@@ -12,7 +12,7 @@ export const listToolContract = {
   method: 'GET',
   description: 'Get tools list',
   responses: {
-    200: c.type<
+    '200': c.type<
       Array<
         Omit<z.infer<typeof ToolListItemSchema>, 'inputs'> & {
           inputs: InputType[];

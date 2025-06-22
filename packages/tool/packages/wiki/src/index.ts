@@ -20,9 +20,8 @@ const func = async (
   const { query } = props;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const wikiInstance = wiki({ apiUrl: 'https://zh.wikipedia.org/w/api.php' }) as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const searchResults = await wikiInstance.page(query).then((page: any) => {
       return page.summary();
     });

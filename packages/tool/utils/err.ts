@@ -1,6 +1,5 @@
 import { replaceSensitiveText } from './string';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getErrText = (err: any, def = ''): string => {
   const msg: string =
     typeof err === 'string'

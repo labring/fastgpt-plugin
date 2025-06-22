@@ -17,7 +17,7 @@ export const runToolContract = {
     systemVar: SystemVarSchema
   }),
   responses: {
-    200: z.object({
+    '200': z.object({
       output: z.record(z.any())
     })
   }

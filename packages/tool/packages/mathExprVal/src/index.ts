@@ -14,7 +14,7 @@ export const OutputType = z.object({
 
 const replaceSpecialChar = (expr: string) => {
   // replace ** to ^
-  let result = expr.replace(/\*\*/g, '^');
+  const result = expr.replace(/\*\*/g, '^');
   return result;
 };
 
