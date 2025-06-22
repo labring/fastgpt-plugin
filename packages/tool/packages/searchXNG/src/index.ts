@@ -1,14 +1,11 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 import * as cheerio from 'cheerio';
 import { delay } from '@tool/utils/delay';
 
-export const InputType = defineInputSchema(
-  z.object({
-    query: z.string(),
-    url: z.string()
-  })
-);
+export const InputType = z.object({
+  query: z.string(),
+  url: z.string()
+});
 
 export const OutputType = z.object({
   result: z

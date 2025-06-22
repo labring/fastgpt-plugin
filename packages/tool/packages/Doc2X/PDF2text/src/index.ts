@@ -1,16 +1,13 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 import axios from 'axios';
 import { getErrText } from '@tool/utils/err';
 import { delay } from '@tool/utils/delay';
 
-export const InputType = defineInputSchema(
-  z.object({
-    apikey: z.string(),
-    HTMLtable: z.boolean(),
-    files: z.array(z.string())
-  })
-);
+export const InputType = z.object({
+  apikey: z.string(),
+  HTMLtable: z.boolean(),
+  files: z.array(z.string())
+});
 
 export const OutputType = z.object({
   result: z.string(),

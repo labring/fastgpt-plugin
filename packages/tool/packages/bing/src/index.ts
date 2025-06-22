@@ -1,14 +1,11 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 
 const bingURL = 'https://api.bing.microsoft.com/v7.0/search';
 
-export const InputType = defineInputSchema(
-  z.object({
-    key: z.string(),
-    query: z.string()
-  })
-);
+export const InputType = z.object({
+  key: z.string(),
+  query: z.string()
+});
 
 export const OutputType = z.object({
   result: z.string()

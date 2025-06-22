@@ -2,10 +2,6 @@ import { z } from 'zod';
 import type { InputType, OutputType } from './fastgpt';
 import type { ToolConfigSchema, ToolSchema, ToolSetConfigSchema, ToolSetSchema } from './tool';
 
-const InputBaseSchema = z.object({
-  version: z.string().optional()
-});
-
 export const SystemVarSchema = z.object({
   user: z.object({
     id: z.string(),
@@ -17,13 +13,13 @@ export const SystemVarSchema = z.object({
     name: z.string()
     // version: z.string()
   }),
+  tool: z.object({
+    id: z.string(),
+    version: z.string().optional()
+  }),
   time: z.string()
 });
 export type SystemVarType = z.infer<typeof SystemVarSchema>;
-
-export function defineInputSchema<T extends z.AnyZodObject>(schema: T) {
-  return InputBaseSchema.merge(schema);
-}
 
 export type ToolConfigType = z.infer<typeof ToolConfigSchema> & {
   inputs: InputType[];

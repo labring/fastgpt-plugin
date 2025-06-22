@@ -1,13 +1,9 @@
-import { defineInputSchema } from '@tool/type';
-import { format } from 'date-fns';
 import { z } from 'zod';
 
-export const InputType = defineInputSchema(
-  z.object({
-    企微机器人地址: z.string(),
-    发送的消息: z.string()
-  })
-);
+export const InputType = z.object({
+  企微机器人地址: z.string(),
+  发送的消息: z.string()
+});
 
 export const OutputType = z.object({});
 

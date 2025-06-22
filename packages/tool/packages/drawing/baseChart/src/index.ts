@@ -1,15 +1,12 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 import * as echarts from 'echarts';
 
-export const InputType = defineInputSchema(
-  z.object({
-    title: z.string(),
-    xAxis: z.array(z.string()),
-    yAxis: z.array(z.union([z.string(), z.number()])),
-    chartType: z.string()
-  })
-);
+export const InputType = z.object({
+  title: z.string(),
+  xAxis: z.array(z.string()),
+  yAxis: z.array(z.union([z.string(), z.number()])),
+  chartType: z.string()
+});
 
 type SeriesData = {
   name: string;

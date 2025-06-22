@@ -4,8 +4,8 @@ export default defineTool({
   toolId: 'community-DingTalkWebhook',
   versionList: [
     {
-      version: '1.0.0',
-      description: '初始版本'
+      version: '0.1.0',
+      description: 'Default version'
     }
   ],
   type: 'communication',

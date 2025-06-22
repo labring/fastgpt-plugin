@@ -1,12 +1,10 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 import { Parser } from 'expr-eval';
 
-export const InputType = defineInputSchema(
-  z.object({
-    数学表达式: z.string()
-  })
-);
+export const InputType = z.object({
+  数学表达式: z.string().optional(),
+  expr: z.string().optional()
+});
 
 export const OutputType = z.object({
   result: z.string()
@@ -19,24 +17,25 @@ const replaceSpecialChar = (expr: string) => {
 };
 
 export async function tool({
-  数学表达式: expr
+  数学表达式: formatExpr,
+  expr
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  if (typeof expr !== 'string') {
-    return {
-      result: `${expr} is not a string`
-    };
+  const parseExpr = formatExpr || expr;
+
+  if (typeof parseExpr !== 'string') {
+    return Promise.reject('Expr is not a string');
   }
 
   try {
     const parser = new Parser();
-    const exprParser = parser.parse(replaceSpecialChar(expr));
+    const exprParser = parser.parse(replaceSpecialChar(parseExpr));
 
     return {
       result: exprParser.evaluate()
     };
   } catch (error) {
     return {
-      result: `${expr} is not a valid math expression. Error: ${error}`
+      result: `${parseExpr} is not a valid math expression. Error: ${error}`
     };
   }
 }

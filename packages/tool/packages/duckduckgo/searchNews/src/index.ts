@@ -1,14 +1,11 @@
-import { defineInputSchema } from '@tool/type';
 import { delay } from '@tool/utils/delay';
 import { getErrText } from '@tool/utils/err';
 import { SafeSearchType, searchNews } from 'duck-duck-scrape';
 import { z } from 'zod';
 
-export const InputType = defineInputSchema(
-  z.object({
-    query: z.string()
-  })
-);
+export const InputType = z.object({
+  query: z.string()
+});
 
 export const OutputType = z.object({
   result: z.string()

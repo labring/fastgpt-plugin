@@ -1,23 +1,21 @@
-import { defineInputSchema } from '@tool/type';
 import { getErrText } from '@tool/utils/err';
 import { z } from 'zod';
 import nodemailer from 'nodemailer';
-export const InputType = defineInputSchema(
-  z.object({
-    smtpHost: z.string(),
-    smtpPort: z.string(),
-    SSL: z.boolean(),
-    smtpUser: z.string(),
-    smtpPass: z.string(),
-    fromName: z.string().optional(),
-    to: z.string(),
-    subject: z.string(),
-    content: z.string(),
-    cc: z.string().optional(),
-    bcc: z.string().optional(),
-    attachments: z.string().optional()
-  })
-);
+
+export const InputType = z.object({
+  smtpHost: z.string(),
+  smtpPort: z.string(),
+  SSL: z.boolean(),
+  smtpUser: z.string(),
+  smtpPass: z.string(),
+  fromName: z.string().optional(),
+  to: z.string(),
+  subject: z.string(),
+  content: z.string(),
+  cc: z.string().optional(),
+  bcc: z.string().optional(),
+  attachments: z.string().optional()
+});
 
 export const OutputType = z.object({
   success: z.boolean(),

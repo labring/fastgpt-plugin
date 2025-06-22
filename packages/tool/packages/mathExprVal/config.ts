@@ -4,8 +4,8 @@ export default defineTool({
   toolId: 'community-mathExprVal',
   versionList: [
     {
-      version: '1.0.0',
-      description: '初始版本'
+      version: '0.1.0',
+      description: 'Default version'
     }
   ],
   type: 'tools',
@@ -23,7 +23,7 @@ export default defineTool({
       renderTypeList: ['reference', 'input'],
       selectedTypeIndex: 0,
       valueType: 'string',
-      key: '数学表达式',
+      key: 'expr',
       label: '数学表达式',
       description: '需要执行的数学表达式',
       required: true,

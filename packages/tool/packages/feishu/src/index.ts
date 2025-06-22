@@ -1,12 +1,9 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 
-export const InputType = defineInputSchema(
-  z.object({
-    content: z.string(),
-    hook_url: z.string()
-  })
-);
+export const InputType = z.object({
+  content: z.string(),
+  hook_url: z.string()
+});
 
 export const OutputType = z.object({
   result: z.string()

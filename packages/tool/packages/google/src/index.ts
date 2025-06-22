@@ -1,13 +1,10 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 
-export const InputType = defineInputSchema(
-  z.object({
-    cx: z.string(),
-    query: z.string(),
-    key: z.string()
-  })
-);
+export const InputType = z.object({
+  cx: z.string(),
+  query: z.string(),
+  key: z.string()
+});
 
 export const OutputType = z.object({
   result: z.any()

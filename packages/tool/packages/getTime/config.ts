@@ -5,7 +5,7 @@ export default defineTool({
   versionList: [
     {
       version: '1.0',
-      description: '初始版本'
+      description: 'Default version'
     }
   ],
   type: 'tools',

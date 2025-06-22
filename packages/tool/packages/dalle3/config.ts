@@ -10,8 +10,8 @@ export default defineTool({
   isActive: false,
   versionList: [
     {
-      version: '1.0.0',
-      description: '初始版本'
+      version: '0.1.0',
+      description: 'Default version'
     }
   ],
   type: 'multimodal',

@@ -1,13 +1,10 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 
-export const InputType = defineInputSchema(
-  z.object({
-    绘图提示词: z.string(),
-    url: z.string(),
-    authorization: z.string()
-  })
-);
+export const InputType = z.object({
+  绘图提示词: z.string(),
+  url: z.string(),
+  authorization: z.string()
+});
 
 export const OutputType = z.object({
   错误信息: z.string().optional(),

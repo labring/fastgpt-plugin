@@ -1,4 +1,3 @@
-import { defineInputSchema } from '@tool/type';
 import { z } from 'zod';
 import * as crypto from 'crypto';
 import * as querystring from 'querystring';
@@ -20,13 +19,11 @@ export const createHmac = (algorithm: string, secret: string) => {
   };
 };
 
-export const InputType = defineInputSchema(
-  z.object({
-    钉钉机器人地址: z.string(),
-    加签值: z.string(),
-    发送的消息: z.string()
-  })
-);
+export const InputType = z.object({
+  钉钉机器人地址: z.string(),
+  加签值: z.string(),
+  发送的消息: z.string()
+});
 
 export const OutputType = z.object({
   钉钉机器人地址: z.string(),

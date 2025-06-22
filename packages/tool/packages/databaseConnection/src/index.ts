@@ -2,22 +2,19 @@ import { z } from 'zod';
 import { Client as PgClient } from 'pg'; // PostgreSQL 客户端
 import mysql from 'mysql2/promise'; // MySQL 客户端
 import mssql from 'mssql'; // SQL Server 客户端
-import { defineInputSchema } from '@tool/type';
 
 // const supportedDatabaseTypes = ['PostgreSQL', 'MySQL', 'Microsoft SQL Server'];
 const supportedDatabaseTypes = z.enum(['PostgreSQL', 'MySQL', 'Microsoft SQL Server']);
 
-export const InputType = defineInputSchema(
-  z.object({
-    databaseType: supportedDatabaseTypes,
-    host: z.string(),
-    port: z.string(),
-    databaseName: z.string(),
-    user: z.string(),
-    password: z.string(),
-    sql: z.string()
-  })
-);
+export const InputType = z.object({
+  databaseType: supportedDatabaseTypes,
+  host: z.string(),
+  port: z.string(),
+  databaseName: z.string(),
+  user: z.string(),
+  password: z.string(),
+  sql: z.string()
+});
 
 export const OutputType = z.object({
   // result: any; // 根据你的 SQL 查询结果类型调整
