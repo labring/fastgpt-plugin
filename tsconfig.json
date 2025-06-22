@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "types": ["vite/client"], // 确保包含 Vite 的类型定义
+
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
@@ -23,8 +25,10 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
+    "baseUrl": "./",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"],
+      "@tool/*": ["./packages/tool/*"]
     }
   }
 }

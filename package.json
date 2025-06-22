@@ -3,12 +3,25 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "bun run scripts/build.ts",
-    "dev": "bun --cwd=./runtime run dev",
-    "start": "bun --cwd=./runtime run start",
-    "lint": "bun eslint --fix",
+    "build:node": "bun build --outfile=dist/index.js --target=node --minify ./src/index.ts && cp worker/worker.js dist/worker.js",
+    "build:bun": "bun build --outfile=dist/index.js --target=bun --minify ./src/index.ts && cp worker/worker.js dist/worker.js",
+    "build": "bun run build:node",
+    "start": "bun ./dist/index.js -p",
+    "dev": "bun run --watch src/index.ts -p",
     "test": "vitest",
-    "new:tool": "bun --cwd=./tools run new"
+    "lint": "bun eslint --fix",
+    "prettier": "prettier --write \"./**/*.{ts,js,json}\"",
+    "new:tool": "bun --cwd=./packages/tool run new"
+  },
+  "dependencies": {
+    "@ts-rest/core": "^3.52.1",
+    "@ts-rest/express": "^3.52.1",
+    "@ts-rest/open-api": "^3.52.1",
+    "comlink": "^4.4.2",
+    "express": "^5.1.0",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^3.24.3",
+    "nanoid": "^5.1.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
@@ -20,21 +33,17 @@
     "eslint": "^9.24.0",
     "globals": "^16.0.0",
     "typescript-eslint": "^8.29.1",
-    "vitest": "3.1.2"
+    "prettier": "3.2.4",
+    "vitest": "3.1.2",
+    "@types/express": "^5.0.1",
+    "@types/swagger-ui-express": "^4.1.8"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "workspaces": [
-    "tools",
-    "runtime",
     "sdk",
-    "tools/packages/**/*"
+    "packages/tools/packages/*"
   ],
-  "packageManager": "bun@1.2.2",
-  "dependencies": {
-    "@ts-rest/express": "^3.52.1",
-    "nanoid": "^5.1.5",
-    "zod": "^3.25.40"
-  }
+  "packageManager": "bun@1.2.2"
 }

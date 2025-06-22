@@ -1,0 +1,49 @@
+import type { z } from 'zod';
+import type { SystemVarType, ToolConfigType, ToolSetConfigType, ToolType } from '@tool/type';
+
+export const exportTool = ({
+  toolCb,
+  InputType,
+  config
+}: {
+  toolCb: (
+    props: z.infer<typeof InputType>,
+    systemVar: SystemVarType
+  ) => Promise<Record<string, any>>;
+  InputType: z.ZodTypeAny;
+  config: ToolConfigType;
+}) => {
+  const cb = async (props: z.infer<typeof InputType>, systemVar: SystemVarType) => {
+    try {
+      const output = await toolCb(InputType.parse(props), systemVar);
+      return {
+        output
+      };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  config.toolId = config.toolId ?? __dirname.split('/').pop()?.split('.').shift();
+
+  const tool: ToolType = {
+    ...config,
+    toolId: config.toolId as string,
+    isToolSet: false,
+    toolFile: __dirname,
+    cb
+  };
+  return tool;
+};
+
+export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
+  config.toolId = config.toolId ?? __dirname.split('/').pop()?.split('.').shift();
+  config.children.forEach((child) => {
+    child.toolId = config.toolId + '/' + child.toolId;
+    child.parentId = config.toolId;
+  });
+
+  return {
+    ...config
+  };
+};

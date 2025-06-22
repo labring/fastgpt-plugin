@@ -1,0 +1,9 @@
+{
+    "editor.formatOnSave": true,
+    "editor.mouseWheelZoom": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "prettier.prettierPath": "node_modules/prettier",
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+}
