@@ -1,4 +1,5 @@
-import { defineTool, FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type';
+import { defineTool } from '@tool/type';
+import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-databaseConnection',

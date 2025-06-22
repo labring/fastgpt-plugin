@@ -1,9 +1,9 @@
+import { defineTool } from '@tool/type';
 import {
-  defineTool,
   FlowNodeInputTypeEnum,
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
-} from '@tool/type';
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-bing',

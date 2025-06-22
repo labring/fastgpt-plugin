@@ -1,3 +1,4 @@
+import { $ } from 'bun';
 import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';
@@ -21,13 +22,12 @@ if (name.length > 20) {
   process.exit(1);
 }
 
-console.log('Creating tool: ', name);
-// copy template to tools/<name>
-
-const templateDir = path.join('scripts', 'template');
-
-const toolDir = path.join('packages', name);
-if (!fs.existsSync(toolDir)) {
+const templateDir = path.join(__dirname, 'template');
+const toolDir = path.join(process.cwd(), 'packages', 'tool', 'packages', name);
+if (fs.existsSync(toolDir)) {
+  console.error('Tool already exists');
+  process.exit(1);
+} else {
   fs.mkdirSync(toolDir, { recursive: true });
 }
 
@@ -48,16 +48,15 @@ if (isToolset) {
 } else {
   copyTemplate(path.join(templateDir, 'tool'), toolDir);
 }
+
 // update package.json
 const packageJsonPath = path.join(templateDir, 'package.json');
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 packageJson.name = `fastgpt-tools-${name}`;
 fs.writeFileSync(toolDir + '/package.json', JSON.stringify(packageJson, null, 2));
 
+// Install package
+(async () => $`bun --cwd=${process.cwd()} install`.quiet())();
+
 // output success message
-console.log(`
-Tool/Toolset created successfully! 🎉
-Next steps:
-- cd packages/${name}
-- bun i
-`);
+console.log(`Tool/Toolset created successfully! 🎉`);

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { InfoString } from './common';
+import { InfoString } from '@/type/i18n';
 import { SystemVarSchema } from '.';
 
 export const ToolCallbackReturnSchema = z.object({
@@ -11,12 +11,12 @@ export const ToolCallbackType = z
   .args(z.any(), SystemVarSchema)
   .returns(z.promise(ToolCallbackReturnSchema));
 
-export const VersionListItemSchema = z.object({
+const VersionListItemSchema = z.object({
   version: z.string(),
   description: z.string().optional()
 });
 
-export const ToolTypeEnum = z.enum(['tools', 'search', 'multimodal', 'communication', 'other']);
+const ToolTypeEnum = z.enum(['tools', 'search', 'multimodal', 'communication', 'other']);
 
 export const ToolConfigSchema = z
   .object({
@@ -40,7 +40,7 @@ export const ToolSchema = ToolConfigSchema.omit({
   z.object({
     toolId: z.string().describe('The unique id of the tool'),
     cb: ToolCallbackType.describe('The callback function of the tool'),
-    isToolSet: z.boolean().describe('Whether it is a tool set'),
+    isToolSet: z.boolean().optional().describe('Whether it is a tool set'),
     parentId: z.string().optional().describe('The parent id of the tool'),
     toolFile: z.string()
   })
@@ -87,31 +87,4 @@ export const ToolListItemSchema = z.object({
   inputs: z.array(z.any()).describe('The inputs of the tool'),
   outputs: z.array(z.any()).describe('The outputs of the tool')
 });
-
-type ToolListItemType = z.infer<typeof ToolListItemSchema>;
-
-export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItemType[] {
-  return list.map((item, index) => ({
-    id: item.toolId,
-    isFolder: item.isToolSet,
-    parentId: item.parentId,
-    docUrl: item.docURL,
-    name: item.name,
-    avatar: item.icon,
-    versionList: item.versionList,
-    workflow: {
-      nodes: [],
-      edges: []
-    },
-    intro: item.description,
-    templateType: item.type,
-    pluginOrder: index,
-    isActive: item.isActive ?? true,
-    weight: index,
-    originCost: 0,
-    currentCost: 0,
-    hasTokenFee: false,
-    inputs: item.inputs,
-    outputs: item.outputs
-  }));
-}
+export type ToolListItemType = z.infer<typeof ToolListItemSchema>;

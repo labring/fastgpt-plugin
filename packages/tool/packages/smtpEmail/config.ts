@@ -1,9 +1,5 @@
-import {
-  defineTool,
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  WorkflowIOValueTypeEnum
-} from '@tool/type';
+import { defineTool } from '@tool/type';
+import { FlowNodeOutputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-smtpEmail',

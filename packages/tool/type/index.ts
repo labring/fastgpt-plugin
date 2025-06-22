@@ -26,8 +26,6 @@ export type ToolConfigType = z.infer<typeof ToolConfigSchema> & {
   outputs: OutputType[];
 };
 
-export type ToolSetConfigType = z.infer<typeof ToolSetConfigSchema>;
-
 export function defineTool(tool: ToolConfigType) {
   return {
     isToolSet: false,
@@ -35,14 +33,13 @@ export function defineTool(tool: ToolConfigType) {
   };
 }
 
+export type ToolSetConfigType = z.infer<typeof ToolSetConfigSchema>;
 export function defineToolSet(toolset: ToolSetConfigType) {
   return {
     isToolSet: true,
     ...toolset
   };
 }
-
-export * from './fastgpt';
 
 export type ToolType = z.infer<typeof ToolSchema>;
 export type ToolSetType = z.infer<typeof ToolSetSchema>;
