@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // main build
-$`bun --cwd=${__dirname} run build-main`.quiet();
+await $`bun --cwd=${__dirname} run build-main`.quiet();
 
 // Build tools
 const toolsDir = path.join(__dirname, '..', 'packages', 'tool', 'packages');
