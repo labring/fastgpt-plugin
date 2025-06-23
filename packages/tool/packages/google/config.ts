@@ -1,4 +1,9 @@
 import { defineTool } from '@tool/type';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-google',
@@ -18,12 +23,13 @@ export default defineTool({
     en: 'Search in Google'
   },
   icon: 'core/workflow/template/google',
-  docURL: 'https://fael3z0zfze.feishu.cn/wiki/Vqk1w4ltNiuLifkHTuoc0hSrnVg?fromScene=spaceOverview',
+  courseUrl:
+    'https://fael3z0zfze.feishu.cn/wiki/Vqk1w4ltNiuLifkHTuoc0hSrnVg?fromScene=spaceOverview',
   inputs: [
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'cx',
       label: 'cx',
       description: 'Google搜索cxID',
@@ -37,9 +43,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'key',
       label: 'key',
       description: 'Google搜索key',
@@ -48,9 +54,9 @@ export default defineTool({
       list: []
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'query',
       label: 'query',
       description: '查询字段值',
@@ -68,10 +74,10 @@ export default defineTool({
   outputs: [
     {
       id: 'result',
-      valueType: 'object',
+      valueType: WorkflowIOValueTypeEnum.object,
       key: 'result',
       label: 'result',
-      type: 'static'
+      type: FlowNodeOutputTypeEnum.static
     }
   ]
 });

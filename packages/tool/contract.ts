@@ -13,13 +13,13 @@ export const toolContract = c.router(
   {
     pathPrefix: '/tool',
     commonResponse: {
-      '401': z.object({
+      401: z.object({
         error: z.string()
       }),
-      '404': z.object({
+      404: z.object({
         error: z.string()
       }),
-      '500': z.object({
+      500: z.object({
         error: z.string()
       })
     }

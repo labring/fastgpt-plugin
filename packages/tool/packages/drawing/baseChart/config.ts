@@ -1,4 +1,9 @@
 import { defineTool } from '@tool/type';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'baseChart',
@@ -20,16 +25,17 @@ export default defineTool({
   icon: 'core/workflow/template/baseChart',
   inputs: [
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'title',
       label: 'title',
       description: 'BI图表的标题',
       toolDescription: 'BI图表的标题'
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'arrayString',
+      valueType: WorkflowIOValueTypeEnum.arrayString,
       key: 'xAxis',
       label: 'xAxis',
       description: 'x轴数据，例如：["A", "B", "C"]',
@@ -44,9 +50,9 @@ export default defineTool({
       ]
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'arrayString',
+      valueType: WorkflowIOValueTypeEnum.arrayString,
       key: 'yAxis',
       label: 'yAxis',
       description: 'y轴数据，例如：[1,2,3]',
@@ -61,9 +67,9 @@ export default defineTool({
       toolDescription: 'y轴数据，例如：[1,2,3]'
     },
     {
-      renderTypeList: ['select', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'chartType',
       label: 'chartType',
       description: '图表类型：柱状图，折线图，饼图',
@@ -89,7 +95,8 @@ export default defineTool({
   outputs: [
     {
       id: '图表 url',
-      type: 'static',
+      type: FlowNodeOutputTypeEnum.static,
+      valueType: WorkflowIOValueTypeEnum.string,
       description: '可用使用markdown格式展示图片，如：![图片](url)',
       defaultValue: '',
       label: '图表 url',

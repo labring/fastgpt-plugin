@@ -1,5 +1,9 @@
 import { defineTool } from '@tool/type';
-import { FlowNodeOutputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-searchXNG',
@@ -19,12 +23,12 @@ export default defineTool({
     en: 'Use Search XNG service for search.'
   },
   icon: 'core/workflow/template/searxng',
-  docURL: '/docs/guide/plugins/searxng_plugin_guide/',
+  courseUrl: '/docs/guide/plugins/searxng_plugin_guide/',
   inputs: [
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'query',
       label: 'query',
       description: '检索词',
@@ -32,9 +36,9 @@ export default defineTool({
       toolDescription: '检索词'
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'url',
       label: 'url',
       description: '部署的searXNG服务的链接',

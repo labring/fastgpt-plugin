@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export enum FlowNodeInputTypeEnum { // render ui
   reference = 'reference', // reference to other node output
   input = 'input', // one line input
@@ -70,73 +72,75 @@ export enum FlowNodeOutputTypeEnum {
   dynamic = 'dynamic'
 }
 
-export type InputConfigType = Omit<InputType, 'renderTypeList' | 'inputList'> & {
-  inputType: 'string' | 'secret';
-};
+// Define InputConfigType schema
+export const InputConfigSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  description: z.string().optional(),
+  required: z.boolean().optional(),
+  inputType: z.enum(['string', 'secret'])
+});
+export type InputConfigType = z.infer<typeof InputConfigSchema>;
 
-export type InputType = {
-  referencePlaceholder?: string;
-  placeholder?: string; // input,textarea
-  maxLength?: number; // input,textarea
+// Define InputType schema
+export const InputSchema = z.object({
+  referencePlaceholder: z.string().optional(),
+  placeholder: z.string().optional(),
+  maxLength: z.number().optional(),
+  list: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.string()
+      })
+    )
+    .optional(),
+  markList: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.number()
+      })
+    )
+    .optional(),
+  step: z.number().optional(),
+  max: z.number().optional(),
+  min: z.number().optional(),
+  defaultValue: z.any().optional(),
+  llmModelType: z.nativeEnum(LLMModelTypeEnum).optional(),
+  customInputConfig: z.any().optional(), // CustomFieldConfigType will be defined elsewhere
+  selectedTypeIndex: z.number().optional(),
+  renderTypeList: z.array(z.nativeEnum(FlowNodeInputTypeEnum)),
+  key: z.string(),
+  valueType: z.nativeEnum(WorkflowIOValueTypeEnum),
+  valueDesc: z.string().optional(),
+  value: z.unknown().optional(),
+  label: z.string(),
+  debugLabel: z.string().optional(),
+  description: z.string().optional(),
+  required: z.boolean().optional(),
+  enum: z.string().optional(),
+  toolDescription: z.string().optional(),
+  canEdit: z.boolean().optional(),
+  isPro: z.boolean().optional(),
+  isToolOutput: z.boolean().optional(),
+  canSelectFile: z.boolean().optional(),
+  canSelectImg: z.boolean().optional(),
+  maxFiles: z.number().optional(),
+  inputList: z.array(InputConfigSchema).optional()
+});
+export type InputType = z.infer<typeof InputSchema>;
 
-  list?: { label: string; value: string }[]; // select
-
-  markList?: { label: string; value: number }[]; // slider
-  step?: number; // slider
-  max?: number; // slider, number input
-  min?: number; // slider, number input
-
-  defaultValue?: any;
-
-  llmModelType?: `${LLMModelTypeEnum}`;
-
-  // dynamic input
-  customInputConfig?: CustomFieldConfigType;
-  selectedTypeIndex?: number;
-  renderTypeList: `${FlowNodeInputTypeEnum}`[]; // Node Type. Decide on a render style
-
-  key: string;
-  valueType?: `${WorkflowIOValueTypeEnum}`; // data type
-  valueDesc?: string; // data desc
-  value?: unknown;
-  label: string;
-  debugLabel?: string;
-  description?: string; // field desc
-  required?: boolean;
-  enum?: string;
-
-  toolDescription?: string; // If this field is not empty, it is entered as a tool
-
-  // render components params
-  canEdit?: boolean; // dynamic inputs
-  isPro?: boolean; // Pro version field
-  isToolOutput?: boolean;
-
-  // file
-  canSelectFile?: boolean;
-  canSelectImg?: boolean;
-  maxFiles?: number;
-
-  inputList?: InputConfigType[];
-};
-
-export type OutputType = {
-  id: string; // output unique id(Does not follow the key change)
-  type: `${FlowNodeOutputTypeEnum}`;
-  key: string;
-  valueType?: `${WorkflowIOValueTypeEnum}`;
-  valueDesc?: string;
-  value?: unknown;
-
-  label?: string;
-  description?: string;
-  defaultValue?: unknown;
-  required?: boolean;
-};
-
-export type CustomFieldConfigType = {
-  // reference
-  selectValueTypeList?: `${WorkflowIOValueTypeEnum}`[]; // 可以选哪个数据类型, 只有1个的话,则默认选择
-  showDefaultValue?: boolean;
-  showDescription?: boolean;
-};
+export const OutputSchema = z.object({
+  id: z.string(),
+  type: z.nativeEnum(FlowNodeOutputTypeEnum),
+  key: z.string(),
+  valueType: z.nativeEnum(WorkflowIOValueTypeEnum),
+  valueDesc: z.string().optional(),
+  value: z.unknown().optional(),
+  label: z.string().optional(),
+  description: z.string().optional(),
+  defaultValue: z.any().optional(),
+  required: z.boolean().optional()
+});
+export type OutputType = z.infer<typeof OutputSchema>;

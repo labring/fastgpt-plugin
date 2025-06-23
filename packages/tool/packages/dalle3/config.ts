@@ -45,7 +45,7 @@ export default defineTool({
         }
       ],
       renderTypeList: [FlowNodeInputTypeEnum.hidden],
-      valueType: 'object',
+      valueType: WorkflowIOValueTypeEnum.object,
       defaultValue: {
         type: 'system'
       }
@@ -53,7 +53,9 @@ export default defineTool({
     {
       key: '绘图提示词',
       label: '绘图提示词',
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
+      valueType: WorkflowIOValueTypeEnum.string,
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+      toolDescription: '绘图提示词'
     }
   ],
   outputs: [

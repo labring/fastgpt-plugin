@@ -1,4 +1,9 @@
 import { defineTool } from '@tool/type';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   versionList: [
@@ -20,9 +25,9 @@ export default defineTool({
   icon: 'plugins/doc2x',
   inputs: [
     {
-      renderTypeList: ['input'],
+      renderTypeList: [FlowNodeInputTypeEnum.input],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'apikey',
       label: 'apikey',
       description: 'Doc2X的API密匙，可以从Doc2X开放平台获得',
@@ -31,9 +36,9 @@ export default defineTool({
       list: []
     },
     {
-      renderTypeList: ['fileSelect'],
+      renderTypeList: [FlowNodeInputTypeEnum.fileSelect],
       selectedTypeIndex: 0,
-      valueType: 'arrayString',
+      valueType: WorkflowIOValueTypeEnum.arrayString,
       key: 'files',
       label: 'files',
       description: '需要处理的PDF地址',
@@ -45,9 +50,9 @@ export default defineTool({
       defaultValue: ''
     },
     {
-      renderTypeList: ['switch', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.switch, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'boolean',
+      valueType: WorkflowIOValueTypeEnum.boolean,
       key: 'HTMLtable',
       label: 'HTMLtable',
       description:
@@ -67,24 +72,24 @@ export default defineTool({
   outputs: [
     {
       id: 'result',
-      type: 'static',
+      type: FlowNodeOutputTypeEnum.static,
       key: 'result',
       label: '结果',
       description: '处理结果，由文件名以及文档内容组成，多个文件之间由横线分隔开',
-      valueType: 'string'
+      valueType: WorkflowIOValueTypeEnum.string
     },
     {
       id: 'error',
-      type: 'static',
-      valueType: 'object',
+      type: FlowNodeOutputTypeEnum.static,
+      valueType: WorkflowIOValueTypeEnum.object,
       key: 'error',
       label: '错误',
       description: '错误信息'
     },
     {
       id: 'success',
-      type: 'static',
-      valueType: 'boolean',
+      type: FlowNodeOutputTypeEnum.static,
+      valueType: WorkflowIOValueTypeEnum.boolean,
       key: 'success',
       label: '成功',
       description: '成功信息'

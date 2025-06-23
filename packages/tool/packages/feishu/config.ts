@@ -1,5 +1,9 @@
 import { defineTool } from '@tool/type';
-import { FlowNodeOutputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-feishu',
@@ -21,9 +25,9 @@ export default defineTool({
   icon: 'core/app/templates/plugin-feishu',
   inputs: [
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'content',
       label: 'content',
       description: '需要发送的消息',
@@ -32,9 +36,9 @@ export default defineTool({
       defaultValue: ''
     },
     {
-      renderTypeList: ['input'],
+      renderTypeList: [FlowNodeInputTypeEnum.input],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'hook_url',
       label: 'hook_url',
       description: '飞书机器人地址',

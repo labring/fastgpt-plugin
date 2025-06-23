@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { InfoString } from '@/type/i18n';
 import { SystemVarSchema } from '.';
+import { InputSchema, OutputSchema } from './fastgpt';
 
 export const ToolCallbackReturnSchema = z.object({
   error: z.any().optional(),
@@ -26,11 +27,11 @@ export const ToolConfigSchema = z
     type: ToolTypeEnum.describe('The type of the tool'),
     icon: z.string().describe('The icon of the tool'),
     author: z.string().optional().describe('The author of the tool'),
-    docURL: z.string().optional().describe('The documentation URL of the tool'),
+    courseUrl: z.string().optional().describe('The documentation URL of the tool'),
     isActive: z.boolean().optional().describe('Whether it is active'),
     versionList: z.array(VersionListItemSchema).min(1).describe('The version list'),
-    inputs: z.array(z.any()).describe('The inputs of the tool'),
-    outputs: z.array(z.any()).describe('The outputs of the tool')
+    inputs: z.array(InputSchema).describe('The inputs of the tool'),
+    outputs: z.array(OutputSchema).describe('The outputs of the tool')
   })
   .describe('The Tool Config Schema');
 
@@ -68,14 +69,11 @@ export const ToolListItemSchema = z.object({
   id: z.string().describe('The unique id of the tool'),
   isFolder: z.boolean().describe('Whether it is a folder'),
   parentId: z.string().optional().describe('The parent id of the tool'),
-  docUrl: z.string().optional().describe('The documentation URL of the tool'),
+  author: z.string().optional().describe('The author of the tool'),
+  courseUrl: z.string().optional().describe('The documentation URL of the tool'),
   name: InfoString.describe('The name of the tool'),
   avatar: z.string().describe('The icon of the tool'),
   versionList: z.array(VersionListItemSchema).min(1).describe('The version list'),
-  workflow: z.object({
-    nodes: z.array(z.any()).describe('The workflow nodes'),
-    edges: z.array(z.any()).describe('The workflow edges')
-  }),
   intro: InfoString.describe('The introduction of the tool'),
   templateType: ToolTypeEnum.describe('The type of the tool'),
   pluginOrder: z.number().describe('The order of the plugin'),
@@ -84,7 +82,7 @@ export const ToolListItemSchema = z.object({
   originCost: z.number().describe('The origin cost of the tool'),
   currentCost: z.number().describe('The current cost of the tool'),
   hasTokenFee: z.boolean().describe('Whether it has token fee'),
-  inputs: z.array(z.any()).describe('The inputs of the tool'),
-  outputs: z.array(z.any()).describe('The outputs of the tool')
+  inputs: z.array(InputSchema).describe('The inputs of the tool'),
+  outputs: z.array(OutputSchema).describe('The outputs of the tool')
 });
 export type ToolListItemType = z.infer<typeof ToolListItemSchema>;

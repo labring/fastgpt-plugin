@@ -1,5 +1,9 @@
 import { defineTool } from '@tool/type';
-import { FlowNodeOutputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-fetchUrl',
@@ -21,9 +25,9 @@ export default defineTool({
   icon: 'core/workflow/template/fetchUrl',
   inputs: [
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'url',
       label: 'url',
       description: '需要读取的网页链接',

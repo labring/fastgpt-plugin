@@ -25,11 +25,7 @@ export const InputType = z.object({
   发送的消息: z.string()
 });
 
-export const OutputType = z.object({
-  钉钉机器人地址: z.string(),
-  加签值: z.string(),
-  发送的消息: z.string()
-});
+export const OutputType = z.object({});
 
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const { sign, timestamp } = createHmac('sha256', props.加签值);
@@ -50,9 +46,5 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
     })
   });
 
-  return {
-    钉钉机器人地址: props.钉钉机器人地址,
-    加签值: props.加签值,
-    发送的消息: props.发送的消息
-  };
+  return {};
 }

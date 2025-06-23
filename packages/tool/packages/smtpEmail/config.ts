@@ -1,5 +1,9 @@
 import { defineTool } from '@tool/type';
-import { FlowNodeOutputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-smtpEmail',
@@ -21,9 +25,9 @@ export default defineTool({
   icon: 'plugins/email',
   inputs: [
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'smtpHost',
       label: 'smtpHost',
       description: '',
@@ -43,9 +47,9 @@ export default defineTool({
       }
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'smtpPort',
       label: 'smtpPort',
       description: 'SMTP端口',
@@ -62,9 +66,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['select', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'SSL',
       label: 'SSL',
       description: 'SSL',
@@ -85,9 +89,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'smtpUser',
       label: 'smtpUser',
       description: 'SMTP用户名, 邮箱账号',
@@ -104,9 +108,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'smtpPass',
       label: 'smtpPass',
       description: '邮箱密码或授权码',
@@ -123,9 +127,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'fromName',
       label: 'fromName',
       description: '显示的发件人名称',
@@ -142,9 +146,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'to',
       label: 'to',
       description: '请输入收件人邮箱，多个邮箱用逗号分隔',
@@ -162,9 +166,9 @@ export default defineTool({
       toolDescription: '请输入收件人邮箱，多个邮箱用逗号分隔'
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'subject',
       label: 'subject',
       description: '请输入邮件主题',
@@ -182,9 +186,9 @@ export default defineTool({
       toolDescription: '请输入邮件主题'
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'content',
       label: 'content',
       description: '请输入邮件内容，支持HTML格式',
@@ -202,9 +206,9 @@ export default defineTool({
       toolDescription: '请输入邮件内容，支持HTML格式'
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'cc',
       label: 'cc',
       description: '请输入抄送邮箱，多个邮箱用逗号分隔',
@@ -222,9 +226,9 @@ export default defineTool({
       toolDescription: '请输入抄送邮箱，多个邮箱用逗号分隔'
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'bcc',
       label: 'bcc',
       description: '请输入密送邮箱，多个邮箱用逗号分隔',
@@ -242,9 +246,9 @@ export default defineTool({
       toolDescription: '请输入密送邮箱，多个邮箱用逗号分隔'
     },
     {
-      renderTypeList: ['JSONEditor', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.JSONEditor, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'attachments',
       label: 'attachments',
       description: '必须是json数组格式\n[{"filename":"附件名","path":"附件url"}]',

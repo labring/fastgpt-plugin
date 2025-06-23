@@ -25,7 +25,7 @@ export default defineTool({
       label: '延迟时长',
       renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       valueType: WorkflowIOValueTypeEnum.number,
-      toolDescription: '要暂停的时间，单位毫秒'
+      description: '要暂停的时间，单位毫秒'
     }
   ],
   outputs: []

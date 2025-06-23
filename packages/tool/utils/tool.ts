@@ -1,6 +1,6 @@
 import type { z } from 'zod';
-import type { SystemVarType, ToolConfigType, ToolSetConfigType, ToolType } from '@tool/type';
-import { ToolSchema, type ToolListItemType } from '@tool/type/tool';
+import type { SystemVarType, ToolSetConfigType, ToolType } from '@tool/type';
+import { ToolConfigSchema, ToolSchema, type ToolListItemType } from '@tool/type/tool';
 
 export const exportTool = ({
   toolCb,
@@ -12,7 +12,7 @@ export const exportTool = ({
     systemVar: SystemVarType
   ) => Promise<Record<string, any>>;
   InputType: z.ZodTypeAny;
-  config: ToolConfigType;
+  config: z.infer<typeof ToolConfigSchema>;
 }) => {
   const cb = async (props: z.infer<typeof InputType>, systemVar: SystemVarType) => {
     try {
@@ -54,14 +54,11 @@ export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItem
     id: item.toolId,
     isFolder: !!item.isToolSet,
     parentId: item.parentId,
-    docUrl: item.docURL,
+    author: item.author,
+    courseUrl: item.courseUrl,
     name: item.name,
     avatar: item.icon,
     versionList: item.versionList,
-    workflow: {
-      nodes: [],
-      edges: []
-    },
     intro: item.description,
     templateType: item.type,
     pluginOrder: index,

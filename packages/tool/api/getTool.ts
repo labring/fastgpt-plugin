@@ -13,7 +13,7 @@ export const getToolContract = {
     toolId: z.string()
   }),
   responses: {
-    '200': ToolListItemSchema
+    200: ToolListItemSchema
   }
 } as const;
 

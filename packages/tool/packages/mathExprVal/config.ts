@@ -1,4 +1,9 @@
 import { defineTool } from '@tool/type';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-mathExprVal',
@@ -20,9 +25,9 @@ export default defineTool({
   icon: 'core/workflow/template/mathCall',
   inputs: [
     {
-      renderTypeList: ['reference', 'input'],
+      renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'expr',
       label: '数学表达式',
       description: '需要执行的数学表达式',
@@ -35,9 +40,9 @@ export default defineTool({
       description: '返回的数学表达式结果',
       id: 'sowtxkCPjvb7',
       key: 'result',
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       label: 'result',
-      type: 'static'
+      type: FlowNodeOutputTypeEnum.static
     }
   ]
 });

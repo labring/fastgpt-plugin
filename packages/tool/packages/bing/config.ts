@@ -8,7 +8,8 @@ import {
 export default defineTool({
   toolId: 'community-bing',
   icon: 'core/workflow/template/bing',
-  docURL: 'https://fael3z0zfze.feishu.cn/wiki/LsKAwOmtniA4vkkC259cmfxXnAc?fromScene=spaceOverview',
+  courseUrl:
+    'https://fael3z0zfze.feishu.cn/wiki/LsKAwOmtniA4vkkC259cmfxXnAc?fromScene=spaceOverview',
   versionList: [
     {
       version: '0.1.0',
@@ -28,11 +29,13 @@ export default defineTool({
     {
       key: 'key',
       label: 'Bing API Key',
+      valueType: WorkflowIOValueTypeEnum.string,
       renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
     },
     {
       key: 'query',
       label: '搜索关键词',
+      valueType: WorkflowIOValueTypeEnum.string,
       renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
     }
   ],

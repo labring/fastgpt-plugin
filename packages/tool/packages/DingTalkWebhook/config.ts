@@ -1,4 +1,5 @@
 import { defineTool } from '@tool/type';
+import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-DingTalkWebhook',
@@ -18,22 +19,22 @@ export default defineTool({
     en: 'Send a webhook request to DingTalk.'
   },
   icon: 'plugins/dingding',
-  docURL: 'https://open.dingtalk.com/document/robots/custom-robot-access',
+  courseUrl: 'https://open.dingtalk.com/document/robots/custom-robot-access',
   inputs: [
     {
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: '钉钉机器人地址',
       label: '钉钉机器人地址',
       description: '',
       defaultValue: '',
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       required: true,
       value: ''
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: '加签值',
       label: '加签值',
       description: '钉钉机器人加签值',
@@ -50,9 +51,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: '发送的消息',
       label: '发送的消息',
       description: '发送的消息',
@@ -70,27 +71,5 @@ export default defineTool({
       toolDescription: '发送的消息'
     }
   ],
-  outputs: [
-    {
-      id: 'mv52BrPVE6bm',
-      key: '钉钉机器人地址',
-      valueType: 'string',
-      label: '钉钉机器人地址',
-      type: 'static'
-    },
-    {
-      id: 'srcret',
-      valueType: 'string',
-      key: '加签值',
-      label: '加签值',
-      type: 'hidden'
-    },
-    {
-      id: '发送的消息',
-      valueType: 'string',
-      key: '发送的消息',
-      label: '发送的消息',
-      type: 'hidden'
-    }
-  ]
+  outputs: []
 });

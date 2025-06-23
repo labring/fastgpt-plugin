@@ -22,18 +22,20 @@ export default defineTool({
     'zh-CN': '向企业微信机器人发起 webhook 请求。只能内部群使用。',
     en: 'Send webhook requests to WeWork robots. Only internal groups can use this tool.'
   },
-  docURL: 'https://developer.work.weixin.qq.com/document/path/91770',
+  courseUrl: 'https://developer.work.weixin.qq.com/document/path/91770',
   icon: 'plugins/qiwei',
   inputs: [
     {
       key: '企微机器人地址',
       label: '企微机器人地址',
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+      valueType: WorkflowIOValueTypeEnum.string
     },
     {
       key: '发送的消息',
       label: '发送的消息',
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+      valueType: WorkflowIOValueTypeEnum.string
     }
   ],
   outputs: []

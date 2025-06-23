@@ -1,5 +1,9 @@
 import { defineTool } from '@tool/type';
-import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'community-databaseConnection',
@@ -61,9 +65,9 @@ export default defineTool({
       ]
     },
     {
-      renderTypeList: ['numberInput', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'number',
+      valueType: WorkflowIOValueTypeEnum.number,
       key: 'port',
       label: 'port',
       description: '数据库连接端口号',
@@ -77,9 +81,9 @@ export default defineTool({
       ]
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'databaseName',
       label: 'databaseName',
       description: '数据库名称',
@@ -93,9 +97,9 @@ export default defineTool({
       ]
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'password',
       label: 'password',
       description: '数据库密码',
@@ -109,9 +113,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'user',
       label: 'user',
       description: '数据库账号',
@@ -125,9 +129,9 @@ export default defineTool({
       required: true
     },
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'sql',
       label: 'sql',
       description: 'sql语句，可以传入sql语句直接执行',
@@ -145,11 +149,11 @@ export default defineTool({
   outputs: [
     {
       id: 'result',
-      type: 'static',
+      type: FlowNodeOutputTypeEnum.static,
       key: 'result',
       label: '结果',
       description: '执行结果',
-      valueType: 'string'
+      valueType: WorkflowIOValueTypeEnum.string
     }
   ]
 });

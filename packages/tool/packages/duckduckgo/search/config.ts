@@ -1,4 +1,9 @@
 import { defineTool } from '@tool/type';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   toolId: 'search',
@@ -20,9 +25,9 @@ export default defineTool({
   icon: 'core/workflow/template/duckduckgo',
   inputs: [
     {
-      renderTypeList: ['input', 'reference'],
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
       selectedTypeIndex: 0,
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'query',
       label: 'query',
       description: '检索词',
@@ -33,10 +38,10 @@ export default defineTool({
   outputs: [
     {
       id: 'result',
-      valueType: 'string',
+      valueType: WorkflowIOValueTypeEnum.string,
       key: 'result',
       label: '检索结果',
-      type: 'static'
+      type: FlowNodeOutputTypeEnum.static
     }
   ]
 });
