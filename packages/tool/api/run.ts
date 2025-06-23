@@ -36,14 +36,16 @@ export const runToolHandler = () =>
     }
 
     try {
-      const result = isProd
+      const result = !isProd
         ? await dispatchWithNewWorker({ toolId, inputs, systemVar })
         : await tool.cb(inputs, systemVar);
 
       if (result?.error) {
         return {
           status: 500,
-          body: getErrText(result.error)
+          body: {
+            error: getErrText(result.error)
+          }
         };
       } else {
         return {
@@ -54,7 +56,7 @@ export const runToolHandler = () =>
     } catch (error) {
       return {
         status: 500,
-        body: { error }
+        body: { error: getErrText(error) }
       };
     }
   });

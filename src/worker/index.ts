@@ -164,11 +164,16 @@ export async function dispatchWithNewWorker(data: {
     return;
   }
 
+  const isBun = typeof Bun !== 'undefined';
   const worker = new Worker('./dist/worker.js', {
     env: {},
-    resourceLimits: {
-      maxOldGenerationSizeMb: parseInt(process.env.MAX_MEMORYMB || '1024')
-    }
+    ...(isBun
+      ? {}
+      : {
+          resourceLimits: {
+            maxOldGenerationSizeMb: parseInt(process.env.MAX_MEMORYMB || '1024')
+          }
+        })
   });
 
   const workerId = `${Date.now()}${Math.random()}`;
@@ -190,13 +195,12 @@ export async function dispatchWithNewWorker(data: {
 
       worker.on('error', (err) => {
         console.log(err);
-        reject('error');
+        reject(err);
         worker.terminate();
       });
-
       worker.on('messageerror', (err) => {
         console.log(err);
-        reject('error');
+        reject(err);
         worker.terminate();
       });
 
