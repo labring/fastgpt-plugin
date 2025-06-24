@@ -1,19 +1,44 @@
 import { $ } from 'bun';
-import { Command } from 'commander';
+import { input, select } from '@inquirer/prompts';
 import fs from 'fs';
 import path from 'path';
-const program = new Command();
+// const program = new Command();
 
-program
-  .name('new')
-  .description('Create a new tool or toolset')
-  .option('--toolset', 'Create a toolset')
-  .argument('<name>', 'name');
+// program
+//   .name('new')
+//   .description('Create a new tool or toolset')
+//   .option('--toolset', 'Create a toolset')
+//   .argument('<name>', 'name');
 
-program.parse();
+// program.parse();
 
-const isToolset = program.opts().toolset as boolean;
-const name = program.args[0];
+// const isToolset = program.opts().toolset as boolean;
+// const name = program.args[0];
+
+const isToolset =
+  (await select({
+    message: 'What kind of tool/toolset do you want to create?',
+    choices: [
+      {
+        name: 'Tool',
+        value: 'tool'
+      },
+      {
+        name: 'Toolset',
+        value: 'toolset'
+      }
+    ]
+  })) === 'toolset';
+
+const name = await input({
+  message: 'What is the name of your tool/toolset?',
+  validate: (value) => {
+    if (value.length < 1) {
+      return 'Please enter a name';
+    }
+    return true;
+  }
+});
 
 // name validation:
 // 1. less than 20 characters

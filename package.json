@@ -15,6 +15,7 @@
     "new:tool": "bun ./scripts/newTool/index.ts"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.5.3",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
     "@ts-rest/open-api": "^3.52.1",
@@ -32,7 +33,6 @@
     "@types/bun": "latest",
     "@vitest/coverage-v8": "3.1.2",
     "bun-plugin-dts": "^0.3.0",
-    "commander": "^13.1.0",
     "eslint": "^9.24.0",
     "globals": "^16.0.0",
     "typescript-eslint": "^8.29.1",
