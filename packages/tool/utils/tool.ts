@@ -29,8 +29,7 @@ export const exportTool = ({
     ...config,
     toolId: config.toolId as string,
     icon: config.icon as string,
-    isToolSet: false,
-
+    toolFile: __dirname,
     cb
   };
   return tool;
@@ -50,7 +49,6 @@ export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
 export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItemType[] {
   return list.map((item, index) => ({
     id: item.toolId,
-    isFolder: !!item.isToolSet,
     parentId: item.parentId,
     author: item.author,
     courseUrl: item.courseUrl,

@@ -49,7 +49,6 @@ export const ToolSchema = ToolConfigSchema.omit({
     toolId: z.string().describe('The unique id of the tool'),
     icon: z.string().describe('The icon of the tool'),
     cb: ToolCallbackType.describe('The callback function of the tool'),
-    isToolSet: z.boolean().optional().describe('Whether it is a tool set'),
     parentId: z.string().optional().describe('The parent id of the tool'),
     toolFile: z.string().optional()
   })
@@ -68,14 +67,12 @@ export const ToolSetConfigSchema = ToolConfigSchema.omit({
 
 export const ToolSetSchema = ToolSetConfigSchema.merge(
   z.object({
-    isToolSet: z.boolean().describe('Whether it is a tool set'),
     children: z.array(ToolSchema).describe('The children of the tool set')
   })
 ).describe('The ToolSet Schema');
 
 export const ToolListItemSchema = z.object({
   id: z.string().describe('The unique id of the tool'),
-  isFolder: z.boolean().describe('Whether it is a folder'),
   parentId: z.string().optional().describe('The parent id of the tool'),
   author: z.string().optional().describe('The author of the tool'),
   courseUrl: z.string().optional().describe('The documentation URL of the tool'),

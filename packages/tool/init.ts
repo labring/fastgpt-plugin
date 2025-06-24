@@ -16,29 +16,34 @@ const saveFile = async (url: string, path: string) => {
   return buffer;
 };
 
-const LoadTool = (mod: ToolType | ToolSetType, filename: string) => {
+export const LoadTool = (mod: ToolType | ToolSetType, filename: string) => {
+  const tmpTools: ToolType[] = [];
   const defaultToolId = filename.split('.').shift() as string;
-  const defaultToolImg = findToolIcon(defaultToolId);
   const toolId = mod.toolId || defaultToolId;
-  const toolImg = mod.icon || defaultToolImg;
-  if (!mod.isToolSet) {
-    tools.push({
+  const defaultToolImg = findToolIcon(defaultToolId);
+
+  if ('children' in mod) {
+    const children = mod.children as ToolType[];
+    tmpTools.push({
       ...mod,
-      toolId,
-      icon: toolImg,
-      toolFile: filename
-    } as ToolType);
-  } else {
-    const children = (mod as ToolSetType).children as ToolType[];
-    tools.push({
-      ...mod,
+      icon: mod.icon || defaultToolImg,
       toolFile: filename,
       toolId,
       inputs: [],
-      outputs: []
-    } as ToolType);
-    tools.push(...children.map((child) => ({ ...child, toolFile: filename })));
+      outputs: [],
+      cb: () => Promise.resolve({})
+    });
+    tmpTools.push(...children.map((child) => ({ ...child, toolFile: filename })));
+  } else {
+    tmpTools.push({
+      ...mod,
+      icon: mod.icon || defaultToolImg,
+      toolId,
+      toolFile: filename
+    });
   }
+
+  return tmpTools;
 };
 
 const LoadToolsProd = async () => {
@@ -49,7 +54,7 @@ const LoadToolsProd = async () => {
   for (const file of files) {
     const filePath = path.join(toolsDir, file);
     const mod = (await import(filePath)).default as ToolType;
-    LoadTool(mod, file);
+    tools.push(...LoadTool(mod, file));
   }
   // 2. 读取 tools.json 文件中的配置（通过网络挂载）
   const toolConfigPath = path.join(process.cwd(), 'dist', 'tools.json');
@@ -62,7 +67,7 @@ const LoadToolsProd = async () => {
     for (const tool of toolConfig) {
       await saveFile(tool.url, path.join(toolsDir, tool.toolId + '.js'));
       const mod = (await import(path.join(toolsDir, tool.toolId + '.js'))).default as ToolType;
-      LoadTool(mod, tool.toolId);
+      tools.push(...LoadTool(mod, tool.toolId));
     }
   }
   addLog.info(`\
@@ -81,7 +86,7 @@ async function LoadToolsDev() {
   for (const tool of toolDirs) {
     const toolPath = path.join(toolsPath, tool);
     const mod = (await import(toolPath)).default as ToolType | ToolSetType;
-    LoadTool(mod, tool);
+    tools.push(...LoadTool(mod, tool));
   }
   addLog.info(`\
 

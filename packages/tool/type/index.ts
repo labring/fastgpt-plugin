@@ -22,7 +22,6 @@ export type SystemVarType = z.infer<typeof SystemVarSchema>;
 
 export function defineTool(tool: z.infer<typeof ToolConfigSchema>) {
   return {
-    isToolSet: false,
     ...tool
   };
 }
@@ -30,7 +29,6 @@ export function defineTool(tool: z.infer<typeof ToolConfigSchema>) {
 export type ToolSetConfigType = z.infer<typeof ToolSetConfigSchema>;
 export function defineToolSet(toolset: ToolSetConfigType) {
   return {
-    isToolSet: true,
     ...toolset
   };
 }
