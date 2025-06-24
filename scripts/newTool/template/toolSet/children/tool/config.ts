@@ -4,15 +4,12 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   name: {
     'zh-CN': '模版工具',
     en: 'Template tool'
   },
-  icon: '',
-  type: ToolTypeEnum.tools,
   description: {
     'zh-CN': '描述',
     en: 'description'

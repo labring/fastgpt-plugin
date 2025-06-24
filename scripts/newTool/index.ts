@@ -2,18 +2,6 @@ import { $ } from 'bun';
 import { input, select } from '@inquirer/prompts';
 import fs from 'fs';
 import path from 'path';
-// const program = new Command();
-
-// program
-//   .name('new')
-//   .description('Create a new tool or toolset')
-//   .option('--toolset', 'Create a toolset')
-//   .argument('<name>', 'name');
-
-// program.parse();
-
-// const isToolset = program.opts().toolset as boolean;
-// const name = program.args[0];
 
 const isToolset =
   (await select({
@@ -47,7 +35,7 @@ if (name.length > 20) {
   process.exit(1);
 }
 
-const templateDir = path.join(__dirname, 'template');
+// 1. Create directory
 const toolDir = path.join(process.cwd(), 'packages', 'tool', 'packages', name);
 if (fs.existsSync(toolDir)) {
   console.error('Tool already exists');
@@ -68,20 +56,19 @@ const copyTemplate = (src: string, dest: string) => {
   }
 };
 
+// 2. Copy template to target directory
+const templateDir = path.join(__dirname, 'template');
 if (isToolset) {
-  copyTemplate(templateDir, toolDir);
+  copyTemplate(path.join(templateDir, 'toolSet'), toolDir);
 } else {
   copyTemplate(path.join(templateDir, 'tool'), toolDir);
 }
 
-// update package.json
-const packageJsonPath = path.join(templateDir, 'package.json');
+// 3. Rewrite new tool package.json
+const packageJsonPath = toolDir + '/package.json';
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 packageJson.name = `fastgpt-tools-${name}`;
-fs.writeFileSync(toolDir + '/package.json', JSON.stringify(packageJson, null, 2));
-
-// Install package
-(async () => $`bun --cwd=${process.cwd()} install`.quiet())();
+fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
 // output success message
 console.log(`Tool/Toolset created successfully! 🎉`);
