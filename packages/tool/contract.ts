@@ -1,14 +1,51 @@
 import z from 'zod';
 import { c } from '@/contract/init';
-import { listToolContract } from './api/list';
-import { getToolContract } from './api/getTool';
-import { runToolContract } from './api/run';
+import { ToolListItemSchema, type ToolListItemType } from './type/tool';
+import type { InputType } from './type/fastgpt';
+import { SystemVarSchema } from './type';
 
 export const toolContract = c.router(
   {
-    list: listToolContract,
-    getTool: getToolContract,
-    run: runToolContract
+    list: {
+      path: '/list',
+      method: 'GET',
+      description: 'Get tools list',
+      responses: {
+        200: c.type<
+          Array<
+            Omit<ToolListItemType, 'inputs'> & {
+              inputs: InputType[];
+            }
+          >
+        >()
+      }
+    },
+    getTool: {
+      path: '/get',
+      method: 'GET',
+      description: 'Get a tool',
+      query: z.object({
+        toolId: z.string()
+      }),
+      responses: {
+        200: ToolListItemSchema
+      }
+    },
+    run: {
+      path: '/run',
+      method: 'POST',
+      description: 'Run a tool',
+      body: z.object({
+        toolId: z.string(),
+        inputs: z.record(z.any()),
+        systemVar: SystemVarSchema
+      }),
+      responses: {
+        200: z.object({
+          output: z.record(z.any())
+        })
+      }
+    }
   },
   {
     pathPrefix: '/tool',

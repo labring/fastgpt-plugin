@@ -3,7 +3,6 @@ import type { Request, Response, NextFunction } from 'express';
 // Auth token middleware for all API routes
 export const authTokenMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authToken = req.headers.authtoken as string;
-  console.log(req.headers);
   // Check if Authorization header exists
   if (!authToken) {
     return res.status(401).json({
@@ -13,6 +12,7 @@ export const authTokenMiddleware = (req: Request, res: Response, next: NextFunct
 
   // Validate token (customize this logic based on your requirements)
   const validToken = process.env.AUTH_TOKEN!;
+  if (!validToken) next(); // if no token is set, skip this middleware
 
   if (authToken !== validToken) {
     return res.status(401).json({

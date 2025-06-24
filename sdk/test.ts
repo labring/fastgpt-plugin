@@ -6,5 +6,8 @@ const client = createClient({
 });
 
 const res = await client.tool.list();
+if (res.status === 200) {
+  const body = res.body;
+}
 
 console.log(res.body);

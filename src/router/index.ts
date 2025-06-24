@@ -11,7 +11,7 @@ export const initRouter = (app: Express) => {
   });
 
   createExpressEndpoints(contract, router, app, {
-    jsonQuery: true
-    // globalMiddleware: [authTokenMiddleware]
+    jsonQuery: true,
+    globalMiddleware: [authTokenMiddleware]
   });
 };

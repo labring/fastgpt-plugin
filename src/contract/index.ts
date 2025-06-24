@@ -8,7 +8,7 @@ export const contract = c.router(
   },
   {
     baseHeaders: z.object({
-      authtoken: z.string()
+      authtoken: z.string().optional()
     })
   }
 );
