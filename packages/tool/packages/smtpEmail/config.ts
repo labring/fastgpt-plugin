@@ -4,16 +4,17 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
+import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-smtpEmail',
   versionList: [
     {
-      version: '0.1.0',
+      value: '0.1.0',
       description: 'Default version'
     }
   ],
-  type: 'communication',
+  type: ToolTypeEnum.communication,
   name: {
     'zh-CN': 'Email 邮件发送',
     en: 'SMTP Email'

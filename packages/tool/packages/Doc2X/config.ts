@@ -3,6 +3,7 @@
 
 import { defineToolSet } from '@tool/type';
 import tool from './PDF2text';
+import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineToolSet({
   toolId: 'community-Doc2X',
@@ -10,7 +11,7 @@ export default defineToolSet({
     'zh-CN': 'Doc2X 服务',
     en: 'Doc2X Service'
   },
-  type: 'tools',
+  type: ToolTypeEnum.tools,
   description: {
     'zh-CN': '将传入的图片或PDF文件发送至Doc2X进行解析，返回带LaTeX公式的markdown格式的文本。',
     en: 'Send an image or PDF file to Doc2X for parsing and return the LaTeX formula in markdown format.'
@@ -18,7 +19,7 @@ export default defineToolSet({
   icon: 'plugins/doc2x',
   versionList: [
     {
-      version: '0.1.0',
+      value: '0.1.0',
       description: 'Default version'
     }
   ],

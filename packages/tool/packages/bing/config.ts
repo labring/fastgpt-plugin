@@ -4,6 +4,7 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
+import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-bing',
@@ -12,11 +13,11 @@ export default defineTool({
     'https://fael3z0zfze.feishu.cn/wiki/LsKAwOmtniA4vkkC259cmfxXnAc?fromScene=spaceOverview',
   versionList: [
     {
-      version: '0.1.0',
+      value: '0.1.0',
       description: 'Default version'
     }
   ],
-  type: 'search',
+  type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'Bing 搜索',
     en: 'Bing Search'

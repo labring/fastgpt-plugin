@@ -4,17 +4,18 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
+import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'commercial-dalle3',
   isActive: false,
   versionList: [
     {
-      version: '0.1.0',
+      value: '0.1.0',
       description: 'Default version'
     }
   ],
-  type: 'multimodal',
+  type: ToolTypeEnum.multimodal,
   name: {
     'zh-CN': 'Dalle3 绘图',
     en: 'Dalle3 Drawing'

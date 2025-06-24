@@ -4,16 +4,17 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
+import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'search',
   versionList: [
     {
-      version: '0.1.0',
+      value: '0.1.0',
       description: 'Default version'
     }
   ],
-  type: 'search',
+  type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'DuckDuckGo 网络搜索',
     en: 'DuckDuckGo Network Search'

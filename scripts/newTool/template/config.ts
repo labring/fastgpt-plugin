@@ -10,7 +10,7 @@ export default defineToolSet({
     'zh-CN': '样例工具集',
     en: 'Template Tool Set'
   },
-  type: 'tools',
+  type: ToolTypeEnum.tools,
   description: {
     'zh-CN': '这是一个样例工具集',
     en: 'This is a sample tool set'
@@ -18,7 +18,7 @@ export default defineToolSet({
   icon: '',
   versionList: [
     {
-      version: '0.1.0',
+      value: '0.1.0',
       description: 'Default version'
     }
   ],

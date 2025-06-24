@@ -1,15 +1,16 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-DingTalkWebhook',
   versionList: [
     {
-      version: '0.1.0',
+      value: '0.1.0',
       description: 'Default version'
     }
   ],
-  type: 'communication',
+  type: ToolTypeEnum.communication,
   name: {
     'zh-CN': '钉钉 webhook',
     en: 'DingTalk Webhook'

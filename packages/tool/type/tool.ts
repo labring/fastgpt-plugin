@@ -13,18 +13,24 @@ export const ToolCallbackType = z
   .returns(z.promise(ToolCallbackReturnSchema));
 
 const VersionListItemSchema = z.object({
-  version: z.string(),
+  value: z.string(),
   description: z.string().optional()
 });
 
-const ToolTypeEnum = z.enum(['tools', 'search', 'multimodal', 'communication', 'other']);
+export enum ToolTypeEnum {
+  tools = 'tools',
+  search = 'search',
+  multimodal = 'multimodal',
+  communication = 'communication',
+  other = 'other'
+}
 
 export const ToolConfigSchema = z
   .object({
     toolId: z.string().describe('The unique id of the tool').optional(),
     name: InfoString.describe('The name of the tool'),
     description: InfoString.describe('The description of the tool'),
-    type: ToolTypeEnum.describe('The type of the tool'),
+    type: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
     icon: z.string().optional().describe('The icon of the tool'),
     author: z.string().optional().describe('The author of the tool'),
     courseUrl: z.string().optional().describe('The documentation URL of the tool'),
@@ -77,7 +83,7 @@ export const ToolListItemSchema = z.object({
   avatar: z.string().describe('The icon of the tool'),
   versionList: z.array(VersionListItemSchema).min(1).describe('The version list'),
   intro: InfoString.describe('The introduction of the tool'),
-  templateType: ToolTypeEnum.describe('The type of the tool'),
+  templateType: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
   pluginOrder: z.number().describe('The order of the plugin'),
   isActive: z.boolean().describe('Whether it is active'),
   weight: z.number().describe('The weight of the tool'),

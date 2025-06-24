@@ -1,15 +1,16 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-delay',
   versionList: [
     {
-      version: '1.0',
+      value: '1.0',
       description: 'Default version'
     }
   ],
-  type: 'tools',
+  type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '流程等待',
     en: 'Delay'

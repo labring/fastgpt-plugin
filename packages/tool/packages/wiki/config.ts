@@ -4,16 +4,17 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
+import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-wiki',
   versionList: [
     {
-      version: '0.1.0',
+      value: '0.1.0',
       description: 'Default version'
     }
   ],
-  type: 'search',
+  type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'Wiki搜索',
     en: 'Wiki Search'
