@@ -1,9 +1,13 @@
+import { Logger } from '@/utils/log';
 import { $ } from 'bun';
 import fs from 'fs';
 import path from 'path';
 
 // main build
-await $`bun --cwd=${__dirname} run build-main`.quiet();
+await $`bun run build:main`.quiet();
+Logger.log('Main Build complete');
+await $`bun run build:worker`.quiet();
+Logger.log('Worker Build complete');
 
 // Build tools
 const toolsDir = path.join(__dirname, '..', 'packages', 'tool', 'packages');
@@ -23,4 +27,4 @@ async function moveTool(tool: string) {
 }
 await Promise.all(tools.map((tool) => moveTool(tool)));
 
-console.log(`Tools Build complete, total files: ${tools.length}`);
+Logger.log(`Tools Build complete, total files: ${tools.length}`);

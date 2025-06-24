@@ -3,6 +3,7 @@ import { isProd } from '@/constants';
 import type { ToolType, ToolSetType } from './type';
 import { tools } from './constants';
 import fs from 'fs';
+import { addLog } from '@/utils/log';
 
 const saveFile = async (url: string, path: string) => {
   const response = await fetch(url);
@@ -60,15 +61,14 @@ const LoadToolsProd = async () => {
       LoadTool(mod, tool.toolId);
     }
   }
-  console.log(
-    `\
+  addLog.info(`\
+
   =================
   reading tools in prod mode
   tools:\n[ ${tools.map((tool) => tool.toolId).join(', ')} ]
   amount: ${tools.length}
   =================
-      `
-  );
+      `);
 };
 
 async function LoadToolsDev() {
@@ -79,15 +79,14 @@ async function LoadToolsDev() {
     const mod = (await import(toolPath)).default as ToolType | ToolSetType;
     LoadTool(mod, tool);
   }
-  console.log(
-    `\
-  =================
+  addLog.info(`\
+
+=================
   reading tools in dev mode
   tools:\n[ ${tools.map((tool) => tool.toolId).join(', ')} ]
   amount: ${tools.length}
-  =================
-          `
-  );
+=================
+`);
 }
 
 export async function initTool() {

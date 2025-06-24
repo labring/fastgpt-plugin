@@ -12,8 +12,9 @@ export const authTokenMiddleware = (req: Request, res: Response, next: NextFunct
 
   // Validate token (customize this logic based on your requirements)
   const validToken = process.env.AUTH_TOKEN!;
-  if (!validToken) next(); // if no token is set, skip this middleware
-
+  if (!validToken) {
+    return next(); // if no token is set, skip this middleware
+  }
   if (authToken !== validToken) {
     return res.status(401).json({
       message: 'Invalid token'

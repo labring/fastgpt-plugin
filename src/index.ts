@@ -2,6 +2,7 @@ import express from 'express';
 import { initOpenAPI } from './contract/openapi';
 import { initRouter } from './router';
 import { initTool } from '@tool/init';
+import { addLog } from './utils/log';
 
 const app = express().use(
   express.json(),
@@ -15,10 +16,17 @@ initRouter(app);
 initTool();
 
 const PORT = parseInt(process.env.PORT || '3000');
-app.listen(PORT, (error?: Error) => {
+const server = app.listen(PORT, (error?: Error) => {
   if (error) {
     console.error(error);
     process.exit(1);
   }
-  console.log(`FastGPT Plugin Service is listening at http://localhost:${PORT}`);
+  addLog.info(`FastGPT Plugin Service is listening at http://localhost:${PORT}`);
+});
+
+process.on('SIGTERM', () => {
+  addLog.debug('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    addLog.info('HTTP server closed');
+  });
 });

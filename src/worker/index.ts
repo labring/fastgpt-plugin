@@ -187,8 +187,9 @@ export async function dispatchWithNewWorker(data: {
             resolve(data);
           } else if (type === 'error') {
             reject(data);
+          } else if (type === 'log') {
+            console.log(data);
           }
-
           worker.terminate();
         }
       );
