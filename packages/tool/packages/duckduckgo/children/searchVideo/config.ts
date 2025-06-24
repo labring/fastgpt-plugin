@@ -4,20 +4,17 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-wiki',
-  type: ToolTypeEnum.search,
+  toolId: 'community-duckduckgo/searchVideo',
   name: {
-    'zh-CN': 'Wiki搜索',
-    en: 'Wiki Search'
+    'zh-CN': 'DuckDuckGo 视频检索',
+    en: 'DockDuckGo Video Search'
   },
   description: {
-    'zh-CN': '在Wiki中查询释义。',
-    en: 'Search meanings in Wiki.'
+    'zh-CN': '使用 DuckDuckGo 进行视频检索',
+    en: 'Use DuckDuckGo to search videos'
   },
-  icon: 'core/workflow/template/wiki',
   versionList: [
     {
       value: '0.1.0',
@@ -40,8 +37,8 @@ export default defineTool({
           type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'result',
-          label: '搜索结果',
-          description: '搜索结果'
+          label: 'result',
+          description: ' 检索结果'
         }
       ]
     }

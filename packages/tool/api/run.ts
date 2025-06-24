@@ -25,7 +25,7 @@ export const runToolHandler = s.route(contract.tool.run, async (args) => {
       return {
         status: 500,
         body: {
-          error: getErrText(result.error)
+          error: getErrText(result.error) || 'unknown error'
         }
       };
     } else {

@@ -1,8 +1,4 @@
 import { defineToolSet } from '@tool/type';
-import search from './search';
-import searchImg from './searchImg';
-import searchNews from './searchNews';
-import searchVideo from './searchVideo';
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineToolSet({
@@ -17,12 +13,5 @@ export default defineToolSet({
     en: 'DuckDuckGo Service, including network search, image search, news search, etc.'
   },
   icon: 'core/workflow/template/duckduckgo',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
-  author: 'FastGPT',
-  children: [search, searchImg, searchNews, searchVideo] // 添加更多 tools
+  author: 'FastGPT'
 });

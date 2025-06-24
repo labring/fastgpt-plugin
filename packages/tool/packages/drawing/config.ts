@@ -1,8 +1,4 @@
-// 你应该修改本文件
-// You should modify this file
-
 import { defineToolSet } from '@tool/type';
-import tool from './baseChart';
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineToolSet({
@@ -17,12 +13,5 @@ export default defineToolSet({
     en: 'BI Charts, can generate some common charts, such as pie charts, bar charts, line charts, etc.'
   },
   icon: 'core/workflow/template/BI',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
-  author: 'FastGPT',
-  children: [tool] // 添加更多 tools
+  author: 'FastGPT'
 });

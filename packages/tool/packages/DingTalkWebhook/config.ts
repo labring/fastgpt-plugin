@@ -4,12 +4,6 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-DingTalkWebhook',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
   type: ToolTypeEnum.communication,
   name: {
     'zh-CN': '钉钉 webhook',
@@ -21,57 +15,63 @@ export default defineTool({
   },
   icon: 'plugins/dingding',
   courseUrl: 'https://open.dingtalk.com/document/robots/custom-robot-access',
-  inputs: [
+  versionList: [
     {
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'webhookUrl',
-      label: '钉钉机器人地址',
-      description: '',
-      defaultValue: '',
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      required: true,
-      value: ''
-    },
-    {
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      selectedTypeIndex: 0,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'secret',
-      label: '加签值',
-      description: '钉钉机器人加签值',
-      defaultValue: '',
-      list: [
+      value: '0.1.0',
+      description: 'Default version',
+      inputs: [
         {
-          label: '',
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'webhookUrl',
+          label: '钉钉机器人地址',
+          description: '',
+          defaultValue: '',
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          required: true,
           value: ''
-        }
-      ],
-      maxFiles: 5,
-      canSelectFile: true,
-      canSelectImg: true,
-      required: true
-    },
-    {
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      selectedTypeIndex: 0,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'message',
+        },
+        {
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          selectedTypeIndex: 0,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'secret',
+          label: '加签值',
+          description: '钉钉机器人加签值',
+          defaultValue: '',
+          list: [
+            {
+              label: '',
+              value: ''
+            }
+          ],
+          maxFiles: 5,
+          canSelectFile: true,
+          canSelectImg: true,
+          required: true
+        },
+        {
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          selectedTypeIndex: 0,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'message',
 
-      label: '发送的消息',
-      description: '发送的消息',
-      defaultValue: '',
-      list: [
-        {
-          label: '',
-          value: ''
+          label: '发送的消息',
+          description: '发送的消息',
+          defaultValue: '',
+          list: [
+            {
+              label: '',
+              value: ''
+            }
+          ],
+          maxFiles: 5,
+          canSelectFile: true,
+          canSelectImg: true,
+          required: true,
+          toolDescription: '发送的消息'
         }
       ],
-      maxFiles: 5,
-      canSelectFile: true,
-      canSelectImg: true,
-      required: true,
-      toolDescription: '发送的消息'
+      outputs: []
     }
-  ],
-  outputs: []
+  ]
 });

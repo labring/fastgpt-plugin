@@ -11,12 +11,6 @@ export default defineTool({
   icon: 'core/workflow/template/bing',
   courseUrl:
     'https://fael3z0zfze.feishu.cn/wiki/LsKAwOmtniA4vkkC259cmfxXnAc?fromScene=spaceOverview',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
   type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'Bing 搜索',
@@ -26,28 +20,34 @@ export default defineTool({
     'zh-CN': '调用 Bing 搜索接口，返回搜索结果',
     en: 'Call Bing search interface and return search results'
   },
-  inputs: [
+  versionList: [
     {
-      key: 'key',
-      label: 'Bing API Key',
-      valueType: WorkflowIOValueTypeEnum.string,
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
-    },
-    {
-      key: 'query',
-      label: '搜索关键词',
-      valueType: WorkflowIOValueTypeEnum.string,
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
-    }
-  ],
-  outputs: [
-    {
-      id: 'result',
-      type: FlowNodeOutputTypeEnum.static,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'result',
-      label: '搜索结果',
-      description: '搜索结果'
+      value: '0.1.0',
+      description: 'Default version',
+      inputs: [
+        {
+          key: 'key',
+          label: 'Bing API Key',
+          valueType: WorkflowIOValueTypeEnum.string,
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
+        },
+        {
+          key: 'query',
+          label: '搜索关键词',
+          valueType: WorkflowIOValueTypeEnum.string,
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
+        }
+      ],
+      outputs: [
+        {
+          id: 'result',
+          type: FlowNodeOutputTypeEnum.static,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'result',
+          label: '搜索结果',
+          description: '搜索结果'
+        }
+      ]
     }
   ]
 });

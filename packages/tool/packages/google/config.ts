@@ -8,12 +8,6 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-google',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
   type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'Google 搜索',
@@ -26,59 +20,65 @@ export default defineTool({
   icon: 'core/workflow/template/google',
   courseUrl:
     'https://fael3z0zfze.feishu.cn/wiki/Vqk1w4ltNiuLifkHTuoc0hSrnVg?fromScene=spaceOverview',
-  inputs: [
+  versionList: [
     {
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      selectedTypeIndex: 0,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'cx',
-      label: 'cx',
-      description: 'Google搜索cxID',
-      defaultValue: '',
-      list: [
+      value: '0.1.0',
+      description: 'Default version',
+      inputs: [
         {
-          label: '',
-          value: ''
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          selectedTypeIndex: 0,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'cx',
+          label: 'cx',
+          description: 'Google搜索cxID',
+          defaultValue: '',
+          list: [
+            {
+              label: '',
+              value: ''
+            }
+          ],
+          required: true
+        },
+        {
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          selectedTypeIndex: 0,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'key',
+          label: 'key',
+          description: 'Google搜索key',
+          defaultValue: '',
+          required: true,
+          list: []
+        },
+        {
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          selectedTypeIndex: 0,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'query',
+          label: 'query',
+          description: '查询字段值',
+          defaultValue: '',
+          list: [
+            {
+              label: '',
+              value: ''
+            }
+          ],
+          required: true,
+          toolDescription: '查询字段值'
         }
       ],
-      required: true
-    },
-    {
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      selectedTypeIndex: 0,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'key',
-      label: 'key',
-      description: 'Google搜索key',
-      defaultValue: '',
-      required: true,
-      list: []
-    },
-    {
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      selectedTypeIndex: 0,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'query',
-      label: 'query',
-      description: '查询字段值',
-      defaultValue: '',
-      list: [
+      outputs: [
         {
-          label: '',
-          value: ''
+          id: 'result',
+          valueType: WorkflowIOValueTypeEnum.object,
+          key: 'result',
+          label: 'result',
+          type: FlowNodeOutputTypeEnum.static
         }
-      ],
-      required: true,
-      toolDescription: '查询字段值'
-    }
-  ],
-  outputs: [
-    {
-      id: 'result',
-      valueType: WorkflowIOValueTypeEnum.object,
-      key: 'result',
-      label: 'result',
-      type: FlowNodeOutputTypeEnum.static
+      ]
     }
   ]
 });

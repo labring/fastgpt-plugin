@@ -1,8 +1,4 @@
-// 你应该修改本文件
-// You should modify this file
-
 import { defineToolSet } from '@tool/type';
-import tool from './PDF2text';
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineToolSet({
@@ -17,12 +13,5 @@ export default defineToolSet({
     en: 'Send an image or PDF file to Doc2X for parsing and return the LaTeX formula in markdown format.'
   },
   icon: 'plugins/doc2x',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
-  author: 'FastGPT',
-  children: [tool] // 添加更多 tools
+  author: 'FastGPT'
 });

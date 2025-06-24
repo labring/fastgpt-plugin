@@ -2,8 +2,8 @@ import { z } from 'zod';
 import * as echarts from 'echarts';
 
 export const InputType = z.object({
-  title: z.string(),
-  xAxis: z.array(z.string()),
+  title: z.string().optional(),
+  xAxis: z.array(z.union([z.string(), z.number()])),
   yAxis: z.array(z.union([z.string(), z.number()])),
   chartType: z.string()
 });
@@ -27,12 +27,7 @@ export const OutputType = z.object({
   chartUrl: z.string().optional()
 });
 
-const generateChart = async (
-  title: string,
-  xAxis: string[],
-  yAxis: string[],
-  chartType: string
-) => {
+const generateChart = async (title = '', xAxis: string[], yAxis: string[], chartType: string) => {
   const chart = echarts.init(undefined, undefined, {
     renderer: 'svg', // 必须使用 SVG 模式
     ssr: true, // 开启 SSR
@@ -74,24 +69,7 @@ const generateChart = async (
 
   chart.setOption(option);
   const svgContent = chart.renderToSVGString();
-  // 生成 Base64 图像
-  // const base64Image = await new Promise<string>((resolve, reject) => {
-  //   try {
-  //     const dataURL = chart.getDataURL({
-  //       type: 'svg',
-  //       pixelRatio: 2 // 可以设置更高的像素比以获得更清晰的图像
-  //     });
-  //     if (dataURL) {
-  //       resolve(dataURL);
-  //     } else {
-  //       reject(new Error('Failed to generate base64 image'));
-  //     }
-  //   } catch (error) {
-  //     reject(error);
-  //   }
-  // });
-  // console.log(base64Image);
-  // const svgContent = decodeURIComponent(base64Image.split(',')[1]);
+
   const base64 = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
 
   return base64;
@@ -105,7 +83,7 @@ export async function tool({
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const base64 = await generateChart(
     title,
-    xAxis,
+    xAxis.map((value) => value.toString()),
     yAxis.map((value) => value.toString()),
     chartType
   );

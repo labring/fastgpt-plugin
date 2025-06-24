@@ -1,6 +1,7 @@
 import type { z } from 'zod';
-import type { SystemVarType, ToolSetConfigType, ToolType } from '@tool/type';
-import { ToolConfigSchema, ToolSchema, type ToolListItemType } from '@tool/type/tool';
+import type { SystemVarType, ToolSetConfigType } from '@tool/type';
+import { ToolConfigSchema, ToolSchema, toolConfigWithCbSchema } from '@tool/type/tool';
+import type { ToolListItemType } from '@tool/type/api';
 
 export const exportTool = ({
   toolCb,
@@ -13,7 +14,7 @@ export const exportTool = ({
   ) => Promise<Record<string, any>>;
   InputType: z.ZodTypeAny;
   config: z.infer<typeof ToolConfigSchema>;
-}) => {
+}): z.infer<typeof toolConfigWithCbSchema> => {
   const cb = async (props: z.infer<typeof InputType>, systemVar: SystemVarType) => {
     try {
       const output = await toolCb(InputType.parse(props), systemVar);
@@ -25,22 +26,13 @@ export const exportTool = ({
     }
   };
 
-  const tool: ToolType = {
+  return {
     ...config,
-    toolId: config.toolId as string,
-    icon: config.icon as string,
-    toolFile: __dirname,
     cb
   };
-  return tool;
 };
 
 export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
-  config.children.forEach((child) => {
-    child.toolId = config.toolId + '/' + child.toolId;
-    child.parentId = config.toolId;
-  });
-
   return {
     ...config
   };
@@ -62,8 +54,6 @@ export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItem
     weight: index,
     originCost: 0,
     currentCost: 0,
-    hasTokenFee: false,
-    inputs: item.inputs,
-    outputs: item.outputs
+    hasTokenFee: false
   }));
 }

@@ -4,12 +4,6 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-delay',
-  versionList: [
-    {
-      value: '1.0',
-      description: 'Default version'
-    }
-  ],
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '流程等待',
@@ -20,14 +14,20 @@ export default defineTool({
     en: 'Delay the workflow after a specified time'
   },
   icon: 'core/workflow/template/sleep',
-  inputs: [
+  versionList: [
     {
-      key: 'ms',
-      label: '延迟时长',
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      valueType: WorkflowIOValueTypeEnum.number,
-      description: '要暂停的时间，单位毫秒'
+      value: '1.0',
+      description: 'Default version',
+      inputs: [
+        {
+          key: 'ms',
+          label: '延迟时长',
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.number,
+          description: '要暂停的时间，单位毫秒'
+        }
+      ],
+      outputs: []
     }
-  ],
-  outputs: []
+  ]
 });

@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import type { ToolConfigSchema, ToolSchema, ToolSetConfigSchema, ToolSetSchema } from './tool';
+import type {
+  ToolConfigSchema,
+  toolConfigWithCbSchema,
+  ToolSchema,
+  ToolSetConfigSchema,
+  ToolSetSchema
+} from './tool';
 
 export const SystemVarSchema = z.object({
   user: z.object({
@@ -20,7 +26,9 @@ export const SystemVarSchema = z.object({
 });
 export type SystemVarType = z.infer<typeof SystemVarSchema>;
 
-export function defineTool(tool: z.infer<typeof ToolConfigSchema>) {
+export type ToolConfigType = z.infer<typeof ToolConfigSchema>;
+export type ToolConfigWithCbType = z.infer<typeof toolConfigWithCbSchema>;
+export function defineTool(tool: ToolConfigType) {
   return {
     ...tool
   };

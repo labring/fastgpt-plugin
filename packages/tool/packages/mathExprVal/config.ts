@@ -8,12 +8,6 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-mathExprVal',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '数学公式执行',
@@ -24,26 +18,32 @@ export default defineTool({
     en: 'A tool for executing mathematical expressions using the expr-eval library in js to return the result.'
   },
   icon: 'core/workflow/template/mathCall',
-  inputs: [
+  versionList: [
     {
-      renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
-      selectedTypeIndex: 0,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'expr',
-      label: '数学表达式',
-      description: '需要执行的数学表达式',
-      required: true,
-      toolDescription: '需要执行的数学表达式'
-    }
-  ],
-  outputs: [
-    {
-      description: '返回的数学表达式结果',
-      id: 'sowtxkCPjvb7',
-      key: 'result',
-      valueType: WorkflowIOValueTypeEnum.string,
-      label: 'result',
-      type: FlowNodeOutputTypeEnum.static
+      value: '0.1.0',
+      description: 'Default version',
+      inputs: [
+        {
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
+          selectedTypeIndex: 0,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'expr',
+          label: '数学表达式',
+          description: '需要执行的数学表达式',
+          required: true,
+          toolDescription: '需要执行的数学表达式'
+        }
+      ],
+      outputs: [
+        {
+          description: '返回的数学表达式结果',
+          id: 'sowtxkCPjvb7',
+          key: 'result',
+          valueType: WorkflowIOValueTypeEnum.string,
+          label: 'result',
+          type: FlowNodeOutputTypeEnum.static
+        }
+      ]
     }
   ]
 });

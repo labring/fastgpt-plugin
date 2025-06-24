@@ -8,12 +8,6 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-WeWorkWebhook',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
   type: ToolTypeEnum.communication,
   name: {
     'zh-CN': '企业微信 webhook',
@@ -25,19 +19,25 @@ export default defineTool({
   },
   courseUrl: 'https://developer.work.weixin.qq.com/document/path/91770',
   icon: 'plugins/qiwei',
-  inputs: [
+  versionList: [
     {
-      key: 'webhookUrl',
-      label: '企微机器人地址',
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      valueType: WorkflowIOValueTypeEnum.string
-    },
-    {
-      key: 'message',
-      label: '发送的消息',
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      valueType: WorkflowIOValueTypeEnum.string
+      value: '0.1.0',
+      description: 'Default version',
+      inputs: [
+        {
+          key: 'webhookUrl',
+          label: '企微机器人地址',
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string
+        },
+        {
+          key: 'message',
+          label: '发送的消息',
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string
+        }
+      ],
+      outputs: []
     }
-  ],
-  outputs: []
+  ]
 });

@@ -8,12 +8,6 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   toolId: 'community-fetchUrl',
-  versionList: [
-    {
-      value: '0.1.0',
-      description: 'Default version'
-    }
-  ],
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '网页内容抓取',
@@ -24,27 +18,33 @@ export default defineTool({
     en: 'Get the content of a website link and output it in Markdown format, only supports static websites.'
   },
   icon: 'core/workflow/template/fetchUrl',
-  inputs: [
+  versionList: [
     {
-      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-      selectedTypeIndex: 0,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'url',
-      label: 'url',
-      description: '需要读取的网页链接',
-      required: true,
-      toolDescription: '需要读取的网页链接',
-      defaultValue: ''
-    }
-  ],
-  outputs: [
-    {
-      id: 'result',
-      type: FlowNodeOutputTypeEnum.static,
-      valueType: WorkflowIOValueTypeEnum.string,
-      key: 'result',
-      label: 'result',
-      description: '获取的网页内容'
+      value: '0.1.0',
+      description: 'Default version',
+      inputs: [
+        {
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          selectedTypeIndex: 0,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'url',
+          label: 'url',
+          description: '需要读取的网页链接',
+          required: true,
+          toolDescription: '需要读取的网页链接',
+          defaultValue: ''
+        }
+      ],
+      outputs: [
+        {
+          id: 'result',
+          type: FlowNodeOutputTypeEnum.static,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'result',
+          label: 'result',
+          description: '获取的网页内容'
+        }
+      ]
     }
   ]
 });

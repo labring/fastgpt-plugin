@@ -3,6 +3,7 @@ import { getTool } from '@tool/controller';
 import { ToolCallbackReturnSchema } from '../../packages/tool/type/tool';
 import { z } from 'zod';
 import { addLog } from '@/utils/log';
+import { isProd } from '@/constants';
 
 type WorkerQueueItem = {
   id: string;
@@ -166,7 +167,8 @@ export async function dispatchWithNewWorker(data: {
   }
 
   const isBun = typeof Bun !== 'undefined';
-  const worker = new Worker('./dist/worker.js', {
+  const workerPath = isProd ? './dist/worker.js' : `${process.cwd()}/dist/worker.js`;
+  const worker = new Worker(workerPath, {
     env: {},
     ...(isBun
       ? {}
@@ -176,8 +178,6 @@ export async function dispatchWithNewWorker(data: {
           }
         })
   });
-
-  const workerId = `${Date.now()}${Math.random()}`;
 
   const resolvePromise = new Promise<z.infer<typeof ToolCallbackReturnSchema>>(
     (resolve, reject) => {
@@ -189,25 +189,25 @@ export async function dispatchWithNewWorker(data: {
           } else if (type === 'error') {
             reject(data);
           } else if (type === 'log') {
-            console.log(...(data as any));
+            addLog.info(`Tool run`, data);
           }
           worker.terminate();
         }
       );
 
       worker.on('error', (err) => {
-        console.log(err);
+        addLog.error(`Run tool error`, err);
         reject(err);
         worker.terminate();
       });
       worker.on('messageerror', (err) => {
-        console.log(err);
+        addLog.error(`Run tool error`, err);
         reject(err);
         worker.terminate();
       });
 
       worker.postMessage({
-        filename: tool.toolFile,
+        toolDirName: tool.toolDirName,
         ...data
       });
     }

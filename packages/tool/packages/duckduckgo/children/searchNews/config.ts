@@ -7,17 +7,15 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-feishu',
-  type: ToolTypeEnum.communication,
+  toolId: 'community-duckduckgo/searchNews',
   name: {
-    'zh-CN': '飞书 webhook',
-    en: 'Feishu Webhook'
+    'zh-CN': 'DuckDuckGo 新闻检索',
+    en: 'DockDuckGo News Search'
   },
   description: {
-    'zh-CN': '向飞书机器人发起 webhook 请求。',
-    en: 'Send webhook request to Feishu bot.'
+    'zh-CN': '使用 DuckDuckGo 进行新闻检索',
+    en: 'Use DuckDuckGo to search news'
   },
-  icon: 'core/app/templates/plugin-feishu',
   versionList: [
     {
       value: '0.1.0',
@@ -27,22 +25,11 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           selectedTypeIndex: 0,
           valueType: WorkflowIOValueTypeEnum.string,
-          key: 'content',
-          label: 'content',
-          description: '需要发送的消息',
+          key: 'query',
+          label: 'query',
+          description: '检索词',
           required: true,
-          toolDescription: '需要发送的消息',
-          defaultValue: ''
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'hook_url',
-          label: 'hook_url',
-          description: '飞书机器人地址',
-          required: true,
-          defaultValue: ''
+          toolDescription: '检索词'
         }
       ],
       outputs: [
@@ -51,7 +38,8 @@ export default defineTool({
           type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'result',
-          label: 'Http Response'
+          label: 'result',
+          description: ' 检索结果'
         }
       ]
     }
