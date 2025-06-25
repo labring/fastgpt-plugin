@@ -22,15 +22,22 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          renderTypeList: [FlowNodeInputTypeEnum.input],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'apikey',
-          label: 'apikey',
-          description: 'Doc2X的API密匙，可以从Doc2X开放平台获得',
-          required: true,
-          defaultValue: '',
-          list: []
+          key: 'system_input_config',
+          label: '',
+          renderTypeList: [FlowNodeInputTypeEnum.hidden],
+          valueType: WorkflowIOValueTypeEnum.object,
+          defaultValue: {
+            type: 'system'
+          },
+          inputList: [
+            {
+              key: 'apikey',
+              label: 'apikey',
+              description: 'Doc2X的API密钥，可以从Doc2X开放平台获得',
+              required: true,
+              inputType: 'secret'
+            }
+          ]
         },
         {
           renderTypeList: [FlowNodeInputTypeEnum.fileSelect],

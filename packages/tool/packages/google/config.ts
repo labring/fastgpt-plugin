@@ -26,31 +26,54 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'cx',
-          label: 'cx',
-          description: 'Google搜索cxID',
-          defaultValue: '',
-          list: [
+          key: 'system_input_config',
+          label: '',
+          renderTypeList: [FlowNodeInputTypeEnum.hidden],
+          valueType: WorkflowIOValueTypeEnum.object,
+          defaultValue: {
+            type: 'system'
+          },
+          inputList: [
             {
-              label: '',
-              value: ''
+              key: 'key',
+              label: 'key',
+              description: 'Google搜索key',
+              required: true,
+              inputType: 'secret'
+            },
+            {
+              key: 'cx',
+              label: 'cx',
+              description: 'Google搜索cxID',
+              required: true,
+              inputType: 'string'
             }
-          ],
-          required: true
+          ]
         },
         {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'key',
-          label: 'key',
-          description: 'Google搜索key',
-          defaultValue: '',
-          required: true,
-          list: []
+          key: 'system_input_config',
+          label: '',
+          renderTypeList: [FlowNodeInputTypeEnum.hidden],
+          valueType: WorkflowIOValueTypeEnum.object,
+          defaultValue: {
+            type: 'system'
+          },
+          inputList: [
+            {
+              key: 'key',
+              label: 'key',
+              description: 'Google搜索key',
+              required: true,
+              inputType: 'secret'
+            },
+            {
+              key: 'cx',
+              label: 'cx',
+              description: 'Google搜索cxID',
+              required: true,
+              inputType: 'secret'
+            }
+          ]
         },
         {
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],

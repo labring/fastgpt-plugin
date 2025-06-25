@@ -24,6 +24,31 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
+          key: 'system_input_config',
+          label: '',
+          renderTypeList: [FlowNodeInputTypeEnum.hidden],
+          valueType: WorkflowIOValueTypeEnum.object,
+          defaultValue: {
+            type: 'system'
+          },
+          inputList: [
+            {
+              key: 'smtpUser',
+              label: 'smtpUser',
+              description: 'SMTP用户名, 邮箱账号',
+              required: true,
+              inputType: 'string'
+            },
+            {
+              key: 'smtpPass',
+              label: 'smtpPass',
+              description: '邮箱密码或授权码',
+              required: true,
+              inputType: 'string'
+            }
+          ]
+        },
+        {
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           selectedTypeIndex: 0,
           valueType: WorkflowIOValueTypeEnum.string,
@@ -80,44 +105,6 @@ export default defineTool({
             {
               label: 'false',
               value: 'false'
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
-          required: true
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'smtpUser',
-          label: 'smtpUser',
-          description: 'SMTP用户名, 邮箱账号',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
-          required: true
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'smtpPass',
-          label: 'smtpPass',
-          description: '邮箱密码或授权码',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
             }
           ],
           maxFiles: 5,

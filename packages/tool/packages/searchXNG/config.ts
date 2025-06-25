@@ -25,6 +25,24 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
+          key: 'system_input_config',
+          label: '',
+          renderTypeList: [FlowNodeInputTypeEnum.hidden],
+          valueType: WorkflowIOValueTypeEnum.object,
+          defaultValue: {
+            type: 'system'
+          },
+          inputList: [
+            {
+              key: 'url',
+              label: 'url',
+              description: 'searXNG搜索url',
+              required: true,
+              inputType: 'secret'
+            }
+          ]
+        },
+        {
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           selectedTypeIndex: 0,
           valueType: WorkflowIOValueTypeEnum.string,
@@ -33,25 +51,6 @@ export default defineTool({
           description: '检索词',
           required: true,
           toolDescription: '检索词'
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'url',
-          label: 'url',
-          description: '部署的searXNG服务的链接',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
-          required: true
         }
       ],
       outputs: [
