@@ -5,11 +5,46 @@ import { isProd } from '@/constants';
 import type { SystemVarType } from '@tool/type';
 import { getErrText } from '@tool/utils/err';
 
+// rewrite console.debug to send to parent
+console.debug = (...args: any[]) => {
+  parentPort?.postMessage({
+    type: 'log',
+    data: {
+      type: 'debug',
+      args: args
+    }
+  });
+};
+
 // rewrite console.log to send to parent
 console.log = (...args: any[]) => {
   parentPort?.postMessage({
     type: 'log',
-    data: args
+    data: {
+      type: 'info',
+      args: args
+    }
+  });
+};
+
+console.warn = (...args: any[]) => {
+  parentPort?.postMessage({
+    type: 'log',
+    data: {
+      type: 'warn',
+      args: args
+    }
+  });
+};
+
+// rewrite console.error to send to parent
+console.error = (...args: any[]) => {
+  parentPort?.postMessage({
+    type: 'log',
+    data: {
+      type: 'error',
+      args: args
+    }
   });
 };
 

@@ -90,7 +90,7 @@ export async function initTool() {
 
   addLog.info(`
 =================
-  Load tools in prod mode
+  Load tools in ${isProd ? 'production' : 'development'} env
   amount: ${tools.length}
 =================
 `);

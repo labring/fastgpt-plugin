@@ -1,6 +1,9 @@
 import { isProd } from '@/constants';
 import { copyToolIcons } from '@tool/utils/icon';
 import path from 'path';
+import { watch } from 'fs/promises';
+import { $ } from 'bun';
+import { addLog } from '@/utils/log';
 
 async function copyDevIcons() {
   if (isProd) return;
@@ -15,3 +18,17 @@ async function copyDevIcons() {
   });
 }
 await copyDevIcons();
+
+// watch the worker.ts change and build it
+const workerPath = path.join(__dirname, '..', 'src', 'worker', 'worker.ts');
+const watcher = watch(workerPath);
+
+(async () => {
+  for await (const _ of watcher) {
+    addLog.debug(`Worker file changed, rebuilding...`);
+    await $`bun run build:worker`;
+  }
+})();
+
+// run the main server
+await $`bun run --watch src/index.ts`;

@@ -17,9 +17,10 @@ export const runToolHandler = s.route(contract.tool.run, async (args) => {
   }
 
   try {
-    const result = isProd
-      ? await dispatchWithNewWorker({ toolId, inputs, systemVar })
-      : await tool.cb(inputs, systemVar);
+    // const result = isProd
+    //   ? await dispatchWithNewWorker({ toolId, inputs, systemVar })
+    //   : await tool.cb(inputs, systemVar);
+    const result = await dispatchWithNewWorker({ toolId, inputs, systemVar });
 
     if (result?.error) {
       return {

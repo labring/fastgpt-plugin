@@ -169,7 +169,9 @@ export async function dispatchWithNewWorker(data: {
   const isBun = typeof Bun !== 'undefined';
   const workerPath = isProd ? './dist/worker.js' : `${process.cwd()}/dist/worker.js`;
   const worker = new Worker(workerPath, {
-    env: {},
+    env: {
+      NODE_ENV: process.env.NODE_ENV
+    },
     ...(isBun
       ? {}
       : {
@@ -186,12 +188,17 @@ export async function dispatchWithNewWorker(data: {
         ({ type, data }: WorkerResponse<z.infer<typeof ToolCallbackReturnSchema>>) => {
           if (type === 'success') {
             resolve(data);
+            worker.terminate();
           } else if (type === 'error') {
             reject(data);
+            worker.terminate();
           } else if (type === 'log') {
-            addLog.info(`Tool run`, data);
+            const msg = data as {
+              type: 'info' | 'error' | 'warn';
+              args: any[];
+            };
+            addLog[msg.type](`Tool run: `, msg.args);
           }
-          worker.terminate();
         }
       );
 

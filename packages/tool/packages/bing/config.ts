@@ -26,10 +26,22 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          key: 'key',
-          label: 'Bing API Key',
-          valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
+          key: 'system_input_config',
+          label: '',
+          inputList: [
+            {
+              key: 'key',
+              label: 'Bing API Key',
+              description: '可以在 https://www.bing.com/business/create 获取',
+              required: true,
+              inputType: 'secret'
+            }
+          ],
+          renderTypeList: [FlowNodeInputTypeEnum.hidden],
+          valueType: WorkflowIOValueTypeEnum.object,
+          defaultValue: {
+            type: 'system'
+          }
         },
         {
           key: 'query',
