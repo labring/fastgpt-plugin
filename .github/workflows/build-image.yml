@@ -22,6 +22,56 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push for ${{ matrix.archs.arch }}
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/${{ matrix.archs.arch }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.sha }}-${{ matrix.archs.arch }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.description=https://github.com/${{ github.repository }} image
+          cache-from: type=gha,scope=${{ matrix.archs.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.archs.arch }}
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.archs.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -33,12 +83,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Login to Docker Hub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_NAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
       - name: Login to Ali Hub
         uses: docker/login-action@v3
         with:
@@ -46,25 +98,29 @@ jobs:
           username: ${{ secrets.ALI_HUB_USERNAME }}
           password: ${{ secrets.ALI_HUB_PASSWORD }}
 
-      - name: Build for ${{ matrix.archs.arch }}
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/${{ matrix.archs.arch }}
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.ref_name }}
-            ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.ref_name }}
-            ${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.ref_name }}
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:latest
-            ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:latest
-            ${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:latest
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.sha }}
-            ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }}
-            ${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=https://github.com/${{ github.repository }} image
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          # Define all tags for different registries
+          GITHUB_TAG="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.ref_name }}"
+          GITHUB_LATEST="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:latest"
+          GITHUB_SHA="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.sha }}"
+
+          ALI_TAG="${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.ref_name }}"
+          ALI_LATEST="${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:latest"
+          ALI_SHA="${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }}"
+
+          DOCKER_TAG="${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.ref_name }}"
+          DOCKER_LATEST="${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:latest"
+          DOCKER_SHA="${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }}"
+
+          # Create array of all tags
+          TAGS="$GITHUB_TAG $GITHUB_LATEST $GITHUB_SHA $ALI_TAG $ALI_LATEST $ALI_SHA $DOCKER_TAG $DOCKER_LATEST $DOCKER_SHA"
+
+          # Create manifest list for each tag
+          for TAG in $TAGS; do
+            echo "Creating manifest list for: $TAG"
+            docker buildx imagetools create -t $TAG \
+              $(printf 'ghcr.io/${{ github.repository_owner }}/fastgpt-plugin@sha256:%s ' *)
+            sleep 2
+          done
