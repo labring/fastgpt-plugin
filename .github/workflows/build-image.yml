@@ -57,7 +57,13 @@ jobs:
             org.opencontainers.image.description=https://github.com/${{ github.repository }} image
             outputs: |
               type=image,
-              name=ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.sha }},
+              name=ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.ref_name }},
+              ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.ref_name }},
+              ${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.ref_name }},
+              ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:latest,
+              ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:latest,
+              ${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:latest,
+              ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.sha }},
               ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }},
               ${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }}
               push-by-digest=true,
