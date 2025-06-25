@@ -44,16 +44,13 @@ export default defineTool({
             }
           ],
           renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object,
-          defaultValue: {
-            type: 'system'
-          }
+          valueType: WorkflowIOValueTypeEnum.object
         },
         {
           key: 'prompt',
           label: '绘图提示词',
           valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           toolDescription: '绘图提示词'
         }
       ],
@@ -70,7 +67,7 @@ export default defineTool({
           id: 'error',
           type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
-          key: 'error',
+          key: 'system_error',
           label: '错误信息',
           description: '错误信息'
         }
