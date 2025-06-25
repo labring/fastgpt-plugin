@@ -39,4 +39,6 @@ const copiedCount = await copyToolIcons({
   logPrefix: 'Copied build icon'
 });
 
-addLog.info(`Tools Build complete, total files: ${tools.length}, icons copied: ${copiedCount}`);
+addLog.info(
+  `Tools Build complete, total toolset/tool: ${tools.length}, icons copied: ${copiedCount}`
+);
