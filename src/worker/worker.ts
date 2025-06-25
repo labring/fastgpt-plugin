@@ -15,7 +15,6 @@ console.debug = (...args: any[]) => {
     }
   });
 };
-
 // rewrite console.log to send to parent
 console.log = (...args: any[]) => {
   parentPort?.postMessage({
@@ -26,7 +25,6 @@ console.log = (...args: any[]) => {
     }
   });
 };
-
 console.warn = (...args: any[]) => {
   parentPort?.postMessage({
     type: 'log',
@@ -36,7 +34,6 @@ console.warn = (...args: any[]) => {
     }
   });
 };
-
 // rewrite console.error to send to parent
 console.error = (...args: any[]) => {
   parentPort?.postMessage({
@@ -67,13 +64,11 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
       }
       try {
         const result = await tool?.cb(data.inputs, data.systemVar);
-        console.log(result, 'result');
         parentPort?.postMessage({
           type: 'success',
           data: result
         });
       } catch (error) {
-        // TODO: 处理错误
         parentPort?.postMessage({
           type: 'error',
           data: getErrText(error)
@@ -87,41 +82,3 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
     }
   }
 });
-
-// parentPort?.on(
-//   'message',
-//   async ({
-//     toolId,
-//     inputs,
-//     systemVar,
-//     toolDirName
-//   }: {
-//     toolId: string;
-//     inputs: Record<string, any>;
-//     systemVar: SystemVarType;
-//     toolDirName: string;
-//   }) => {
-//     const tools = await LoadToolsByFilename(basePath, toolDirName);
-//     const tool = tools.find((tool) => tool.toolId === toolId);
-
-//     if (!tool || !tool.cb) {
-//       parentPort?.postMessage({
-//         type: 'error',
-//         data: `Tool with ID ${toolId} not found or does not have a callback.`
-//       });
-//     }
-//     try {
-//       const result = await tool?.cb(inputs, systemVar);
-
-//       parentPort?.postMessage({
-//         type: 'success',
-//         data: result
-//       });
-//     } catch (error) {
-//       parentPort?.postMessage({
-//         type: 'error',
-//         data: getErrText(error)
-//       });
-//     }
-//   }
-// );

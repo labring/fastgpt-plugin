@@ -1,6 +1,11 @@
 import z from 'zod';
 import { FileInputSchema } from '@/s3/controller';
-import { FileMetadataSchema } from '@/s3/config';
+import { FileMetadataSchema, type FileMetadata } from '@/s3/config';
+
+declare global {
+  var uploadFileResponseFn: (data: { data?: FileMetadata; error?: string }) => void | undefined;
+}
+
 /**
  * Worker --> Main Thread
  */
@@ -41,7 +46,10 @@ export const Main2WorkerMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('uploadFileResponse'),
-    data: FileMetadataSchema
+    data: z.object({
+      data: FileMetadataSchema.optional(),
+      error: z.string().optional()
+    })
   })
 ]);
 

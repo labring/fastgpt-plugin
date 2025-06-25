@@ -1,12 +1,9 @@
-name: Docker Build and Push
+name: Build image and push to registry
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
     tags: ['v*']
-  pull_request:
-    branches: [main]
 
 permissions:
   contents: read
@@ -60,9 +57,9 @@ jobs:
             org.opencontainers.image.description=https://github.com/${{ github.repository }} image
             outputs: |
               type=image,
-              name=ghcr.io/${{ github.repository_owner }}/FastGPT-plugin:${{ github.sha }},
-              ${{ secrets.ALI_IMAGE_NAME }}/FastGPT-plugin:${{ github.sha }},
-              ${{ secrets.DOCKER_IMAGE_NAME }}/FastGPT-plugin:${{ github.sha }}
+              name=ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.sha }},
+              ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }},
+              ${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }}
               push-by-digest=true,
               push=true
           cache-from: type=local,src=/tmp/.buildx-cache

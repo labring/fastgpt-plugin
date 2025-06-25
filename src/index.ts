@@ -4,6 +4,7 @@ import { initRouter } from './router';
 import { initTool } from '@tool/init';
 import { addLog } from './utils/log';
 import { isProd } from './constants';
+import { initS3Server } from './s3/config';
 
 const app = express().use(
   express.json(),
@@ -13,7 +14,7 @@ const app = express().use(
 
 initOpenAPI(app);
 initRouter(app);
-
+initS3Server();
 initTool();
 
 const PORT = parseInt(process.env.PORT || '3000');

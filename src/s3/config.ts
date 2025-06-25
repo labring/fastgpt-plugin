@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { S3Service } from './controller';
 
 export type FileConfig = {
   maxFileSize: number; // 文件大小限制（字节）
@@ -33,3 +34,11 @@ export const FileMetadataSchema = z.object({
 });
 
 export type FileMetadata = z.infer<typeof FileMetadataSchema>;
+
+export const initS3Server = () => {
+  global.s3Server = new S3Service(defaultFileConfig);
+};
+
+declare global {
+  var s3Server: S3Service;
+}

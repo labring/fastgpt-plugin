@@ -4,8 +4,14 @@ import { parentPort } from 'worker_threads';
 
 export const uploadFile = async (data: FileInput) => {
   return new Promise<FileMetadata>((resolve, reject) => {
-    global.uploadFileResponseFn = (res: FileMetadata) => {
-      resolve(res);
+    global.uploadFileResponseFn = ({ data, error }) => {
+      if (error) {
+        reject(error);
+      } else if (data) {
+        resolve(data);
+      } else {
+        reject('Unknow error');
+      }
     };
     parentPort?.postMessage({
       type: 'uploadFile',
@@ -13,10 +19,3 @@ export const uploadFile = async (data: FileInput) => {
     });
   });
 };
-
-declare global {
-  // eslint-disable-next-line no-var
-  var uploadFileResponseFn: (data: FileMetadata) => void | undefined;
-}
-
-export {};

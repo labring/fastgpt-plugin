@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import * as echarts from 'echarts';
+import { uploadFile } from '@/worker/utils';
+import { randomUUIDv7 } from 'bun';
 
 export const InputType = z.object({
   title: z.string().optional(),
@@ -72,7 +74,12 @@ const generateChart = async (title = '', xAxis: string[], yAxis: string[], chart
 
   const base64 = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
 
-  return base64;
+  const file = await uploadFile({
+    base64,
+    filename: `chart.svg`
+  });
+
+  return file.accessUrl;
 };
 
 export async function tool({

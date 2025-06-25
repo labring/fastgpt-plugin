@@ -1,4 +1,4 @@
-name: Docker Build and Push Preview
+name: Preview build image
 
 on:
   workflow_dispatch:
@@ -39,7 +39,7 @@ jobs:
             org.opencontainers.image.description=https://github.com/${{ github.repository }} image
             outputs: |
               type=image,
-              name=ghcr.io/${{ github.repository_owner }}/FastGPT-plugin-pr:${{ github.sha }},
+              name=ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.sha }},
               push-by-digest=true,
               push=true
           cache-from: type=local,src=/tmp/.buildx-cache

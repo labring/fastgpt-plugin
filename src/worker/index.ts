@@ -5,11 +5,8 @@ import { z } from 'zod';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
-import { FileService } from '@/s3/controller';
-import { defaultFileConfig } from '@/s3/config';
-const fileService = new FileService({
-  ...defaultFileConfig
-});
+import { getErrText } from '@tool/utils/err';
+
 type WorkerQueueItem = {
   id: string;
   worker: Worker;
@@ -202,11 +199,24 @@ export async function dispatchWithNewWorker(data: {
           };
           addLog[msg.type](`Tool run: `, msg.args);
         } else if (type === 'uploadFile') {
-          const result = await fileService.uploadFileAdvanced(data);
-          worker.postMessage({
-            type: 'uploadFileResponse',
-            data: result
-          });
+          try {
+            const result = await global.s3Server.uploadFileAdvanced(data);
+            worker.postMessage({
+              type: 'uploadFileResponse',
+              data: {
+                type: 'success',
+                data: result
+              }
+            });
+          } catch (error) {
+            worker.postMessage({
+              type: 'uploadFileResponse',
+              data: {
+                type: 'error',
+                data: getErrText(error)
+              }
+            });
+          }
         }
       });
 
