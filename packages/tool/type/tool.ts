@@ -28,6 +28,7 @@ export const VersionListItemSchema = z.object({
 });
 
 export const ToolConfigSchema = z
+
   .object({
     toolId: z.string().optional().describe('The unique id of the tool'),
     name: InfoString.describe('The name of the tool'),
@@ -65,7 +66,8 @@ export const ToolSetConfigSchema = ToolConfigSchema.omit({
 })
   .merge(
     z.object({
-      type: z.nativeEnum(ToolTypeEnum).describe('The type of the tool')
+      type: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
+      children: z.array(toolConfigWithCbSchema).describe('The children of the tool set')
     })
   )
   .describe('The ToolSet Config Schema');

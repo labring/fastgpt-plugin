@@ -1,5 +1,9 @@
 import { defineToolSet } from '@tool/type';
 import { ToolTypeEnum } from '@tool/type/tool';
+import search from './children/search';
+import searchImg from './children/searchImg';
+import searchNews from './children/searchNews';
+import searchVideo from './children/searchVideo';
 
 export default defineToolSet({
   toolId: 'community-duckduckgo',
@@ -13,5 +17,6 @@ export default defineToolSet({
     en: 'DuckDuckGo Service, including network search, image search, news search, etc.'
   },
   icon: 'core/workflow/template/duckduckgo',
-  author: 'FastGPT'
+  author: 'FastGPT',
+  children: [search, searchImg, searchNews, searchVideo]
 });

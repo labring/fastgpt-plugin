@@ -1,5 +1,6 @@
 import { defineToolSet } from '@tool/type';
 import { ToolTypeEnum } from '@tool/type/tool';
+import PDF2text from './children/PDF2text';
 
 export default defineToolSet({
   toolId: 'community-Doc2X',
@@ -13,5 +14,6 @@ export default defineToolSet({
     en: 'Send an image or PDF file to Doc2X for parsing and return the LaTeX formula in markdown format.'
   },
   icon: 'plugins/doc2x',
-  author: 'FastGPT'
+  author: 'FastGPT',
+  children: [PDF2text]
 });

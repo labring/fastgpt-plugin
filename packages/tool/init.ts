@@ -25,18 +25,19 @@ export const LoadToolsByFilename = async (
   const tools: ToolType[] = [];
 
   const toolRootPath = path.join(basePath, filename);
-  const childrenPath = path.join(toolRootPath, 'children');
-  const isToolSet = fs.existsSync(childrenPath);
-
+  // const childrenPath = path.join(toolRootPath, 'children');
+  // const isToolSet = fs.existsSync(childrenPath);
+  const rootMod = (await import(toolRootPath)).default as ToolConfigWithCbType | ToolSetConfigType;
+  const isToolSet = 'children' in rootMod;
   const defaultIcon = findToolIcon(filename);
 
   if (isToolSet) {
-    const toolset = (await import(toolRootPath)).default as ToolSetConfigType;
-    const toolsetId = toolset.toolId || filename;
-    const icon = toolset.icon || defaultIcon;
+    // const toolset = (await import(toolRootPath)).default as ToolSetConfigType;
+    const toolsetId = rootMod.toolId || filename;
+    const icon = rootMod.icon || defaultIcon;
 
     tools.push({
-      ...toolset,
+      ...rootMod,
       toolId: toolsetId,
       icon,
       toolDirName: filename,
@@ -45,19 +46,20 @@ export const LoadToolsByFilename = async (
     });
     // Push children
     // 1. Read children
-    const children = fs.readdirSync(childrenPath);
+    // const children = fs.readdirSync(childrenPath);
+    const children = rootMod.children;
 
     for await (const child of children) {
-      const childPath = path.join(childrenPath, child);
-      const childMod = (await import(childPath)).default as ToolConfigWithCbType;
+      // const childPath = path.join(childrenPath, child);
+      // const childMod = (await import(childPath)).default as ToolConfigWithCbType;
 
-      const toolId = childMod.toolId || `${toolsetId}/${child}`;
+      const toolId = child.toolId || `${toolsetId}/${child}`;
 
       tools.push({
-        ...childMod,
+        ...child,
         toolId,
         parentId: toolsetId,
-        type: toolset.type,
+        type: rootMod.type,
         icon,
         toolDirName: filename
       });
