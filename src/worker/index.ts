@@ -4,6 +4,7 @@ import { ToolCallbackReturnSchema } from '../../packages/tool/type/tool';
 import { z } from 'zod';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
+import type { Worker2MainMessageType } from './type';
 
 type WorkerQueueItem = {
   id: string;
@@ -183,24 +184,27 @@ export async function dispatchWithNewWorker(data: {
 
   const resolvePromise = new Promise<z.infer<typeof ToolCallbackReturnSchema>>(
     (resolve, reject) => {
-      worker.on(
-        'message',
-        ({ type, data }: WorkerResponse<z.infer<typeof ToolCallbackReturnSchema>>) => {
-          if (type === 'success') {
-            resolve(data);
-            worker.terminate();
-          } else if (type === 'error') {
-            reject(data);
-            worker.terminate();
-          } else if (type === 'log') {
-            const msg = data as {
-              type: 'info' | 'error' | 'warn';
-              args: any[];
-            };
-            addLog[msg.type](`Tool run: `, msg.args);
-          }
+      worker.on('message', ({ type, data }: Worker2MainMessageType) => {
+        if (type === 'success') {
+          resolve(data);
+          worker.terminate();
+        } else if (type === 'error') {
+          reject(data);
+          worker.terminate();
+        } else if (type === 'log') {
+          const msg = data as {
+            type: 'info' | 'error' | 'warn';
+            args: any[];
+          };
+          addLog[msg.type](`Tool run: `, msg.args);
+        } else if (type === 'uploadFile') {
+          // TODO upload
+          worker.postMessage({
+            type: 'uploadFileResponse',
+            data: null // TODO: response
+          });
         }
-      );
+      });
 
       worker.on('error', (err) => {
         addLog.error(`Run tool error`, err);
@@ -214,8 +218,11 @@ export async function dispatchWithNewWorker(data: {
       });
 
       worker.postMessage({
-        toolDirName: tool.toolDirName,
-        ...data
+        type: 'runTool',
+        data: {
+          toolDirName: tool.toolDirName,
+          ...data
+        }
       });
     }
   );
