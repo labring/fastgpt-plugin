@@ -7,4 +7,6 @@
 bun install
 bun run build
 bun run new:tool <tool name>
+
+pnpm link xxxx/fastgpt-plugin/sdk
 ```
