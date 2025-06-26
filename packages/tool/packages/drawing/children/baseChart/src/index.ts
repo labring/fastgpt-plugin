@@ -76,7 +76,7 @@ const generateChart = async (title = '', xAxis: string[], yAxis: string[], chart
 
   const file = await uploadFile({
     base64,
-    filename: `chart.svg`
+    defaultFilename: `chart.svg`
   });
 
   return file.accessUrl;

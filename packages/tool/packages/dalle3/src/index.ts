@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import axios from 'axios';
 import { getErrText } from '@tool/utils/err';
+import { uploadFile } from '@/worker/utils';
 
 export const InputType = z
   .object({
@@ -53,12 +54,17 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
     const imageUrl = data?.data?.[0]?.url;
 
     if (!imageUrl) {
-      throw new Error('Request failed');
+      return Promise.reject('Request failed');
     }
 
+    const uploadResult = await uploadFile({
+      url: imageUrl,
+      defaultFilename: 'dalle3.png'
+    });
+
     return {
-      图片访问链接: imageUrl,
-      link: imageUrl
+      图片访问链接: uploadResult.accessUrl,
+      link: uploadResult.accessUrl
     };
   } catch (error: any) {
     return {

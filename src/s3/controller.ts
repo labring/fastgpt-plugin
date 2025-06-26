@@ -11,12 +11,12 @@ export const FileInputSchema = z
     path: z.string().min(1, 'File path cannot be empty').optional(),
     base64: z.string().min(1, 'Base64 data cannot be empty').optional(),
     buffer: z.instanceof(Buffer, { message: 'Buffer is required' }).optional(),
-    filename: z.string().optional()
+    defaultFilename: z.string().optional()
   })
   .refine(
     (data) => {
       const inputMethods = [data.url, data.path, data.base64, data.buffer].filter(Boolean);
-      return inputMethods.length === 1 && (!(data.base64 || data.buffer) || data.filename);
+      return inputMethods.length === 1 && (!(data.base64 || data.buffer) || data.defaultFilename);
     },
     {
       message: 'Provide exactly one input method. Filename required for base64/buffer inputs.'
@@ -65,7 +65,7 @@ export class S3Service {
 
       const buffer = Buffer.from(await response.arrayBuffer());
       const filename = (() => {
-        if (input.filename) return input.filename;
+        if (input.defaultFilename) return input.defaultFilename;
 
         const urlFilename = path.basename(new URL(input.url!).pathname) || 'downloaded_file';
 
@@ -84,7 +84,7 @@ export class S3Service {
         return Promise.reject(new Error(`File not found: ${input.path}`));
 
       const buffer = await fs.promises.readFile(input.path!);
-      const filename = input.filename || path.basename(input.path!);
+      const filename = input.defaultFilename || path.basename(input.path!);
 
       return { buffer, filename };
     };
@@ -96,11 +96,11 @@ export class S3Service {
 
       return {
         buffer: Buffer.from(base64Data, 'base64'),
-        filename: input.filename!
+        filename: input.defaultFilename!
       };
     };
     const handleBufferFile = (input: FileInput): GetUploadBufferResponse => {
-      return { buffer: input.buffer!, filename: input.filename! };
+      return { buffer: input.buffer!, filename: input.defaultFilename! };
     };
     const uploadFile = async (
       fileBuffer: Buffer,
@@ -138,7 +138,7 @@ export class S3Service {
       }
 
       const fileId = this.generateFileId();
-      const objectName = `${fileId}/${originalFilename}`;
+      const objectName = `${fileId}-${originalFilename}`;
       const uploadTime = new Date();
 
       const contentType = inferContentType(originalFilename);
