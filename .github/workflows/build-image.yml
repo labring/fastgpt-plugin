@@ -124,23 +124,3 @@ jobs:
               $(printf 'ghcr.io/${{ github.repository_owner }}/fastgpt-plugin@sha256:%s ' *)
             sleep 2
           done
-      - name: '@finleyge/github-tools'
-        uses: FinleyGe/github-tools@0.0.1
-        id: print-image-label
-        if: success()
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tool: issue-comment
-          title: Image Label
-          body: |
-            ```
-            ${{ GITHUB_TAG }}
-            ${{ GITHUB_LATEST }}
-            ${{ GITHUB_SHA }}
-            ${{ ALI_TAG }}
-            ${{ ALI_LATEST }}
-            ${{ ALI_SHA }}
-            ${{ DOCKER_TAG }}
-            ${{ DOCKER_LATEST }}
-            ${{ DOCKER_SHA }}
-            ```
