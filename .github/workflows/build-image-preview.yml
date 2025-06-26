@@ -44,9 +44,9 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
-      - name: print the image label
+      - name: '@finleyge/github-tools'
+        uses: FinleyGe/github-tools@0.0.1
         id: print-image-label
-        uses: '@finleyge/github-tools'
         if: success()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

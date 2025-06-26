@@ -124,9 +124,9 @@ jobs:
               $(printf 'ghcr.io/${{ github.repository_owner }}/fastgpt-plugin@sha256:%s ' *)
             sleep 2
           done
-      - name: print the image label
+      - name: '@finleyge/github-tools'
+        uses: FinleyGe/github-tools@0.0.1
         id: print-image-label
-        uses: '@finleyge/github-tools'
         if: success()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
