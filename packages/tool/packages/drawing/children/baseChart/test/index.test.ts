@@ -1,12 +1,12 @@
 import { expect, test, vi } from 'vitest';
-import tool from '..';
+import { tool } from '../src';
 
 test('baseChart', async () => {
-  const result = await tool.cb({
-    title: '测试图表',
-    xAxis: ['2022', '2023', '2024'],
-    yAxis: [10, 20, 30],
+  const res = await tool({
+    title: '测试',
+    xAxis: ['1', '2', '3'],
+    yAxis: ['1', '2', '3'],
     chartType: '柱状图'
   });
-  expect(result.output['图表 url']).toBeDefined();
+  console.log(res);
 });

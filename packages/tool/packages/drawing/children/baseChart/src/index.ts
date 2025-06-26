@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import * as echarts from 'echarts';
 import { uploadFile } from '@/worker/utils';
-import { randomUUIDv7 } from 'bun';
 
 export const InputType = z.object({
   title: z.string().optional(),

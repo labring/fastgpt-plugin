@@ -30,9 +30,8 @@ const func = async (query: string, retry = 3) => {
       result: JSON.stringify(result)
     };
   } catch (error) {
-    console.log(error);
     if (retry <= 0) {
-      console.log('DuckDuckGo error', { error });
+      console.error('DuckDuckGo error', { error });
       return {
         result: getErrText(error, 'Failed to fetch data from DuckDuckGo')
       };

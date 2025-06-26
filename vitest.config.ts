@@ -20,7 +20,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve('.')
+      '@': resolve(__dirname, 'src'),
+      '@tool': resolve(__dirname, 'packages/tool')
     }
   }
 });
