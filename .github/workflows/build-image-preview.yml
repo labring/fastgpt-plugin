@@ -43,3 +43,17 @@ jobs:
             org.opencontainers.image.description=https://github.com/${{ github.repository }} image
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: print the image label
+        id: print-image-label
+        uses: '@finleyge/github-tools'
+        if: success()
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tool: issue-comment
+          title: Preview Image Label
+          body: |
+            Preview Image for this PR is:
+            ```
+            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.sha }}
+            ```
