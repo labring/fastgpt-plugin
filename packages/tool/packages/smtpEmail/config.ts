@@ -33,84 +33,41 @@ export default defineTool({
           },
           inputList: [
             {
+              key: 'smtpHost',
+              label: 'smtpHost',
+              description: 'SMTP服务器地址',
+              required: true,
+              inputType: 'input'
+            },
+            {
+              key: 'smtpPort',
+              label: 'smtpPort',
+              description: 'SMTP服务器端口',
+              required: true,
+              inputType: 'input'
+            },
+            {
+              key: 'SSL',
+              label: 'SSL',
+              description: '是否使用SSL',
+              required: true,
+              inputType: 'switch'
+            },
+            {
               key: 'smtpUser',
               label: 'smtpUser',
               description: 'SMTP用户名, 邮箱账号',
               required: true,
-              inputType: 'string'
+              inputType: 'input'
             },
             {
               key: 'smtpPass',
               label: 'smtpPass',
               description: '邮箱密码或授权码',
               required: true,
-              inputType: 'string'
+              inputType: 'secret'
             }
           ]
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'smtpHost',
-          label: 'smtpHost',
-          description: '',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
-          required: true,
-          customInputConfig: {
-            selectValueTypeList: ['string']
-          }
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'smtpPort',
-          label: 'smtpPort',
-          description: 'SMTP端口',
-          defaultValue: '465',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
-          required: true
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'SSL',
-          label: 'SSL',
-          description: 'SSL',
-          defaultValue: 'true',
-          list: [
-            {
-              label: 'true',
-              value: 'true'
-            },
-            {
-              label: 'false',
-              value: 'false'
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
-          required: true
         },
         {
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],

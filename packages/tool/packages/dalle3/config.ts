@@ -32,7 +32,7 @@ export default defineTool({
               key: 'url',
               label: 'Dalle3 接口基础地址',
               description: '例如：https://api.openai.com',
-              inputType: 'string',
+              inputType: 'input',
               required: true
             },
             {

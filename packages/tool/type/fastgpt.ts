@@ -78,7 +78,7 @@ export const InputConfigSchema = z.object({
   label: z.string(),
   description: z.string().optional(),
   required: z.boolean().optional(),
-  inputType: z.enum(['string', 'secret'])
+  inputType: z.enum(['input', 'secret', 'switch'])
 });
 export type InputConfigType = z.infer<typeof InputConfigSchema>;
 
