@@ -8,7 +8,7 @@ COPY . .
 # 安装依赖
 RUN --mount=type=cache,target=/root/.bun \
     for i in $(seq 1 3); do \
-    bun i && break || \
+    bun i --production && break || \
     sleep 5; \
     done
 
@@ -25,10 +25,11 @@ RUN apk add --no-cache\
 
 # copy running files
 COPY --from=builder /app/dist/ ./dist/
+COPY --from=builder /app/node_modules/swagger-ui-dist/ ./node_modules/swagger-ui-dist/
 
 ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE 3000
 
 ENV serverPath=./dist/index.js
-ENTRYPOINT ["sh","-c","node ${serverPath} -p"]
+CMD ["node", "dist/index.js", "-p"]

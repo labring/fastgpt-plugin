@@ -13,5 +13,5 @@ export const initOpenAPI = (app: Express) => {
     }
   });
   app.use('/openapi', swaggerUi.serve);
-  app.get('/openapi', swaggerUi.setup(openApiDocument));
+  app.get('/openapi', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 };
