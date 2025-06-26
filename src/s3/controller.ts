@@ -46,13 +46,13 @@ export class S3Service {
     return randomBytes(16).toString('hex');
   }
 
-  private generateAccessUrl(fileId: string, filename: string): string {
+  private generateAccessUrl(filename: string): string {
     const protocol = this.config.useSSL ? 'https' : 'http';
     const port =
       this.config.port && this.config.port !== (this.config.useSSL ? 443 : 80)
         ? `:${this.config.port}`
         : '';
-    return `${protocol}://${this.config.endpoint}${port}/${this.config.bucket}/${fileId}/${encodeURIComponent(filename)}`;
+    return `${protocol}://${this.config.endpoint}${port}/${this.config.bucket}/${encodeURIComponent(filename)}`;
   }
 
   async uploadFileAdvanced(input: FileInput): Promise<FileMetadata> {
@@ -161,7 +161,7 @@ export class S3Service {
         contentType,
         size: fileBuffer.length,
         uploadTime,
-        accessUrl: this.generateAccessUrl(fileId, originalFilename)
+        accessUrl: this.generateAccessUrl(objectName)
       };
 
       return metadata;
