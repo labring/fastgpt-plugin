@@ -23,6 +23,7 @@
     "comlink": "^4.4.2",
     "date-fns": "^4.1.0",
     "express": "^5.1.0",
+    "json5": "^2.2.3",
     "minio": "^8.0.5",
     "nanoid": "^5.1.5",
     "swagger-ui-express": "^5.0.1",
