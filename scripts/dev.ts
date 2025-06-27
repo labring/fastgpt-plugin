@@ -30,5 +30,7 @@ const watcher = watch(workerPath);
   }
 })();
 
+// build the worker
+await $`bun run build:worker`;
 // run the main server
 await $`bun run --watch src/index.ts`;
