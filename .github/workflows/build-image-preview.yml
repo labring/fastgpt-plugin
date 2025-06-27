@@ -3,7 +3,7 @@ name: Preview build image
 on:
   workflow_dispatch:
   pull_request_target:
-    branches: [main]
+    branches: ['*']
 
 permissions:
   contents: read
@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,7 +32,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build for amd64
+      - name: Login to Aliyun Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Build and push for amd64
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -38,7 +47,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
+            ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.event.pull_request.head.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=https://github.com/${{ github.repository }} image
@@ -54,8 +63,8 @@ jobs:
           tool: issue-comment
           title: Preview Image Label
           body: |
-            Preview Image for this PR is:
+            Preview Images for this PR are:
 
             ```
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
+            ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.event.pull_request.head.sha }}
             ```
