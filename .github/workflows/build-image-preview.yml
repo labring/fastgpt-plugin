@@ -44,6 +44,7 @@ jobs:
             org.opencontainers.image.description=https://github.com/${{ github.repository }} image
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
+
       - name: '@finleyge/github-tools'
         uses: FinleyGe/github-tools@0.0.1
         id: print-image-label
@@ -56,5 +57,5 @@ jobs:
             Preview Image for this PR is:
 
             ```
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.pull_request.head.sha }}
+            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
             ```
