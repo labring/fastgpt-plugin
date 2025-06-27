@@ -56,5 +56,5 @@ jobs:
           body: |
             Preview Image for this PR is:
             ```
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
             ```
