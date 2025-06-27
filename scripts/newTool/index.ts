@@ -1,4 +1,3 @@
-import { $ } from 'bun';
 import { input, select } from '@inquirer/prompts';
 import fs from 'fs';
 import path from 'path';

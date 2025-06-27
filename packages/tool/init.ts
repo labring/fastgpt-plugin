@@ -44,7 +44,7 @@ export const LoadToolsByFilename = async (
     const children = rootMod.children;
 
     for (const child of children) {
-      const toolId = child.toolId || `${toolsetId}/${child}`;
+      const toolId = child.toolId!;
 
       tools.push({
         ...child,
