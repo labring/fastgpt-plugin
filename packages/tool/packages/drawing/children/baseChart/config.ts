@@ -35,15 +35,8 @@ export default defineTool({
           key: 'xAxis',
           label: 'xAxis',
           description: 'x轴数据，例如：["A", "B", "C"]',
-          defaultValue: '',
           required: true,
-          toolDescription: 'x轴数据，例如：["A", "B", "C"]',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ]
+          toolDescription: 'x轴数据，例如：["A", "B", "C"]'
         },
         {
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
@@ -52,13 +45,6 @@ export default defineTool({
           key: 'yAxis',
           label: 'yAxis',
           description: 'y轴数据，例如：[1,2,3]',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
           required: true,
           toolDescription: 'y轴数据，例如：[1,2,3]'
         },
@@ -69,16 +55,15 @@ export default defineTool({
           key: 'chartType',
           label: 'chartType',
           description: '图表类型：柱状图，折线图，饼图',
-          defaultValue: '',
           required: true,
           list: [
             {
-              label: '柱状图',
-              value: '柱状图'
-            },
-            {
               label: '折线图',
               value: '折线图'
+            },
+            {
+              label: '柱状图',
+              value: '柱状图'
             },
             {
               label: '饼图',

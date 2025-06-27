@@ -29,9 +29,6 @@ export default defineTool({
           label: '',
           renderTypeList: [FlowNodeInputTypeEnum.hidden],
           valueType: WorkflowIOValueTypeEnum.object,
-          defaultValue: {
-            type: 'system'
-          },
           inputList: [
             {
               key: 'url',

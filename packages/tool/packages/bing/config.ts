@@ -38,10 +38,7 @@ export default defineTool({
             }
           ],
           renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object,
-          defaultValue: {
-            type: 'system'
-          }
+          valueType: WorkflowIOValueTypeEnum.object
         },
         {
           key: 'query',

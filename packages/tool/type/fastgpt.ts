@@ -78,7 +78,17 @@ export const InputConfigSchema = z.object({
   label: z.string(),
   description: z.string().optional(),
   required: z.boolean().optional(),
-  inputType: z.enum(['input', 'secret', 'switch'])
+  inputType: z.enum(['input', 'numberInput', 'secret', 'switch', 'select']),
+
+  // select
+  list: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.string()
+      })
+    )
+    .optional()
 });
 export type InputConfigType = z.infer<typeof InputConfigSchema>;
 
@@ -86,7 +96,32 @@ export type InputConfigType = z.infer<typeof InputConfigSchema>;
 export const InputSchema = z.object({
   referencePlaceholder: z.string().optional(),
   placeholder: z.string().optional(),
+  defaultValue: z.any().optional(),
+  selectedTypeIndex: z.number().optional(),
+  renderTypeList: z.array(z.nativeEnum(FlowNodeInputTypeEnum)),
+  key: z.string(),
+  valueType: z.nativeEnum(WorkflowIOValueTypeEnum),
+  valueDesc: z.string().optional(),
+  value: z.unknown().optional(),
+  label: z.string(),
+  description: z.string().optional(),
+  required: z.boolean().optional(),
+  toolDescription: z.string().optional(),
+  canEdit: z.boolean().optional(),
+  isPro: z.boolean().optional(),
+
+  // Different from renderType
+  // String input
   maxLength: z.number().optional(),
+  //  Selecet files
+  canSelectFile: z.boolean().optional(),
+  canSelectImg: z.boolean().optional(),
+  maxFiles: z.number().optional(),
+  // Input config
+  inputList: z.array(InputConfigSchema).optional(),
+  // Select model
+  llmModelType: z.nativeEnum(LLMModelTypeEnum).optional(),
+  // options
   list: z
     .array(
       z.object({
@@ -95,6 +130,7 @@ export const InputSchema = z.object({
       })
     )
     .optional(),
+  // Slider
   markList: z
     .array(
       z.object({
@@ -103,31 +139,12 @@ export const InputSchema = z.object({
       })
     )
     .optional(),
+  // Number input/ Slider
   step: z.number().optional(),
+  // number input
   max: z.number().optional(),
   min: z.number().optional(),
-  defaultValue: z.any().optional(),
-  llmModelType: z.nativeEnum(LLMModelTypeEnum).optional(),
-  customInputConfig: z.any().optional(), // CustomFieldConfigType will be defined elsewhere
-  selectedTypeIndex: z.number().optional(),
-  renderTypeList: z.array(z.nativeEnum(FlowNodeInputTypeEnum)),
-  key: z.string(),
-  valueType: z.nativeEnum(WorkflowIOValueTypeEnum),
-  valueDesc: z.string().optional(),
-  value: z.unknown().optional(),
-  label: z.string(),
-  debugLabel: z.string().optional(),
-  description: z.string().optional(),
-  required: z.boolean().optional(),
-  enum: z.string().optional(),
-  toolDescription: z.string().optional(),
-  canEdit: z.boolean().optional(),
-  isPro: z.boolean().optional(),
-  isToolOutput: z.boolean().optional(),
-  canSelectFile: z.boolean().optional(),
-  canSelectImg: z.boolean().optional(),
-  maxFiles: z.number().optional(),
-  inputList: z.array(InputConfigSchema).optional()
+  precision: z.number().optional()
 });
 export type InputType = z.infer<typeof InputSchema>;
 

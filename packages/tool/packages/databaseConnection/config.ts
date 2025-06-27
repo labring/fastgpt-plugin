@@ -24,108 +24,62 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'databaseType',
-          label: 'databaseType',
-          description: '数据库的类型',
-          defaultValue: '',
-          list: [
+          key: 'system_input_config',
+          label: '',
+          renderTypeList: [FlowNodeInputTypeEnum.hidden],
+          valueType: WorkflowIOValueTypeEnum.object,
+          inputList: [
             {
-              label: 'MySQL',
-              value: 'MySQL'
+              key: 'databaseType',
+              label: '数据库类型',
+              required: true,
+              inputType: 'select',
+              list: [
+                {
+                  label: 'MySQL',
+                  value: 'MySQL'
+                },
+                {
+                  label: 'PostgreSQL',
+                  value: 'PostgreSQL'
+                },
+                {
+                  label: 'Microsoft SQL Server',
+                  value: 'Microsoft SQL Server'
+                }
+              ]
             },
             {
-              label: 'PostgreSQL',
-              value: 'PostgreSQL'
+              key: 'host',
+              label: 'host',
+              required: true,
+              inputType: 'input'
             },
             {
-              label: 'Microsoft SQL Server',
-              value: 'Microsoft SQL Server'
-            }
-          ],
-          required: true
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'host',
-          label: 'host',
-          description: '数据库连接host',
-          defaultValue: '',
-          required: true,
-          list: [
+              key: 'port',
+              label: '数据库连接端口号',
+              required: true,
+              inputType: 'numberInput'
+            },
             {
-              label: '',
-              value: ''
+              key: 'databaseName',
+              label: '数据库名称',
+              required: true,
+              inputType: 'input'
+            },
+            {
+              key: 'user',
+              label: '数据库账号',
+              required: true,
+              inputType: 'input'
+            },
+            {
+              key: 'password',
+              label: '数据库密码',
+              required: true,
+              inputType: 'secret'
             }
           ]
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.number,
-          key: 'port',
-          label: 'port',
-          description: '数据库连接端口号',
-          defaultValue: '',
-          required: true,
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ]
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'databaseName',
-          label: 'databaseName',
-          description: '数据库名称',
-          defaultValue: '',
-          required: true,
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ]
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'password',
-          label: 'password',
-          description: '数据库密码',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          required: true
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'user',
-          label: 'user',
-          description: '数据库账号',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          required: true
         },
         {
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],

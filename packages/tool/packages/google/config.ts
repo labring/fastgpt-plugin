@@ -30,9 +30,6 @@ export default defineTool({
           label: '',
           renderTypeList: [FlowNodeInputTypeEnum.hidden],
           valueType: WorkflowIOValueTypeEnum.object,
-          defaultValue: {
-            type: 'system'
-          },
           inputList: [
             {
               key: 'key',
@@ -57,13 +54,6 @@ export default defineTool({
           key: 'query',
           label: 'query',
           description: '查询字段值',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
           required: true,
           toolDescription: '查询字段值'
         }

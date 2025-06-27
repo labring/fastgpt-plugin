@@ -31,8 +31,7 @@ export default defineTool({
           label: 'url',
           description: '需要读取的网页链接',
           required: true,
-          toolDescription: '需要读取的网页链接',
-          defaultValue: ''
+          toolDescription: '需要读取的网页链接'
         }
       ],
       outputs: [

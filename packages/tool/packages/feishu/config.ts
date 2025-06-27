@@ -31,8 +31,7 @@ export default defineTool({
           label: 'content',
           description: '需要发送的消息',
           required: true,
-          toolDescription: '需要发送的消息',
-          defaultValue: ''
+          toolDescription: '需要发送的消息'
         },
         {
           renderTypeList: [FlowNodeInputTypeEnum.input],
@@ -41,8 +40,7 @@ export default defineTool({
           key: 'hook_url',
           label: 'hook_url',
           description: '飞书机器人地址',
-          required: true,
-          defaultValue: ''
+          required: true
         }
       ],
       outputs: [

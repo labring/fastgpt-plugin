@@ -28,9 +28,6 @@ export default defineTool({
           label: '',
           renderTypeList: [FlowNodeInputTypeEnum.hidden],
           valueType: WorkflowIOValueTypeEnum.object,
-          defaultValue: {
-            type: 'system'
-          },
           inputList: [
             {
               key: 'smtpHost',
@@ -76,16 +73,6 @@ export default defineTool({
           key: 'fromName',
           label: 'fromName',
           description: '显示的发件人名称',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: true
         },
         {
@@ -95,16 +82,6 @@ export default defineTool({
           key: 'to',
           label: 'to',
           description: '请输入收件人邮箱，多个邮箱用逗号分隔',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: true,
           toolDescription: '请输入收件人邮箱，多个邮箱用逗号分隔'
         },
@@ -115,16 +92,6 @@ export default defineTool({
           key: 'subject',
           label: 'subject',
           description: '请输入邮件主题',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: true,
           toolDescription: '请输入邮件主题'
         },
@@ -135,16 +102,6 @@ export default defineTool({
           key: 'content',
           label: 'content',
           description: '请输入邮件内容，支持HTML格式',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: true,
           toolDescription: '请输入邮件内容，支持HTML格式'
         },
@@ -155,16 +112,6 @@ export default defineTool({
           key: 'cc',
           label: 'cc',
           description: '请输入抄送邮箱，多个邮箱用逗号分隔',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: false,
           toolDescription: '请输入抄送邮箱，多个邮箱用逗号分隔'
         },
@@ -175,16 +122,6 @@ export default defineTool({
           key: 'bcc',
           label: 'bcc',
           description: '请输入密送邮箱，多个邮箱用逗号分隔',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: false,
           toolDescription: '请输入密送邮箱，多个邮箱用逗号分隔'
         },
@@ -195,22 +132,8 @@ export default defineTool({
           key: 'attachments',
           label: 'attachments',
           description: '必须是json数组格式\n[{"filename":"附件名","path":"附件url"}]',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: false,
-          customInputConfig: {
-            selectValueTypeList: ['arrayObject']
-          },
-          toolDescription: '必须是json数组格式\n[{"filename":"附件名","path":"附件url"}]',
-          maxLength: 0
+          toolDescription: '必须是json数组格式\n[{"filename":"附件名","path":"附件url"}]'
         }
       ],
       outputs: [

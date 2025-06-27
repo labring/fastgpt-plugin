@@ -16,6 +16,7 @@ export default defineTool({
       '将PDF文件发送至Doc2X进行解析，返回结构化的LaTeX公式的文本(markdown)，支持传入String类型的URL或者流程输出中的文件链接变量',
     en: 'Send an PDF file to Doc2X for parsing and return the LaTeX formula in markdown format.'
   },
+  courseUrl: 'https://open.noedgeai.com',
   versionList: [
     {
       value: '0.1.0',
@@ -26,9 +27,6 @@ export default defineTool({
           label: '',
           renderTypeList: [FlowNodeInputTypeEnum.hidden],
           valueType: WorkflowIOValueTypeEnum.object,
-          defaultValue: {
-            type: 'system'
-          },
           inputList: [
             {
               key: 'apikey',

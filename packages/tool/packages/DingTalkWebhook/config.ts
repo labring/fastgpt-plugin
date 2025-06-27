@@ -24,11 +24,8 @@ export default defineTool({
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'webhookUrl',
           label: '钉钉机器人地址',
-          description: '',
-          defaultValue: '',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          required: true,
-          value: ''
+          required: true
         },
         {
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
@@ -37,16 +34,6 @@ export default defineTool({
           key: 'secret',
           label: '加签值',
           description: '钉钉机器人加签值',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: true
         },
         {
@@ -57,16 +44,6 @@ export default defineTool({
 
           label: '发送的消息',
           description: '发送的消息',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
           required: true,
           toolDescription: '发送的消息'
         }
