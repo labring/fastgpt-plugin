@@ -24,7 +24,7 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           selectedTypeIndex: 0,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'url',

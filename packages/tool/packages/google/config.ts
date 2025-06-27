@@ -51,7 +51,7 @@ export default defineTool({
           ]
         },
         {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           selectedTypeIndex: 0,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'query',
