@@ -18,16 +18,16 @@ export enum EventTypeEnum {
 
 const logMap = {
   [LogLevelEnum.debug]: {
-    levelLog: chalk.green('🐛 [Debug]')
+    levelLog: chalk.bgGreen('[Debug]')
   },
   [LogLevelEnum.info]: {
-    levelLog: chalk.blue('💬 [Info]')
+    levelLog: chalk.bgBlue('[Info]')
   },
   [LogLevelEnum.warn]: {
-    levelLog: chalk.yellow('⚠️ [Warn]')
+    levelLog: chalk.bgYellow('[Warn]')
   },
   [LogLevelEnum.error]: {
-    levelLog: chalk.red('❌ [Error]')
+    levelLog: chalk.bgRed('[Error]')
   }
 };
 const envLogLevelMap: Record<string, number> = {
@@ -51,7 +51,7 @@ export const addLog = {
     const isEmpty = Object.keys(obj).length === 0;
 
     console.log(
-      `${logMap[level].levelLog} ${format(Date.now(), 'yyyy-MM-dd HH:mm:ss')} ${msg} ${
+      `${logMap[level].levelLog} ${format(Date.now(), 'yyyy-MM-dd HH:mm:ss')}: ${msg} ${
         level !== LogLevelEnum.error && !isEmpty ? stringifyObj : ''
       }`
     );
