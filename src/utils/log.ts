@@ -55,21 +55,6 @@ export const addLog = {
     );
 
     if (level === LogLevelEnum.error) console.error(obj);
-
-    // store log
-    // if (level >= STORE_LOG_LEVEL && connectionMongo.connection.readyState === 1) {
-    //   (async () => {
-    //     try {
-    //       await getMongoLog().create({
-    //         text: msg,
-    //         level,
-    //         metadata: obj
-    //       });
-    //     } catch (error) {
-    //       console.error('store log error', error);
-    //     }
-    //   })();
-    // }
   },
   debug(msg: string, obj?: Record<string, any>) {
     this.log(LogLevelEnum.debug, msg, obj);

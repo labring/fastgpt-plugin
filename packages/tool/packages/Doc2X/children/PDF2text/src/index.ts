@@ -1,12 +1,16 @@
 import { z } from 'zod';
-import axios from 'axios';
+import axios, { type Method } from 'axios';
 import { getErrText } from '@tool/utils/err';
 import { delay } from '@tool/utils/delay';
+import { htmlTable2Md } from '@tool/utils/markdown';
+import { addLog } from '@/utils/log';
 
 export const InputType = z.object({
   apikey: z.string(),
-  HTMLtable: z.boolean(),
-  files: z.array(z.string())
+  files: z.array(z.string()),
+
+  // @deprecated
+  HTMLtable: z.boolean().optional()
 });
 
 export const OutputType = z.object({
@@ -15,101 +19,194 @@ export const OutputType = z.object({
   error: z.object({}).optional()
 });
 
-function processContent(content: string, HTMLtable: boolean): string {
-  if (HTMLtable) {
-    return content;
-  }
-  return content.replace(/<table>[\s\S]*?<\/table>/g, (htmlTable) => {
-    try {
-      // Clean up whitespace and newlines
-      const cleanHtml = htmlTable.replace(/\n\s*/g, '');
-      const rows = cleanHtml.match(/<tr>(.*?)<\/tr>/g);
-      if (!rows) return htmlTable;
+type ApiResponseDataType<T = any> = {
+  code: string;
+  msg?: string;
+  data: T;
+};
 
-      // Parse table data
-      const tableData: string[][] = [];
-      let maxColumns = 0;
-
-      // Try to convert to markdown table
-      try {
-        rows.forEach((row, rowIndex) => {
-          if (!tableData[rowIndex]) {
-            tableData[rowIndex] = [];
-          }
-          let colIndex = 0;
-          const cells = row.match(/<td.*?>(.*?)<\/td>/g) || [];
-
-          cells.forEach((cell) => {
-            while (tableData[rowIndex][colIndex]) {
-              colIndex++;
-            }
-            const colspan = parseInt(cell.match(/colspan="(\d+)"/)?.[1] || '1');
-            const rowspan = parseInt(cell.match(/rowspan="(\d+)"/)?.[1] || '1');
-            const content = cell.replace(/<td.*?>|<\/td>/g, '').trim();
-
-            for (let i = 0; i < rowspan; i++) {
-              for (let j = 0; j < colspan; j++) {
-                if (!tableData[rowIndex + i]) {
-                  tableData[rowIndex + i] = [];
-                }
-                tableData[rowIndex + i][colIndex + j] = i === 0 && j === 0 ? content : '^^';
-              }
-            }
-            colIndex += colspan;
-            maxColumns = Math.max(maxColumns, colIndex);
-          });
-
-          for (let i = 0; i < maxColumns; i++) {
-            if (!tableData[rowIndex][i]) {
-              tableData[rowIndex][i] = ' ';
-            }
-          }
-        });
-        const chunks: string[] = [];
-
-        const headerCells = tableData[0]
-          .slice(0, maxColumns)
-          .map((cell) => (cell === '^^' ? ' ' : cell || ' '));
-        const headerRow = '| ' + headerCells.join(' | ') + ' |';
-        chunks.push(headerRow);
-
-        const separator = '| ' + Array(headerCells.length).fill('---').join(' | ') + ' |';
-        chunks.push(separator);
-
-        tableData.slice(1).forEach((row) => {
-          const paddedRow = row
-            .slice(0, maxColumns)
-            .map((cell) => (cell === '^^' ? ' ' : cell || ' '));
-          while (paddedRow.length < maxColumns) {
-            paddedRow.push(' ');
-          }
-          chunks.push('| ' + paddedRow.join(' | ') + ' |');
-        });
-
-        return chunks.join('\n');
-      } catch (error) {
-        return htmlTable;
-      }
-    } catch (error) {
-      return htmlTable;
+export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
+  // Init request
+  const instance = axios.create({
+    baseURL: 'https://v2.doc2x.noedgeai.com/api',
+    timeout: 60000,
+    headers: {
+      Authorization: `Bearer ${apiKey}`
     }
   });
-}
+  // Response check
+  const checkRes = (data: ApiResponseDataType) => {
+    if (data === undefined) {
+      addLog.info('[Doc2x] Server data is empty');
+      return Promise.reject('服务器异常');
+    }
+    return data;
+  };
+  const responseError = (err: any) => {
+    if (!err) {
+      return Promise.reject({ message: '[Doc2x] Unknown error' });
+    }
+    if (typeof err === 'string') {
+      return Promise.reject({ message: `[Doc2x] ${err}` });
+    }
+    if (typeof err.message === 'string') {
+      return Promise.reject({ message: `[Doc2x] ${err.message}` });
+    }
+    if (typeof err.data === 'string') {
+      return Promise.reject({ message: `[Doc2x] ${err.data}` });
+    }
+    if (err?.response?.data) {
+      return Promise.reject({ message: `[Doc2x] ${getErrText(err?.response?.data)}` });
+    }
+
+    addLog.error('[Doc2x] Unknown error', err);
+    return Promise.reject({ message: `[Doc2x] ${getErrText(err)}` });
+  };
+  const request = <T>(url: string, data: any, method: Method): Promise<ApiResponseDataType<T>> => {
+    // Remove empty data
+    for (const key in data) {
+      if (data[key] === undefined) {
+        delete data[key];
+      }
+    }
+
+    return instance
+      .request({
+        url,
+        method,
+        data: ['POST', 'PUT'].includes(method) ? data : undefined,
+        params: !['POST', 'PUT'].includes(method) ? data : undefined
+      })
+      .then((res) => checkRes(res.data))
+      .catch((err) => responseError(err));
+  };
+
+  const parsePDF = async (fileBuffer: Buffer) => {
+    addLog.debug('[Doc2x] PDF parse start');
+    const startTime = Date.now();
+
+    // 1. Get pre-upload URL first
+    const {
+      code,
+      msg,
+      data: preupload_data
+    } = await request<{ uid: string; url: string }>('/v2/parse/preupload', null, 'POST');
+    if (!['ok', 'success'].includes(code)) {
+      return Promise.reject(`[Doc2x] Failed to get pre-upload URL: ${msg}`);
+    }
+    const upload_url = preupload_data.url;
+    const uid = preupload_data.uid;
+
+    // 2. Upload file to pre-signed URL with binary stream
+    const blob = new Blob([fileBuffer], { type: 'application/pdf' });
+    const response = await axios
+      .put(upload_url, blob, {
+        headers: {
+          'Content-Type': 'application/pdf'
+        }
+      })
+      .catch((error) => {
+        return Promise.reject(`[Doc2x] Failed to upload file: ${getErrText(error)}`);
+      });
+    if (response.status !== 200) {
+      return Promise.reject(
+        `[Doc2x] Upload failed with status ${response.status}: ${response.statusText}`
+      );
+    }
+    addLog.debug(`[Doc2x] Uploaded file success, uid: ${uid}`);
+
+    await delay(5000);
+
+    // 3. Get the result by uid
+    const checkResult = async () => {
+      // 10 minutes
+      let retry = 120;
+
+      while (retry > 0) {
+        try {
+          const {
+            code,
+            data: result_data,
+            msg
+          } = await request<{
+            progress: number;
+            status: 'processing' | 'failed' | 'success';
+            result: {
+              pages: {
+                md: string;
+              }[];
+            };
+          }>(`/v2/parse/status?uid=${uid}`, null, 'GET');
+
+          // Error
+          if (!['ok', 'success'].includes(code)) {
+            return Promise.reject(`[Doc2x] Failed to get result (uid: ${uid}): ${msg}`);
+          }
+
+          // Process
+          if (['ready', 'processing'].includes(result_data.status)) {
+            addLog.debug(`[Doc2x] Waiting for the result, uid: ${uid}`);
+            await delay(5000);
+          }
+
+          // Finifsh
+          if (result_data.status === 'success') {
+            return {
+              text: result_data.result.pages
+                .map((page) => page.md)
+                .join('')
+                .replace(/\\[()]/g, '$')
+                .replace(/\\[[\]]/g, '$$')
+                .replace(/<img\s+src="([^"]+)"(?:\s*\?[^>]*)?(?:\s*\/>|>)/g, '![img]($1)')
+                .replace(/<!-- Media -->/g, '')
+                .replace(/<!-- Footnote -->/g, '')
+                .replace(/\$(.+?)\s+\\tag\{(.+?)\}\$/g, '$$$1 \\qquad \\qquad ($2)$$')
+                .replace(/\\text\{([^}]*?)(\b\w+)_(\w+\b)([^}]*?)\}/g, '\\text{$1$2\\_$3$4}'),
+              pages: result_data.result.pages.length
+            };
+          }
+        } catch (error) {
+          // Just network error
+          addLog.warn(`[Doc2x] Get result error`, { error });
+          await delay(500);
+        }
+
+        retry--;
+      }
+      return Promise.reject(`[Doc2x] Failed to get result (uid: ${uid}): Process timeout`);
+    };
+
+    const { text, pages } = await checkResult();
+
+    const formatText = htmlTable2Md(text);
+
+    addLog.debug(`[Doc2x] PDF parse finished`, {
+      time: `${Math.round((Date.now() - startTime) / 1000)}s`,
+      pages
+    });
+
+    return {
+      pages,
+      text: formatText
+    };
+  };
+
+  return {
+    parsePDF
+  };
+};
 
 export async function tool({
   apikey,
-  files,
-  HTMLtable
+  files
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   if (!apikey) {
     return Promise.reject(`API key is required`);
   }
-  const successResult = [];
-  const failedResult = [];
+  const successResult: string[] = [];
+  const failedResult: string[] = [];
 
-  const axiosInstance = axios.create({
-    timeout: 30000 // 30 seconds timeout
-  });
+  const doc2x = useDoc2xServer({ apiKey: apikey });
 
   //Process each file one by one
   for await (const url of files) {
@@ -132,118 +229,14 @@ export async function tool({
       }
 
       const contentType = PDFResponse.headers['content-type'];
-      const file_name = url.match(/read\/([^?]+)/)?.[1] || 'unknown.pdf';
       if (!contentType || !contentType.startsWith('application/pdf')) {
-        throw new Error(`The provided file does not point to a PDF: ${contentType}`);
+        continue;
       }
 
-      const blob = new Blob([PDFResponse.data], { type: 'application/pdf' });
-      // Get pre-upload URL first
-      const preupload_response = await axiosInstance
-        .post('https://v2.doc2x.noedgeai.com/api/v2/parse/preupload', null, {
-          headers: {
-            Authorization: `Bearer ${apikey}`
-          }
-        })
-        .catch((error) => {
-          throw new Error(`[Pre-upload Error] Failed to get pre-upload URL: ${getErrText(error)}`);
-        });
-
-      if (preupload_response.status !== 200) {
-        throw new Error(`Failed to get pre-upload URL: ${preupload_response.data}`);
-      }
-
-      const preupload_data = preupload_response.data;
-      if (preupload_data.code !== 'success') {
-        throw new Error(`Failed to get pre-upload URL: ${JSON.stringify(preupload_data)}`);
-      }
-
-      const upload_url = preupload_data.data.url;
-      const uid = preupload_data.data.uid;
-      // Upload file to pre-signed URL with binary stream
-
-      const response = await axiosInstance
-        .put(upload_url, blob, {
-          headers: {
-            'Content-Type': 'application/pdf'
-          }
-        })
-        .catch((error) => {
-          throw new Error(`[Upload Error] Failed to upload file: ${getErrText(error)}`);
-        });
-
-      if (response.status !== 200) {
-        throw new Error(`Upload failed with status ${response.status}: ${response.statusText}`);
-      }
-
-      // Get the result by uid
-
-      // Wait for the result
-      const checkResult = async (retry = 20) => {
-        if (retry <= 0)
-          return Promise.reject(
-            `File:${file_name}\n<Content>\n[Parse Timeout Error] Failed to get result (uid: ${uid}): Process timeout\n</Content>`
-          );
-
-        try {
-          const result_response = await axiosInstance
-            .get(`https://v2.doc2x.noedgeai.com/api/v2/parse/status?uid=${uid}`, {
-              headers: {
-                Authorization: `Bearer ${apikey}`
-              }
-            })
-            .catch((error) => {
-              throw new Error(
-                `[Parse Status Error] Failed to get parse status: ${getErrText(error)}`
-              );
-            });
-
-          const result_data = result_response.data;
-          if (!['ok', 'success'].includes(result_data.code)) {
-            return Promise.reject(
-              `File:${file_name}\n<Content>\nFailed to get result (uid: ${uid}): ${JSON.stringify(result_data)}\n</Content>`
-            );
-          }
-
-          if (['ready', 'processing'].includes(result_data.data.status)) {
-            await delay(4000);
-            return checkResult(retry - 1);
-          }
-
-          if (result_data.data.status === 'success') {
-            const result = processContent(
-              await Promise.all(
-                result_data.data.result.pages.map((page: { md: unknown }) => page.md)
-              ).then((pages) => pages.join('\n')),
-              HTMLtable
-            )
-              // Do some post-processing
-              .replace(/\\[()]/g, '$')
-              .replace(/\\[[\]]/g, '$$')
-              .replace(/<img\s+src="([^"]+)"(?:\s*\?[^>]*)?(?:\s*\/>|>)/g, '![img]($1)')
-              .replace(/<!-- Media -->/g, '')
-              .replace(/<!-- Footnote -->/g, '')
-              .replace(/\$(.+?)\s+\\tag\{(.+?)\}\$/g, '$$$1 \\qquad \\qquad ($2)$$')
-              .replace(/\\text\{([^}]*?)(\b\w+)_(\w+\b)([^}]*?)\}/g, '\\text{$1$2\\_$3$4}');
-
-            return `File:${file_name}\n<Content>\n${result}\n</Content>`;
-          }
-          return checkResult(retry - 1);
-        } catch (error) {
-          if (retry > 1) {
-            await delay(100);
-            return checkResult(retry - 1);
-          }
-          throw error;
-        }
-      };
-
-      const result = await checkResult();
-      successResult.push(result);
+      const result = await doc2x.parsePDF(Buffer.from(PDFResponse.data));
+      successResult.push(result.text);
     } catch (error) {
-      failedResult.push(
-        `File:${url} \n<Content>\nFailed to fetch file from URL: ${getErrText(error)}\n</Content>`
-      );
+      failedResult.push(getErrText(error));
     }
   }
 

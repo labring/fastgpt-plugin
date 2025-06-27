@@ -40,37 +40,15 @@ export default defineTool({
           ]
         },
         {
-          renderTypeList: [FlowNodeInputTypeEnum.fileSelect],
-          selectedTypeIndex: 0,
+          renderTypeList: [FlowNodeInputTypeEnum.fileSelect, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.arrayString,
           key: 'files',
           label: 'files',
           description: '需要处理的PDF地址',
           required: true,
-          list: [],
           canSelectFile: true,
           canSelectImg: false,
-          maxFiles: 14,
-          defaultValue: ''
-        },
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.switch, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.boolean,
-          key: 'HTMLtable',
-          label: 'HTMLtable',
-          description:
-            '是否以HTML格式输出表格。如果需要精确地输出表格，请打开此开关以使用HTML格式。关闭后，表格将转换为Markdown形式输出，但这可能会损失一些表格特性，如合并单元格。',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          maxFiles: 5,
-          canSelectFile: true,
-          canSelectImg: true,
-          required: true
+          maxFiles: 14
         }
       ],
       outputs: [

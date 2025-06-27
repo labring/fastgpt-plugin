@@ -1,4 +1,5 @@
 import { customAlphabet } from 'nanoid';
+
 export const replaceSensitiveText = (text: string) => {
   // 1. http link
   text = text.replace(/(?<=https?:\/\/)[^\s]+/g, 'xxx');

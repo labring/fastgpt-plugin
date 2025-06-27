@@ -7,11 +7,11 @@ import { addLog } from '@/utils/log';
 
 export const runToolHandler = s.route(contract.tool.run, async (args) => {
   const { toolId, inputs, systemVar } = args.body;
-  addLog.info('run tool', { toolId, inputs, systemVar });
+  addLog.debug('Run tool', { toolId, inputs, systemVar });
   const tool = getTool(toolId);
 
   if (!tool) {
-    addLog.error('tool not found', { toolId });
+    addLog.error('Tool not found', { toolId });
     return {
       status: 404,
       body: { error: 'tool not found' }
@@ -19,13 +19,10 @@ export const runToolHandler = s.route(contract.tool.run, async (args) => {
   }
 
   try {
-    // const result = isProd
-    //   ? await dispatchWithNewWorker({ toolId, inputs, systemVar })
-    //   : await tool.cb(inputs, systemVar);
     const result = await dispatchWithNewWorker({ toolId, inputs, systemVar });
 
     if (result?.error) {
-      addLog.error('run tool error', { toolId, error: result.error });
+      addLog.error('Run tool error', { toolId, error: result.error });
       return {
         status: 500,
         body: {
@@ -33,14 +30,14 @@ export const runToolHandler = s.route(contract.tool.run, async (args) => {
         }
       };
     } else {
-      addLog.debug('run tool success', { toolId, result });
+      addLog.debug('Run tool success', { toolId, result });
       return {
         status: 200,
         body: contract.tool.run.responses[200].parse(result)
       };
     }
   } catch (error) {
-    addLog.error('run tool error', { toolId, error });
+    addLog.error('Run tool error', { toolId, error });
     return {
       status: 500,
       body: { error: getErrText(error) }

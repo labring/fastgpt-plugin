@@ -16,10 +16,7 @@ export const Worker2MainMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('log'),
-    data: z.object({
-      type: z.enum(['info', 'error', 'warn']),
-      args: z.array(z.any())
-    })
+    data: z.array(z.any())
   }),
   z.object({
     type: z.literal('success'),

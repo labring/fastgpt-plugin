@@ -31,6 +31,7 @@ export default defineConfig([
       '@typescript-eslint/ban-ts-comment': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       'no-var': 'off',
+      'no-console': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
