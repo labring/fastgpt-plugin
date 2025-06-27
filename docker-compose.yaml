@@ -14,7 +14,7 @@ services:
     environment:
       - AUTH_TOKEN=FX589vMlhV # disable authentication token if you do not set this variable
       # Minio configuration
-      - MINIO_ENDPOINT=minio
+      - MINIO_HOST=minio
       - MINIO_PORT=9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin

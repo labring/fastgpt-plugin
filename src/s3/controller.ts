@@ -52,7 +52,11 @@ export class S3Service {
       this.config.port && this.config.port !== (this.config.useSSL ? 443 : 80)
         ? `:${this.config.port}`
         : '';
-    return `${protocol}://${this.config.endpoint}${port}/${this.config.bucket}/${encodeURIComponent(filename)}`;
+
+    const customEndpoint = process.env.CUSTOM_CUSTOM_ENDPOINT;
+    return customEndpoint
+      ? `${customEndpoint}/${encodeURIComponent(filename)}`
+      : `${protocol}://${this.config.endpoint}${port}/${this.config.bucket}/${encodeURIComponent(filename)}`;
   }
 
   async uploadFileAdvanced(input: FileInput): Promise<FileMetadata> {
