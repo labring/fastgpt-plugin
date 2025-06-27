@@ -21,7 +21,15 @@ export const exportTool = ({
       return {
         output
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle zod validation errors
+      if (error.name === 'ZodError') {
+        const zodError = error as z.ZodError;
+        const errorMessage = zodError.errors
+          .map((err) => `${err.path.join('.')}: ${err.message}`)
+          .join(', ');
+        return { error: errorMessage };
+      }
       return { error };
     }
   };
