@@ -100,12 +100,7 @@ export async function tool({
   yAxis,
   chartType
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  const base64 = await generateChart(
-    title,
-    xAxis.map((value) => value.toString()),
-    yAxis.map((value) => value.toString()),
-    chartType
-  );
+  const base64 = await generateChart(title, xAxis, yAxis, chartType);
   return {
     '图表 url': base64, // 兼容旧版
     chartUrl: base64
