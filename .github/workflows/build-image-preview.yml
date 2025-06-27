@@ -38,30 +38,23 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=https://github.com/${{ github.repository }} image
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
-
-      - name: Find existing comment
-        uses: peter-evans/find-comment@v3
-        id: find-comment
+      - name: '@finleyge/github-tools'
+        uses: FinleyGe/github-tools@0.0.1
+        id: print-image-label
+        if: success()
         with:
-          issue-number: ${{ github.event.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: 'Preview Image for this PR is:'
-
-      - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.find-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tool: issue-comment
+          title: Preview Image Label
           body: |
             Preview Image for this PR is:
+
             ```
-            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
+            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.pull_request.head.sha }}
             ```
-          edit-mode: replace
-          token: ${{ secrets.GITHUB_TOKEN }}
