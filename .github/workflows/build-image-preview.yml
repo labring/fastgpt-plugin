@@ -13,7 +13,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  build:
+  preview-image:
     runs-on: ubuntu-24.04
 
     steps:
@@ -45,16 +45,23 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
-      - name: '@finleyge/github-tools'
-        uses: FinleyGe/github-tools@0.0.1
-        id: print-image-label
-        if: success()
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tool: issue-comment
-          title: Preview Image Label
+          issue-number: ${{ github.event.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: 'Preview Image for this PR is:'
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.number }}
           body: |
             Preview Image for this PR is:
             ```
             ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-pr:${{ github.sha }}
             ```
+          edit-mode: replace
+          token: ${{ secrets.GITHUB_TOKEN }}

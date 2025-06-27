@@ -1,6 +1,8 @@
 import chalk from 'chalk';
 import { format } from 'date-fns';
 
+chalk.level = 1; // Add this line to force color support
+
 export enum LogLevelEnum {
   debug = 0,
   info = 1,

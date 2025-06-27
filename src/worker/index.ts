@@ -198,7 +198,8 @@ export async function dispatchWithNewWorker(data: {
           reject(data);
           worker.terminate();
         } else if (type === 'log') {
-          console.log(...data);
+          const logData = Array.isArray(data) ? data : [data];
+          console.log(...logData);
         } else if (type === 'uploadFile') {
           try {
             const result = await global.s3Server.uploadFileAdvanced(data);
