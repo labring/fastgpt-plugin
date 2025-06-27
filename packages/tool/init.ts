@@ -81,10 +81,5 @@ export async function initTool() {
     tools.push(...tmpTools);
   }
 
-  addLog.info(`
-=================
-  Load tools in ${isProd ? 'production' : 'development'} env
-  amount: ${tools.length}
-=================
-`);
+  addLog.info(`Load tools in ${isProd ? 'production' : 'development'} env, total: ${tools.length}`);
 }
