@@ -1,0 +1,66 @@
+import { defineTool } from '@tool/type';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  NodeInputKeyEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
+
+export default defineTool({
+  name: {
+    'zh-CN': '百度搜索',
+    en: 'Baidu Search'
+  },
+  description: {
+    'zh-CN': '调用百度搜索',
+    en: 'Call Baidu search'
+  },
+  versionList: [
+    {
+      value: '0.1.0',
+      description: 'Default version',
+      inputs: [
+        {
+          key: NodeInputKeyEnum.systemInputConfig,
+          label: '',
+          renderTypeList: [FlowNodeInputTypeEnum.hidden],
+          valueType: WorkflowIOValueTypeEnum.object,
+          inputList: [
+            {
+              key: 'apiKey',
+              label: 'Search API Key',
+              required: true,
+              inputType: 'secret'
+            }
+          ]
+        },
+        {
+          key: 'q',
+          label: '搜索关键词',
+          required: true,
+          valueType: WorkflowIOValueTypeEnum.string,
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input]
+        },
+        {
+          key: 'num',
+          label: '搜索数量',
+          valueType: WorkflowIOValueTypeEnum.number,
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.numberInput],
+          value: 20,
+          max: 100,
+          min: 1
+        }
+      ],
+      outputs: [
+        {
+          id: 'result',
+          type: FlowNodeOutputTypeEnum.static,
+          valueType: WorkflowIOValueTypeEnum.arrayObject,
+          key: 'result',
+          label: '搜索结果',
+          description: '搜索结果'
+        }
+      ]
+    }
+  ]
+});

@@ -1,5 +1,5 @@
 {
-  "name": "fastgpt-tools-firecrawl",
+  "name": "fastgpt-tools-SearchApi",
   "module": "index.ts",
   "type": "module",
   "scripts": {
@@ -12,7 +12,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@mendable/firecrawl-js": "^1.27.0",
     "zod": "^3.24.2"
   }
 }
