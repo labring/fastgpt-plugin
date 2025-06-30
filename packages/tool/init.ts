@@ -70,6 +70,8 @@ export const LoadToolsByFilename = async (
         toolId,
         parentId: toolsetId,
         type: rootMod.type,
+        courseUrl: rootMod.courseUrl,
+        author: rootMod.author,
         icon,
         toolDirName: filename
       });

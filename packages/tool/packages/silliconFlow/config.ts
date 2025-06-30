@@ -7,6 +7,7 @@ export default defineToolSet({
     'zh-CN': '硅基流动',
     en: 'Silicon Flow'
   },
+  courseUrl: 'https://cloud.siliconflow.cn/i/TR9Ym0c4',
   type: ToolTypeEnum.tools,
   description: {
     'zh-CN': '这是一个硅基流动工具集',

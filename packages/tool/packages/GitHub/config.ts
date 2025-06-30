@@ -8,7 +8,6 @@ export default defineToolSet({
     'zh-CN': 'GitHub 工具集',
     en: 'GitHub Tool Set'
   },
-  icon: '',
   type: ToolTypeEnum.tools,
   description: {
     'zh-CN': 'GitHub 工具集',
