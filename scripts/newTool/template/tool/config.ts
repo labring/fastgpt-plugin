@@ -11,7 +11,6 @@ export default defineTool({
     'zh-CN': '模版工具',
     en: 'Template tool'
   },
-  icon: '',
   type: ToolTypeEnum.tools,
   description: {
     'zh-CN': '描述',

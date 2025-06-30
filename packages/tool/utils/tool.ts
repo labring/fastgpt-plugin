@@ -1,26 +1,18 @@
 import type { z } from 'zod';
 import type { ToolSetConfigType } from '@tool/type';
-import {
-  ToolConfigSchema,
-  ToolSchema,
-  toolConfigWithCbSchema,
-  type SystemVarType
-} from '@tool/type/tool';
+import { ToolConfigSchema, ToolSchema, type SystemVarType } from '@tool/type/tool';
 import type { ToolListItemType } from '@tool/type/api';
 
-export const exportTool = ({
+export const exportTool = <T extends z.Schema>({
   toolCb,
   InputType,
   config
 }: {
-  toolCb: (
-    props: z.infer<typeof InputType>,
-    systemVar: SystemVarType
-  ) => Promise<Record<string, any>>;
-  InputType: z.ZodTypeAny;
+  toolCb: (props: z.infer<T>, systemVar: SystemVarType) => Promise<Record<string, any>>;
+  InputType: T;
   config: z.infer<typeof ToolConfigSchema>;
-}): z.infer<typeof toolConfigWithCbSchema> => {
-  const cb = async (props: z.infer<typeof InputType>, systemVar: SystemVarType) => {
+}) => {
+  const cb = async (props: z.infer<T>, systemVar: SystemVarType) => {
     try {
       const output = await toolCb(InputType.parse(props), systemVar);
       return {
@@ -38,8 +30,6 @@ export const exportTool = ({
       return { error };
     }
   };
-
-  console.log(__dirname);
 
   return {
     ...config,
