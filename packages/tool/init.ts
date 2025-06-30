@@ -7,6 +7,8 @@ import fs from 'fs';
 import { addLog } from '@/utils/log';
 import { ToolTypeEnum } from './type/tool';
 
+const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
+
 const saveFile = async (url: string, path: string) => {
   const response = await fetch(url);
   if (!response.ok) {
@@ -29,6 +31,7 @@ export const LoadToolsByFilename = async (
   const defaultIcon = findToolIcon(filename);
 
   if ('children' in rootMod) {
+    // is toolSet
     const toolsetId = rootMod.toolId || filename;
     const icon = rootMod.icon || defaultIcon;
 
@@ -41,7 +44,23 @@ export const LoadToolsByFilename = async (
       versionList: []
     });
     // Push children
-    const children = rootMod.children;
+    const getChildren = async (toolRootPath: string) => {
+      const childrenPath = path.join(toolRootPath, 'children');
+      const files = fs.readdirSync(childrenPath);
+      const children: ToolConfigWithCbType[] = [];
+      for (const file of files) {
+        const childPath = path.join(childrenPath, file);
+        const childMod = (await import(childPath)).default as ToolConfigWithCbType;
+        const toolId = childMod.toolId || `${toolsetId}/${file}`;
+        children.push({
+          ...childMod,
+          toolId
+        });
+      }
+      return children;
+    };
+
+    const children = isProd ? rootMod.children : await getChildren(toolRootPath);
 
     for (const child of children) {
       const toolId = child.toolId!;
@@ -75,7 +94,7 @@ export async function initTool() {
     ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools')
     : path.join(__dirname, 'packages');
 
-  const toolDirs = fs.readdirSync(basePath);
+  const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
     const tmpTools = await LoadToolsByFilename(basePath, tool);
     tools.push(...tmpTools);
