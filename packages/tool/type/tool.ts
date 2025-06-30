@@ -47,6 +47,7 @@ export const VersionListItemSchema = z.object({
 
 export const ToolConfigSchema = z
   .object({
+    toolId: z.string().optional().describe('The unique id of the tool'),
     name: InfoString.describe('The name of the tool'),
     description: InfoString.describe('The description of the tool'),
     versionList: z.array(VersionListItemSchema).min(1).describe('The version list'),

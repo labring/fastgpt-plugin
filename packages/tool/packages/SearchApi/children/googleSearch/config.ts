@@ -43,9 +43,9 @@ export default defineTool({
         },
         {
           key: 'num',
-          label: '搜索数量',
+          label: '最大搜索数量',
           valueType: WorkflowIOValueTypeEnum.number,
-          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.numberInput],
+          renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
           value: 20,
           max: 100,
           min: 1
