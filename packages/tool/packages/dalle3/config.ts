@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  isActive: false,
   type: ToolTypeEnum.multimodal,
   name: {
     'zh-CN': 'Dalle3 绘图',
