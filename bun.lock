@@ -247,6 +247,18 @@
         "typescript": "^5.0.0",
       },
     },
+    "packages/tool/packages/silliconFlow": {
+      "name": "fastgpt-tools-silliconFlow",
+      "dependencies": {
+        "zod": "^3.24.2",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5.0.0",
+      },
+    },
     "packages/tool/packages/smtpEmail": {
       "name": "fastgpt-tools-smtpEmail",
       "dependencies": {
@@ -878,6 +890,8 @@
     "fastgpt-tools-mathExprVal": ["fastgpt-tools-mathExprVal@workspace:packages/tool/packages/mathExprVal"],
 
     "fastgpt-tools-searchXNG": ["fastgpt-tools-searchXNG@workspace:packages/tool/packages/searchXNG"],
+
+    "fastgpt-tools-silliconFlow": ["fastgpt-tools-silliconFlow@workspace:packages/tool/packages/silliconFlow"],
 
     "fastgpt-tools-smtpEmail": ["fastgpt-tools-smtpEmail@workspace:packages/tool/packages/smtpEmail"],
 
@@ -1565,6 +1579,8 @@
 
     "fastgpt-tools-searchXNG/@types/bun": ["@types/bun@1.2.17", "https://registry.npmmirror.com/@types/bun/-/bun-1.2.17.tgz", { "dependencies": { "bun-types": "1.2.17" } }, "sha512-l/BYs/JYt+cXA/0+wUhulYJB6a6p//GTPiJ7nV+QHa8iiId4HZmnu/3J/SowP5g0rTiERY2kfGKXEK5Ehltx4Q=="],
 
+    "fastgpt-tools-silliconFlow/@types/bun": ["@types/bun@1.2.17", "https://registry.npmmirror.com/@types/bun/-/bun-1.2.17.tgz", { "dependencies": { "bun-types": "1.2.17" } }, "sha512-l/BYs/JYt+cXA/0+wUhulYJB6a6p//GTPiJ7nV+QHa8iiId4HZmnu/3J/SowP5g0rTiERY2kfGKXEK5Ehltx4Q=="],
+
     "fastgpt-tools-smtpEmail/@types/bun": ["@types/bun@1.2.17", "https://registry.npmmirror.com/@types/bun/-/bun-1.2.17.tgz", { "dependencies": { "bun-types": "1.2.17" } }, "sha512-l/BYs/JYt+cXA/0+wUhulYJB6a6p//GTPiJ7nV+QHa8iiId4HZmnu/3J/SowP5g0rTiERY2kfGKXEK5Ehltx4Q=="],
 
     "fastgpt-tools-wiki/@types/bun": ["@types/bun@1.2.17", "https://registry.npmmirror.com/@types/bun/-/bun-1.2.17.tgz", { "dependencies": { "bun-types": "1.2.17" } }, "sha512-l/BYs/JYt+cXA/0+wUhulYJB6a6p//GTPiJ7nV+QHa8iiId4HZmnu/3J/SowP5g0rTiERY2kfGKXEK5Ehltx4Q=="],
@@ -1680,6 +1696,8 @@
     "fastgpt-tools-mathExprVal/@types/bun/bun-types": ["bun-types@1.2.17", "https://registry.npmmirror.com/bun-types/-/bun-types-1.2.17.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-ElC7ItwT3SCQwYZDYoAH+q6KT4Fxjl8DtZ6qDulUFBmXA8YB4xo+l54J9ZJN+k2pphfn9vk7kfubeSd5QfTVJQ=="],
 
     "fastgpt-tools-searchXNG/@types/bun/bun-types": ["bun-types@1.2.17", "https://registry.npmmirror.com/bun-types/-/bun-types-1.2.17.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-ElC7ItwT3SCQwYZDYoAH+q6KT4Fxjl8DtZ6qDulUFBmXA8YB4xo+l54J9ZJN+k2pphfn9vk7kfubeSd5QfTVJQ=="],
+
+    "fastgpt-tools-silliconFlow/@types/bun/bun-types": ["bun-types@1.2.17", "https://registry.npmmirror.com/bun-types/-/bun-types-1.2.17.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-ElC7ItwT3SCQwYZDYoAH+q6KT4Fxjl8DtZ6qDulUFBmXA8YB4xo+l54J9ZJN+k2pphfn9vk7kfubeSd5QfTVJQ=="],
 
     "fastgpt-tools-smtpEmail/@types/bun/bun-types": ["bun-types@1.2.17", "https://registry.npmmirror.com/bun-types/-/bun-types-1.2.17.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-ElC7ItwT3SCQwYZDYoAH+q6KT4Fxjl8DtZ6qDulUFBmXA8YB4xo+l54J9ZJN+k2pphfn9vk7kfubeSd5QfTVJQ=="],
 
