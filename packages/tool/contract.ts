@@ -2,7 +2,7 @@ import z from 'zod';
 import { c } from '@/contract/init';
 import { ToolListItemSchema, type ToolListItemType } from './type/api';
 import type { InputType } from './type/fastgpt';
-import { SystemVarSchema } from './type';
+import { SystemVarSchema } from './type/tool';
 
 export const toolContract = c.router(
   {

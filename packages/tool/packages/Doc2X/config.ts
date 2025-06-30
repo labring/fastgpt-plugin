@@ -3,7 +3,6 @@ import { ToolTypeEnum } from '@tool/type/tool';
 import PDF2text from './children/PDF2text';
 
 export default defineToolSet({
-  toolId: 'community-Doc2X',
   name: {
     'zh-CN': 'Doc2X 服务',
     en: 'Doc2X Service'

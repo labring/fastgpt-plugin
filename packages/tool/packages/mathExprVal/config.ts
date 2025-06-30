@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-mathExprVal',
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '数学公式执行',

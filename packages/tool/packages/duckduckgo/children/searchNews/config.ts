@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  toolId: 'community-duckduckgo/searchNews',
   name: {
     'zh-CN': 'DuckDuckGo 新闻检索',
     en: 'DockDuckGo News Search'

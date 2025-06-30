@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-databaseConnection',
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '数据库连接',

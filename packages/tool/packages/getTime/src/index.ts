@@ -1,4 +1,4 @@
-import type { SystemVarType } from '@tool/type';
+import type { SystemVarType } from '@tool/type/tool';
 import { z } from 'zod';
 
 export const InputType = z.object({});

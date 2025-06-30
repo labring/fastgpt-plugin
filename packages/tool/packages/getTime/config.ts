@@ -3,7 +3,6 @@ import { FlowNodeOutputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fast
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-getTime',
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '获取当前时间',

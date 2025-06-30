@@ -1,0 +1,18 @@
+{
+  "name": "fastgpt-tools-firecrawl",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun build index.ts --minify --outdir dist --outFile index.js --target=node"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@mendable/firecrawl-js": "^1.27.0",
+    "zod": "^3.24.2"
+  }
+}

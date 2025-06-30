@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'commercial-dalle3',
   isActive: false,
   type: ToolTypeEnum.multimodal,
   name: {

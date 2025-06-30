@@ -6,7 +6,6 @@ import searchNews from './children/searchNews';
 import searchVideo from './children/searchVideo';
 
 export default defineToolSet({
-  toolId: 'community-duckduckgo',
   name: {
     'zh-CN': 'DuckDuckGo服务',
     en: 'DuckDuckGo Service'

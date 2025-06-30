@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  toolId: 'community-duckduckgo/searchVideo',
   name: {
     'zh-CN': 'DuckDuckGo 视频检索',
     en: 'DockDuckGo Video Search'

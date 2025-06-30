@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-WeWorkWebhook',
   type: ToolTypeEnum.communication,
   name: {
     'zh-CN': '企业微信 webhook',

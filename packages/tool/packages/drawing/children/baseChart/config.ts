@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  toolId: 'community-drawing/baseChart',
   name: {
     'zh-CN': '基础图表',
     en: 'baseChart'

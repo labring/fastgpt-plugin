@@ -3,7 +3,6 @@ import { ToolTypeEnum } from '@tool/type/tool';
 import baseChart from './children/baseChart';
 
 export default defineToolSet({
-  toolId: 'community-drawing',
   name: {
     'zh-CN': 'BI图表功能',
     en: 'BI Charts'

@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-smtpEmail',
   type: ToolTypeEnum.communication,
   name: {
     'zh-CN': 'Email 邮件发送',

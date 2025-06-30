@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-wiki',
   type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'Wiki搜索',

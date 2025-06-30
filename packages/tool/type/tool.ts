@@ -1,7 +1,25 @@
 import { z } from 'zod';
 import { InfoString } from '@/type/i18n';
-import { SystemVarSchema } from '.';
 import { InputSchema, OutputSchema } from './fastgpt';
+
+export const SystemVarSchema = z.object({
+  user: z.object({
+    id: z.string(),
+    teamId: z.string(),
+    name: z.string()
+  }),
+  app: z.object({
+    id: z.string(),
+    name: z.string()
+    // version: z.string()
+  }),
+  tool: z.object({
+    id: z.string(),
+    version: z.string().optional()
+  }),
+  time: z.string()
+});
+export type SystemVarType = z.infer<typeof SystemVarSchema>;
 
 export const ToolCallbackReturnSchema = z.object({
   error: z.any().optional(),
@@ -29,7 +47,6 @@ export const VersionListItemSchema = z.object({
 
 export const ToolConfigSchema = z
   .object({
-    toolId: z.string().optional().describe('The unique id of the tool'),
     name: InfoString.describe('The name of the tool'),
     description: InfoString.describe('The description of the tool'),
     versionList: z.array(VersionListItemSchema).min(1).describe('The version list'),

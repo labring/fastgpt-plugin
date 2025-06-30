@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+export enum NodeInputKeyEnum {
+  systemInputConfig = 'system_input_config'
+}
+
 export enum FlowNodeInputTypeEnum { // render ui
   reference = 'reference', // reference to other node output
   input = 'input', // one line input

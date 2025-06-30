@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-google',
   type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'Google 搜索',

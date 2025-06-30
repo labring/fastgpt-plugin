@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  toolId: 'toolId', // required when type is toolset
   name: {
     'zh-CN': '模版工具',
     en: 'Template tool'

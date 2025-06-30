@@ -163,9 +163,9 @@ export async function dispatchWithNewWorker(data: {
 }) {
   const { toolId } = data;
   const tool = getTool(toolId);
+
   if (!tool || !tool.cb) {
-    console.error(`Tool with ID ${toolId} not found or does not have a callback.`);
-    return;
+    return Promise.reject(`Tool with ID ${toolId} not found or does not have a callback.`);
   }
 
   const isBun = typeof Bun !== 'undefined';

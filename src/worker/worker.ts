@@ -22,6 +22,7 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
   switch (type) {
     case 'runTool': {
       const tools = await LoadToolsByFilename(basePath, data.toolDirName);
+
       const tool = tools.find((tool) => tool.toolId === data.toolId);
 
       if (!tool || !tool.cb) {

@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-fetchUrl',
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '网页内容抓取',

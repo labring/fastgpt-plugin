@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  toolId: 'community-Doc2X/PDF2text',
   name: {
     'zh-CN': 'PDF 识别',
     en: 'PDF Recognition'

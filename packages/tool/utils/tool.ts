@@ -1,6 +1,11 @@
 import type { z } from 'zod';
-import type { SystemVarType, ToolSetConfigType } from '@tool/type';
-import { ToolConfigSchema, ToolSchema, toolConfigWithCbSchema } from '@tool/type/tool';
+import type { ToolSetConfigType } from '@tool/type';
+import {
+  ToolConfigSchema,
+  ToolSchema,
+  toolConfigWithCbSchema,
+  type SystemVarType
+} from '@tool/type/tool';
 import type { ToolListItemType } from '@tool/type/api';
 
 export const exportTool = ({
@@ -33,6 +38,8 @@ export const exportTool = ({
       return { error };
     }
   };
+
+  console.log(__dirname);
 
   return {
     ...config,

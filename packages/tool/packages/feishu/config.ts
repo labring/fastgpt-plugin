@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-feishu',
   type: ToolTypeEnum.communication,
   name: {
     'zh-CN': '飞书 webhook',

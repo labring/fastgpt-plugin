@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-bing',
   icon: 'core/workflow/template/bing',
   courseUrl:
     'https://fael3z0zfze.feishu.cn/wiki/LsKAwOmtniA4vkkC259cmfxXnAc?fromScene=spaceOverview',

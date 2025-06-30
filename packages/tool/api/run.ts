@@ -22,7 +22,7 @@ export const runToolHandler = s.route(contract.tool.run, async (args) => {
     const result = await dispatchWithNewWorker({ toolId, inputs, systemVar });
 
     if (result?.error) {
-      addLog.error('Run tool error', { toolId, error: result.error });
+      addLog.error(`Run tool ${toolId} error`, result.error);
       return {
         status: 500,
         body: {
@@ -30,14 +30,14 @@ export const runToolHandler = s.route(contract.tool.run, async (args) => {
         }
       };
     } else {
-      addLog.debug('Run tool success', { toolId, result });
+      addLog.debug('Run tool success', { toolId });
       return {
         status: 200,
         body: contract.tool.run.responses[200].parse(result)
       };
     }
   } catch (error) {
-    addLog.error('Run tool error', { toolId, error });
+    addLog.error(`Run tool ${toolId} error`, error);
     return {
       status: 500,
       body: { error: getErrText(error) }

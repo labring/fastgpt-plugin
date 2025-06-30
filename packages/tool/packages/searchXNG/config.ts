@@ -7,7 +7,6 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  toolId: 'community-searchXNG',
   type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'Search XNG 搜索',

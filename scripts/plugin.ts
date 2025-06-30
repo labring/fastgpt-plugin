@@ -31,7 +31,7 @@ export const autoToolIdPlugin: BunPlugin = {
         })();
         const splitIndex = content.indexOf('name:');
         const newContent =
-          content.slice(0, splitIndex) + `toolId: '${toolId}' \n,` + content.slice(splitIndex);
+          content.slice(0, splitIndex) + `toolId: '${toolId}',\n` + content.slice(splitIndex);
 
         return {
           contents: newContent,

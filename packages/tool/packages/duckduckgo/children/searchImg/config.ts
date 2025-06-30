@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  toolId: 'community-duckduckgo/searchImg',
   name: {
     'zh-CN': 'DuckDuckGo 图片搜索',
     en: 'DockDuckGo Image Search'
