@@ -1,5 +1,5 @@
 # FastGPT-plugin
-简体中文 | [English](./README.zh_CN.md)
+简体中文 | [English](./README.md)
 
 [FastGPT](https://github.com/labring/FastGPT) 插件项目。
 将 FastGPT 深度 **模块化**，实现最大程度的 **可拓展性**。

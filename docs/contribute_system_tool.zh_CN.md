@@ -3,14 +3,15 @@
 ## 0. 准备工作
 
 - [Bun](https://bun.sh/)
-- `git clone git@github.com:labring/fastgpt-plugin.git`
+- Fork 本仓库
+- `git clone git@github.com:your-username/fastgpt-plugin.git`
 - `cd fastgpt-plugin && bun i`
 
 ## 1. 创建系统工具并配置
 
 ### 1. 执行如下命令，根据提示创建工具
 ```bash
-bun run new
+bun run new:tool
 ```
 
 系统工具的目录在 `packages/tool/packages/[your-tool-name]`下。

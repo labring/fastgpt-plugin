@@ -3,14 +3,15 @@ This document will describe how to contribute a system tool to FastGPT.
 ## 0. Prerequisites
 
 - [Bun](https://bun.sh/)
-- `git clone git@github.com:labring/fastgpt-plugin.git`
+- Fork this repository
+- `git clone git@github.com:your-username/fastgpt-plugin.git`
 - `cd fastgpt-plugin && bun i`
 
 ## 1. Create and Configure System Tool
 
 ### 1. Execute the following command and create tool according to the prompts
 ```bash
-bun run new
+bun run new:tool
 ```
 
 The system tool directory is `packages/tool/packages/[your-tool-name]`.
