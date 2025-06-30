@@ -43,4 +43,4 @@ B <--> C(Minio)
 
 ### System Tool Structure
 
-Refer to [Contributing System Tools]()
+Refer to [Contributing System Tools](./contribute_system_tool.md)

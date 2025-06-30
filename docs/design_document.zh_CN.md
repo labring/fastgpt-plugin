@@ -42,4 +42,4 @@ B <--> C(Minio)
 
 ### 系统工具结构
 
-参考 [贡献系统工具]()
+参考 [贡献系统工具](./contribute_system_tool.zh_CN.md)
