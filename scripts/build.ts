@@ -3,7 +3,6 @@ import { $ } from 'bun';
 import fs from 'fs';
 import path from 'path';
 import { copyToolIcons } from '../packages/tool/utils/icon';
-import { autoToolIdPlugin } from './plugin';
 
 // Delete dist
 const distDir = path.join(__dirname, '..', 'dist');

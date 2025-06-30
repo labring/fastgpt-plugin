@@ -7,8 +7,8 @@ import {
 
 export default defineTool({
   name: {
-    'zh-CN': 'Kwai-Kolors/Kolors画图',
-    en: 'Kwai-Kolors/Kolors painting'
+    'zh-CN': 'Kolors画图',
+    en: 'Kolors painting'
   },
   description: {
     'zh-CN': '采用硅基流动提供的Kwai-Kolors/Kolors 模型进行绘图',

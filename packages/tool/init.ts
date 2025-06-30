@@ -28,6 +28,7 @@ export const LoadToolsByFilename = async (
 
   const toolRootPath = path.join(basePath, filename);
   const rootMod = (await import(toolRootPath)).default as ToolConfigWithCbType | ToolSetConfigType;
+
   const defaultIcon = findToolIcon(filename);
 
   if ('children' in rootMod) {

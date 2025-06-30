@@ -18,16 +18,16 @@ export enum EventTypeEnum {
 
 const logMap = {
   [LogLevelEnum.debug]: {
-    levelLog: chalk.bgGreen('[Debug]')
+    levelLog: chalk.bgGreenBright('[Debug]')
   },
   [LogLevelEnum.info]: {
-    levelLog: chalk.bgBlue('[Info]')
+    levelLog: chalk.bgBlueBright('[Info]')
   },
   [LogLevelEnum.warn]: {
-    levelLog: chalk.bgYellow('[Warn]')
+    levelLog: chalk.bgYellowBright('[Warn]')
   },
   [LogLevelEnum.error]: {
-    levelLog: chalk.bgRed('[Error]')
+    levelLog: chalk.bgRedBright('[Error]')
   }
 };
 const envLogLevelMap: Record<string, number> = {
