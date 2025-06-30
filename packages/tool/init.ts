@@ -31,8 +31,7 @@ export const LoadToolsByFilename = async (
 
   if ('children' in rootMod) {
     // is toolSet
-    const toolsetId = rootMod.toolId!;
-
+    const toolsetId = isProd ? rootMod.toolId! : filename;
     const icon = rootMod.icon || defaultIcon;
 
     tools.push({
