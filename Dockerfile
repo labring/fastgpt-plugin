@@ -8,7 +8,7 @@ COPY . .
 # 安装依赖
 RUN --mount=type=cache,target=/root/.bun \
     for i in $(seq 1 3); do \
-    bun i --production && break || \
+    bun i && break || \
     sleep 5; \
     done
 
