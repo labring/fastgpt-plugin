@@ -206,16 +206,15 @@ export async function dispatchWithNewWorker(data: {
             worker.postMessage({
               type: 'uploadFileResponse',
               data: {
-                type: 'success',
                 data: result
               }
             });
           } catch (error) {
+            addLog.error(`Tool upload file error`, error);
             worker.postMessage({
               type: 'uploadFileResponse',
               data: {
-                type: 'error',
-                data: getErrText(error)
+                error: 'Tool upload file error'
               }
             });
           }

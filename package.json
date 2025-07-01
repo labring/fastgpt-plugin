@@ -9,7 +9,7 @@
     "build:worker": "bun build --env=disable --outfile=dist/worker.js --target=node --minify ./src/worker/worker.ts",
     "start": "NODE_ENV=production node --env-file-if-exists=.env.local dist/index.js",
     "dev": "bun run ./scripts/dev.ts",
-    "test": "vitest",
+    "test": "vitest run",
     "lint": "bun eslint --fix",
     "prettier": "prettier --write \"./**/*.{ts,js,json}\"",
     "new:tool": "bun ./scripts/newTool/index.ts"

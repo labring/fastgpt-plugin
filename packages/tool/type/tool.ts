@@ -35,6 +35,13 @@ export enum ToolTypeEnum {
   search = 'search',
   multimodal = 'multimodal',
   communication = 'communication',
+  finance = 'finance',
+  design = 'design',
+  productivity = 'productivity',
+  news = 'news',
+  entertainment = 'entertainment',
+  social = 'social',
+  scientific = 'scientific',
   other = 'other'
 }
 
