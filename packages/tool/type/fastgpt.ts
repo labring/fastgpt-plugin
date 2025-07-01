@@ -152,25 +152,17 @@ export const InputSchema = z.object({
 });
 export type InputType = z.infer<typeof InputSchema>;
 
-export const OutputSchema = z
-  .object({
-    id: z.string().optional(),
-    type: z.nativeEnum(FlowNodeOutputTypeEnum).optional(),
-    key: z.string(),
-    valueType: z.nativeEnum(WorkflowIOValueTypeEnum),
-    valueDesc: z.string().optional(),
-    value: z.unknown().optional(),
-    label: z.string().optional(),
-    description: z.string().optional(),
-    defaultValue: z.any().optional(),
-    required: z.boolean().optional()
-  })
-  .transform((val) => {
-    return {
-      ...val,
-      id: val.id ?? val.key,
-      type: val.type ?? FlowNodeOutputTypeEnum.static
-    };
-  });
+export const OutputSchema = z.object({
+  id: z.string().optional(),
+  type: z.nativeEnum(FlowNodeOutputTypeEnum).optional(),
+  key: z.string(),
+  valueType: z.nativeEnum(WorkflowIOValueTypeEnum),
+  valueDesc: z.string().optional(),
+  value: z.unknown().optional(),
+  label: z.string().optional(),
+  description: z.string().optional(),
+  defaultValue: z.any().optional(),
+  required: z.boolean().optional()
+});
 
 export type OutputType = z.infer<typeof OutputSchema>;

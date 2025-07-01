@@ -1,17 +1,31 @@
 import { z } from 'zod';
-import type {
+import {
   ToolConfigSchema,
-  toolConfigWithCbSchema,
   ToolSchema,
   ToolSetConfigSchema,
-  ToolSetSchema
+  type toolConfigWithCbSchema,
+  type ToolSetSchema
 } from './tool';
+import { FlowNodeOutputTypeEnum } from './fastgpt';
 
 export type ToolConfigType = z.infer<typeof ToolConfigSchema>;
 export type ToolConfigWithCbType = z.infer<typeof toolConfigWithCbSchema>;
 export function defineTool(tool: ToolConfigType) {
+  const versionList = tool.versionList.map((version) => {
+    return {
+      ...version,
+      outputs: version.outputs.map((output) => {
+        return {
+          ...output,
+          type: output.type ?? FlowNodeOutputTypeEnum.static,
+          id: output.id ?? output.key
+        };
+      })
+    };
+  });
   return {
-    ...tool
+    ...tool,
+    versionList
   };
 }
 
