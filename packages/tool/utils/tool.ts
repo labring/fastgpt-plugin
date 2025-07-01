@@ -3,20 +3,22 @@ import type { ToolSetConfigType } from '@tool/type';
 import { ToolConfigSchema, ToolSchema, type SystemVarType } from '@tool/type/tool';
 import type { ToolListItemType } from '@tool/type/api';
 
-export const exportTool = <T extends z.Schema>({
+export const exportTool = <T extends z.Schema, D extends z.Schema>({
   toolCb,
   InputType,
+  OutputType,
   config
 }: {
   toolCb: (props: z.infer<T>, systemVar: SystemVarType) => Promise<Record<string, any>>;
   InputType: T;
+  OutputType: D;
   config: z.infer<typeof ToolConfigSchema>;
 }) => {
   const cb = async (props: z.infer<T>, systemVar: SystemVarType) => {
     try {
       const output = await toolCb(InputType.parse(props), systemVar);
       return {
-        output
+        output: OutputType.parse(output)
       };
     } catch (error: any) {
       // Handle zod validation errors

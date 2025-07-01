@@ -11,13 +11,7 @@ export const toolContract = c.router(
       method: 'GET',
       description: 'Get tools list',
       responses: {
-        200: c.type<
-          Array<
-            Omit<ToolListItemType, 'inputs'> & {
-              inputs: InputType[];
-            }
-          >
-        >()
+        200: c.type<Array<ToolListItemType>>()
       }
     },
     getTool: {
