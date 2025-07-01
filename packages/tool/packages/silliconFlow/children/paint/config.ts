@@ -38,7 +38,7 @@ export default defineTool({
           key: 'prompt',
           label: '绘图提示词',
           required: true,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           valueType: WorkflowIOValueTypeEnum.string,
           toolDescription: '绘图提示词'
         },

@@ -8,7 +8,7 @@ export default defineToolSet({
     en: 'Silicon Flow'
   },
   courseUrl: 'https://cloud.siliconflow.cn/i/TR9Ym0c4',
-  type: ToolTypeEnum.tools,
+  type: ToolTypeEnum.multimodal,
   description: {
     'zh-CN': '这是一个硅基流动工具集',
     en: 'This is a Silicon Flow tool set'
