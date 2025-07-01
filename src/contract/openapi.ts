@@ -1,7 +1,7 @@
 import { generateOpenApi } from '@ts-rest/open-api';
 import { contract } from '.';
-import swaggerUi from 'swagger-ui-express';
 import type { Express } from 'express';
+import { apiReference } from '@scalar/express-api-reference';
 
 export const initOpenAPI = (app: Express) => {
   // OpenAPI document
@@ -12,6 +12,13 @@ export const initOpenAPI = (app: Express) => {
       description: 'FastGPT-plugin API document'
     }
   });
-  app.use('/openapi', swaggerUi.serve);
-  app.get('/openapi', swaggerUi.serve, swaggerUi.setup(openApiDocument));
+  app.use(
+    '/openapi',
+    apiReference({
+      url: '/openapi.json'
+    })
+  );
+  app.get('/openapi.json', (req, res) => {
+    res.json(openApiDocument);
+  });
 };

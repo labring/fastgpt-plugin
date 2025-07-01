@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.5.3",
+    "@scalar/express-api-reference": "^0.8.7",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
     "@ts-rest/open-api": "^3.52.1",
@@ -26,7 +27,6 @@
     "json5": "^2.2.3",
     "minio": "^8.0.5",
     "nanoid": "^5.1.5",
-    "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0",
     "zod": "^3.24.3"
   },
@@ -35,7 +35,6 @@
     "@eslint/json": "^0.11.0",
     "@types/bun": "latest",
     "@types/express": "^5.0.1",
-    "@types/swagger-ui-express": "^4.1.8",
     "@vitest/coverage-v8": "3.1.2",
     "bun-plugin-dts": "^0.3.0",
     "eslint": "^9.24.0",
