@@ -74,8 +74,6 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: '图表 url',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           description: '可用使用markdown格式展示图片，如：![图片](url)',
           defaultValue: '',

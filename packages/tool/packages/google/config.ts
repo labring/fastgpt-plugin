@@ -59,11 +59,9 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'result',
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'result',
-          label: 'result',
-          type: FlowNodeOutputTypeEnum.static
+          label: 'result'
         }
       ]
     }

@@ -137,8 +137,6 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'result',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'result',
           label: '发送结果',

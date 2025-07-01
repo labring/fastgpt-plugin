@@ -63,8 +63,6 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'papers',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.arrayObject,
           key: 'papers',
           label: '论文列表',

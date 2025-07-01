@@ -34,8 +34,6 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'metadata',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'metadata',
           label: '论文元数据',

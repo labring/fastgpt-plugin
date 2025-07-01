@@ -51,16 +51,12 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'result',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'result',
           label: '搜索结果',
           description: ' 检索结果'
         },
         {
-          id: 'error',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'error',
           label: '错误信息',

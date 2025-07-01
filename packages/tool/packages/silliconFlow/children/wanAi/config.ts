@@ -99,24 +99,18 @@ export default defineTool({
 
       outputs: [
         {
-          id: 'status',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'status',
           label: '状态',
           description: "操作状态。可选值：'Succeed','InQueue','InProgress','Failed'"
         },
         {
-          id: 'reason',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'reason',
           label: '原因',
           description: '操作原因'
         },
         {
-          id: 'results',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'results',
           label: '结果',

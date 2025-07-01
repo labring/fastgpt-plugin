@@ -100,8 +100,6 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'result',
-          type: FlowNodeOutputTypeEnum.static,
           key: 'result',
           label: '结果',
           description: '执行结果',

@@ -54,24 +54,18 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'info',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'info',
           label: '仓库基本信息',
           description: '包含star数、fork数、描述、语言、topics等'
         },
         {
-          id: 'readme',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'readme',
           label: 'README内容',
           description: '仓库README的markdown原文内容'
         },
         {
-          id: 'license',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'license',
           label: 'License信息',

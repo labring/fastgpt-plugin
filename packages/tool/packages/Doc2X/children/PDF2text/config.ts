@@ -50,24 +50,18 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'result',
-          type: FlowNodeOutputTypeEnum.static,
           key: 'result',
           label: '结果',
           description: '处理结果，由文件名以及文档内容组成，多个文件之间由横线分隔开',
           valueType: WorkflowIOValueTypeEnum.string
         },
         {
-          id: 'error',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'error',
           label: '错误',
           description: '错误信息'
         },
         {
-          id: 'success',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.boolean,
           key: 'success',
           label: '成功',

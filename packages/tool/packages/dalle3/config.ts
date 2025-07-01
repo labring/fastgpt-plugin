@@ -55,16 +55,12 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'link',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'link',
           label: '图片访问链接',
           description: '图片访问链接'
         },
         {
-          id: 'error',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'system_error',
           label: '错误信息',

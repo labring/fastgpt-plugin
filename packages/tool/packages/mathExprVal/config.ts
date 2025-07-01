@@ -36,11 +36,9 @@ export default defineTool({
       outputs: [
         {
           description: '返回的数学表达式结果',
-          id: 'sowtxkCPjvb7',
           key: 'result',
           valueType: WorkflowIOValueTypeEnum.string,
-          label: 'result',
-          type: FlowNodeOutputTypeEnum.static
+          label: 'result'
         }
       ]
     }

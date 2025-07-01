@@ -53,8 +53,6 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'result',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.arrayObject,
           key: 'result',
           label: '搜索结果',

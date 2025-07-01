@@ -116,24 +116,18 @@ export default defineTool({
 
       outputs: [
         {
-          id: 'images',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'images',
           label: '生成的图片',
           description: '生成的图片列表，包含图片 URL 和其他信息'
         },
         {
-          id: 'timings',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'timings',
           label: '推理时间',
           description: '推理过程的时间信息'
         },
         {
-          id: 'seed',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.number,
           key: 'seed',
           label: '随机种子',

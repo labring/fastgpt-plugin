@@ -30,8 +30,6 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'time',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'time',
           label: '时间',

@@ -32,11 +32,9 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'result',
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'result',
-          label: '检索结果',
-          type: FlowNodeOutputTypeEnum.static
+          label: '检索结果'
         }
       ]
     }

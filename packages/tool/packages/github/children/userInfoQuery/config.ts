@@ -46,16 +46,12 @@ export default defineTool({
       ],
       outputs: [
         {
-          id: 'userInfo',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.object,
           key: 'userInfo',
           label: '用户基本信息',
           description: 'GitHub 用户的公开信息，如头像、bio、粉丝数、仓库数等'
         },
         {
-          id: 'repos',
-          type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.arrayObject,
           key: 'repos',
           label: '公开仓库列表',
