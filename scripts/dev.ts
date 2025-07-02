@@ -1,5 +1,5 @@
 import { isProd } from '@/constants';
-import { copyToolIcons } from '@tool/utils/icon';
+import { copyToolIcons } from 'modules/tool/utils/icon';
 import path from 'path';
 import { watch } from 'fs/promises';
 import { $ } from 'bun';
@@ -8,7 +8,7 @@ import { addLog } from '@/utils/log';
 async function copyDevIcons() {
   if (isProd) return;
 
-  const toolsDir = path.join(__dirname, '..', 'packages', 'tool', 'packages');
+  const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
   const publicImgsDir = path.join(__dirname, '..', 'public', 'imgs', 'tools');
 
   await copyToolIcons({

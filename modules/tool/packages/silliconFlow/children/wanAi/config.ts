@@ -1,7 +1,6 @@
 import { defineTool } from '@tool/type';
 import {
   FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
   SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';

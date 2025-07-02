@@ -53,6 +53,12 @@ export const InputType = z
 
 export const OutputType = z.object({
   images: z.array(z.string().url()).describe('List of generated image URLs'),
+  timings: z
+    .object({
+      inference: z.number().describe('Inference time in milliseconds')
+    })
+    .passthrough()
+    .describe('Timing information for the inference process'),
   seed: z.number().describe('Random seed for image generation')
 });
 

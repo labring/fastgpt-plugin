@@ -2,7 +2,7 @@ import { addLog } from '@/utils/log';
 import { $ } from 'bun';
 import fs from 'fs';
 import path from 'path';
-import { copyToolIcons } from '../packages/tool/utils/icon';
+import { copyToolIcons } from '../modules/tool/utils/icon';
 import { autoToolIdPlugin } from './plugin';
 
 // main build
@@ -12,7 +12,7 @@ addLog.info('Main Build complete');
 await $`bun run build:worker`.quiet();
 addLog.info('Worker Build complete');
 
-const toolsDir = path.join(__dirname, '..', 'packages', 'tool', 'packages');
+const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
 const distDir = path.join(__dirname, '..', 'dist', 'tools');
 const tools = fs.readdirSync(toolsDir);
 

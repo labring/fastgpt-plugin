@@ -50,7 +50,7 @@
   },
   "workspaces": [
     "sdk",
-    "packages/tool/packages/*"
+    "modules/tool/packages/*"
   ],
   "packageManager": "bun@1.2.2",
   "lint-staged": {

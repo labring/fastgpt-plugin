@@ -1,11 +1,11 @@
 import { Worker } from 'worker_threads';
-import { getTool } from '@tool/controller';
-import { ToolCallbackReturnSchema } from '../../packages/tool/type/tool';
+import { getTool } from 'modules/tool/controller';
+import { ToolCallbackReturnSchema } from '../../modules/tool/type/tool';
 import { z } from 'zod';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
-import { getErrText } from '@tool/utils/err';
+import { getErrText } from 'modules/tool/utils/err';
 
 type WorkerQueueItem = {
   id: string;
