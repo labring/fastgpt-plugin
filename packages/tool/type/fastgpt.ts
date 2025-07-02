@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export enum NodeInputKeyEnum {
+export enum SystemInputKeyEnum {
   systemInputConfig = 'system_input_config'
 }
 

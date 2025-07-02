@@ -79,7 +79,7 @@ Keys will be saved through symmetric encryption to ensure security.
 ```
 // This field in dalle3's config.ts
 {
-  key: 'system_input_config', // Must be this value
+  key: SystemInputKeyEnum.systemInputConfig, // Must be this value
   label: '', // Leave empty
   inputList: [
 	{

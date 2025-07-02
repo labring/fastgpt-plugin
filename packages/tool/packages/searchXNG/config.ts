@@ -2,6 +2,7 @@ import { defineTool } from '@tool/type';
 import {
   FlowNodeInputTypeEnum,
   FlowNodeOutputTypeEnum,
+  SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
@@ -24,7 +25,7 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          key: 'system_input_config',
+          key: SystemInputKeyEnum.systemInputConfig,
           label: '',
           renderTypeList: [FlowNodeInputTypeEnum.hidden],
           valueType: WorkflowIOValueTypeEnum.object,

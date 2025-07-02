@@ -76,7 +76,7 @@ package.json
 ```
 // dalle3 的 config.ts 中的该字段
 {
-  key: 'system_input_config', // 必须为这个值
+  key: SystemInputKeyEnum.systemInputConfig, // 必须为这个值
   label: '', // 为空即可
   inputList: [
 	{
