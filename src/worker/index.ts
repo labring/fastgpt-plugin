@@ -173,13 +173,6 @@ export async function dispatchWithNewWorker(data: {
     env: {
       NODE_ENV: process.env.NODE_ENV,
       LOG_LEVEL: process.env.LOG_LEVEL
-      // HTTP_PROXY: process.env.HTTP_PROXY,
-      // HTTPS_PROXY: process.env.HTTPS_PROXY,
-      // SOCKS_PROXY: process.env.SOCKS_PROXY,
-      // PROXY_HOST: process.env.PROXY_HOST,
-      // PROXY_PORT: process.env.PROXY_PORT,
-      // PROXY_USERNAME: process.env.PROXY_USERNAME,
-      // PROXY_PASSWORD: process.env.PROXY_PASSWORD
     },
     ...(isBun
       ? {}
