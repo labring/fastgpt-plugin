@@ -16,7 +16,7 @@ export type FileConfig = {
 export const defaultFileConfig: FileConfig = {
   maxFileSize: process.env.MAX_FILE_SIZE ? parseInt(process.env.MAX_FILE_SIZE) : 20 * 1024 * 1024, // 默认 20MB
   retentionDays: process.env.RETENTION_DAYS ? parseInt(process.env.RETENTION_DAYS) : 15, // 默认保留15天
-  endpoint: process.env.MINIO_HOST || 'localhost',
+  endpoint: process.env.MINIO_ENDPOINT || 'localhost',
   port: process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : 9000,
   useSSL: process.env.MINIO_USE_SSL === 'true',
   accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',

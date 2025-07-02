@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { z } from 'zod';
 import { addLog } from '@/utils/log';
+import { getErrText } from '@tool/utils/err';
 
 export const FileInputSchema = z
   .object({
@@ -43,20 +44,20 @@ export class S3Service {
     });
   }
 
-  async initialize(config?: Partial<FileConfig>): Promise<S3Service> {
-    const service = new S3Service(config);
+  async initialize() {
     try {
-      addLog.info(`Checking bucket: ${service.config.bucket}`);
-      const bucketExists = await service.minioClient.bucketExists(service.config.bucket);
+      addLog.info(`Checking bucket: ${this.config.bucket}`);
+      const bucketExists = await this.minioClient.bucketExists(this.config.bucket);
+
       if (!bucketExists) {
-        addLog.info(`Creating bucket: ${service.config.bucket}`);
-        await service.minioClient.makeBucket(service.config.bucket);
+        addLog.info(`Creating bucket: ${this.config.bucket}`);
+        await this.minioClient.makeBucket(this.config.bucket);
       }
 
       // 同时设置访问策略和生命周期规则
       await Promise.all([
-        service.minioClient.setBucketPolicy(
-          service.config.bucket,
+        this.minioClient.setBucketPolicy(
+          this.config.bucket,
           JSON.stringify({
             Version: '2012-10-17',
             Statement: [
@@ -64,18 +65,18 @@ export class S3Service {
                 Effect: 'Allow',
                 Principal: '*',
                 Action: ['s3:GetObject'],
-                Resource: [`arn:aws:s3:::${service.config.bucket}/*`]
+                Resource: [`arn:aws:s3:::${this.config.bucket}/*`]
               }
             ]
           })
         ),
-        service.minioClient.setBucketLifecycle(service.config.bucket, {
+        this.minioClient.setBucketLifecycle(this.config.bucket, {
           Rule: [
             {
               ID: 'AutoDeleteRule',
               Status: 'Enabled',
               Expiration: {
-                Days: service.config.retentionDays,
+                Days: this.config.retentionDays,
                 DeleteMarker: false,
                 DeleteAll: false
               }
@@ -85,15 +86,17 @@ export class S3Service {
       ]);
 
       addLog.info(
-        `Bucket ${service.config.bucket} configured successfully with ${service.config.retentionDays} days retention`
+        `Bucket initialized, ${this.config.bucket} configured successfully with ${this.config.retentionDays} days retention`
       );
-      addLog.info('FileService initialized successfully');
-      return service;
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('Method Not Allowed')) {
+    } catch (error: any) {
+      const errMsg = getErrText(error);
+      if (errMsg.includes('Method Not Allowed')) {
         addLog.warn(
           'Method Not Allowed - bucket may exist with different permissions,check document for more details'
         );
+      } else if (errMsg.includes('Access Denied.')) {
+        addLog.warn('Access Denied - check your access key and secret key');
+        return;
       }
       return Promise.reject(error);
     }

@@ -107,7 +107,7 @@ export default defineTool({
         },
         {
           key: 'image',
-          label: '上传图片',
+          label: '参考图',
           description:
             '需要上传的图片应转换为 base64 格式，如 "data:image/png;base64, XXX"。例如："data:image/png;base64, XXX"',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
