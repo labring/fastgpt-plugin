@@ -18,7 +18,7 @@ export default defineTool({
     en: 'Call Dalle3 Interface to Draw'
   },
   icon: 'common/openai',
-  courseUrl: 'https://open.noedgeai.com',
+  courseUrl: 'https://openai.com',
   versionList: [
     {
       value: '0.1.0',
