@@ -23,14 +23,14 @@ export const InputType = z
     prompt: data.prompt || data.绘图提示词
   }));
 export const OutputType = z.object({
-  错误信息: z.string().optional(), // 兼容旧版的错误信息
+  error: z.string().optional(), // 兼容旧版的错误信息
   图片访问链接: z.string().optional(), // 兼容旧版的图片访问链接
   system_error: z.string().optional(),
   link: z.string().optional()
 });
 
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  const { prompt, url, authorization } = props;
+  const { prompt, url, authorization, 绘图提示词: old_prompt } = props;
 
   try {
     const { data } = await axios.post<{
@@ -62,14 +62,20 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
       defaultFilename: 'dalle3.png'
     });
 
-    return {
-      图片访问链接: uploadResult.accessUrl,
-      link: uploadResult.accessUrl
-    };
+    if (old_prompt) {
+      return {
+        图片访问链接: uploadResult.accessUrl
+      };
+    } else {
+      return {
+        link: uploadResult.accessUrl
+      };
+    }
   } catch (error: any) {
+    const errorMessage = getErrText(error);
     return {
-      错误信息: getErrText(error),
-      system_error: getErrText(error)
+      error: errorMessage,
+      system_error: errorMessage
     };
   }
 }
