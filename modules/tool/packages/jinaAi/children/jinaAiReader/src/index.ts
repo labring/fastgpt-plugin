@@ -2,37 +2,52 @@ import { z } from 'zod';
 import { getErrText } from '@tool/utils/err';
 
 // 输入参数类型定义
-export const InputType = z.object({
-  url: z.string().url('请提供有效的URL地址').describe('要提取内容的网页URL'),
-  apiKey: z.string().min(1, 'API密钥不能为空').describe('Jina AI API密钥'),
-  timeout: z.number().min(1).max(300).optional().describe('请求超时时间（秒），默认30秒'),
-  returnFormat: z
-    .enum(['default', 'markdown', 'html', 'text', 'screenshot', 'pageshot'])
-    .optional()
-    .describe('内容返回格式，默认default')
-});
+export const InputType = z
+  .object({
+    url: z.string().url('请提供有效的URL地址').describe('要提取内容的网页URL'),
+    apiKey: z.string().min(1, 'API密钥不能为空').describe('Jina AI API密钥'),
+    timeout: z.number().min(1).max(300).optional().describe('请求超时时间（秒），默认30秒'),
+    returnFormat: z
+      .enum(['default', 'markdown', 'html', 'text', 'screenshot', 'pageshot'])
+      .optional()
+      .describe('内容返回格式，默认default')
+  })
+  .refine(
+    (val) => {
+      // 验证URL格式
+      try {
+        const urlObj = new URL(val.url);
+        return ['http:', 'https:'].includes(urlObj.protocol);
+      } catch {
+        return false;
+      }
+    },
+    {
+      message: 'URL格式不正确，请提供有效的HTTP/HTTPS网页地址',
+      path: ['url']
+    }
+  )
+  .refine(
+    (val) => {
+      // 验证API密钥格式
+      return val.apiKey.startsWith('jina_') && val.apiKey.length >= 25;
+    },
+    {
+      message: 'API密钥格式无效，请确保使用以"jina_"开头的有效密钥',
+      path: ['apiKey']
+    }
+  );
 
 // 输出结果类型定义
-export const OutputType = z.any().describe('Jina AI Reader API的响应内容');
-
-/**
- * 验证URL格式
- */
-function isValidUrl(url: string): boolean {
-  try {
-    const urlObj = new URL(url);
-    return ['http:', 'https:'].includes(urlObj.protocol);
-  } catch {
-    return false;
-  }
-}
-
-/**
- * 验证API密钥格式
- */
-function validateApiKey(apiKey: string): boolean {
-  return apiKey.startsWith('jina_') && apiKey.length >= 25;
-}
+export const OutputType = z
+  .object({
+    code: z.number().describe('响应状态码'),
+    title: z.string().describe('网页标题'),
+    description: z.string().describe('网页描述'),
+    url: z.string().describe('页面URL'),
+    content: z.string().describe('网页内容')
+  })
+  .describe('Jina AI Reader API的响应内容');
 
 /**
  * 构建Jina Reader请求URL
@@ -53,7 +68,7 @@ function buildHeaders(
     Accept: 'application/json',
     Authorization: `Bearer ${apiKey}`,
     'X-Timeout': timeout.toString(),
-    'User-Agent': 'FastGPT-JinaAI-Plugin/2.0.0'
+    'User-Agent': 'FastGPT-JinaAI-Plugin/0.1.0'
   };
 
   // 根据格式设置X-Return-Format头
@@ -73,15 +88,47 @@ function processResponse(response: Response, responseText: string): any {
   // 尝试解析JSON
   if (contentType.includes('application/json')) {
     try {
-      return JSON.parse(responseText);
+      const jsonData = JSON.parse(responseText);
+
+      // 如果是Jina AI的标准响应格式
+      if (jsonData.code === 200 && jsonData.status === 20000 && jsonData.data) {
+        return {
+          code: jsonData.code || 200,
+          title: jsonData.data.title || '',
+          description: jsonData.data.description || '',
+          url: jsonData.data.url || '',
+          content: jsonData.data.content || ''
+        };
+      }
+
+      // 其他JSON格式的处理
+      return {
+        code: jsonData.code || 200,
+        title: jsonData.title || '',
+        description: jsonData.description || '',
+        url: jsonData.url || '',
+        content: jsonData.content || JSON.stringify(jsonData)
+      };
     } catch (error) {
       console.warn('JSON解析失败，返回原始文本:', error);
-      return { content: responseText, type: 'text' };
+      return {
+        code: 200,
+        title: '',
+        description: '',
+        url: '',
+        content: responseText
+      };
     }
   }
 
   // 非JSON内容返回包装对象
-  return { content: responseText, type: 'raw' };
+  return {
+    code: 200,
+    title: '',
+    description: '',
+    url: '',
+    content: responseText
+  };
 }
 
 /**
@@ -154,21 +201,13 @@ async function extractWebContent(
 /**
  * Jina AI Reader 工具主函数
  */
-export async function tool(props: z.infer<typeof InputType>): Promise<any> {
+export async function tool(
+  props: z.infer<typeof InputType>
+): Promise<{ code: number; title: string; description: string; url: string; content: string }> {
   try {
-    // 使用 zod 进行参数验证
+    // 使用 zod 进行参数验证（包括 refine 验证）
     const validatedProps = InputType.parse(props);
     const { url, apiKey, timeout = 30, returnFormat = 'default' } = validatedProps;
-
-    // 额外的URL格式验证
-    if (!isValidUrl(url)) {
-      throw new Error('URL格式不正确，请提供有效的HTTP/HTTPS网页地址');
-    }
-
-    // 额外的API密钥格式验证
-    if (!validateApiKey(apiKey)) {
-      throw new Error('API密钥格式无效，请确保使用以"jina_"开头的有效密钥');
-    }
 
     // 执行网页内容提取
     const result = await extractWebContent(url, apiKey, timeout, returnFormat);

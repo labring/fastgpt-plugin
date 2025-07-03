@@ -16,12 +16,11 @@ export default defineTool({
     'zh-CN': '基于 Jina AI Reader 的智能网页内容解析工具，支持多种格式输出',
     en: 'Intelligent web content parsing powered by Jina AI Reader with multiple output formats'
   },
-  icon: 'core/workflow/template/jinaReader',
   courseUrl: 'https://jina.ai/reader/',
-  author: 'FastGPT',
+  author: 'Xuyupeng',
   versionList: [
     {
-      value: '2.0.0',
+      value: '0.1.0',
       description: 'Enhanced version with comprehensive format support',
       inputs: [
         {
@@ -57,8 +56,7 @@ export default defineTool({
           valueType: WorkflowIOValueTypeEnum.number,
           defaultValue: 30,
           min: 1,
-          max: 300,
-          toolDescription: '请求超时时间（秒）'
+          max: 300
         },
         {
           key: 'returnFormat',
@@ -69,23 +67,46 @@ export default defineTool({
           selectedTypeIndex: 0,
           valueType: WorkflowIOValueTypeEnum.string,
           list: [
-            { label: '默认（针对大多数网站和大模型输入进行优化）', value: 'default' },
+            { label: '默认（针对大多数网站和大模型输入优化的默认管道）', value: 'default' },
             { label: 'Markdown', value: 'markdown' },
             { label: 'HTML源码', value: 'html' },
             { label: '纯文本', value: 'text' },
             { label: '页面截图', value: 'screenshot' },
             { label: '完整截图', value: 'pageshot' }
           ],
-          defaultValue: 'default',
-          toolDescription: '内容输出格式'
+          defaultValue: 'default'
         }
       ],
       outputs: [
         {
-          key: 'result',
-          label: '解析结果',
-          description: '网页内容解析结果',
-          valueType: WorkflowIOValueTypeEnum.object
+          key: 'code',
+          label: '响应状态码',
+          description: 'API响应的状态码',
+          valueType: WorkflowIOValueTypeEnum.number
+        },
+        {
+          key: 'title',
+          label: '页面标题',
+          description: '网页的标题信息',
+          valueType: WorkflowIOValueTypeEnum.string
+        },
+        {
+          key: 'description',
+          label: '页面描述',
+          description: '网页的描述信息',
+          valueType: WorkflowIOValueTypeEnum.string
+        },
+        {
+          key: 'url',
+          label: '页面URL',
+          description: '解析的网页URL地址',
+          valueType: WorkflowIOValueTypeEnum.string
+        },
+        {
+          key: 'content',
+          label: '页面内容',
+          description: '网页的主要内容',
+          valueType: WorkflowIOValueTypeEnum.string
         }
       ]
     }
