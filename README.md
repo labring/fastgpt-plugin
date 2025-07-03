@@ -17,23 +17,24 @@ Deeply **modularize** FastGPT to achieve maximum **extensibility**.
 
 ## Expansion Modules
 
-- [x] System Tools  
-- [ ] RAG Algorithm  
-- [ ] Agent Strategy  
-- [ ] Third-party Integration  
+- [x] System Tools
+- [ ] RAG Algorithm
+- [ ] Agent Strategy
+- [ ] Third-party Integration
 
 ## System Tool Features
 
-- [x] Independent tool execution  
-- [ ] Hot-swappable plugins  
-- [ ] Secure and elegant secret configuration  
-- [ ] Visual debugging support  
-- [ ] Reverse invocation of FastGPT  
-- [ ] Plugin version management  
-- [ ] SSE streaming response support  
-- [ ] Enhanced security policies  
+- [x] Independent tool execution
+- [ ] Hot-swappable plugins
+- [ ] Secure and elegant secret configuration
+- [ ] Visual debugging support
+- [ ] Reverse invocation of FastGPT
+- [ ] Plugin version management
+- [ ] SSE streaming response support
+- [ ] Enhanced security policies
 
 ## Documentation & Development Guides
 
 - [Plugin design document](https://doc.tryfastgpt.ai/docs/development/design/design_plugin)
-- [System tool development guide](https://doc.tryfastgpt.ai/docs/guide/plugins/dev_system_tool)  
+- [System tool development guide](https://doc.tryfastgpt.ai/docs/guide/plugins/dev_system_tool)
+- [Development Specifications](./dev.md)
