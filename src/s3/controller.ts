@@ -113,7 +113,7 @@ export class S3Service {
         ? `:${this.config.port}`
         : '';
 
-    const customEndpoint = process.env.CUSTOM_CUSTOM_ENDPOINT;
+    const customEndpoint = process.env.MINIO_CUSTOM_ENDPOINT;
     return customEndpoint
       ? `${customEndpoint}/${encodeURIComponent(filename)}`
       : `${protocol}://${this.config.endpoint}${port}/${this.config.bucket}/${encodeURIComponent(filename)}`;
