@@ -13,7 +13,7 @@ export default defineTool({
     en: 'Bocha Search'
   },
   icon: 'core/workflow/template/bocha',
-  type: ToolTypeEnum.tools,
+  type: ToolTypeEnum.search,
   description: {
     'zh-CN': '使用博查AI搜索引擎进行网络搜索。',
     en: 'Use Bocha AI search engine for web search.'
