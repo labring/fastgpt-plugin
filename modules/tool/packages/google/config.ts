@@ -1,11 +1,7 @@
 import { defineTool } from '@tool/type';
-import {
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  SystemInputKeyEnum,
-  WorkflowIOValueTypeEnum
-} from '@tool/type/fastgpt';
+import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
+import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   type: ToolTypeEnum.search,
@@ -25,28 +21,22 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object,
-          inputList: [
-            {
-              key: 'key',
-              label: 'key',
-              description: 'Google搜索key',
-              required: true,
-              inputType: 'secret'
-            },
-            {
-              key: 'cx',
-              label: 'cx',
-              description: 'Google搜索cxID',
-              required: true,
-              inputType: 'secret'
-            }
-          ]
-        },
+        defineInputConfig([
+          {
+            key: 'key',
+            label: 'key',
+            description: 'Google搜索key',
+            required: true,
+            inputType: 'secret'
+          },
+          {
+            key: 'cx',
+            label: 'cx',
+            description: 'Google搜索cxID',
+            required: true,
+            inputType: 'secret'
+          }
+        ]),
         {
           renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           selectedTypeIndex: 0,

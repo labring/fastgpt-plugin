@@ -2,6 +2,12 @@ import type { z } from 'zod';
 import type { ToolSetConfigType } from '@tool/type';
 import { ToolConfigSchema, ToolSchema, type SystemVarType } from '@tool/type/tool';
 import type { ToolListItemType } from '@tool/type/api';
+import {
+  FlowNodeInputTypeEnum,
+  SystemInputKeyEnum,
+  WorkflowIOValueTypeEnum,
+  type InputConfigSchema
+} from '@tool/type/fastgpt';
 
 export const exportTool = <T extends z.Schema, D extends z.Schema>({
   toolCb,
@@ -63,4 +69,14 @@ export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItem
     currentCost: 0,
     hasTokenFee: false
   }));
+}
+
+export function defineInputConfig(inputList: Array<z.infer<typeof InputConfigSchema>>) {
+  return {
+    key: SystemInputKeyEnum.systemInputConfig,
+    label: '',
+    inputList,
+    renderTypeList: [FlowNodeInputTypeEnum.hidden],
+    valueType: WorkflowIOValueTypeEnum.object
+  };
 }

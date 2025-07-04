@@ -5,6 +5,7 @@ import {
   SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
+import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   name: {
@@ -20,20 +21,14 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object,
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'Search API Key',
-              required: true,
-              inputType: 'secret'
-            }
-          ]
-        },
+        defineInputConfig([
+          {
+            key: 'apiKey',
+            label: 'Search API Key',
+            required: true,
+            inputType: 'secret'
+          }
+        ]),
         {
           key: 'q',
           label: '搜索关键词',
