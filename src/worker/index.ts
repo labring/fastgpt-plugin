@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
+import { getErrText } from '@tool/utils/err';
 
 type WorkerQueueItem = {
   id: string;
@@ -159,8 +160,9 @@ export async function dispatchWithNewWorker(data: {
   toolId: string;
   inputs: Record<string, any>;
   systemVar: Record<string, any>;
+  onMessage?: (message: { type: string; data: any }) => void; // streaming callback 可选
 }) {
-  const { toolId } = data;
+  const { toolId, onMessage } = data;
   const tool = getTool(toolId);
 
   if (!tool || !tool.cb) {
@@ -186,56 +188,81 @@ export async function dispatchWithNewWorker(data: {
   const resolvePromise = new Promise<z.infer<typeof ToolCallbackReturnSchema>>(
     (resolve, reject) => {
       worker.on('message', async ({ type, data }: Worker2MainMessageType) => {
-        if (type === 'success') {
-          resolve(data);
-          worker.terminate();
-        } else if (type === 'error') {
-          reject(data);
-          worker.terminate();
-        } else if (type === 'log') {
-          const logData = Array.isArray(data) ? data : [data];
-          console.log(...logData);
-        } else if (type === 'uploadFile') {
-          try {
-            const result = await global.s3Server.uploadFileAdvanced(data);
-            worker.postMessage({
-              type: 'uploadFileResponse',
-              data: {
-                data: result
-              }
-            });
-          } catch (error) {
-            addLog.error(`Tool upload file error`, error);
-            worker.postMessage({
-              type: 'uploadFileResponse',
-              data: {
-                error: 'Tool upload file error'
-              }
-            });
+        switch (type) {
+          case 'log': {
+            const logData = Array.isArray(data) ? data : [data];
+            console.log(...logData);
+            break;
+          }
+          case 'success': {
+            if (onMessage) onMessage({ type: 'success', data });
+            worker.terminate();
+            resolve(data);
+            break;
+          }
+          case 'error': {
+            if (onMessage) onMessage({ type: 'error', data: { error: getErrText(data) } });
+            worker.terminate();
+            reject(new Error(getErrText(data)));
+            break;
+          }
+          case 'answer': {
+            if (onMessage) onMessage({ type: 'answer', data });
+            break;
+          }
+          case 'fastAnswer': {
+            if (onMessage) onMessage({ type: 'fastAnswer', data });
+            worker.terminate();
+            resolve(data);
+            break;
+          }
+          case 'uploadFile': {
+            try {
+              const result = await global.s3Server.uploadFileAdvanced(data);
+              worker.postMessage({
+                type: 'uploadFileResponse',
+                data: { data: result }
+              });
+            } catch (error) {
+              addLog.error(`Tool upload file error`, error);
+              worker.postMessage({
+                type: 'uploadFileResponse',
+                data: { error: 'Tool upload file error' }
+              });
+            }
+            break;
           }
         }
       });
 
-      worker.on('error', (err) => {
-        addLog.error(`Run tool error`, err);
-        reject(err);
-        worker.terminate();
+      worker.on('error', (error) => {
+        if (onMessage) onMessage({ type: 'error', data: { error: getErrText(error) } });
+        reject(error);
       });
-      worker.on('messageerror', (err) => {
-        addLog.error(`Run tool error`, err);
-        reject(err);
-        worker.terminate();
+
+      worker.on('messageerror', (error) => {
+        if (onMessage) onMessage({ type: 'error', data: { error: getErrText(error) } });
+        reject(error);
+      });
+
+      worker.on('exit', (code) => {
+        if (code !== 0) {
+          const error = new Error(`Worker stopped with exit code ${code}`);
+          if (onMessage) onMessage({ type: 'error', data: { error: getErrText(error) } });
+          reject(error);
+        }
       });
 
       worker.postMessage({
         type: 'runTool',
         data: {
           toolDirName: tool.toolDirName,
-          ...data
+          toolId: data.toolId,
+          inputs: data.inputs,
+          systemVar: data.systemVar
         }
       });
     }
   );
-
   return resolvePromise;
 }
