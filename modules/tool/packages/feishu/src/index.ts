@@ -13,31 +13,22 @@ export const OutputType = z.object({
   })
 });
 
+// support json or plaintext:
+// if json, just return it (for supporting customized message)
+// if plaintext, wrap it with json
 function format(content: string) {
   try {
-    const parseData = JSON.parse(content);
-    if (typeof parseData === 'object') {
-      return parseData;
-    }
-    addLog.info('Feishu tool format content', {
-      content,
-      parseData
-    });
+    return JSON.parse(content);
+  } catch (err) {
     return {
       msg_type: 'text',
       content: {
         text: content
       }
     };
-  } catch (err) {
-    return {
-      msg_type: 'text',
-      content: {
-        text: err
-      }
-    };
   }
 }
+
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const { content, hook_url } = props;
   const data = format(content);
