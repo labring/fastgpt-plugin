@@ -1,6 +1,6 @@
 import path from 'path';
 import { isProd } from '@/constants';
-import type { ToolType, ToolConfigWithCbType, ToolSetConfigType } from './type';
+import type { ToolType, ToolConfigWithCbType, ToolSetType } from './type';
 import { tools } from './constants';
 import fs from 'fs';
 import { addLog } from '@/utils/log';
@@ -26,7 +26,7 @@ export const LoadToolsByFilename = async (
   const tools: ToolType[] = [];
 
   const toolRootPath = path.join(basePath, filename);
-  const rootMod = (await import(toolRootPath)).default as ToolConfigWithCbType | ToolSetConfigType;
+  const rootMod = (await import(toolRootPath)).default as ToolConfigWithCbType | ToolSetType;
   const defaultIcon = `/imgs/tools/${filename.split('.')[0]}.svg`;
 
   if ('children' in rootMod) {
