@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { getErrText } from '@tool/utils/err';
 
 // 输入参数类型定义
 export const InputType = z.object({
@@ -87,20 +86,22 @@ const executeWithRetry = async (
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'Unknown error');
-          throw new Error(`HTTP ${response.status}: ${response.statusText}. ${errorText}`);
+          return Promise.reject(
+            new Error(`HTTP ${response.status}: ${response.statusText}. ${errorText}`)
+          );
         }
 
         const data = await response.json();
 
         // 验证响应数据结构
         if (!data || typeof data !== 'object') {
-          throw new Error('Invalid response format from Jina AI API');
+          return Promise.reject(new Error('Invalid response format from Jina AI API'));
         }
 
         return data;
       } catch (error) {
         clearTimeout(timeoutId);
-        throw error;
+        return Promise.reject(error);
       }
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -124,8 +125,8 @@ const executeWithRetry = async (
     }
   }
 
-  throw new Error(
-    `搜索请求失败，已达到最大重试次数(${maxRetries})。最后错误: ${lastError.message}`
+  return Promise.reject(
+    new Error(`搜索请求失败，已达到最大重试次数(${maxRetries})。最后错误: ${lastError.message}`)
   );
 };
 
@@ -133,31 +134,29 @@ const executeWithRetry = async (
  * Jina AI 搜索工具主函数
  */
 export async function tool(props: z.infer<typeof InputType>): Promise<any> {
+  const {
+    query,
+    apiKey,
+    country,
+    language,
+    timeout = 30,
+    readFullContent = false,
+    withFavicons = false
+  } = props;
+
+  // 额外的API密钥格式验证
+  if (!validateApiKey(apiKey)) {
+    return Promise.reject(new Error('API密钥格式无效，请确保使用以"jina_"开头的有效密钥'));
+  }
+
+  // 清理查询词
+  const cleanQuery = query.trim();
+  if (cleanQuery.length === 0) {
+    return Promise.reject(new Error('搜索查询词不能为空或仅包含空白字符'));
+  }
+
+  // 执行搜索
   try {
-    // 使用 zod 进行参数验证
-    const validatedProps = InputType.parse(props);
-    const {
-      query,
-      apiKey,
-      country,
-      language,
-      timeout = 30,
-      readFullContent = false,
-      withFavicons = false
-    } = validatedProps;
-
-    // 额外的API密钥格式验证
-    if (!validateApiKey(apiKey)) {
-      throw new Error('API密钥格式无效，请确保使用以"jina_"开头的有效密钥');
-    }
-
-    // 清理查询词
-    const cleanQuery = query.trim();
-    if (cleanQuery.length === 0) {
-      throw new Error('搜索查询词不能为空或仅包含空白字符');
-    }
-
-    // 执行搜索
     const result = await executeWithRetry(
       cleanQuery,
       apiKey,
@@ -167,21 +166,11 @@ export async function tool(props: z.infer<typeof InputType>): Promise<any> {
       readFullContent,
       withFavicons
     );
-
     return result;
   } catch (error) {
-    // 统一错误处理
-    if (error instanceof z.ZodError) {
-      const errorMessages = error.errors
-        .map((err) => `${err.path.join('.')}: ${err.message}`)
-        .join('; ');
-      throw new Error(`参数验证失败: ${errorMessages}`);
-    }
-
     if (error instanceof Error) {
-      throw error;
+      return Promise.reject(error);
     }
-
-    throw new Error(`未知错误: ${String(error)}`);
+    return Promise.reject(new Error(`未知错误: ${String(error)}`));
   }
 }

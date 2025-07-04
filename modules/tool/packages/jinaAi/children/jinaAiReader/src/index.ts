@@ -1,27 +1,15 @@
 import { z } from 'zod';
-import { getErrText } from '@tool/utils/err';
 
 // 输入参数类型定义
-export const InputType = z
-  .object({
-    url: z.string().url('请提供有效的URL地址').describe('要提取内容的网页URL'),
-    apiKey: z.string().describe('Jina AI API密钥'),
-    timeout: z.number().min(1).max(300).optional().describe('请求超时时间（秒），默认30秒'),
-    returnFormat: z
-      .enum(['default', 'markdown', 'html', 'text', 'screenshot', 'pageshot'])
-      .optional()
-      .describe('内容返回格式，默认default')
-  })
-  .refine(
-    (val) => {
-      // 验证API密钥格式
-      return val.apiKey.startsWith('jina_') && val.apiKey.length >= 25;
-    },
-    {
-      message: 'API密钥格式无效，请确保使用以"jina_"开头的有效密钥',
-      path: ['apiKey']
-    }
-  );
+export const InputType = z.object({
+  url: z.string().url('请提供有效的URL地址').describe('要提取内容的网页URL'),
+  apiKey: z.string().describe('Jina AI API密钥'),
+  timeout: z.number().min(1).max(300).optional().describe('请求超时时间（秒），默认30秒'),
+  returnFormat: z
+    .enum(['default', 'markdown', 'html', 'text', 'screenshot', 'pageshot'])
+    .optional()
+    .describe('内容返回格式，默认default')
+});
 
 // 输出结果类型定义
 export const OutputType = z
@@ -33,6 +21,13 @@ export const OutputType = z
     content: z.string().describe('网页内容')
   })
   .describe('Jina AI Reader API的响应内容');
+
+/**
+ * 验证API密钥格式
+ */
+const validateApiKey = (apiKey: string): boolean => {
+  return apiKey.startsWith('jina_') && apiKey.length >= 25;
+};
 
 /**
  * 构建Jina Reader请求URL
@@ -202,19 +197,19 @@ async function extractWebContent(
 export async function tool(
   props: z.infer<typeof InputType>
 ): Promise<{ code: number; title: string; description: string; url: string; content: string }> {
-  try {
-    // 使用 zod 进行参数验证（包括 refine 验证）
-    const validatedProps = InputType.parse(props);
-    const { url, apiKey, timeout = 30, returnFormat = 'default' } = validatedProps;
+  const { url, apiKey, timeout = 30, returnFormat = 'default' } = props;
 
+  // 添加API密钥格式验证
+  if (!validateApiKey(apiKey)) {
+    return Promise.reject(new Error('API密钥格式无效，请确保使用以"jina_"开头的有效密钥'));
+  }
+
+  try {
     // 执行网页内容提取
     const result = await extractWebContent(url, apiKey, timeout, returnFormat);
     return result;
   } catch (error) {
-    if (error instanceof Error) {
-      return Promise.reject(error);
-    }
-
-    return Promise.reject(new Error(getErrText(error, '网页内容提取过程中发生未知错误')));
+    const errorMessage = error instanceof Error ? error.message : '网页内容提取过程中发生未知错误';
+    return Promise.reject(new Error(errorMessage));
   }
 }
