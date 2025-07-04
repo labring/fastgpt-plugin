@@ -26,16 +26,17 @@ export const LoadToolsByFilename = async (
   const tools: ToolType[] = [];
 
   const toolRootPath = path.join(basePath, filename);
-  const rootMod = (await import(toolRootPath)).default as ToolConfigWithCbType | ToolSetType;
+  const rootMod = (await import(toolRootPath)).default as ToolSetType;
   const defaultIcon = `/imgs/tools/${filename.split('.')[0]}.svg`;
 
-  if ('children' in rootMod) {
-    // is toolSet
+  if ('children' in rootMod || fs.existsSync(path.join(toolRootPath, 'children'))) {
     const toolsetId = isProd ? rootMod.toolId! : filename;
     const icon = rootMod.icon || defaultIcon;
 
+    // is toolSet
     tools.push({
       ...rootMod,
+      type: rootMod.type || ToolTypeEnum.other,
       toolId: toolsetId,
       icon,
       toolDirName: filename,
