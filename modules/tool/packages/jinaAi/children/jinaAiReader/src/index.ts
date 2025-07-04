@@ -78,26 +78,22 @@ function processResponse(response: Response, responseText: string, returnFormat:
       // 如果是Jina AI的标准响应格式
       if (jsonData.code === 200 && jsonData.status === 20000 && jsonData.data) {
         // 根据returnFormat确定要提取的内容字段
-        let content = '';
-        switch (returnFormat) {
-          case 'html':
-            content = jsonData.data.html || '';
-            break;
-          case 'text':
-            content = jsonData.data.text || '';
-            break;
-          case 'screenshot':
-            content = jsonData.data.screenshotUrl || '';
-            break;
-          case 'pageshot':
-            content = jsonData.data.pageshotUrl || '';
-            break;
-          case 'markdown':
-          case 'default':
-          default:
-            content = jsonData.data.content || '';
-            break;
-        }
+        const content = (() => {
+          switch (returnFormat) {
+            case 'html':
+              return jsonData.data.html || '';
+            case 'text':
+              return jsonData.data.text || '';
+            case 'screenshot':
+              return jsonData.data.screenshotUrl || '';
+            case 'pageshot':
+              return jsonData.data.pageshotUrl || '';
+            case 'markdown':
+            case 'default':
+            default:
+              return jsonData.data.content || '';
+          }
+        })();
 
         return {
           code: jsonData.code || 200,
