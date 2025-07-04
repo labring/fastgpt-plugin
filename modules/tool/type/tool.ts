@@ -27,7 +27,11 @@ export const ToolCallbackReturnSchema = z.object({
 });
 export const ToolCallbackType = z
   .function()
-  .args(z.any(), SystemVarSchema)
+  .args(
+    z.any(),
+    SystemVarSchema,
+    z.function().args(z.any()).returns(z.void()).optional() // sendMessage
+  )
   .returns(z.promise(ToolCallbackReturnSchema));
 
 export enum ToolTypeEnum {
