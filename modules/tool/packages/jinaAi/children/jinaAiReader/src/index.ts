@@ -5,28 +5,13 @@ import { getErrText } from '@tool/utils/err';
 export const InputType = z
   .object({
     url: z.string().url('请提供有效的URL地址').describe('要提取内容的网页URL'),
-    apiKey: z.string().min(1, 'API密钥不能为空').describe('Jina AI API密钥'),
+    apiKey: z.string().describe('Jina AI API密钥'),
     timeout: z.number().min(1).max(300).optional().describe('请求超时时间（秒），默认30秒'),
     returnFormat: z
       .enum(['default', 'markdown', 'html', 'text', 'screenshot', 'pageshot'])
       .optional()
       .describe('内容返回格式，默认default')
   })
-  .refine(
-    (val) => {
-      // 验证URL格式
-      try {
-        const urlObj = new URL(val.url);
-        return ['http:', 'https:'].includes(urlObj.protocol);
-      } catch {
-        return false;
-      }
-    },
-    {
-      message: 'URL格式不正确，请提供有效的HTTP/HTTPS网页地址',
-      path: ['url']
-    }
-  )
   .refine(
     (val) => {
       // 验证API密钥格式
@@ -82,7 +67,7 @@ function buildHeaders(
 /**
  * 处理响应内容
  */
-function processResponse(response: Response, responseText: string): any {
+function processResponse(response: Response, responseText: string, returnFormat: string): any {
   const contentType = response.headers.get('content-type') || '';
 
   // 尝试解析JSON
@@ -92,12 +77,34 @@ function processResponse(response: Response, responseText: string): any {
 
       // 如果是Jina AI的标准响应格式
       if (jsonData.code === 200 && jsonData.status === 20000 && jsonData.data) {
+        // 根据returnFormat确定要提取的内容字段
+        let content = '';
+        switch (returnFormat) {
+          case 'html':
+            content = jsonData.data.html || '';
+            break;
+          case 'text':
+            content = jsonData.data.text || '';
+            break;
+          case 'screenshot':
+            content = jsonData.data.screenshotUrl || '';
+            break;
+          case 'pageshot':
+            content = jsonData.data.pageshotUrl || '';
+            break;
+          case 'markdown':
+          case 'default':
+          default:
+            content = jsonData.data.content || '';
+            break;
+        }
+
         return {
           code: jsonData.code || 200,
           title: jsonData.data.title || '',
           description: jsonData.data.description || '',
           url: jsonData.data.url || '',
-          content: jsonData.data.content || ''
+          content: content
         };
       }
 
@@ -132,70 +139,65 @@ function processResponse(response: Response, responseText: string): any {
 }
 
 /**
- * 网页内容提取（带重试机制）
+ * 网页内容提取（递归重试机制）
  */
 async function extractWebContent(
   url: string,
   apiKey: string,
   timeout: number,
   returnFormat: string,
-  maxRetries: number = 2
+  retry: number = 3
 ): Promise<any> {
-  const jinaUrl = buildJinaUrl(url);
-  const headers = buildHeaders(apiKey, timeout, returnFormat);
-  let lastError: Error = new Error('未知错误');
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), (timeout + 10) * 1000);
-
-      try {
-        const response = await fetch(jinaUrl, {
-          method: 'GET',
-          headers,
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => 'Unknown error');
-          throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
-        }
-
-        const responseText = await response.text();
-
-        if (!responseText || responseText.trim() === '') {
-          throw new Error('服务器返回空响应');
-        }
-
-        return processResponse(response, responseText);
-      } catch (error) {
-        clearTimeout(timeoutId);
-        throw error;
-      }
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      console.error(`Jina Reader尝试 ${attempt}/${maxRetries} 失败:`, {
-        attempt,
-        error: lastError.message,
-        url: url.substring(0, 100) + (url.length > 100 ? '...' : '')
-      });
-
-      if (attempt === maxRetries) {
-        break;
-      }
-
-      // 简单重试延迟
-      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-    }
+  if (retry <= 0) {
+    return Promise.reject(new Error('网页内容提取失败，已达到最大重试次数'));
   }
 
-  throw new Error(
-    `网页内容提取失败，已达到最大重试次数(${maxRetries})。最后错误: ${lastError.message}`
-  );
+  const jinaUrl = buildJinaUrl(url);
+  const headers = buildHeaders(apiKey, timeout, returnFormat);
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), (timeout + 10) * 1000);
+
+    try {
+      const response = await fetch(jinaUrl, {
+        method: 'GET',
+        headers,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        return Promise.reject(
+          new Error(`HTTP ${response.status}: ${errorText || response.statusText}`)
+        );
+      }
+
+      const responseText = await response.text();
+
+      if (!responseText || responseText.trim() === '') {
+        return Promise.reject(new Error('服务器返回空响应'));
+      }
+
+      return processResponse(response, responseText, returnFormat);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      return Promise.reject(error);
+    }
+  } catch (error) {
+    console.error(`Jina Reader尝试失败，剩余重试次数: ${retry - 1}`, {
+      error: error instanceof Error ? error.message : String(error),
+      url: url.substring(0, 100) + (url.length > 100 ? '...' : '')
+    });
+
+    // 简单重试延迟
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 递归重试
+    return extractWebContent(url, apiKey, timeout, returnFormat, retry - 1);
+  }
 }
 
 /**
@@ -213,18 +215,10 @@ export async function tool(
     const result = await extractWebContent(url, apiKey, timeout, returnFormat);
     return result;
   } catch (error) {
-    // 统一错误处理
-    if (error instanceof z.ZodError) {
-      const errorMessages = error.errors
-        .map((err) => `${err.path.join('.')}: ${err.message}`)
-        .join('; ');
-      throw new Error(`参数验证失败: ${errorMessages}`);
-    }
-
     if (error instanceof Error) {
-      throw error;
+      return Promise.reject(error);
     }
 
-    throw new Error(getErrText(error, '网页内容提取过程中发生未知错误'));
+    return Promise.reject(new Error(getErrText(error, '网页内容提取过程中发生未知错误')));
   }
 }

@@ -17,7 +17,6 @@ export default defineTool({
     en: 'Intelligent web content parsing powered by Jina AI Reader with multiple output formats'
   },
   courseUrl: 'https://jina.ai/reader/',
-  author: 'Xuyupeng',
   versionList: [
     {
       value: '0.1.0',
