@@ -25,6 +25,14 @@ export const Worker2MainMessageSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('error'),
     data: z.any()
+  }),
+  z.object({
+    type: z.literal('answer'),
+    data: z.any()
+  }),
+  z.object({
+    type: z.literal('fastAnswer'),
+    data: z.any()
   })
 ]);
 
