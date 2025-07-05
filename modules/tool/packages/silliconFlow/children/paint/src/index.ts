@@ -1,5 +1,7 @@
+import { addLog } from '@/utils/log';
 import { z } from 'zod';
 
+// Define input schema for the Silicon Flow painting API
 export const InputType = z
   .object({
     authorization: z.string().describe('API token (without Bearer), e.g., sk-xxxx'),
@@ -41,9 +43,14 @@ export const InputType = z
       .optional()
       .describe('Random seed for image generation, range 0-9999999999'),
     image: z
-      .string()
-      .url()
-      .or(z.string().startsWith('data:image/'))
+      .union([
+        z.string().url(),
+        z.string().startsWith('data:image/'),
+        z
+          .string()
+          .length(0)
+          .transform(() => undefined)
+      ])
       .optional()
       .describe(
         'Image to upload, supports image URL or base64 format, e.g., "https://xxx/xx.png" or "data:image/png;base64,XXX"'
@@ -51,6 +58,7 @@ export const InputType = z
   })
   .describe('Silicon Flow painting API parameters');
 
+// Define output schema for the Silicon Flow painting API
 export const OutputType = z.object({
   images: z.array(z.string().url()).describe('List of generated image URLs'),
   timings: z
@@ -59,10 +67,10 @@ export const OutputType = z.object({
     })
     .passthrough()
     .describe('Timing information for the inference process'),
-  seed: z.number().describe('Random seed for image generation')
+  seed: z.number().describe('Random seed for image generation').optional()
 });
 
-// 错误状态码映射
+// Error status code mapping
 const ERROR_MESSAGES = {
   400: (data: any) => `Bad Request${data?.message ? `: ${data.message}` : ''}`,
   401: () => 'Invalid token',
@@ -72,6 +80,7 @@ const ERROR_MESSAGES = {
   504: () => 'Gateway Timeout'
 } as const;
 
+// Convert image URL to base64 format
 export async function urlToBase64(imageUrl: string): Promise<string> {
   const res = await fetch(imageUrl);
   if (!res.ok)
@@ -79,7 +88,7 @@ export async function urlToBase64(imageUrl: string): Promise<string> {
       `Failed to fetch image from ${imageUrl}: ${res.status} ${res.statusText}`
     );
   const buffer = Buffer.from(await res.arrayBuffer());
-  // 简单推断 mime
+  // Infer MIME type
   const mime = imageUrl.endsWith('.png')
     ? 'image/png'
     : imageUrl.endsWith('.jpg') || imageUrl.endsWith('.jpeg')
@@ -88,19 +97,19 @@ export async function urlToBase64(imageUrl: string): Promise<string> {
   return `data:${mime};base64,${buffer.toString('base64')}`;
 }
 
+// Main tool function for Silicon Flow painting API
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  // url 直接硬编码
+  // Hardcoded API URL
   const url = 'https://api.siliconflow.cn/v1/images/generations';
   const { authorization, ...params } = props;
-
-  // image 字段自动转 base64
+  // Automatically convert image field to base64
   const image = await (async () => {
     if (!params.image) return undefined;
     if (params.image.startsWith('data:image/')) return params.image;
     return await urlToBase64(params.image);
   })();
 
-  // 构建请求体，过滤掉 undefined 值
+  // Build request body, filtering out undefined values
   const body = Object.fromEntries(
     Object.entries({
       model: params.model,
@@ -123,7 +132,7 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
     },
     body: JSON.stringify(body)
   });
-
+  addLog.info(`[Silicon Flow] Request: ${url} - Body: ${JSON.stringify(body)}`);
   const data = await response.json();
 
   if (!response.ok) {
