@@ -2,7 +2,7 @@ import { createExpressEndpoints } from '@ts-rest/express';
 import { contract } from '../contract';
 import { s } from '../router/init';
 import type { Express } from 'express';
-import { toolRouter } from '@tool/router';
+import { toolRouter, runToolStreamHandler } from '@tool/router';
 import { authTokenMiddleware } from './middleware/auth';
 
 export const initRouter = (app: Express) => {
@@ -13,5 +13,12 @@ export const initRouter = (app: Express) => {
   createExpressEndpoints(contract, router, app, {
     jsonQuery: true,
     globalMiddleware: [authTokenMiddleware]
+  });
+
+  // Register SSE streaming routing separately
+  app.post('/tool/runstream', (req, res, next) => {
+    authTokenMiddleware(req, res, () => {
+      runToolStreamHandler(req, res, next).catch(next);
+    });
   });
 };
