@@ -91,7 +91,7 @@ export const ToolSetConfigSchema = ToolConfigSchema.omit({
   .merge(
     z.object({
       type: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
-      children: z.array(toolConfigWithCbSchema).describe('The children of the tool set')
+      children: z.array(toolConfigWithCbSchema).optional().describe('The children of the tool set')
     })
   )
   .describe('The ToolSet Config Schema');

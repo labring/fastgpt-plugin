@@ -1,11 +1,7 @@
 import { defineTool } from '@tool/type';
-import {
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  SystemInputKeyEnum,
-  WorkflowIOValueTypeEnum
-} from '@tool/type/fastgpt';
+import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
+import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   name: {
@@ -13,7 +9,7 @@ export default defineTool({
     en: 'Bocha Search'
   },
   icon: 'core/workflow/template/bocha',
-  type: ToolTypeEnum.tools,
+  type: ToolTypeEnum.search,
   description: {
     'zh-CN': '使用博查AI搜索引擎进行网络搜索。',
     en: 'Use Bocha AI search engine for web search.'
@@ -23,21 +19,15 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'apiKey',
-              label: '博查API密钥',
-              description: '博查API密钥',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
+        defineInputConfig([
+          {
+            key: 'apiKey',
+            label: '博查API密钥',
+            description: '博查API密钥',
+            required: true,
+            inputType: 'secret'
+          }
+        ]),
         {
           key: 'query',
           label: '搜索查询词',

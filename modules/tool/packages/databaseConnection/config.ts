@@ -6,6 +6,7 @@ import {
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
+import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   type: ToolTypeEnum.tools,
@@ -23,64 +24,58 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object,
-          inputList: [
-            {
-              key: 'databaseType',
-              label: '数据库类型',
-              required: true,
-              inputType: 'select',
-              list: [
-                {
-                  label: 'MySQL',
-                  value: 'MySQL'
-                },
-                {
-                  label: 'PostgreSQL',
-                  value: 'PostgreSQL'
-                },
-                {
-                  label: 'Microsoft SQL Server',
-                  value: 'Microsoft SQL Server'
-                }
-              ]
-            },
-            {
-              key: 'host',
-              label: 'host',
-              required: true,
-              inputType: 'input'
-            },
-            {
-              key: 'port',
-              label: '数据库连接端口号',
-              required: true,
-              inputType: 'numberInput'
-            },
-            {
-              key: 'databaseName',
-              label: '数据库名称',
-              required: true,
-              inputType: 'input'
-            },
-            {
-              key: 'user',
-              label: '数据库账号',
-              required: true,
-              inputType: 'input'
-            },
-            {
-              key: 'password',
-              label: '数据库密码',
-              required: true,
-              inputType: 'secret'
-            }
-          ]
-        },
+        defineInputConfig([
+          {
+            key: 'databaseType',
+            label: '数据库类型',
+            required: true,
+            inputType: 'select',
+            list: [
+              {
+                label: 'MySQL',
+                value: 'MySQL'
+              },
+              {
+                label: 'PostgreSQL',
+                value: 'PostgreSQL'
+              },
+              {
+                label: 'Microsoft SQL Server',
+                value: 'Microsoft SQL Server'
+              }
+            ]
+          },
+          {
+            key: 'host',
+            label: 'host',
+            required: true,
+            inputType: 'input'
+          },
+          {
+            key: 'port',
+            label: '数据库连接端口号',
+            required: true,
+            inputType: 'numberInput'
+          },
+          {
+            key: 'databaseName',
+            label: '数据库名称',
+            required: true,
+            inputType: 'input'
+          },
+          {
+            key: 'user',
+            label: '数据库账号',
+            required: true,
+            inputType: 'input'
+          },
+          {
+            key: 'password',
+            label: '数据库密码',
+            required: true,
+            inputType: 'secret'
+          }
+        ]),
         {
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           selectedTypeIndex: 0,
