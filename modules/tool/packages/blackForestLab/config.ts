@@ -3,12 +3,13 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineToolSet({
   name: {
-    'zh-CN': 'Black Forest Lab(Flux模型)',
-    en: 'Black Forest Lab (Flux Model)'
+    'zh-CN': 'Flux 绘图',
+    en: 'Flux Drawing'
   },
-  type: ToolTypeEnum.tools,
+  courseUrl: 'https://www.flux.ai',
+  type: ToolTypeEnum.multimodal,
   description: {
-    'zh-CN': '一个提供Flux绘图模型的工具集',
-    en: 'A toolset that provides Flux drawing models'
+    'zh-CN': 'Flux官方绘图模型工具集',
+    en: 'Flux official drawing model toolset'
   }
 });

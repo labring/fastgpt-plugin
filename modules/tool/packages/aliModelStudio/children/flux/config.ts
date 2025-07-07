@@ -9,8 +9,8 @@ import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   name: {
-    'zh-CN': '阿里云百炼FLUX文生图',
-    en: 'Alibaba Cloud FLUX Text-to-Image'
+    'zh-CN': 'FLUX文生图',
+    en: 'FLUX Text-to-Image'
   },
   description: {
     'zh-CN':
@@ -25,8 +25,7 @@ export default defineTool({
         defineInputConfig([
           {
             key: 'apiKey',
-            label: '阿里云百炼API Key',
-            description: '可以在阿里云百炼控制台获取API密钥',
+            label: 'API Key',
             required: true,
             inputType: 'secret'
           }
@@ -35,7 +34,8 @@ export default defineTool({
           key: 'prompt',
           label: '文本提示词',
           description: '文本内容，支持中英文，中文不超过500个字符，英文不超过500个单词',
-          renderTypeList: [FlowNodeInputTypeEnum.textarea, FlowNodeInputTypeEnum.reference],
+          toolDescription: '文本提示词',
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           valueType: WorkflowIOValueTypeEnum.string,
           required: true
         },
@@ -45,6 +45,7 @@ export default defineTool({
           description: '选择要使用的FLUX模型',
           renderTypeList: [FlowNodeInputTypeEnum.select],
           valueType: WorkflowIOValueTypeEnum.string,
+          defaultValue: 'flux-schnell',
           list: [
             {
               label: 'flux-schnell (快速模型)',
@@ -66,6 +67,7 @@ export default defineTool({
           description: '设置生成图像的分辨率',
           renderTypeList: [FlowNodeInputTypeEnum.select],
           valueType: WorkflowIOValueTypeEnum.string,
+          defaultValue: '1024*1024',
           list: [
             { label: '512×1024', value: '512*1024' },
             { label: '768×512', value: '768*512' },

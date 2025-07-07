@@ -7,8 +7,8 @@ import {
 
 export default defineTool({
   name: {
-    'zh-CN': 'FLUX.1 Kontext 图像编辑',
-    en: 'FLUX.1 Kontext Image Editing'
+    'zh-CN': 'FLUX.1 图像编辑',
+    en: 'FLUX.1 Image Editing'
   },
   description: {
     'zh-CN': '使用 FLUX.1 Kontext [pro] 模型对图像进行编辑，支持基于文本提示的图像修改',
@@ -25,7 +25,7 @@ export default defineTool({
           inputList: [
             {
               key: 'apiKey',
-              label: 'Black Forest Labs API Key',
+              label: 'API Key',
               description: '可以在 https://api.bfl.ai/ 获取 API Key',
               required: true,
               inputType: 'secret'
@@ -38,8 +38,9 @@ export default defineTool({
           key: 'prompt',
           label: '编辑描述',
           description: '描述您想要对图像进行的编辑操作',
+          toolDescription: '图像描述',
           required: true,
-          renderTypeList: [FlowNodeInputTypeEnum.textarea, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           valueType: WorkflowIOValueTypeEnum.string
         },
         {

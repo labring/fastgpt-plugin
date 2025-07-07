@@ -6,7 +6,7 @@ export default defineToolSet({
     'zh-CN': 'SearchApi',
     en: 'SearchApi'
   },
-  icon: '',
+  courseUrl: 'https://www.searchapi.io/',
   type: ToolTypeEnum.search,
   description: {
     'zh-CN': 'SearchApi 服务',

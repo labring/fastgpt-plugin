@@ -9,8 +9,8 @@ import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   name: {
-    'zh-CN': '阿里云百炼通义万相文生图v2',
-    en: 'Alibaba Qwen Wanx Text-to-Image'
+    'zh-CN': '通义万相文生图v2',
+    en: 'Qwen Wanx Text-to-Image'
   },
   description: {
     'zh-CN':
@@ -25,26 +25,19 @@ export default defineTool({
         defineInputConfig([
           {
             key: 'apiKey',
-            label: '阿里云百炼API Key',
+            label: 'API Key',
             description: '可以在阿里云百炼控制台获取API密钥',
             required: true,
             inputType: 'secret'
           }
         ]),
         {
-          key: 'prompt',
-          label: '正向提示词',
-          description: '描述期望生成的图像内容，支持中英文，长度不超过800个字符',
-          renderTypeList: [FlowNodeInputTypeEnum.textarea, FlowNodeInputTypeEnum.reference],
-          valueType: WorkflowIOValueTypeEnum.string,
-          required: true
-        },
-        {
           key: 'model',
           label: '模型名称',
           description: '选择要使用的通义万相模型',
           renderTypeList: [FlowNodeInputTypeEnum.select],
           valueType: WorkflowIOValueTypeEnum.string,
+          defaultValue: 'wanx2.1-t2i-turbo',
           list: [
             {
               label: 'wanx2.1-t2i-turbo (快速版)',
@@ -61,10 +54,20 @@ export default defineTool({
           ]
         },
         {
+          key: 'prompt',
+          label: '正向提示词',
+          description: '描述期望生成的图像内容，支持中英文，长度不超过800个字符',
+          toolDescription: '文本提示词',
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
+          valueType: WorkflowIOValueTypeEnum.string,
+          required: true
+        },
+        {
           key: 'negative_prompt',
           label: '反向提示词',
           description: '描述不希望在画面中看到的内容，长度不超过500个字符',
-          renderTypeList: [FlowNodeInputTypeEnum.textarea, FlowNodeInputTypeEnum.reference],
+          toolDescription: '反向提示词',
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string
         },
         {
@@ -73,6 +76,7 @@ export default defineTool({
           description: '设置生成图像的分辨率',
           renderTypeList: [FlowNodeInputTypeEnum.select],
           valueType: WorkflowIOValueTypeEnum.string,
+          defaultValue: '1024*1024',
           list: [
             { label: '512×512', value: '512*512' },
             { label: '512×1024', value: '512*1024' },

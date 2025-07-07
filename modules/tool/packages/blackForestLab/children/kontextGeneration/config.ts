@@ -7,8 +7,8 @@ import {
 
 export default defineTool({
   name: {
-    'zh-CN': 'FLUX.1 Kontext 图像生成',
-    en: 'FLUX.1 Kontext Image Generation'
+    'zh-CN': 'FLUX.1 图像生成',
+    en: 'FLUX.1 Image Generation'
   },
   description: {
     'zh-CN': '使用 FLUX.1 Kontext [pro] 模型生成高质量图像，支持文本到图像的生成',
@@ -25,7 +25,7 @@ export default defineTool({
           inputList: [
             {
               key: 'apiKey',
-              label: 'Black Forest Labs API Key',
+              label: 'API Key',
               description: '可以在 https://api.bfl.ai/ 获取 API Key',
               required: true,
               inputType: 'secret'
@@ -38,8 +38,9 @@ export default defineTool({
           key: 'prompt',
           label: '图像描述',
           description: '描述您想要生成的图像',
+          toolDescription: '图像描述',
           required: true,
-          renderTypeList: [FlowNodeInputTypeEnum.textarea, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           valueType: WorkflowIOValueTypeEnum.string
         },
         {
