@@ -32,11 +32,8 @@ export const runToolStreamHandler = async (
       onMessage: (message) => {
         // forwarding to SSE
         switch (message.type) {
-          case 'answer':
-            sseManager.sendAnswer(message.data, toolId);
-            break;
-          case 'fastAnswer':
-            sseManager.sendFastAnswer(message.data, toolId);
+          case 'data':
+            sseManager.sendData(message.data, toolId);
             break;
           case 'success':
             sseManager.sendSuccess(message.data, toolId);
@@ -50,6 +47,6 @@ export const runToolStreamHandler = async (
   } catch (error) {
     addLog.error(`Run tool ${toolId} stream error`, error);
     const sseManager = new SSEManager(res);
-    sseManager.sendFastAnswer({ error: getErrText(error) }, toolId);
+    sseManager.sendError({ error: getErrText(error) }, toolId);
   }
 };

@@ -49,23 +49,11 @@ export class SSEManager {
     }
   }
 
-  sendAnswer(data: any, toolId?: string) {
+  sendData(data: any, toolId?: string) {
     this.sendMessage({
-      type: SSEMessageType.ANSWER,
+      type: SSEMessageType.DATA,
       data
     });
-  }
-
-  sendFastAnswer(data: any, toolId?: string) {
-    this.sendMessage({
-      type: SSEMessageType.FAST_ANSWER,
-      data
-    });
-
-    // Delay the connection closure
-    setTimeout(() => {
-      this.close();
-    }, 100);
   }
 
   sendSuccess(data: any, toolId?: string) {
@@ -76,7 +64,7 @@ export class SSEManager {
 
     setTimeout(() => {
       this.close();
-    }, 100);
+    }, 1000);
   }
 
   sendError(data: any, toolId?: string) {
@@ -87,7 +75,7 @@ export class SSEManager {
 
     setTimeout(() => {
       this.close();
-    }, 100);
+    }, 1000);
   }
 
   close() {

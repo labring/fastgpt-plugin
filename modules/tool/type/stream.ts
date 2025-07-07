@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
 export enum SSEMessageType {
-  ANSWER = 'answer',
-  FAST_ANSWER = 'fastAnswer',
   ERROR = 'error',
-  SUCCESS = 'success'
+  SUCCESS = 'success',
+  DATA = 'data'
 }
 
 export const SSEMessageSchema = z.object({

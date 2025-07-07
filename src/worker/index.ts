@@ -206,14 +206,8 @@ export async function dispatchWithNewWorker(data: {
             reject(new Error(getErrText(data)));
             break;
           }
-          case 'answer': {
-            if (onMessage) onMessage({ type: 'answer', data });
-            break;
-          }
-          case 'fastAnswer': {
-            if (onMessage) onMessage({ type: 'fastAnswer', data });
-            worker.terminate();
-            resolve(data);
+          case 'data': {
+            if (onMessage) onMessage({ type: 'data', data });
             break;
           }
           case 'uploadFile': {

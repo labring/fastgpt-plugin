@@ -27,11 +27,7 @@ export const Worker2MainMessageSchema = z.discriminatedUnion('type', [
     data: z.any()
   }),
   z.object({
-    type: z.literal('answer'),
-    data: z.any()
-  }),
-  z.object({
-    type: z.literal('fastAnswer'),
+    type: z.literal('data'),
     data: z.any()
   })
 ]);
