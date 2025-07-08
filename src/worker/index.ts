@@ -6,6 +6,7 @@ import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
+import { SSEMessageType } from '@tool/type/stream';
 
 type WorkerQueueItem = {
   id: string;
@@ -160,7 +161,7 @@ export async function dispatchWithNewWorker(data: {
   toolId: string;
   inputs: Record<string, any>;
   systemVar: Record<string, any>;
-  onMessage?: (message: { type: string; data: any }) => void; // streaming callback 可选
+  onMessage?: (message: { type: SSEMessageType; data: any }) => void; // streaming callback 可选
 }) {
   const { toolId, onMessage } = data;
   const tool = getTool(toolId);
@@ -195,19 +196,20 @@ export async function dispatchWithNewWorker(data: {
             break;
           }
           case 'success': {
-            if (onMessage) onMessage({ type: 'success', data });
+            if (onMessage) onMessage({ type: SSEMessageType.DATA, data });
             worker.terminate();
             resolve(data);
             break;
           }
           case 'error': {
-            if (onMessage) onMessage({ type: 'error', data: { error: getErrText(data) } });
+            if (onMessage)
+              onMessage({ type: SSEMessageType.ERROR, data: { error: getErrText(data) } });
             worker.terminate();
             reject(new Error(getErrText(data)));
             break;
           }
           case 'data': {
-            if (onMessage) onMessage({ type: 'data', data });
+            if (onMessage) onMessage({ type: SSEMessageType.DATA, data });
             break;
           }
           case 'uploadFile': {
@@ -230,19 +232,22 @@ export async function dispatchWithNewWorker(data: {
       });
 
       worker.on('error', (error) => {
-        if (onMessage) onMessage({ type: 'error', data: { error: getErrText(error) } });
+        if (onMessage)
+          onMessage({ type: SSEMessageType.ERROR, data: { error: getErrText(error) } });
         reject(error);
       });
 
       worker.on('messageerror', (error) => {
-        if (onMessage) onMessage({ type: 'error', data: { error: getErrText(error) } });
+        if (onMessage)
+          onMessage({ type: SSEMessageType.ERROR, data: { error: getErrText(error) } });
         reject(error);
       });
 
       worker.on('exit', (code) => {
         if (code !== 0) {
           const error = new Error(`Worker stopped with exit code ${code}`);
-          if (onMessage) onMessage({ type: 'error', data: { error: getErrText(error) } });
+          if (onMessage)
+            onMessage({ type: SSEMessageType.ERROR, data: { error: getErrText(error) } });
           reject(error);
         }
       });

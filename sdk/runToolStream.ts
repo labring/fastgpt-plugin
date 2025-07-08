@@ -1,4 +1,5 @@
 import type { SystemVarType } from '@tool/type/tool';
+import { StreamDataAnswerType } from '@tool/type/stream';
 
 export async function runToolStream({
   baseUrl,
@@ -13,7 +14,7 @@ export async function runToolStream({
   toolId: string;
   inputs: Record<string, any>;
   systemVar: SystemVarType;
-  onStreamData: (data: { type: string; data: any }) => void;
+  onStreamData: (type: StreamDataAnswerType, data: any) => void;
 }) {
   const response = await fetch(`${baseUrl}/tool/runstream`, {
     method: 'POST',
@@ -39,7 +40,7 @@ export async function runToolStream({
 
   const decoder = new TextDecoder();
   let buffer = '';
-  let finalResult: any = null;
+  const finalResult: any = null;
 
   try {
     while (true) {
@@ -59,13 +60,7 @@ export async function runToolStream({
 
         try {
           const data = JSON.parse(trimmedLine);
-          onStreamData(data);
-
-          if (data.type === 'success' && data.data?.output) {
-            finalResult = data.data.output;
-          } else if (data.type === 'error') {
-            return Promise.reject(data.data?.message || 'Stream error');
-          }
+          onStreamData(data.type, data.content);
         } catch (parseError) {
           continue;
         }

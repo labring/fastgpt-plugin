@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { getTool } from '@tool/controller';
 import { dispatchWithNewWorker } from '@/worker';
 import { SSEManager } from '../utils/sse';
+import { SSEMessageType, StreamDataAnswerType } from '../type/stream';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 
@@ -21,10 +22,8 @@ export const runToolStreamHandler = async (
     res.status(404).json({ error: 'tool not found' });
     return;
   }
-
+  const sseManager = new SSEManager(res);
   try {
-    const sseManager = new SSEManager(res);
-
     await dispatchWithNewWorker({
       toolId,
       inputs,
@@ -32,21 +31,25 @@ export const runToolStreamHandler = async (
       onMessage: (message) => {
         // forwarding to SSE
         switch (message.type) {
-          case 'data':
-            sseManager.sendData(message.data, toolId);
+          case SSEMessageType.DATA:
+            sseManager.sendMessage(message.data);
             break;
-          case 'success':
-            sseManager.sendSuccess(message.data, toolId);
-            break;
-          case 'error':
-            sseManager.sendError(message.data, toolId);
+          case SSEMessageType.ERROR:
+            sseManager.sendMessage({
+              type: StreamDataAnswerType.Error,
+              content: message.data
+            });
             break;
         }
       }
     });
+
+    sseManager.close();
   } catch (error) {
     addLog.error(`Run tool ${toolId} stream error`, error);
-    const sseManager = new SSEManager(res);
-    sseManager.sendError({ error: getErrText(error) }, toolId);
+    sseManager.sendMessage({
+      type: StreamDataAnswerType.Error,
+      content: getErrText(error)
+    });
   }
 };

@@ -1,6 +1,5 @@
 import type { Response } from 'express';
 import type { SSEMessage } from '../type/stream';
-import { SSEMessageType } from '../type/stream';
 
 export class SSEManager {
   private response: Response;
@@ -42,33 +41,6 @@ export class SSEManager {
     } catch (error) {
       console.error('Failed to send SSE message:', error);
     }
-  }
-
-  sendData(data: any, toolId?: string) {
-    this.sendMessage({
-      type: SSEMessageType.DATA,
-      data
-    });
-  }
-
-  sendSuccess(data: any, toolId?: string) {
-    this.sendMessage({
-      type: SSEMessageType.SUCCESS,
-      data
-    });
-
-    this.close();
-  }
-
-  sendError(data: any, toolId?: string) {
-    this.sendMessage({
-      type: SSEMessageType.ERROR,
-      data
-    });
-
-    setTimeout(() => {
-      this.close();
-    }, 1000);
   }
 
   close() {
