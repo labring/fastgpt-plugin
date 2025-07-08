@@ -32,6 +32,7 @@ export default defineTool({
         {
           key: 'q',
           label: '搜索关键词',
+          toolDescription: '搜索关键词',
           required: true,
           valueType: WorkflowIOValueTypeEnum.string,
           renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input]

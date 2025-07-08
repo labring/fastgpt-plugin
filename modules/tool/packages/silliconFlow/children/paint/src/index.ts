@@ -61,13 +61,8 @@ export const InputType = z
 // Define output schema for the Silicon Flow painting API
 export const OutputType = z.object({
   images: z.array(z.string().url()).describe('List of generated image URLs'),
-  timings: z
-    .object({
-      inference: z.number().describe('Inference time in milliseconds')
-    })
-    .passthrough()
-    .describe('Timing information for the inference process'),
-  seed: z.number().describe('Random seed for image generation').optional()
+  timings: z.number().optional().describe('Timing information for the inference process'),
+  seed: z.number().optional().describe('Random seed for image generation')
 });
 
 // Error status code mapping
@@ -147,7 +142,8 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
   }
 
   return {
-    ...data,
+    seed: data?.seed,
+    timings: data?.timings?.inference,
     images: Array.isArray(data.images)
       ? data.images.map((item: any) => (typeof item === 'string' ? item : item.url))
       : []

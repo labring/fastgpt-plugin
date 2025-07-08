@@ -34,7 +34,7 @@ export const InputType = z
 
 export const OutputType = z.object({
   status: z.enum(['Succeed', 'InQueue', 'InProgress', 'Failed']).describe('Operation status'),
-  reason: z.string().describe('Reason for the operation'),
+  url: z.string().describe('Video URL'),
   results: z
     .object({
       videos: z.array(z.string().url()).describe('Array of generated video URLs, valid for 1 hour'),
@@ -47,7 +47,6 @@ export const OutputType = z.object({
 });
 
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  addLog.error('Call Silicon Flow video generation API, params:', { props });
   const url = 'https://api.siliconflow.cn/v1/video';
   const { authorization, ...params } = props;
 
@@ -101,12 +100,8 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
   }
 
   return {
-    ...statusData,
-    results: {
-      ...statusData.results,
-      videos: Array.isArray(statusData.results?.videos)
-        ? statusData.results.videos.map((item: any) => (typeof item === 'string' ? item : item.url))
-        : []
-    }
+    status: statusData.status,
+    results: statusData.results,
+    url: statusData.results?.videos?.[0]
   };
 }

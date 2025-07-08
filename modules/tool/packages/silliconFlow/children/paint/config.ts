@@ -117,13 +117,13 @@ export default defineTool({
 
       outputs: [
         {
-          valueType: WorkflowIOValueTypeEnum.object,
+          valueType: WorkflowIOValueTypeEnum.arrayString,
           key: 'images',
           label: '生成的图片',
-          description: '生成的图片列表，包含图片 URL 和其他信息'
+          description: '生成的图片列表'
         },
         {
-          valueType: WorkflowIOValueTypeEnum.object,
+          valueType: WorkflowIOValueTypeEnum.number,
           key: 'timings',
           label: '推理时间',
           description: '推理过程的时间信息'

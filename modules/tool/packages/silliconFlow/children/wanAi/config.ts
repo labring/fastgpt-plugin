@@ -100,15 +100,14 @@ export default defineTool({
       outputs: [
         {
           valueType: WorkflowIOValueTypeEnum.string,
-          key: 'status',
-          label: '状态',
-          description: "操作状态。可选值：'Succeed','InQueue','InProgress','Failed'"
+          key: 'url',
+          label: '视频链接'
         },
         {
           valueType: WorkflowIOValueTypeEnum.string,
-          key: 'reason',
-          label: '原因',
-          description: '操作原因'
+          key: 'status',
+          label: '状态',
+          description: "操作状态。可选值：'Succeed','InQueue','InProgress','Failed'"
         },
         {
           valueType: WorkflowIOValueTypeEnum.object,
