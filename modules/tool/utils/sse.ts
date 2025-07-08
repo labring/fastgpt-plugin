@@ -5,12 +5,10 @@ import { nanoid } from 'nanoid';
 
 export class SSEManager {
   private response: Response;
-  private sessionId: string;
   private isConnected: boolean = false;
 
   constructor(response: Response) {
     this.response = response;
-    this.sessionId = nanoid();
     this.initSSE();
   }
 

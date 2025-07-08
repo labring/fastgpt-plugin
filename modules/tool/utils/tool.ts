@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import type { ToolSetConfigType } from '@tool/type';
 import { ToolConfigSchema, ToolSchema, type SystemVarType } from '@tool/type/tool';
 import type { ToolListItemType } from '@tool/type/api';
+import { StreamDataSchema } from '@tool/type/stream';
 import {
   FlowNodeInputTypeEnum,
   SystemInputKeyEnum,
@@ -18,7 +19,7 @@ export const exportTool = <T extends z.Schema, D extends z.Schema>({
   toolCb: (
     props: z.infer<T>,
     systemVar: SystemVarType,
-    sendMessage?: (data: any) => void
+    sendMessage?: (data: z.infer<typeof StreamDataSchema>) => void
   ) => Promise<Record<string, any>>;
   InputType: T;
   OutputType: D;
@@ -27,7 +28,7 @@ export const exportTool = <T extends z.Schema, D extends z.Schema>({
   const cb = async (
     props: z.infer<T>,
     systemVar: SystemVarType,
-    sendMessage?: (data: any) => void
+    sendMessage?: (data: z.infer<typeof StreamDataSchema>) => void
   ) => {
     try {
       const output = await toolCb(InputType.parse(props), systemVar, sendMessage);
