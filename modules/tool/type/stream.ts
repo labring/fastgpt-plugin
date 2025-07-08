@@ -13,8 +13,7 @@ export enum StreamDataAnswerType {
 
 export const StreamDataSchema = z.object({
   type: z.nativeEnum(StreamDataAnswerType),
-  content: z.string(),
-  fullResponse: z.string().optional()
+  content: z.string()
 });
 
 export const SuccessDataSchema = z.object({

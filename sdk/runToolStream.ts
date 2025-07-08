@@ -55,14 +55,10 @@ export async function runToolStream({
 
       for (const line of lines) {
         const trimmedLine = line.trim();
-        if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
-
-        // Remove the 'data:' prefix
-        const jsonStr = trimmedLine.slice(6);
-        if (jsonStr === '[DONE]') continue;
+        if (!trimmedLine) continue;
 
         try {
-          const data = JSON.parse(jsonStr);
+          const data = JSON.parse(trimmedLine);
           onStreamData(data);
 
           if (data.type === 'success' && data.data?.output) {

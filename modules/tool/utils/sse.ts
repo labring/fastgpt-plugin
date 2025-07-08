@@ -1,7 +1,6 @@
 import type { Response } from 'express';
 import type { SSEMessage } from '../type/stream';
 import { SSEMessageType } from '../type/stream';
-import { nanoid } from 'nanoid';
 
 export class SSEManager {
   private response: Response;
@@ -39,9 +38,7 @@ export class SSEManager {
     }
 
     try {
-      const data = JSON.stringify(message);
-      this.response.write(`event: ${message.type}\n`);
-      this.response.write(`data: ${data}\n\n`);
+      this.response.write(`${JSON.stringify(message)}\n\n`);
     } catch (error) {
       console.error('Failed to send SSE message:', error);
     }
@@ -60,9 +57,7 @@ export class SSEManager {
       data
     });
 
-    setTimeout(() => {
-      this.close();
-    }, 1000);
+    this.close();
   }
 
   sendError(data: any, toolId?: string) {
