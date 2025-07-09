@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import crypto from 'crypto';
-
+import { delay } from '@tool/utils/delay';
 const SizeEnum = z.enum(['512*1024', '768*512', '768*1024', '1024*576', '576*1024', '1024*1024']);
+
+const TaskType = z.enum(['text2img', 'check']);
+const apiMap = {
+  text2img: '/api/generate/webui/text2img/ultra',
+  check: '/api/generate/webui/status'
+};
 
 export const InputType = z
   .object({
@@ -58,13 +64,10 @@ function generateUrlSignature(urlPath: string, secretKey: string): SignatureData
   };
 }
 
-function buildRequestUrl(
-  accessKey: string,
-  secretKey: string,
-  apiPath: string = '/api/generate/webui/text2img/ultra'
-) {
+function buildRequestUrl(accessKey: string, secretKey: string, taskType: z.infer<typeof TaskType>) {
   const BASE_URL = 'https://openapi.liblibai.cloud';
 
+  const apiPath: string = apiMap[taskType];
   const signatureData = generateUrlSignature(apiPath, secretKey);
 
   const params = new URLSearchParams({
@@ -86,8 +89,7 @@ function buildRequestUrl(
 }
 
 async function queryTaskStatus(accessKey: string, secretKey: string, generateUuid: string) {
-  const statusApiPath = '/api/generate/webui/status';
-  const requestData = buildRequestUrl(accessKey, secretKey, statusApiPath);
+  const requestData = buildRequestUrl(accessKey, secretKey, 'check');
   const requestBody = {
     generateUuid: generateUuid
   };
@@ -136,10 +138,9 @@ async function waitForTaskCompletion(
   accessKey: string,
   secretKey: string,
   generateUuid: string,
-  retryCount: number = 0,
   maxRetries: number = 30
 ): Promise<TaskResult> {
-  if (retryCount >= maxRetries) {
+  if (maxRetries === 0) {
     return {
       link: generateUuid,
       msg: 'failed'
@@ -162,11 +163,10 @@ async function waitForTaskCompletion(
       };
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    return waitForTaskCompletion(accessKey, secretKey, generateUuid, retryCount + 1, maxRetries);
+    await delay(3000);
+    return waitForTaskCompletion(accessKey, secretKey, generateUuid, maxRetries - 1);
   } catch (error) {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    return waitForTaskCompletion(accessKey, secretKey, generateUuid, retryCount + 1, maxRetries);
+    return Promise.reject(error);
   }
 }
 
@@ -174,7 +174,7 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
   const { accessKey, secretKey, prompt, size } = props;
 
   try {
-    const requestData = buildRequestUrl(accessKey, secretKey);
+    const requestData = buildRequestUrl(accessKey, secretKey, 'text2img');
 
     const requestBody = {
       templateUuid: '5d7e67009b344550bc1aa6ccbfa1d7f4',
@@ -203,12 +203,10 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
 
     const result = await response.json();
 
-    // 如果返回了生成UUID，则等待任务完成
     if (result.data?.generateUuid) {
       return await waitForTaskCompletion(accessKey, secretKey, result.data.generateUuid);
     }
 
-    // 直接返回结果
     return {
       link:
         result.link || result.image_url || result.data?.imageUrl || 'https://www.liblib.art/apis',

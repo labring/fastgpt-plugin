@@ -10,5 +10,6 @@ export default defineToolSet({
   description: {
     'zh-CN': 'libulibu 工具集',
     en: 'Libulibu Tool Set'
-  }
+  },
+  courseUrl: 'https://www.liblib.art/apis'
 });
