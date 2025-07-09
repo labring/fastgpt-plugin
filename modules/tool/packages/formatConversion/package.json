@@ -1,0 +1,23 @@
+{
+  "name": "fastgpt-tools-formatConversion",
+  "version": "1.0.0",
+  "description": "Convert markdown to various document formats",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun build index.ts --minify --outdir dist --outFile index.js --target=node"
+  },
+  "dependencies": {
+    "markdown-it": "^14.0.0",
+    "minio": "^7.1.3",
+    "zod": "^3.22.4",
+    "docx": "^8.5.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/markdown-it": "^13.0.7",
+    "@types/minio": "^7.1.1",
+    "typescript": "^5.0.0"
+  }
+}
