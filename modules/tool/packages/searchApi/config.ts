@@ -1,5 +1,6 @@
 import { defineToolSet } from '@tool/type';
 import { ToolTypeEnum } from '@tool/type/tool';
+import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineToolSet({
   name: {
@@ -11,5 +12,13 @@ export default defineToolSet({
   description: {
     'zh-CN': 'SearchApi 服务',
     en: 'SearchApi Service'
-  }
+  },
+  inputConfig: defineInputConfig([
+    {
+      key: 'apiKey',
+      label: 'Search API Key',
+      required: true,
+      inputType: 'secret'
+    }
+  ])
 });

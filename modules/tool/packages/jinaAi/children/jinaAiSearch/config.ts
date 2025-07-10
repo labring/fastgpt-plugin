@@ -25,21 +25,6 @@ export default defineTool({
       description: 'Initial version with full search functionality',
       inputs: [
         {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'Jina AI API密钥',
-              description: 'Jina AI API密钥，格式：jina_xxxxxxxxxxxxxxxx',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
-        {
           key: 'query',
           label: '搜索关键词',
           description: '要搜索的关键词或查询语句',

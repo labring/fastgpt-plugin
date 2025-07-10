@@ -67,7 +67,8 @@ export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItem
     weight: index,
     originCost: 0,
     currentCost: 0,
-    hasTokenFee: false
+    hasTokenFee: false,
+    inputConfig: item.inputConfig
   }));
 }
 

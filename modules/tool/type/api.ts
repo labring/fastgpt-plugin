@@ -1,6 +1,7 @@
 import { InfoString } from '@/type/i18n';
 import { z } from 'zod';
 import { ToolTypeEnum, VersionListItemSchema } from './tool';
+import { InputSchema } from './fastgpt';
 
 export const ToolListItemSchema = z.object({
   id: z.string().describe('The unique id of the tool'),
@@ -17,6 +18,7 @@ export const ToolListItemSchema = z.object({
   weight: z.number().describe('The weight of the tool'),
   originCost: z.number().describe('The origin cost of the tool'),
   currentCost: z.number().describe('The current cost of the tool'),
-  hasTokenFee: z.boolean().describe('Whether it has token fee')
+  hasTokenFee: z.boolean().describe('Whether it has token fee'),
+  inputConfig: InputSchema.optional().describe('The input list of the tool')
 });
 export type ToolListItemType = z.infer<typeof ToolListItemSchema>;

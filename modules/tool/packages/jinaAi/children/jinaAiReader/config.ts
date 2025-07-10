@@ -23,21 +23,6 @@ export default defineTool({
       description: 'Enhanced version with comprehensive format support',
       inputs: [
         {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'Jina AI API密钥',
-              description: 'Jina AI API密钥，格式：jina_xxxxxxxxxxxxxxxx',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
-        {
           key: 'url',
           label: '目标网页',
           description: '需要解析的网页URL地址',
