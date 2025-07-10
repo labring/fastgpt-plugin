@@ -6,7 +6,7 @@ import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
-import { SSEMessageSchema, SSEMessageType, StreamDataAnswerType } from '@tool/type/stream';
+import { StreamMessageSchema, StreamMessageType, StreamDataAnswerType } from '@tool/type/stream';
 
 type WorkerQueueItem = {
   id: string;
@@ -161,7 +161,10 @@ export async function dispatchWithNewWorker(data: {
   toolId: string;
   inputs: Record<string, any>;
   systemVar: Record<string, any>;
-  onMessage?: (message: { type: SSEMessageType; data: z.infer<typeof SSEMessageSchema> }) => void; // streaming callback 可选
+  onMessage?: (message: {
+    type: StreamMessageType;
+    data: z.infer<typeof StreamMessageSchema>;
+  }) => void; // streaming callback 可选
 }) {
   const { toolId, onMessage } = data;
   const tool = getTool(toolId);
@@ -196,7 +199,7 @@ export async function dispatchWithNewWorker(data: {
             break;
           }
           case 'success': {
-            if (onMessage) onMessage({ type: SSEMessageType.DATA, data });
+            if (onMessage) onMessage({ type: StreamMessageType.DATA, data });
             worker.terminate();
             resolve(data);
             break;
@@ -204,7 +207,7 @@ export async function dispatchWithNewWorker(data: {
           case 'error': {
             if (onMessage)
               onMessage({
-                type: SSEMessageType.ERROR,
+                type: StreamMessageType.ERROR,
                 data: { type: StreamDataAnswerType.Error, content: getErrText(data) }
               });
             worker.terminate();
@@ -212,7 +215,7 @@ export async function dispatchWithNewWorker(data: {
             break;
           }
           case 'data': {
-            if (onMessage) onMessage({ type: SSEMessageType.DATA, data });
+            if (onMessage) onMessage({ type: StreamMessageType.DATA, data });
             break;
           }
           case 'uploadFile': {
@@ -237,7 +240,7 @@ export async function dispatchWithNewWorker(data: {
       worker.on('error', (error) => {
         if (onMessage)
           onMessage({
-            type: SSEMessageType.ERROR,
+            type: StreamMessageType.ERROR,
             data: { type: StreamDataAnswerType.Error, content: getErrText(error) }
           });
         reject(error);
@@ -246,7 +249,7 @@ export async function dispatchWithNewWorker(data: {
       worker.on('messageerror', (error) => {
         if (onMessage)
           onMessage({
-            type: SSEMessageType.ERROR,
+            type: StreamMessageType.ERROR,
             data: { type: StreamDataAnswerType.Error, content: getErrText(error) }
           });
         reject(error);
@@ -257,7 +260,7 @@ export async function dispatchWithNewWorker(data: {
           const error = new Error(`Worker stopped with exit code ${code}`);
           if (onMessage)
             onMessage({
-              type: SSEMessageType.ERROR,
+              type: StreamMessageType.ERROR,
               data: { type: StreamDataAnswerType.Error, content: getErrText(error) }
             });
           reject(error);

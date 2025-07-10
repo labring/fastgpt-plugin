@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export enum SSEMessageType {
+export enum StreamMessageType {
   ERROR = 'error',
   DATA = 'data'
 }
@@ -11,19 +11,9 @@ export enum StreamDataAnswerType {
   Error = 'error'
 }
 
-export const SuccessDataSchema = z.object({
-  output: z.record(z.any()).optional(),
-  error: z.string().optional()
-});
-
-export const ErrorDataSchema = z.object({
-  error: z.string(),
-  message: z.string().optional()
-});
-
-export const SSEMessageSchema = z.object({
+export const StreamMessageSchema = z.object({
   type: z.nativeEnum(StreamDataAnswerType),
   content: z.string()
 });
 
-export type SSEMessage = z.infer<typeof SSEMessageSchema>;
+export type StreamMessage = z.infer<typeof StreamMessageSchema>;

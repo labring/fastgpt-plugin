@@ -1,15 +1,15 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getTool } from '@tool/controller';
 import { dispatchWithNewWorker } from '@/worker';
-import { SSEManager } from '../utils/sse';
-import { SSEMessageType, StreamDataAnswerType } from '../type/stream';
+import { StreamManager } from '../utils/stream';
+import { StreamMessageType, StreamDataAnswerType } from '../type/stream';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 
 export const runToolStreamHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): Promise<void> => {
   const { toolId, inputs, systemVar } = req.body;
 
@@ -22,25 +22,26 @@ export const runToolStreamHandler = async (
     res.status(404).json({ error: 'tool not found' });
     return;
   }
-  const sseManager = new SSEManager(res);
+  const streamManager = new StreamManager(res);
   try {
     await dispatchWithNewWorker({
       toolId,
       inputs,
       systemVar,
       onMessage: (message) => {
-        // forwarding to SSE
+        // forwarding to Stream
         switch (message.type) {
-          case SSEMessageType.DATA:
+          case StreamMessageType.DATA: {
             // there is no "type", the content is directly output.
             const dataToSend =
               message.data.type === StreamDataAnswerType.Answer
                 ? { type: StreamDataAnswerType.Answer, content: message.data.content }
                 : message.data;
-            sseManager.sendMessage(dataToSend);
+            streamManager.sendMessage(dataToSend);
             break;
-          case SSEMessageType.ERROR:
-            sseManager.sendMessage({
+          }
+          case StreamMessageType.ERROR:
+            streamManager.sendMessage({
               type: StreamDataAnswerType.Error,
               content: message.data.content
             });
@@ -49,10 +50,10 @@ export const runToolStreamHandler = async (
       }
     });
 
-    sseManager.close();
+    streamManager.close();
   } catch (error) {
     addLog.error(`Run tool ${toolId} stream error`, error);
-    sseManager.sendMessage({
+    streamManager.sendMessage({
       type: StreamDataAnswerType.Error,
       content: getErrText(error)
     });

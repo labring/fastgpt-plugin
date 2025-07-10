@@ -1,17 +1,17 @@
 import type { Response } from 'express';
-import type { SSEMessage } from '../type/stream';
+import type { StreamMessage } from '../type/stream';
 
-export class SSEManager {
+export class StreamManager {
   private response: Response;
   private isConnected: boolean = false;
 
   constructor(response: Response) {
     this.response = response;
-    this.initSSE();
+    this.initStream();
   }
 
-  private initSSE() {
-    // SSE response header
+  private initStream() {
+    // Stream response header
     this.response.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -31,7 +31,7 @@ export class SSEManager {
     });
   }
 
-  sendMessage(message: SSEMessage) {
+  sendMessage(message: StreamMessage) {
     if (!this.isConnected) {
       return;
     }
@@ -39,7 +39,7 @@ export class SSEManager {
     try {
       this.response.write(`${JSON.stringify(message)}\n\n`);
     } catch (error) {
-      console.error('Failed to send SSE message:', error);
+      console.error('Failed to send Stream message:', error);
     }
   }
 
@@ -48,7 +48,7 @@ export class SSEManager {
       try {
         this.response.end();
       } catch (error) {
-        console.error('Error closing SSE connection:', error);
+        console.error('Error closing Stream connection:', error);
       } finally {
         this.isConnected = false;
       }

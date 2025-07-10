@@ -15,7 +15,7 @@ export const initRouter = (app: Express) => {
     globalMiddleware: [authTokenMiddleware]
   });
 
-  // Register SSE streaming routing
+  // Register Stream streaming routing
   app.use('/tool/runstream', (req, res, next) => {
     authTokenMiddleware(req, res, () => {
       runToolStreamHandler(req, res, next).catch(next);
