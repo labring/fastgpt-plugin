@@ -23,21 +23,6 @@ export const toolContract = c.router(
       responses: {
         200: ToolListItemSchema
       }
-    },
-    run: {
-      path: '/run',
-      method: 'POST',
-      description: 'Run a tool',
-      body: z.object({
-        toolId: z.string(),
-        inputs: z.record(z.any()),
-        systemVar: SystemVarSchema
-      }),
-      responses: {
-        200: z.object({
-          output: z.record(z.any())
-        })
-      }
     }
   },
   {
