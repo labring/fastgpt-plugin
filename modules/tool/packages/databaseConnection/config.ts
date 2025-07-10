@@ -42,6 +42,10 @@ export default defineTool({
               {
                 label: 'Microsoft SQL Server',
                 value: 'Microsoft SQL Server'
+              },
+              {
+                label: 'TiDB',
+                value: 'TiDB'
               }
             ]
           },
