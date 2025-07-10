@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { InfoString } from '@/type/i18n';
 import { InputSchema, OutputSchema } from './fastgpt';
+import { StreamMessageSchema } from './stream';
 
 export const SystemVarSchema = z.object({
   user: z.object({
@@ -27,7 +28,11 @@ export const ToolCallbackReturnSchema = z.object({
 });
 export const ToolCallbackType = z
   .function()
-  .args(z.any(), SystemVarSchema)
+  .args(
+    z.any(),
+    SystemVarSchema,
+    z.function().args(StreamMessageSchema).returns(z.void()).optional() // sendMessage
+  )
   .returns(z.promise(ToolCallbackReturnSchema));
 
 export enum ToolTypeEnum {

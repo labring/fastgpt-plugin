@@ -30,9 +30,21 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
           type: 'error',
           data: `Tool with ID ${data.toolId} not found or does not have a callback.`
         });
+        return;
       }
+
       try {
-        const result = await tool?.cb(data.inputs, data.systemVar);
+        // callback function
+        const sendMessage = (messageData: any) => {
+          parentPort?.postMessage({
+            type: 'data',
+            data: messageData
+          });
+        };
+
+        // sendMessage is optinal
+        const result = await tool.cb(data.inputs, data.systemVar, sendMessage);
+
         parentPort?.postMessage({
           type: 'success',
           data: result
