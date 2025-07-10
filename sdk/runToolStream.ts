@@ -1,5 +1,9 @@
 import type { SystemVarType } from '@tool/type/tool';
-import { StreamDataAnswerType } from '@tool/type/stream';
+import {
+  StreamDataAnswerTypeEnum,
+  StreamMessageTypeEnum,
+  type StreamMessageType
+} from '@tool/type/stream';
 
 export async function runToolStream({
   baseUrl,
@@ -14,7 +18,7 @@ export async function runToolStream({
   toolId: string;
   inputs: Record<string, any>;
   systemVar: SystemVarType;
-  onStreamData: (type: StreamDataAnswerType, data: any) => void;
+  onStreamData: (type: StreamDataAnswerTypeEnum, data: any) => void;
 }) {
   const response = await fetch(`${baseUrl}/tool/runstream`, {
     method: 'POST',
@@ -54,13 +58,20 @@ export async function runToolStream({
         if (!trimmedLine) continue;
 
         try {
-          const data = JSON.parse(trimmedLine);
+          const data = JSON.parse(trimmedLine) as StreamMessageType;
 
-          if ('output' in data) {
-            return data.output;
+          if (data.type === StreamMessageTypeEnum.DATA) {
+            if ('content' in data.data) {
+              // streamed data
+              onStreamData(data.data.type, data.data.content);
+            } else {
+              // unstreamed data
+              return data.data;
+            }
           }
-
-          onStreamData(data.type, data.content);
+          if (data.type === StreamMessageTypeEnum.ERROR) {
+            return Promise.reject(data.error);
+          }
         } catch (parseError) {
           continue;
         }
