@@ -1,11 +1,5 @@
 import { defineTool } from '@tool/type';
-import {
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  SystemInputKeyEnum,
-  WorkflowIOValueTypeEnum
-} from '@tool/type/fastgpt';
-import { defineInputConfig } from '@tool/utils/tool';
+import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
   name: {
@@ -22,22 +16,14 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'token',
-            label: 'GitHub Token',
-            description: '可选，填写后可提升API速率或访问更多信息',
-            inputType: 'secret',
-            required: false
-          }
-        ]),
         {
           key: 'owner',
           label: '仓库拥有者',
           description: 'GitHub 仓库的拥有者用户名，如 facebook',
           required: true,
           valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          toolDescription: 'GitHub 仓库的拥有者用户名, 如 facebook'
         },
         {
           key: 'repo',
@@ -45,7 +31,8 @@ export default defineTool({
           description: 'GitHub 仓库名，如 react',
           required: true,
           valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference]
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          toolDescription: 'GitHub 仓库名，如 react'
         }
       ],
       outputs: [
