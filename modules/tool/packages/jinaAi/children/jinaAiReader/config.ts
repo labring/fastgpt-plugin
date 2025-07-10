@@ -41,21 +41,10 @@ export default defineTool({
           key: 'url',
           label: '目标网页',
           description: '需要解析的网页URL地址',
+          toolDescription: '需要解析的网页URL地址',
           required: true,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          valueType: WorkflowIOValueTypeEnum.string,
-          toolDescription: '目标网页URL'
-        },
-        {
-          key: 'timeout',
-          label: '超时时间（秒）',
-          description: '请求超时时间，范围1-300秒',
-          required: false,
-          renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
-          valueType: WorkflowIOValueTypeEnum.number,
-          defaultValue: 30,
-          min: 1,
-          max: 300
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
+          valueType: WorkflowIOValueTypeEnum.string
         },
         {
           key: 'returnFormat',
@@ -78,12 +67,6 @@ export default defineTool({
       ],
       outputs: [
         {
-          key: 'code',
-          label: '响应状态码',
-          description: 'API响应的状态码',
-          valueType: WorkflowIOValueTypeEnum.number
-        },
-        {
           key: 'title',
           label: '页面标题',
           description: '网页的标题信息',
@@ -93,12 +76,6 @@ export default defineTool({
           key: 'description',
           label: '页面描述',
           description: '网页的描述信息',
-          valueType: WorkflowIOValueTypeEnum.string
-        },
-        {
-          key: 'url',
-          label: '页面URL',
-          description: '解析的网页URL地址',
           valueType: WorkflowIOValueTypeEnum.string
         },
         {

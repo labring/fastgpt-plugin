@@ -2,6 +2,7 @@ import { z } from 'zod';
 import axios from 'axios';
 import { getErrText } from '@tool/utils/err';
 import { uploadFile } from '@/worker/utils';
+import { POST } from '@tool/utils/request';
 
 export const InputType = z
   .object({
@@ -33,7 +34,7 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
   const { prompt, url, authorization, 绘图提示词: old_prompt } = props;
 
   try {
-    const { data } = await axios.post<{
+    const { data } = await POST<{
       data: { url: string }[];
     }>(
       `${url}/v1/images/generations`,

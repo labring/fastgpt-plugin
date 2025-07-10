@@ -43,10 +43,10 @@ export default defineTool({
           key: 'query',
           label: '搜索关键词',
           description: '要搜索的关键词或查询语句',
+          toolDescription: '搜索关键词',
           required: true,
           valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          toolDescription: '搜索关键词'
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input]
         },
         {
           key: 'country',
@@ -86,44 +86,27 @@ export default defineTool({
           toolDescription: '搜索语言代码'
         },
         {
-          key: 'timeout',
-          label: '超时时间（秒）',
-          description: '请求超时时间，范围5-120秒',
-          required: false,
-          valueType: WorkflowIOValueTypeEnum.number,
-          renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
-          min: 5,
-          max: 120,
-          defaultValue: 30,
-          toolDescription: '请求超时时间（秒）'
-        },
-        {
           key: 'readFullContent',
           label: '读取完整内容',
           description: '是否访问搜索结果中的每个URL并返回完整内容',
           required: false,
           valueType: WorkflowIOValueTypeEnum.boolean,
-          renderTypeList: [FlowNodeInputTypeEnum.switch, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.switch],
           defaultValue: false,
           toolDescription: '是否读取SERP的完整内容'
-        },
-        {
-          key: 'withFavicons',
-          label: '获取图标',
-          description: '是否获取SERP中每个URL的图标，用于UI渲染',
-          required: false,
-          valueType: WorkflowIOValueTypeEnum.boolean,
-          renderTypeList: [FlowNodeInputTypeEnum.switch, FlowNodeInputTypeEnum.reference],
-          defaultValue: false,
-          toolDescription: '是否获取网站图标'
         }
       ],
       outputs: [
         {
           key: 'result',
           label: '搜索结果',
-          description: 'Jina AI 搜索返回的结构化数据',
-          valueType: WorkflowIOValueTypeEnum.object
+          description: `Jina AI 搜索返回的结构化数据: {
+  title: string;
+  url: string;
+  description: string;
+  content?: string;
+}[]`,
+          valueType: WorkflowIOValueTypeEnum.arrayObject
         }
       ]
     }
