@@ -32,12 +32,17 @@ export const runToolStreamHandler = async (
         // forwarding to SSE
         switch (message.type) {
           case SSEMessageType.DATA:
-            sseManager.sendMessage(message.data);
+            // there is no "type", the content is directly output.
+            const dataToSend =
+              message.data.type === StreamDataAnswerType.Answer
+                ? { type: StreamDataAnswerType.Answer, content: message.data.content }
+                : message.data;
+            sseManager.sendMessage(dataToSend);
             break;
           case SSEMessageType.ERROR:
             sseManager.sendMessage({
               type: StreamDataAnswerType.Error,
-              content: message.data
+              content: message.data.content
             });
             break;
         }

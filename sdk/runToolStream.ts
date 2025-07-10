@@ -40,15 +40,10 @@ export async function runToolStream({
 
   const decoder = new TextDecoder();
   let buffer = '';
-  const finalResult: any = null;
 
   try {
     while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        return finalResult || {};
-      }
+      const { value } = await reader.read();
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
@@ -60,6 +55,11 @@ export async function runToolStream({
 
         try {
           const data = JSON.parse(trimmedLine);
+
+          if ('output' in data) {
+            return data.output;
+          }
+
           onStreamData(data.type, data.content);
         } catch (parseError) {
           continue;

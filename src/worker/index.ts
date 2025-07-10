@@ -6,7 +6,7 @@ import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
-import { SSEMessageType } from '@tool/type/stream';
+import { SSEMessageSchema, SSEMessageType, StreamDataAnswerType } from '@tool/type/stream';
 
 type WorkerQueueItem = {
   id: string;
@@ -161,7 +161,7 @@ export async function dispatchWithNewWorker(data: {
   toolId: string;
   inputs: Record<string, any>;
   systemVar: Record<string, any>;
-  onMessage?: (message: { type: SSEMessageType; data: any }) => void; // streaming callback 可选
+  onMessage?: (message: { type: SSEMessageType; data: z.infer<typeof SSEMessageSchema> }) => void; // streaming callback 可选
 }) {
   const { toolId, onMessage } = data;
   const tool = getTool(toolId);
@@ -203,7 +203,10 @@ export async function dispatchWithNewWorker(data: {
           }
           case 'error': {
             if (onMessage)
-              onMessage({ type: SSEMessageType.ERROR, data: { error: getErrText(data) } });
+              onMessage({
+                type: SSEMessageType.ERROR,
+                data: { type: StreamDataAnswerType.Error, content: getErrText(data) }
+              });
             worker.terminate();
             reject(new Error(getErrText(data)));
             break;
@@ -233,13 +236,19 @@ export async function dispatchWithNewWorker(data: {
 
       worker.on('error', (error) => {
         if (onMessage)
-          onMessage({ type: SSEMessageType.ERROR, data: { error: getErrText(error) } });
+          onMessage({
+            type: SSEMessageType.ERROR,
+            data: { type: StreamDataAnswerType.Error, content: getErrText(error) }
+          });
         reject(error);
       });
 
       worker.on('messageerror', (error) => {
         if (onMessage)
-          onMessage({ type: SSEMessageType.ERROR, data: { error: getErrText(error) } });
+          onMessage({
+            type: SSEMessageType.ERROR,
+            data: { type: StreamDataAnswerType.Error, content: getErrText(error) }
+          });
         reject(error);
       });
 
@@ -247,7 +256,10 @@ export async function dispatchWithNewWorker(data: {
         if (code !== 0) {
           const error = new Error(`Worker stopped with exit code ${code}`);
           if (onMessage)
-            onMessage({ type: SSEMessageType.ERROR, data: { error: getErrText(error) } });
+            onMessage({
+              type: SSEMessageType.ERROR,
+              data: { type: StreamDataAnswerType.Error, content: getErrText(error) }
+            });
           reject(error);
         }
       });
