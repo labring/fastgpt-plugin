@@ -1,9 +1,9 @@
 {
-  "name": "fastgpt-tools-aliModelStudio",
+  "name": "@fastgpt-plugins/tool-ali-model-studio",
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "bun build index.ts --minify --outdir dist --outFile index.js --target=node"
+    "build": "bun ../../../../scripts/build.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

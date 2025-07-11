@@ -29,8 +29,16 @@ const name = await input({
 
 // name validation:
 // 1. less than 20 characters
+// 2. camelCase
 if (name.length > 20) {
   console.error('Tool name must be less than 20 characters');
+  process.exit(1);
+}
+
+if (!/^[a-z][a-zA-Z0-9]*$/.test(name)) {
+  console.error(
+    'Tool name must be camelCase, for example: myTool, myToolset. These name can not be used: MyTool, my-tool, my_tool'
+  );
   process.exit(1);
 }
 
@@ -66,7 +74,11 @@ if (isToolset) {
 // 3. Rewrite new tool package.json
 const packageJsonPath = toolDir + '/package.json';
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-packageJson.name = `fastgpt-tools-${name}`;
+
+const nameFormatToKebabCase = (name: string) =>
+  name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+
+packageJson.name = `@fastgpt-plugins/tool-${nameFormatToKebabCase(name)}`;
 fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
 // output success message
