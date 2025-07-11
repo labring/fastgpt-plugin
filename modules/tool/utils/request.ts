@@ -251,4 +251,4 @@ export const DELETE = request.delete.bind(request);
 export const PATCH = request.patch.bind(request);
 
 // Create method for custom instances
-export const create = (config: RequestConfig): HttpClient => new HttpClient(config);
+export const createHttpClient = (config: RequestConfig): HttpClient => new HttpClient(config);

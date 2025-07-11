@@ -18,7 +18,8 @@ export const buildATool = async (tool: string, dist: string = distDir) => {
     naming: tool + '.js',
     target: 'node',
     plugins: [autoToolIdPlugin],
-    external: ['zod', 'minio']
+    external: ['zod', '@tool/utils'],
+    minify: true
   });
 };
 

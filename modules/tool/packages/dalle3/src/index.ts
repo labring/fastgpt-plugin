@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import axios from 'axios';
 import { getErrText } from '@tool/utils/err';
-import { uploadFile } from '@/worker/utils';
+import { uploadFile } from '@tool/utils/uploadFile';
 import { POST } from '@tool/utils/request';
 
 export const InputType = z

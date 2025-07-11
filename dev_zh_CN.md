@@ -56,3 +56,35 @@ pnpm link xxxx/fastgpt-plugin/sdk
 为插件编写测试用例。
 
 我们使用 [vitest](https://vitest.dev) 进行测试。
+
+#### 4. 尽量不使用变量(let, var), 使用 const
+
+“不可变”以提高代码的可读性，并且可以避免变量因错误赋值导致的问题，也对 TS 提示有所好处。
+
+#### 5. 尽量不使用 any
+
+#### 6. 变量作用域
+
+尽量使用更小的变量作用域。
+
+### 系统工具内可用的工具函数
+
+系统内置了一些工具函数可供调用，其目录位于 `modules/tool/utils` 下。
+在代码中可以使用 `import { xxx } from '@/tool/utils'` 的方式引入。
+
+下面是工具函数的列表：
+
+- delay: 延时
+- getErrText: 错误处理
+- htmlTable2Md: html表格转markdown
+- retryFn: 重试函数
+- replaceSensitiveText: 替换敏感文本
+- request: 请求函数
+- GET: GET请求
+- POST: POST请求
+- PUT: PUT请求
+- DELETE: DELETE请求
+- PATCH: PATCH请求
+- createHttpClient: 创建自定义的http客户端
+- getNanoid: 生成唯一id
+- uploadFile: 上传文件到 Minio 中

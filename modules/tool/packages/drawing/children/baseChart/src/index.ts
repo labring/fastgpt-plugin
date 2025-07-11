@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import * as echarts from 'echarts';
-import { uploadFile } from '@/worker/utils';
+import { uploadFile } from '@tool/utils/uploadFile';
 import json5 from 'json5';
 
 export const InputType = z
