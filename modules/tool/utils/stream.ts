@@ -1,5 +1,5 @@
+import type { StreamMessageType } from '@tool/type/stream';
 import type { Response } from 'express';
-import type { StreamMessage } from '../type/stream';
 
 export class StreamManager {
   private response: Response;
@@ -31,7 +31,7 @@ export class StreamManager {
     });
   }
 
-  sendMessage(message: StreamMessage) {
+  sendMessage(message: StreamMessageType) {
     if (!this.isConnected) {
       return;
     }

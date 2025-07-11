@@ -1,19 +1,38 @@
 import { z } from 'zod';
 
-export enum StreamMessageType {
+export const ToolOutputTypeSchema = z.union([
+  z.object({
+    output: z.record(z.any())
+  }),
+  z.object({
+    error: z.string()
+  })
+]);
+
+export enum StreamMessageTypeEnum {
   ERROR = 'error',
   DATA = 'data'
 }
 
-export enum StreamDataAnswerType {
+export enum StreamDataAnswerTypeEnum {
   Answer = 'answer',
-  FastAnswer = 'fastAnswer',
-  Error = 'error'
+  FastAnswer = 'fastAnswer'
 }
 
-export const StreamMessageSchema = z.object({
-  type: z.nativeEnum(StreamDataAnswerType),
+export const StreamDataSchema = z.object({
+  type: z.nativeEnum(StreamDataAnswerTypeEnum),
   content: z.string()
 });
 
-export type StreamMessage = z.infer<typeof StreamMessageSchema>;
+export const StreamMessageSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal(StreamMessageTypeEnum.ERROR),
+    error: z.string()
+  }),
+  z.object({
+    type: z.literal(StreamMessageTypeEnum.DATA),
+    data: z.union([StreamDataSchema, ToolOutputTypeSchema])
+  })
+]);
+
+export type StreamMessageType = z.infer<typeof StreamMessageSchema>;

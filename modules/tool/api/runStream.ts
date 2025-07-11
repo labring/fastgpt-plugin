@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { getTool } from '@tool/controller';
 import { dispatchWithNewWorker } from '@/worker';
 import { StreamManager } from '../utils/stream';
-import { StreamMessageType, StreamDataAnswerType } from '../type/stream';
+import { StreamMessageTypeEnum, StreamDataAnswerTypeEnum } from '../type/stream';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 
@@ -31,19 +31,18 @@ export const runToolStreamHandler = async (
       onMessage: (message) => {
         // forwarding to Stream
         switch (message.type) {
-          case StreamMessageType.DATA: {
+          case StreamMessageTypeEnum.DATA: {
             // there is no "type", the content is directly output.
-            const dataToSend =
-              message.data.type === StreamDataAnswerType.Answer
-                ? { type: StreamDataAnswerType.Answer, content: message.data.content }
-                : message.data;
-            streamManager.sendMessage(dataToSend);
+            streamManager.sendMessage({
+              type: StreamMessageTypeEnum.DATA,
+              data: message.data
+            });
             break;
           }
-          case StreamMessageType.ERROR:
+          case StreamMessageTypeEnum.ERROR:
             streamManager.sendMessage({
-              type: StreamDataAnswerType.Error,
-              content: message.data.content
+              type: StreamMessageTypeEnum.ERROR,
+              error: message.error
             });
             break;
         }
@@ -54,8 +53,8 @@ export const runToolStreamHandler = async (
   } catch (error) {
     addLog.error(`Run tool ${toolId} stream error`, error);
     streamManager.sendMessage({
-      type: StreamDataAnswerType.Error,
-      content: getErrText(error)
+      type: StreamMessageTypeEnum.ERROR,
+      error: getErrText(error)
     });
   }
 };
