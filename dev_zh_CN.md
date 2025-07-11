@@ -65,7 +65,34 @@ pnpm link xxxx/fastgpt-plugin/sdk
 
 #### 6. 变量作用域
 
-尽量使用更小的变量作用域。
+尽量使用更小的变量作用域。通常可以用如下两种方式：
+
+1. 使用“块作用域”语法
+
+```typescript
+const foo = () => {
+  {
+    const bar = 1;
+    console.log(bar); // 1
+  }
+  console.log(bar); // ReferenceError: bar is not defined
+};
+```
+
+2. 使用 IIFE (Immediately Invoked Function Expression, 立即执行函数表达式)
+如果某个结果需要导出到更大的作用域中，可以使用 IIFE 语法。
+
+```typescript
+const foo = () => {
+  const bar = (()=>{
+    const a = 1;
+    const b = 2;
+    return a + b;
+  })();
+  console.log(bar); // 3
+  console.log(a); // ReferenceError: a is not defined
+};
+```
 
 ### 系统工具内可用的工具函数
 
