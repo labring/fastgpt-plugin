@@ -4,7 +4,7 @@ import mysql from 'mysql2/promise'; // MySQL 客户端
 import mssql from 'mssql'; // SQL Server 客户端
 
 // const supportedDatabaseTypes = ['PostgreSQL', 'MySQL', 'Microsoft SQL Server'];
-const supportedDatabaseTypes = z.enum(['PostgreSQL', 'MySQL', 'Microsoft SQL Server']);
+const supportedDatabaseTypes = z.enum(['PostgreSQL', 'MySQL', 'TiDB', 'Microsoft SQL Server']);
 
 export const InputType = z
   .object({
@@ -59,6 +59,19 @@ export async function tool({
         user,
         password,
         connectTimeout: 30000
+      });
+      const [rows] = await connection.execute(sql);
+      result = rows;
+      await connection.end();
+    } else if (databaseType === 'TiDB') {
+      const connection = await mysql.createConnection({
+        host,
+        port,
+        database: databaseName,
+        user,
+        password,
+        connectTimeout: 30000,
+        enableKeepAlive: false
       });
 
       const [rows] = await connection.execute(sql);
