@@ -1,5 +1,5 @@
-import type { SystemVarType } from '@tool/type/tool';
 import { z } from 'zod';
+import { type RunToolSecondParamsType } from '@tool/type/tool';
 
 export const InputType = z.object({});
 
@@ -9,7 +9,7 @@ export const OutputType = z.object({
 
 export async function tool(
   props: z.infer<typeof InputType>,
-  systemVar: SystemVarType
+  { systemVar }: RunToolSecondParamsType
 ): Promise<z.infer<typeof OutputType>> {
   return {
     time: systemVar.time

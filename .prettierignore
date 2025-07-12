@@ -3,4 +3,4 @@ dist
 **/.DS_Store
 node_modules
 *.md
-pnpm-lock.yaml
+bun.lock

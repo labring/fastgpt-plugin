@@ -1,6 +1,8 @@
 import z from 'zod';
 import { FileInputSchema } from '@/s3/controller';
 import { FileMetadataSchema, type FileMetadata } from '@/s3/config';
+import { StreamMessageSchema } from '@tool/type/tool';
+import { ToolCallbackReturnSchema } from '@tool/type/tool';
 
 declare global {
   var uploadFileResponseFn: (data: { data?: FileMetadata; error?: string }) => void | undefined;
@@ -20,15 +22,15 @@ export const Worker2MainMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('success'),
-    data: z.any()
+    data: ToolCallbackReturnSchema
   }),
   z.object({
     type: z.literal('error'),
     data: z.any()
   }),
   z.object({
-    type: z.literal('data'),
-    data: z.any()
+    type: z.literal('stream'),
+    data: StreamMessageSchema
   })
 ]);
 

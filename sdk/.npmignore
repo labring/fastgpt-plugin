@@ -1,3 +1,5 @@
 build.ts
 client.ts
 test.ts
+pnpm-lock.yaml
+runToolStream.ts

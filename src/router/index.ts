@@ -2,7 +2,8 @@ import { createExpressEndpoints } from '@ts-rest/express';
 import { contract } from '../contract';
 import { s } from '../router/init';
 import type { Express } from 'express';
-import { toolRouter, runToolStreamHandler } from '@tool/router';
+import { toolRouter } from '@tool/router';
+import { runToolStreamHandler } from '@tool/api/runStream';
 import { authTokenMiddleware } from './middleware/auth';
 
 export const initRouter = (app: Express) => {

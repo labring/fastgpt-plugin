@@ -1,16 +1,10 @@
 import { Worker } from 'worker_threads';
 import { getTool } from 'modules/tool/controller';
-import { ToolCallbackReturnSchema } from '../../modules/tool/type/tool';
-import { z } from 'zod';
+import { type ToolCallbackReturnSchemaType } from '../../modules/tool/type/tool';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
-import { getErrText } from '@tool/utils/err';
-import {
-  StreamMessageTypeEnum,
-  StreamDataAnswerTypeEnum,
-  type StreamMessageType
-} from '@tool/type/stream';
+import type { StreamMessageType } from '@tool/type/tool';
 
 type WorkerQueueItem = {
   id: string;
@@ -167,7 +161,7 @@ export async function dispatchWithNewWorker(data: {
   systemVar: Record<string, any>;
   onMessage?: (message: StreamMessageType) => void; // streaming callback 可选
 }) {
-  const { toolId, onMessage } = data;
+  const { toolId, onMessage, ...workerData } = data; // 解构出 onMessage，剩余数据传给 worker
   const tool = getTool(toolId);
 
   if (!tool || !tool.cb) {
@@ -190,94 +184,59 @@ export async function dispatchWithNewWorker(data: {
         })
   });
 
-  const resolvePromise = new Promise<z.infer<typeof ToolCallbackReturnSchema>>(
-    (resolve, reject) => {
-      worker.on('message', async ({ type, data }: Worker2MainMessageType) => {
-        switch (type) {
-          case 'log': {
-            const logData = Array.isArray(data) ? data : [data];
-            console.log(...logData);
-            break;
-          }
-          case 'success': {
-            if (onMessage) onMessage({ type: StreamMessageTypeEnum.DATA, data });
-            worker.terminate();
-            resolve(data);
-            break;
-          }
-          case 'error': {
-            if (onMessage)
-              onMessage({
-                type: StreamMessageTypeEnum.ERROR,
-                error: getErrText(data)
-              });
-            worker.terminate();
-            reject(new Error(getErrText(data)));
-            break;
-          }
-          case 'data': {
-            if (onMessage) onMessage({ type: StreamMessageTypeEnum.DATA, data });
-            break;
-          }
-          case 'uploadFile': {
-            try {
-              const result = await global.s3Server.uploadFileAdvanced(data);
-              worker.postMessage({
-                type: 'uploadFileResponse',
-                data: { data: result }
-              });
-            } catch (error) {
-              addLog.error(`Tool upload file error`, error);
-              worker.postMessage({
-                type: 'uploadFileResponse',
-                data: { error: 'Tool upload file error' }
-              });
+  return new Promise<ToolCallbackReturnSchemaType>((resolve, reject) => {
+    worker.on('message', async ({ type, data }: Worker2MainMessageType) => {
+      if (type === 'success') {
+        resolve(data);
+        worker.terminate();
+      } else if (type === 'stream') {
+        onMessage?.(data);
+      } else if (type === 'error') {
+        reject(data);
+        worker.terminate();
+      } else if (type === 'log') {
+        const logData = Array.isArray(data) ? data : [data];
+        console.log(...logData);
+      } else if (type === 'uploadFile') {
+        try {
+          const result = await global.s3Server.uploadFileAdvanced(data);
+          worker.postMessage({
+            type: 'uploadFileResponse',
+            data: {
+              data: result
             }
-            break;
-          }
-        }
-      });
-
-      worker.on('error', (error) => {
-        if (onMessage)
-          onMessage({
-            type: StreamMessageTypeEnum.ERROR,
-            error: getErrText(error)
           });
-        reject(error);
-      });
-
-      worker.on('messageerror', (error) => {
-        if (onMessage)
-          onMessage({
-            type: StreamMessageTypeEnum.ERROR,
-            error: getErrText(error)
+        } catch (error) {
+          addLog.error(`Tool upload file error`, error);
+          worker.postMessage({
+            type: 'uploadFileResponse',
+            data: {
+              error: 'Tool upload file error'
+            }
           });
-        reject(error);
-      });
-
-      worker.on('exit', (code) => {
-        if (code !== 0) {
-          const error = new Error(`Worker stopped with exit code ${code}`);
-          if (onMessage)
-            onMessage({
-              type: StreamMessageTypeEnum.ERROR,
-              error: getErrText(error)
-            });
-          reject(error);
         }
-      });
+      }
+    });
 
-      worker.postMessage({
-        type: 'runTool',
-        data: {
-          toolDirName: tool.toolDirName,
-          toolId: data.toolId,
-          inputs: data.inputs,
-          systemVar: data.systemVar
-        }
-      });
-    }
-  );
-  return resolvePromise;
+    worker.on('error', (err) => {
+      addLog.error(`Run tool error`, err);
+      reject(err);
+      worker.terminate();
+    });
+    worker.on('messageerror', (err) => {
+      addLog.error(`Run tool error`, err);
+      reject(err);
+      worker.terminate();
+    });
+
+    worker.postMessage({
+      type: 'runTool',
+      data: {
+        toolDirName: tool.toolDirName,
+        toolId,
+        inputs: workerData.inputs,
+        systemVar: workerData.systemVar
+      }
+    });
+  });
 }

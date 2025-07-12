@@ -2,7 +2,7 @@ import type { z } from 'zod';
 import type { ToolSetConfigType } from '@tool/type';
 import { ToolConfigSchema, ToolSchema, type SystemVarType } from '@tool/type/tool';
 import type { ToolListItemType } from '@tool/type/api';
-import { StreamDataSchema } from '@tool/type/stream';
+import { StreamDataSchema } from '@tool/type/tool';
 import {
   FlowNodeInputTypeEnum,
   SystemInputKeyEnum,

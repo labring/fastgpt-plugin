@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { getTool } from '@tool/controller';
 import { dispatchWithNewWorker } from '@/worker';
 import { StreamManager } from '../utils/stream';
-import { StreamMessageTypeEnum, StreamDataAnswerTypeEnum } from '../type/stream';
+import { StreamMessageTypeEnum } from '../type/tool';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 
@@ -13,7 +13,7 @@ export const runToolStreamHandler = async (
 ): Promise<void> => {
   const { toolId, inputs, systemVar } = req.body;
 
-  addLog.debug('Run tool stream', { toolId, inputs, systemVar });
+  addLog.debug('Run tool', { toolId, inputs, systemVar });
 
   const tool = getTool(toolId);
 
@@ -24,37 +24,24 @@ export const runToolStreamHandler = async (
   }
   const streamManager = new StreamManager(res);
   try {
-    await dispatchWithNewWorker({
+    const result = await dispatchWithNewWorker({
       toolId,
       inputs,
       systemVar,
-      onMessage: (message) => {
-        // forwarding to Stream
-        switch (message.type) {
-          case StreamMessageTypeEnum.DATA: {
-            // there is no "type", the content is directly output.
-            streamManager.sendMessage({
-              type: StreamMessageTypeEnum.DATA,
-              data: message.data
-            });
-            break;
-          }
-          case StreamMessageTypeEnum.ERROR:
-            streamManager.sendMessage({
-              type: StreamMessageTypeEnum.ERROR,
-              error: message.error
-            });
-            break;
-        }
-      }
+      onMessage: streamManager.sendMessage
     });
 
-    streamManager.close();
-  } catch (error) {
-    addLog.error(`Run tool ${toolId} stream error`, error);
     streamManager.sendMessage({
-      type: StreamMessageTypeEnum.ERROR,
-      error: getErrText(error)
+      type: StreamMessageTypeEnum.response,
+      data: result
+    });
+    addLog.debug(`Run tool '${toolId}' success`);
+  } catch (error) {
+    addLog.error(`Run tool '${toolId}' error`, error);
+    streamManager.sendMessage({
+      type: StreamMessageTypeEnum.error,
+      data: getErrText(error)
     });
   }
+  streamManager.close();
 };

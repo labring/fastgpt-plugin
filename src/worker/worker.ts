@@ -43,7 +43,10 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
         };
 
         // sendMessage is optinal
-        const result = await tool.cb(data.inputs, data.systemVar, sendMessage);
+        const result = await tool.cb(data.inputs, {
+          systemVar: data.systemVar,
+          streamResponse: sendMessage
+        });
 
         parentPort?.postMessage({
           type: 'success',
