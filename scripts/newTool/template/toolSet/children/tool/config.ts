@@ -26,8 +26,8 @@ export default defineTool({
           inputList: [
             {
               key: 'apiKey',
-              label: 'Bing API Key',
-              description: '可以在 https://www.bing.com/business/create 获取',
+              label: 'API Key',
+              description: '可以在 xxx 获取',
               required: true,
               inputType: 'secret'
             }

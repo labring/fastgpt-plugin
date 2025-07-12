@@ -28,7 +28,11 @@ export const runToolStreamHandler = async (
       toolId,
       inputs,
       systemVar,
-      onMessage: streamManager.sendMessage
+      onMessage: (e) =>
+        streamManager.sendMessage({
+          type: StreamMessageTypeEnum.stream,
+          data: e
+        })
     });
 
     streamManager.sendMessage({

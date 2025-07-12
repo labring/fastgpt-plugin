@@ -1,7 +1,7 @@
 import z from 'zod';
 import { FileInputSchema } from '@/s3/controller';
 import { FileMetadataSchema, type FileMetadata } from '@/s3/config';
-import { StreamMessageSchema } from '@tool/type/tool';
+import { StreamDataSchema } from '@tool/type/tool';
 import { ToolCallbackReturnSchema } from '@tool/type/tool';
 
 declare global {
@@ -30,7 +30,7 @@ export const Worker2MainMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('stream'),
-    data: StreamMessageSchema
+    data: StreamDataSchema
   })
 ]);
 

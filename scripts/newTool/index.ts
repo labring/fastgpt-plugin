@@ -34,6 +34,10 @@ if (name.length > 20) {
   console.error('Tool name must be less than 20 characters');
   process.exit(1);
 }
+if (name.includes('-')) {
+  console.error(`Tool name cannot contain '-'`);
+  process.exit(1);
+}
 
 if (!/^[a-z][a-zA-Z0-9]*$/.test(name)) {
   console.error(

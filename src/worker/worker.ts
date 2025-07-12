@@ -37,7 +37,7 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
         // callback function
         const sendMessage = (messageData: any) => {
           parentPort?.postMessage({
-            type: 'data',
+            type: 'stream',
             data: messageData
           });
         };

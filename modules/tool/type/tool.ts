@@ -62,7 +62,7 @@ export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
 
 export const runToolSecondParams = z.object({
   systemVar: SystemVarSchema,
-  streamResponse: z.function().args(StreamDataSchema).returns(z.void()).optional() // sendMessage
+  streamResponse: z.function().args(StreamDataSchema).returns(z.void()) // sendMessage
 });
 export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
 

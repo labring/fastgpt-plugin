@@ -1,10 +1,9 @@
 import { Worker } from 'worker_threads';
 import { getTool } from 'modules/tool/controller';
-import { type ToolCallbackReturnSchemaType } from '../../modules/tool/type/tool';
+import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/tool';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
-import type { StreamMessageType } from '@tool/type/tool';
 
 type WorkerQueueItem = {
   id: string;
@@ -159,7 +158,7 @@ export async function dispatchWithNewWorker(data: {
   toolId: string;
   inputs: Record<string, any>;
   systemVar: Record<string, any>;
-  onMessage?: (message: StreamMessageType) => void; // streaming callback 可选
+  onMessage?: (message: StreamDataType) => void; // streaming callback 可选
 }) {
   const { toolId, onMessage, ...workerData } = data; // 解构出 onMessage，剩余数据传给 worker
   const tool = getTool(toolId);
