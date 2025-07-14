@@ -65,8 +65,8 @@ export default defineTool({
         {
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'msg',
-          label: '消息',
-          description: '成功或者失败信息'
+          label: '错误消息',
+          description: '当任务执行失败时返回的错误描述'
         }
       ]
     }

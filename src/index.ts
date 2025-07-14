@@ -14,12 +14,12 @@ const app = express().use(
 
 initOpenAPI(app);
 initRouter(app);
-try {
-  await initS3Server();
-} catch (error) {
-  addLog.error('Failed to initialize S3 server:', error);
-  process.exit(1);
-}
+// try {
+//   await initS3Server();
+// } catch (error) {
+//   addLog.error('Failed to initialize S3 server:', error);
+//   process.exit(1);
+// }
 initTool();
 
 const PORT = parseInt(process.env.PORT || '3000');
