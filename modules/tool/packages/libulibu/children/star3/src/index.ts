@@ -17,9 +17,6 @@ export const OutputType = z.object({
   msg: z.string().optional().describe('error message, returned when task execution fails')
 });
 
-/**
- * 生成 URL 签名
- */
 function generateUrlSignature(urlPath: string, secretKey: string) {
   const timestamp = Date.now();
   const nonce = crypto.randomBytes(8).toString('hex');
@@ -39,9 +36,6 @@ function generateUrlSignature(urlPath: string, secretKey: string) {
   };
 }
 
-/**
- * 构建请求 URL
- */
 function buildRequestUrl(accessKey: string, secretKey: string, apiPath: string) {
   const BASE_URL = 'https://openapi.liblibai.cloud';
   const signatureData = generateUrlSignature(apiPath, secretKey);
@@ -56,9 +50,6 @@ function buildRequestUrl(accessKey: string, secretKey: string, apiPath: string) 
   return `${BASE_URL}${apiPath}?${params.toString()}`;
 }
 
-/**
- * 提交绘画任务
- */
 async function submitDrawingTask(
   accessKey: string,
   secretKey: string,
@@ -96,9 +87,6 @@ async function submitDrawingTask(
   return await response.json();
 }
 
-/**
- * 查询任务状态
- */
 async function queryTaskStatus(accessKey: string, secretKey: string, generateUuid: string) {
   const apiPath = '/api/generate/webui/status';
   const url = buildRequestUrl(accessKey, secretKey, apiPath);
@@ -122,9 +110,6 @@ async function queryTaskStatus(accessKey: string, secretKey: string, generateUui
   return await response.json();
 }
 
-/**
- * 等待任务完成（递归重试机制）
- */
 async function waitForTaskCompletion(
   accessKey: string,
   secretKey: string,
@@ -142,7 +127,6 @@ async function waitForTaskCompletion(
     const statusResult = await queryTaskStatus(accessKey, secretKey, generateUuid);
     const generateStatus = statusResult.data?.generateStatus;
 
-    // 任务完成
     if (generateStatus === 5) {
       const images = statusResult.data?.images || [];
 
@@ -167,7 +151,6 @@ async function waitForTaskCompletion(
       };
     }
 
-    // 任务失败
     if (generateStatus === 4) {
       const errorMsg = statusResult.data?.generateMsg || '图片生成任务失败';
       return {
@@ -176,7 +159,6 @@ async function waitForTaskCompletion(
       };
     }
 
-    // 等待继续，递归重试
     await new Promise((resolve) => setTimeout(resolve, 3000));
     return waitForTaskCompletion(accessKey, secretKey, generateUuid, retryCount - 1);
   } catch (error) {
@@ -185,20 +167,15 @@ async function waitForTaskCompletion(
       generateUuid: generateUuid
     });
 
-    // 网络错误时也进行重试
     await new Promise((resolve) => setTimeout(resolve, 3000));
     return waitForTaskCompletion(accessKey, secretKey, generateUuid, retryCount - 1);
   }
 }
 
-/**
- * libulibu star3 绘画工具主函数
- */
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const { accessKey, secretKey, prompt, size } = props;
 
   try {
-    // 提交绘画任务
     const result = await submitDrawingTask(accessKey, secretKey, prompt, size);
 
     if (!result.data?.generateUuid) {
@@ -208,7 +185,6 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
       };
     }
 
-    // 等待任务完成
     return await waitForTaskCompletion(accessKey, secretKey, result.data.generateUuid);
   } catch (error) {
     const errorMessage =
