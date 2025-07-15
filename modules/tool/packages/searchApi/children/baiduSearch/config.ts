@@ -21,14 +21,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'apiKey',
-            label: 'Search API Key',
-            required: true,
-            inputType: 'secret'
-          }
-        ]),
         {
           key: 'q',
           label: '搜索关键词',
