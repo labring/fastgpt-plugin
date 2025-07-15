@@ -1,7 +1,6 @@
 import { defineTool } from '@tool/type';
 import {
   FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
   SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
@@ -20,21 +19,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'authorization',
-              label: '接口凭证（不需要 Bearer）',
-              description: 'sk-xxxx',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
         {
           key: 'prompt',
           label: '绘图提示词',

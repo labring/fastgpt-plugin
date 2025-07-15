@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { InfoString } from '@/type/i18n';
-import { InputSchema, OutputSchema } from './fastgpt';
+import { InputConfigSchema, InputSchema, OutputSchema, SystemInputKeyEnum } from './fastgpt';
 
 /* Call back type */
 export const SystemVarSchema = z.object({
@@ -123,7 +123,10 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
 
     // Computed
     parentId: z.string().optional().describe('The parent id of the tool'),
-    toolDirName: z.string()
+    toolDirName: z.string(),
+
+    // ToolSet Parent
+    inputConfig: InputSchema.optional().describe('The input list of the tool')
   })
 );
 
@@ -133,7 +136,15 @@ export const ToolSetConfigSchema = ToolConfigSchema.omit({
   .merge(
     z.object({
       type: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
-      children: z.array(toolConfigWithCbSchema).optional().describe('The children of the tool set')
+      children: z.array(toolConfigWithCbSchema).optional().describe('The children of the tool set'),
+      inputConfig: InputSchema.omit({ key: true })
+        .merge(
+          z.object({
+            key: z.literal(SystemInputKeyEnum.systemInputConfig)
+          })
+        )
+        .optional()
+        .describe('The input config of the tool set')
     })
   )
   .describe('The ToolSet Config Schema');

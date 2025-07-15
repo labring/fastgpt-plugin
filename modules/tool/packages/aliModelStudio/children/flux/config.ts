@@ -22,14 +22,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'apiKey',
-            label: 'API Key',
-            required: true,
-            inputType: 'secret'
-          }
-        ]),
         {
           key: 'prompt',
           label: '文本提示词',
