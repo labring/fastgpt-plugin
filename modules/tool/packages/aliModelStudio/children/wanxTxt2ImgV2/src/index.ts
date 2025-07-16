@@ -67,8 +67,7 @@ export const InputType = z.object({
 });
 
 export const OutputType = z.object({
-  images: z.array(z.string()).optional().describe('Array of generated image URLs'),
-  error: z.string().optional().describe('Error message')
+  images: z.array(z.string()).describe('Array of generated image URLs')
 });
 
 // Task status enumeration
@@ -123,9 +122,9 @@ export async function tool({
     const createTaskData = await createTaskResponse.json();
     const taskId = createTaskData?.output?.task_id;
     if (!taskId) {
-      return {
+      return Promise.reject({
         error: 'Failed to create task, task ID not obtained'
-      };
+      });
     }
 
     // Step 2: Poll for task results
@@ -162,13 +161,13 @@ export async function tool({
             images
           };
         } else if (taskStatus === TaskStatus.FAILED) {
-          return {
+          return Promise.reject({
             error: 'Image generation task failed'
-          };
+          });
         } else if (taskStatus === TaskStatus.CANCELED) {
-          return {
+          return Promise.reject({
             error: 'Image generation task was canceled'
-          };
+          });
         }
         // Task still in progress, continue polling
       } catch (queryError) {
@@ -181,12 +180,12 @@ export async function tool({
     }
 
     // Timeout
-    return {
+    return Promise.reject({
       error: 'Image generation timeout, please try again later'
-    };
+    });
   } catch (error: any) {
-    return {
+    return Promise.reject({
       error: getErrText(error, 'Text-to-image request failed')
-    };
+    });
   }
 }

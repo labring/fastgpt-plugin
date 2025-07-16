@@ -21,12 +21,8 @@ export const Worker2MainMessageSchema = z.discriminatedUnion('type', [
     data: z.array(z.any())
   }),
   z.object({
-    type: z.literal('success'),
+    type: z.literal('done'),
     data: ToolCallbackReturnSchema
-  }),
-  z.object({
-    type: z.literal('error'),
-    data: z.any()
   }),
   z.object({
     type: z.literal('stream'),

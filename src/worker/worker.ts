@@ -27,8 +27,10 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
 
       if (!tool || !tool.cb) {
         parentPort?.postMessage({
-          type: 'error',
-          data: `Tool with ID ${data.toolId} not found or does not have a callback.`
+          type: 'done',
+          data: {
+            error: `Tool with ID ${data.toolId} not found or does not have a callback.`
+          }
         });
         return;
       }
@@ -48,14 +50,20 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
           streamResponse: sendMessage
         });
 
+        if (result.error && result.error instanceof Error) {
+          result.error = getErrText(result.error.message);
+        }
+
         parentPort?.postMessage({
-          type: 'success',
+          type: 'done',
           data: result
         });
       } catch (error) {
         parentPort?.postMessage({
-          type: 'error',
-          data: getErrText(error)
+          type: 'done',
+          data: {
+            error: error instanceof Error ? getErrText(error) : error
+          }
         });
       }
       break;

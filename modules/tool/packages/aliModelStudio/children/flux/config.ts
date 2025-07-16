@@ -128,10 +128,10 @@ export default defineTool({
           description: '包含图片URL的数组'
         },
         {
+          type: FlowNodeOutputTypeEnum.error,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'error',
-          label: '错误信息',
-          description: '当任务执行失败时返回的错误描述'
+          label: '错误信息'
         }
       ]
     }
