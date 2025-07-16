@@ -35,6 +35,7 @@ export const exportTool = <T extends z.Schema, D extends z.Schema>({
           .join(', ');
         return { error: errorMessage };
       }
+
       return { error };
     }
   };
