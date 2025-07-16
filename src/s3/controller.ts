@@ -6,7 +6,6 @@ import * as path from 'path';
 import { z } from 'zod';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
-import { catchError } from '@/utils/catch';
 
 export const FileInputSchema = z
   .object({
@@ -52,46 +51,40 @@ export class S3Service {
 
       if (!bucketExists) {
         addLog.info(`Creating bucket: ${this.config.bucket}`);
-        const [, err] = await catchError(() => this.minioClient.makeBucket(this.config.bucket));
-        if (err) return Promise.reject('Can not create bucket');
+        await this.minioClient.makeBucket(this.config.bucket);
       }
 
-      // setting bucket policy and lifecycle rule
-      const [, err] = await catchError(() =>
-        Promise.all([
-          this.minioClient.setBucketPolicy(
-            this.config.bucket,
-            JSON.stringify({
-              Version: '2012-10-17',
-              Statement: [
-                {
-                  Effect: 'Allow',
-                  Principal: '*',
-                  Action: ['s3:GetObject'],
-                  Resource: [`arn:aws:s3:::${this.config.bucket}/*`]
-                }
-              ]
-            })
-          ),
-          this.minioClient.setBucketLifecycle(this.config.bucket, {
-            Rule: [
+      // 同时设置访问策略和生命周期规则
+      await Promise.all([
+        this.minioClient.setBucketPolicy(
+          this.config.bucket,
+          JSON.stringify({
+            Version: '2012-10-17',
+            Statement: [
               {
-                ID: 'AutoDeleteRule',
-                Status: 'Enabled',
-                Expiration: {
-                  Days: this.config.retentionDays,
-                  DeleteMarker: false,
-                  DeleteAll: false
-                }
+                Effect: 'Allow',
+                Principal: '*',
+                Action: ['s3:GetObject'],
+                Resource: [`arn:aws:s3:::${this.config.bucket}/*`]
               }
             ]
           })
-        ])
-      );
+        ),
+        this.minioClient.setBucketLifecycle(this.config.bucket, {
+          Rule: [
+            {
+              ID: 'AutoDeleteRule',
+              Status: 'Enabled',
+              Expiration: {
+                Days: this.config.retentionDays,
+                DeleteMarker: false,
+                DeleteAll: false
+              }
+            }
+          ]
+        })
+      ]);
 
-      if (err) {
-        addLog.warn('Can not set bucket policy or lifecycle rule');
-      }
       addLog.info(
         `Bucket initialized, ${this.config.bucket} configured successfully with ${this.config.retentionDays} days retention`
       );
@@ -122,7 +115,7 @@ export class S3Service {
 
     const customEndpoint = process.env.MINIO_CUSTOM_ENDPOINT;
     return customEndpoint
-      ? `${customEndpoint}/${this.config.bucket}/${encodeURIComponent(filename)}`
+      ? `${customEndpoint}/${encodeURIComponent(filename)}`
       : `${protocol}://${this.config.endpoint}${port}/${this.config.bucket}/${encodeURIComponent(filename)}`;
   }
 

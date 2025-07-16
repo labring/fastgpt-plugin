@@ -18,8 +18,7 @@ try {
   await initS3Server();
 } catch (error) {
   addLog.error('Failed to initialize S3 server:', error);
-  // only in production environment exit the process, in development environment just log the error
-  if (isProd) process.exit(1);
+  process.exit(1);
 }
 initTool();
 
