@@ -1,6 +1,7 @@
 import { defineTool } from '@tool/type';
 import {
   FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
   SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
@@ -114,10 +115,10 @@ export default defineTool({
           description: '生成的图片URL'
         },
         {
+          type: FlowNodeOutputTypeEnum.error,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'error',
-          label: '错误信息',
-          description: '如果生成失败，返回错误信息'
+          label: '错误信息'
         }
       ]
     }
