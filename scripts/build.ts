@@ -19,7 +19,7 @@ export const buildATool = async (tool: string, dist: string = distToolDir) => {
     naming: tool + '.js',
     target: 'node',
     plugins: [autoToolIdPlugin],
-    external: ['zod', '@tool/utils'],
+    external: ['@tool/utils'],
     minify: true
   });
 };
@@ -49,7 +49,6 @@ Bun.build({
   outdir: path.join(distDir, 'node_modules', '@tool', 'utils'),
   naming: '[name]',
   target: 'node',
-  external: ['zod'],
   minify: true
 });
 
