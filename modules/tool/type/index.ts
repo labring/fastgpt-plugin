@@ -14,6 +14,13 @@ export function defineTool(tool: ToolConfigType) {
   const versionList = tool.versionList.map((version) => {
     return {
       ...version,
+      inputs: version.inputs.map((input) => {
+        return {
+          ...input,
+          description: input.description ?? input.label,
+          toolDescription: input.toolDescription ?? input.description ?? input.label
+        };
+      }),
       outputs: version.outputs.map((output) => {
         return {
           ...output,
