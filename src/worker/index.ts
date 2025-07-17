@@ -198,7 +198,10 @@ export async function dispatchWithNewWorker(data: {
         console.log(...logData);
       } else if (type === 'uploadFile') {
         try {
-          const result = await global.s3Server.uploadFileAdvanced(data);
+          const result = await global.s3Server.uploadFileAdvanced({
+            ...data,
+            ...(data.buffer ? { buffer: Buffer.from(data.buffer) } : {})
+          });
           worker.postMessage({
             type: 'uploadFileResponse',
             data: {

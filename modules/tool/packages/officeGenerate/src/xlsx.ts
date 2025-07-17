@@ -12,9 +12,117 @@ export const OutputType = z.object({
   downloadUrl: z.string().describe('URL to download the converted file')
 });
 
+async function processLineWithImages(
+  workbook: ExcelJS.Workbook,
+  worksheet: ExcelJS.Worksheet,
+  line: string,
+  currentRow: number
+): Promise<number> {
+  let remainingText = line;
+  const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  let match;
+
+  while ((match = imageRegex.exec(remainingText)) !== null) {
+    const beforeText = remainingText.slice(0, match.index).trim();
+    if (beforeText) {
+      const { text, style } = parseMarkdownLine(beforeText);
+      const cell = worksheet.getCell(currentRow, 1);
+      cell.value = text;
+      cell.font = {
+        name: 'Arial',
+        size: style.isTitle ? 12 + (6 - style.isTitle) : 11,
+        bold: !!style.isTitle,
+        italic: style.isQuote
+      };
+      cell.alignment = {
+        vertical: 'top',
+        horizontal: 'left',
+        indent: style.isList ? 1 : 0,
+        wrapText: true
+      };
+      const column = worksheet.getColumn(1);
+      const safeColumnWidth = column.width ?? 50;
+      const lineCount = calculateTextLines(text, safeColumnWidth);
+      const rowHeight = style.isTitle ? Math.max(lineCount * 20, 25) : lineCount * 16;
+      worksheet.getRow(currentRow).height = rowHeight;
+      currentRow++;
+    }
+
+    const url = match[2];
+    try {
+      const buffer = await downloadImage(url);
+      const { width: imgWidth, height: imgHeight } = getImageDimensions(buffer);
+      const column = worksheet.getColumn(1);
+      const columnWidth = column.width ?? 50;
+      const cellWidthPx = columnWidth * 7.5;
+      const ratio = imgWidth / imgHeight;
+
+      let displayWidth = Math.min(imgWidth, cellWidthPx * 0.9);
+      let displayHeight = displayWidth / ratio;
+      if (displayHeight > 400) {
+        displayHeight = 400 * 0.9;
+        displayWidth = displayHeight * ratio;
+      }
+
+      const imageId = workbook.addImage({
+        buffer: buffer as unknown as ExcelBuffer,
+        extension: getImageExtension(url)
+      });
+
+      worksheet.addImage(imageId, {
+        tl: { col: 0, row: currentRow - 1, nativeColOff: 0, nativeRowOff: 0 },
+        ext: { width: displayWidth, height: displayHeight },
+        editAs: 'twoCell'
+      });
+
+      const cell = worksheet.getCell(currentRow, 1);
+      cell.value = '';
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      worksheet.getRow(currentRow).height = Math.ceil(displayHeight / 0.75) + 10;
+      currentRow++;
+    } catch (error) {
+      const cell = worksheet.getCell(currentRow, 1);
+      cell.value = '[image loading failed]';
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      worksheet.getRow(currentRow).height = 20;
+      currentRow++;
+      console.error('failed to handle image:', error);
+    }
+
+    remainingText = remainingText.slice(match.index + match[0].length).trim();
+    imageRegex.lastIndex = 0;
+  }
+
+  if (remainingText) {
+    const { text, style } = parseMarkdownLine(remainingText);
+    const cell = worksheet.getCell(currentRow, 1);
+    cell.value = text;
+    cell.font = {
+      name: 'Arial',
+      size: style.isTitle ? 12 + (6 - style.isTitle) : 11,
+      bold: !!style.isTitle,
+      italic: style.isQuote
+    };
+    cell.alignment = {
+      vertical: 'top',
+      horizontal: 'left',
+      indent: style.isList ? 1 : 0,
+      wrapText: true
+    };
+    const column = worksheet.getColumn(1);
+    const safeColumnWidth = column.width ?? 50;
+    const lineCount = calculateTextLines(text, safeColumnWidth);
+    const rowHeight = style.isTitle ? Math.max(lineCount * 20, 25) : lineCount * 16;
+    worksheet.getRow(currentRow).height = rowHeight;
+    currentRow++;
+  }
+
+  return currentRow;
+}
+
 function extractImageInfo(text: string): { alt: string; url: string } | null {
   const match = /!\[([^\]]*)\]\(([^)]+)\)/.exec(text);
-  if (match) return { alt: match[1], url: match[2].split('!')[0] }; // 移除URL参数
+  if (match) return { alt: match[1], url: match[2].split('!')[0] };
   return null;
 }
 
@@ -33,8 +141,8 @@ async function downloadImage(url: string): Promise<Buffer> {
     });
     return Buffer.from(response.data);
   } catch (error) {
-    console.error(`下载图片失败: ${url}`, error);
-    throw new Error(`无法下载图片: ${url}`);
+    console.error(`failed to download image: ${url}`, error);
+    throw new Error(`failed to download image: ${url}`);
   }
 }
 
@@ -76,7 +184,7 @@ function getImageDimensions(buffer: Buffer): { width: number; height: number } {
       };
     }
   } catch (error) {
-    console.warn('获取图片尺寸失败，使用默认值', error);
+    console.warn('failed to get image dimensions, using default values', error);
   }
   return { width: 400, height: 300 };
 }
@@ -199,9 +307,9 @@ async function handleImageCell(
 
     return Math.ceil(displayHeight / 0.75) + 10;
   } catch (error) {
-    console.error('处理图片失败', error);
+    console.error('failed to handle image:', error);
     const cell = worksheet.getCell(row, col + 1);
-    cell.value = '[图片加载失败]';
+    cell.value = '[image loading failed]';
     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
     return 20;
   }
@@ -239,7 +347,7 @@ function handleTextCell(
 
 async function createExcelFromMarkdown(markdown: string): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Markdown内容');
+  const worksheet = workbook.addWorksheet('Markdown content');
 
   worksheet.columns = [{ width: 50 }];
 
@@ -337,35 +445,7 @@ async function createExcelFromMarkdown(markdown: string): Promise<Buffer> {
         .filter((line) => line !== '');
 
       for (const line of lines) {
-        const { text, style } = parseMarkdownLine(line);
-        if (style.isHorizontalLine) {
-          currentRow++;
-          continue;
-        }
-
-        const cell = worksheet.getCell(currentRow, 1);
-        cell.value = text;
-        cell.font = {
-          name: 'Arial',
-          size: style.isTitle ? 12 + (6 - style.isTitle) : 11,
-          bold: !!style.isTitle,
-          italic: style.isQuote
-        };
-        cell.alignment = {
-          vertical: 'top',
-          horizontal: 'left',
-          indent: style.isList ? 1 : 0,
-          wrapText: true
-        };
-
-        const column = worksheet.getColumn(1);
-        const safeColumnWidth = column.width ?? 50;
-        const lineCount = calculateTextLines(text, safeColumnWidth);
-
-        const rowHeight = style.isTitle ? Math.max(lineCount * 20, 25) : lineCount * 16;
-        worksheet.getRow(currentRow).height = rowHeight;
-
-        currentRow++;
+        currentRow = await processLineWithImages(workbook, worksheet, line, currentRow);
       }
 
       if (blocks.indexOf(block) !== blocks.length - 1) {
@@ -390,20 +470,20 @@ async function createExcelFromMarkdown(markdown: string): Promise<Buffer> {
   return Buffer.from(buffer as ArrayBuffer);
 }
 
-export async function tool(input: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
+export async function xlsxTool(
+  input: z.infer<typeof InputType>
+): Promise<z.infer<typeof OutputType>> {
   const { markdown } = input;
   try {
     const xlsxBuffer = await createExcelFromMarkdown(markdown);
-    const base64Data = xlsxBuffer.toString('base64');
-
     const result = await uploadFile({
-      base64: base64Data,
+      buffer: xlsxBuffer,
       defaultFilename: `markdown-to-excel-${Date.now()}.xlsx`
     });
 
     return { downloadUrl: result.accessUrl };
   } catch (error) {
-    console.error('生成Excel失败:', error);
-    throw new Error(`转换失败: ${(error as Error).message}`);
+    console.error('failed to generate excel:', error);
+    throw new Error(`failed to generate excel: ${(error as Error).message}`);
   }
 }
