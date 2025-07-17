@@ -1,4 +1,4 @@
-import { getErrText } from '@tool/utils';
+import { getErrText } from '@tool/utils/err';
 import { z } from 'zod';
 
 export const InputType = z.object({
