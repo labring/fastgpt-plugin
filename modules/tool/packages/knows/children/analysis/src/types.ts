@@ -9,11 +9,11 @@ export type AnalysisType = 'single_summary' | 'all_summary' | 'highlight';
 
 // 分析工具输入
 export interface AnalysisToolInput extends ToolInput {
-  analysis_type: AnalysisType;
-  evidence_id?: string;
-  question_id?: string;
-  stream_mode?: boolean;
-  api_key?: string;
+  analysisType: AnalysisType;
+  evidenceId?: string;
+  questionId?: string;
+  streamMode?: boolean;
+  apiKey: string;
   environment?: 'production' | 'development';
 }
 
@@ -54,5 +54,5 @@ export const BLOCK_TYPE_LABELS: Record<string, string> = {
   figure: '图片',
   heading: '标题',
   table: '表格',
-  paragraph: '段落',
+  paragraph: '段落'
 };

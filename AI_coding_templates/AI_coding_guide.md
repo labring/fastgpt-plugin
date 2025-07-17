@@ -624,4 +624,19 @@ export default exportTool({
 
 ---
 
+## 📖 专项开发指南
+
+### Children 结构工具开发
+对于复杂的工具集开发（包含多个子工具的 ToolSet），请参考：
+- **[Children 结构工具开发指南](./Children_ToolSet_Development_Guide.md)** - 详细的 children 结构工具开发要点、常见陷阱和最佳实践
+
+该指南涵盖：
+- ToolSet 配置管理和子工具集成
+- 类型定义规范和参数命名约定
+- 错误处理最佳实践和调试技巧
+- 常见开发陷阱和解决方案
+- 完整的开发流程和验证步骤
+
+---
+
 **遵循此框架可以确保 FastGPT 插件的高质量、可维护性和一致性。** 🎯

@@ -6,6 +6,7 @@ import {
   SystemInputKeyEnum
 } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
+import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   type: ToolTypeEnum.search,
@@ -23,6 +24,15 @@ export default defineTool({
       value: '1.0.0',
       description: 'Default version',
       inputs: [
+        defineInputConfig([
+          {
+            key: 'apiKey',
+            label: 'KnowS API Key',
+            description: 'KnowS 平台的 API 密钥',
+            required: true,
+            inputType: 'secret'
+          }
+        ]),
         {
           key: 'query',
           label: '检索问题',
@@ -46,7 +56,7 @@ export default defineTool({
             { label: '指南文档', value: 'GUIDE' },
             { label: '会议文献', value: 'MEETING' }
           ],
-          defaultValue: ['PAPER', 'PAPER_CN', 'GUIDE', 'MEETING']  // 默认选择全部
+          defaultValue: ['PAPER', 'PAPER_CN', 'GUIDE', 'MEETING'] // 默认选择全部
         },
         {
           key: 'maxResults',

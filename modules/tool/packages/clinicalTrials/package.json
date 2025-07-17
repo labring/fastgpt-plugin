@@ -3,6 +3,7 @@
   "version": "0.1.1",
   "module": "index.ts",
   "type": "module",
+  "author": "xiaoyibao team",
   "scripts": {
     "build": "bun ../../../../scripts/build.ts"
   },

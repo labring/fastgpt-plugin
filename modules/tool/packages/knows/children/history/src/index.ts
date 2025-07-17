@@ -4,31 +4,40 @@ import { createKnowsClient } from '../../../shared/api';
 
 // 定义输入和输出的 Zod schema
 export const InputType = z.object({
-  historyType: z.enum(['question', 'interpretation']).describe('历史记录类型：question-问题历史，interpretation-文献解读历史'),
+  historyType: z
+    .enum(['question', 'interpretation'])
+    .describe('历史记录类型：question-问题历史，interpretation-文献解读历史'),
   fromTime: z.number().optional().describe('起始时间戳（毫秒）'),
   toTime: z.number().optional().describe('结束时间戳（毫秒）'),
   page: z.number().default(1).describe('页码，从1开始'),
   pageSize: z.number().default(20).describe('每页条数，最大50'),
-  apiKey: z.string().optional().describe('API密钥'),
+  apiKey: z.string().describe('API密钥'),
   environment: z.enum(['production', 'development']).optional().describe('环境配置')
 });
 
 export const OutputType = z.object({
   success: z.boolean().describe('执行状态'),
   historyType: z.string().describe('历史记录类型'),
-  records: z.array(z.object({
-    id: z.string().describe('记录ID'),
-    title: z.string().describe('标题或问题内容'),
-    time: z.string().describe('时间'),
-    userId: z.string().describe('用户ID'),
-    type: z.string().optional().describe('记录类型'),
-    hasAnswers: z.object({
-      clinical: z.boolean().optional(),
-      research: z.boolean().optional(),
-      popularScience: z.boolean().optional()
-    }).optional().describe('答案类型（仅问题历史）'),
-    evidenceType: z.string().optional().describe('证据类型（仅文献解读历史）')
-  })).describe('历史记录列表'),
+  records: z
+    .array(
+      z.object({
+        id: z.string().describe('记录ID'),
+        title: z.string().describe('标题或问题内容'),
+        time: z.string().describe('时间'),
+        userId: z.string().describe('用户ID'),
+        type: z.string().optional().describe('记录类型'),
+        hasAnswers: z
+          .object({
+            clinical: z.boolean().optional(),
+            research: z.boolean().optional(),
+            popularScience: z.boolean().optional()
+          })
+          .optional()
+          .describe('答案类型（仅问题历史）'),
+        evidenceType: z.string().optional().describe('证据类型（仅文献解读历史）')
+      })
+    )
+    .describe('历史记录列表'),
   totalCount: z.number().describe('总记录数'),
   totalPage: z.number().describe('总页数'),
   currentPage: z.number().describe('当前页码'),
@@ -45,15 +54,15 @@ function validateInput(input: InputType): string | null {
   if (input.page < 1) {
     return '页码必须大于等于1';
   }
-  
+
   if (input.pageSize < 1 || input.pageSize > 50) {
     return '每页条数必须在1-50之间';
   }
-  
+
   if (input.fromTime && input.toTime && input.fromTime >= input.toTime) {
     return '起始时间必须小于结束时间';
   }
-  
+
   return null;
 }
 
@@ -73,7 +82,7 @@ async function getQuestionHistory(
     page,
     page_size: pageSize
   });
-  
+
   return {
     records: response.items.map((item: any) => ({
       id: item.id,
@@ -108,7 +117,7 @@ async function getInterpretationHistory(
     page,
     page_size: pageSize
   });
-  
+
   return {
     records: response.items.map((item: any) => ({
       id: item.id,
@@ -161,7 +170,7 @@ export async function tool(input: InputType): Promise<OutputType> {
     const client = createKnowsClient(config);
 
     let result;
-    
+
     // 根据历史记录类型调用不同的API
     if (input.historyType === 'question') {
       result = await getQuestionHistory(
@@ -190,10 +199,9 @@ export async function tool(input: InputType): Promise<OutputType> {
       currentPage: input.page,
       message: `成功获取${result.records.length}条${input.historyType === 'question' ? '问题' : '文献解读'}历史记录`
     };
-
   } catch (error: any) {
     console.error('历史记录获取失败:', error);
-    
+
     // 处理特定错误类型
     let errorMessage = '历史记录获取失败';
     if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
@@ -205,7 +213,7 @@ export async function tool(input: InputType): Promise<OutputType> {
     } else if (error.message) {
       errorMessage = `历史记录获取失败: ${error.message}`;
     }
-    
+
     return {
       success: false,
       historyType: input.historyType,

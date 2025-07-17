@@ -9,9 +9,10 @@ import { ToolTypeEnum } from '@tool/type/tool';
 import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
-  icon: 'core/workflow/template/httpRequest', // 使用HTTP请求图标
+  icon: '/imgs/tools/clinicalTrials.svg', // 使用自定义图标
   courseUrl: '', // 可以添加使用教程链接
   type: ToolTypeEnum.search, // 定义为搜索类型工具
+  author: 'xiaoyibao team', // 开发团队信息
   name: {
     'zh-CN': '临床试验查询',
     en: 'Clinical Trials Search'

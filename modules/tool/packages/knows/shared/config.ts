@@ -8,29 +8,34 @@ import type { KnowsConfig } from './types';
 // 环境配置
 export const KNOWS_ENVIRONMENTS = {
   development: {
-    baseUrl: 'https://dev-api.nullht.com',
-    defaultApiKey: 'c0970d9fe46345ecbf8b6d35b230d45e',
+    baseUrl: 'https://dev-api.nullht.com'
   },
   production: {
-    baseUrl: 'https://api.nullht.com',
-    defaultApiKey: 'a6d9ce8081ac4d8cbcd772adafb75bca',
-  },
+    baseUrl: 'https://api.nullht.com'
+  }
 } as const;
 
 /**
- * 获取配置
+ * 获取 KnowS 配置
+ * @param apiKey - API 密钥（必填）
+ * @param environment - 环境配置
+ * @param timeout - 超时时间
  */
 export function getKnowsConfig(
-  apiKey?: string,
+  apiKey: string,
   environment: 'development' | 'production' = 'production',
   timeout: number = 30000
 ): KnowsConfig {
+  if (!apiKey) {
+    throw new Error('API Key 是必填项，请在工具配置中输入有效的 KnowS API Key');
+  }
+
   const env = KNOWS_ENVIRONMENTS[environment];
-  
+
   return {
-    apiKey: apiKey || env.defaultApiKey,
+    apiKey,
     baseUrl: env.baseUrl,
-    timeout,
+    timeout
   };
 }
 
@@ -41,21 +46,16 @@ export function validateConfig(config: KnowsConfig): { valid: boolean; error?: s
   if (!config.apiKey) {
     return { valid: false, error: 'API Key is required' };
   }
-  
+
   if (!config.baseUrl) {
     return { valid: false, error: 'Base URL is required' };
   }
-  
+
   try {
     new URL(config.baseUrl);
   } catch {
     return { valid: false, error: 'Invalid Base URL format' };
   }
-  
+
   return { valid: true };
 }
-
-/**
- * 默认配置
- */
-export const DEFAULT_CONFIG: KnowsConfig = getKnowsConfig();

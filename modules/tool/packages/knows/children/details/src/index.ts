@@ -1,16 +1,16 @@
 import { z } from 'zod';
 import { createKnowsClient } from '../../../shared/api';
 import { getKnowsConfig, validateConfig } from '../../../shared/config';
-import { 
-  createSuccessOutput, 
-  createErrorOutput, 
-  formatEvidence, 
+import {
+  createSuccessOutput,
+  createErrorOutput,
+  formatEvidence,
   formatDate,
   isValidEvidenceId,
-  isEmpty 
+  isEmpty
 } from '../../../shared/utils';
-import type { 
-  EvidenceType, 
+import type {
+  EvidenceType,
   EvidenceDetailRequest,
   PaperEnResponse,
   PaperCnResponse,
@@ -27,7 +27,7 @@ export const InputType = z.object({
   evidenceId: z.string().describe('证据ID'),
   evidenceType: z.enum(['PAPER', 'PAPER_CN', 'GUIDE', 'MEETING']).describe('证据类型'),
   translateToChinese: z.boolean().optional().default(false).describe('是否翻译为中文'),
-  apiKey: z.string().optional().describe('API密钥'),
+  apiKey: z.string().describe('API密钥'),
   environment: z.enum(['production', 'development']).optional().describe('环境配置')
 });
 
@@ -35,26 +35,28 @@ export const InputType = z.object({
 export const OutputType = z.object({
   success: z.boolean().describe('执行状态'),
   evidenceType: z.string().describe('证据类型'),
-  details: z.object({
-    titleEn: z.string().optional(),
-    titleCn: z.string().optional(),
-    publishDate: z.string().optional(),
-    impactFactor: z.number().optional(),
-    studyType: z.string().optional(),
-    journal: z.string().optional(),
-    authors: z.array(z.string()).optional(),
-    doi: z.string().optional(),
-    abstractEn: z.string().optional(),
-    abstractCn: z.string().optional(),
-    casJournalDivision: z.string().optional(),
-    casJournalDivisionSub: z.string().optional(),
-    wosJifQuartile: z.string().optional(),
-    hasPdf: z.boolean().optional(),
-    organizations: z.array(z.string()).optional(),
-    conference: z.string().optional(),
-    sponsor: z.string().optional(),
-    dataSource: z.string().optional()
-  }).describe('文献详情'),
+  details: z
+    .object({
+      titleEn: z.string().optional(),
+      titleCn: z.string().optional(),
+      publishDate: z.string().optional(),
+      impactFactor: z.number().optional(),
+      studyType: z.string().optional(),
+      journal: z.string().optional(),
+      authors: z.array(z.string()).optional(),
+      doi: z.string().optional(),
+      abstractEn: z.string().optional(),
+      abstractCn: z.string().optional(),
+      casJournalDivision: z.string().optional(),
+      casJournalDivisionSub: z.string().optional(),
+      wosJifQuartile: z.string().optional(),
+      hasPdf: z.boolean().optional(),
+      organizations: z.array(z.string()).optional(),
+      conference: z.string().optional(),
+      sponsor: z.string().optional(),
+      dataSource: z.string().optional()
+    })
+    .describe('文献详情'),
   message: z.string().describe('结果消息'),
   error: z.string().optional().describe('错误信息')
 });
@@ -139,7 +141,13 @@ function formatMeetingDetails(response: MeetingResponse) {
  */
 export async function tool(input: InputType): Promise<OutputType> {
   try {
-    const { evidenceId, evidenceType, translateToChinese, apiKey, environment = 'production' } = input;
+    const {
+      evidenceId,
+      evidenceType,
+      translateToChinese,
+      apiKey,
+      environment = 'production'
+    } = input;
 
     // 验证输入参数
     if (!evidenceId) {
@@ -164,7 +172,7 @@ export async function tool(input: InputType): Promise<OutputType> {
 
     // 获取配置
     const config = getKnowsConfig(apiKey, environment);
-    
+
     // 验证配置
     const configValidation = validateConfig(config);
     if (!configValidation.valid) {
@@ -236,10 +244,9 @@ export async function tool(input: InputType): Promise<OutputType> {
       details,
       message: `成功获取${typeLabel}详情`
     };
-
   } catch (error) {
     console.error('[KnowS Details] 获取详情失败:', error);
-    
+
     // 提供更详细的错误信息
     let errorMessage = '获取文献详情失败';
     if (error instanceof Error) {

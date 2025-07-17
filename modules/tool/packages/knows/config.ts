@@ -21,7 +21,7 @@ export default defineToolSet({
     en: 'Professional medical knowledge retrieval and analysis toolset, providing literature search, evidence analysis, scenario summary and other functions'
   },
   type: ToolTypeEnum.scientific,
-  icon: 'core/app/toolCall',
-  author: 'FastGPT',
+  icon: '/imgs/tools/knows.svg',
+  author: 'xiaoyibao team',
   children: [search, analysis, summary, details, history, management]
 });

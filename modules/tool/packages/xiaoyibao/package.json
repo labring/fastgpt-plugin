@@ -2,6 +2,7 @@
   "name": "fastgpt-tools-xiaoyibao",
   "module": "index.ts",
   "type": "module",
+  "author": "xiaoyibao team",
   "scripts": {
     "build": "bun ../../../../scripts/build.ts"
   },

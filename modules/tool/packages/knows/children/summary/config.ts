@@ -5,6 +5,7 @@ import {
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
+import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   type: ToolTypeEnum.tools,
@@ -22,6 +23,15 @@ export default defineTool({
       value: '1.0.0',
       description: 'Default version',
       inputs: [
+        defineInputConfig([
+          {
+            key: 'apiKey',
+            label: 'KnowS API Key',
+            description: 'KnowS 平台的 API 密钥',
+            required: true,
+            inputType: 'secret'
+          }
+        ]),
         {
           key: 'questionId',
           label: '问题ID',
@@ -44,7 +54,7 @@ export default defineTool({
             { label: '研究', value: 'RESEARCH' },
             { label: '科普', value: 'POPULAR_SCIENCE' }
           ],
-          defaultValue: 'CLINICAL'  // 默认选择临床类型
+          defaultValue: 'CLINICAL' // 默认选择临床类型
         }
       ],
       outputs: [
