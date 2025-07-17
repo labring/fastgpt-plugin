@@ -1,4 +1,132 @@
-# FastGPT 临床试验查询工具增强开发日志
+# 开发日志
+
+## 2025-01-17 - KnowS 工具集成修复
+
+### 问题描述
+在集成 KnowS 工具集时遇到了多个构建错误：
+
+1. **类型错误**: `WorkflowIOValueTypeEnum` 枚举值使用错误
+2. **导入路径错误**: `defineTool` 从错误的模块导入
+3. **工具类型错误**: 工具类型枚举使用错误
+4. **配置结构错误**: 工具配置结构不符合 FastGPT 规范
+5. **构建插件错误**: 构建插件中存在 undefined 访问错误
+
+### 修复过程
+
+#### 1. 修复 WorkflowIOValueTypeEnum 枚举值
+**问题**: 使用了不存在的枚举值如 `WorkflowIOValueTypeEnum.text`
+**解决方案**: 将所有枚举值修正为正确的值：
+- `text` → `string`
+- `json` → `object`
+- `array` → `arrayString` 或 `arrayObject`
+
+#### 2. 修复 defineTool 导入路径
+**问题**: 从 `@tool/utils/tool` 导入 `defineTool`，但该模块不存在此导出
+**解决方案**: 将导入路径修正为 `@tool/type`
+
+#### 3. 修复工具类型枚举
+**问题**: 使用了字符串 `"tool"` 而不是枚举值
+**解决方案**: 
+- 对于大部分工具使用 `ToolTypeEnum.tools`
+- 对于搜索工具使用 `ToolTypeEnum.search`
+
+#### 4. 修复配置结构
+**问题**: 配置结构不符合 FastGPT 的 `defineTool` 要求
+**解决方案**: 
+- 将 `input`/`output` 转换为 `versionList` 格式
+- 添加多语言支持的 `name` 和 `description`
+- 将 `version` 字段重命名为 `value`
+- 为输入参数添加 `toolDescription` 字段
+
+#### 5. 修复构建插件错误
+**问题**: 构建插件中访问 `path.node.arguments[0].type` 时未检查 `arguments[0]` 是否存在
+**解决方案**: 添加空值检查 `path.node.arguments[0] &&`
+
+### 修复的文件列表
+1. `/modules/tool/packages/knows/analysis/config.ts`
+2. `/modules/tool/packages/knows/details/config.ts`
+3. `/modules/tool/packages/knows/history/config.ts`
+4. `/modules/tool/packages/knows/management/config.ts`
+5. `/modules/tool/packages/knows/search/config.ts`
+6. `/modules/tool/packages/knows/search/src/types.ts`
+7. `/modules/tool/packages/knows/summary/config.ts`
+8. `/scripts/plugin.ts`
+
+### 关键修改要点
+
+#### 工具配置标准化
+所有工具配置都遵循以下结构：
+```typescript
+export default defineTool({
+  type: ToolTypeEnum.tools, // 或 ToolTypeEnum.search
+  name: {
+    'zh-CN': '中文名称',
+    'en-US': 'English Name'
+  },
+  description: {
+    'zh-CN': '中文描述',
+    'en-US': 'English Description'
+  },
+  versionList: [
+    {
+      value: '1.0.0',
+      input: [
+        {
+          key: 'paramName',
+          valueType: WorkflowIOValueTypeEnum.string,
+          label: {
+            'zh-CN': '参数标签',
+            'en-US': 'Parameter Label'
+          },
+          toolDescription: {
+            'zh-CN': '参数描述',
+            'en-US': 'Parameter Description'
+          },
+          required: true
+        }
+      ],
+      output: [
+        {
+          key: 'result',
+          valueType: WorkflowIOValueTypeEnum.object,
+          label: {
+            'zh-CN': '结果',
+            'en-US': 'Result'
+          }
+        }
+      ]
+    }
+  ]
+});
+```
+
+#### 类型安全改进
+- 移除了对未定义类型 `Evidence` 的引用
+- 重新定义了 `SearchToolInput`、`SearchToolOutput` 和 `SearchResult` 接口
+- 确保所有类型定义都有对应的实现
+
+### 构建结果
+✅ 构建成功，所有 30 个工具/工具集编译完成
+✅ 复制了 8 个工具图标
+✅ 无 TypeScript 错误
+✅ 无运行时错误
+
+### 经验总结
+1. **类型安全**: 始终使用正确的枚举值，避免字符串硬编码
+2. **导入路径**: 确认模块的正确导出路径，避免导入不存在的成员
+3. **配置规范**: 严格遵循 FastGPT 的工具配置规范
+4. **空值检查**: 在访问对象属性前进行空值检查，避免运行时错误
+5. **渐进式修复**: 逐个修复错误，每次修复后进行构建验证
+
+### 下一步计划
+1. 测试所有 KnowS 工具的功能
+2. 编写工具使用文档
+3. 添加单元测试
+4. 优化错误处理和用户体验
+
+---
+
+## FastGPT 临床试验查询工具增强开发日志
 
 ## 开发时间
 2025-07-16

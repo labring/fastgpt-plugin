@@ -3,6 +3,200 @@
 
 基于最佳实践构建的 FastGPT 插件开发标准化框架
 
+## 🚨 重要开发原则
+
+### 开发顺序要求（必须严格遵守）
+**⚠️ 关键原则：先开发一个子功能，确保代码完全正确后，再快速开发其他功能**
+
+1. **单一功能优先**：选择最简单的子工具先完成开发
+2. **完整验证**：确保该子工具的所有代码都正确无误
+3. **构建测试**：运行 `npm run build` 或者 `npx tsc --noEmit --skipLibCheck`  确保构建成功
+4. **功能测试**：验证该子工具功能正常
+5. **复制扩展**：基于正确的模板快速开发其他子工具
+6. **避免全量开发**：禁止一次性开发所有功能后重复修改全部代码
+
+**错误示例**：❌ 同时开发多个工具 → 发现错误 → 修改多个文件 → 重复多次
+**正确示例**：✅ 开发单个工具 → 验证正确 → 复制模板开发其他工具
+
+## 🐛 高频错误修复指南
+
+### 1. TypeScript 类型错误
+
+#### 错误1：未定义类型引用
+**错误描述**：`Cannot find name 'SomeType'` 或类似的类型未定义错误
+**原因**：引用了未定义或未正确导入的类型
+**修复方法**：
+- 检查类型定义文件中是否存在该类型
+- 确保正确导入类型
+- 如果类型不存在，需要定义或移除引用
+
+```typescript
+// ❌ 错误代码
+export interface ToolOutput {
+  data: UndefinedType[];  // UndefinedType 类型未定义
+}
+
+// ✅ 正确代码
+export interface ToolOutput {
+  data: DefinedType[];  // 使用已定义的类型
+}
+
+export interface DefinedType {
+  id: string;
+  name: string;
+}
+```
+
+#### 错误2：导入路径错误
+**错误描述**：`Module '"../path/types"' has no exported member 'SomeType'`
+**原因**：导入路径不正确或导出的成员名称错误
+**修复方法**：
+- 检查文件路径是否正确
+- 确认导出的成员名称
+- 使用相对路径时注意层级关系
+
+```typescript
+// ❌ 错误代码
+import { WrongType } from '../wrong/path';  // 路径或导出名错误
+
+// ✅ 正确代码
+import { CorrectType } from '../correct/path';  // 确保路径和导出名正确
+```
+
+### 2. FastGPT 配置错误
+
+#### 错误3：工具类型枚举错误
+**错误描述**：`Type '"tool"' is not assignable to type 'ToolTypeEnum | undefined'`
+**原因**：使用了错误的工具类型值
+**修复方法**：使用正确的 ToolTypeEnum 枚举值
+
+```typescript
+// ❌ 错误代码
+export const config = defineTool({
+  type: 'tool',  // 错误的类型值
+  // ...
+});
+
+// ✅ 正确代码
+export const config = defineTool({
+  type: ToolTypeEnum.tools,  // 使用正确的枚举值
+  // ...
+});
+```
+
+#### 错误4：配置结构错误
+**错误描述**：`Object literal may only specify known properties, and 'version' does not exist`
+**原因**：配置对象中使用了不存在的属性名
+**修复方法**：使用正确的属性名
+
+```typescript
+// ❌ 错误代码
+versionList: [
+  {
+    version: '1.0.0',  // 错误的属性名
+    // ...
+  }
+]
+
+// ✅ 正确代码
+versionList: [
+  {
+    value: '1.0.0',  // 正确的属性名
+    // ...
+  }
+]
+```
+
+### 3. 输入输出参数配置错误
+
+#### 错误5：缺少必需的参数属性
+**错误描述**：构建时提示缺少 `toolDescription` 或其他必需属性
+**原因**：输入参数配置不完整
+**修复方法**：添加所有必需的属性
+
+```typescript
+// ❌ 错误代码
+{
+  key: 'input',
+  valueType: WorkflowIOValueTypeEnum.string,
+  label: '输入内容',
+  // 缺少 toolDescription
+}
+
+// ✅ 正确代码
+{
+  key: 'input',
+  valueType: WorkflowIOValueTypeEnum.string,
+  label: '输入内容',
+  toolDescription: '输入要处理的内容',  // 添加必需属性
+  renderTypeList: [FlowNodeInputTypeEnum.textarea],
+  required: true
+}
+```
+
+### 4. 构建插件错误
+
+#### 错误6：空指针访问错误
+**错误描述**：`undefined is not an object (evaluating 'object.property')`
+**原因**：在访问对象属性前没有检查对象是否存在
+**修复方法**：添加存在性检查
+
+```typescript
+// ❌ 错误代码
+if (obj.property.type === 'expected') {
+  // 直接访问可能为 undefined 的属性
+}
+
+// ✅ 正确代码
+if (obj.property && obj.property.type === 'expected') {
+  // 先检查对象存在再访问属性
+}
+```
+
+### 5. 字符编码错误
+
+#### 错误7：全角字符导致语法错误
+**错误描述**：意外的字符或语法错误
+**原因**：使用了全角标点符号
+**修复方法**：所有代码必须使用半角字符
+
+```typescript
+// ❌ 错误代码（全角字符）
+const config = {
+  name: '工具名称'，  // 全角逗号
+  description: '工具描述'；  // 全角分号
+}
+
+// ✅ 正确代码（半角字符）
+const config = {
+  name: '工具名称',  // 半角逗号
+  description: '工具描述';  // 半角分号
+}
+```
+
+### 6. 多语言配置错误
+
+#### 错误8：缺少多语言支持
+**错误描述**：配置中只有单一语言
+**原因**：FastGPT 要求支持多语言配置
+**修复方法**：为 name 和 description 添加多语言支持
+
+```typescript
+// ❌ 错误代码
+name: '工具名称',
+description: '工具描述',
+
+// ✅ 正确代码
+name: {
+  'zh-CN': '工具名称',
+  'en-US': 'Tool Name'
+},
+description: {
+  'zh-CN': '工具描述',
+  'en-US': 'Tool Description'
+},
+```
+
 ## 🛠 技术栈
 
 ### 核心技术
@@ -11,6 +205,28 @@
 - **包管理**: Bun (推荐) / npm
 - **测试框架**: Vitest
 - **代码规范**: ESLint + Prettier
+
+### 开发环境配置
+
+#### 包管理
+- **推荐使用 Bun** - 更快的包管理器和运行时
+  ```bash
+  # 安装 Bun
+  curl -fsSL https://bun.sh/install | bash
+  
+  # 安装依赖
+  bun install
+  
+  # 运行脚本
+  bun run dev
+  bun test
+  ```
+- **备选方案** - npm/yarn (如果 Bun 不可用)
+  ```bash
+  npm install
+  npm run dev
+  npm test
+  ```
 
 ### FastGPT 特定
 - **插件系统**: FastGPT Plugin API
@@ -339,6 +555,72 @@ npm version major  # 重大版本
 git tag -a v1.0.0 -m "Release version 1.0.0"
 git push origin v1.0.0
 ```
+
+### 8. ToolSet 配置错误（关键错误）
+
+#### 错误9：Cannot read properties of undefined (reading '0')
+**错误描述**：FastGPT 主程序无法显示插件，控制台报错 `Cannot read properties of undefined (reading '0')`
+**原因**：ToolSet 配置中缺少 `children` 数组配置，或子工具导出结构错误
+**修复方法**：
+1. 在主配置文件中添加 children 数组
+2. 修复所有子工具的导出结构
+
+**主配置文件修复**：
+```typescript
+// ❌ 错误代码 - 缺少 children 数组
+import { defineToolSet } from '@tool/type';
+import { ToolTypeEnum } from '@tool/type/tool';
+
+export default defineToolSet({
+  name: { 'zh-CN': '工具集名称' },
+  type: ToolTypeEnum.tools,
+  // 缺少 children 数组配置
+});
+
+// ✅ 正确代码 - 添加 children 数组
+import { defineToolSet } from '@tool/type';
+import { ToolTypeEnum } from '@tool/type/tool';
+import subTool1 from './children/subTool1';
+import subTool2 from './children/subTool2';
+
+export default defineToolSet({
+  name: { 'zh-CN': '工具集名称' },
+  type: ToolTypeEnum.tools,
+  children: [subTool1, subTool2]  // 必须包含 children 数组
+});
+```
+
+**子工具导出结构修复**：
+```typescript
+// ❌ 错误代码 - 错误的导出结构
+import { InputType, OutputType, tool as toolCb } from './src/index';
+import config from './config';
+
+export default {
+  InputType,
+  OutputType,
+  toolCb,
+  config
+};
+
+// ✅ 正确代码 - 使用 exportTool 函数
+import config from './config';
+import { InputType, OutputType, tool as toolCb } from './src';
+import { exportTool } from '@tool/utils/tool';
+
+export default exportTool({
+  toolCb,
+  InputType,
+  OutputType,
+  config
+});
+```
+
+**关键检查点**：
+1. 确保主配置文件导入了所有子工具
+2. 确保 children 数组包含所有子工具
+3. 确保所有子工具使用 exportTool 函数导出
+4. 确保导入路径正确（'./src' 而不是 './src/index'）
 
 ---
 

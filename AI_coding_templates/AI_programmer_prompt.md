@@ -183,7 +183,7 @@ function handleError(error: unknown): never {
 
 ### 快速开发模板
 ```bash
-# 1. 创建新插件
+# 1. 创建新插件 (推荐使用 Bun)
 bun run newTool
 
 # 2. 选择模板类型
@@ -198,6 +198,12 @@ bun run newTool
 # - src/types.ts (类型定义)
 # - src/__tests__/index.test.ts (测试文件)
 # - README.md (文档模板)
+
+# 4. 使用 Bun 进行开发
+bun install          # 安装依赖
+bun run dev         # 开发模式
+bun test            # 运行测试
+bun run build       # 构建项目
 ```
 
 ### 调试技巧
@@ -369,5 +375,50 @@ class ApiClient {
 2. **性能优化**: "如何优化这个函数的性能？"
 3. **安全检查**: "这段代码有安全隐患吗？"
 4. **最佳实践**: "这个实现符合最佳实践吗？"
+
+## 🚨 关键错误预防
+
+### ToolSet 配置错误预防（最高优先级）
+**错误**：`Cannot read properties of undefined (reading '0')`
+**预防措施**：
+1. **主配置文件必须包含 children 数组**
+2. **所有子工具必须使用 exportTool 函数导出**
+3. **导入路径必须正确**
+
+**检查清单**：
+- [ ] 主配置导入所有子工具：`import subTool from './children/subTool'`
+- [ ] children 数组包含所有子工具：`children: [subTool1, subTool2]`
+- [ ] 子工具使用 exportTool：`export default exportTool({...})`
+- [ ] 导入路径正确：`from './src'` 而不是 `from './src/index'`
+
+### 其他高频错误预防
+```typescript
+// ❌ 错误：缺少必要的类型导入
+import { PluginInputModule } from '@fastgpt/global/core/module/node/type';
+
+// ✅ 正确：完整的类型导入
+import {
+  PluginInputModule,
+  PluginOutputModule,
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum
+} from '@fastgpt/global/core/module/node/type';
+
+// ❌ 错误：异步函数未正确处理
+export default function handler(input) {
+  return apiCall(input); // 可能导致未捕获的 Promise 错误
+}
+
+// ✅ 正确：完整的异步错误处理
+export default async function handler(input: PluginInput): Promise<PluginOutput> {
+  try {
+    const result = await apiCall(input);
+    return result;
+  } catch (error) {
+    console.error('Plugin execution failed:', error);
+    throw new Error(`插件执行失败: ${error.message}`);
+  }
+}
+```
 
 **记住：始终遵循 FastGPT 插件开发框架指南，确保代码质量和一致性！** 🚀
