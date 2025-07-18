@@ -24,7 +24,7 @@ const workerPath = path.join(__dirname, '..', 'src', 'worker', 'worker.ts');
 const watcher = watch(workerPath);
 
 (async () => {
-  for await (const _ of watcher) {
+  for await (const _event of watcher) {
     addLog.debug(`Worker file changed, rebuilding...`);
     await $`bun run build:worker`;
   }
