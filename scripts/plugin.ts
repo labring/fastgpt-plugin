@@ -30,6 +30,7 @@ const transformSourceCode = async ({
       if (
         path.node.callee.type === 'Identifier' &&
         // path.node.callee.name === 'defineToolSet' &&
+        path.node.arguments[0] &&
         path.node.arguments[0].type === 'ObjectExpression'
       ) {
         let hasToolId = false;
