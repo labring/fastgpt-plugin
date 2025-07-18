@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import crypto from 'crypto';
+import { delay } from '@tool/utils/delay';
 
 const SizeEnum = z.enum(['512*1024', '768*512', '768*1024', '1024*576', '576*1024', '1024*1024']);
 
@@ -159,7 +160,7 @@ async function waitForTaskCompletion(
       };
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await delay(3000);
     return waitForTaskCompletion(accessKey, secretKey, generateUuid, retryCount - 1);
   } catch (error) {
     console.error(`查询任务状态失败，剩余重试次数: ${retryCount - 1}`, {
@@ -167,7 +168,7 @@ async function waitForTaskCompletion(
       generateUuid: generateUuid
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await delay(3000);
     return waitForTaskCompletion(accessKey, secretKey, generateUuid, retryCount - 1);
   }
 }
