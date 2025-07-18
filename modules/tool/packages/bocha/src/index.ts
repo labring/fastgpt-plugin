@@ -1,3 +1,4 @@
+import { getErrText } from '@tool/utils/err';
 import { z } from 'zod';
 
 export const InputType = z.object({
@@ -17,25 +18,17 @@ export const InputType = z.object({
 });
 
 export const OutputType = z.object({
-  result: z
-    .array(
-      z.object({
-        id: z.string().nullable().optional(),
-        name: z.string().nullable().optional(),
-        url: z.string().nullable().optional(),
-        snippet: z.string().nullable().optional(),
-        dateLastCrawled: z.string().nullable().optional(),
-        language: z.string().nullable().optional(),
-        isNavigational: z.boolean().nullable().optional()
-      })
-    )
-    .optional(),
-  error: z
-    .object({
-      message: z.string().optional(),
-      code: z.string().optional()
+  result: z.array(
+    z.object({
+      id: z.string().nullable().optional(),
+      name: z.string().nullable().optional(),
+      url: z.string().nullable().optional(),
+      snippet: z.string().nullable().optional(),
+      dateLastCrawled: z.string().nullable().optional(),
+      language: z.string().nullable().optional(),
+      isNavigational: z.boolean().nullable().optional()
     })
-    .optional()
+  )
 });
 
 export async function tool({
@@ -65,12 +58,9 @@ export async function tool({
     });
 
     if (!response.ok) {
-      return {
-        error: {
-          message: `HTTP错误: ${response.status} ${response.statusText}`,
-          code: response.status.toString()
-        }
-      };
+      return Promise.reject({
+        error: `HTTP错误: ${response.status} ${response.statusText}`
+      });
     }
 
     const data = await response.json();
@@ -78,15 +68,11 @@ export async function tool({
     const searchResults = data?.data?.webPages?.value || [];
 
     return {
-      result: searchResults,
-      error: undefined
+      result: searchResults
     };
   } catch (error) {
-    return {
-      error: {
-        message: error instanceof Error ? error.message : '未知错误',
-        code: 'FETCH_ERROR'
-      }
-    };
+    return Promise.reject({
+      error: getErrText(error)
+    });
   }
 }

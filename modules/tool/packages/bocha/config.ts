@@ -1,5 +1,9 @@
 import { defineTool } from '@tool/type';
-import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
 import { defineInputConfig } from '@tool/utils/tool';
 
@@ -109,10 +113,10 @@ export default defineTool({
           description: '搜索返回的结果列表'
         },
         {
-          valueType: WorkflowIOValueTypeEnum.object,
+          type: FlowNodeOutputTypeEnum.error,
+          valueType: WorkflowIOValueTypeEnum.string,
           key: 'error',
-          label: '错误信息',
-          description: '请求错误信息，成功时返回空'
+          label: '错误信息'
         }
       ]
     }

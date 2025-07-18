@@ -82,8 +82,7 @@ export const InputType = z.object({
 });
 
 export const OutputType = z.object({
-  error: z.string().optional().describe('Error message if editing failed'),
-  image_url: z.string().optional().describe('URL to access the edited image')
+  image_url: z.string().describe('URL to access the edited image')
 });
 
 // API schemas
@@ -158,18 +157,21 @@ export async function tool(params: z.infer<typeof InputType>): Promise<z.infer<t
           break;
         case FluxStatus.enum.Error:
         case FluxStatus.enum.Failed:
-          return { error: result.error || 'Image editing failed' };
+          return Promise.reject({
+            error: result.error || 'Image editing failed'
+          });
         case FluxStatus.enum.Pending:
           // continue polling
           break;
       }
     }
 
-    return { error: 'Image editing timeout, please try again later' };
+    return Promise.reject({
+      error: 'Image editing timeout, please try again later'
+    });
   } catch (error: unknown) {
-    console.error('FLUX.1 Kontext image editing error:', error);
-
-    const errorMessage = error instanceof Error ? error.message : 'Image editing failed';
-    return { error: errorMessage };
+    return Promise.reject({
+      error
+    });
   }
 }

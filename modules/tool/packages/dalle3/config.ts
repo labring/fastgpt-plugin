@@ -57,10 +57,10 @@ export default defineTool({
           description: '图片访问链接'
         },
         {
+          type: FlowNodeOutputTypeEnum.error,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'system_error',
-          label: '错误信息',
-          description: '错误信息'
+          label: '错误信息'
         }
       ]
     }

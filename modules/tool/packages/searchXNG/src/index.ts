@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import * as cheerio from 'cheerio';
-import { delay } from '@tool/utils/delay';
 
 export const InputType = z.object({
   query: z.string(),
@@ -8,22 +7,19 @@ export const InputType = z.object({
 });
 
 export const OutputType = z.object({
-  result: z
-    .array(
-      z.object({
-        title: z.string(),
-        link: z.string(),
-        snippet: z.string()
-      })
-    )
-    .nullable(),
-  error: z.any()
+  result: z.array(
+    z.object({
+      title: z.string(),
+      link: z.string(),
+      snippet: z.string()
+    })
+  )
 });
 
-async function func(
-  { url, query }: z.infer<typeof InputType>,
-  retry = 3
-): Promise<z.infer<typeof OutputType>> {
+export async function tool({
+  query,
+  url
+}: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   try {
     const response = await fetch(`${url}?q=${encodeURIComponent(query)}&language=auto`);
     const html = await response.text();
@@ -43,33 +39,15 @@ async function func(
     });
 
     if (results.length === 0) {
-      return {
-        result: null,
-        error: {
-          message: 'No search results',
-          code: 500
-        }
-      };
+      return Promise.reject({
+        error: 'No search results'
+      });
     }
 
     return {
       result: results.slice(0, 10)
     };
   } catch (error) {
-    console.log(error);
-    if (retry <= 0) {
-      console.log('Search XNG error', { error });
-      return Promise.reject('Failed to fetch data from Search XNG');
-    }
-
-    await delay(Math.random() * 2000);
-    return func({ url, query }, retry - 1);
+    return Promise.reject({ error });
   }
-}
-
-export async function tool({
-  query,
-  url
-}: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  return func({ query, url });
 }

@@ -16,14 +16,14 @@ export const SystemVarSchema = z.object({
   }),
   tool: z.object({
     id: z.string(),
-    version: z.string().optional()
+    version: z.string()
   }),
   time: z.string()
 });
 export type SystemVarType = z.infer<typeof SystemVarSchema>;
 
 export const ToolCallbackReturnSchema = z.object({
-  error: z.any().optional(),
+  error: z.union([z.string(), z.record(z.any())]).optional(),
   output: z.record(z.any()).optional()
 });
 export type ToolCallbackReturnSchemaType = z.infer<typeof ToolCallbackReturnSchema>;

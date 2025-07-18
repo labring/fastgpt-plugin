@@ -74,9 +74,15 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
     }
   } catch (error: any) {
     const errorMessage = getErrText(error);
-    return {
-      error: errorMessage,
+
+    if (old_prompt) {
+      return {
+        error: errorMessage
+      };
+    }
+
+    return Promise.reject({
       system_error: errorMessage
-    };
+    });
   }
 }
