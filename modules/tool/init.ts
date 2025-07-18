@@ -8,7 +8,7 @@ import { ToolTypeEnum } from './type/tool';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
-const saveFile = async (url: string, path: string) => {
+const _saveFile = async (url: string, path: string) => {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to download file: ${response.statusText}`);
@@ -21,7 +21,8 @@ const saveFile = async (url: string, path: string) => {
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (
   basePath: string,
-  filename: string
+  filename: string,
+  toolSource: 'built-in' | 'uploaded' = 'built-in'
 ): Promise<ToolType[]> => {
   const tools: ToolType[] = [];
 
@@ -40,6 +41,7 @@ export const LoadToolsByFilename = async (
       toolId: toolsetId,
       icon,
       toolDirName: filename,
+      toolSource,
       cb: () => Promise.resolve({}),
       versionList: []
     });
@@ -73,7 +75,8 @@ export const LoadToolsByFilename = async (
         courseUrl: rootMod.courseUrl,
         author: rootMod.author,
         icon,
-        toolDirName: filename
+        toolDirName: filename,
+        toolSource
       });
     }
   } else {
@@ -84,7 +87,8 @@ export const LoadToolsByFilename = async (
       type: tool.type || ToolTypeEnum.tools,
       icon: tool.icon || defaultIcon,
       toolId: tool.toolId || filename,
-      toolDirName: filename
+      toolDirName: filename,
+      toolSource
     });
   }
 
@@ -93,12 +97,26 @@ export const LoadToolsByFilename = async (
 
 export async function initTool() {
   const basePath = isProd
-    ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools')
+    ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools', 'built-in')
     : path.join(__dirname, 'packages');
 
   const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
-    const tmpTools = await LoadToolsByFilename(basePath, tool);
+    const tmpTools = await LoadToolsByFilename(basePath, tool, 'built-in');
+    tools.push(...tmpTools);
+  }
+
+  addLog.info(`Load tools in ${isProd ? 'production' : 'development'} env, total: ${tools.length}`);
+}
+
+export async function initUploadedTool() {
+  const basePath = isProd
+    ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools', 'uploaded')
+    : path.join(__dirname, 'packages');
+
+  const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
+  for (const tool of toolDirs) {
+    const tmpTools = await LoadToolsByFilename(basePath, tool, 'uploaded');
     tools.push(...tmpTools);
   }
 

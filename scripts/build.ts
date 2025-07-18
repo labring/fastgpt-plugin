@@ -8,7 +8,7 @@ import { exit } from 'process';
 
 const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
 const distDir = path.join(__dirname, '..', 'dist');
-const distToolDir = path.join(distDir, 'tools');
+const distToolDir = path.join(distDir, 'tools', 'built-in');
 const tools = fs.readdirSync(toolsDir);
 
 export const buildATool = async (tool: string, dist: string = distToolDir) => {
