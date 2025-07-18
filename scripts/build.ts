@@ -19,7 +19,6 @@ export const buildATool = async (tool: string, dist: string = distToolDir) => {
     naming: tool + '.js',
     target: 'node',
     plugins: [autoToolIdPlugin],
-    external: ['@tool/utils'],
     minify: true
   });
 };
@@ -41,16 +40,6 @@ addLog.info('Worker Build complete');
 
 await Promise.all(tools.map((tool) => buildATool(tool)));
 addLog.info('Tools Build complete');
-
-// build @tool/utils/*
-const utilsDir = path.join(__dirname, '..', 'modules', 'tool', 'utils');
-Bun.build({
-  entrypoints: fs.readdirSync(utilsDir).map((f) => path.join(utilsDir, f)),
-  outdir: path.join(distDir, 'node_modules', '@tool', 'utils'),
-  naming: '[name]',
-  target: 'node',
-  minify: true
-});
 
 const publicImgsDir = path.join(__dirname, '..', 'dist', 'public', 'imgs', 'tools');
 const copiedCount = await copyToolIcons({

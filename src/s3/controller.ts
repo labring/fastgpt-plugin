@@ -45,7 +45,7 @@ export class S3Service {
   }
 
   async initialize() {
-    try {
+    const [, err] = await catchError(async () => {
       addLog.info(`Checking bucket: ${this.config.bucket}`);
       const bucketExists = await this.minioClient.bucketExists(this.config.bucket);
 
@@ -88,18 +88,17 @@ export class S3Service {
       addLog.info(
         `Bucket initialized, ${this.config.bucket} configured successfully with ${this.config.retentionDays} days retention`
       );
-    } catch (error: any) {
-      const errMsg = getErrText(error);
-      if (errMsg.includes('Method Not Allowed')) {
-        addLog.warn(
-          'Method Not Allowed - bucket may exist with different permissions,check document for more details'
-        );
-      } else if (errMsg.includes('Access Denied.')) {
-        addLog.warn('Access Denied - check your access key and secret key');
-        return;
-      }
-      return Promise.reject(error);
+    });
+    const errMsg = getErrText(err);
+    if (errMsg.includes('Method Not Allowed')) {
+      addLog.warn(
+        'Method Not Allowed - bucket may exist with different permissions,check document for more details'
+      );
+    } else if (errMsg.includes('Access Denied.')) {
+      addLog.warn('Access Denied - check your access key and secret key');
+      return;
     }
+    return Promise.reject(err);
   }
 
   private generateFileId(): string {
