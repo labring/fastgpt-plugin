@@ -1,12 +1,14 @@
 import express from 'express';
 import { initOpenAPI } from './contract/openapi';
 import { initRouter } from './router';
-import { initTool } from '@tool/init';
+import { initTool, initUploadedTool } from '@tool/init';
 import { addLog } from './utils/log';
 import { isProd } from './constants';
 import { initS3Server } from './s3/config';
 import { connectSignoz } from './utils/signoz';
 import { initModels } from '@model/init';
+import { initPluginSystem } from './plugin/init';
+import { connectMongo, connectionMongo, MONGO_URL } from './utils/mongo';
 
 const app = express().use(
   express.json(),
@@ -24,14 +26,16 @@ initRouter(app);
 
 // DB
 try {
+  await connectMongo(connectionMongo, MONGO_URL);
   await initS3Server();
+  await initPluginSystem();
 } catch (error) {
-  addLog.error('Failed to initialize S3 server:', error);
+  addLog.error('Failed to initialize services:', error);
   process.exit(1);
 }
 
 // Modules
-await Promise.all([initTool(), initModels()]);
+await Promise.all([initTool(), initUploadedTool(), initModels()]);
 
 const PORT = parseInt(process.env.PORT || '3000');
 const server = app.listen(PORT, (error?: Error) => {
