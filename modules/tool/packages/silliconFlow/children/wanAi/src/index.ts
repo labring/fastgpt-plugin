@@ -101,7 +101,12 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
 
   return {
     status: statusData.status,
-    results: statusData.results,
-    url: statusData.results?.videos?.[0]
+    results: {
+      ...statusData.results,
+      videos: Array.isArray(statusData.results?.videos)
+        ? statusData.results.videos.map((item: any) => (typeof item === 'string' ? item : item.url))
+        : []
+    },
+    url: statusData.results?.videos?.[0]?.url
   };
 }
