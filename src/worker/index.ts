@@ -4,6 +4,7 @@ import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/to
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
+import { getErrText } from '@tool/utils';
 
 type WorkerQueueItem = {
   id: string;
@@ -210,7 +211,7 @@ export async function dispatchWithNewWorker(data: {
           worker.postMessage({
             type: 'uploadFileResponse',
             data: {
-              error: 'Tool upload file error'
+              error: `Tool upload file error: ${getErrText(error)}`
             }
           });
         }

@@ -12,7 +12,18 @@ export const FileInputSchema = z
     url: z.string().url('Invalid URL format').optional(),
     path: z.string().min(1, 'File path cannot be empty').optional(),
     base64: z.string().min(1, 'Base64 data cannot be empty').optional(),
-    buffer: z.instanceof(Buffer, { message: 'Buffer is required' }).optional(),
+    buffer: z
+      .union([
+        z.instanceof(Buffer, { message: 'Buffer is required' }),
+        z.instanceof(Uint8Array, { message: 'Uint8Array is required' })
+      ])
+      .transform((data) => {
+        if (data instanceof Uint8Array && !(data instanceof Buffer)) {
+          return Buffer.from(data);
+        }
+        return data;
+      })
+      .optional(),
     defaultFilename: z.string().optional()
   })
   .refine(
