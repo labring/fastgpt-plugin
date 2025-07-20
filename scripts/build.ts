@@ -9,8 +9,7 @@ import { exit } from 'process';
 const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
 const distDir = path.join(__dirname, '..', 'dist');
 const distToolDir = path.join(distDir, 'tools');
-const tools = fs.readdirSync(toolsDir);
-
+const tools = fs.readdirSync(toolsDir).filter((item) => !['.DS_Store'].includes(item));
 export const buildATool = async (tool: string, dist: string = distToolDir) => {
   const filepath = path.join(toolsDir, tool);
   Bun.build({
