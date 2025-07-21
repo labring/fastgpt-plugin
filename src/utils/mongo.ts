@@ -1,14 +1,11 @@
 import { isProd } from '../constants';
 import { addLog } from './log';
 import { MongoClient } from 'mongodb';
-
-// Define custom Model interface since we're not using mongoose
 interface Model<_T> {
   collection: { name: string };
   syncIndexes: (options: any) => Promise<any>;
 }
 
-// Define Mongoose-like interface for compatibility
 interface Mongoose {
   client: MongoClient | null;
   connection: {
@@ -23,39 +20,25 @@ interface Mongoose {
   model: <T>(name: string, schema: any) => Model<T>;
   mongo: {
     ReadPreference: {
-      PRIMARY: string;
-      PRIMARY_PREFERRED: string;
-      SECONDARY: string;
       SECONDARY_PREFERRED: string;
-      NEAREST: string;
     };
   };
 }
-
-// Define Schema interface
 interface Schema {
   pre: (op: string | RegExp, callback: (next: () => void) => void) => void;
   post: (op: string | RegExp, callback: (result: any, next: () => void) => void) => void;
 }
 
 export const MONGO_URL = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/fastgpt';
-export const MONGO_LOG_URL = (process.env.MONGODB_LOG_URI ??
-  process.env.MONGODB_URI ??
-  'mongodb://127.0.0.1:27017/fastgpt') as string;
-
-// Global declarations
 declare global {
   var mongodb: Mongoose | undefined;
-  var mongodbLog: Mongoose | undefined;
 }
 
-// Create MongoDB connection wrapper with Mongoose-like API
 class MongooseWrapper implements Mongoose {
   public client: MongoClient | null = null;
   public connection: any = {
     readyState: 0,
     on: (event: string, callback: (...args: any[]) => void) => {
-      // Store event handlers
       if (!this._eventHandlers[event]) {
         this._eventHandlers[event] = [];
       }
@@ -68,11 +51,7 @@ class MongooseWrapper implements Mongoose {
   public models: Record<string, any> = {};
   public mongo: any = {
     ReadPreference: {
-      PRIMARY: 'primary',
-      PRIMARY_PREFERRED: 'primaryPreferred',
-      SECONDARY: 'secondary',
-      SECONDARY_PREFERRED: 'secondaryPreferred',
-      NEAREST: 'nearest'
+      SECONDARY_PREFERRED: 'secondaryPreferred'
     }
   };
 
@@ -81,15 +60,12 @@ class MongooseWrapper implements Mongoose {
     disconnected: []
   };
 
-  set(_option: string, _value: any) {
-    // Implementation for set method
-  }
+  set(_option: string, _value: any) {}
 
   async connect(url: string, options: any) {
     if (this.client) return this.client;
 
     try {
-      // Create a new MongoDB client with supported options
       this.client = new MongoClient(url, {
         maxPoolSize: options.maxPoolSize,
         minPoolSize: options.minPoolSize,
@@ -102,16 +78,14 @@ class MongooseWrapper implements Mongoose {
         directConnection: options.directConnection
       });
 
-      // Connect to the MongoDB server
       await this.client.connect();
 
-      this.connection.readyState = 1; // Connected
+      this.connection.readyState = 1;
       return this.client;
     } catch (error) {
-      this.connection.readyState = 0; // Disconnected
+      this.connection.readyState = 0;
       addLog.error('Failed to connect to MongoDB:', error);
 
-      // Trigger error event
       this._eventHandlers.error?.forEach((handler) => handler(error));
 
       throw error;
@@ -157,50 +131,21 @@ export const connectionMongo = (() => {
   return global.mongodb;
 })();
 
-export const connectionLogMongo = (() => {
-  if (!global.mongodbLog) {
-    global.mongodbLog = new MongooseWrapper();
-  }
-  return global.mongodbLog;
-})();
-
+// Simplified middleware - only add basic logging for slow operations
 const addCommonMiddleware = (schema: Schema) => {
-  const operations = [
-    /^find/,
-    'save',
-    'create',
-    /^update/,
-    /^delete/,
-    'aggregate',
-    'count',
-    'countDocuments',
-    'estimatedDocumentCount',
-    'distinct',
-    'insertMany'
-  ];
+  const operations = [/^find/, 'save', 'create', /^update/, /^delete/];
 
   operations.forEach((op: any) => {
     schema.pre(op, function (this: any, next: () => void) {
       this._startTime = Date.now();
-      this._query = this.getQuery ? this.getQuery() : null;
-
       next();
     });
 
     schema.post(op, function (this: any, result: any, next: () => void) {
       if (this._startTime) {
         const duration = Date.now() - this._startTime;
-        const warnLogData = {
-          collectionName: this.collection?.name,
-          op: this.op,
-          ...(this._query && { query: this._query }),
-          ...(this._update && { update: this._update }),
-          ...(this._delete && { delete: this._delete }),
-          duration
-        };
-
         if (duration > 1000) {
-          addLog.warn(`Slow operation ${duration}ms`, warnLogData);
+          addLog.warn(`Slow operation ${duration}ms on ${this.collection?.name}`);
         }
       }
       next();
@@ -217,20 +162,6 @@ export const getMongoModel = <T>(name: string, schema: Schema) => {
 
   const model = connectionMongo.model<T>(name, schema);
 
-  // Sync index
-  syncMongoIndex(model);
-
-  return model;
-};
-
-export const getMongoLogModel = <T>(name: string, schema: Schema) => {
-  if (connectionLogMongo.models[name]) return connectionLogMongo.models[name] as Model<T>;
-  addLog.info(`Load model: ${name}`);
-  addCommonMiddleware(schema);
-
-  const model = connectionLogMongo.model<T>(name, schema);
-
-  // Sync index
   syncMongoIndex(model);
 
   return model;
@@ -248,30 +179,17 @@ const syncMongoIndex = async (model: Model<any>) => {
 
 export const ReadPreference = connectionMongo.mongo.ReadPreference;
 
-export const readFromSecondary = {
-  readPreference: ReadPreference.SECONDARY_PREFERRED, // primary | primaryPreferred | secondary | secondaryPreferred | nearest
-  readConcern: 'local' as any // local | majority | linearizable | available
-};
-
-const _maxConnecting = Math.max(30, Number(process.env.DB_MAX_LINK || 20));
-
-/**
- * connect MongoDB and init data
- */
 export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose> {
-  /* Connecting, connected will return */
   if (db.connection.readyState !== 0) {
     return db;
   }
 
-  // Validate URL
   if (!url || typeof url !== 'string') {
     throw new Error(`Invalid MongoDB connection URL: ${url}`);
   }
 
   addLog.info(`connecting to ${isProd ? 'MongoDB' : url}`);
 
-  // Event listeners
   db.connection.removeAllListeners('error');
   db.connection.removeAllListeners('disconnected');
 
@@ -290,6 +208,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
         addLog.error('Error during reconnection:', _error);
       }
     });
+
     db.connection.on('disconnected', async () => {
       addLog.warn('mongo disconnected');
       try {
@@ -303,7 +222,6 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
       }
     });
 
-    // 移除不支持的选项
     const options = {
       maxPoolSize: Math.max(30, Number(process.env.DB_MAX_LINK || 20)),
       minPoolSize: 20,
@@ -325,7 +243,6 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
   return db;
 }
 
-// Helper function for delay
 export async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
