@@ -76,11 +76,8 @@ async function deleteMinioFile(url: string): Promise<void> {
       addLog.warn(`Could not extract objectName from URL: ${url}`);
       return;
     }
-
-    // 使用全局的 s3Server 删除文件
     if (global.s3Server && typeof global.s3Server.removeFile === 'function') {
       await global.s3Server.removeFile(objectName);
-      addLog.info(`MinIO file deleted: ${objectName}`);
     } else {
       addLog.warn('S3Server not available, skipping MinIO file deletion');
     }

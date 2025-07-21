@@ -266,7 +266,8 @@ export class S3Service {
 
   async removeFile(objectName: string): Promise<void> {
     try {
-      await this.minioClient.removeObject(this.config.bucket, objectName);
+      await this.minioClient.removeObject(process.env.MINIO_PLUGIN_BUCKET!, objectName);
+      addLog.info(`MinIO file deleted: ${process.env.MINIO_PLUGIN_BUCKET}/${objectName}`);
       return Promise.resolve();
     } catch (error) {
       return Promise.reject(error);

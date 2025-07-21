@@ -90,12 +90,10 @@ function buildFullUrl(url: string): string {
     return url;
   }
 
-  if (process.env.MINIO_ENDPOINT && process.env.MINIO_PORT) {
-    return `http://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}`;
-  } else if (process.env.FASTGPT_BASE_URL) {
-    return process.env.FASTGPT_BASE_URL;
+  if (process.env.MINIO_HOST && process.env.MINIO_PORT) {
+    return `http://${process.env.MINIO_HOST}:${process.env.MINIO_PORT}/${url}`;
   } else {
-    return `http://localhost:9000`;
+    return `http://localhost:9000/${url}`;
   }
 }
 
