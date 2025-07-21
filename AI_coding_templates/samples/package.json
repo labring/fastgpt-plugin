@@ -1,0 +1,59 @@
+{
+  "name": "fastgpt-plugin-utils",
+  "version": "1.0.0",
+  "description": "FastGPT 插件开发工具函数库 - 推荐使用 Bun 包管理器",
+  "main": "common/utils/index.ts",
+  "type": "module",
+  "packageManager": "bun@1.0.0",
+  "scripts": {
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "install:bun": "bun install",
+    "install:npm": "npm install"
+  },
+  "keywords": [
+    "fastgpt",
+    "plugin",
+    "utils",
+    "typescript",
+    "validation",
+    "cache",
+    "async",
+    "bun"
+  ],
+  "author": "FastGPT Team",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/labring/FastGPT.git"
+  },
+  "bugs": {
+    "url": "https://github.com/labring/FastGPT/issues"
+  },
+  "homepage": "https://github.com/labring/FastGPT#readme"
+}

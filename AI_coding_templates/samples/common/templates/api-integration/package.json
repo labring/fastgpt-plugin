@@ -1,0 +1,25 @@
+{
+  "name": "@fastgpt-plugins/api-integration-template",
+  "module": "index.ts",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "FastGPT API集成类插件模板",
+  "keywords": ["fastgpt", "plugin", "api", "integration", "template"],
+  "author": "FastGPT Team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "zod": "^3.22.0",
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "msw": "^2.0.0"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "type-check": "tsc --noEmit"
+  }
+}
