@@ -4,7 +4,7 @@ import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/to
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
-import { getErrText } from '@tool/utils';
+import { getErrText } from '@tool/utils/err';
 
 type WorkerQueueItem = {
   id: string;
