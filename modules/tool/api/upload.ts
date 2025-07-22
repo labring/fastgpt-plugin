@@ -1,5 +1,6 @@
-import type { Request, Response, NextFunction } from 'express';
-import { MongoFastGPTPlugin } from '../../../src/plugin/schema';
+import { s } from '@/router/init';
+import { contract } from '@/contract';
+import { PluginModel } from '../../../src/plugin/model';
 import { addLog } from '../../../src/utils/log';
 import { getErrText } from '@tool/utils/err';
 import { initUploadedTool } from '@tool/init';
@@ -9,36 +10,40 @@ import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import { Readable } from 'stream';
 
-export const uploadHandler = async (
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): Promise<void> => {
+export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) => {
   try {
-    const { url } = req.body;
+    const { url } = body;
 
     addLog.info('Plugin URL received', { url });
 
-    await MongoFastGPTPlugin.connect();
-
     const extractedToolId = await downloadAndInstallPlugin(url);
 
-    const result = await MongoFastGPTPlugin.insertPluginUrl(extractedToolId, url);
-
-    res.status(200).json({
-      code: 200,
-      message: 'Plugin URL processed and installed successfully',
-      mongoResult: result,
-      toolId: extractedToolId
+    const result = await PluginModel.create({
+      toolId: extractedToolId,
+      url,
+      type: 'tool'
     });
+
+    return {
+      status: 200,
+      body: {
+        code: 200,
+        message: 'Plugin URL processed and installed successfully',
+        mongoResult: result,
+        toolId: extractedToolId
+      }
+    };
   } catch (error) {
     addLog.error('Plugin URL processing error:', error);
-    res.status(500).json({
-      code: 500,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    return {
+      status: 500,
+      body: {
+        code: 500,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    };
   }
-};
+});
 
 async function extractToolIdFromFile(filePath: string): Promise<string | null> {
   const rootMod = (await import(filePath)).default as ToolSetType;

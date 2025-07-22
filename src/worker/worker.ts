@@ -21,12 +21,13 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
   const { type, data } = params;
   switch (type) {
     case 'runTool': {
-      const isUploadedTool =
-        data.toolDirName.includes('uploaded') ||
-        (isProd && data.toolDirName.startsWith('uploaded'));
-      const toolSource = isUploadedTool ? 'uploaded' : 'built-in';
+      // Extract toolSource and filename from toolDirName (format: "toolSource/filename")
+      const [toolSource, filename] = data.toolDirName.split('/') as [
+        'uploaded' | 'built-in',
+        string
+      ];
 
-      const tools = await LoadToolsByFilename(basePath, data.toolDirName, toolSource);
+      const tools = await LoadToolsByFilename(basePath, filename, toolSource);
 
       const tool = tools.find((tool) => tool.toolId === data.toolId);
 

@@ -6,8 +6,6 @@ import { toolRouter } from '@tool/router';
 import { modelRouter } from '@model/router';
 import { runToolStreamHandler } from '@tool/api/runStream';
 import { authTokenMiddleware } from './middleware/auth';
-import { uploadHandler } from '@tool/api/upload';
-import { deleteHandler } from '@tool/api/delete';
 
 export const initRouter = (app: Express) => {
   const router = s.router(contract, {
@@ -25,13 +23,5 @@ export const initRouter = (app: Express) => {
     authTokenMiddleware(req, res, () => {
       runToolStreamHandler(req, res, next).catch(next);
     });
-  });
-
-  app.post('/tool/upload', (req, res, next) => {
-    uploadHandler(req, res, next).catch(next);
-  });
-
-  app.post('/tool/delete', (req, res, next) => {
-    deleteHandler(req, res, next).catch(next);
   });
 };

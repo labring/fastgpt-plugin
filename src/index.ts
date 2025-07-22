@@ -28,7 +28,6 @@ initRouter(app);
 try {
   await connectMongo(connectionMongo, MONGO_URL);
   await initS3Server();
-  await initPluginSystem();
 } catch (error) {
   addLog.error('Failed to initialize services:', error);
   process.exit(1);
