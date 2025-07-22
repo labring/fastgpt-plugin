@@ -23,6 +23,45 @@ export const toolContract = c.router(
       responses: {
         200: ToolListItemSchema
       }
+    },
+    delete: {
+      path: '/delete',
+      method: 'POST',
+      description: 'Delete a tool',
+      body: z.object({
+        toolId: z.string()
+      }),
+      responses: {
+        200: z.object({
+          code: z.number(),
+          message: z.string(),
+          deletedRecord: z.any()
+        }),
+        400: z.object({
+          code: z.number(),
+          error: z.string()
+        }),
+        404: z.object({
+          code: z.number(),
+          error: z.string()
+        })
+      }
+    },
+    upload: {
+      path: '/upload',
+      method: 'POST',
+      description: 'Upload and install a tool plugin',
+      body: z.object({
+        url: z.string()
+      }),
+      responses: {
+        200: z.object({
+          code: z.number(),
+          message: z.string(),
+          mongoResult: z.any(),
+          toolId: z.string()
+        })
+      }
     }
   },
   {

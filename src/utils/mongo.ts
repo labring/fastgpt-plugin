@@ -1,138 +1,21 @@
 import { isProd } from '../constants';
 import { addLog } from './log';
-import { MongoClient } from 'mongodb';
-interface Model<_T> {
-  collection: { name: string };
-  syncIndexes: (options: any) => Promise<any>;
-}
-
-interface Mongoose {
-  client: MongoClient | null;
-  connection: {
-    readyState: number;
-    on: (event: string, callback: (...args: any[]) => void) => void;
-    removeAllListeners: (event: string) => void;
-  };
-  set: (_option: string, _value: any) => void;
-  connect: (url: string, options: any) => Promise<any>;
-  disconnect: () => Promise<void>;
-  models: Record<string, any>;
-  model: <T>(name: string, schema: any) => Model<T>;
-  mongo: {
-    ReadPreference: {
-      SECONDARY_PREFERRED: string;
-    };
-  };
-}
-interface Schema {
-  pre: (op: string | RegExp, callback: (next: () => void) => void) => void;
-  post: (op: string | RegExp, callback: (result: any, next: () => void) => void) => void;
-}
+import mongoose, { type Mongoose, type Model } from 'mongoose';
 
 export const MONGO_URL = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/fastgpt';
+
 declare global {
   var mongodb: Mongoose | undefined;
 }
 
-class MongooseWrapper implements Mongoose {
-  public client: MongoClient | null = null;
-  public connection: any = {
-    readyState: 0,
-    on: (event: string, callback: (...args: any[]) => void) => {
-      if (!this._eventHandlers[event]) {
-        this._eventHandlers[event] = [];
-      }
-      this._eventHandlers[event].push(callback);
-    },
-    removeAllListeners: (event: string) => {
-      this._eventHandlers[event] = [];
-    }
-  };
-  public models: Record<string, any> = {};
-  public mongo: any = {
-    ReadPreference: {
-      SECONDARY_PREFERRED: 'secondaryPreferred'
-    }
-  };
-
-  private _eventHandlers: Record<string, ((...args: any[]) => void)[]> = {
-    error: [],
-    disconnected: []
-  };
-
-  set(_option: string, _value: any) {}
-
-  async connect(url: string, options: any) {
-    if (this.client) return this.client;
-
-    try {
-      this.client = new MongoClient(url, {
-        maxPoolSize: options.maxPoolSize,
-        minPoolSize: options.minPoolSize,
-        connectTimeoutMS: options.connectTimeoutMS,
-        socketTimeoutMS: options.socketTimeoutMS,
-        waitQueueTimeoutMS: options.waitQueueTimeoutMS,
-        maxIdleTimeMS: options.maxIdleTimeMS,
-        retryWrites: options.retryWrites,
-        retryReads: options.retryReads,
-        directConnection: options.directConnection
-      });
-
-      await this.client.connect();
-
-      this.connection.readyState = 1;
-      return this.client;
-    } catch (error) {
-      this.connection.readyState = 0;
-      addLog.error('Failed to connect to MongoDB:', error);
-
-      this._eventHandlers.error?.forEach((handler) => handler(error));
-
-      throw error;
-    }
-  }
-
-  async disconnect() {
-    if (this.client) {
-      await this.client.close();
-      this.client = null;
-      this.connection.readyState = 0;
-
-      // Trigger disconnected event
-      this._eventHandlers.disconnected?.forEach((handler) => handler());
-    }
-  }
-
-  model<T>(name: string, schema: any): Model<T> {
-    if (!this.models[name]) {
-      // Create a model-like object
-      this.models[name] = {
-        collection: { name },
-        syncIndexes: async (_options: any) => {
-          try {
-            if (this.client) {
-              const db = this.client.db();
-              await db.collection(name).createIndexes(schema.indexes || []);
-            }
-          } catch (error) {
-            addLog.error(`Error creating indexes for ${name}:`, error);
-          }
-        }
-      };
-    }
-    return this.models[name];
-  }
-}
-
 export const connectionMongo = (() => {
   if (!global.mongodb) {
-    global.mongodb = new MongooseWrapper();
+    global.mongodb = new mongoose.Mongoose();
   }
   return global.mongodb;
 })();
 
-// Simplified middleware - only add basic logging for slow operations
-const addCommonMiddleware = (schema: Schema) => {
+const addCommonMiddleware = (schema: mongoose.Schema) => {
   const operations = [/^find/, 'save', 'create', /^update/, /^delete/];
 
   operations.forEach((op: any) => {
@@ -155,7 +38,7 @@ const addCommonMiddleware = (schema: Schema) => {
   return schema;
 };
 
-export const getMongoModel = <T>(name: string, schema: Schema) => {
+export const getMongoModel = <T>(name: string, schema: mongoose.Schema) => {
   if (connectionMongo.models[name]) return connectionMongo.models[name] as Model<T>;
   if (!isProd) addLog.info(`Load model: ${name}`);
   addCommonMiddleware(schema);
@@ -190,11 +73,10 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
 
   addLog.info(`connecting to ${isProd ? 'MongoDB' : url}`);
 
-  db.connection.removeAllListeners('error');
-  db.connection.removeAllListeners('disconnected');
-
-  if (global.mongodb) {
-    global.mongodb.set('strictQuery', 'throw');
+  try {
+    db.connection.removeAllListeners('error');
+    db.connection.removeAllListeners('disconnected');
+    db.set('strictQuery', 'throw');
 
     db.connection.on('error', async (error: any) => {
       addLog.error('mongo error', error);
@@ -223,6 +105,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
     });
 
     const options = {
+      bufferCommands: true,
       maxPoolSize: Math.max(30, Number(process.env.DB_MAX_LINK || 20)),
       minPoolSize: 20,
       connectTimeoutMS: 60000,
@@ -231,16 +114,20 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
       maxIdleTimeMS: 300000,
       retryWrites: true,
       retryReads: true,
-      directConnection: true,
       serverSelectionTimeoutMS: 60000,
       heartbeatFrequencyMS: 20000,
       maxStalenessSeconds: 120
     };
 
-    return await db.connect(url, options);
+    await db.connect(url, options);
+    addLog.info('mongo connected');
+    return db;
+  } catch (error) {
+    addLog.error('Mongo connect error', error);
+    await db.disconnect();
+    await delay(1000);
+    return connectMongo(db, url);
   }
-
-  return db;
 }
 
 export async function delay(ms: number) {

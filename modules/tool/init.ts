@@ -8,16 +8,6 @@ import { ToolTypeEnum } from './type/tool';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
-const _saveFile = async (url: string, path: string) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download file: ${response.statusText}`);
-  }
-  const buffer = await response.arrayBuffer();
-  fs.writeFileSync(path, Buffer.from(buffer));
-  return buffer;
-};
-
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (
   basePath: string,
@@ -40,7 +30,7 @@ export const LoadToolsByFilename = async (
       type: rootMod.type || ToolTypeEnum.other,
       toolId: toolsetId,
       icon,
-      toolDirName: filename,
+      toolDirName: `${toolSource}/${filename}`,
       toolSource,
       cb: () => Promise.resolve({}),
       versionList: []
@@ -75,7 +65,7 @@ export const LoadToolsByFilename = async (
         courseUrl: rootMod.courseUrl,
         author: rootMod.author,
         icon,
-        toolDirName: filename,
+        toolDirName: `${toolSource}/${filename}`,
         toolSource
       });
     }
@@ -87,7 +77,7 @@ export const LoadToolsByFilename = async (
       type: tool.type || ToolTypeEnum.tools,
       icon: tool.icon || defaultIcon,
       toolId: tool.toolId || filename,
-      toolDirName: filename,
+      toolDirName: `${toolSource}/${filename}`,
       toolSource
     });
   }
@@ -113,6 +103,12 @@ export async function initUploadedTool() {
   const basePath = isProd
     ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools', 'uploaded')
     : path.join(__dirname, 'packages');
+
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(basePath)) {
+    addLog.info(`Creating uploaded tools directory: ${basePath}`);
+    fs.mkdirSync(basePath, { recursive: true });
+  }
 
   const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {

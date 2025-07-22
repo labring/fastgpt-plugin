@@ -1,34 +1,23 @@
 import { getMongoModel } from '../utils/mongo';
+import { z } from 'zod';
+import mongoose from 'mongoose';
 
-interface PluginSchema {
-  pre: (op: string | RegExp, callback: (next: () => void) => void) => void;
-  post: (op: string | RegExp, callback: (result: any, next: () => void) => void) => void;
-  indexes?: any[];
-}
+export const PluginZodSchema = z.object({
+  toolId: z.string(),
+  url: z.string().optional(),
+  type: z.literal('tool').default('tool')
+});
 
-export interface PluginDocument {
-  _id?: string;
-  toolId: string;
-  url: string;
-  type: 'tool';
-}
+export type PluginDocument = z.infer<typeof PluginZodSchema>;
 
-const createPluginSchema = (): PluginSchema => {
-  const schema: PluginSchema = {
-    pre: (_op, _callback) => {},
-    post: (_op, _callback) => {},
-    indexes: [
-      { key: { toolId: 1 }, unique: true },
-      { key: { url: 1 }, unique: true },
-      { key: { type: 1 } }
-    ]
-  };
+const pluginMongooseSchema = new mongoose.Schema({
+  toolId: { type: String, required: true },
+  url: { type: String, required: false },
+  type: { type: String, required: true, default: 'tool' }
+});
 
-  schema.pre('save', function (this: any, next: () => void) {
-    next();
-  });
+pluginMongooseSchema.index({ toolId: 1 }, { unique: true });
+pluginMongooseSchema.index({ url: 1 }, { unique: true });
+pluginMongooseSchema.index({ type: 1 });
 
-  return schema;
-};
-
-export const PluginModel = getMongoModel<PluginDocument>('fastgpt_plugins', createPluginSchema());
+export const PluginModel = getMongoModel<PluginDocument>('fastgpt_plugins', pluginMongooseSchema);

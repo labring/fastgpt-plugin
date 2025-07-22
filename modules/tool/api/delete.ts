@@ -1,65 +1,60 @@
-import type { Request, Response, NextFunction } from 'express';
-import { MongoFastGPTPlugin } from '../../../src/plugin/schema';
+import { s } from '@/router/init';
+import { contract } from '@/contract';
+import { PluginModel } from '../../../src/plugin/model';
 import { addLog } from '../../../src/utils/log';
 import { getTool } from '@tool/controller';
 import { tools } from '@tool/constants';
 import path from 'path';
 import fs from 'fs';
 
-export const deleteHandler = async (
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): Promise<void> => {
+export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) => {
   try {
-    const { toolId } = req.body;
-
-    if (!toolId) {
-      res.status(400).json({
-        code: 400,
-        error: 'toolId is required'
-      });
-      return;
-    }
-
-    await MongoFastGPTPlugin.connect();
+    const { toolId } = body;
 
     const deletedRecord = await deleteMongoRecord(toolId);
     if (!deletedRecord) {
-      res.status(404).json({
-        code: 404,
-        error: `Tool with toolId ${toolId} not found in MongoDB`
-      });
-      return;
+      return {
+        status: 404,
+        body: {
+          code: 404,
+          error: `Tool with toolId ${toolId} not found in MongoDB`
+        }
+      };
     }
 
     await deleteMinioFile(deletedRecord.url);
 
     await deleteLocalFileAndRemoveFromList(toolId);
 
-    res.status(200).json({
-      code: 200,
-      message: 'Tool deleted successfully',
-      deletedRecord
-    });
+    return {
+      status: 200,
+      body: {
+        code: 200,
+        message: 'Tool deleted successfully',
+        deletedRecord
+      }
+    };
   } catch (error) {
     addLog.error('Delete tool error:', error);
-    res.status(500).json({
-      code: 500,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    return {
+      status: 500,
+      body: {
+        code: 500,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    };
   }
-};
+});
 
 async function deleteMongoRecord(toolId: string): Promise<any> {
   try {
-    const record = await MongoFastGPTPlugin.findOne({ toolId });
+    const record = await PluginModel.findOne({ toolId });
     if (!record) {
       addLog.warn(`No MongoDB record found for toolId: ${toolId}`);
       return null;
     }
 
-    const result = await MongoFastGPTPlugin.deleteOne({ toolId });
+    const result = await PluginModel.deleteOne({ toolId });
     addLog.info(`MongoDB delete result for toolId ${toolId}:`, result);
 
     return record;
@@ -123,9 +118,10 @@ async function deleteLocalFileAndRemoveFromList(toolId: string): Promise<void> {
       return Promise.reject(`Tool not found in tools list for toolId: ${toolId}`);
     }
 
-    const toolDirName = tool.toolDirName;
-    const uploadedPluginDir = path.join(process.cwd(), 'dist', 'tools', 'uploaded');
-    const filePath = path.join(uploadedPluginDir, toolDirName);
+    // Extract filename from toolDirName (format: "toolSource/filename")
+    const [toolSource, filename] = tool.toolDirName.split('/');
+    const pluginDir = path.join(process.cwd(), 'dist', 'tools', toolSource);
+    const filePath = path.join(pluginDir, filename);
 
     if (fs.existsSync(filePath)) {
       await fs.promises.unlink(filePath);

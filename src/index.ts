@@ -5,7 +5,6 @@ import { initTool, initUploadedTool } from '@tool/init';
 import { addLog } from './utils/log';
 import { isProd } from './constants';
 import { initS3Server } from './s3/config';
-import { initPluginSystem } from './plugin/init';
 import { connectMongo, connectionMongo, MONGO_URL } from './utils/mongo';
 
 const app = express().use(
@@ -19,7 +18,6 @@ initRouter(app);
 try {
   await connectMongo(connectionMongo, MONGO_URL);
   await initS3Server();
-  await initPluginSystem();
 } catch (error) {
   addLog.error('Failed to initialize services:', error);
   process.exit(1);
