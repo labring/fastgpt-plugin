@@ -18,6 +18,18 @@ export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) 
 
     const extractedToolId = await downloadAndInstallPlugin(url);
 
+    const existingPlugin = await PluginModel.findOne({ toolId: extractedToolId });
+    if (existingPlugin) {
+      addLog.warn(`Plugin with toolId ${extractedToolId} already exists, skipping upload`);
+      return {
+        status: 409,
+        body: {
+          code: 409,
+          error: `Plugin with toolId ${extractedToolId} already exists`
+        }
+      };
+    }
+
     const result = await PluginModel.create({
       toolId: extractedToolId,
       url,
@@ -58,18 +70,12 @@ async function downloadAndInstallPlugin(url: string): Promise<string> {
       signal: AbortSignal.timeout(30000)
     });
 
-    addLog.info(`Response status: ${response.status}`);
-    addLog.info(`Response statusText: ${response.statusText}`);
-
     if (!response.ok) {
-      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+      return Promise.reject(`Download failed: ${response.status} ${response.statusText}`);
     }
 
-    // Determine filename and path
-    const filename = getFilenameFromUrl(fullUrl);
-    if (!filename) {
-      throw new Error('Failed to get filename from url');
-    }
+    const filename = await getFilenameFromUrl(fullUrl);
+    if (!filename) return Promise.reject('Failed to get filename from url');
 
     const finalFilePath = path.join(process.cwd(), 'dist', 'tools', 'uploaded', filename);
 
@@ -77,16 +83,14 @@ async function downloadAndInstallPlugin(url: string): Promise<string> {
     await pipeline(Readable.fromWeb(response.body as any), fileStream);
 
     const extractedToolId = await extractToolIdFromFile(finalFilePath);
-    if (!extractedToolId) {
-      throw new Error('Failed to extract toolId from downloaded file');
-    }
+    if (!extractedToolId) return Promise.reject('Failed to extract toolId from downloaded file');
 
     await initUploadedTool();
 
     return extractedToolId;
   } catch (error) {
     addLog.error(`Failed to download/install plugin:`, getErrText(error));
-    throw error;
+    return Promise.reject(error);
   }
 }
 
@@ -102,7 +106,7 @@ function buildFullUrl(url: string): string {
   }
 }
 
-function getFilenameFromUrl(url: string): string | null {
+function getFilenameFromUrl(url: string): Promise<string> {
   try {
     const urlObj = new URL(url);
     const pathname = urlObj.pathname;
@@ -112,8 +116,8 @@ function getFilenameFromUrl(url: string): string | null {
       filename += '.js';
     }
 
-    return filename || null;
+    return Promise.resolve(filename);
   } catch {
-    return null;
+    return Promise.reject(new Error('Failed to get filename from url'));
   }
 }

@@ -9,7 +9,6 @@
         "@ts-rest/core": "^3.52.1",
         "@ts-rest/express": "^3.52.1",
         "@ts-rest/open-api": "^3.52.1",
-        "@types/mongoose": "^5.11.97",
         "chalk": "^5.4.1",
         "comlink": "^4.4.2",
         "date-fns": "^4.1.0",

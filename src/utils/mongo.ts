@@ -2,7 +2,9 @@ import { isProd } from '../constants';
 import { addLog } from './log';
 import mongoose, { type Mongoose, type Model } from 'mongoose';
 
-export const MONGO_URL = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/fastgpt';
+export const MONGO_URL =
+  process.env.MONGODB_URI ||
+  'mongodb://myusername:mypassword@localhost:27017/fastgpt?authSource=admin&directConnection=true';
 
 declare global {
   var mongodb: Mongoose | undefined;
