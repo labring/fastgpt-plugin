@@ -1,7 +1,6 @@
 import z from 'zod';
 import { c } from '@/contract/init';
 import { ToolListItemSchema, type ToolListItemType } from './type/api';
-import { SystemVarSchema } from './type/tool';
 
 export const toolContract = c.router(
   {
@@ -26,23 +25,19 @@ export const toolContract = c.router(
     },
     delete: {
       path: '/delete',
-      method: 'POST',
+      method: 'DELETE',
       description: 'Delete a tool',
       body: z.object({
         toolId: z.string()
       }),
       responses: {
         200: z.object({
-          code: z.number(),
-          message: z.string(),
-          deletedRecord: z.any()
+          message: z.string()
         }),
         400: z.object({
-          code: z.number(),
           error: z.string()
         }),
         404: z.object({
-          code: z.number(),
           error: z.string()
         })
       }
@@ -56,7 +51,6 @@ export const toolContract = c.router(
       }),
       responses: {
         200: z.object({
-          code: z.number(),
           message: z.string(),
           mongoResult: z.any(),
           toolId: z.string()

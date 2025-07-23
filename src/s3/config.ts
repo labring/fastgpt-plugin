@@ -3,12 +3,12 @@ import { S3Service } from './controller';
 
 export type FileConfig = {
   maxFileSize: number; // 文件大小限制（字节）
-  retentionDays: number; // 保留天数（由 MinIO 生命周期策略自动管理）
-  endpoint: string; // MinIO endpoint
-  port?: number; // MinIO port
+  retentionDays: number; // 保留天数（由 S3 生命周期策略自动管理）
+  endpoint: string; // S3 endpoint
+  port?: number; // S3 port
   useSSL: boolean; // 是否使用SSL
-  accessKey: string; // MinIO access key
-  secretKey: string; // MinIO secret key
+  accessKey: string; // S3 access key
+  secretKey: string; // S3 secret key
   bucket: string; // 存储桶名称
 };
 
@@ -16,12 +16,12 @@ export type FileConfig = {
 export const defaultFileConfig: FileConfig = {
   maxFileSize: process.env.MAX_FILE_SIZE ? parseInt(process.env.MAX_FILE_SIZE) : 20 * 1024 * 1024, // 默认 20MB
   retentionDays: process.env.RETENTION_DAYS ? parseInt(process.env.RETENTION_DAYS) : 15, // 默认保留15天
-  endpoint: process.env.MINIO_ENDPOINT || 'localhost',
-  port: process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : 9000,
-  useSSL: process.env.MINIO_USE_SSL === 'true',
-  accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-  secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
-  bucket: process.env.MINIO_BUCKET || 'files'
+  endpoint: process.env.S3_ENDPOINT || 'localhost',
+  port: process.env.S3_PORT ? parseInt(process.env.S3_PORT) : 9000,
+  useSSL: process.env.S3_USE_SSL === 'true',
+  accessKey: process.env.S3_ACCESS_KEY || 'minioadmin',
+  secretKey: process.env.S3_SECRET_KEY || 'minioadmin',
+  bucket: process.env.S3_TOOL_BUCKET || process.env.S3_BUCKET || 'files'
 };
 
 export const FileMetadataSchema = z.object({

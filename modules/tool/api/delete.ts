@@ -11,6 +11,8 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
   try {
     const { toolId } = body;
 
+    await deleteLocalFileAndRemoveFromList(toolId);
+
     const deletedRecord = await deleteMongoRecord(toolId);
     if (!deletedRecord) {
       return {
@@ -23,8 +25,6 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
     }
 
     await deleteMinioFile(deletedRecord.url);
-
-    await deleteLocalFileAndRemoveFromList(toolId);
 
     return {
       status: 200,
