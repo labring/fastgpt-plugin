@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import crypto from 'crypto';
 import { delay } from '@tool/utils/delay';
+import { retryFn } from '@tool/utils/function';
+import { getErrText } from '@tool/utils/err';
 
 const SizeEnum = z.enum(['512*1024', '768*512', '768*1024', '1024*576', '576*1024', '1024*1024']);
 
@@ -111,20 +113,8 @@ async function queryTaskStatus(accessKey: string, secretKey: string, generateUui
   return await response.json();
 }
 
-async function waitForTaskCompletion(
-  accessKey: string,
-  secretKey: string,
-  generateUuid: string,
-  retryCount: number = 30
-): Promise<{ link: string; msg?: string }> {
-  if (retryCount <= 0) {
-    return {
-      link: '',
-      msg: '任务超时，请稍后重试'
-    };
-  }
-
-  try {
+async function waitForTaskCompletion(accessKey: string, secretKey: string, generateUuid: string) {
+  return await retryFn(async () => {
     const statusResult = await queryTaskStatus(accessKey, secretKey, generateUuid);
     const generateStatus = statusResult.data?.generateStatus;
 
@@ -132,19 +122,17 @@ async function waitForTaskCompletion(
       const images = statusResult.data?.images || [];
 
       if (images.length === 0) {
-        return {
-          link: '',
-          msg: '任务完成但图片列表为空，可能图片未通过审核'
-        };
+        return Promise.reject({
+          error: '任务完成但图片列表为空，可能图片未通过审核'
+        });
       }
 
       const validImage = images.find((img: any) => img.imageUrl && img.imageUrl.trim() !== '');
 
       if (!validImage?.imageUrl) {
-        return {
-          link: '',
-          msg: '任务完成但未找到有效的图片链接'
-        };
+        return Promise.reject({
+          error: '任务完成但未找到有效的图片链接'
+        });
       }
 
       return {
@@ -153,43 +141,38 @@ async function waitForTaskCompletion(
     }
 
     if (generateStatus === 4) {
-      const errorMsg = statusResult.data?.generateMsg || '图片生成任务失败';
-      return {
-        link: '',
-        msg: errorMsg
-      };
+      return Promise.reject({
+        error: statusResult.data?.generateMsg || '图片生成任务失败'
+      });
     }
-
-    await delay(3000);
-    return waitForTaskCompletion(accessKey, secretKey, generateUuid, retryCount - 1);
-  } catch (error) {
-    console.error(`查询任务状态失败，剩余重试次数: ${retryCount - 1}`, {
-      error: error instanceof Error ? error.message : String(error),
-      generateUuid: generateUuid
-    });
-
-    await delay(3000);
-    return waitForTaskCompletion(accessKey, secretKey, generateUuid, retryCount - 1);
-  }
+    await delay(2000);
+    return Promise.reject({});
+  }, 30);
 }
 
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const { accessKey, secretKey, prompt, size } = props;
 
   try {
-    const result = await submitDrawingTask(accessKey, secretKey, prompt, size);
+    const upload = await submitDrawingTask(accessKey, secretKey, prompt, size);
 
-    if (!result.data?.generateUuid) {
+    if (!upload.data?.generateUuid) {
       return {
         link: '',
         msg: '提交任务失败，未获取到任务ID'
       };
     }
 
-    return await waitForTaskCompletion(accessKey, secretKey, result.data.generateUuid);
+    const result = await waitForTaskCompletion(accessKey, secretKey, upload.data.generateUuid);
+    if (result) {
+      return result;
+    }
+    return Promise.reject({
+      error: '任务超时，请稍后重试'
+    });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : '调用 libulibu API 时发生未知错误';
-    return Promise.reject(new Error(errorMessage));
+    return Promise.reject({
+      error: getErrText(error)
+    });
   }
 }

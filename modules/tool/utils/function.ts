@@ -2,7 +2,7 @@ import { delay } from '@tool/utils/delay';
 
 export const retryFn = async <T>(fn: () => Promise<T>, retryTimes = 3): Promise<T> => {
   try {
-    return fn();
+    return await fn();
   } catch (error) {
     if (retryTimes > 0) {
       await delay(500);

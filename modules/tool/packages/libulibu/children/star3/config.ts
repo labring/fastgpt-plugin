@@ -1,5 +1,9 @@
 import { defineTool } from '@tool/type';
-import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
@@ -35,6 +39,7 @@ export default defineTool({
         {
           key: 'prompt',
           label: '绘画提示词',
+          toolDescription: '绘画提示词',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string
         },
@@ -42,6 +47,8 @@ export default defineTool({
           key: 'size',
           label: '图像尺寸',
           description: '设置生成图像的分辨率',
+          toolDescription:
+            '设置生成图像的分辨率, 可选值: 512*1024, 768*512, 768*1024, 1024*576, 576*1024, 1024*1024',
           renderTypeList: [FlowNodeInputTypeEnum.select],
           valueType: WorkflowIOValueTypeEnum.string,
           defaultValue: '1024*1024',
@@ -63,10 +70,10 @@ export default defineTool({
           description: '绘画结果图片链接'
         },
         {
+          type: FlowNodeOutputTypeEnum.error,
           valueType: WorkflowIOValueTypeEnum.string,
-          key: 'msg',
-          label: '错误消息',
-          description: '当任务执行失败时返回的错误描述'
+          key: 'error',
+          label: '错误消息'
         }
       ]
     }
