@@ -2,7 +2,6 @@ import { defineTool } from '@tool/type';
 import {
   FlowNodeInputTypeEnum,
   FlowNodeOutputTypeEnum,
-  SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
@@ -23,21 +22,6 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'API Key',
-              description: '可以在 xxx 获取',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
-        {
           key: 'formatStr',
           label: '格式化字符串',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
@@ -50,8 +34,23 @@ export default defineTool({
           key: 'time',
           label: '时间',
           description: '当前时间'
+        },
+        {
+          valueType: WorkflowIOValueTypeEnum.string,
+          type: FlowNodeOutputTypeEnum.error,
+          key: 'error',
+          label: '错误'
         }
       ]
+    }
+  ],
+  secretInputConfig: [
+    {
+      key: 'apiKey',
+      label: 'API Key',
+      description: '可以在 xxx 获取',
+      required: true,
+      inputType: 'secret'
     }
   ]
 });

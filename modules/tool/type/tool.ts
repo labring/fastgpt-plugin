@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { InfoString } from '@/type/i18n';
-import { InputConfigSchema, InputSchema, OutputSchema, SystemInputKeyEnum } from './fastgpt';
+import { InputConfigSchema, InputSchema, OutputSchema } from './fastgpt';
 
 /* Call back type */
 export const SystemVarSchema = z.object({
@@ -106,7 +106,11 @@ export const ToolConfigSchema = z
     type: z.nativeEnum(ToolTypeEnum).optional().describe('The type of the tool'),
     icon: z.string().optional().describe('The icon of the tool'),
     author: z.string().optional().describe('The author of the tool'),
-    courseUrl: z.string().optional().describe('The documentation URL of the tool')
+    courseUrl: z.string().optional().describe('The documentation URL of the tool'),
+    secretInputConfig: z
+      .array(InputConfigSchema)
+      .optional()
+      .describe('The secret input list of the tool')
   })
   .describe('The Tool Config Schema');
 export const toolConfigWithCbSchema = ToolConfigSchema.merge(
@@ -126,7 +130,10 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
     toolDirName: z.string(),
 
     // ToolSet Parent
-    inputConfig: InputSchema.optional().describe('The input list of the tool')
+    secretInputConfig: z
+      .array(InputConfigSchema)
+      .optional()
+      .describe('The secret input list of the tool')
   })
 );
 
@@ -136,15 +143,7 @@ export const ToolSetConfigSchema = ToolConfigSchema.omit({
   .merge(
     z.object({
       type: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
-      children: z.array(toolConfigWithCbSchema).optional().describe('The children of the tool set'),
-      inputConfig: InputSchema.omit({ key: true })
-        .merge(
-          z.object({
-            key: z.literal(SystemInputKeyEnum.systemInputConfig)
-          })
-        )
-        .optional()
-        .describe('The input config of the tool set')
+      children: z.array(toolConfigWithCbSchema).optional().describe('The children of the tool set')
     })
   )
   .describe('The ToolSet Config Schema');

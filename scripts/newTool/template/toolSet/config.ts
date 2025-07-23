@@ -10,5 +10,14 @@ export default defineToolSet({
   description: {
     'zh-CN': '这是一个样例工具集',
     en: 'This is a sample tool set'
-  }
+  },
+  secretInputConfig: [
+    {
+      key: 'apiKey',
+      label: 'API Key',
+      description: '可以在 xxx 获取',
+      required: true,
+      inputType: 'secret'
+    }
+  ]
 });

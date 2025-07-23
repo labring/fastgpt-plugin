@@ -1,6 +1,5 @@
 import { defineToolSet } from '@tool/type';
 import { ToolTypeEnum } from '@tool/type/tool';
-import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineToolSet({
   name: {
@@ -12,7 +11,7 @@ export default defineToolSet({
     'zh-CN': 'GitHub 工具集',
     en: 'GitHub Tool Set'
   },
-  inputConfig: defineInputConfig([
+  secretInputConfig: [
     {
       key: 'token',
       label: 'GitHub Token',
@@ -20,5 +19,5 @@ export default defineToolSet({
       inputType: 'secret',
       required: false
     }
-  ])
+  ]
 });

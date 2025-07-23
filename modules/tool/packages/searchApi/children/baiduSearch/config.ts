@@ -1,11 +1,5 @@
 import { defineTool } from '@tool/type';
-import {
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  SystemInputKeyEnum,
-  WorkflowIOValueTypeEnum
-} from '@tool/type/fastgpt';
-import { defineInputConfig } from '@tool/utils/tool';
+import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
   name: {

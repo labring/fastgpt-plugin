@@ -4,7 +4,6 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   name: {
@@ -20,22 +19,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'accessKey',
-            label: 'accessKey',
-            description: '可以在 https://www.liblib.art/apis 获取',
-            required: true,
-            inputType: 'secret'
-          },
-          {
-            key: 'secretKey',
-            label: 'secretKey',
-            description: '可以在 https://www.liblib.art/apis 获取',
-            required: true,
-            inputType: 'secret'
-          }
-        ]),
         {
           key: 'prompt',
           label: '绘画提示词',

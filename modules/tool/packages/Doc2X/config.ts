@@ -1,6 +1,5 @@
 import { defineToolSet } from '@tool/type';
 import { ToolTypeEnum } from '@tool/type/tool';
-import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineToolSet({
   name: {
@@ -14,7 +13,7 @@ export default defineToolSet({
     en: 'Send an image or PDF file to Doc2X for parsing and return the LaTeX formula in markdown format.'
   },
   icon: 'plugins/doc2x',
-  inputConfig: defineInputConfig([
+  secretInputConfig: [
     {
       key: 'apikey',
       label: 'apikey',
@@ -22,5 +21,5 @@ export default defineToolSet({
       required: true,
       inputType: 'secret'
     }
-  ])
+  ]
 });
