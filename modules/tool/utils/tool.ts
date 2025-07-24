@@ -64,6 +64,7 @@ export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItem
     originCost: 0,
     currentCost: 0,
     hasTokenFee: false,
-    secretInputConfig: item.secretInputConfig
+    secretInputConfig: item.secretInputConfig,
+    toolSource: item.toolSource
   }));
 }
