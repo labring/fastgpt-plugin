@@ -40,6 +40,7 @@
     "https-proxy-agent": "^7.0.6",
     "json5": "^2.2.3",
     "minio": "^8.0.5",
+    "mongoose": "^8.16.4",
     "nanoid": "^5.1.5",
     "undici": "^7.13.0",
     "uuid": "^11.1.0",
