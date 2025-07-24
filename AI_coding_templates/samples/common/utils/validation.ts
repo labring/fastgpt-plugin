@@ -13,8 +13,8 @@ export class InputValidator {
    * @param fieldName 字段名称（用于错误消息）
    */
   static validateStringLength(
-    value: string, 
-    min: number = 1, 
+    value: string,
+    min: number = 1,
     max: number = 10000,
     fieldName: string = '字段'
   ): void {
@@ -25,7 +25,7 @@ export class InputValidator {
       throw new Error(`${fieldName}长度不能超过${max}个字符`);
     }
   }
-  
+
   /**
    * 验证数值范围
    * @param value 要验证的数值
@@ -34,8 +34,8 @@ export class InputValidator {
    * @param fieldName 字段名称
    */
   static validateNumberRange(
-    value: number, 
-    min: number, 
+    value: number,
+    min: number,
     max: number,
     fieldName: string = '数值'
   ): void {
@@ -43,7 +43,7 @@ export class InputValidator {
       throw new Error(`${fieldName}必须在${min}到${max}之间`);
     }
   }
-  
+
   /**
    * 验证邮箱格式
    * @param email 邮箱地址
@@ -53,7 +53,7 @@ export class InputValidator {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
-  
+
   /**
    * 验证URL格式
    * @param url URL地址
@@ -67,7 +67,7 @@ export class InputValidator {
       return false;
     }
   }
-  
+
   /**
    * 验证JSON格式
    * @param jsonString JSON字符串
@@ -81,7 +81,7 @@ export class InputValidator {
       return false;
     }
   }
-  
+
   /**
    * 验证文件扩展名
    * @param filename 文件名
@@ -92,7 +92,7 @@ export class InputValidator {
     const ext = filename.toLowerCase().split('.').pop();
     return ext ? allowedExtensions.includes(ext) : false;
   }
-  
+
   /**
    * 检查是否包含中文字符
    * @param text 文本内容
@@ -101,7 +101,7 @@ export class InputValidator {
   static containsChinese(text: string): boolean {
     return /[\u4e00-\u9fff]/.test(text);
   }
-  
+
   /**
    * 验证中国手机号
    * @param phone 手机号
@@ -111,14 +111,15 @@ export class InputValidator {
     const phoneRegex = /^1[3-9]\d{9}$/;
     return phoneRegex.test(phone);
   }
-  
+
   /**
    * 验证中国身份证号
    * @param idCard 身份证号
    * @returns 是否为有效身份证号
    */
   static validateChineseIdCard(idCard: string): boolean {
-    const idCardRegex = /^[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/;
+    const idCardRegex =
+      /^[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/;
     return idCardRegex.test(idCard);
   }
 }
@@ -135,22 +136,19 @@ export class ValidationSchemaFactory {
    * @param pattern 正则表达式模式
    * @returns Zod 字符串验证模式
    */
-  static createTextSchema(
-    minLength: number = 1,
-    maxLength: number = 10000,
-    pattern?: RegExp
-  ) {
-    let schema = z.string()
+  static createTextSchema(minLength: number = 1, maxLength: number = 10000, pattern?: RegExp) {
+    let schema = z
+      .string()
       .min(minLength, `文本长度不能少于${minLength}个字符`)
       .max(maxLength, `文本长度不能超过${maxLength}个字符`);
-    
+
     if (pattern) {
       schema = schema.regex(pattern, '文本格式不符合要求');
     }
-    
+
     return schema;
   }
-  
+
   /**
    * 创建数值验证模式
    * @param min 最小值
@@ -158,45 +156,38 @@ export class ValidationSchemaFactory {
    * @param isInteger 是否必须为整数
    * @returns Zod 数值验证模式
    */
-  static createNumberSchema(
-    min?: number,
-    max?: number,
-    isInteger: boolean = false
-  ) {
+  static createNumberSchema(min?: number, max?: number, isInteger: boolean = false) {
     let schema = z.number();
-    
+
     if (isInteger) {
       schema = schema.int('必须是整数');
     }
-    
+
     if (min !== undefined) {
       schema = schema.min(min, `数值不能小于${min}`);
     }
-    
+
     if (max !== undefined) {
       schema = schema.max(max, `数值不能大于${max}`);
     }
-    
+
     return schema;
   }
-  
+
   /**
    * 创建枚举验证模式
    * @param values 枚举值列表
    * @param errorMessage 自定义错误消息
    * @returns Zod 枚举验证模式
    */
-  static createEnumSchema<T extends string>(
-    values: T[],
-    errorMessage?: string
-  ) {
+  static createEnumSchema<T extends string>(values: T[], errorMessage?: string) {
     return z.enum(values as [T, ...T[]], {
-      errorMap: () => ({ 
-        message: errorMessage || `值必须是以下之一: ${values.join(', ')}` 
+      errorMap: () => ({
+        message: errorMessage || `值必须是以下之一: ${values.join(', ')}`
       })
     });
   }
-  
+
   /**
    * 创建数组验证模式
    * @param itemSchema 数组项的验证模式
@@ -204,21 +195,17 @@ export class ValidationSchemaFactory {
    * @param maxLength 最大长度
    * @returns Zod 数组验证模式
    */
-  static createArraySchema<T>(
-    itemSchema: z.ZodSchema<T>,
-    minLength?: number,
-    maxLength?: number
-  ) {
+  static createArraySchema<T>(itemSchema: z.ZodSchema<T>, minLength?: number, maxLength?: number) {
     let schema = z.array(itemSchema);
-    
+
     if (minLength !== undefined) {
       schema = schema.min(minLength, `数组长度不能少于${minLength}`);
     }
-    
+
     if (maxLength !== undefined) {
       schema = schema.max(maxLength, `数组长度不能超过${maxLength}`);
     }
-    
+
     return schema;
   }
 }

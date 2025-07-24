@@ -73,7 +73,9 @@ export const LoadToolsByFilename = async (
         courseUrl: rootMod.courseUrl,
         author: rootMod.author,
         icon,
-        toolDirName: filename
+        toolDirName: filename,
+        // 确保 versionList 存在，如果子工具没有则使用空数组
+        versionList: child.versionList || []
       });
     }
   } else {
@@ -84,7 +86,9 @@ export const LoadToolsByFilename = async (
       type: tool.type || ToolTypeEnum.tools,
       icon: tool.icon || defaultIcon,
       toolId: tool.toolId || filename,
-      toolDirName: filename
+      toolDirName: filename,
+      // 确保 versionList 存在
+      versionList: tool.versionList || []
     });
   }
 

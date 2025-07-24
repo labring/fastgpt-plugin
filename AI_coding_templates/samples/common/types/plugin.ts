@@ -4,23 +4,18 @@
  */
 
 // 输入字段类型
-export type PluginInputType = 
-  | 'string' 
-  | 'number' 
-  | 'boolean' 
-  | 'select' 
-  | 'textarea' 
-  | 'file' 
-  | 'object' 
+export type PluginInputType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'select'
+  | 'textarea'
+  | 'file'
+  | 'object'
   | 'array';
 
 // 输出字段类型
-export type PluginOutputType = 
-  | 'string' 
-  | 'number' 
-  | 'boolean' 
-  | 'object' 
-  | 'array';
+export type PluginOutputType = 'string' | 'number' | 'boolean' | 'object' | 'array';
 
 // 选项接口
 export interface PluginOption {
@@ -90,20 +85,20 @@ export interface PluginConfig {
   updateTime: string;
   tags?: string[];
   category?: string;
-  
+
   // 工具配置
   toolConfig?: ToolConfig;
-  
+
   // 版本列表
   versionList: PluginVersion[];
-  
+
   // 权限配置
   permissions?: {
     network?: boolean;
     filesystem?: boolean;
     environment?: boolean;
   };
-  
+
   // 依赖配置
   dependencies?: {
     required?: string[];

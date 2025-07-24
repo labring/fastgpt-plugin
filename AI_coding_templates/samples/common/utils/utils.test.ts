@@ -29,7 +29,9 @@ describe('InputValidator', () => {
   it('should validate string length correctly', () => {
     expect(() => InputValidator.validateStringLength('hello', 1, 10)).not.toThrow();
     expect(() => InputValidator.validateStringLength('', 1, 10)).toThrow('字段长度不能少于1个字符');
-    expect(() => InputValidator.validateStringLength('a'.repeat(11), 1, 10)).toThrow('字段长度不能超过10个字符');
+    expect(() => InputValidator.validateStringLength('a'.repeat(11), 1, 10)).toThrow(
+      '字段长度不能超过10个字符'
+    );
   });
 
   it('should validate number range correctly', () => {
@@ -97,7 +99,7 @@ describe('ValidationSchemaFactory', () => {
   it('should create array schema', () => {
     const itemSchema = ValidationSchemaFactory.createTextSchema(1, 5);
     const arraySchema = ValidationSchemaFactory.createArraySchema(itemSchema, 1, 3);
-    
+
     expect(arraySchema.safeParse(['a', 'b']).success).toBe(true);
     expect(arraySchema.safeParse([]).success).toBe(false); // 最小长度1
     expect(arraySchema.safeParse(['a', 'b', 'c', 'd']).success).toBe(false); // 最大长度3
@@ -142,7 +144,7 @@ describe('DataCleaner', () => {
       },
       hobbies: ['reading', '', null, 'swimming']
     };
-    
+
     const cleaned = DataCleaner.deepClean(obj);
     expect(cleaned).toEqual({
       name: 'John',
@@ -229,7 +231,9 @@ describe('TextFormatter', () => {
 
   it('should format phone numbers', () => {
     expect(TextFormatter.formatPhoneNumber('13812345678')).toBe('138 1234 5678');
-    expect(TextFormatter.formatPhoneNumber('13812345678', 'international')).toBe('+86 138 1234 5678');
+    expect(TextFormatter.formatPhoneNumber('13812345678', 'international')).toBe(
+      '+86 138 1234 5678'
+    );
   });
 
   it('should format bank card numbers', () => {
@@ -264,7 +268,7 @@ describe('DataConverter', () => {
         settings: { theme: 'dark' }
       }
     };
-    
+
     const flattened = DataConverter.flattenObject(obj);
     expect(flattened).toEqual({
       'user.profile.name': 'John',
@@ -279,7 +283,7 @@ describe('DataConverter', () => {
       'user.profile.age': 25,
       'user.settings.theme': 'dark'
     };
-    
+
     const unflattened = DataConverter.unflattenObject(flattened);
     expect(unflattened).toEqual({
       user: {
@@ -294,7 +298,7 @@ describe('DataConverter', () => {
       { id: '1', name: 'John' },
       { id: '2', name: 'Jane' }
     ];
-    
+
     const obj = DataConverter.arrayToObject(array, 'id');
     expect(obj).toEqual({
       '1': { id: '1', name: 'John' },
@@ -318,30 +322,28 @@ describe('DataConverter', () => {
       { category: 'fruit', name: 'banana' },
       { category: 'vegetable', name: 'carrot' }
     ];
-    
-    const grouped = DataConverter.groupBy(array, item => item.category);
+
+    const grouped = DataConverter.groupBy(array, (item) => item.category);
     expect(grouped).toEqual({
       fruit: [
         { category: 'fruit', name: 'apple' },
         { category: 'fruit', name: 'banana' }
       ],
-      vegetable: [
-        { category: 'vegetable', name: 'carrot' }
-      ]
+      vegetable: [{ category: 'vegetable', name: 'carrot' }]
     });
   });
 
   it('should remove duplicates from array', () => {
     const array = [1, 2, 2, 3, 3, 4];
     expect(DataConverter.unique(array)).toEqual([1, 2, 3, 4]);
-    
+
     const objArray = [
       { id: 1, name: 'John' },
       { id: 2, name: 'Jane' },
       { id: 1, name: 'John' }
     ];
-    
-    const unique = DataConverter.unique(objArray, item => item.id);
+
+    const unique = DataConverter.unique(objArray, (item) => item.id);
     expect(unique).toEqual([
       { id: 1, name: 'John' },
       { id: 2, name: 'Jane' }
@@ -354,7 +356,7 @@ describe('DataConverter', () => {
       hobbies: ['reading', 'swimming'],
       address: { city: 'New York' }
     };
-    
+
     const cloned = DataConverter.deepClone(original);
     expect(cloned).toEqual(original);
     expect(cloned).not.toBe(original);
@@ -367,12 +369,12 @@ describe('DataConverter', () => {
       a: 1,
       b: { c: 2, d: 3 }
     };
-    
+
     const source = {
       b: { c: 2, d: 4, e: 5 },
       f: 6
     };
-    
+
     const merged = DataConverter.deepMerge(target, source);
     expect(merged).toEqual({
       a: 1,
@@ -391,10 +393,9 @@ describe('AsyncUtils', () => {
   });
 
   it('should timeout promises', async () => {
-    const slowPromise = new Promise(resolve => setTimeout(resolve, 200));
-    
-    await expect(AsyncUtils.timeout(slowPromise, 100))
-      .rejects.toThrow('操作超时');
+    const slowPromise = new Promise((resolve) => setTimeout(resolve, 200));
+
+    await expect(AsyncUtils.timeout(slowPromise, 100)).rejects.toThrow('操作超时');
   });
 
   it('should retry failed operations', async () => {
@@ -406,21 +407,19 @@ describe('AsyncUtils', () => {
       }
       return '成功';
     };
-    
+
     const result = await AsyncUtils.retry(unstableFunction, 3, 10);
     expect(result).toBe('成功');
     expect(attempts).toBe(3);
   });
 
   it('should control concurrency', async () => {
-    const tasks = Array.from({ length: 5 }, (_, i) => 
-      () => AsyncUtils.delay(50).then(() => i)
-    );
-    
+    const tasks = Array.from({ length: 5 }, (_, i) => () => AsyncUtils.delay(50).then(() => i));
+
     const start = Date.now();
     const results = await AsyncUtils.concurrent(tasks, 2);
     const end = Date.now();
-    
+
     expect(results).toEqual([0, 1, 2, 3, 4]);
     // 应该比串行执行快，但比完全并行慢
     expect(end - start).toBeGreaterThan(100);
@@ -431,9 +430,9 @@ describe('AsyncUtils', () => {
     const items = [1, 2, 3, 4, 5];
     const processor = async (batch: number[]) => {
       await AsyncUtils.delay(10);
-      return batch.map(x => x * 2);
+      return batch.map((x) => x * 2);
     };
-    
+
     const results = await AsyncUtils.batch(items, processor, 2);
     expect(results).toEqual([2, 4, 6, 8, 10]);
   });
@@ -441,20 +440,20 @@ describe('AsyncUtils', () => {
   it('should create and manage queues', async () => {
     const queue = AsyncUtils.createQueue<void>();
     const results: string[] = [];
-    
+
     queue.add(async () => {
       await AsyncUtils.delay(10);
       results.push('task1');
     });
-    
+
     queue.add(async () => {
       await AsyncUtils.delay(10);
       results.push('task2');
     });
-    
+
     // 等待队列处理完成
     await AsyncUtils.delay(50);
-    
+
     expect(results).toEqual(['task1', 'task2']);
   });
 
@@ -464,12 +463,12 @@ describe('AsyncUtils', () => {
       callCount++;
       return value;
     }, 50);
-    
+
     // 快速连续调用
     debouncedFn('a');
     debouncedFn('b');
     const result = await debouncedFn('c');
-    
+
     expect(result).toBe('c');
     expect(callCount).toBe(1);
   });
@@ -479,12 +478,12 @@ describe('AsyncUtils', () => {
     const throttledFn = AsyncUtils.throttle(() => {
       callCount++;
     }, 100);
-    
+
     // 快速连续调用
     throttledFn();
     throttledFn();
     throttledFn();
-    
+
     expect(callCount).toBe(1);
   });
 
@@ -492,9 +491,9 @@ describe('AsyncUtils', () => {
     const { promise, cancel } = AsyncUtils.cancellable<string>((resolve) => {
       setTimeout(() => resolve('完成'), 100);
     });
-    
+
     cancel();
-    
+
     await expect(promise).rejects.toThrow('操作已取消');
   });
 
@@ -504,20 +503,18 @@ describe('AsyncUtils', () => {
       AsyncUtils.delay(50).then(() => '成功'),
       Promise.reject(new Error('失败2'))
     ];
-    
+
     const result = await AsyncUtils.raceSuccess(promises);
     expect(result).toBe('成功');
   });
 
   it('should use semaphore for concurrency control', async () => {
-    const tasks = Array.from({ length: 5 }, (_, i) => 
-      () => AsyncUtils.delay(50).then(() => i)
-    );
-    
+    const tasks = Array.from({ length: 5 }, (_, i) => () => AsyncUtils.delay(50).then(() => i));
+
     const start = Date.now();
     const results = await AsyncUtils.withSemaphore(tasks, 2);
     const end = Date.now();
-    
+
     expect(results).toEqual([0, 1, 2, 3, 4]);
     expect(end - start).toBeGreaterThan(100);
   });
@@ -528,10 +525,10 @@ describe('AsyncUtils', () => {
       await AsyncUtils.delay(10);
       return item * 2;
     };
-    
+
     const iterator = AsyncUtils.asyncIterator(items, processor);
     const results = await AsyncUtils.toArray(iterator);
-    
+
     expect(results).toEqual([2, 4, 6]);
   });
 });
@@ -552,7 +549,7 @@ describe('MemoryCache', () => {
   it('should respect TTL', async () => {
     cache.set('key1', 'value1', 50);
     expect(cache.get('key1')).toBe('value1');
-    
+
     await AsyncUtils.delay(60);
     expect(cache.get('key1')).toBeUndefined();
   });
@@ -561,14 +558,14 @@ describe('MemoryCache', () => {
     cache.set('key1', 'value1');
     cache.set('key2', 'value2');
     cache.set('key3', 'value3');
-    
+
     // 访问key1和key2
     cache.get('key1');
     cache.get('key2');
-    
+
     // 添加第4个项，应该驱逐key3
     cache.set('key4', 'value4');
-    
+
     expect(cache.get('key1')).toBe('value1');
     expect(cache.get('key2')).toBe('value2');
     expect(cache.get('key3')).toBeUndefined();
@@ -580,7 +577,7 @@ describe('MemoryCache', () => {
     cache.get('key1');
     cache.get('key1');
     cache.get('nonexistent');
-    
+
     const stats = cache.getStats();
     expect(stats.size).toBe(1);
     expect(stats.maxSize).toBe(3);
@@ -591,9 +588,9 @@ describe('MemoryCache', () => {
   it('should cleanup expired items', async () => {
     cache.set('key1', 'value1', 50);
     cache.set('key2', 'value2', 200);
-    
+
     await AsyncUtils.delay(60);
-    
+
     const cleaned = cache.cleanup();
     expect(cleaned).toBe(1);
     expect(cache.size()).toBe(1);
@@ -604,7 +601,7 @@ describe('MemoryCache', () => {
     cache.set('key1', 'value1', 50);
     const updated = cache.updateTTL('key1', 200);
     expect(updated).toBe(true);
-    
+
     const nonexistentUpdate = cache.updateTTL('nonexistent', 200);
     expect(nonexistentUpdate).toBe(false);
   });
@@ -612,7 +609,7 @@ describe('MemoryCache', () => {
   it('should provide item info', () => {
     cache.set('key1', 'value1');
     cache.get('key1');
-    
+
     const info = cache.getItemInfo('key1');
     expect(info).toBeDefined();
     expect(info!.hits).toBe(1);
@@ -632,13 +629,13 @@ describe('LRUCache', () => {
     cache.set('a', 'value1');
     cache.set('b', 'value2');
     cache.set('c', 'value3');
-    
+
     // 访问a，使其成为最近使用的
     cache.get('a');
-    
+
     // 添加新项，应该驱逐b
     cache.set('d', 'value4');
-    
+
     expect(cache.get('a')).toBe('value1');
     expect(cache.get('b')).toBeUndefined();
     expect(cache.get('c')).toBe('value3');
@@ -650,7 +647,7 @@ describe('Common Helpers', () => {
   it('should generate UUIDs', () => {
     const uuid1 = generateUUID();
     const uuid2 = generateUUID();
-    
+
     expect(uuid1).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(uuid1).not.toBe(uuid2);
   });
@@ -658,7 +655,7 @@ describe('Common Helpers', () => {
   it('should generate short IDs', () => {
     const id1 = generateShortId(8);
     const id2 = generateShortId(8);
-    
+
     expect(id1).toHaveLength(8);
     expect(id1).not.toBe(id2);
     expect(id1).toMatch(/^[A-Za-z0-9]+$/);
@@ -686,7 +683,7 @@ describe('Common Helpers', () => {
 
   it('should get nested properties', () => {
     const obj = { user: { profile: { name: 'John' } } };
-    
+
     expect(getNestedProperty(obj, 'user.profile.name')).toBe('John');
     expect(getNestedProperty(obj, 'user.profile.age', 'Unknown')).toBe('Unknown');
     expect(getNestedProperty(obj, 'nonexistent.path', 'Default')).toBe('Default');
@@ -694,10 +691,10 @@ describe('Common Helpers', () => {
 
   it('should set nested properties', () => {
     const obj: any = {};
-    
+
     setNestedProperty(obj, 'user.profile.name', 'John');
     setNestedProperty(obj, 'user.profile.age', 25);
-    
+
     expect(obj).toEqual({
       user: {
         profile: {
@@ -711,14 +708,14 @@ describe('Common Helpers', () => {
   it('should chunk arrays', () => {
     const array = [1, 2, 3, 4, 5, 6, 7];
     const chunks = chunk(array, 3);
-    
+
     expect(chunks).toEqual([[1, 2, 3], [4, 5, 6], [7]]);
   });
 
   it('should shuffle arrays', () => {
     const array = [1, 2, 3, 4, 5];
     const shuffled = shuffle(array);
-    
+
     expect(shuffled).toHaveLength(5);
     expect(shuffled).toContain(1);
     expect(shuffled).toContain(2);
@@ -732,9 +729,9 @@ describe('Common Helpers', () => {
   it('should sample arrays', () => {
     const array = [1, 2, 3, 4, 5];
     const sampled = sample(array, 3);
-    
+
     expect(sampled).toHaveLength(3);
-    sampled.forEach(item => {
+    sampled.forEach((item) => {
       expect(array).toContain(item);
     });
   });
@@ -770,14 +767,14 @@ describe('Common Helpers', () => {
       callCount++;
       return n * n;
     };
-    
+
     const memoized = memoize(expensiveFunction);
-    
+
     expect(memoized(5)).toBe(25);
     expect(memoized(5)).toBe(25);
     expect(memoized(3)).toBe(9);
     expect(memoized(5)).toBe(25);
-    
+
     expect(callCount).toBe(2); // 只调用了两次：5和3
   });
 
@@ -787,10 +784,10 @@ describe('Common Helpers', () => {
       createCount++;
       return { id: createCount };
     });
-    
+
     const instance1 = createInstance();
     const instance2 = createInstance();
-    
+
     expect(instance1).toBe(instance2);
     expect(createCount).toBe(1);
   });
@@ -800,7 +797,7 @@ describe('Integration Tests', () => {
   it('should work together in a real scenario', async () => {
     // 创建缓存
     const cache = new MemoryCache<any>(100, 60000);
-    
+
     // 模拟API服务
     class ApiService {
       async fetchUser(id: string) {
@@ -810,13 +807,13 @@ describe('Integration Tests', () => {
         if (cached) {
           return cached;
         }
-        
+
         // 模拟API调用
         await AsyncUtils.delay(100);
-        
+
         // 验证输入
         InputValidator.validateStringLength(id, 1, 50, '用户ID');
-        
+
         // 生成用户数据
         const userData = {
           id,
@@ -824,44 +821,44 @@ describe('Integration Tests', () => {
           email: `user${id}@example.com`,
           createdAt: new Date().toISOString()
         };
-        
+
         // 缓存结果
         cache.set(cacheKey, userData, 30000);
-        
+
         return userData;
       }
-      
+
       async processUsers(userIds: string[]) {
         // 批量处理
         return AsyncUtils.batch(
           userIds,
           async (batch) => {
-            const tasks = batch.map(id => () => this.fetchUser(id));
+            const tasks = batch.map((id) => () => this.fetchUser(id));
             return AsyncUtils.concurrent(tasks, 3);
           },
           5
         );
       }
     }
-    
+
     const apiService = new ApiService();
-    
+
     // 测试单个用户获取
     const user1 = await apiService.fetchUser('123');
     expect(user1.id).toBe('123');
     expect(user1.name).toBe('User 123');
-    
+
     // 测试缓存命中
     const user1Cached = await apiService.fetchUser('123');
     expect(user1Cached).toBe(user1); // 应该是同一个对象
-    
+
     // 测试批量处理
     const userIds = Array.from({ length: 10 }, (_, i) => `user${i}`);
     const users = await apiService.processUsers(userIds);
-    
+
     expect(users).toHaveLength(10);
     expect(users[0].id).toBe('user0');
-    
+
     // 验证缓存统计
     const stats = cache.getStats();
     expect(stats.size).toBeGreaterThan(0);

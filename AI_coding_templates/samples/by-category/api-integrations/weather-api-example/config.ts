@@ -3,107 +3,129 @@ import { z } from 'zod';
 
 // 输入参数验证模式
 export const InputSchema = z.object({
-  query: z.string()
+  query: z
+    .string()
     .min(1, '查询内容不能为空')
     .max(100, '查询内容过长')
     .describe('城市名称或经纬度坐标（格式：lat,lon）'),
-  
-  type: z.enum(['current', 'forecast'])
+
+  type: z
+    .enum(['current', 'forecast'])
     .default('current')
     .describe('查询类型：current-当前天气，forecast-天气预报'),
-  
-  days: z.number()
-    .int()
-    .min(1)
-    .max(7)
-    .default(5)
-    .describe('预报天数（仅在type为forecast时有效）'),
-  
-  units: z.enum(['metric', 'imperial', 'kelvin'])
+
+  days: z.number().int().min(1).max(7).default(5).describe('预报天数（仅在type为forecast时有效）'),
+
+  units: z
+    .enum(['metric', 'imperial', 'kelvin'])
     .default('metric')
     .describe('温度单位：metric-摄氏度，imperial-华氏度，kelvin-开尔文'),
-  
-  lang: z.string()
-    .default('zh')
-    .describe('语言代码（zh-中文，en-英文）'),
-  
-  includeDetails: z.boolean()
-    .default(true)
-    .describe('是否包含详细信息（湿度、风速、紫外线等）')
+
+  lang: z.string().default('zh').describe('语言代码（zh-中文，en-英文）'),
+
+  includeDetails: z.boolean().default(true).describe('是否包含详细信息（湿度、风速、紫外线等）')
 });
 
 // 输出结果类型
 export const OutputSchema = z.object({
   success: z.boolean().describe('查询是否成功'),
-  
-  data: z.object({
-    location: z.object({
-      name: z.string().describe('地点名称'),
-      country: z.string().describe('国家'),
-      coordinates: z.object({
-        lat: z.number().describe('纬度'),
-        lon: z.number().describe('经度')
-      }).describe('坐标信息')
-    }).describe('位置信息'),
-    
-    current: z.object({
-      temperature: z.number().describe('当前温度'),
-      feelsLike: z.number().describe('体感温度'),
-      humidity: z.number().describe('湿度百分比'),
-      pressure: z.number().describe('气压'),
-      visibility: z.number().describe('能见度'),
-      uvIndex: z.number().describe('紫外线指数'),
-      condition: z.object({
-        main: z.string().describe('主要天气状况'),
-        description: z.string().describe('详细描述'),
-        icon: z.string().describe('天气图标代码')
-      }).describe('天气状况'),
-      wind: z.object({
-        speed: z.number().describe('风速'),
-        direction: z.number().describe('风向角度'),
-        gust: z.number().optional().describe('阵风速度')
-      }).describe('风力信息'),
-      timestamp: z.string().describe('数据时间戳')
-    }).optional().describe('当前天气（type为current时返回）'),
-    
-    forecast: z.array(z.object({
-      date: z.string().describe('日期'),
-      temperature: z.object({
-        min: z.number().describe('最低温度'),
-        max: z.number().describe('最高温度'),
-        morning: z.number().describe('早晨温度'),
-        day: z.number().describe('白天温度'),
-        evening: z.number().describe('傍晚温度'),
-        night: z.number().describe('夜晚温度')
-      }).describe('温度信息'),
-      condition: z.object({
-        main: z.string().describe('主要天气状况'),
-        description: z.string().describe('详细描述'),
-        icon: z.string().describe('天气图标代码')
-      }).describe('天气状况'),
-      humidity: z.number().describe('湿度百分比'),
-      pressure: z.number().describe('气压'),
-      wind: z.object({
-        speed: z.number().describe('风速'),
-        direction: z.number().describe('风向角度')
-      }).describe('风力信息'),
-      precipitation: z.object({
-        probability: z.number().describe('降水概率'),
-        amount: z.number().describe('降水量')
-      }).describe('降水信息'),
-      uvIndex: z.number().describe('紫外线指数')
-    })).optional().describe('天气预报（type为forecast时返回）')
-  }).describe('天气数据'),
-  
-  metadata: z.object({
-    source: z.string().describe('数据来源'),
-    units: z.string().describe('使用的单位系统'),
-    language: z.string().describe('返回数据的语言'),
-    cacheHit: z.boolean().describe('是否命中缓存'),
-    requestTime: z.number().describe('请求耗时（毫秒）'),
-    lastUpdated: z.string().describe('数据最后更新时间')
-  }).describe('元数据信息'),
-  
+
+  data: z
+    .object({
+      location: z
+        .object({
+          name: z.string().describe('地点名称'),
+          country: z.string().describe('国家'),
+          coordinates: z
+            .object({
+              lat: z.number().describe('纬度'),
+              lon: z.number().describe('经度')
+            })
+            .describe('坐标信息')
+        })
+        .describe('位置信息'),
+
+      current: z
+        .object({
+          temperature: z.number().describe('当前温度'),
+          feelsLike: z.number().describe('体感温度'),
+          humidity: z.number().describe('湿度百分比'),
+          pressure: z.number().describe('气压'),
+          visibility: z.number().describe('能见度'),
+          uvIndex: z.number().describe('紫外线指数'),
+          condition: z
+            .object({
+              main: z.string().describe('主要天气状况'),
+              description: z.string().describe('详细描述'),
+              icon: z.string().describe('天气图标代码')
+            })
+            .describe('天气状况'),
+          wind: z
+            .object({
+              speed: z.number().describe('风速'),
+              direction: z.number().describe('风向角度'),
+              gust: z.number().optional().describe('阵风速度')
+            })
+            .describe('风力信息'),
+          timestamp: z.string().describe('数据时间戳')
+        })
+        .optional()
+        .describe('当前天气（type为current时返回）'),
+
+      forecast: z
+        .array(
+          z.object({
+            date: z.string().describe('日期'),
+            temperature: z
+              .object({
+                min: z.number().describe('最低温度'),
+                max: z.number().describe('最高温度'),
+                morning: z.number().describe('早晨温度'),
+                day: z.number().describe('白天温度'),
+                evening: z.number().describe('傍晚温度'),
+                night: z.number().describe('夜晚温度')
+              })
+              .describe('温度信息'),
+            condition: z
+              .object({
+                main: z.string().describe('主要天气状况'),
+                description: z.string().describe('详细描述'),
+                icon: z.string().describe('天气图标代码')
+              })
+              .describe('天气状况'),
+            humidity: z.number().describe('湿度百分比'),
+            pressure: z.number().describe('气压'),
+            wind: z
+              .object({
+                speed: z.number().describe('风速'),
+                direction: z.number().describe('风向角度')
+              })
+              .describe('风力信息'),
+            precipitation: z
+              .object({
+                probability: z.number().describe('降水概率'),
+                amount: z.number().describe('降水量')
+              })
+              .describe('降水信息'),
+            uvIndex: z.number().describe('紫外线指数')
+          })
+        )
+        .optional()
+        .describe('天气预报（type为forecast时返回）')
+    })
+    .describe('天气数据'),
+
+  metadata: z
+    .object({
+      source: z.string().describe('数据来源'),
+      units: z.string().describe('使用的单位系统'),
+      language: z.string().describe('返回数据的语言'),
+      cacheHit: z.boolean().describe('是否命中缓存'),
+      requestTime: z.number().describe('请求耗时（毫秒）'),
+      lastUpdated: z.string().describe('数据最后更新时间')
+    })
+    .describe('元数据信息'),
+
   error: z.string().optional().describe('错误信息（失败时返回）')
 });
 
@@ -120,14 +142,14 @@ export const config: PluginConfig = {
   version: '1.0.0',
   documentUrl: 'https://doc.fastgpt.in/docs/development/custom-plugin/',
   updateTime: '2024-01-01',
-  
+
   // 工具配置
   toolConfig: {
     customHeaders: {
       'Content-Type': 'application/json'
     }
   },
-  
+
   // 版本列表
   versionList: [
     {

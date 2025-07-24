@@ -20,7 +20,13 @@ try {
   addLog.error('Failed to initialize S3 server:', error);
   process.exit(1);
 }
-initTool();
+
+try {
+  await initTool();
+} catch (error) {
+  addLog.error('Failed to initialize tools:', error);
+  process.exit(1);
+}
 
 const PORT = parseInt(process.env.PORT || '3000');
 const server = app.listen(PORT, (error?: Error) => {

@@ -9,9 +9,9 @@ export class AsyncUtils {
    * @returns Promise
    */
   static delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  
+
   /**
    * 超时控制
    * @param promise 要控制的Promise
@@ -21,12 +21,12 @@ export class AsyncUtils {
   static timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return Promise.race([
       promise,
-      new Promise<never>((_, reject) => 
+      new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error(`操作超时 (${ms}ms)`)), ms)
       )
     ]);
   }
-  
+
   /**
    * 重试机制
    * @param fn 要重试的函数
@@ -42,38 +42,35 @@ export class AsyncUtils {
     backoff: boolean = true
   ): Promise<T> {
     let lastError: Error;
-    
+
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         return await fn();
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt === maxAttempts) {
           throw lastError;
         }
-        
+
         const waitTime = backoff ? delay * Math.pow(2, attempt - 1) : delay;
         await this.delay(waitTime);
       }
     }
-    
+
     throw lastError!;
   }
-  
+
   /**
    * 并发控制
    * @param tasks 任务数组
    * @param concurrency 并发数
    * @returns Promise结果数组
    */
-  static async concurrent<T>(
-    tasks: (() => Promise<T>)[],
-    concurrency: number = 5
-  ): Promise<T[]> {
+  static async concurrent<T>(tasks: (() => Promise<T>)[], concurrency: number = 5): Promise<T[]> {
     const results: T[] = new Array(tasks.length);
     let index = 0;
-    
+
     // 创建工作函数
     const worker = async (): Promise<void> => {
       while (index < tasks.length) {
@@ -83,16 +80,16 @@ export class AsyncUtils {
         }
       }
     };
-    
+
     // 创建并发工作者
     const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, () => worker());
-    
+
     // 等待所有工作者完成
     await Promise.all(workers);
-    
+
     return results;
   }
-  
+
   /**
    * 批处理
    * @param items 要处理的项目
@@ -106,16 +103,16 @@ export class AsyncUtils {
     batchSize: number = 10
   ): Promise<R[]> {
     const results: R[] = [];
-    
+
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
       const batchResults = await processor(batch);
       results.push(...batchResults);
     }
-    
+
     return results;
   }
-  
+
   /**
    * 创建任务队列
    * @returns 队列控制对象
@@ -123,12 +120,12 @@ export class AsyncUtils {
   static createQueue<T>() {
     const queue: (() => Promise<T>)[] = [];
     let processing = false;
-    
+
     const processQueue = async () => {
       if (processing || queue.length === 0) return;
-      
+
       processing = true;
-      
+
       while (queue.length > 0) {
         const task = queue.shift()!;
         try {
@@ -137,10 +134,10 @@ export class AsyncUtils {
           console.error('队列任务执行失败:', error);
         }
       }
-      
+
       processing = false;
     };
-    
+
     return {
       add: (task: () => Promise<T>) => {
         queue.push(task);
@@ -151,7 +148,7 @@ export class AsyncUtils {
       isProcessing: () => processing
     };
   }
-  
+
   /**
    * 防抖函数
    * @param func 要防抖的函数
@@ -163,7 +160,7 @@ export class AsyncUtils {
     wait: number
   ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
     let timeout: NodeJS.Timeout;
-    
+
     return (...args: Parameters<T>): Promise<ReturnType<T>> => {
       return new Promise((resolve) => {
         clearTimeout(timeout);
@@ -173,7 +170,7 @@ export class AsyncUtils {
       });
     };
   }
-  
+
   /**
    * 节流函数
    * @param func 要节流的函数
@@ -185,17 +182,17 @@ export class AsyncUtils {
     wait: number
   ): (...args: Parameters<T>) => ReturnType<T> | undefined {
     let lastTime = 0;
-    
+
     return (...args: Parameters<T>): ReturnType<T> | undefined => {
       const now = Date.now();
-      
+
       if (now - lastTime >= wait) {
         lastTime = now;
         return func(...args);
       }
     };
   }
-  
+
   /**
    * 创建可取消的Promise
    * @param executor Promise执行器
@@ -206,13 +203,13 @@ export class AsyncUtils {
   ): { promise: Promise<T>; cancel: () => void } {
     let isCancelled = false;
     let cancelCallback: (() => void) | undefined;
-    
+
     const promise = new Promise<T>((resolve, reject) => {
       cancelCallback = () => {
         isCancelled = true;
         reject(new Error('操作已取消'));
       };
-      
+
       executor(
         (value) => {
           if (!isCancelled) resolve(value);
@@ -222,13 +219,13 @@ export class AsyncUtils {
         }
       );
     });
-    
+
     return {
       promise,
       cancel: () => cancelCallback?.()
     };
   }
-  
+
   /**
    * 并行执行多个Promise，返回第一个成功的结果
    * @param promises Promise数组
@@ -238,22 +235,20 @@ export class AsyncUtils {
     return new Promise((resolve, reject) => {
       let rejectedCount = 0;
       const errors: any[] = [];
-      
+
       promises.forEach((promise, index) => {
-        promise
-          .then(resolve)
-          .catch(error => {
-            errors[index] = error;
-            rejectedCount++;
-            
-            if (rejectedCount === promises.length) {
-              reject(new Error(`所有Promise都失败了: ${errors.map(e => e.message).join(', ')}`));
-            }
-          });
+        promise.then(resolve).catch((error) => {
+          errors[index] = error;
+          rejectedCount++;
+
+          if (rejectedCount === promises.length) {
+            reject(new Error(`所有Promise都失败了: ${errors.map((e) => e.message).join(', ')}`));
+          }
+        });
       });
     });
   }
-  
+
   /**
    * 创建信号量（控制并发数）
    * @param maxConcurrency 最大并发数
@@ -262,9 +257,9 @@ export class AsyncUtils {
   static createSemaphore(maxConcurrency: number) {
     let currentCount = 0;
     const waitingQueue: (() => void)[] = [];
-    
+
     const acquire = (): Promise<void> => {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         if (currentCount < maxConcurrency) {
           currentCount++;
           resolve();
@@ -273,7 +268,7 @@ export class AsyncUtils {
         }
       });
     };
-    
+
     const release = (): void => {
       currentCount--;
       if (waitingQueue.length > 0) {
@@ -282,23 +277,20 @@ export class AsyncUtils {
         next();
       }
     };
-    
+
     return { acquire, release };
   }
-  
+
   /**
    * 使用信号量执行任务
    * @param tasks 任务数组
    * @param maxConcurrency 最大并发数
    * @returns 执行结果数组
    */
-  static async withSemaphore<T>(
-    tasks: (() => Promise<T>)[],
-    maxConcurrency: number
-  ): Promise<T[]> {
+  static async withSemaphore<T>(tasks: (() => Promise<T>)[], maxConcurrency: number): Promise<T[]> {
     const semaphore = this.createSemaphore(maxConcurrency);
-    
-    const wrappedTasks = tasks.map(task => async () => {
+
+    const wrappedTasks = tasks.map((task) => async () => {
       await semaphore.acquire();
       try {
         return await task();
@@ -306,17 +298,17 @@ export class AsyncUtils {
         semaphore.release();
       }
     });
-    
-    return Promise.all(wrappedTasks.map(task => task()));
+
+    return Promise.all(wrappedTasks.map((task) => task()));
   }
-  
+
   /**
    * 创建异步迭代器
    * @param items 项目数组
    * @param processor 处理函数
    * @returns 异步迭代器
    */
-  static async* asyncIterator<T, R>(
+  static async *asyncIterator<T, R>(
     items: T[],
     processor: (item: T) => Promise<R>
   ): AsyncIterableIterator<R> {
@@ -324,7 +316,7 @@ export class AsyncUtils {
       yield await processor(item);
     }
   }
-  
+
   /**
    * 将异步迭代器转换为数组
    * @param asyncIterable 异步迭代器

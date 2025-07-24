@@ -28,12 +28,12 @@ export class MemoryCache<T> {
   private maxSize: number;
   private defaultTTL: number;
   private totalRequests = 0;
-  
+
   constructor(maxSize: number = 1000, defaultTTL: number = 300000) {
     this.maxSize = maxSize;
     this.defaultTTL = defaultTTL; // 默认5分钟
   }
-  
+
   /**
    * 设置缓存
    * @param key 缓存键
@@ -42,12 +42,12 @@ export class MemoryCache<T> {
    */
   set(key: string, value: T, ttl?: number): void {
     const expiry = Date.now() + (ttl || this.defaultTTL);
-    
+
     // 如果缓存已满，删除最少使用的项
     if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
       this.evictLeastUsed();
     }
-    
+
     this.cache.set(key, {
       value,
       expiry,
@@ -55,7 +55,7 @@ export class MemoryCache<T> {
       created: Date.now()
     });
   }
-  
+
   /**
    * 获取缓存
    * @param key 缓存键
@@ -64,23 +64,23 @@ export class MemoryCache<T> {
   get(key: string): T | undefined {
     this.totalRequests++;
     const item = this.cache.get(key);
-    
+
     if (!item) {
       return undefined;
     }
-    
+
     // 检查是否过期
     if (Date.now() > item.expiry) {
       this.cache.delete(key);
       return undefined;
     }
-    
+
     // 增加命中次数
     item.hits++;
-    
+
     return item.value;
   }
-  
+
   /**
    * 删除缓存
    * @param key 缓存键
@@ -89,7 +89,7 @@ export class MemoryCache<T> {
   delete(key: string): boolean {
     return this.cache.delete(key);
   }
-  
+
   /**
    * 清空缓存
    */
@@ -97,7 +97,7 @@ export class MemoryCache<T> {
     this.cache.clear();
     this.totalRequests = 0;
   }
-  
+
   /**
    * 检查是否存在
    * @param key 缓存键
@@ -105,20 +105,20 @@ export class MemoryCache<T> {
    */
   has(key: string): boolean {
     const item = this.cache.get(key);
-    
+
     if (!item) {
       return false;
     }
-    
+
     // 检查是否过期
     if (Date.now() > item.expiry) {
       this.cache.delete(key);
       return false;
     }
-    
+
     return true;
   }
-  
+
   /**
    * 获取缓存大小
    * @returns 缓存项数量
@@ -126,7 +126,7 @@ export class MemoryCache<T> {
   size(): number {
     return this.cache.size;
   }
-  
+
   /**
    * 获取所有缓存键
    * @returns 缓存键数组
@@ -134,18 +134,18 @@ export class MemoryCache<T> {
   keys(): string[] {
     return Array.from(this.cache.keys());
   }
-  
+
   /**
    * 获取缓存统计
    * @returns 缓存统计信息
    */
   getStats(): CacheStats {
     let totalHits = 0;
-    
+
     for (const item of this.cache.values()) {
       totalHits += item.hits;
     }
-    
+
     return {
       size: this.cache.size,
       maxSize: this.maxSize,
@@ -154,7 +154,7 @@ export class MemoryCache<T> {
       totalRequests: this.totalRequests
     };
   }
-  
+
   /**
    * 清理过期项
    * @returns 清理的项目数量
@@ -162,17 +162,17 @@ export class MemoryCache<T> {
   cleanup(): number {
     const now = Date.now();
     let cleaned = 0;
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (now > item.expiry) {
         this.cache.delete(key);
         cleaned++;
       }
     }
-    
+
     return cleaned;
   }
-  
+
   /**
    * 更新TTL
    * @param key 缓存键
@@ -187,7 +187,7 @@ export class MemoryCache<T> {
     }
     return false;
   }
-  
+
   /**
    * 获取缓存项信息
    * @param key 缓存键
@@ -204,7 +204,7 @@ export class MemoryCache<T> {
     }
     return undefined;
   }
-  
+
   /**
    * 驱逐最少使用的项
    */
@@ -212,7 +212,7 @@ export class MemoryCache<T> {
     let leastUsedKey: string | undefined;
     let leastHits = Infinity;
     let oldestTime = Infinity;
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (item.hits < leastHits || (item.hits === leastHits && item.created < oldestTime)) {
         leastUsedKey = key;
@@ -220,7 +220,7 @@ export class MemoryCache<T> {
         oldestTime = item.created;
       }
     }
-    
+
     if (leastUsedKey) {
       this.cache.delete(leastUsedKey);
     }
@@ -238,27 +238,25 @@ export function cached<T extends (...args: any[]) => Promise<any>>(
 ) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = async function (...args: Parameters<T>) {
-      const key = keyGenerator 
-        ? keyGenerator(...args)
-        : `${propertyKey}_${JSON.stringify(args)}`;
-      
+      const key = keyGenerator ? keyGenerator(...args) : `${propertyKey}_${JSON.stringify(args)}`;
+
       // 尝试从缓存获取
       const cached = cache.get(key);
       if (cached !== undefined) {
         return cached;
       }
-      
+
       // 执行原方法
       const result = await originalMethod.apply(this, args);
-      
+
       // 缓存结果
       cache.set(key, result, ttl);
-      
+
       return result;
     };
-    
+
     return descriptor;
   };
 }
@@ -270,11 +268,11 @@ export function cached<T extends (...args: any[]) => Promise<any>>(
 export class LRUCache<T> {
   private cache = new Map<string, T>();
   private maxSize: number;
-  
+
   constructor(maxSize: number = 100) {
     this.maxSize = maxSize;
   }
-  
+
   /**
    * 获取值
    * @param key 键
@@ -289,7 +287,7 @@ export class LRUCache<T> {
     }
     return value;
   }
-  
+
   /**
    * 设置值
    * @param key 键
@@ -305,10 +303,10 @@ export class LRUCache<T> {
         this.cache.delete(firstKey);
       }
     }
-    
+
     this.cache.set(key, value);
   }
-  
+
   /**
    * 删除值
    * @param key 键
@@ -317,14 +315,14 @@ export class LRUCache<T> {
   delete(key: string): boolean {
     return this.cache.delete(key);
   }
-  
+
   /**
    * 清空缓存
    */
   clear(): void {
     this.cache.clear();
   }
-  
+
   /**
    * 获取大小
    * @returns 缓存大小
@@ -332,7 +330,7 @@ export class LRUCache<T> {
   size(): number {
     return this.cache.size;
   }
-  
+
   /**
    * 检查是否存在
    * @param key 键
@@ -349,7 +347,7 @@ export class LRUCache<T> {
  */
 export class CacheManager {
   private caches = new Map<string, MemoryCache<any>>();
-  
+
   /**
    * 创建缓存
    * @param name 缓存名称
@@ -357,12 +355,16 @@ export class CacheManager {
    * @param defaultTTL 默认TTL
    * @returns 缓存实例
    */
-  createCache<T>(name: string, maxSize: number = 1000, defaultTTL: number = 300000): MemoryCache<T> {
+  createCache<T>(
+    name: string,
+    maxSize: number = 1000,
+    defaultTTL: number = 300000
+  ): MemoryCache<T> {
     const cache = new MemoryCache<T>(maxSize, defaultTTL);
     this.caches.set(name, cache);
     return cache;
   }
-  
+
   /**
    * 获取缓存
    * @param name 缓存名称
@@ -371,7 +373,7 @@ export class CacheManager {
   getCache<T>(name: string): MemoryCache<T> | undefined {
     return this.caches.get(name);
   }
-  
+
   /**
    * 删除缓存实例
    * @param name 缓存名称
@@ -381,7 +383,7 @@ export class CacheManager {
     this.caches.get(name)?.clear();
     return this.caches.delete(name);
   }
-  
+
   /**
    * 清理所有缓存的过期项
    * @returns 清理的总项目数
@@ -393,7 +395,7 @@ export class CacheManager {
     }
     return totalCleaned;
   }
-  
+
   /**
    * 获取所有缓存的统计信息
    * @returns 统计信息对象
@@ -405,7 +407,7 @@ export class CacheManager {
     }
     return stats;
   }
-  
+
   /**
    * 清空所有缓存
    */

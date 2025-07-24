@@ -57,7 +57,6 @@ export async function tool(input: InputType): Promise<OutputType> {
       status: 'success',
       message
     };
-
   } catch (error) {
     console.error('内容管理操作失败:', error);
     return {

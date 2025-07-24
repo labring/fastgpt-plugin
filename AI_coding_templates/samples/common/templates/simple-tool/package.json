@@ -4,7 +4,12 @@
   "type": "module",
   "version": "1.0.0",
   "description": "FastGPT 简单工具类插件模板",
-  "keywords": ["fastgpt", "plugin", "tool", "template"],
+  "keywords": [
+    "fastgpt",
+    "plugin",
+    "tool",
+    "template"
+  ],
   "author": "FastGPT Team",
   "license": "Apache-2.0",
   "dependencies": {

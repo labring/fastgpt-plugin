@@ -32,24 +32,24 @@ export enum SystemInputKeyEnum {
   USER_ID = 'userId',
   USER_NAME = 'userName',
   USER_AVATAR = 'userAvatar',
-  
+
   // 对话相关
   CHAT_ID = 'chatId',
   CHAT_HISTORY = 'chatHistory',
   USER_QUESTION = 'userQuestion',
-  
+
   // 应用相关
   APP_ID = 'appId',
   APP_NAME = 'appName',
-  
+
   // 团队相关
   TEAM_ID = 'teamId',
   TEAM_NAME = 'teamName',
-  
+
   // 环境相关
   ENVIRONMENT = 'environment',
   TIMESTAMP = 'timestamp',
-  
+
   // 变量相关
   VARIABLES = 'variables',
   CONTEXT = 'context'
@@ -75,7 +75,7 @@ export enum FlowNodeTypeEnum {
   USER_GUIDE = 'userGuide',
   QUESTION_INPUT = 'questionInput',
   HISTORY = 'history',
-  
+
   // 处理节点
   CHAT_NODE = 'chatNode',
   DATASET_SEARCH = 'datasetSearch',
@@ -86,12 +86,12 @@ export enum FlowNodeTypeEnum {
   HTTP_REQUEST = 'httpRequest',
   RUN_CODE = 'runCode',
   PLUGIN = 'plugin',
-  
+
   // 逻辑节点
   IF_ELSE = 'ifElse',
   VARIABLE_UPDATE = 'variableUpdate',
   CODE = 'code',
-  
+
   // 输出节点
   ANSWER_NODE = 'answerNode'
 }

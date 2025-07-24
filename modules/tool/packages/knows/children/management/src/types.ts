@@ -8,7 +8,13 @@ import type { ToolInput, ToolOutput } from '../../../shared/types';
 export type ManagementAction = 'create_evidence' | 'auto_tagging';
 
 // 标签类型
-export type TagType = 'disease' | 'treatment' | 'medication' | 'study_type' | 'population' | 'outcome';
+export type TagType =
+  | 'disease'
+  | 'treatment'
+  | 'medication'
+  | 'study_type'
+  | 'population'
+  | 'outcome';
 
 // 内容管理工具输入
 export interface ManagementToolInput extends ToolInput {
@@ -86,7 +92,7 @@ export interface AutoTaggingResponse {
 // 操作类型标签映射
 export const ACTION_LABELS: Record<ManagementAction, string> = {
   create_evidence: '创建证据',
-  auto_tagging: '自动标签',
+  auto_tagging: '自动标签'
 };
 
 // 标签类型标签映射
@@ -96,12 +102,12 @@ export const TAG_TYPE_LABELS: Record<TagType, string> = {
   medication: '药物',
   study_type: '研究类型',
   population: '人群',
-  outcome: '结局指标',
+  outcome: '结局指标'
 };
 
 // 语言标签映射
 export const LANGUAGE_LABELS: Record<string, string> = {
   zh: '中文',
   en: '英文',
-  auto: '自动检测',
+  auto: '自动检测'
 };

@@ -4,7 +4,13 @@
   "type": "module",
   "version": "1.0.0",
   "description": "FastGPT API集成类插件模板",
-  "keywords": ["fastgpt", "plugin", "api", "integration", "template"],
+  "keywords": [
+    "fastgpt",
+    "plugin",
+    "api",
+    "integration",
+    "template"
+  ],
   "author": "FastGPT Team",
   "license": "Apache-2.0",
   "dependencies": {

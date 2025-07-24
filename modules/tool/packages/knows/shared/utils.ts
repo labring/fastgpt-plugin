@@ -14,7 +14,7 @@ export async function parseStreamResponse(
   onError?: (error: Error) => void
 ): Promise<StreamResponse[]> {
   const results: StreamResponse[] = [];
-  
+
   if (!response.body) {
     throw new Error('Response body is empty');
   }
@@ -25,7 +25,7 @@ export async function parseStreamResponse(
   try {
     while (true) {
       const { done, value } = await reader.read();
-      
+
       if (done) {
         onEnd?.();
         break;
@@ -42,7 +42,7 @@ export async function parseStreamResponse(
               const data: StreamResponse = JSON.parse(jsonStr);
               results.push(data);
               onData?.(data);
-              
+
               // 检查是否是结束标记
               if (data.data.type === 'END') {
                 onEnd?.();
@@ -73,7 +73,7 @@ export function createSuccessOutput(data: any, message?: string): ToolOutput {
   return {
     success: true,
     data,
-    message,
+    message
   };
 }
 
@@ -85,7 +85,7 @@ export function createErrorOutput(error: string | Error, data?: any): ToolOutput
   return {
     success: false,
     error: errorMessage,
-    data,
+    data
   };
 }
 
@@ -96,7 +96,7 @@ export function formatEvidenceLabels(labels: string[]): string {
   if (!labels || labels.length === 0) {
     return '';
   }
-  
+
   return labels.join(' | ');
 }
 
@@ -105,12 +105,12 @@ export function formatEvidenceLabels(labels: string[]): string {
  */
 export function formatEvidence(evidence: any): any {
   if (!evidence) return evidence;
-  
+
   return {
     ...evidence,
     formatted_date: evidence.publish_date ? formatDate(evidence.publish_date) : '',
     truncated_abstract: evidence.abstract ? truncateText(evidence.abstract, 200) : '',
-    formatted_labels: evidence.labels ? formatEvidenceLabels(evidence.labels) : '',
+    formatted_labels: evidence.labels ? formatEvidenceLabels(evidence.labels) : ''
   };
 }
 
@@ -158,12 +158,12 @@ export function isValidQuestionId(id: string): boolean {
 export function extractCitationIds(content: string): string[] {
   const regex = /\{([a-f0-9]{32})\}/gi;
   const matches = content.match(regex);
-  
+
   if (!matches) {
     return [];
   }
-  
-  return matches.map(match => match.slice(1, -1)); // 移除大括号
+
+  return matches.map((match) => match.slice(1, -1)); // 移除大括号
 }
 
 /**
@@ -171,11 +171,11 @@ export function extractCitationIds(content: string): string[] {
  */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
@@ -183,7 +183,7 @@ export function formatFileSize(bytes: number): string {
  * 延迟函数
  */
 export function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -195,21 +195,21 @@ export async function retry<T>(
   delayMs: number = 1000
 ): Promise<T> {
   let lastError: Error;
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      
+
       if (attempt === maxAttempts) {
         throw lastError;
       }
-      
+
       await delay(delayMs * attempt); // 指数退避
     }
   }
-  
+
   throw lastError!;
 }
 

@@ -25,9 +25,9 @@ export function generateRandomString(
  * @returns UUID字符串
  */
 export function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
@@ -102,14 +102,14 @@ export function isNotEmpty(value: any): boolean {
 export function getNestedProperty(obj: any, path: string, defaultValue: any = undefined): any {
   const keys = path.split('.');
   let current = obj;
-  
+
   for (const key of keys) {
     if (current === null || current === undefined || !(key in current)) {
       return defaultValue;
     }
     current = current[key];
   }
-  
+
   return current;
 }
 
@@ -122,7 +122,7 @@ export function getNestedProperty(obj: any, path: string, defaultValue: any = un
 export function setNestedProperty(obj: any, path: string, value: any): void {
   const keys = path.split('.');
   let current = obj;
-  
+
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
     if (!(key in current) || typeof current[key] !== 'object') {
@@ -130,7 +130,7 @@ export function setNestedProperty(obj: any, path: string, value: any): void {
     }
     current = current[key];
   }
-  
+
   current[keys[keys.length - 1]] = value;
 }
 
@@ -143,7 +143,7 @@ export function setNestedProperty(obj: any, path: string, value: any): void {
 export function deleteNestedProperty(obj: any, path: string): boolean {
   const keys = path.split('.');
   let current = obj;
-  
+
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
     if (!(key in current) || typeof current[key] !== 'object') {
@@ -151,13 +151,13 @@ export function deleteNestedProperty(obj: any, path: string): boolean {
     }
     current = current[key];
   }
-  
+
   const lastKey = keys[keys.length - 1];
   if (lastKey in current) {
     delete current[lastKey];
     return true;
   }
-  
+
   return false;
 }
 
@@ -274,10 +274,10 @@ export function average(numbers: number[]): number {
  */
 export function median(numbers: number[]): number {
   if (numbers.length === 0) return 0;
-  
+
   const sorted = [...numbers].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  
+
   if (sorted.length % 2 === 0) {
     return (sorted[mid - 1] + sorted[mid]) / 2;
   } else {
@@ -292,11 +292,11 @@ export function median(numbers: number[]): number {
  */
 export function standardDeviation(numbers: number[]): number {
   if (numbers.length === 0) return 0;
-  
+
   const avg = average(numbers);
-  const squaredDiffs = numbers.map(num => Math.pow(num - avg, 2));
+  const squaredDiffs = numbers.map((num) => Math.pow(num - avg, 2));
   const avgSquaredDiff = average(squaredDiffs);
-  
+
   return Math.sqrt(avgSquaredDiff);
 }
 
@@ -311,7 +311,7 @@ export function debounceSync<T extends (...args: any[]) => any>(
   delay: number
 ): (...args: Parameters<T>) => void {
   let timeoutId: NodeJS.Timeout;
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
@@ -329,7 +329,7 @@ export function throttleSync<T extends (...args: any[]) => any>(
   delay: number
 ): (...args: Parameters<T>) => void {
   let lastCall = 0;
-  
+
   return (...args: Parameters<T>) => {
     const now = Date.now();
     if (now - lastCall >= delay) {
@@ -350,17 +350,17 @@ export function memoize<T extends (...args: any[]) => any>(
   keyGenerator?: (...args: Parameters<T>) => string
 ): T {
   const cache = new Map<string, ReturnType<T>>();
-  
+
   return ((...args: Parameters<T>) => {
     const key = keyGenerator ? keyGenerator(...args) : JSON.stringify(args);
-    
+
     if (cache.has(key)) {
       return cache.get(key);
     }
-    
+
     const result = func(...args);
     cache.set(key, result);
-    
+
     return result;
   }) as T;
 }
@@ -373,7 +373,7 @@ export function memoize<T extends (...args: any[]) => any>(
 export function singleton<T>(func: () => T): () => T {
   let instance: T;
   let created = false;
-  
+
   return () => {
     if (!created) {
       instance = func();
@@ -389,12 +389,9 @@ export function singleton<T>(func: () => T): () => T {
  * @param maxAttempts 最大尝试次数
  * @returns 重试函数
  */
-export function retrySync<T>(
-  func: () => T,
-  maxAttempts: number = 3
-): T {
+export function retrySync<T>(func: () => T, maxAttempts: number = 3): T {
   let lastError: Error;
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return func();
@@ -405,7 +402,7 @@ export function retrySync<T>(
       }
     }
   }
-  
+
   throw lastError!;
 }
 
@@ -459,7 +456,7 @@ export function isArray(value: any): value is any[] {
  * @param value 值
  * @returns 是否为函数
  */
-export function isFunction(value: any): value is Function {
+export function isFunction(value: any): value is (...args: any[]) => any {
   return typeof value === 'function';
 }
 

@@ -34,19 +34,21 @@ export interface ToolDefinition extends PluginConfig {
 export function defineTool(config: ToolDefinition): ToolDefinition {
   return {
     ...config,
-    versionList: config.versionList || [{
-      version: config.version,
-      updateTime: config.updateTime,
-      description: config.description,
-      inputs: [],
-      outputs: []
-    }]
+    versionList: config.versionList || [
+      {
+        version: config.version,
+        updateTime: config.updateTime,
+        description: config.description,
+        inputs: [],
+        outputs: []
+      }
+    ]
   };
 }
 
 // 输入配置定义函数
 export function defineInputConfig(inputs: PluginInputConfig[]): PluginInputConfig[] {
-  return inputs.map(input => ({
+  return inputs.map((input) => ({
     ...input,
     required: input.required ?? false
   }));

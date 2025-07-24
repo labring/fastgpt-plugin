@@ -46,7 +46,7 @@ export const defaultUtilsConfig: UtilsConfig = {
 // 工具类初始化函数
 export function initializeUtils(config: Partial<UtilsConfig> = {}): void {
   const mergedConfig = { ...defaultUtilsConfig, ...config };
-  
+
   // 这里可以根据配置初始化全局设置
   console.log('工具类已初始化，配置:', mergedConfig);
 }
