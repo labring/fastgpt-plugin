@@ -123,7 +123,8 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
 
     // Computed
     parentId: z.string().optional().describe('The parent id of the tool'),
-    toolDirName: z.string()
+    toolDirName: z.string(),
+    toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool')
   })
 );
 

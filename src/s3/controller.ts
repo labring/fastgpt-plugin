@@ -263,4 +263,14 @@ export class S3Service {
 
     return await uploadFile(buffer, filename);
   }
+
+  async removeFile(objectName: string): Promise<void> {
+    try {
+      await this.minioClient.removeObject(process.env.S3_TOOL_BUCKET!, objectName);
+      addLog.info(`MinIO file deleted: ${process.env.S3_TOOL_BUCKET}/${objectName}`);
+      return Promise.resolve();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
 }

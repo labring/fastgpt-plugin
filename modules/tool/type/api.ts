@@ -17,6 +17,7 @@ export const ToolListItemSchema = z.object({
   weight: z.number().describe('The weight of the tool'),
   originCost: z.number().describe('The origin cost of the tool'),
   currentCost: z.number().describe('The current cost of the tool'),
-  hasTokenFee: z.boolean().describe('Whether it has token fee')
+  hasTokenFee: z.boolean().describe('Whether it has token fee'),
+  toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool')
 });
 export type ToolListItemType = z.infer<typeof ToolListItemSchema>;
