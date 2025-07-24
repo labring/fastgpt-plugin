@@ -1,6 +1,5 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   name: {
@@ -17,21 +16,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'apiUrl',
-            label: 'Firecrawl API Url',
-            description: 'Firecrawl 的 API 地址，如果使用官方的服务，这里可以留空。',
-            required: false,
-            inputType: 'input'
-          },
-          {
-            key: 'apiKey',
-            label: 'Firecrawl API Key',
-            required: true,
-            inputType: 'secret'
-          }
-        ]),
         {
           key: 'url',
           label: 'Url',
