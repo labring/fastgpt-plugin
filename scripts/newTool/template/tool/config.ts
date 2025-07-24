@@ -16,6 +16,15 @@ export default defineTool({
     'zh-CN': '描述',
     en: 'description'
   },
+  secretInputConfig: [
+    {
+      key: 'apiKey',
+      label: 'API Key',
+      description: '可以在 xxx 获取',
+      required: true,
+      inputType: 'secret'
+    }
+  ],
   versionList: [
     {
       value: '0.1.0',
@@ -34,23 +43,8 @@ export default defineTool({
           key: 'time',
           label: '时间',
           description: '当前时间'
-        },
-        {
-          valueType: WorkflowIOValueTypeEnum.string,
-          type: FlowNodeOutputTypeEnum.error,
-          key: 'error',
-          label: '错误'
         }
       ]
-    }
-  ],
-  secretInputConfig: [
-    {
-      key: 'apiKey',
-      label: 'API Key',
-      description: '可以在 xxx 获取',
-      required: true,
-      inputType: 'secret'
     }
   ]
 });
