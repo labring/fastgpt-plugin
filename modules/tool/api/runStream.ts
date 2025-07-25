@@ -5,6 +5,7 @@ import { StreamManager } from '../utils/stream';
 import { StreamMessageTypeEnum } from '../type/tool';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
+import { recordToolExecution } from '@/utils/signoz';
 
 export const runToolStreamHandler = async (
   req: Request,
@@ -13,12 +14,12 @@ export const runToolStreamHandler = async (
 ): Promise<void> => {
   const { toolId, inputs, systemVar } = req.body;
 
-  addLog.debug('Run tool', { toolId, inputs, systemVar });
-
   const tool = getTool(toolId);
 
   if (!tool) {
     addLog.error('Tool not found', { toolId });
+
+    recordToolExecution(toolId, 'error');
     res.status(404).json({ error: 'tool not found' });
     return;
   }
@@ -40,12 +41,16 @@ export const runToolStreamHandler = async (
       data: result
     });
     addLog.debug(`Run tool '${toolId}' success`);
+
+    recordToolExecution(toolId, 'success');
   } catch (error) {
     addLog.error(`Run tool '${toolId}' error`, error);
     streamManager.sendMessage({
       type: StreamMessageTypeEnum.error,
       data: getErrText(error)
     });
+
+    recordToolExecution(toolId, 'error');
   }
   streamManager.close();
 };
