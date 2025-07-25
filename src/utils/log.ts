@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import { format } from 'date-fns';
+import { getLogger } from './signoz';
 
 chalk.level = 1; // Add this line to force color support
 
@@ -57,6 +58,18 @@ export const addLog = {
     );
 
     if (level === LogLevelEnum.error) console.log(obj);
+
+    const logger = getLogger();
+    if (logger) {
+      logger.emit({
+        severityNumber: level.valueOf(),
+        severityText: ['debug', 'info', 'warn', 'error'][level],
+        body: {
+          msg,
+          obj
+        }
+      });
+    }
   },
   debug(msg: string, obj?: Record<string, any>) {
     this.log(LogLevelEnum.debug, msg, obj);

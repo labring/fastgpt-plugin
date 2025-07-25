@@ -5,12 +5,17 @@ import { initTool } from '@tool/init';
 import { addLog } from './utils/log';
 import { isProd } from './constants';
 import { initS3Server } from './s3/config';
+import { connectSignoz } from './utils/signoz';
 
 const app = express().use(
   express.json(),
   express.urlencoded({ extended: true }),
   express.static('public', { maxAge: isProd ? '1d' : '0', etag: true, lastModified: true })
 );
+
+addLog.info('Signoz connecting');
+connectSignoz();
+addLog.info('Signoz connected');
 
 initOpenAPI(app);
 initRouter(app);
