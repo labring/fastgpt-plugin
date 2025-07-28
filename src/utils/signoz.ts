@@ -10,30 +10,54 @@ import { addLog } from './log';
 import { metrics } from '@opentelemetry/api';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import type { Counter, Attributes } from '@opentelemetry/api';
 
-// global metrics
-const metricExporter = new OTLPMetricExporter({
-  url: `${SignozBaseURL}/v1/metrics`
-});
+class Signoz {
+  private static toolIdCounter: Counter<Attributes> | undefined;
+  private static toolExecutionStatusCounter: Counter<Attributes> | undefined;
 
-const meterProvider = new MeterProvider({
-  readers: [
-    new PeriodicExportingMetricReader({
-      exporter: metricExporter,
-      exportIntervalMillis: 5000
-    })
-  ]
-});
+  public static initializeMetrics(baseURL: string, serviceName: string) {
+    const metricExporter = new OTLPMetricExporter({
+      url: `${baseURL}/v1/metrics`
+    });
 
-metrics.setGlobalMeterProvider(meterProvider);
+    const meterProvider = new MeterProvider({
+      readers: [
+        new PeriodicExportingMetricReader({
+          exporter: metricExporter,
+          exportIntervalMillis: 1000
+        })
+      ]
+    });
 
-const meter = meterProvider.getMeter(SignozServiceName);
-const toolIdCounter = meter.createCounter('tool_execution_count', {
-  description: 'Count of tool executions by toolId'
-});
-const toolExecutionStatusCounter = meter.createCounter('tool_execution_status', {
-  description: 'Count of tool executions by status (success/error)'
-});
+    metrics.setGlobalMeterProvider(meterProvider);
+
+    const meter = meterProvider.getMeter(serviceName);
+    this.toolIdCounter = meter.createCounter('tool_execution_count', {
+      description: 'Count of tool executions by toolId'
+    });
+    this.toolExecutionStatusCounter = meter.createCounter('tool_execution_status', {
+      description: 'Count of tool executions by status (success/error)'
+    });
+  }
+
+  public static recordToolExecution(
+    toolId: string,
+    status: 'success' | 'error',
+    serviceName: string
+  ) {
+    try {
+      if (this.toolIdCounter && this.toolExecutionStatusCounter) {
+        this.toolIdCounter.add(1, { tool_id: toolId, service: serviceName });
+        this.toolExecutionStatusCounter.add(1, { tool_id: toolId, status, service: serviceName });
+      } else {
+        addLog.warn('Metrics not initialized, skipping metric recording');
+      }
+    } catch (error) {
+      addLog.error('Failed to record metrics:', error);
+    }
+  }
+}
 
 export const getLogger = () => {
   if (!global.logger) {
@@ -69,24 +93,8 @@ export const getLogger = () => {
 
 // record tool execution metrics
 export const recordToolExecution = (toolId: string, status: 'success' | 'error') => {
-  try {
-    if (!toolIdCounter || !toolExecutionStatusCounter) {
-      addLog.warn('Metrics not initialized, skipping metric recording', {
-        toolId,
-        status,
-        hasToolIdCounter: !!toolIdCounter,
-        hasToolExecutionStatusCounter: !!toolExecutionStatusCounter
-      });
-      return;
-    }
-
-    toolIdCounter.add(1, { tool_id: toolId, service: SignozServiceName });
-    toolExecutionStatusCounter.add(1, { tool_id: toolId, status, service: SignozServiceName });
-
-    addLog.info('Metrics recorded', { toolId, status });
-  } catch (error) {
-    addLog.error('Failed to record metrics:', error);
-  }
+  Signoz.recordToolExecution(toolId, status, SignozServiceName);
+  addLog.info('Metrics recorded', { toolId, status });
 };
 
 export function connectSignoz() {
@@ -98,6 +106,8 @@ export function connectSignoz() {
   addLog.info(`Connecting signoz, ${SignozBaseURL}, ${SignozServiceName}`);
 
   try {
+    Signoz.initializeMetrics(SignozBaseURL, SignozServiceName);
+
     const result = registerOTel({
       serviceName: SignozServiceName,
       traceExporter: new OTLPHttpJsonTraceExporter({
