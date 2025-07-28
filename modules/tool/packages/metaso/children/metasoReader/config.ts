@@ -24,21 +24,6 @@ export default defineTool({
       description: 'Initial version with web content reading functionality',
       inputs: [
         {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'Metaso API密钥',
-              description: 'Metaso API密钥，用于访问网页读取服务',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
-        {
           key: 'url',
           label: '网页URL',
           description: '要读取内容的网页URL地址',

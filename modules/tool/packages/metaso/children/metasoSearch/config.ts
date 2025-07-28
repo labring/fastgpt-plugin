@@ -24,21 +24,6 @@ export default defineTool({
       description: 'Initial version with full search functionality',
       inputs: [
         {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'Metaso API密钥',
-              description: 'Metaso API密钥，用于访问搜索服务',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
-        {
           key: 'query',
           label: '搜索关键词',
           description: '要搜索的关键词或查询语句',

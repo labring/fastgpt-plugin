@@ -1,8 +1,5 @@
 import { defineToolSet } from '@tool/type';
 import { ToolTypeEnum } from '@tool/type/tool';
-import metasoSearch from './children/metasoSearch';
-import metasoAsk from './children/metasoAsk';
-import metasoReader from './children/metasoReader';
 
 export default defineToolSet({
   name: {
@@ -15,5 +12,13 @@ export default defineToolSet({
     'zh-CN': 'Metaso 秘塔AI搜索工具集，包含智能搜索、问答和网页内容读取功能',
     en: 'Metaso AI search tool set, including intelligent search, Q&A and web content reading functionality'
   },
-  children: [metasoSearch, metasoAsk, metasoReader]
+  secretInputConfig: [
+    {
+      key: 'apiKey',
+      label: 'Metaso API密钥',
+      description: 'Metaso API密钥，用于访问问答服务',
+      required: true,
+      inputType: 'secret'
+    }
+  ]
 });

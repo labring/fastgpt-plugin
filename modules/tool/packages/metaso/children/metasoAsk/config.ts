@@ -24,21 +24,6 @@ export default defineTool({
       description: 'Initial version with full Q&A functionality',
       inputs: [
         {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'Metaso API密钥',
-              description: 'Metaso API密钥，用于访问问答服务',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
-        {
           key: 'question',
           label: '问题',
           description: '要询问的问题或查询内容',
