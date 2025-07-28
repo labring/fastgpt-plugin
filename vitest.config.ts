@@ -11,8 +11,8 @@ export default defineConfig({
       enabled: true,
       reportOnFailure: true,
       cleanOnRerun: false,
-      include: ['runtime/**/*.ts', 'modules/**/*.ts'],
-      exclude: ['**/node_modules/**', '**/dist/**']
+      include: ['runtime/**/*.ts', 'modules/**/src/*.ts']
+      // exclude: ['**/node_modules/**', '**/dist/**', 'modules/**/*.ts']
     },
     reporters: ['github-actions', 'default'],
     include: ['runtime/**/*.test.ts', 'modules/**/*.test.ts'],
@@ -21,7 +21,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@tool': resolve(__dirname, 'packages/tool')
+      '@tool': resolve(__dirname, 'modules/tool')
     }
   }
 });
