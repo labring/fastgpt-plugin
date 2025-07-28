@@ -1,11 +1,5 @@
 import { defineToolSet } from '@tool/type';
 import { ToolTypeEnum } from '@tool/type/tool';
-import search from './children/search';
-import analysis from './children/analysis';
-import summary from './children/summary';
-import details from './children/details';
-import history from './children/history';
-import management from './children/management';
 
 /**
  * KnowS 医学知识检索工具集配置
@@ -23,5 +17,13 @@ export default defineToolSet({
   type: ToolTypeEnum.scientific,
   icon: '/imgs/tools/knows.svg',
   author: 'xiaoyibao team',
-  children: [search, analysis, summary, details, history, management]
+  secretInputConfig: [
+    {
+      key: 'apiKey',
+      label: 'KnowS API Key',
+      description: 'KnowS 平台的 API 密钥',
+      required: true,
+      inputType: 'secret'
+    }
+  ]
 });

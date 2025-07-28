@@ -91,19 +91,19 @@ export const DETAIL_TYPE_LABELS: Record<DetailType, string> = {
   paper_en: '英文文献',
   paper_cn: '中文文献',
   guide: '指南',
-  meeting: '会议',
+  meeting: '会议'
 };
 
 // 研究类型标签映射
 export const STUDY_TYPE_LABELS: Record<string, string> = {
-  'RCT': '随机对照试验',
-  'META_ANALYSIS': 'Meta分析',
-  'SYSTEMATIC_REVIEW': '系统评价',
-  'COHORT_STUDY': '队列研究',
-  'CASE_CONTROL': '病例对照研究',
-  'CROSS_SECTIONAL': '横断面研究',
-  'CASE_REPORT': '病例报告',
-  'REVIEW': '综述',
-  'GUIDELINE': '指南',
-  'EXPERT_CONSENSUS': '专家共识',
+  RCT: '随机对照试验',
+  META_ANALYSIS: 'Meta分析',
+  SYSTEMATIC_REVIEW: '系统评价',
+  COHORT_STUDY: '队列研究',
+  CASE_CONTROL: '病例对照研究',
+  CROSS_SECTIONAL: '横断面研究',
+  CASE_REPORT: '病例报告',
+  REVIEW: '综述',
+  GUIDELINE: '指南',
+  EXPERT_CONSENSUS: '专家共识'
 };

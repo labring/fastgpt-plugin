@@ -1,12 +1,6 @@
 import { defineTool } from '@tool/type';
-import {
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  SystemInputKeyEnum,
-  WorkflowIOValueTypeEnum
-} from '@tool/type/fastgpt';
+import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
-import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   icon: '/imgs/tools/xiaoyibao.svg', // 使用自定义图标
@@ -26,15 +20,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'key',
-            label: '小X宝 API Key',
-            description: '可以在 https://admin.xiaoyibao.com.cn 获取API密钥',
-            required: true,
-            inputType: 'secret' // 敏感信息，使用密码输入框
-          }
-        ]),
         {
           key: 'query',
           label: '患者咨询问题',
@@ -53,6 +38,15 @@ export default defineTool({
           description: '小X宝癌症患者助手的专业回复'
         }
       ]
+    }
+  ],
+  secretInputConfig: [
+    {
+      key: 'key',
+      label: '小X宝 API Key',
+      description: '可以在 https://admin.xiaoyibao.com.cn 获取API密钥',
+      required: true,
+      inputType: 'secret' // 敏感信息，使用密码输入框
     }
   ]
 });

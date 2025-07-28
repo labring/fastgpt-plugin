@@ -34,7 +34,7 @@ export interface StreamChunk {
 export const ANSWER_TYPE_LABELS: Record<AnswerType, string> = {
   CLINICAL: '临床答案',
   RESEARCH: '学术答案',
-  POPULAR_SCIENCE: '科普答案',
+  POPULAR_SCIENCE: '科普答案'
 };
 
 // 总结统计信息

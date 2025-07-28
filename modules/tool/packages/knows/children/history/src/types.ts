@@ -81,22 +81,22 @@ export interface QueryParams {
 // 历史记录类型标签映射
 export const HISTORY_TYPE_LABELS: Record<HistoryType, string> = {
   questions: '问题列表',
-  interpretations: '文献解读列表',
+  interpretations: '文献解读列表'
 };
 
 // 状态标签映射
 export const STATUS_LABELS: Record<string, string> = {
   completed: '已完成',
   processing: '处理中',
-  failed: '失败',
+  failed: '失败'
 };
 
 // 数据范围标签映射
 export const DATA_SCOPE_LABELS: Record<string, string> = {
-  'all': '全部数据',
-  'papers': '学术论文',
-  'guidelines': '临床指南',
-  'reviews': '综述文献',
-  'meta_analysis': 'Meta分析',
-  'rct': '随机对照试验',
+  all: '全部数据',
+  papers: '学术论文',
+  guidelines: '临床指南',
+  reviews: '综述文献',
+  meta_analysis: 'Meta分析',
+  rct: '随机对照试验'
 };

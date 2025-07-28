@@ -17,7 +17,7 @@ export type EvidenceType = 'PAPER' | 'PAPER_CN' | 'GUIDE' | 'MEETING';
 export type AnswerType = 'CLINICAL' | 'RESEARCH' | 'POPULAR_SCIENCE';
 
 // 标签类型枚举
-export type TaggingType = 
+export type TaggingType =
   | 'THERAPEUTIC_AREA'
   | 'ORGANISM'
   | 'REGION'
@@ -53,7 +53,7 @@ export type TaggingType =
   | 'BLINDING_OF_PARTICIPANTS_AND_PERSONNEL';
 
 // 块类型枚举
-export type BlockType = 
+export type BlockType =
   | 'caption'
   | 'footnote'
   | 'equation'

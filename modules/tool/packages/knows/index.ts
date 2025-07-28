@@ -1,5 +1,5 @@
 import config from './config';
-import { exportToolSet } from  '@tool/utils/tool';
+import { exportToolSet } from '@tool/utils/tool';
 
 /**
  * KnowS 医学知识检索工具集入口
