@@ -2,11 +2,9 @@ import { defineTool } from '@tool/type';
 import {
   FlowNodeInputTypeEnum,
   FlowNodeOutputTypeEnum,
-  SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
 import { ToolTypeEnum } from '@tool/type/tool';
-import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   type: ToolTypeEnum.multimodal,
@@ -25,22 +23,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'url',
-            label: 'Dalle3 接口基础地址',
-            description: '例如：https://api.openai.com',
-            inputType: 'input',
-            required: true
-          },
-          {
-            key: 'authorization',
-            label: '接口凭证（不需要 Bearer）',
-            description: 'sk-xxxx',
-            required: true,
-            inputType: 'secret'
-          }
-        ]),
         {
           key: 'prompt',
           label: '绘图提示词',
@@ -57,12 +39,28 @@ export default defineTool({
           description: '图片访问链接'
         },
         {
+          type: FlowNodeOutputTypeEnum.error,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'system_error',
-          label: '错误信息',
-          description: '错误信息'
+          label: '错误信息'
         }
       ]
+    }
+  ],
+  secretInputConfig: [
+    {
+      key: 'url',
+      label: 'Dalle3 接口基础地址',
+      description: '例如：https://api.openai.com',
+      inputType: 'input',
+      required: true
+    },
+    {
+      key: 'authorization',
+      label: '接口凭证（不需要 Bearer）',
+      description: 'sk-xxxx',
+      required: true,
+      inputType: 'secret'
     }
   ]
 });

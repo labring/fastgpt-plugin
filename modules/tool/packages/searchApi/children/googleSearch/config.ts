@@ -21,20 +21,6 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object,
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'Search API Key',
-              required: true,
-              inputType: 'secret'
-            }
-          ]
-        },
-        {
           key: 'q',
           label: '搜索关键词',
           toolDescription: '搜索关键词',

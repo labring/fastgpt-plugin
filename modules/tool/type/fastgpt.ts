@@ -73,7 +73,8 @@ export enum FlowNodeOutputTypeEnum {
   hidden = 'hidden',
   source = 'source',
   static = 'static',
-  dynamic = 'dynamic'
+  dynamic = 'dynamic',
+  error = 'error'
 }
 
 // Define InputConfigType schema

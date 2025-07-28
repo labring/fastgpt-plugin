@@ -18,7 +18,7 @@ export default defineTool({
     en: 'Use Search XNG service for search.'
   },
   icon: 'core/workflow/template/searxng',
-  courseUrl: '/docs/guide/plugins/searxng_plugin_guide/',
+  courseUrl: '/docs/introduction/guide/plugins/searxng_plugin_guide/',
   versionList: [
     {
       value: '0.1.0',
@@ -58,10 +58,10 @@ export default defineTool({
           description: ' 检索结果'
         },
         {
+          type: FlowNodeOutputTypeEnum.error,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'error',
-          label: '错误信息',
-          description: '错误信息'
+          label: '错误信息'
         }
       ]
     }

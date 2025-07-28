@@ -31,9 +31,7 @@ export function defineTool(tool: ToolConfigType) {
 
 export type ToolSetConfigType = z.infer<typeof ToolSetConfigSchema>;
 export function defineToolSet(toolset: ToolSetConfigType) {
-  return {
-    ...toolset
-  };
+  return toolset;
 }
 
 export type ToolType = z.infer<typeof ToolSchema>;

@@ -10,5 +10,14 @@ export default defineToolSet({
   description: {
     'zh-CN': '这是一个硅基流动工具集',
     en: 'This is a Silicon Flow tool set'
-  }
+  },
+  secretInputConfig: [
+    {
+      key: 'authorization',
+      label: '接口凭证（不需要 Bearer）',
+      description: 'sk-xxxx',
+      required: true,
+      inputType: 'secret'
+    }
+  ]
 });

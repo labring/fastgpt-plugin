@@ -20,8 +20,7 @@ export const InputType = z.object({
 });
 
 export const OutputType = z.object({
-  error: z.string().optional().describe('Error message if generation failed'),
-  image_url: z.string().optional().describe('URL to access the generated image')
+  image_url: z.string().describe('URL to access the generated image')
 });
 
 // API schemas
@@ -57,7 +56,9 @@ export async function tool(params: z.infer<typeof InputType>): Promise<z.infer<t
     });
 
     if (!response.ok) {
-      return Promise.reject(`HTTP error! status: ${response.status}`);
+      return Promise.reject({
+        error: `HTTP error! status: ${response.status}`
+      });
     }
 
     const { polling_url } = GenerationRequestSchema.parse(await response.json());
@@ -74,7 +75,9 @@ export async function tool(params: z.infer<typeof InputType>): Promise<z.infer<t
       });
 
       if (!pollResponse.ok) {
-        return Promise.reject(`Polling failed: ${pollResponse.status}`);
+        return Promise.reject({
+          error: `Polling failed: ${pollResponse.status}`
+        });
       }
 
       const result = FluxResultSchema.parse(await pollResponse.json());
@@ -90,18 +93,21 @@ export async function tool(params: z.infer<typeof InputType>): Promise<z.infer<t
           break;
         case FluxStatus.enum.Error:
         case FluxStatus.enum.Failed:
-          return { error: result.error || 'Image generation failed' };
+          return Promise.reject({
+            error: result.error || 'Image generation failed'
+          });
         case FluxStatus.enum.Pending:
           // continue polling
           break;
       }
     }
 
-    return { error: 'Image generation timeout, please try again later' };
-  } catch (error: unknown) {
-    console.error('FLUX.1 Kontext image generation error:', error);
-
-    const errorMessage = error instanceof Error ? error.message : 'Image generation failed';
-    return { error: errorMessage };
+    return Promise.reject({
+      error: 'Image generation timeout, please try again later'
+    });
+  } catch (error: any) {
+    return Promise.reject({
+      error
+    });
   }
 }

@@ -57,8 +57,7 @@ export const InputType = z.object({
 });
 
 export const OutputType = z.object({
-  images: z.array(z.string()).optional().describe('Array of generated image URLs'),
-  error: z.string().optional().describe('Error message')
+  images: z.array(z.string()).describe('Array of generated image URLs')
 });
 
 // Task status enum
@@ -114,9 +113,9 @@ export async function tool({
     const createTaskData = await createTaskResponse.json();
     const taskId = createTaskData?.output?.task_id;
     if (!taskId) {
-      return {
+      return Promise.reject({
         error: 'Failed to create task, no task ID received.'
-      };
+      });
     }
 
     // Step 2: Poll for task result
@@ -152,13 +151,13 @@ export async function tool({
           };
         } else if (taskStatus === TaskStatus.FAILED) {
           const errorMessage = queryData?.output?.message || 'Image generation task failed.';
-          return {
+          return Promise.reject({
             error: errorMessage
-          };
+          });
         } else if (taskStatus === TaskStatus.CANCELED) {
-          return {
+          return Promise.reject({
             error: 'Image generation task was canceled.'
-          };
+          });
         }
         // Task is still in progress, continue polling
       } catch (queryError) {
@@ -173,12 +172,12 @@ export async function tool({
     }
 
     // Timeout
-    return {
+    return Promise.reject({
       error: 'Image generation timed out, please try again later.'
-    };
+    });
   } catch (error: unknown) {
-    return {
+    return Promise.reject({
       error: getErrText(error, 'FLUX text-to-image request failed.')
-    };
+    });
   }
 }

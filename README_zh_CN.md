@@ -35,6 +35,6 @@ FastGPT 已有系统工具已经迁移到这个仓库，新工具也将在这个
 
 ## 文档
 
-- [系统工具开发指南](https://doc.tryfastgpt.ai/docs/guide/plugins/dev_system_tool)
-- [设计文档](https://doc.tryfastgpt.ai/docs/development/design/design_plugin)
+- [系统工具开发指南](https://doc.tryfastgpt.ai/docs/introduction/guide/plugins/dev_system_tool)
+- [设计文档](https://doc.tryfastgpt.ai/docs/introduction/development/design/design_plugin)
 - [开发规范](./dev_zh_CN.md)

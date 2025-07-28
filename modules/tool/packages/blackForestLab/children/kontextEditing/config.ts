@@ -1,6 +1,7 @@
 import { defineTool } from '@tool/type';
 import {
   FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
   SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
@@ -19,21 +20,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        {
-          key: SystemInputKeyEnum.systemInputConfig,
-          label: '',
-          inputList: [
-            {
-              key: 'apiKey',
-              label: 'API Key',
-              description: '可以在 https://api.bfl.ai/ 获取 API Key',
-              required: true,
-              inputType: 'secret'
-            }
-          ],
-          renderTypeList: [FlowNodeInputTypeEnum.hidden],
-          valueType: WorkflowIOValueTypeEnum.object
-        },
         {
           key: 'prompt',
           label: '编辑描述',
@@ -124,10 +110,10 @@ export default defineTool({
           description: '编辑后的图片URL'
         },
         {
+          type: FlowNodeOutputTypeEnum.error,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'error',
-          label: '错误信息',
-          description: '如果编辑失败，返回错误信息'
+          label: '错误信息'
         }
       ]
     }

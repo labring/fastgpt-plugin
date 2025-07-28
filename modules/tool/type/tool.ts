@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { InfoString } from '@/type/i18n';
-import { InputSchema, OutputSchema } from './fastgpt';
+import { InputConfigSchema, InputSchema, OutputSchema } from './fastgpt';
 
 /* Call back type */
 export const SystemVarSchema = z.object({
@@ -16,14 +16,14 @@ export const SystemVarSchema = z.object({
   }),
   tool: z.object({
     id: z.string(),
-    version: z.string().optional()
+    version: z.string()
   }),
   time: z.string()
 });
 export type SystemVarType = z.infer<typeof SystemVarSchema>;
 
 export const ToolCallbackReturnSchema = z.object({
-  error: z.any().optional(),
+  error: z.union([z.string(), z.record(z.any())]).optional(),
   output: z.record(z.any()).optional()
 });
 export type ToolCallbackReturnSchemaType = z.infer<typeof ToolCallbackReturnSchema>;
@@ -106,7 +106,11 @@ export const ToolConfigSchema = z
     type: z.nativeEnum(ToolTypeEnum).optional().describe('The type of the tool'),
     icon: z.string().optional().describe('The icon of the tool'),
     author: z.string().optional().describe('The author of the tool'),
-    courseUrl: z.string().optional().describe('The documentation URL of the tool')
+    courseUrl: z.string().optional().describe('The documentation URL of the tool'),
+    secretInputConfig: z
+      .array(InputConfigSchema)
+      .optional()
+      .describe('The secret input list of the tool')
   })
   .describe('The Tool Config Schema');
 export const toolConfigWithCbSchema = ToolConfigSchema.merge(
@@ -123,7 +127,13 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
 
     // Computed
     parentId: z.string().optional().describe('The parent id of the tool'),
-    toolDirName: z.string()
+    toolDirName: z.string(),
+
+    // ToolSet Parent
+    secretInputConfig: z
+      .array(InputConfigSchema)
+      .optional()
+      .describe('The secret input list of the tool')
   })
 );
 

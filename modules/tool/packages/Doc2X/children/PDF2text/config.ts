@@ -1,6 +1,9 @@
 import { defineTool } from '@tool/type';
-import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { defineInputConfig } from '@tool/utils/tool';
+import {
+  FlowNodeInputTypeEnum,
+  FlowNodeOutputTypeEnum,
+  WorkflowIOValueTypeEnum
+} from '@tool/type/fastgpt';
 
 export default defineTool({
   name: {
@@ -18,15 +21,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'apikey',
-            label: 'apikey',
-            description: 'Doc2X的API密钥，可以从Doc2X开放平台获得',
-            required: true,
-            inputType: 'secret'
-          }
-        ]),
         {
           renderTypeList: [FlowNodeInputTypeEnum.fileSelect, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.arrayString,
@@ -47,16 +41,16 @@ export default defineTool({
           valueType: WorkflowIOValueTypeEnum.string
         },
         {
-          valueType: WorkflowIOValueTypeEnum.object,
-          key: 'error',
-          label: '错误',
-          description: '错误信息'
-        },
-        {
           valueType: WorkflowIOValueTypeEnum.boolean,
           key: 'success',
           label: '成功',
           description: '成功信息'
+        },
+        {
+          type: FlowNodeOutputTypeEnum.static,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'error',
+          label: '错误解析'
         }
       ]
     }

@@ -11,5 +11,13 @@ export default defineToolSet({
   description: {
     'zh-CN': 'SearchApi 服务',
     en: 'SearchApi Service'
-  }
+  },
+  secretInputConfig: [
+    {
+      key: 'apiKey',
+      label: 'Search API Key',
+      required: true,
+      inputType: 'secret'
+    }
+  ]
 });
