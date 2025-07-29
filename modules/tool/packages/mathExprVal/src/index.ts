@@ -19,7 +19,7 @@ export const InputType = z
   }));
 
 export const OutputType = z.object({
-  result: z.string()
+  result: z.union([z.string(), z.number()])
 });
 
 const replaceSpecialChar = (expr: string) => {
