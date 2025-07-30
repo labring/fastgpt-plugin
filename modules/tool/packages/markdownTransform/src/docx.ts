@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import axios from 'axios';
 import { uploadFile } from '@tool/utils/uploadFile';
 import {
   Document,
@@ -11,10 +10,17 @@ import {
   TableRow,
   HeadingLevel as HeadingLevelEnum,
   TableCell,
-  WidthType
+  WidthType,
+  BorderStyle
 } from 'docx';
 import MarkdownIt from 'markdown-it';
 import { OutputType } from './type';
+import {
+  downloadImage,
+  getImageDimensions,
+  getImageExtension,
+  calculateDisplaySize
+} from './shared';
 
 export const InputType = z.object({
   markdown: z.string().describe('Markdown content to convert')
@@ -52,69 +58,6 @@ function getHeadingLevel(level: number): (typeof HeadingLevelEnum)[keyof typeof 
   }
 }
 
-function getImageDimensions(buffer: Buffer): { width: number; height: number } {
-  try {
-    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
-      const width = buffer.readUInt32BE(16);
-      const height = buffer.readUInt32BE(20);
-      return { width, height };
-    }
-
-    if (buffer[0] === 0xff && buffer[1] === 0xd8) {
-      let i = 2;
-      while (i < buffer.length) {
-        if (buffer[i] === 0xff) {
-          const marker = buffer[i + 1];
-          if (marker === 0xc0 || marker === 0xc2) {
-            const height = buffer.readUInt16BE(i + 5);
-            const width = buffer.readUInt16BE(i + 7);
-            return { width, height };
-          }
-          i += 2 + buffer.readUInt16BE(i + 2);
-        } else {
-          i++;
-        }
-      }
-    }
-
-    if (
-      buffer.toString('ascii', 0, 6) === 'GIF87a' ||
-      buffer.toString('ascii', 0, 6) === 'GIF89a'
-    ) {
-      const width = buffer.readUInt16LE(6);
-      const height = buffer.readUInt16LE(8);
-      return { width, height };
-    }
-
-    if (buffer[0] === 0x42 && buffer[1] === 0x4d) {
-      const width = buffer.readUInt32LE(18);
-      const height = buffer.readUInt32LE(22);
-      return { width, height };
-    }
-
-    return { width: 400, height: 300 };
-  } catch (error) {
-    console.warn('getImageDimensions error', error);
-    return { width: 400, height: 300 };
-  }
-}
-
-function calculateDisplaySize(
-  originalWidth: number,
-  originalHeight: number,
-  maxWidth: number = 600
-): { width: number; height: number } {
-  const aspectRatio = originalWidth / originalHeight;
-
-  if (originalWidth <= maxWidth) {
-    return { width: originalWidth, height: originalHeight };
-  } else {
-    const width = maxWidth;
-    const height = Math.round(width / aspectRatio);
-    return { width, height };
-  }
-}
-
 async function processImageFromText(text: string): Promise<Paragraph | null> {
   const imageMatch = text.match(/!\[([^\]]*)\]\(([^)]+)\)/);
   if (!imageMatch) return null;
@@ -122,28 +65,9 @@ async function processImageFromText(text: string): Promise<Paragraph | null> {
   const [, alt, src] = imageMatch;
 
   try {
-    const response = await axios.get(src, { responseType: 'arraybuffer' });
-    const imageBuffer = Buffer.from(response.data);
-
+    const imageBuffer = await downloadImage(src);
     const originalDimensions = getImageDimensions(imageBuffer);
-
     const displaySize = calculateDisplaySize(originalDimensions.width, originalDimensions.height);
-
-    const getImageType = (url: string): 'jpg' | 'png' | 'gif' | 'bmp' => {
-      const extension = url.toLowerCase().split('.').pop();
-      switch (extension) {
-        case 'jpg':
-        case 'jpeg':
-          return 'jpg';
-        case 'gif':
-          return 'gif';
-        case 'bmp':
-          return 'bmp';
-        case 'png':
-        default:
-          return 'png';
-      }
-    };
 
     return new Paragraph({
       children: [
@@ -153,7 +77,7 @@ async function processImageFromText(text: string): Promise<Paragraph | null> {
             width: displaySize.width,
             height: displaySize.height
           },
-          type: getImageType(src)
+          type: getImageExtension(src)
         })
       ],
       spacing: { after: 200 }
@@ -169,7 +93,7 @@ async function processImageFromText(text: string): Promise<Paragraph | null> {
 
 function parseInline(content: string): TextRun[] {
   const runs: TextRun[] = [];
-  const regex = /(\*\*.+?\*\*|\*.+?\*|[^*]+)/g;
+  const regex = /(\*\*.+?\*\*|\*.+?\*|\[.+?\]\(.+?\)|[^*[\]]+)/g;
   let match;
   while ((match = regex.exec(content)) !== null) {
     const part = match[1];
@@ -177,6 +101,8 @@ function parseInline(content: string): TextRun[] {
       runs.push(createTextRun(part.slice(2, -2), { bold: true }));
     } else if (part.startsWith('*') && part.endsWith('*')) {
       runs.push(createTextRun(part.slice(1, -1), { italics: true }));
+    } else if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
+      runs.push(createTextRun(part));
     } else if (part.trim()) {
       runs.push(createTextRun(part));
     }
@@ -270,6 +196,20 @@ async function parseMarkdownToParagraphs(markdown: string): Promise<(Paragraph |
               children.push(createTextRun(next.content, { italics: true }));
               j++;
             }
+          } else if (inline.type === 'code_inline') {
+            children.push(
+              new TextRun({
+                text: inline.content,
+                font: 'Courier New',
+                italics: false,
+                bold: false
+              })
+            );
+          } else if (inline.type === 'link_open') {
+            const linkText = childTokens[j + 1]?.content || '';
+            const linkUrl = inline.attrGet('href') || '';
+            children.push(createTextRun(`[${linkText}](${linkUrl})`));
+            j++;
           } else if (inline.type === 'image') {
             if (children.length > 0) {
               elements.push(new Paragraph({ children, spacing: { after: 100 } }));
@@ -300,6 +240,51 @@ async function parseMarkdownToParagraphs(markdown: string): Promise<(Paragraph |
       continue;
     }
 
+    if (token.type === 'fence') {
+      const codeLines = token.content.split('\n');
+
+      for (let k = 0; k < codeLines.length; k++) {
+        const line = codeLines[k];
+        const codeParagraph = new Paragraph({
+          children: [
+            new TextRun({
+              text: line,
+              font: 'Courier New',
+              size: 20,
+              color: '333333'
+            })
+          ],
+          shading: {
+            type: 'clear',
+            color: 'auto',
+            fill: 'EEEEEE'
+          },
+          spacing: k === codeLines.length - 1 ? { after: 200 } : { after: 0 },
+          border:
+            k === 0
+              ? {
+                  top: { size: 1, color: 'auto', style: BorderStyle.SINGLE },
+                  left: { size: 1, color: 'auto', style: BorderStyle.SINGLE },
+                  right: { size: 1, color: 'auto', style: BorderStyle.SINGLE }
+                }
+              : k === codeLines.length - 1
+                ? {
+                    bottom: { size: 1, color: 'auto', style: BorderStyle.SINGLE },
+                    left: { size: 1, color: 'auto', style: BorderStyle.SINGLE },
+                    right: { size: 1, color: 'auto', style: BorderStyle.SINGLE }
+                  }
+                : {
+                    left: { size: 1, color: 'auto', style: BorderStyle.SINGLE },
+                    right: { size: 1, color: 'auto', style: BorderStyle.SINGLE }
+                  }
+        });
+
+        elements.push(codeParagraph);
+      }
+
+      continue;
+    }
+
     if (token.type === 'paragraph_open') {
       const children: TextRun[] = [];
       const imageMarkdowns: string[] = [];
@@ -324,6 +309,11 @@ async function parseMarkdownToParagraphs(markdown: string): Promise<(Paragraph |
               children.push(createTextRun(next.content, { italics: true }));
               j++;
             }
+          } else if (inline.type === 'link_open') {
+            const linkText = childTokens[j + 1]?.content || '';
+            const linkUrl = inline.attrGet('href') || '';
+            children.push(createTextRun(`[${linkText}](${linkUrl})`));
+            j++;
           } else if (inline.type === 'image') {
             const alt = inline.attrGet('alt') || '';
             const src = inline.attrGet('src');
