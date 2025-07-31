@@ -64,7 +64,11 @@ async function extractToolIdFromFile(filePath: string): Promise<string | null> {
 
 async function downloadAndInstallPlugin(url: string): Promise<string> {
   try {
-    const fullUrl = buildFullUrl(url);
+    if (!process.env.S3_HOST || !process.env.S3_PORT) {
+      return Promise.reject('Failed to build full url: S3_HOST or S3_PORT not configured');
+    }
+
+    const fullUrl = `http://${process.env.S3_HOST}:${process.env.S3_PORT}/${url}`;
 
     const response = await fetch(fullUrl, {
       signal: AbortSignal.timeout(30000)
@@ -94,18 +98,6 @@ async function downloadAndInstallPlugin(url: string): Promise<string> {
   }
 }
 
-function buildFullUrl(url: string): string {
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-
-  if (process.env.MINIO_HOST && process.env.MINIO_PORT) {
-    return `http://${process.env.MINIO_HOST}:${process.env.MINIO_PORT}/${url}`;
-  } else {
-    return `http://localhost:9000/${url}`;
-  }
-}
-
 function getFilenameFromUrl(url: string): Promise<string> {
   try {
     const urlObj = new URL(url);
@@ -118,6 +110,6 @@ function getFilenameFromUrl(url: string): Promise<string> {
 
     return Promise.resolve(filename);
   } catch {
-    return Promise.reject(new Error('Failed to get filename from url'));
+    return Promise.reject('Failed to get filename from url');
   }
 }

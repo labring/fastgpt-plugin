@@ -7,8 +7,7 @@ import { isProd } from './constants';
 import { initS3Server } from './s3/config';
 import { connectSignoz } from './utils/signoz';
 import { initModels } from '@model/init';
-import { initPluginSystem } from './plugin/init';
-import { connectMongo, connectionMongo, MONGO_URL } from './utils/mongo';
+import { connectMongo, connectionMongo } from './utils/mongo';
 
 const app = express().use(
   express.json(),
@@ -26,7 +25,8 @@ initRouter(app);
 
 // DB
 try {
-  await connectMongo(connectionMongo, MONGO_URL);
+  await connectMongo(connectionMongo);
+  addLog.info('MongoDB connected');
   await initS3Server();
 } catch (error) {
   addLog.error('Failed to initialize services:', error);

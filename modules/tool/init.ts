@@ -90,6 +90,12 @@ export async function initTool() {
     ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools', 'built-in')
     : path.join(__dirname, 'packages');
 
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(basePath)) {
+    addLog.info(`Creating built-in tools directory: ${basePath}`);
+    fs.mkdirSync(basePath, { recursive: true });
+  }
+
   const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
     const tmpTools = await LoadToolsByFilename(basePath, tool, 'built-in');
