@@ -28,7 +28,7 @@ export const exportTool = <T extends z.Schema, D extends z.Schema>({
       };
     } catch (error: any) {
       // Handle zod validation errors
-      if (error.name === 'ZodError') {
+      if (error && error.name === 'ZodError') {
         const zodError = error as z.ZodError;
         const errorMessage = zodError.errors
           .map((err) => `${err.path.join('.')}: ${err.message}`)
