@@ -48,11 +48,8 @@ export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
 
 export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItemType[] {
   return list.map((item, index) => ({
+    ...item,
     id: item.toolId,
-    parentId: item.parentId,
-    author: item.author,
-    courseUrl: item.courseUrl,
-    name: item.name,
     avatar: item.icon,
     versionList: item.versionList,
     description: item.description,
