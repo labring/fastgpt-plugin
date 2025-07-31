@@ -2,10 +2,8 @@ import { defineTool } from '@tool/type';
 import {
   FlowNodeInputTypeEnum,
   FlowNodeOutputTypeEnum,
-  SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { defineInputConfig } from '@tool/utils/tool';
 
 export default defineTool({
   name: {
@@ -22,15 +20,6 @@ export default defineTool({
       value: '0.1.0',
       description: 'Default version',
       inputs: [
-        defineInputConfig([
-          {
-            key: 'apiKey',
-            label: 'API Key',
-            description: '可以在阿里云百炼控制台获取API密钥',
-            required: true,
-            inputType: 'secret'
-          }
-        ]),
         {
           key: 'model',
           label: '模型名称',

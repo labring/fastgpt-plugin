@@ -35,6 +35,6 @@ Deeply **modularize** FastGPT to achieve maximum **extensibility**.
 
 ## Documentation & Development Guides
 
-- [Plugin design document](https://doc.tryfastgpt.ai/docs/development/design/design_plugin)
-- [System tool development guide](https://doc.tryfastgpt.ai/docs/guide/plugins/dev_system_tool)
+- [Plugin design document](https://doc.tryfastgpt.ai/docs/introduction/development/design/design_plugin)
+- [System tool development guide](https://doc.tryfastgpt.ai/docs/introduction/guide/plugins/dev_system_tool)
 - [Development Specifications](./dev.md)

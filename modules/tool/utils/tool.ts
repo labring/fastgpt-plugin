@@ -28,7 +28,7 @@ export const exportTool = <T extends z.Schema, D extends z.Schema>({
       };
     } catch (error: any) {
       // Handle zod validation errors
-      if (error.name === 'ZodError') {
+      if (error && error.name === 'ZodError') {
         const zodError = error as z.ZodError;
         const errorMessage = zodError.errors
           .map((err) => `${err.path.join('.')}: ${err.message}`)
@@ -54,13 +54,9 @@ export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
 
 export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItemType[] {
   return list.map((item, index) => ({
+    ...item,
     id: item.toolId,
-    parentId: item.parentId,
-    author: item.author,
-    courseUrl: item.courseUrl,
-    name: item.name,
     avatar: item.icon,
-    versionList: item.versionList,
     intro: item.description,
     templateType: item.type,
     pluginOrder: index,
@@ -71,14 +67,4 @@ export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItem
     hasTokenFee: false,
     toolSource: item.toolSource
   }));
-}
-
-export function defineInputConfig(inputList: Array<z.infer<typeof InputConfigSchema>>) {
-  return {
-    key: SystemInputKeyEnum.systemInputConfig,
-    label: '',
-    inputList,
-    renderTypeList: [FlowNodeInputTypeEnum.hidden],
-    valueType: WorkflowIOValueTypeEnum.object
-  };
 }

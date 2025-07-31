@@ -3,12 +3,14 @@ import { contract } from '../contract';
 import { s } from '../router/init';
 import type { Express } from 'express';
 import { toolRouter } from '@tool/router';
+import { modelRouter } from '@model/router';
 import { runToolStreamHandler } from '@tool/api/runStream';
 import { authTokenMiddleware } from './middleware/auth';
 
 export const initRouter = (app: Express) => {
   const router = s.router(contract, {
-    tool: toolRouter
+    tool: toolRouter,
+    model: modelRouter
   });
 
   createExpressEndpoints(contract, router, app, {

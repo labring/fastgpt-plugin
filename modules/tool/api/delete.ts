@@ -6,6 +6,7 @@ import { getTool } from '@tool/controller';
 import { tools } from '@tool/constants';
 import path from 'path';
 import fs from 'fs';
+import { getErrText } from '@tool/utils/err';
 
 export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) => {
   try {
@@ -40,7 +41,7 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
       status: 500,
       body: {
         code: 500,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: getErrText(error)
       }
     };
   }
@@ -48,16 +49,10 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
 
 async function deleteMongoRecord(toolId: string): Promise<any> {
   try {
-    const record = await PluginModel.findOne({ toolId });
-    if (!record) {
-      addLog.warn(`No MongoDB record found for toolId: ${toolId}`);
-      return null;
-    }
-
     const result = await PluginModel.deleteOne({ toolId });
     addLog.info(`MongoDB delete result for toolId ${toolId}:`, result);
+    return result;
 
-    return record;
   } catch (error) {
     addLog.error(`Failed to delete MongoDB record for toolId ${toolId}:`, error);
     return Promise.reject(error);
@@ -65,19 +60,16 @@ async function deleteMongoRecord(toolId: string): Promise<any> {
 }
 
 async function deleteMinioFile(url: string): Promise<void> {
-  try {
-    const objectName = extractObjectNameFromUrl(url);
-    if (!objectName) {
-      addLog.warn(`Could not extract objectName from URL: ${url}`);
-      return;
-    }
-    if (global.s3Server && typeof global.s3Server.removeFile === 'function') {
-      await global.s3Server.removeFile(objectName);
-    } else {
-      addLog.warn('S3Server not available, skipping MinIO file deletion');
-    }
-  } catch (error) {
-    addLog.error(`Failed to delete MinIO file from URL ${url}:`, error);
+  const objectName = extractObjectNameFromUrl(url);
+  if (!objectName) {
+    addLog.warn(`Could not extract objectName from URL: ${url}`);
+    return;
+  }
+  if (global.s3Server && typeof global.s3Server.removeFile === 'function') {
+    await global.s3Server.removeFile(objectName);
+  } else {
+    addLog.warn('S3Server not available, skipping MinIO file deletion');
+
   }
 }
 

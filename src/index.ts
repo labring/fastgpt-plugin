@@ -5,6 +5,8 @@ import { initTool, initUploadedTool } from '@tool/init';
 import { addLog } from './utils/log';
 import { isProd } from './constants';
 import { initS3Server } from './s3/config';
+import { connectSignoz } from './utils/signoz';
+import { initModels } from '@model/init';
 import { connectMongo, connectionMongo, MONGO_URL } from './utils/mongo';
 
 const app = express().use(
@@ -13,8 +15,15 @@ const app = express().use(
   express.static('public', { maxAge: isProd ? '1d' : '0', etag: true, lastModified: true })
 );
 
+addLog.info('Signoz connecting');
+connectSignoz();
+addLog.info('Signoz connected');
+
+// System
 initOpenAPI(app);
 initRouter(app);
+
+// DB
 try {
   await connectMongo(connectionMongo, MONGO_URL);
   await initS3Server();
@@ -23,8 +32,8 @@ try {
   process.exit(1);
 }
 
-initTool();
-initUploadedTool();
+// Modules
+await Promise.all([initTool(), initUploadedTool(), initModels()]);
 
 const PORT = parseInt(process.env.PORT || '3000');
 const server = app.listen(PORT, (error?: Error) => {

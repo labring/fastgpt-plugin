@@ -64,6 +64,7 @@ const syncMongoIndex = async (model: Model<any>) => {
 
 export const ReadPreference = connectionMongo.mongo.ReadPreference;
 
+
 export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose> {
   if (db.connection.readyState !== 0) {
     return db;
@@ -108,7 +109,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
 
     const options = {
       bufferCommands: true,
-      maxPoolSize: Math.max(30, Number(process.env.DB_MAX_LINK || 20)),
+      maxPoolSize: Math.max(30, Number(process.env.MONGO_MAX_LINK || 20)),
       minPoolSize: 20,
       connectTimeoutMS: 60000,
       waitQueueTimeoutMS: 60000,
@@ -120,6 +121,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
       heartbeatFrequencyMS: 20000,
       maxStalenessSeconds: 120
     };
+
 
     await db.connect(url, options);
     addLog.info('mongo connected');
