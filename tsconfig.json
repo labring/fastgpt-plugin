@@ -28,7 +28,8 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"],
-      "@tool/*": ["modules/tool/*"]
+      "@tool/*": ["modules/tool/*"],
+      "@model/*": ["modules/model/*"]
     }
   },
   "include": ["**/*.ts", "**/*.d.ts"]

@@ -6,6 +6,7 @@ import { addLog } from './utils/log';
 import { isProd } from './constants';
 import { initS3Server } from './s3/config';
 import { connectSignoz } from './utils/signoz';
+import { initModels } from '@model/init';
 
 const app = express().use(
   express.json(),
@@ -17,15 +18,20 @@ addLog.info('Signoz connecting');
 connectSignoz();
 addLog.info('Signoz connected');
 
+// System
 initOpenAPI(app);
 initRouter(app);
+
+// DB
 try {
   await initS3Server();
 } catch (error) {
   addLog.error('Failed to initialize S3 server:', error);
   process.exit(1);
 }
-initTool();
+
+// Modules
+await Promise.all([initTool(), initModels()]);
 
 const PORT = parseInt(process.env.PORT || '3000');
 const server = app.listen(PORT, (error?: Error) => {
