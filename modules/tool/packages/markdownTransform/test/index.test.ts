@@ -10,21 +10,31 @@ vi.mock('@tool/utils/uploadFile', () => ({
 // Mock axios for image downloads
 vi.mock('axios', () => ({
   default: {
-    get: vi.fn().mockResolvedValue({
-      data: Buffer.from('fake-image-data')
-    })
+    get: vi.fn()
   }
 }));
 
 const mockUploadFile = vi.mocked(uploadFileModule.uploadFile);
 
-beforeEach(() => {
+// Get the axios mock with proper typing
+const getAxiosMock = async () => {
+  const axios = await import('axios');
+  return vi.mocked(axios.default.get);
+};
+
+beforeEach(async () => {
   // Reset mocks before each test
   vi.clearAllMocks();
 
   // Default mock implementation
   mockUploadFile.mockResolvedValue({
     accessUrl: 'https://example.com/test-file.docx'
+  } as any);
+
+  // Default axios mock implementation
+  const axiosMock = await getAxiosMock();
+  axiosMock.mockResolvedValue({
+    data: Buffer.from('fake-image-data')
   } as any);
 });
 
@@ -302,8 +312,8 @@ Some text after the image.`;
     });
 
     test('should handle image download failure gracefully', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
-      axiosMock.get.mockRejectedValueOnce(new Error('Network error'));
+      const axiosMock = await getAxiosMock();
+      axiosMock.mockRejectedValue(new Error('Network error'));
 
       const markdown = `# Document with Broken Image
 
@@ -322,7 +332,7 @@ Some text after the image.`;
     });
 
     test('should handle different image formats (PNG, JPEG, GIF, BMP)', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
+      const axiosMock = await getAxiosMock();
 
       // Mock PNG image data
       const pngBuffer = Buffer.from([
@@ -352,7 +362,7 @@ Some text after the image.`;
         0x2c // height: 300
       ]);
 
-      axiosMock.get.mockResolvedValue({ data: pngBuffer });
+      axiosMock.mockResolvedValue({ data: pngBuffer } as any);
 
       const markdown = `# Images Test
 
@@ -374,7 +384,7 @@ Some text after the image.`;
     });
 
     test('should handle images with different buffer formats', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
+      const axiosMock = await getAxiosMock();
 
       // Test JPEG buffer
       const jpegBuffer = Buffer.from([
@@ -391,7 +401,7 @@ Some text after the image.`;
         0x90 // width: 400
       ]);
 
-      axiosMock.get.mockResolvedValue({ data: jpegBuffer });
+      axiosMock.mockResolvedValue({ data: jpegBuffer } as any);
 
       const markdown = `![JPEG Test](https://example.com/test.jpeg)`;
 
@@ -408,12 +418,12 @@ Some text after the image.`;
     });
 
     test('should handle GIF buffer format', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
+      const axiosMock = await getAxiosMock();
 
       // Test GIF buffer
       const gifBuffer = Buffer.from('GIF89a\x90\x01\x2c\x01', 'binary');
 
-      axiosMock.get.mockResolvedValue({ data: gifBuffer });
+      axiosMock.mockResolvedValue({ data: gifBuffer } as any);
 
       const markdown = `![GIF Test](https://example.com/test.gif)`;
 
@@ -430,7 +440,7 @@ Some text after the image.`;
     });
 
     test('should handle BMP buffer format', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
+      const axiosMock = await getAxiosMock();
 
       // Test BMP buffer
       const bmpBuffer = Buffer.alloc(30);
@@ -439,7 +449,7 @@ Some text after the image.`;
       bmpBuffer.writeUInt32LE(400, 18); // width
       bmpBuffer.writeUInt32LE(300, 22); // height
 
-      axiosMock.get.mockResolvedValue({ data: bmpBuffer });
+      axiosMock.mockResolvedValue({ data: bmpBuffer } as any);
 
       const markdown = `![BMP Test](https://example.com/test.bmp)`;
 
@@ -456,12 +466,12 @@ Some text after the image.`;
     });
 
     test('should handle invalid image buffer gracefully', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
+      const axiosMock = await getAxiosMock();
 
       // Invalid buffer that doesn't match any format
       const invalidBuffer = Buffer.from('invalid image data');
 
-      axiosMock.get.mockResolvedValue({ data: invalidBuffer });
+      axiosMock.mockResolvedValue({ data: invalidBuffer } as any);
 
       const markdown = `![Invalid Image](https://example.com/invalid.png)`;
 
@@ -659,8 +669,8 @@ Final paragraph.`;
     });
 
     test('should handle image failures in xlsx cells', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
-      axiosMock.get.mockRejectedValue(new Error('Image download failed'));
+      const axiosMock = await getAxiosMock();
+      axiosMock.mockRejectedValue(new Error('Image download failed'));
 
       mockUploadFile.mockResolvedValue({
         accessUrl: 'https://example.com/failed-images.xlsx'
@@ -741,7 +751,7 @@ Should be handled gracefully.
     });
 
     test('should handle large image size calculations', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
+      const axiosMock = await getAxiosMock();
 
       // Large image buffer
       const largeImageBuffer = Buffer.alloc(100);
@@ -752,7 +762,7 @@ Should be handled gracefully.
       largeImageBuffer.writeUInt32BE(2000, 16); // Large width
       largeImageBuffer.writeUInt32BE(1500, 20); // Large height
 
-      axiosMock.get.mockResolvedValue({ data: largeImageBuffer });
+      axiosMock.mockResolvedValue({ data: largeImageBuffer } as any);
 
       const markdown = `![Large Image](https://example.com/large.png)`;
 
@@ -769,7 +779,7 @@ Should be handled gracefully.
     });
 
     test('should handle corrupted image buffer', async () => {
-      const axiosMock = vi.mocked((await import('axios')).default);
+      const axiosMock = await getAxiosMock();
 
       // Buffer that throws error during processing
       const corruptBuffer = Buffer.alloc(10);
@@ -779,7 +789,7 @@ Should be handled gracefully.
         }
       });
 
-      axiosMock.get.mockResolvedValue({ data: corruptBuffer });
+      axiosMock.mockResolvedValue({ data: corruptBuffer } as any);
 
       const markdown = `![Corrupt Image](https://example.com/corrupt.png)`;
 
