@@ -134,6 +134,7 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
       .array(InputConfigSchema)
       .optional()
       .describe('The secret input list of the tool'),
+
     toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool')
   })
 );

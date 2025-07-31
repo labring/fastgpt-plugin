@@ -70,6 +70,7 @@ async function downloadAndInstallPlugin(url: string): Promise<string> {
 
     const fullUrl = `http://${process.env.S3_HOST}:${process.env.S3_PORT}/${url}`;
 
+
     const response = await fetch(fullUrl, {
       signal: AbortSignal.timeout(30000)
     });

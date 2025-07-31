@@ -64,11 +64,17 @@ const syncMongoIndex = async (model: Model<any>) => {
 
 export const ReadPreference = connectionMongo.mongo.ReadPreference;
 
-export async function connectMongo(db: Mongoose): Promise<Mongoose> {
+
+export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose> {
   if (db.connection.readyState !== 0) {
     return db;
   }
-  addLog.info(`connecting to ${isProd ? 'MongoDB' : MONGO_URL}`);
+
+  if (!url || typeof url !== 'string') {
+    throw new Error(`Invalid MongoDB connection URL: ${url}`);
+  }
+
+  addLog.info(`connecting to ${isProd ? 'MongoDB' : url}`);
 
   try {
     db.connection.removeAllListeners('error');
@@ -81,7 +87,7 @@ export async function connectMongo(db: Mongoose): Promise<Mongoose> {
         if (db.connection.readyState !== 0) {
           await db.disconnect();
           await delay(1000);
-          await connectMongo(db);
+          await connectMongo(db, url);
         }
       } catch (_error) {
         addLog.error('Error during reconnection:', _error);
@@ -94,7 +100,7 @@ export async function connectMongo(db: Mongoose): Promise<Mongoose> {
         if (db.connection.readyState !== 0) {
           await db.disconnect();
           await delay(1000);
-          await connectMongo(db);
+          await connectMongo(db, url);
         }
       } catch (_error) {
         addLog.error('Error during reconnection:', _error);
@@ -116,14 +122,15 @@ export async function connectMongo(db: Mongoose): Promise<Mongoose> {
       maxStalenessSeconds: 120
     };
 
-    await db.connect(MONGO_URL, options);
+
+    await db.connect(url, options);
     addLog.info('mongo connected');
     return db;
   } catch (error) {
     addLog.error('Mongo connect error', error);
     await db.disconnect();
     await delay(1000);
-    return connectMongo(db);
+    return connectMongo(db, url);
   }
 }
 

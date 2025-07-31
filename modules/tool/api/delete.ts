@@ -52,6 +52,7 @@ async function deleteMongoRecord(toolId: string): Promise<any> {
     const result = await PluginModel.deleteOne({ toolId });
     addLog.info(`MongoDB delete result for toolId ${toolId}:`, result);
     return result;
+
   } catch (error) {
     addLog.error(`Failed to delete MongoDB record for toolId ${toolId}:`, error);
     return Promise.reject(error);
@@ -68,6 +69,7 @@ async function deleteMinioFile(url: string): Promise<void> {
     await global.s3Server.removeFile(objectName);
   } else {
     addLog.warn('S3Server not available, skipping MinIO file deletion');
+
   }
 }
 
