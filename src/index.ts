@@ -14,9 +14,7 @@ const app = express().use(
   express.static('public', { maxAge: isProd ? '1d' : '0', etag: true, lastModified: true })
 );
 
-addLog.info('Signoz connecting');
 connectSignoz();
-addLog.info('Signoz connected');
 
 // System
 initOpenAPI(app);

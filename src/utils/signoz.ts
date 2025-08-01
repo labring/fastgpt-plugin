@@ -99,7 +99,7 @@ export const recordToolExecution = (toolId: string, status: 'success' | 'error')
 
 export function connectSignoz() {
   if (!SignozBaseURL) {
-    addLog.info('SignOz not configured, skipping monitoring setup');
+    addLog.debug('SignOz not configured, skipping monitoring setup');
     return;
   }
 
@@ -121,7 +121,6 @@ export function connectSignoz() {
     return result;
   } catch (error) {
     addLog.error('Failed to connect to Signoz:', error);
-    throw error;
   }
 }
 

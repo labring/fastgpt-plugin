@@ -11,7 +11,7 @@ export const ToolListItemSchema = z.object({
   name: InfoString.describe('The name of the tool'),
   avatar: z.string().describe('The icon of the tool'),
   versionList: z.array(VersionListItemSchema).min(1).describe('The version list'),
-  intro: InfoString.describe('The introduction of the tool'),
+  description: InfoString.describe('The introduction of the tool'),
   templateType: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
   pluginOrder: z.number().describe('The order of the plugin'),
   isActive: z.boolean().describe('Whether it is active'),
