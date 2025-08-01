@@ -25,6 +25,8 @@ export const runToolStreamHandler = async (
   }
   const streamManager = new StreamManager(res);
   try {
+    addLog.debug(`Run tool start`, { toolId, inputs, systemVar });
+
     const result = await dispatchWithNewWorker({
       toolId,
       inputs,
