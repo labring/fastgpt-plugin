@@ -36,6 +36,8 @@
     "comlink": "^4.4.2",
     "date-fns": "^4.1.0",
     "express": "^5.1.0",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.6",
     "json5": "^2.2.3",
     "minio": "^8.0.5",
     "nanoid": "^5.1.5",

@@ -52,7 +52,8 @@ export class S3Service {
       port: this.config.port,
       useSSL: this.config.useSSL,
       accessKey: this.config.accessKey,
-      secretKey: this.config.secretKey
+      secretKey: this.config.secretKey,
+      transportAgent: this.config.transportAgent
     });
   }
 
