@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { S3Service } from './controller';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { HttpProxyAgent } from 'http-proxy-agent';
 
 export type FileConfig = {
   maxFileSize: number; // 文件大小限制（字节）
@@ -10,7 +12,16 @@ export type FileConfig = {
   accessKey: string; // MinIO access key
   secretKey: string; // MinIO secret key
   bucket: string; // 存储桶名称
+  transportAgent: any; // 代理
 };
+
+let transportAgent;
+if (process.env.HTTP_PROXY) {
+  transportAgent =
+    process.env.MINIO_USE_SSL === 'true'
+      ? new HttpsProxyAgent(process.env.HTTP_PROXY)
+      : new HttpProxyAgent(process.env.HTTP_PROXY);
+}
 
 // 默认配置（动态从环境变量读取）
 export const defaultFileConfig: FileConfig = {
@@ -21,7 +32,8 @@ export const defaultFileConfig: FileConfig = {
   useSSL: process.env.MINIO_USE_SSL === 'true',
   accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
   secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
-  bucket: process.env.MINIO_BUCKET || 'files'
+  bucket: process.env.MINIO_BUCKET || 'files',
+  transportAgent: transportAgent
 };
 
 export const FileMetadataSchema = z.object({
