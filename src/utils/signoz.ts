@@ -50,8 +50,6 @@ class Signoz {
       if (this.toolIdCounter && this.toolExecutionStatusCounter) {
         this.toolIdCounter.add(1, { tool_id: toolId, service: serviceName });
         this.toolExecutionStatusCounter.add(1, { tool_id: toolId, status, service: serviceName });
-      } else {
-        addLog.warn('Metrics not initialized, skipping metric recording');
       }
     } catch (error) {
       addLog.error('Failed to record metrics:', error);
@@ -94,7 +92,6 @@ export const getLogger = () => {
 // record tool execution metrics
 export const recordToolExecution = (toolId: string, status: 'success' | 'error') => {
   Signoz.recordToolExecution(toolId, status, SignozServiceName);
-  addLog.info('Metrics recorded', { toolId, status });
 };
 
 export function connectSignoz() {
