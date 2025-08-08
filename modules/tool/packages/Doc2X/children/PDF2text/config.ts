@@ -37,7 +37,7 @@ export default defineTool({
         {
           key: 'result',
           label: '结果',
-          description: '处理结果，由文件名以及文档内容组成，多个文件之间由横线分隔开',
+          description: '处理结果，由文档内容组成，多个文件之间由横线分隔开',
           valueType: WorkflowIOValueTypeEnum.string
         },
         {
@@ -50,7 +50,7 @@ export default defineTool({
           type: FlowNodeOutputTypeEnum.static,
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'error',
-          label: '错误解析'
+          label: '错误信息'
         }
       ]
     }

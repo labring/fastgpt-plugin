@@ -49,14 +49,14 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
     if (typeof err === 'string') {
       return Promise.reject({ message: `[Doc2x] ${err}` });
     }
-    if (typeof err.message === 'string') {
-      return Promise.reject({ message: `[Doc2x] ${err.message}` });
-    }
     if (typeof err.data === 'string') {
       return Promise.reject({ message: `[Doc2x] ${err.data}` });
     }
     if (err?.response?.data) {
       return Promise.reject({ message: `[Doc2x] ${getErrText(err?.response?.data)}` });
+    }
+    if (typeof err.message === 'string') {
+      return Promise.reject({ message: `[Doc2x] ${err.message}` });
     }
 
     addLog.error('[Doc2x] Unknown error', err);
@@ -90,7 +90,7 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
       code,
       msg,
       data: preupload_data
-    } = await request<{ uid: string; url: string }>('/v2/parse/preupload', null, 'POST');
+    } = await request<{ uid: string; url: string }>('/v2/parse/preupload', {}, 'POST');
     if (!['ok', 'success'].includes(code)) {
       return Promise.reject(`[Doc2x] Failed to get pre-upload URL: ${msg}`);
     }
@@ -151,6 +151,7 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
 
           // Finifsh
           if (result_data.status === 'success') {
+            addLog.debug('resule', result_data.result);
             return {
               text: result_data.result.pages
                 .map((page) => page.md)
@@ -160,8 +161,11 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
                 .replace(/<img\s+src="([^"]+)"(?:\s*\?[^>]*)?(?:\s*\/>|>)/g, '![img]($1)')
                 .replace(/<!-- Media -->/g, '')
                 .replace(/<!-- Footnote -->/g, '')
+                .replace(/<!-- Meanless:[\s\S]*?-->/g, '')
+                .replace(/<!-- figureText:[\s\S]*?-->/g, '')
                 .replace(/\$(.+?)\s+\\tag\{(.+?)\}\$/g, '$$$1 \\qquad \\qquad ($2)$$')
-                .replace(/\\text\{([^}]*?)(\b\w+)_(\w+\b)([^}]*?)\}/g, '\\text{$1$2\\_$3$4}'),
+                .replace(/\\text\{([^}]*?)(\b\w+)_(\w+\b)([^}]*?)\}/g, '\\text{$1$2\\_$3$4}')
+                .trim(),
               pages: result_data.result.pages.length
             };
           }
@@ -241,10 +245,8 @@ export async function tool({
   }
 
   return {
-    result: successResult.join('\n******\n'),
-    error: {
-      message: failedResult.join('\n******\n')
-    },
+    result: successResult.join('\n------\n'),
+    error: failedResult.join('\n------\n'),
     success: failedResult.length === 0
   };
 }
