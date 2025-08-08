@@ -9,11 +9,14 @@ const models: ProviderConfigType = {
       maxContext: 400000,
       maxTokens: 128000,
       quoteMaxToken: 400000,
-      maxTemperature: 1.2,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      fieldMap: {
+        max_tokens: 'max_completion_tokens'
+      }
     },
     {
       type: ModelTypeEnum.llm,
@@ -21,11 +24,14 @@ const models: ProviderConfigType = {
       maxContext: 400000,
       maxTokens: 128000,
       quoteMaxToken: 400000,
-      maxTemperature: 1.2,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      fieldMap: {
+        max_tokens: 'max_completion_tokens'
+      }
     },
     {
       type: ModelTypeEnum.llm,
@@ -33,11 +39,14 @@ const models: ProviderConfigType = {
       maxContext: 400000,
       maxTokens: 128000,
       quoteMaxToken: 400000,
-      maxTemperature: 1.2,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      fieldMap: {
+        max_tokens: 'max_completion_tokens'
+      }
     },
     {
       type: ModelTypeEnum.llm,
@@ -46,10 +55,12 @@ const models: ProviderConfigType = {
       maxTokens: 128000,
       quoteMaxToken: 400000,
       maxTemperature: 1.2,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      fieldMap: {
+        max_tokens: 'max_completion_tokens'
+      }
     },
 
     {
