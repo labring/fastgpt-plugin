@@ -6,6 +6,10 @@ import { InputConfigSchema, InputSchema, OutputSchema } from './fastgpt';
 export const SystemVarSchema = z.object({
   user: z.object({
     id: z.string(),
+    userId: z.string(),
+    rank: z.string(),
+    membername: z.string(),
+    teamName: z.string(),
     teamId: z.string(),
     name: z.string()
   }),
