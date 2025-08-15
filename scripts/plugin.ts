@@ -159,24 +159,3 @@ export const autoToolIdPlugin: BunPlugin = {
   },
   target: 'node'
 };
-
-export const setupFetchPlugin: BunPlugin = {
-  name: 'import-fetch',
-  setup(build) {
-    build.onLoad(
-      {
-        filter: /packages\/.+\/src\/index\.ts/
-      },
-      async (args) => {
-        const content = await Bun.file(args.path).text();
-        if (content.includes(' fetch(')) {
-          return {
-            contents: `import '@tool/utils/setupProxy'\n${content}`,
-            loader: 'ts'
-          };
-        }
-      }
-    );
-  },
-  target: 'node'
-};

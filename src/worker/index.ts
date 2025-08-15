@@ -93,7 +93,10 @@ export class WorkerPool<Props = Record<string, unknown>, Response = unknown> {
     // Create a new worker and push it queue.
     const workerId = `${Date.now()}${Math.random()}`;
     const worker = new Worker('./worker.js', {
-      env: {},
+      env: {
+        ...(process.env.HTTP_PROXY ? { HTTP_PROXY: process.env.HTTP_PROXY } : {}),
+        ...(process.env.HTTPS_PROXY ? { HTTPS_PROXY: process.env.HTTPS_PROXY } : {})
+      },
       resourceLimits: {
         maxOldGenerationSizeMb: parseInt(process.env.MAX_MEMORYMB || '1024')
       }

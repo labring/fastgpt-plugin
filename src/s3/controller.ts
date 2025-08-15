@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 import { catchError } from '@/utils/catch';
+import { HttpProxyAgent } from 'http-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export const FileInputSchema = z
   .object({
@@ -53,7 +55,11 @@ export class S3Service {
       useSSL: this.config.useSSL,
       accessKey: this.config.accessKey,
       secretKey: this.config.secretKey,
-      transportAgent: this.config.transportAgent
+      transportAgent: process.env.HTTP_PROXY
+        ? new HttpProxyAgent(process.env.HTTP_PROXY)
+        : process.env.HTTPS_PROXY
+          ? new HttpsProxyAgent(process.env.HTTPS_PROXY)
+          : undefined
     });
   }
 

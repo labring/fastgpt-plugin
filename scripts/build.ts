@@ -3,7 +3,7 @@ import { $ } from 'bun';
 import fs from 'fs';
 import path from 'path';
 import { copyToolIcons } from '../modules/tool/utils/icon';
-import { autoToolIdPlugin, setupFetchPlugin } from './plugin';
+import { autoToolIdPlugin } from './plugin';
 import { exit } from 'process';
 
 const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
@@ -17,7 +17,7 @@ export const buildATool = async (tool: string, dist: string = distToolDir) => {
     outdir: dist,
     naming: tool + '.js',
     target: 'node',
-    plugins: [autoToolIdPlugin, setupFetchPlugin],
+    plugins: [autoToolIdPlugin],
     minify: true
   });
 };

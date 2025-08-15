@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "prepare": "husky install",
-    "build": "tsc && bun ./scripts/build.ts --env inline",
+    "build": "tsc && bun ./scripts/build.ts",
     "build:no-tsc": "bun ./scripts/build.ts",
     "build:main": "bun build --env=disable --outfile=dist/index.js --target=node --minify ./src/index.ts",
     "build:worker": "bun build --env=disable --outfile=dist/worker.js --target=node --minify ./src/worker/worker.ts",
@@ -41,6 +41,7 @@
     "json5": "^2.2.3",
     "minio": "^8.0.5",
     "nanoid": "^5.1.5",
+    "undici": "^7.13.0",
     "uuid": "^11.1.0",
     "zod": "^3.24.3"
   },

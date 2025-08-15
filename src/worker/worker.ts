@@ -4,6 +4,8 @@ import { LoadToolsByFilename } from '@tool/init';
 import { isProd } from '@/constants';
 import { getErrText } from '@tool/utils/err';
 import type { Main2WorkerMessageType } from './type';
+import { setupProxy } from '@/utils/setupProxy';
+setupProxy();
 
 // rewrite console.log to send to parent
 console.log = (...args: any[]) => {

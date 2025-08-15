@@ -7,6 +7,7 @@ import { isProd } from './constants';
 import { initS3Server } from './s3/config';
 import { connectSignoz } from './utils/signoz';
 import { initModels } from '@model/init';
+import { setupProxy } from './utils/setupProxy';
 
 const app = express().use(
   express.json(),
@@ -19,6 +20,7 @@ connectSignoz();
 // System
 initOpenAPI(app);
 initRouter(app);
+setupProxy();
 
 // DB
 try {
