@@ -17,6 +17,8 @@ export default defineTool({
     'zh-CN': '使用博查AI搜索引擎进行网络搜索。',
     en: 'Use Bocha AI search engine for web search.'
   },
+
+  courseUrl: 'https://open.bochaai.com/',
   versionList: [
     {
       value: '0.1.0',
@@ -26,6 +28,7 @@ export default defineTool({
           key: 'query',
           label: '搜索查询词',
           description: '搜索查询词',
+          toolDescription: '搜索查询词',
           required: true,
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string

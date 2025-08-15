@@ -94,7 +94,20 @@ const foo = () => {
 };
 ```
 
-### 系统工具内可用的工具函数
+## 系统工具
+
+### 工具集/工具声明规则
+
+1. 名字和描述至少包含中英文
+2. 工具还包含包含`toolDescription`字段，用于给`LLM`的工具调用提示，`description`是给使用者看到。
+3. 工具输入字段里也可以声明`toolDescription`，表示该字段可以由模型生成。
+
+### toolDescription 声明规则
+
+1. 工具的`toolDescription`，包含2个主体：服务商和工具功能。
+2. input 字段的`toolDescription`，只需包含字段功能描述即可。
+
+### 内置的工具函数
 
 系统内置了一些工具函数可供调用，其目录位于 `modules/tool/utils` 下。
 在代码中可以使用 `import { xxx } from '@/tool/utils'` 的方式引入。
