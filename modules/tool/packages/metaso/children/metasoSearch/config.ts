@@ -16,6 +16,7 @@ export default defineTool({
     'zh-CN': '基于秘塔API的智能搜索工具，支持多种搜索范围和结果摘要',
     en: 'Intelligent search tool powered by Metaso API with multiple search scopes and result summaries'
   },
+  toolDescription: '使用秘塔 API 进行网络搜索。',
   courseUrl: 'https://metaso.cn',
   author: 'FastGPT',
   versionList: [
