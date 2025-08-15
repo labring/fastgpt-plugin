@@ -11,6 +11,8 @@ export default defineToolSet({
     'zh-CN': '这是一个样例工具集',
     en: 'This is a sample tool set'
   },
+  toolDescription:
+    'tool description for ai to use, fallback to English description if not provided',
   secretInputConfig: [
     {
       key: 'apiKey',

@@ -56,6 +56,7 @@ export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItem
     avatar: item.icon,
     versionList: item.versionList,
     description: item.description,
+    toolDescription: item.toolDescription || item.description.en,
     templateType: item.type,
     pluginOrder: index,
     isActive: item.isActive ?? true,

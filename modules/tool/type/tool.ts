@@ -103,6 +103,12 @@ export const ToolConfigSchema = z
     toolId: z.string().optional().describe('The unique id of the tool'),
     name: InfoString.describe('The name of the tool'),
     description: InfoString.describe('The description of the tool'),
+    toolDescription: z
+      .string()
+      .optional()
+      .describe(
+        'The tool description for ai to use, fallback to English description if not provided'
+      ),
     versionList: z.array(VersionListItemSchema).min(1).describe('The version list'),
 
     // Can be inherited

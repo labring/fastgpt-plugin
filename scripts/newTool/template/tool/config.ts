@@ -16,6 +16,8 @@ export default defineTool({
     'zh-CN': '描述',
     en: 'description'
   },
+  toolDescription:
+    'tool description for ai to use, fallback to English description if not provided',
   secretInputConfig: [
     {
       key: 'apiKey',
