@@ -37,20 +37,6 @@ export default defineTool({
       description: '企业ID',
       required: true,
       inputType: 'secret'
-    },
-    {
-      key: 'appId',
-      label: '钉钉Memo应用ID',
-      description: '应用ID',
-      required: true,
-      inputType: 'secret'
-    },
-    {
-      key: 'appAccessKey',
-      label: '钉钉Memo应用AccessKey',
-      description: '应用AccessKey',
-      required: true,
-      inputType: 'secret'
     }
   ],
   versionList: [
@@ -61,6 +47,20 @@ export default defineTool({
         {
           key: 'query',
           label: '用户提问内容',
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string,
+          required: true
+        },
+        {
+          key: 'appId',
+          label: '钉钉Memo应用ID',
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string,
+          required: true
+        },
+        {
+          key: 'appAccessKey',
+          label: '钉钉Memo应用AccessKey',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           required: true

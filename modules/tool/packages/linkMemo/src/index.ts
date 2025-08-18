@@ -6,11 +6,11 @@ import { getErrText } from '@tool/utils/err';
 export const InputType = z.object({
   query: z.string().describe('用户提问内容'),
   dingdingUrl: z.string().describe('钉钉Memo服务根地址'),
-  appId: z.string().describe('钉钉Memo应用ID'),
+  sysAccessKey: z.string().describe('钉钉Memo系统AccessKey'),
   corpId: z.string().describe('钉钉Memo企业ID'),
+  appId: z.string().describe('钉钉Memo应用ID'),
   appAccessKey: z.string().describe('钉钉Memo应用AccessKey'),
-  iscontact: z.boolean().describe('是否使用职级'),
-  sysAccessKey: z.string().describe('系统AccessKey')
+  iscontact: z.boolean().optional().describe('是否使用职级')
 });
 
 export const OutputType = z.object({
@@ -58,14 +58,15 @@ function extractCiteLinks(docs: ReferenceDocument[]) {
 
   docs.forEach((doc) => {
     citeLinks.push({
-      name: `[ Web ] ${doc.name}`,
+      // name: `[ Web ] ${doc.name}`,
+      name: `${doc.name}`,
       url: doc.webUrl
     });
 
-    citeLinks.push({
-      name: `[ DingTalk ] ${doc.name}`,
-      url: doc.dingUrl
-    });
+    // citeLinks.push({
+    //   name: `[ DingTalk ] ${doc.name}`,
+    //   url: doc.dingUrl
+    // });
   });
 
   return citeLinks;
@@ -94,12 +95,12 @@ function parseDataString(
 export async function tool(
   {
     query,
-    appId,
-    corpId,
-    appAccessKey,
-    iscontact,
     dingdingUrl,
-    sysAccessKey
+    sysAccessKey,
+    corpId,
+    appId,
+    appAccessKey,
+    iscontact
   }: z.infer<typeof InputType>,
   { systemVar, streamResponse }: RunToolSecondParamsType
 ): Promise<z.infer<typeof OutputType>> {
@@ -112,7 +113,7 @@ export async function tool(
     url.searchParams.append('appId', appId.toString());
     url.searchParams.append('appAccessKey', appAccessKey);
 
-    const queryString = buildQueryString(query, iscontact, systemVar.user.contact);
+    const queryString = buildQueryString(query, iscontact || false, systemVar.user.contact);
 
     url.searchParams.append('query', queryString);
 
@@ -181,7 +182,7 @@ export async function tool(
             isFinished = true;
             break;
           }
-        } catch (parseError) {
+        } catch {
           // Ignore parse errors for malformed SSE data
           continue;
         }
