@@ -16,7 +16,7 @@ export const InputType = z.object({
 export const OutputType = z.object({
   result: z.string(),
   success: z.boolean(),
-  error: z.object({}).optional()
+  error: z.string().optional()
 });
 
 type ApiResponseDataType<T = any> = {
