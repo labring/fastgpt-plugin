@@ -6,7 +6,7 @@ export const InputType = z
   .object({
     smtpHost: z.string(),
     smtpPort: z.string(),
-    SSL: z.union([z.enum(['true', 'false']), z.boolean()]),
+    SSL: z.union([z.enum(['true', 'false', '']), z.boolean()]).optional(),
     smtpUser: z.string(),
     smtpPass: z.string(),
     fromName: z.string().optional(),
