@@ -58,15 +58,9 @@ function extractCiteLinks(docs: ReferenceDocument[]) {
 
   docs.forEach((doc) => {
     citeLinks.push({
-      // name: `[ Web ] ${doc.name}`,
       name: `${doc.name}`,
       url: doc.webUrl
     });
-
-    // citeLinks.push({
-    //   name: `[ DingTalk ] ${doc.name}`,
-    //   url: doc.dingUrl
-    // });
   });
 
   return citeLinks;
