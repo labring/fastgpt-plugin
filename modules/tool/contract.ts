@@ -13,6 +13,14 @@ export const toolContract = c.router(
         200: c.type<Array<ToolListItemType>>()
       }
     },
+    getTemplate: {
+      path: '/getTemplate',
+      method: 'GET',
+      description: 'Get a template',
+      responses: {
+        200: z.any()
+      }
+    },
     getTool: {
       path: '/get',
       method: 'GET',
