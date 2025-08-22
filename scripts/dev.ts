@@ -9,13 +9,23 @@ async function copyDevIcons() {
   if (isProd) return;
 
   const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
-  const publicImgsDir = path.join(__dirname, '..', 'public', 'imgs', 'tools');
+  const publicImgsToolsDir = path.join(__dirname, '..', 'public', 'imgs', 'tools');
+  const modelsDir = path.join(__dirname, '..', 'modules', 'model', 'provider');
+  const publicImgsModelsDir = path.join(__dirname, '..', 'public', 'imgs', 'models');
 
-  await copyToolIcons({
-    toolsDir,
-    targetDir: publicImgsDir,
-    logPrefix: 'Copied dev icon'
-  });
+  // Copy tool and model icons in parallel
+  await Promise.all([
+    copyToolIcons({
+      sourceDir: toolsDir,
+      targetDir: publicImgsToolsDir,
+      logPrefix: 'Copied dev tool icon'
+    }),
+    copyToolIcons({
+      sourceDir: modelsDir,
+      targetDir: publicImgsModelsDir,
+      logPrefix: 'Copied dev model icon'
+    })
+  ]);
 }
 await copyDevIcons();
 

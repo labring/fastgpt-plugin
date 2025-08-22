@@ -40,14 +40,25 @@ addLog.info('Worker Build complete');
 await Promise.all(tools.map((tool) => buildATool(tool)));
 addLog.info('Tools Build complete');
 
-const publicImgsDir = path.join(__dirname, '..', 'dist', 'public', 'imgs', 'tools');
-const copiedCount = await copyToolIcons({
-  toolsDir,
-  targetDir: publicImgsDir,
-  tools,
-  logPrefix: 'Copied build icon'
-});
+// copy tool and model icons to dist in parallel
+const publicImgsToolsDir = path.join(__dirname, '..', 'dist', 'public', 'imgs', 'tools');
+const modelsDir = path.join(__dirname, '..', 'modules', 'model', 'provider');
+const publicImgsModelsDir = path.join(__dirname, '..', 'dist', 'public', 'imgs', 'models');
+
+const [copiedToolsCount, copiedModelsCount] = await Promise.all([
+  copyToolIcons({
+    sourceDir: toolsDir,
+    targetDir: publicImgsToolsDir,
+    items: tools,
+    logPrefix: 'Copied build tool icon'
+  }),
+  copyToolIcons({
+    sourceDir: modelsDir,
+    targetDir: publicImgsModelsDir,
+    logPrefix: 'Copied build model icon'
+  })
+]);
 
 addLog.info(
-  `Tools Build complete, total toolset/tool: ${tools.length}, icons copied: ${copiedCount}`
+  `Tools Build complete, total toolset/tool: ${tools.length}, tool icons copied: ${copiedToolsCount}, model icons copied: ${copiedModelsCount}`
 );

@@ -2,22 +2,21 @@ import fs from 'fs';
 import path from 'path';
 
 export interface CopyIconOptions {
-  toolsDir: string;
+  sourceDir: string;
   targetDir: string;
-  tools?: string[];
+  items?: string[];
   logPrefix?: string;
 }
 
 /**
- * Copy tool icons from the tools directory to the target directory.
+ * Copy logo files from source directory to target directory.
  * @param options CopyIconOptions
  * @returns Count of copied icons
  */
 export async function copyToolIcons(options: CopyIconOptions): Promise<number> {
-  const { toolsDir, targetDir, tools, logPrefix = 'Copied icon' } = options;
+  const { sourceDir, targetDir, items, logPrefix = 'Copied icon' } = options;
 
-  // will read tools from the toolsDir if not provided
-  const toolList = tools || fs.readdirSync(toolsDir);
+  const itemList = items || fs.readdirSync(sourceDir);
 
   // create target directory if it doesn't exist
   if (!fs.existsSync(targetDir)) {
@@ -26,19 +25,19 @@ export async function copyToolIcons(options: CopyIconOptions): Promise<number> {
 
   let copiedCount = 0;
 
-  for (const tool of toolList) {
-    const toolDir = path.join(toolsDir, tool);
+  for (const item of itemList) {
+    const itemDir = path.join(sourceDir, item);
 
-    // check if the tool directory exists and is a directory
-    if (!fs.existsSync(toolDir) || !fs.statSync(toolDir).isDirectory()) {
+    // check if the item directory exists and is a directory
+    if (!fs.existsSync(itemDir) || !fs.statSync(itemDir).isDirectory()) {
       continue;
     }
 
-    const iconPath = path.join(toolDir, `logo.svg`);
-    if (fs.existsSync(iconPath)) {
-      const iconTarget = path.join(targetDir, `${tool}.svg`);
-      fs.cpSync(iconPath, iconTarget);
-      console.log(`📦 ${logPrefix}: /imgs/tools/${tool}.svg`);
+    const logoPath = path.join(itemDir, 'logo.svg');
+    if (fs.existsSync(logoPath)) {
+      const logoTarget = path.join(targetDir, `${item}.svg`);
+      fs.cpSync(logoPath, logoTarget);
+      console.log(`📦 ${logPrefix}: ${path.relative(process.cwd(), logoTarget)}`);
       copiedCount++;
     }
   }
