@@ -1,4 +1,4 @@
-import createClient from './client';
+import { createClient } from './client';
 
 const client = createClient({
   baseUrl: 'http://localhost:3002',
