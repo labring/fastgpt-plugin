@@ -85,9 +85,9 @@ export const LoadToolsByFilename = async (
   return tools;
 };
 
-export async function initTool() {
+export async function initBuiltinTools() {
   const basePath = isProd
-    ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools', 'built-in')
+    ? path.join(process.cwd(), 'dist', 'tools', 'built-in')
     : path.join(__dirname, 'packages');
 
   // Create directory if it doesn't exist
@@ -102,13 +102,15 @@ export async function initTool() {
     tools.push(...tmpTools);
   }
 
-  addLog.info(`Load tools in ${isProd ? 'production' : 'development'} env, total: ${tools.length}`);
+  addLog.info(
+    `Load builtin tools in ${isProd ? 'production' : 'development'} env, total: ${toolDirs.length}`
+  );
 }
 
 export async function initUploadedTool() {
   const basePath = isProd
-    ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools', 'uploaded')
-    : path.join(__dirname, 'packages');
+    ? path.join(process.cwd(), 'dist', 'tools', 'uploaded')
+    : path.join(__dirname, '..', '..', 'dist', 'tools', 'uploaded');
 
   // Create directory if it doesn't exist
   if (!fs.existsSync(basePath)) {
@@ -122,5 +124,9 @@ export async function initUploadedTool() {
     tools.push(...tmpTools);
   }
 
-  addLog.info(`Load tools in ${isProd ? 'production' : 'development'} env, total: ${tools.length}`);
+  addLog.info(
+    `Load uploaded tools in ${isProd ? 'production' : 'development'} env, total: ${toolDirs.length}`
+  );
 }
+
+export const initTools = () => Promise.all([initBuiltinTools(), initUploadedTool()]);

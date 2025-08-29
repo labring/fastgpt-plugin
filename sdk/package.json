@@ -1,6 +1,10 @@
 {
   "name": "@fastgpt-sdk/plugin",
+<<<<<<< HEAD
   "version": "0.1.16",
+=======
+  "version": "0.1.12",
+>>>>>>> 05e2c6a (refactor: plugin tool upload)
   "description": "fastgpt-plugin sdk",
   "main": "dist/client.js",
   "types": "dist/client.d.ts",

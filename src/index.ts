@@ -1,7 +1,7 @@
 import express from 'express';
 import { initOpenAPI } from './contract/openapi';
 import { initRouter } from './router';
-import { initTool, initUploadedTool } from '@tool/init';
+import { initTools } from '@tool/init';
 import { addLog } from './utils/log';
 import { isProd } from './constants';
 import { initS3Server } from './s3/config';

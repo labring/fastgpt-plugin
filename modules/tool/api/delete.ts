@@ -52,7 +52,6 @@ async function deleteMongoRecord(toolId: string): Promise<any> {
     const result = await PluginModel.deleteOne({ toolId });
     addLog.info(`MongoDB delete result for toolId ${toolId}:`, result);
     return result;
-
   } catch (error) {
     addLog.error(`Failed to delete MongoDB record for toolId ${toolId}:`, error);
     return Promise.reject(error);
@@ -65,11 +64,10 @@ async function deleteMinioFile(url: string): Promise<void> {
     addLog.warn(`Could not extract objectName from URL: ${url}`);
     return;
   }
-  if (global.s3Server && typeof global.s3Server.removeFile === 'function') {
-    await global.s3Server.removeFile(objectName);
+  if (global.fileUploadS3Server && typeof global.fileUploadS3Server.removeFile === 'function') {
+    await global.fileUploadS3Server.removeFile(objectName);
   } else {
     addLog.warn('S3Server not available, skipping MinIO file deletion');
-
   }
 }
 
