@@ -9,13 +9,11 @@ import type { ToolSetType } from '@tool/type';
 import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import { Readable } from 'stream';
+import * as fs from 'fs';
 
 export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) => {
   try {
     const { url } = body;
-
-    addLog.info('Plugin URL received', { url });
-
     const extractedToolId = await downloadAndInstallPlugin(url);
 
     const existingPlugin = await PluginModel.findOne({ toolId: extractedToolId });
@@ -24,13 +22,12 @@ export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) 
       return {
         status: 409,
         body: {
-          code: 409,
           error: `Plugin with toolId ${extractedToolId} already exists`
         }
       };
     }
 
-    const result = await PluginModel.create({
+    await PluginModel.create({
       toolId: extractedToolId,
       url,
       type: 'tool'
@@ -39,9 +36,7 @@ export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) 
     return {
       status: 200,
       body: {
-        code: 200,
         message: 'Plugin URL processed and installed successfully',
-        mongoResult: result,
         toolId: extractedToolId
       }
     };
@@ -50,8 +45,7 @@ export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) 
     return {
       status: 500,
       body: {
-        code: 500,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: getErrText(error)
       }
     };
   }
@@ -62,15 +56,10 @@ async function extractToolIdFromFile(filePath: string): Promise<string | null> {
   return rootMod.toolId;
 }
 
-async function downloadAndInstallPlugin(url: string): Promise<string> {
+async function downloadAndInstallPlugin(Url: string): Promise<string> {
   try {
-    if (!process.env.S3_HOST || !process.env.S3_PORT) {
-      return Promise.reject('Failed to build full url: S3_HOST or S3_PORT not configured');
-    }
-
-    const fullUrl = `http://${process.env.S3_HOST}:${process.env.S3_PORT}/${url}`;
-
-
+    const fullUrl = global.pluginFileS3Server.generateAccessUrl(Url);
+    console.log('fullUrl', fullUrl);
     const response = await fetch(fullUrl, {
       signal: AbortSignal.timeout(30000)
     });
@@ -80,18 +69,18 @@ async function downloadAndInstallPlugin(url: string): Promise<string> {
     }
 
     const filename = await getFilenameFromUrl(fullUrl);
-    if (!filename) return Promise.reject('Failed to get filename from url');
+    const uploadPath = path.join(process.cwd(), 'dist', 'tools', 'uploaded');
 
-    const finalFilePath = path.join(process.cwd(), 'dist', 'tools', 'uploaded', filename);
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
 
-    const fileStream = createWriteStream(finalFilePath);
-    await pipeline(Readable.fromWeb(response.body as any), fileStream);
-
-    const extractedToolId = await extractToolIdFromFile(finalFilePath);
-    if (!extractedToolId) return Promise.reject('Failed to extract toolId from downloaded file');
+    const filepath = path.join(uploadPath, filename);
+    await pipeline(Readable.fromWeb(response.body as any), createWriteStream(filepath));
+    const extractedToolId = await extractToolIdFromFile(filepath);
+    if (!extractedToolId) return Promise.reject('Failed to extract toolId from file');
 
     await initUploadedTool();
-
     return extractedToolId;
   } catch (error) {
     addLog.error(`Failed to download/install plugin:`, getErrText(error));

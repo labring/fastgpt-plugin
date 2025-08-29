@@ -212,12 +212,12 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
     parentId: z.string().optional().describe('The parent id of the tool'),
     toolDirName: z.string(),
 
-    toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool')
+    toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool'),
     // ToolSet Parent
     secretInputConfig: z
       .array(InputConfigSchema)
       .optional()
-      .describe('The secret input list of the tool'),
+      .describe('The secret input list of the tool')
   })
 );
 

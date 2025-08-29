@@ -1,6 +1,6 @@
 import * as Minio from 'minio';
 import { randomBytes } from 'crypto';
-import { defaultFileConfig, type FileConfig, type FileMetadata } from './config';
+import { type S3ConfigType, type FileMetadata } from './config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { z } from 'zod';
@@ -9,6 +9,7 @@ import { getErrText } from '@tool/utils/err';
 import { catchError } from '@/utils/catch';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { mimeMap } from './const';
 
 export const FileInputSchema = z
   .object({
@@ -44,17 +45,13 @@ type GetUploadBufferResponse = { buffer: Buffer; filename: string };
 
 export class S3Service {
   private minioClient: Minio.Client;
-  private config: FileConfig;
+  private config: S3ConfigType;
 
-  constructor(config?: Partial<FileConfig>) {
-    this.config = { ...defaultFileConfig, ...config };
+  constructor(config: S3ConfigType) {
+    this.config = config;
 
     this.minioClient = new Minio.Client({
-      endPoint: this.config.endpoint,
-      port: this.config.port,
-      useSSL: this.config.useSSL,
-      accessKey: this.config.accessKey,
-      secretKey: this.config.secretKey,
+      ...this.config,
       transportAgent: process.env.HTTP_PROXY
         ? new HttpProxyAgent(process.env.HTTP_PROXY)
         : process.env.HTTPS_PROXY
@@ -77,40 +74,42 @@ export class S3Service {
         }
       }
 
-      const [, err] = await catchError(() =>
-        Promise.all([
-          this.minioClient.setBucketPolicy(
-            this.config.bucket,
-            JSON.stringify({
-              Version: '2012-10-17',
-              Statement: [
+      if (this.config.retentionDays) {
+        const Days = this.config.retentionDays;
+        const [, err] = await catchError(() =>
+          Promise.all([
+            this.minioClient.setBucketPolicy(
+              this.config.bucket,
+              JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [
+                  {
+                    Effect: 'Allow',
+                    Principal: '*',
+                    Action: ['s3:GetObject'],
+                    Resource: [`arn:aws:s3:::${this.config.bucket}/*`]
+                  }
+                ]
+              })
+            ),
+            this.minioClient.setBucketLifecycle(this.config.bucket, {
+              Rule: [
                 {
-                  Effect: 'Allow',
-                  Principal: '*',
-                  Action: ['s3:GetObject'],
-                  Resource: [`arn:aws:s3:::${this.config.bucket}/*`]
+                  ID: 'AutoDeleteRule',
+                  Status: 'Enabled',
+                  Expiration: {
+                    Days,
+                    DeleteMarker: false,
+                    DeleteAll: false
+                  }
                 }
               ]
             })
-          ),
-          this.minioClient.setBucketLifecycle(this.config.bucket, {
-            Rule: [
-              {
-                ID: 'AutoDeleteRule',
-                Status: 'Enabled',
-                Expiration: {
-                  Days: this.config.retentionDays,
-                  DeleteMarker: false,
-                  DeleteAll: false
-                }
-              }
-            ]
-          })
-        ])
-      );
-
-      if (err) {
-        addLog.warn(`Failed to set bucket policy: ${this.config.bucket}`);
+          ])
+        );
+        if (err) {
+          addLog.warn(`Failed to set bucket policy: ${this.config.bucket}`);
+        }
       }
 
       addLog.info(`Bucket initialized, ${this.config.bucket} configured successfully.`);
@@ -133,17 +132,17 @@ export class S3Service {
     return randomBytes(16).toString('hex');
   }
 
-  private generateAccessUrl(filename: string): string {
+  public generateAccessUrl(filename: string): string {
     const protocol = this.config.useSSL ? 'https' : 'http';
     const port =
       this.config.port && this.config.port !== (this.config.useSSL ? 443 : 80)
         ? `:${this.config.port}`
         : '';
 
-    const customEndpoint = process.env.MINIO_CUSTOM_ENDPOINT;
+    const customEndpoint = this.config.customEndpoint;
     return customEndpoint
-      ? `${customEndpoint}/${encodeURIComponent(filename)}`
-      : `${protocol}://${this.config.endpoint}${port}/${this.config.bucket}/${encodeURIComponent(filename)}`;
+      ? `${customEndpoint}/${filename}`
+      : `${protocol}://${this.config.endPoint}${port}/${this.config.bucket}/${filename}`;
   }
 
   async uploadFileAdvanced(input: FileInput): Promise<FileMetadata> {
@@ -199,30 +198,11 @@ export class S3Service {
     ): Promise<FileMetadata> => {
       const inferContentType = (filename: string) => {
         const ext = path.extname(filename).toLowerCase();
-        const mimeMap: Record<string, string> = {
-          '.jpg': 'image/jpeg',
-          '.jpeg': 'image/jpeg',
-          '.png': 'image/png',
-          '.gif': 'image/gif',
-          '.webp': 'image/webp',
-          '.svg': 'image/svg+xml',
-          '.pdf': 'application/pdf',
-          '.txt': 'text/plain',
-          '.json': 'application/json',
-          '.csv': 'text/csv',
-          '.zip': 'application/zip',
-          '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-          '.doc': 'application/msword',
-          '.xls': 'application/vnd.ms-excel',
-          '.ppt': 'application/vnd.ms-powerpoint'
-        };
 
         return mimeMap[ext] || 'application/octet-stream';
       };
 
-      if (fileBuffer.length > this.config.maxFileSize) {
+      if (this.config.maxFileSize && fileBuffer.length > this.config.maxFileSize) {
         return Promise.reject(
           `File size ${fileBuffer.length} exceeds limit ${this.config.maxFileSize}`
         );
@@ -271,7 +251,7 @@ export class S3Service {
     return await uploadFile(buffer, filename);
   }
 
-  async removeFile(objectName: string): Promise<void> {
+  async removeFile(objectName: string) {
     try {
       await this.minioClient.removeObject(process.env.S3_PLIGIN_BUCKET!, objectName);
       addLog.info(`MinIO file deleted: ${process.env.S3_PLIGIN_BUCKET}/${objectName}`);

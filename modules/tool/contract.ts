@@ -60,8 +60,6 @@ export const toolContract = c.router(
       }),
       responses: {
         200: z.object({
-          message: z.string(),
-          mongoResult: z.any(),
           toolId: z.string()
         })
       }
