@@ -168,6 +168,11 @@ export const ModelProviders = {
     'zh-CN': 'PPIO',
     'zh-Hant': 'PPIO'
   },
+  Sangfor: {
+    en: 'Sangfor',
+    'zh-CN': '深信服',
+    'zh-Hant': '深信服'
+  },
   Other: {
     en: 'Other',
     'zh-CN': '其他',
@@ -177,14 +182,16 @@ export const ModelProviders = {
 
 export type ModelProviderIdType = keyof typeof ModelProviders;
 
-export const aiproxyIdMap: Record<
+export type aiproxyType = Record<
   number,
   {
     name: StringI18nType | string;
     provider: ModelProviderIdType; // Use to sort,get avatar
     avatar?: string;
   }
-> = {
+>;
+
+export const aiproxyIdMap: aiproxyType = {
   1: {
     name: 'OpenAI',
     provider: 'OpenAI'
@@ -387,5 +394,10 @@ export const aiproxyIdMap: Record<
     name: 'Coze',
     provider: 'Other',
     avatar: 'model/coze'
+  },
+  48: {
+    name: 'Sangfor',
+    provider: 'Sangfor',
+    avatar: 'model/sangfor'
   }
 };

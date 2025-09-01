@@ -8,4 +8,3 @@ export type { SystemVarType, StreamMessageType as StreamMessage };
 
 export { RunToolWithStream } from './runToolStream';
 export { StreamDataAnswerTypeEnum } from '@tool/type/tool';
-export { ModelProviders, aiproxyIdMap } from '@model/constants';
