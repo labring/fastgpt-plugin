@@ -38,6 +38,7 @@
     "express": "^5.1.0",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.6",
+    "ioredis": "^5.7.0",
     "json5": "^2.2.3",
     "minio": "^8.0.5",
     "mongoose": "^8.16.4",
