@@ -1,12 +1,12 @@
 import { s } from '@/router/init';
 import { contract } from '@/contract';
-import { PluginModel } from '../../../src/plugin/model';
 import { addLog } from '../../../src/utils/log';
 import { getTool } from '@tool/controller';
-import { tools } from '@tool/constants';
 import path from 'path';
 import fs from 'fs';
 import { getErrText } from '@tool/utils/err';
+import { uploadedTools } from '@tool/constants';
+import { PluginModel } from '@/models/plugins';
 
 export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) => {
   try {
@@ -25,7 +25,7 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
       };
     }
 
-    await deleteMinioFile(deletedRecord.url);
+    await deleteMinioFile(deletedRecord.objectName);
 
     return {
       status: 200,
@@ -49,8 +49,7 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
 
 async function deleteMongoRecord(toolId: string): Promise<any> {
   try {
-    const result = await PluginModel.deleteOne({ toolId });
-    addLog.info(`MongoDB delete result for toolId ${toolId}:`, result);
+    const result = await PluginModel.findOneAndDelete({ toolId });
     return result;
   } catch (error) {
     addLog.error(`Failed to delete MongoDB record for toolId ${toolId}:`, error);
@@ -119,12 +118,12 @@ async function deleteLocalFileAndRemoveFromList(toolId: string): Promise<void> {
       addLog.warn(`Local file not found: ${filePath}`);
     }
 
-    const initialLength = tools.length;
-    const filteredTools = tools.filter((t) => t.toolId !== toolId);
+    const initialLength = uploadedTools.length;
+    const filteredTools = uploadedTools.filter((t) => t.toolId !== toolId);
 
     if (filteredTools.length < initialLength) {
-      tools.length = 0;
-      tools.push(...filteredTools);
+      uploadedTools.length = 0;
+      uploadedTools.push(...filteredTools);
     } else {
       addLog.warn(`Tool not found in tools list for removal: ${toolId}`);
     }

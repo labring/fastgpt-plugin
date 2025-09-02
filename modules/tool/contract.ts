@@ -56,11 +56,14 @@ export const toolContract = c.router(
       method: 'POST',
       description: 'Upload and install a tool plugin',
       body: z.object({
-        url: z.string()
+        objectName: z.string()
       }),
       responses: {
         200: z.object({
-          toolId: z.string()
+          message: z.string()
+        }),
+        409: z.object({
+          error: z.string()
         })
       }
     }

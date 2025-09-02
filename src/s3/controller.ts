@@ -132,7 +132,7 @@ export class S3Service {
     return randomBytes(16).toString('hex');
   }
 
-  public generateAccessUrl(filename: string): string {
+  public generateAccessUrl(objectName: string): string {
     const protocol = this.config.useSSL ? 'https' : 'http';
     const port =
       this.config.port && this.config.port !== (this.config.useSSL ? 443 : 80)
@@ -141,8 +141,8 @@ export class S3Service {
 
     const customEndpoint = this.config.customEndpoint;
     return customEndpoint
-      ? `${customEndpoint}/${filename}`
-      : `${protocol}://${this.config.endPoint}${port}/${this.config.bucket}/${filename}`;
+      ? `${customEndpoint}/${objectName}`
+      : `${protocol}://${this.config.endPoint}${port}/${this.config.bucket}/${objectName}`;
   }
 
   async uploadFileAdvanced(input: FileInput): Promise<FileMetadata> {
@@ -252,12 +252,18 @@ export class S3Service {
   }
 
   async removeFile(objectName: string) {
-    try {
-      await this.minioClient.removeObject(process.env.S3_PLIGIN_BUCKET!, objectName);
-      addLog.info(`MinIO file deleted: ${process.env.S3_PLIGIN_BUCKET}/${objectName}`);
-      return Promise.resolve();
-    } catch (error) {
-      return Promise.reject(error);
-    }
+    await this.minioClient.removeObject(this.config.bucket, objectName);
+    addLog.info(`MinIO file deleted: ${this.config.bucket}/${objectName}`);
+  }
+
+  /**
+   * Get the file's digest, which is called ETag in Minio and in fact it is MD5
+   */
+  async getDigest(objectName: string): Promise<string> {
+    // Get the ETag of the object as its digest
+    const stat = await this.minioClient.statObject(this.config.bucket, objectName);
+    // Remove quotes around ETag if present
+    const etag = stat.etag.replace(/^"|"$/g, '');
+    return etag;
   }
 }

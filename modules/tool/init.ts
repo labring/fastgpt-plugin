@@ -1,7 +1,7 @@
 import path from 'path';
 import { isProd } from '@/constants';
 import type { ToolType, ToolConfigWithCbType, ToolSetType } from './type';
-import { tools } from './constants';
+import { builtinTools, uploadedTools } from './constants';
 import fs from 'fs';
 import { addLog } from '@/utils/log';
 import { ToolTypeEnum } from './type/tool';
@@ -96,10 +96,11 @@ export async function initBuiltinTools() {
     fs.mkdirSync(basePath, { recursive: true });
   }
 
+  builtinTools.length = 0;
   const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
     const tmpTools = await LoadToolsByFilename(basePath, tool, 'built-in');
-    tools.push(...tmpTools);
+    builtinTools.push(...tmpTools);
   }
 
   addLog.info(
@@ -118,10 +119,12 @@ export async function initUploadedTool() {
     fs.mkdirSync(basePath, { recursive: true });
   }
 
+  uploadedTools.length = 0;
+
   const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
     const tmpTools = await LoadToolsByFilename(basePath, tool, 'uploaded');
-    tools.push(...tmpTools);
+    uploadedTools.push(...tmpTools);
   }
 
   addLog.info(
