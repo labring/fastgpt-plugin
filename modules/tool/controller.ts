@@ -2,13 +2,6 @@ import { ToolTypeEnum } from './type/tool';
 import { ToolTypeMap } from './type/tool';
 import z from 'zod';
 import { I18nStringStrictSchema } from '@/type/i18n';
-
-export const ToolTypeListSchema = z.array(
-  z.object({
-    type: z.nativeEnum(ToolTypeEnum),
-    name: I18nStringStrictSchema
-  })
-);
 import { PluginModel, pluginTypeEnum } from '@/models/plugins';
 import { builtinTools, uploadedTools } from './constants';
 import type { ToolSetType, ToolType } from './type';
@@ -20,6 +13,14 @@ import { initUploadedTool } from '@tool/init';
 import path from 'path';
 import { addLog } from '@/utils/log';
 import { getErrText } from './utils/err';
+import { pluginFileS3Server } from '@/s3/config';
+
+export const ToolTypeListSchema = z.array(
+  z.object({
+    type: z.nativeEnum(ToolTypeEnum),
+    name: I18nStringStrictSchema
+  })
+);
 
 export function getTool(toolId: string): ToolType | undefined {
   const tools = [...builtinTools, ...uploadedTools];
@@ -59,7 +60,7 @@ export async function refreshUploadedTools() {
 
 export async function downloadTool(objectName: string, dir: string = 'uploaded') {
   try {
-    const fullUrl = global.pluginFileS3Server.generateAccessUrl(objectName);
+    const fullUrl = pluginFileS3Server.generateAccessUrl(objectName);
     const response = await fetch(fullUrl, {
       signal: AbortSignal.timeout(30000)
     });

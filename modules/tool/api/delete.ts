@@ -7,6 +7,7 @@ import fs from 'fs';
 import { getErrText } from '@tool/utils/err';
 import { uploadedTools } from '@tool/constants';
 import { PluginModel } from '@/models/plugins';
+import { fileUploadS3Server } from '@/s3/config';
 
 export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) => {
   try {
@@ -63,11 +64,7 @@ async function deleteMinioFile(url: string): Promise<void> {
     addLog.warn(`Could not extract objectName from URL: ${url}`);
     return;
   }
-  if (global.fileUploadS3Server && typeof global.fileUploadS3Server.removeFile === 'function') {
-    await global.fileUploadS3Server.removeFile(objectName);
-  } else {
-    addLog.warn('S3Server not available, skipping MinIO file deletion');
-  }
+  await fileUploadS3Server.removeFile(objectName);
 }
 
 function extractObjectNameFromUrl(url: string): string | null {

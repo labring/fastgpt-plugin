@@ -30,7 +30,7 @@ export const FileMetadataSchema = z.object({
 export type FileMetadata = z.infer<typeof FileMetadataSchema>;
 
 export const initS3Server = () => {
-  global.fileUploadS3Server = new S3Service({
+  global._fileUploadS3Server = new S3Service({
     ...commonS3Config,
     maxFileSize: process.env.MAX_FILE_SIZE ? parseInt(process.env.MAX_FILE_SIZE) : 20 * 1024 * 1024, // 默认 20MB
     retentionDays: process.env.RETENTION_DAYS ? parseInt(process.env.RETENTION_DAYS) : 15, // 默认保留15天
@@ -38,19 +38,22 @@ export const initS3Server = () => {
     customEndpoint: process.env.S3_CUSTOM_ENDPOINT
   });
 
-  global.pluginFileS3Server = new S3Service({
+  global._pluginFileS3Server = new S3Service({
     ...commonS3Config,
     maxFileSize: 10 * 1024 * 1024, // 默认 10MB,
     bucket: process.env.S3_PLUGIN_BUCKET || process.env.S3_BUCKET || 'files'
   });
 
   return Promise.all([
-    global.fileUploadS3Server.initialize(),
-    global.pluginFileS3Server.initialize()
+    global._fileUploadS3Server.initialize(),
+    global._pluginFileS3Server.initialize()
   ]);
 };
 
 declare global {
-  var fileUploadS3Server: S3Service;
-  var pluginFileS3Server: S3Service;
+  var _fileUploadS3Server: S3Service;
+  var _pluginFileS3Server: S3Service;
 }
+
+export const fileUploadS3Server = global._fileUploadS3Server;
+export const pluginFileS3Server = global._pluginFileS3Server;
