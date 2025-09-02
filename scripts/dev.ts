@@ -1,5 +1,5 @@
 import { isProd } from '@/constants';
-import { copyToolIcons } from 'modules/tool/utils/icon';
+import { copyIcons } from 'modules/tool/utils/icon';
 import path from 'path';
 import { watch } from 'fs/promises';
 import { $ } from 'bun';
@@ -15,12 +15,12 @@ async function copyDevIcons() {
 
   // Copy tool and model icons in parallel
   await Promise.all([
-    copyToolIcons({
+    copyIcons({
       sourceDir: toolsDir,
       targetDir: publicImgsToolsDir,
       logPrefix: 'Copied dev tool icon'
     }),
-    copyToolIcons({
+    copyIcons({
       sourceDir: modelsDir,
       targetDir: publicImgsModelsDir,
       logPrefix: 'Copied dev model icon'

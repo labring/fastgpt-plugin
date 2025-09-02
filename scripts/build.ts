@@ -2,10 +2,24 @@ import { addLog } from '@/utils/log';
 import { $ } from 'bun';
 import fs from 'fs';
 import path from 'path';
-import { copyToolIcons } from '../modules/tool/utils/icon';
-import { copyWorkflowTemplates } from '../modules/tool/utils/workflow';
+import { copyIcons } from '../modules/tool/utils/icon';
 import { autoToolIdPlugin } from './plugin';
 import { exit } from 'process';
+
+const copyDir = async (sourceDir: string, targetDir: string) => {
+  await fs.promises.mkdir(targetDir, { recursive: true });
+  const entries = await fs.promises.readdir(sourceDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const sourcePath = path.join(sourceDir, entry.name);
+    const targetPath = path.join(targetDir, entry.name);
+    if (entry.isDirectory()) {
+      await copyDir(sourcePath, targetPath);
+    } else {
+      await fs.promises.copyFile(sourcePath, targetPath);
+    }
+  }
+  return entries.length;
+};
 
 const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
 const distDir = path.join(__dirname, '..', 'dist');
@@ -45,26 +59,23 @@ addLog.info('Tools Build complete');
 const publicImgsToolsDir = path.join(__dirname, '..', 'dist', 'public', 'imgs', 'tools');
 const modelsDir = path.join(__dirname, '..', 'modules', 'model', 'provider');
 const publicImgsModelsDir = path.join(__dirname, '..', 'dist', 'public', 'imgs', 'models');
-const workflowsDir = path.join(__dirname, '..', 'modules', 'workflows');
+
+const workflowsDir = path.join(__dirname, '..', 'modules', 'workflow', 'templates');
 const publicWorkflowsDir = path.join(__dirname, '..', 'dist', 'workflows');
 
 const [copiedToolsCount, copiedModelsCount, copiedWorkflowsCount] = await Promise.all([
-  copyToolIcons({
+  copyIcons({
     sourceDir: toolsDir,
     targetDir: publicImgsToolsDir,
     items: tools,
     logPrefix: 'Copied build tool icon'
   }),
-  copyToolIcons({
+  copyIcons({
     sourceDir: modelsDir,
     targetDir: publicImgsModelsDir,
     logPrefix: 'Copied build model icon'
   }),
-  copyWorkflowTemplates({
-    sourceDir: workflowsDir,
-    targetDir: publicWorkflowsDir,
-    logPrefix: 'Copied build workflow template'
-  })
+  copyDir(workflowsDir, publicWorkflowsDir)
 ]);
 
 addLog.info(

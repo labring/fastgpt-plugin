@@ -13,7 +13,7 @@ export interface CopyIconOptions {
  * @param options CopyIconOptions
  * @returns Count of copied icons
  */
-export async function copyToolIcons(options: CopyIconOptions): Promise<number> {
+export async function copyIcons(options: CopyIconOptions): Promise<number> {
   const { sourceDir, targetDir, items, logPrefix = 'Copied icon' } = options;
 
   const itemList = items || fs.readdirSync(sourceDir);

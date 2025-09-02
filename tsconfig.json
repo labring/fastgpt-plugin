@@ -29,7 +29,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@tool/*": ["modules/tool/*"],
-      "@model/*": ["modules/model/*"]
+      "@model/*": ["modules/model/*"],
+      "@workflow/*": ["modules/workflow/*"]
     }
   },
   "include": ["**/*.ts", "**/*.d.ts"]

@@ -8,6 +8,7 @@ import { initS3Server } from './s3/config';
 import { connectSignoz } from './utils/signoz';
 import { initModels } from '@model/init';
 import { setupProxy } from './utils/setupProxy';
+import { initWorkflowTemplates } from '@workflow/init';
 
 const app = express().use(
   express.json(),
@@ -31,7 +32,7 @@ try {
 }
 
 // Modules
-await Promise.all([initTool(), initModels()]);
+await Promise.all([initTool(), initModels(), initWorkflowTemplates()]);
 
 const PORT = parseInt(process.env.PORT || '3000');
 const server = app.listen(PORT, (error?: Error) => {

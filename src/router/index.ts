@@ -6,11 +6,13 @@ import { toolRouter } from '@tool/router';
 import { modelRouter } from '@model/router';
 import { runToolStreamHandler } from '@tool/api/runStream';
 import { authTokenMiddleware } from './middleware/auth';
+import { workflowRouter } from '@workflow/router';
 
 export const initRouter = (app: Express) => {
   const router = s.router(contract, {
     tool: toolRouter,
-    model: modelRouter
+    model: modelRouter,
+    workflow: workflowRouter
   });
 
   createExpressEndpoints(contract, router, app, {

@@ -8,31 +8,26 @@ export interface CopyWorkflowOptions {
   logPrefix?: string;
 }
 
-export async function copyWorkflowTemplates(options: CopyWorkflowOptions): Promise<number> {
-  const { sourceDir, targetDir, logPrefix = 'Copied workflow template' } = options;
+// export async function copyWorkflowTemplates(options: CopyWorkflowOptions): Promise<number> {
+//   const { sourceDir, targetDir, logPrefix = 'Copied workflow template' } = options;
 
-  // create target directory if it doesn't exist
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
-  }
+//   // create target directory if it doesn't exist
+//   if (!fs.existsSync(targetDir)) {
+//     fs.mkdirSync(targetDir, { recursive: true });
+//   }
 
-  const workflowDirs = fs.readdirSync(sourceDir, { withFileTypes: true });
-  const directories = workflowDirs
-    .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => dirent.name);
+//   const workflows = fs.readdirSync(sourceDir, { withFileTypes: true });
 
-  let copiedCount = 0;
+//   let copiedCount = 0;
 
-  for (const dirName of directories) {
-    const templatePath = path.join(sourceDir, dirName, 'template.json');
-    const targetPath = path.join(targetDir, `${dirName}.json`);
+//   const templatePath = path.join(sourceDir, dirName, 'template.json');
+//   const targetPath = path.join(targetDir, `${dirName}.json`);
 
-    if (fs.existsSync(templatePath)) {
-      fs.cpSync(templatePath, targetPath);
-      addLog.info(`📦 ${logPrefix}: ${path.relative(process.cwd(), targetPath)}`);
-      copiedCount++;
-    }
-  }
+//   if (fs.existsSync(templatePath)) {
+//     fs.cpSync(templatePath, targetPath);
+//     addLog.info(`📦 ${logPrefix}: ${path.relative(process.cwd(), targetPath)}`);
+//     copiedCount++;
+//   }
 
-  return copiedCount;
-}
+//   return copiedCount;
+// }
