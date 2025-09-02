@@ -6,12 +6,13 @@ import { downloadTool } from '@tool/controller';
 import { addLog } from '@/utils/log';
 import { flushSyncKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
+import { pluginFileS3Server } from '@/s3/config';
 
 export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) => {
   try {
     const { objectName } = body;
     const toolId = await downloadTool(objectName);
-    const digest = await global.pluginFileS3Server.getDigest(objectName);
+    const digest = await pluginFileS3Server.getDigest(objectName);
 
     const existingPlugin = await PluginModel.findOne({ toolId });
 

@@ -1,32 +1,36 @@
-import alicloud from './provider/alicloud';
-import baai from './provider/baai';
-import baichuan from './provider/baichuan';
-import chatglm from './provider/chatglm';
-import claude from './provider/claude';
-import deepseek from './provider/deepseek';
-import doubao from './provider/doubao';
-import ernie from './provider/ernie';
-import fishaudio from './provider/fishaudio';
-import gemini from './provider/gemini';
-import grok from './provider/grok';
-import groq from './provider/groq';
-import hunyuan from './provider/hunyuan';
-import intern from './provider/intern';
-import jina from './provider/jina';
-import meta from './provider/meta';
-import minimax from './provider/minimax';
-import mistralai from './provider/mistralai';
-import moka from './provider/moka';
-import moonshot from './provider/moonshot';
-import ollama from './provider/ollama';
-import openai from './provider/openai';
-import other from './provider/other';
-import ppio from './provider/ppio';
-import qwen from './provider/qwen';
-import siliconflow from './provider/siliconflow';
-import sparkdesk from './provider/sparkdesk';
-import stepfun from './provider/stepfun';
-import yi from './provider/yi';
+import alicloud from './provider/AliCloud';
+import baai from './provider/BAAI';
+import baichuan from './provider/Baichuan';
+import chatglm from './provider/ChatGLM';
+import claude from './provider/Claude';
+import deepseek from './provider/DeepSeek';
+import doubao from './provider/Doubao';
+import ernie from './provider/Ernie';
+import fishaudio from './provider/FishAudio';
+import gemini from './provider/Gemini';
+import grok from './provider/Grok';
+import groq from './provider/Groq';
+import hunyuan from './provider/Hunyuan';
+import intern from './provider/InternLM';
+import jina from './provider/Jina';
+import meta from './provider/Meta';
+import minimax from './provider/MiniMax';
+import mistralai from './provider/MistralAI';
+import moka from './provider/Moka';
+import moonshot from './provider/Moonshot';
+import ollama from './provider/Ollama';
+import openai from './provider/OpenAI';
+import other from './provider/Other';
+import ppio from './provider/PPIO';
+import qwen from './provider/Qwen';
+import siliconflow from './provider/Siliconflow';
+import sparkdesk from './provider/SparkDesk';
+import stepfun from './provider/StepFun';
+import yi from './provider/Yi';
+import ai360 from './provider/ai360';
+import huggingface from './provider/HuggingFace';
+import novita from './provider/novita';
+import openrouter from './provider/OpenRouter';
 
 import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
 import { modelsBuffer } from './constants';
@@ -34,6 +38,7 @@ import { addLog } from '@/utils/log';
 
 // All providers array in alphabetical order
 const allProviders: ProviderConfigType[] = [
+  ai360,
   alicloud,
   baai,
   baichuan,
@@ -46,6 +51,7 @@ const allProviders: ProviderConfigType[] = [
   gemini,
   grok,
   groq,
+  huggingface,
   hunyuan,
   intern,
   jina,
@@ -54,8 +60,10 @@ const allProviders: ProviderConfigType[] = [
   mistralai,
   moka,
   moonshot,
+  novita,
   ollama,
   openai,
+  openrouter,
   other,
   ppio,
   qwen,
