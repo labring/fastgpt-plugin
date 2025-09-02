@@ -1,6 +1,6 @@
 import z from 'zod';
 import { c } from '@/contract/init';
-import { ToolListItemSchema, type ToolListItemType } from './type/api';
+import { TemplateListSchema, ToolListItemSchema, type ToolListItemType } from './type/api';
 import { ToolTypeListSchema } from './controller';
 
 export const toolContract = c.router(
@@ -11,6 +11,14 @@ export const toolContract = c.router(
       description: 'Get tools list',
       responses: {
         200: c.type<Array<ToolListItemType>>()
+      }
+    },
+    getTemplateList: {
+      path: '/getTemplate',
+      method: 'GET',
+      description: 'Get template list',
+      responses: {
+        200: TemplateListSchema
       }
     },
     getTool: {

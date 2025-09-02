@@ -3,6 +3,7 @@ import { $ } from 'bun';
 import fs from 'fs';
 import path from 'path';
 import { copyToolIcons } from '../modules/tool/utils/icon';
+import { copyWorkflowTemplates } from '../modules/tool/utils/workflow';
 import { autoToolIdPlugin } from './plugin';
 import { exit } from 'process';
 
@@ -44,8 +45,10 @@ addLog.info('Tools Build complete');
 const publicImgsToolsDir = path.join(__dirname, '..', 'dist', 'public', 'imgs', 'tools');
 const modelsDir = path.join(__dirname, '..', 'modules', 'model', 'provider');
 const publicImgsModelsDir = path.join(__dirname, '..', 'dist', 'public', 'imgs', 'models');
+const workflowsDir = path.join(__dirname, '..', 'modules', 'workflows');
+const publicWorkflowsDir = path.join(__dirname, '..', 'dist', 'workflows');
 
-const [copiedToolsCount, copiedModelsCount] = await Promise.all([
+const [copiedToolsCount, copiedModelsCount, copiedWorkflowsCount] = await Promise.all([
   copyToolIcons({
     sourceDir: toolsDir,
     targetDir: publicImgsToolsDir,
@@ -56,9 +59,14 @@ const [copiedToolsCount, copiedModelsCount] = await Promise.all([
     sourceDir: modelsDir,
     targetDir: publicImgsModelsDir,
     logPrefix: 'Copied build model icon'
+  }),
+  copyWorkflowTemplates({
+    sourceDir: workflowsDir,
+    targetDir: publicWorkflowsDir,
+    logPrefix: 'Copied build workflow template'
   })
 ]);
 
 addLog.info(
-  `Tools Build complete, total toolset/tool: ${tools.length}, tool icons copied: ${copiedToolsCount}, model icons copied: ${copiedModelsCount}`
+  `Tools Build complete, total toolset/tool: ${tools.length}, tool icons copied: ${copiedToolsCount}, model icons copied: ${copiedModelsCount}, workflow templates copied: ${copiedWorkflowsCount}`
 );
