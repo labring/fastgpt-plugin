@@ -10,11 +10,42 @@ export const InputType = z
     smtpUser: z.string(),
     smtpPass: z.string(),
     fromName: z.string().optional(),
-    to: z.string().email(),
+    to: z.string().refine(
+      (val) =>
+        val
+          .split(',')
+          .map((email) => email.trim())
+          .every((email) => z.string().email().safeParse(email).success),
+      { message: 'to should be a comma-separated list of valid emails' }
+    ),
     subject: z.string(),
     content: z.string(),
-    cc: z.string().optional(),
-    bcc: z.string().optional(),
+    cc: z
+      .string()
+      .refine(
+        (val) =>
+          val === undefined ||
+          val === '' ||
+          val
+            .split(',')
+            .map((email) => email.trim())
+            .every((email) => z.string().email().safeParse(email).success),
+        { message: 'cc should be a comma-separated list of valid emails if provided' }
+      )
+      .optional(),
+    bcc: z
+      .string()
+      .refine(
+        (val) =>
+          val === undefined ||
+          val === '' ||
+          val
+            .split(',')
+            .map((email) => email.trim())
+            .every((email) => z.string().email().safeParse(email).success),
+        { message: 'bcc should be a comma-separated list of valid emails if provided' }
+      )
+      .optional(),
     attachments: z.string().optional()
   })
   .transform((data) => {
