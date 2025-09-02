@@ -13,8 +13,8 @@ export default defineTool({
   },
   type: ToolTypeEnum.tools,
   description: {
-    'zh-CN': '描述',
-    en: 'description'
+    'zh-CN': '钉钉Memo工具',
+    en: 'DingTalk Memo Tool'
   },
   secretInputConfig: [
     {
