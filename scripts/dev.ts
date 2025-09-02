@@ -4,6 +4,7 @@ import path from 'path';
 import { watch } from 'fs/promises';
 import { $ } from 'bun';
 import { addLog } from '@/utils/log';
+import { DevServer } from './devServer';
 
 async function copyDevIcons() {
   if (isProd) return;
@@ -30,17 +31,26 @@ async function copyDevIcons() {
 await copyDevIcons();
 
 // watch the worker.ts change and build it
-const workerPath = path.join(__dirname, '..', 'src', 'worker', 'worker.ts');
-const watcher = watch(workerPath);
 
-(async () => {
-  for await (const _ of watcher) {
-    addLog.debug(`Worker file changed, rebuilding...`);
-    await $`bun run build:worker`;
-  }
-})();
+// (async () => {
+//   const watcher = watch(path.join(__dirname, '..', 'src', 'worker', 'worker.ts'));
+//   for await (const _event of watcher) {
+//     addLog.debug(`Worker file changed, rebuilding...`);
+//   }
+// })();
 
 // build the worker
-await $`bun run build:worker`;
+// await $`bun run build:worker`;
 // run the main server
-await $`bun run --hot src/index.ts`;
+// (async () => {
+//   const watcher = watch(path.join(__dirname, '..', 'src'));
+//   for await (const _event of watcher) {
+//     addLog.debug(`Worker file changed, rebuilding...`);
+//     // rerun the server
+//     await $`bun run build:worker`;
+//     await $`bun run src/index.ts`;
+//   }
+// })();
+
+const server = new DevServer();
+await server.start();
