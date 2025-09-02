@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { InfoString } from '@/type/i18n';
+import { I18nStringSchema } from '@/type/i18n';
 import { InputConfigSchema, InputSchema, OutputSchema } from './fastgpt';
+import type { ToolTypeListSchema } from '@tool/controller';
 
 /* Call back type */
 export const SystemVarSchema = z.object({
@@ -119,7 +120,7 @@ export const ToolTypeTranslations = {
   [ToolTypeEnum.communication]: {
     en: 'communication',
     'zh-CN': '通信',
-    'zh-Hant': '通信'
+    'zh-Hant': '通訊'
   },
   [ToolTypeEnum.finance]: {
     en: 'finance',
@@ -149,7 +150,7 @@ export const ToolTypeTranslations = {
   [ToolTypeEnum.social]: {
     en: 'social',
     'zh-CN': '社交',
-    'zh-Hant': '社交'
+    'zh-Hant': '社群'
   },
   [ToolTypeEnum.scientific]: {
     en: 'scientific',
@@ -173,8 +174,8 @@ export const VersionListItemSchema = z.object({
 export const ToolConfigSchema = z
   .object({
     toolId: z.string().optional().describe('The unique id of the tool'),
-    name: InfoString.describe('The name of the tool'),
-    description: InfoString.describe('The description of the tool'),
+    name: I18nStringSchema.describe('The name of the tool'),
+    description: I18nStringSchema.describe('The description of the tool'),
     toolDescription: z
       .string()
       .optional()

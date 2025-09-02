@@ -1,4 +1,4 @@
-import type { StringI18nType } from '@/type/i18n';
+import type { I18nStringType } from '@/type/i18n';
 import type { ListModelsType } from './api/type';
 
 export const modelsBuffer: {
@@ -180,7 +180,7 @@ export type ModelProviderIdType = keyof typeof ModelProviders;
 export const aiproxyIdMap: Record<
   number,
   {
-    name: StringI18nType | string;
+    name: I18nStringType | string;
     provider: ModelProviderIdType; // Use to sort,get avatar
     avatar?: string;
   }

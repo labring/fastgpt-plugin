@@ -1,4 +1,4 @@
-import { InfoString } from '@/type/i18n';
+import { I18nStringSchema } from '@/type/i18n';
 import { z } from 'zod';
 import { ToolTypeEnum, VersionListItemSchema } from './tool';
 import { InputConfigSchema } from './fastgpt';
@@ -8,10 +8,10 @@ export const ToolListItemSchema = z.object({
   parentId: z.string().optional().describe('The parent id of the tool'),
   author: z.string().optional().describe('The author of the tool'),
   courseUrl: z.string().optional().describe('The documentation URL of the tool'),
-  name: InfoString.describe('The name of the tool'),
+  name: I18nStringSchema.describe('The name of the tool'),
   avatar: z.string().describe('The icon of the tool'),
   versionList: z.array(VersionListItemSchema).min(1).describe('The version list'),
-  description: InfoString.describe('The introduction of the tool'),
+  description: I18nStringSchema.describe('The introduction of the tool'),
   toolDescription: z
     .string()
     .optional()

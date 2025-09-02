@@ -2,6 +2,7 @@ import z from 'zod';
 import { c } from '@/contract/init';
 import { ToolListItemSchema, type ToolListItemType } from './type/api';
 import { ToolTypeEnum } from './type/tool';
+import { ToolTypeListSchema } from './controller';
 
 export const toolContract = c.router(
   {
@@ -29,16 +30,7 @@ export const toolContract = c.router(
       method: 'GET',
       description: 'Get tool type',
       responses: {
-        200: z.array(
-          z.object({
-            type: z.nativeEnum(ToolTypeEnum),
-            name: z.object({
-              en: z.string(),
-              'zh-CN': z.string(),
-              'zh-Hant': z.string()
-            })
-          })
-        )
+        200: ToolTypeListSchema
       }
     }
   },
