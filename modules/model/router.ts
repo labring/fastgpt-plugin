@@ -5,5 +5,5 @@ import { getProvidersHandler } from './api/provider';
 
 export const modelRouter = s.router(contract.model, {
   list: getModelsHandler,
-  provider: getProvidersHandler
+  getProviders: getProvidersHandler
 });

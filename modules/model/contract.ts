@@ -3,7 +3,7 @@ import { c } from '@/contract/init';
 import { type ListModelsType } from './api/type';
 import { type I18nStringStrictType } from '@/type/i18n';
 import type { ModelProviderIdType } from './constants';
-import type { aiproxyType } from './constants';
+import type { AiproxyMapProviderType } from './constants';
 
 export const modelContract = c.router(
   {
@@ -15,14 +15,14 @@ export const modelContract = c.router(
         200: c.type<ListModelsType>()
       }
     },
-    provider: {
-      path: '/provider',
+    getProviders: {
+      path: '/getProviders',
       method: 'GET',
       description: 'Get model provider list',
       responses: {
         200: c.type<{
-          ModelProviders: Record<ModelProviderIdType, I18nStringStrictType>;
-          aiproxyIdMap: aiproxyType;
+          modelProviders: Record<ModelProviderIdType, I18nStringStrictType>;
+          aiproxyIdMap: AiproxyMapProviderType;
         }>()
       }
     }

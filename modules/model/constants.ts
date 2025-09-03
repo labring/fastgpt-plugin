@@ -182,7 +182,7 @@ export const ModelProviders = {
 
 export type ModelProviderIdType = keyof typeof ModelProviders;
 
-export type aiproxyType = Record<
+export type AiproxyMapProviderType = Record<
   number,
   {
     name: I18nStringType | string;
@@ -191,7 +191,7 @@ export type aiproxyType = Record<
   }
 >;
 
-export const aiproxyIdMap: aiproxyType = {
+export const aiproxyIdMap: AiproxyMapProviderType = {
   1: {
     name: 'OpenAI',
     provider: 'OpenAI'
