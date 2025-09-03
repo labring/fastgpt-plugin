@@ -15,6 +15,37 @@ export default defineTool({
   icon: 'core/workflow/template/datasource',
   versionList: [
     {
+      value: '0.1.1',
+      description: 'Default version',
+      inputs: [
+        {
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          selectedTypeIndex: 0,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'sql',
+          label: 'sql',
+          description: 'sql语句，可以传入sql语句直接执行',
+          defaultValue: '',
+          list: [
+            {
+              label: '',
+              value: ''
+            }
+          ],
+          required: true,
+          toolDescription: 'sql语句，可以传入sql语句直接执行'
+        }
+      ],
+      outputs: [
+        {
+          key: 'result',
+          label: '结果',
+          description: '执行结果',
+          valueType: WorkflowIOValueTypeEnum.object
+        }
+      ]
+    },
+    {
       value: '0.1.0',
       description: 'Default version',
       inputs: [
