@@ -101,7 +101,7 @@ export type ToolClassifyType = {
 };
 
 /* Tool config is passed to FastGPT */
-export const ToolTypeTranslations = {
+export const ToolTypeMap = {
   [ToolTypeEnum.tools]: {
     en: 'tools',
     'zh-CN': '工具',

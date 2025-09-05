@@ -1,7 +1,6 @@
 import z from 'zod';
 import { c } from '@/contract/init';
 import { ToolListItemSchema, type ToolListItemType } from './type/api';
-import { ToolTypeEnum } from './type/tool';
 import { ToolTypeListSchema } from './controller';
 
 export const toolContract = c.router(

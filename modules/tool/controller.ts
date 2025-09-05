@@ -1,7 +1,7 @@
 import type { ToolType } from './type';
 import { tools } from './constants';
 import { ToolTypeEnum } from './type/tool';
-import { ToolTypeTranslations } from './type/tool';
+import { ToolTypeMap } from './type/tool';
 import z from 'zod';
 import { I18nStringStrictSchema } from '@/type/i18n';
 
@@ -17,7 +17,7 @@ export function getTool(toolId: string): ToolType | undefined {
 }
 
 export function getToolType(): z.infer<typeof ToolTypeListSchema> {
-  return Object.entries(ToolTypeTranslations).map(([type, name]) => ({
+  return Object.entries(ToolTypeMap).map(([type, name]) => ({
     type: type as ToolTypeEnum,
     name
   }));
