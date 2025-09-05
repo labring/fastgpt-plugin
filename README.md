@@ -18,6 +18,7 @@ Deeply **modularize** FastGPT to achieve maximum **extensibility**.
 ## Expansion Modules
 
 - [x] System Tools
+- [x] App templates
 - [ ] RAG Algorithm
 - [ ] Agent Strategy
 - [ ] Third-party Integration
