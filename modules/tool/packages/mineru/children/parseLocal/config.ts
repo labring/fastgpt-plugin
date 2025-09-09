@@ -79,15 +79,6 @@ export default defineTool({
           defaultValue: false
         },
         {
-          key: 'return_images',
-          label: '返回图片',
-          renderTypeList: [FlowNodeInputTypeEnum.switch],
-          valueType: WorkflowIOValueTypeEnum.boolean,
-          required: false,
-          description: '是否返回图片，默认 false',
-          defaultValue: false
-        },
-        {
           key: 'lang_list',
           label: '文档语言',
           renderTypeList: [FlowNodeInputTypeEnum.textarea],

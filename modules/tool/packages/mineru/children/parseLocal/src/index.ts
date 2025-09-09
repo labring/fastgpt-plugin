@@ -11,7 +11,6 @@ export const InputType = z.object({
   table_enable: z.boolean().optional().default(true),
   return_md: z.boolean().optional().default(true),
   return_content_list: z.boolean().optional().default(false),
-  return_images: z.boolean().optional().default(false),
   lang_list: z.string().optional().default('ch'),
   backend: z.string().optional().default('pipeline'),
   sglang_server_url: z.string().optional().default('')
@@ -114,7 +113,7 @@ export async function tool(props: InnerPropsType): Promise<z.infer<typeof Output
   formData.append('table_enable', innerProps.table_enable.toString());
   formData.append('return_md', innerProps.return_md.toString());
   formData.append('return_content_list', innerProps.return_content_list.toString());
-  formData.append('return_images', innerProps.return_images.toString());
+  formData.append('return_images', true.toString());
 
   const requestHeaders: Record<string, string> = { ...innerProps.headers };
 
