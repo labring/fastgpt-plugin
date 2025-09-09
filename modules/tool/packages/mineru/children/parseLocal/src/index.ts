@@ -76,7 +76,7 @@ function replaceImageUrl(content: string, images: Record<string, string>) {
   return content;
 }
 
-export async function tool(props: InnerPropsType): Promise<z.infer<typeof OutputType>> {
+export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const { base_url, token, lang_list, files: propsFiles } = props;
 
   if (!base_url) {
