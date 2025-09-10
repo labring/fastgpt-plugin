@@ -5,12 +5,12 @@ import { ToolTypeEnum } from '@tool/type/tool';
 export default defineTool({
   type: ToolTypeEnum.tools,
   name: {
-    'zh-CN': '文档解析（本地部署api v2）',
-    en: 'Parse file (local api v2)'
+    'zh-CN': '本地部署解析',
+    en: 'Parse file by local MinerU api v2'
   },
   description: {
-    'zh-CN': '使用本地部署的 MinerU api v2 解析文件',
-    en: 'Parse the file using the local MinerU api v2'
+    'zh-CN': '使用本地部署的 MinerU api v2 解析文件，支持 pdf、png、jpg、jpeg 等多种格式',
+    en: 'Parse the file using the local MinerU api v2, support pdf, png, jpg, jpeg等多种格式'
   },
   courseUrl: 'https://github.com/opendatalab/MinerU/blob/master/mineru/cli/fast_api.py#L63',
   versionList: [
@@ -61,21 +61,12 @@ export default defineTool({
           defaultValue: true
         },
         {
-          key: 'return_md',
-          label: '返回markdown',
-          renderTypeList: [FlowNodeInputTypeEnum.switch],
-          valueType: WorkflowIOValueTypeEnum.boolean,
-          required: false,
-          description: '是否返回markdown，默认 true',
-          defaultValue: true
-        },
-        {
           key: 'return_content_list',
-          label: '返回内容列表',
+          label: '返回结构化 json',
           renderTypeList: [FlowNodeInputTypeEnum.switch],
           valueType: WorkflowIOValueTypeEnum.boolean,
           required: false,
-          description: '是否返回内容列表，默认 false',
+          description: '是否返回结构化 json，默认 false',
           defaultValue: false
         },
         {
