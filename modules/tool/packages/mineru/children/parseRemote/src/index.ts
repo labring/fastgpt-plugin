@@ -216,28 +216,52 @@ async function extractResult(batchId: string, props: InnerPropsType): Promise<Ex
   const completedFiles = new Set<string>();
   const result: ExtracResultType[] = [];
 
-  for (let i = 0; i < MAX_RETRIES; i++) {
-    if (i >= MAX_RETRIES) {
-      console.warn('Max retries reached');
-      return result;
-    }
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const batchResult = await queryFn();
+      const failedItems = batchResult.filter((item) => item.state === 'failed');
 
-    const batchResult = await queryFn();
-    for (const [index, item] of batchResult.entries()) {
-      if (item.state === 'failed' && index === batchResult.length - 1) {
-        return Promise.reject(item.err_msg ?? 'Extract failed');
+      if (failedItems.length > 0) {
+        const errorMessages = failedItems
+          .map((item) => item.err_msg ?? 'Extract failed')
+          .join('; ');
+        return Promise.reject(`Extract failed: ${errorMessages}`);
       }
-      if (item.state === 'done' && !completedFiles.has(item.file_name)) {
-        completedFiles.add(item.file_name);
-        result.push(await extractFromZip(item.full_zip_url));
+
+      const newCompletedItems = batchResult.filter(
+        (item) => item.state === 'done' && !completedFiles.has(item.file_name)
+      );
+
+      if (newCompletedItems.length > 0) {
+        const extractedResults = await Promise.all(
+          newCompletedItems.map(async (item) => {
+            completedFiles.add(item.file_name);
+            return extractFromZip(item.full_zip_url);
+          })
+        );
+        result.push(...extractedResults);
+      }
+
+      if (completedFiles.size >= props.files.length) {
+        break;
+      }
+    } catch (error) {
+      console.error(`Retry ${attempt} failed:`, error);
+
+      if (attempt === MAX_RETRIES) {
+        throw error;
       }
     }
 
-    if (completedFiles.size === props.files.length) {
-      break;
+    if (completedFiles.size < props.files.length) {
+      await delay(5000);
     }
+  }
 
-    await delay(5000);
+  if (completedFiles.size < props.files.length) {
+    console.warn(
+      `Max retries reached. Completed ${completedFiles.size}/${props.files.length} files.`
+    );
   }
 
   return result;

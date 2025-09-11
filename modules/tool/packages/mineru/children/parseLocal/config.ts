@@ -10,7 +10,7 @@ export default defineTool({
   },
   description: {
     'zh-CN': '使用本地部署的 MinerU api v2 解析文件，支持 pdf、png、jpg、jpeg 等多种格式',
-    en: 'Parse the file using the local MinerU api v2, support pdf, png, jpg, jpeg等多种格式'
+    en: 'Parse the file using the local MinerU api v2, support pdf, png, jpg, jpeg, and other formats'
   },
   courseUrl: 'https://github.com/opendatalab/MinerU/blob/master/mineru/cli/fast_api.py#L63',
   versionList: [
