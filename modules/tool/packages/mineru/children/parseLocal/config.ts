@@ -6,7 +6,7 @@ export default defineTool({
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': '本地部署解析',
-    en: 'Parse file by local MinerU api v2'
+    en: 'Local Deployment Parse'
   },
   description: {
     'zh-CN': '使用本地部署的 MinerU api v2 解析文件，支持 pdf、png、jpg、jpeg 等多种格式',

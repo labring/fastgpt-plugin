@@ -6,12 +6,12 @@ export default defineTool({
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': 'MinerU Sass 解析',
-    en: 'Parse file by MinerU Sass'
+    en: 'MinerU Sass Parse'
   },
   description: {
     'zh-CN':
       '使用 MinerU 官方的 Sass 解析文件，支持.pdf、.doc、.docx、.ppt、.pptx、.png、.jpg、.jpeg',
-    en: 'Parse the file using the official MinerU Sass, support docx and pptx format'
+    en: 'Parse files using the official MinerU Sass, support .pdf, .doc, .docx, .ppt, .pptx, .png, .jpg, .jpeg'
   },
   courseUrl: 'https://mineru.net/apiManage/docs',
   versionList: [
