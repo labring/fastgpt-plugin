@@ -89,22 +89,22 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
   };
 
   const { files } = innerProps;
-  let langList = lang_list.split(',');
+  let langList = lang_list.split(',').map((item) => item.trim());
 
   if (langList.length === 0) {
     langList = ['ch'];
   }
+
   const url = `${base_url}/file_parse`;
-
   const result: Record<string, ResultItemType[]> = {};
-
-  // 构造一次性多文件上传的表单
   const formData = new FormData();
+
   for (const filePath of files) {
     const fileblob = await fetch(filePath).then((res) => res.blob());
-    const baseName = path.basename(filePath.split('?')[0]);
+    const baseName = filePath.split('?')[0].split('/').pop();
     formData.append('files', fileblob, baseName);
   }
+
   formData.append('server_url', innerProps.sglang_server_url);
   formData.append('lang_list', innerProps.lang_list);
   formData.append('backend', innerProps.backend);

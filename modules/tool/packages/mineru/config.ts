@@ -16,8 +16,8 @@ export default defineToolSet({
   secretInputConfig: [
     {
       key: 'base_url',
-      label: 'MinerU 地址',
-      description: '官方地址为：https://mineru.net，也可使用本地部署的地址',
+      label: 'MinerU Base url',
+      description: 'Example: https://mineru.net, http://127.0.0.1:8000',
       inputType: 'input'
     },
     {
