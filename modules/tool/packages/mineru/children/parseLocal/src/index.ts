@@ -1,6 +1,5 @@
 import { uploadFile } from '@tool/utils/uploadFile';
 import { z } from 'zod';
-import path from 'path';
 
 export const InputType = z.object({
   base_url: z.string(),
