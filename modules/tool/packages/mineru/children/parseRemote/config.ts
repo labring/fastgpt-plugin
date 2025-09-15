@@ -5,12 +5,12 @@ import { ToolTypeEnum } from '@tool/type/tool';
 export default defineTool({
   type: ToolTypeEnum.tools,
   name: {
-    'zh-CN': 'MinerU Sass 解析',
-    en: 'MinerU Sass Parse'
+    'zh-CN': 'MinerU Saas 解析',
+    en: 'MinerU Saas Parse'
   },
   description: {
     'zh-CN':
-      '使用 MinerU 官方的 Sass 解析文件，支持.pdf、.doc、.docx、.ppt、.pptx、.png、.jpg、.jpeg',
+      '使用 MinerU 官方的 Saas 解析文件，支持.pdf、.doc、.docx、.ppt、.pptx、.png、.jpg、.jpeg',
     en: 'Parse files using the official MinerU Sass, support .pdf, .doc, .docx, .ppt, .pptx, .png, .jpg, .jpeg'
   },
   courseUrl: 'https://mineru.net/apiManage/docs',

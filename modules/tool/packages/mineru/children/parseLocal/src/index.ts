@@ -29,24 +29,17 @@ interface ParsedResultType {
   results: Record<string, ParsedResultItemType>;
 }
 
-interface ResultItemType {
-  filename: string;
-  images?: string[];
-  content_list?: any[];
-  md_content?: string;
-}
+const ResultItemType = z.object({
+  filename: z.string(),
+  images: z.array(z.string()).optional(),
+  content_list: z.array(z.any()).optional(),
+  md_content: z.string().optional()
+});
+
+type ResultItemType = z.infer<typeof ResultItemType>;
 
 export const OutputType = z.object({
-  result: z.record(
-    z.array(
-      z.object({
-        filename: z.string(),
-        images: z.array(z.string()).optional(),
-        content_list: z.array(z.any()).optional(),
-        md_content: z.string().optional()
-      })
-    )
-  )
+  result: z.record(z.array(ResultItemType))
 });
 
 function buildHeaders(token?: string) {
@@ -76,7 +69,7 @@ function replaceImageUrl(content: string, images: Record<string, string>) {
 }
 
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  const { base_url, token, lang_list, files: propsFiles } = props;
+  const { base_url, token, lang_list } = props;
 
   if (!base_url) {
     return Promise.reject('MinerU base url is required');
@@ -150,7 +143,7 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
     if (result_item.content_list) {
       try {
         item.content_list = JSON.parse(result_item.content_list);
-      } catch (error) {
+      } catch {
         throw new Error('content_list is not a valid JSON string');
       }
     }

@@ -6,12 +6,12 @@ export default defineToolSet({
     'zh-CN': 'MinerU',
     en: 'MinerU'
   },
+  author: 'gary-Shen',
   type: ToolTypeEnum.tools,
   courseUrl: 'https://mineru.net/',
   description: {
-    'zh-CN':
-      'MinerU是一款可以在本地部署的将FILES转化为机器可读格式的工具（如markdown、json），可以很方便地抽取为任意格式。',
-    en: 'MinerU is a tool that can convert FILES to machine-readable formats (such as markdown, json) and can easily extract to any format.'
+    'zh-CN': 'MinerU 是一款可以在本地部署的将文件转化为机器可读格式的工具（如 markdown、json ）。',
+    en: 'MinerU is a tool that can convert FILES to machine-readable formats (such as markdown, json).'
   },
   secretInputConfig: [
     {
