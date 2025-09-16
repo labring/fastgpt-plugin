@@ -19,7 +19,7 @@ export default defineTool({
     en: 'Use SearchInfinity search engine for web search. Service opening link: https://console.volcengine.com/ask-echo/web-search\n'
   },
 
-  courseUrl: 'https://open.feedcoopapi.com/',
+  courseUrl: 'https://www.volcengine.com/docs/85508/1650263',
   versionList: [
     {
       value: '0.1.0',
@@ -82,7 +82,8 @@ export default defineTool({
     {
       key: 'apiKey',
       label: 'API密钥',
-      description: 'SearchInfinity API密钥，与火山引擎Access Key和Secret Key二选一',
+      description:
+        'SearchInfinity API密钥，与火山引擎Access Key和Secret Key二选一，获取链接https://console.volcengine.com/ask-echo/web-search',
       required: false,
       inputType: 'secret'
     },
