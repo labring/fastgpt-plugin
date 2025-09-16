@@ -21,6 +21,8 @@ export const OutputType = z.object({
     z.object({
       Title: z.string().nullable().optional(),
       Snippet: z.string().nullable().optional(),
+      Content: z.string().nullable().optional(),
+      Summary: z.string().nullable().optional(),
       Url: z.string().nullable().optional(),
       SiteName: z.string().nullable().optional(),
       PublishTime: z.string().nullable().optional(),

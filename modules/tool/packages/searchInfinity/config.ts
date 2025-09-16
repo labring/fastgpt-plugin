@@ -8,14 +8,15 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   name: {
-    'zh-CN': '融合搜索',
+    'zh-CN': '融合信息搜索',
     en: 'SearchInfinity'
   },
   icon: 'core/workflow/template/searchInfinity',
   type: ToolTypeEnum.search,
   description: {
-    'zh-CN': '使用融合信息搜索引擎进行网络搜索。',
-    en: 'Use SearchInfinity search engine for web search.'
+    'zh-CN':
+      '使用融合信息搜索引擎进行网络搜索。登录火山控制台，开通【融合信息检索】，服务开通链接：https://console.volcengine.com/ask-echo/web-search',
+    en: 'Use SearchInfinity search engine for web search. Service opening link: https://console.volcengine.com/ask-echo/web-search\n'
   },
 
   courseUrl: 'https://open.feedcoopapi.com/',
@@ -81,21 +82,21 @@ export default defineTool({
     {
       key: 'apiKey',
       label: 'API密钥',
-      description: 'SearchInfinity API密钥，可在 https://open.feedcoopapi.com/ 获取',
+      description: 'SearchInfinity API密钥，与火山引擎Access Key和Secret Key二选一',
       required: false,
       inputType: 'secret'
     },
     {
       key: 'volcengineAccessKey',
       label: '火山引擎Access Key',
-      description: '火山引擎Access Key，用于火山引擎认证方式',
+      description: '火山引擎Access Key，用于火山引擎认证方式，与API密钥二选一',
       required: false,
       inputType: 'secret'
     },
     {
       key: 'volcengineSecretKey',
       label: '火山引擎Secret Key',
-      description: '火山引擎Secret Key，用于火山引擎认证方式',
+      description: '火山引擎Secret Key，用于火山引擎认证方式，与API密钥二选一',
       required: false,
       inputType: 'secret'
     }
