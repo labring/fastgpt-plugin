@@ -15,8 +15,8 @@ export default defineTool({
   type: ToolTypeEnum.search,
   description: {
     'zh-CN':
-      '使用融合信息搜索引擎进行网络搜索。登录火山控制台，开通【融合信息检索】，服务开通链接：https://console.volcengine.com/ask-echo/web-search',
-    en: 'Use SearchInfinity search engine for web search. Service opening link: https://console.volcengine.com/ask-echo/web-search\n'
+      '基于字节跳动强大的检索能力的高级网页搜索插件，具有智能搜索、网站过滤、时间范围控制和全面结果格式化功能。登录火山控制台，开通【融合信息检索】，服务开通链接：https://console.volcengine.com/ask-echo/web-search',
+    en: "An advanced web search plugin based on ByteDance's powerful search capabilities. Features intelligent search, website filtering, time range control, and comprehensive result formatting.. Service opening link: https://console.volcengine.com/ask-echo/web-search\n"
   },
 
   courseUrl: 'https://www.volcengine.com/docs/85508/1650263',
