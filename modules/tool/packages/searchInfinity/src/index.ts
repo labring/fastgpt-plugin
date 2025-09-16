@@ -137,7 +137,7 @@ async function generateVolcengineSignature(accessKey: string, secretKey: string,
     'X-Date': xDate,
     'X-Content-Sha256': xContentSha256,
     Authorization: authorization,
-    'X-Traffic-Tag': 'dify_search_web'
+    'X-Traffic-Tag': 'fast_gpt_search_web'
   };
 }
 
@@ -192,7 +192,8 @@ export async function tool({
         method: 'POST',
         headers: {
           Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Traffic-Tag': 'fast_gpt_search_web'
         },
         body: JSON.stringify(requestData)
       });
@@ -216,13 +217,17 @@ export async function tool({
     }
 
     if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+      return Promise.reject({
+        error: `HTTP error: ${response.status} ${response.statusText}`
+      });
     }
 
     const data = await response.json();
 
     if (!data.Result || !data.Result.WebResults) {
-      throw new Error('Invalid response format: missing Result or WebResults');
+      return Promise.reject({
+        error: 'Invalid response format: missing Result or WebResults'
+      });
     }
 
     return {
