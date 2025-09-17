@@ -7,18 +7,17 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
+  author: '火山引擎',
   name: {
     'zh-CN': '融合信息搜索',
-    en: 'SearchInfinity'
+    en: 'Volcano-SearchInfinity'
   },
-  icon: 'core/workflow/template/searchInfinity',
   type: ToolTypeEnum.search,
   description: {
     'zh-CN':
-      '基于字节跳动强大的检索能力的高级网页搜索插件，具有智能搜索、网站过滤、时间范围控制和全面结果格式化功能。登录火山控制台，开通【融合信息检索】，服务开通链接：https://console.volcengine.com/ask-echo/web-search',
-    en: "An advanced web search plugin based on ByteDance's powerful search capabilities. Features intelligent search, website filtering, time range control, and comprehensive result formatting.. Service opening link: https://console.volcengine.com/ask-echo/web-search\n"
+      '基于字节跳动强大的检索能力的高级网页搜索插件，具有智能搜索、网站过滤、时间范围控制和全面结果格式化功能。登录火山控制台，开通【融合信息检索】。',
+    en: "An advanced web search plugin based on ByteDance's powerful search capabilities. Features intelligent search, website filtering, time range control, and comprehensive result formatting."
   },
-
   courseUrl: 'https://www.volcengine.com/docs/85508/1650263',
   versionList: [
     {
@@ -42,7 +41,8 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.number,
           min: 1,
-          max: 50
+          max: 50,
+          defaultValue: 10
         },
         {
           key: 'sites',
