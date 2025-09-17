@@ -15,7 +15,7 @@ export default defineTool({
   type: ToolTypeEnum.search,
   description: {
     'zh-CN':
-      '基于字节跳动强大的检索能力的高级网页搜索插件，具有智能搜索、网站过滤、时间范围控制和全面结果格式化功能。登录火山控制台，开通【融合信息检索】。',
+      '基于字节跳动强大的检索能力的高级网页搜索插件，具有智能搜索、网站过滤、时间范围控制和全面结果格式化功能。',
     en: "An advanced web search plugin based on ByteDance's powerful search capabilities. Features intelligent search, website filtering, time range control, and comprehensive result formatting."
   },
   courseUrl: 'https://www.volcengine.com/docs/85508/1650263',
