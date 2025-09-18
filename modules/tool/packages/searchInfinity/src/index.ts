@@ -1,3 +1,4 @@
+import { getErrText } from '@tool/utils/err';
 import { z } from 'zod';
 
 export const InputType = z.object({
@@ -20,13 +21,10 @@ export const OutputType = z.object({
   result: z.array(
     z.object({
       Title: z.string().nullable().optional(),
-      Snippet: z.string().nullable().optional(),
-      Content: z.string().nullable().optional(),
-      Summary: z.string().nullable().optional(),
+      Content: z.string().nullable(),
       Url: z.string().nullable().optional(),
       SiteName: z.string().nullable().optional(),
-      PublishTime: z.string().nullable().optional(),
-      AuthInfoDes: z.string().nullable().optional()
+      PublishTime: z.string().nullable().optional()
     })
   )
 });
@@ -224,18 +222,32 @@ export async function tool({
 
     const data = await response.json();
 
-    if (!data.Result || !data.Result.WebResults) {
+    if (data?.ResponseMetadata?.Error?.Message) {
+      return Promise.reject({
+        error: data?.ResponseMetadata?.Error?.Message
+      });
+    }
+    console.log(data);
+
+    const result = data?.Result?.WebResults;
+    if (!result) {
       return Promise.reject({
         error: 'Invalid response format: missing Result or WebResults'
       });
     }
 
     return {
-      result: data.Result.WebResults
+      result: result.map((item: any) => ({
+        Title: item.Title,
+        Content: item.Content || item.Summary || item.Snippet || '',
+        Url: item.Url,
+        SiteName: item.SiteName,
+        PublishTime: item.PublishTime
+      }))
     };
   } catch (error) {
     return Promise.reject({
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: getErrText(error)
     });
   }
 }
