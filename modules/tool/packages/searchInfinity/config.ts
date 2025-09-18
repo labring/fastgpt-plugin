@@ -30,7 +30,7 @@ export default defineTool({
           description: '搜索查询词',
           toolDescription: '搜索查询词',
           required: true,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           valueType: WorkflowIOValueTypeEnum.string
         },
         {
