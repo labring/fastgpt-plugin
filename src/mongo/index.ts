@@ -1,5 +1,5 @@
 import { isProd } from '../constants';
-import { addLog } from './log';
+import { addLog } from '../utils/log';
 import mongoose, { type Mongoose, type Model } from 'mongoose';
 
 export const MONGO_URL =

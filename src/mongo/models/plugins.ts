@@ -1,4 +1,4 @@
-import { getMongoModel } from '../utils/mongo';
+import { getMongoModel } from '..';
 import { z } from 'zod';
 import { Schema } from 'mongoose';
 
@@ -6,12 +6,11 @@ export const pluginTypeEnum = z.enum(['tool']);
 
 export const PluginZodSchema = z
   .object({
-    objectName: z.string(),
-    digest: z.string()
+    objectName: z.string()
   })
   .merge(
     z.object({
-      type: z.literal('tool').default('tool'),
+      type: z.literal('tool'),
       toolId: z.string()
     })
   );
@@ -24,10 +23,10 @@ const pluginMongooseSchema = new Schema({
   type: { type: String, required: true, enum: Object.values(pluginTypeEnum.Enum) }
 });
 
-pluginMongooseSchema.index({ url: 1 }, { unique: true });
+pluginMongooseSchema.index({ objectName: 1 }, { unique: true });
 pluginMongooseSchema.index({ type: 1 });
 
-export const PluginModel = getMongoModel<MongoPluginSchemaType>(
+export const MongoPluginModel = getMongoModel<MongoPluginSchemaType>(
   'fastgpt_plugins',
   pluginMongooseSchema
 );

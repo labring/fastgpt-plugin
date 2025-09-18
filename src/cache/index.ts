@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { initCache } from './init';
 import { FASTGPT_REDIS_PREFIX, getGlobalRedisConnection } from '@/redis';
 
-export const flushSyncKey = async (key: `${SystemCacheKeyEnum}`) => {
+export const refreshSyncKey = async (key: `${SystemCacheKeyEnum}`) => {
   if (!global.systemCache) initCache();
   const val = randomUUID();
   const redis = getGlobalRedisConnection();
@@ -29,7 +29,7 @@ export const getCachedData = async (key: `${SystemCacheKeyEnum}`) => {
     return global.systemCache[key].data;
   }
   const refreshedData = await global.systemCache[key].refreshFunc();
-  await flushSyncKey(key);
+  await refreshSyncKey(key);
   global.systemCache[key].data = refreshedData;
   return global.systemCache[key].data;
 };

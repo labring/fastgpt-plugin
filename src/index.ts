@@ -9,7 +9,7 @@ import { connectSignoz } from './utils/signoz';
 import { initModels } from '@model/init';
 import { setupProxy } from './utils/setupProxy';
 import { initWorkflowTemplates } from '@workflow/init';
-import { connectMongo, connectionMongo, MONGO_URL } from './utils/mongo';
+import { connectMongo, connectionMongo, MONGO_URL } from '@/mongo';
 
 const app = express().use(
   express.json(),

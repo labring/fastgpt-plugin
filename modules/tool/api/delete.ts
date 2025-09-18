@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { getErrText } from '@tool/utils/err';
 import { uploadedTools } from '@tool/constants';
-import { PluginModel } from '@/models/plugins';
+import { MongoPluginModel } from '@/mongo/models/plugins';
 import { fileUploadS3Server } from '@/s3/config';
 
 export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) => {
@@ -15,25 +15,22 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
 
     await deleteLocalFileAndRemoveFromList(toolId);
 
-    const deletedRecord = await deleteMongoRecord(toolId);
-    if (!deletedRecord) {
+    const result = await MongoPluginModel.findOneAndDelete({ toolId });
+    if (!result) {
       return {
         status: 404,
         body: {
-          code: 404,
           error: `Tool with toolId ${toolId} not found in MongoDB`
         }
       };
     }
 
-    await deleteMinioFile(deletedRecord.objectName);
+    await fileUploadS3Server.removeFile(result.objectName);
 
     return {
       status: 200,
       body: {
-        code: 200,
-        message: 'Tool deleted successfully',
-        deletedRecord
+        message: 'Tool deleted successfully'
       }
     };
   } catch (error) {
@@ -41,63 +38,13 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
     return {
       status: 500,
       body: {
-        code: 500,
         error: getErrText(error)
       }
     };
   }
 });
 
-async function deleteMongoRecord(toolId: string): Promise<any> {
-  try {
-    const result = await PluginModel.findOneAndDelete({ toolId });
-    return result;
-  } catch (error) {
-    addLog.error(`Failed to delete MongoDB record for toolId ${toolId}:`, error);
-    return Promise.reject(error);
-  }
-}
-
-async function deleteMinioFile(url: string): Promise<void> {
-  const objectName = extractObjectNameFromUrl(url);
-  if (!objectName) {
-    addLog.warn(`Could not extract objectName from URL: ${url}`);
-    return;
-  }
-  await fileUploadS3Server.removeFile(objectName);
-}
-
-function extractObjectNameFromUrl(url: string): string | null {
-  try {
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      const parts = url.split('/');
-      if (parts.length >= 2) {
-        const objectName = parts.slice(1).join('/');
-        return objectName;
-      } else {
-        return url;
-      }
-    }
-
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-
-    const pathParts = pathname.substring(1).split('/');
-
-    if (pathParts.length < 2) {
-      addLog.warn(`Invalid URL structure: ${url}`);
-      return null;
-    }
-
-    const objectName = pathParts.slice(1).join('/');
-    return objectName;
-  } catch (error) {
-    addLog.error(`Failed to extract objectName from URL: ${url}`, error);
-    return null;
-  }
-}
-
-async function deleteLocalFileAndRemoveFromList(toolId: string): Promise<void> {
+async function deleteLocalFileAndRemoveFromList(toolId: string) {
   try {
     const tool = getTool(toolId);
     if (!tool) {

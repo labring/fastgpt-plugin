@@ -2,7 +2,7 @@ import { ToolTypeEnum } from './type/tool';
 import { ToolTypeMap } from './type/tool';
 import z from 'zod';
 import { I18nStringStrictSchema } from '@/type/i18n';
-import { PluginModel, pluginTypeEnum } from '@/models/plugins';
+import { MongoPluginModel, pluginTypeEnum } from '@/mongo/models/plugins';
 import { builtinTools, uploadedTools } from './constants';
 import type { ToolSetType, ToolType } from './type';
 import { pipeline } from 'stream/promises';
@@ -38,7 +38,7 @@ export async function refreshUploadedTools() {
   addLog.info('refreshUploadedTools');
   const existsFiles = uploadedTools.map((item) => item.toolDirName);
 
-  const tools = await PluginModel.find({
+  const tools = await MongoPluginModel.find({
     type: pluginTypeEnum.Enum.tool
   }).lean();
 
