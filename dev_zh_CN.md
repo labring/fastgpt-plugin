@@ -96,6 +96,10 @@ const foo = () => {
 
 ## 系统工具
 
+### 新增系统工具类型
+
+modules/tool/type/tool.ts 下修改 `ToolTypeMap` 字段来增加类型枚举。
+
 ### 工具集/工具声明规则
 
 1. 名字和描述至少包含中英文
@@ -128,3 +132,17 @@ const foo = () => {
 - createHttpClient: 创建自定义的http客户端
 - getNanoid: 生成唯一id
 - uploadFile: 上传文件到 Minio 中
+
+
+## 模型
+
+### 新增模型提供商
+
+1. modules/model/provider 下新增对应提供商目录
+2. modules/model/constants.ts 下增加模型名字和对应 aiproxy 的映射
+3. modules/model/init.ts 下引入新的模型提供商
+
+### 新增模型
+
+1. modules/model/provider 找到对应模型提供商配置文件
+2. 按 ConfigModelItemSchema 数据类型填写配置即可
