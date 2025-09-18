@@ -3,18 +3,35 @@ import type { RunToolSecondParamsType } from '@tool/type/tool';
 import { StreamDataAnswerTypeEnum } from '@tool/type/tool';
 import { getErrText } from '@tool/utils/err';
 
+type DataType = {
+  isFinished: boolean;
+  isSuccess: boolean;
+  errorMessage?: string;
+  processList: unknown[];
+  displayContentList: ContentType[];
+  streamData: string;
+};
+
+enum ContentTypeEnum {
+  text = 'TEXT'
+}
+type ContentType = {
+  content: string;
+  type: ContentTypeEnum;
+};
+
 export const InputType = z.object({
   query: z.string(),
   appId: z.string(),
   appAccessKey: z.string(),
-  sessionId: z.string(),
+  sessionId: z.string().optional(),
   chatBIUrl: z.string(),
   sysAccessKey: z.string(),
   corpId: z.string()
 });
 
 export const OutputType = z.object({
-  displayContentList: z.array(z.any())
+  // displayContentList: z.array(z.any())
 });
 
 export async function tool(
@@ -46,13 +63,13 @@ export async function tool(
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        sysAccessKey: sysAccessKey,
-        corpId: corpId,
-        appId: appId,
-        appAccessKey: appAccessKey,
-        userId: userId,
-        query: query,
-        sessionId: sessionId
+        sysAccessKey,
+        corpId,
+        appId,
+        appAccessKey,
+        userId,
+        query,
+        sessionId
       })
     });
 
@@ -67,10 +84,9 @@ export async function tool(
     }
 
     const decoder = new TextDecoder();
-    const displayContentList: any[] = [];
+    let sentListLen = 0;
     let buffer = '';
     let isFinished = false;
-    let previousLength = 0;
 
     while (!isFinished) {
       const { done, value } = await reader.read();
@@ -98,23 +114,33 @@ export async function tool(
 
         if (eventData && eventData !== '') {
           try {
-            const data = JSON.parse(eventData);
+            const data: DataType = JSON.parse(eventData);
 
-            if (data.displayContentList && data.displayContentList.length > previousLength) {
-              const newItems = data.displayContentList.slice(previousLength);
+            if (data.displayContentList && data.displayContentList.length > sentListLen) {
+              // only send the last items
+              const sendList = data.displayContentList.slice(sentListLen);
+              const texts = sendList
+                .filter((item) => item.type === 'TEXT')
+                .map((item) => item.content)
+                .join('\n');
+              const unTexts = sendList.filter((item) => item.type !== 'TEXT');
+              const content =
+                texts +
+                '\n' +
+                (unTexts.length > 0 ? `\`\`\`RENDER\n${JSON.stringify(unTexts)}\n\`\`\`\n` : '');
 
-              for (const item of newItems) {
-                // 只有等待 type 输出成功后再输出那一整个
-                if (item.type !== undefined) {
-                  await streamResponse({
-                    type: StreamDataAnswerTypeEnum.answer,
-                    content: JSON.stringify(item)
-                  });
-                  displayContentList.push(JSON.stringify([item]));
-                }
-              }
+              streamResponse({
+                content,
+                type: StreamDataAnswerTypeEnum.answer
+              });
+              sentListLen = data.displayContentList.length;
+            }
 
-              previousLength = data.displayContentList.length;
+            if (data.streamData) {
+              streamResponse({
+                content: data.streamData,
+                type: StreamDataAnswerTypeEnum.answer
+              });
             }
 
             if (data.isFinished) {
@@ -129,7 +155,7 @@ export async function tool(
     }
 
     return {
-      displayContentList
+      // displayContentList
     };
   } catch (error) {
     return Promise.reject(getErrText(error));
