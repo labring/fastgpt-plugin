@@ -34,7 +34,7 @@ try {
 }
 
 // Modules
-await Promise.all([initTool(), initUploadedTool(), initModels(), initWorkflowTemplates()]);
+await Promise.all([initTools(), initModels(), initWorkflowTemplates()]);
 
 const PORT = parseInt(process.env.PORT || '3000');
 const server = app.listen(PORT, (error?: Error) => {

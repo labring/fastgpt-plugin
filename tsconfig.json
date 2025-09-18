@@ -28,9 +28,9 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"],
-      "@tool/*": ["modules/tool/*"],
-      "@model/*": ["modules/model/*"],
-      "@workflow/*": ["modules/workflow/*"]
+      "@tool/*": ["./modules/tool/*"],
+      "@model/*": ["./modules/model/*"],
+      "@workflow/*": ["./modules/workflow/*"]
     }
   },
   "include": ["**/*.ts", "**/*.d.ts"]
