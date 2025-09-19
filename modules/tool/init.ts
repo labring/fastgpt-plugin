@@ -85,7 +85,7 @@ export const LoadToolsByFilename = async (
   return tools;
 };
 
-export async function initBuiltinTools() {
+async function initBuiltinTools() {
   const basePath = isProd
     ? path.join(process.cwd(), 'dist', 'tools', 'built-in')
     : path.join(__dirname, 'packages');

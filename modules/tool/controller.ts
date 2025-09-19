@@ -59,6 +59,10 @@ export async function refreshUploadedTools() {
 }
 
 export async function downloadTool(objectName: string, dir: string = 'uploaded') {
+  async function extractToolIdFromFile(filePath: string) {
+    const rootMod = (await import(filePath)).default as ToolSetType;
+    return rootMod.toolId;
+  }
   try {
     const fullUrl = pluginFileS3Server.generateAccessUrl(objectName);
     const response = await fetch(fullUrl, {
@@ -86,9 +90,4 @@ export async function downloadTool(objectName: string, dir: string = 'uploaded')
     addLog.error(`Failed to download/install plugin:`, getErrText(error));
     return Promise.reject(error);
   }
-}
-
-async function extractToolIdFromFile(filePath: string) {
-  const rootMod = (await import(filePath)).default as ToolSetType;
-  return rootMod.toolId;
 }
