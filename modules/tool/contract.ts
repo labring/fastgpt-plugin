@@ -61,9 +61,6 @@ export const toolContract = c.router(
       responses: {
         200: z.object({
           message: z.string()
-        }),
-        409: z.object({
-          error: z.string()
         })
       }
     }

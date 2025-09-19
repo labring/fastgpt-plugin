@@ -2,27 +2,16 @@ import { s } from '@/router/init';
 import { contract } from '@/contract';
 import { MongoPluginModel, pluginTypeEnum } from '@/mongo/models/plugins';
 import { downloadTool } from '@tool/controller';
-import { addLog } from '@/utils/log';
 import { refreshSyncKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { mongoSessionRun } from '@/mongo/utils';
+import { addLog } from '@/utils/log';
 
 export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) => {
   const { objectName } = body;
-  const toolId = await downloadTool(objectName);
 
   await mongoSessionRun(async (session) => {
-    const existingPlugin = await MongoPluginModel.findOne({ toolId }).session(session);
-
-    if (existingPlugin) {
-      addLog.warn(`Plugin with toolId ${toolId} already exists, skipping upload`);
-      return {
-        status: 409,
-        body: {
-          error: `Plugin with toolId ${toolId} already exists`
-        }
-      };
-    }
+    const toolId = await downloadTool(objectName);
     await MongoPluginModel.create(
       {
         toolId,
@@ -35,6 +24,7 @@ export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) 
     );
 
     await refreshSyncKey(SystemCacheKeyEnum.systemTool);
+    addLog.info(` Upload tool success: ${toolId}`);
   });
 
   return {
