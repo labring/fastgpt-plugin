@@ -4,18 +4,16 @@ import { addLog } from '../../../src/utils/log';
 import { getTool } from '@tool/controller';
 import path from 'path';
 import fs from 'fs';
-import { getErrText } from '@tool/utils/err';
 import { uploadedTools } from '@tool/constants';
 import { MongoPluginModel } from '@/mongo/models/plugins';
 import { fileUploadS3Server } from '@/s3/config';
+import { mongoSessionRun } from '@/mongo/utils';
 
 export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) => {
-  try {
-    const { toolId } = body;
+  const { toolId } = body;
 
-    await deleteLocalFileAndRemoveFromList(toolId);
-
-    const result = await MongoPluginModel.findOneAndDelete({ toolId });
+  await mongoSessionRun(async (session) => {
+    const result = await MongoPluginModel.findOneAndDelete({ toolId }).session(session);
     if (!result) {
       return {
         status: 404,
@@ -26,22 +24,15 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
     }
 
     await fileUploadS3Server.removeFile(result.objectName);
+    await deleteLocalFileAndRemoveFromList(toolId);
+  });
 
-    return {
-      status: 200,
-      body: {
-        message: 'Tool deleted successfully'
-      }
-    };
-  } catch (error) {
-    addLog.error('Delete tool error:', error);
-    return {
-      status: 500,
-      body: {
-        error: getErrText(error)
-      }
-    };
-  }
+  return {
+    status: 200,
+    body: {
+      message: 'Tool deleted successfully'
+    }
+  };
 });
 
 async function deleteLocalFileAndRemoveFromList(toolId: string) {

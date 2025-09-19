@@ -5,33 +5,37 @@ import { downloadTool } from '@tool/controller';
 import { addLog } from '@/utils/log';
 import { refreshSyncKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
-import { pluginFileS3Server } from '@/s3/config';
+import { mongoSessionRun } from '@/mongo/utils';
 
 export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) => {
   const { objectName } = body;
   const toolId = await downloadTool(objectName);
-  const digest = await pluginFileS3Server.getDigest(objectName);
 
-  const existingPlugin = await MongoPluginModel.findOne({ toolId });
+  await mongoSessionRun(async (session) => {
+    const existingPlugin = await MongoPluginModel.findOne({ toolId }).session(session);
 
-  if (existingPlugin) {
-    addLog.warn(`Plugin with toolId ${toolId} already exists, skipping upload`);
-    return {
-      status: 409,
-      body: {
-        error: `Plugin with toolId ${toolId} already exists`
+    if (existingPlugin) {
+      addLog.warn(`Plugin with toolId ${toolId} already exists, skipping upload`);
+      return {
+        status: 409,
+        body: {
+          error: `Plugin with toolId ${toolId} already exists`
+        }
+      };
+    }
+    await MongoPluginModel.create(
+      {
+        toolId,
+        objectName,
+        type: pluginTypeEnum.Enum.tool
+      },
+      {
+        session
       }
-    };
-  }
+    );
 
-  await MongoPluginModel.create({
-    toolId,
-    objectName,
-    type: pluginTypeEnum.Enum.tool,
-    digest
+    await refreshSyncKey(SystemCacheKeyEnum.systemTool);
   });
-
-  await refreshSyncKey(SystemCacheKeyEnum.systemTool);
 
   return {
     status: 200,
