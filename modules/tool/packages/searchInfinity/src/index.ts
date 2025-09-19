@@ -227,7 +227,6 @@ export async function tool({
         error: data?.ResponseMetadata?.Error?.Message
       });
     }
-    console.log(data);
 
     const result = data?.Result?.WebResults;
     if (!result) {
