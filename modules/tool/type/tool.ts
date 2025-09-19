@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { I18nStringSchema } from '@/type/i18n';
 import { InputConfigSchema, InputSchema, OutputSchema } from './fastgpt';
-import type { ToolTypeListSchema } from '@tool/controller';
 
 /* Call back type */
 export const SystemVarSchema = z.object({

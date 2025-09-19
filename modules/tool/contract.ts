@@ -1,7 +1,6 @@
 import z from 'zod';
 import { c } from '@/contract/init';
-import { ToolListItemSchema, type ToolListItemType } from './type/api';
-import { ToolTypeListSchema } from './controller';
+import { ToolListItemSchema, type ToolListItemType, ToolTypeListSchema } from './type/api';
 
 export const toolContract = c.router(
   {
