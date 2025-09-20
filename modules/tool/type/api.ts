@@ -1,7 +1,15 @@
-import { I18nStringSchema } from '@/type/i18n';
+import { I18nStringSchema, I18nStringStrictSchema } from '@/type/i18n';
 import { z } from 'zod';
 import { ToolTypeEnum, VersionListItemSchema } from './tool';
 import { InputConfigSchema } from './fastgpt';
+
+// Tool Type List Schema - 移动到这里以避免导入 controller（controller 中有 mongo 依赖）
+export const ToolTypeListSchema = z.array(
+  z.object({
+    type: z.nativeEnum(ToolTypeEnum),
+    name: I18nStringStrictSchema
+  })
+);
 
 export const ToolListItemSchema = z.object({
   id: z.string().describe('The unique id of the tool'),
@@ -28,7 +36,8 @@ export const ToolListItemSchema = z.object({
   secretInputConfig: z
     .array(InputConfigSchema)
     .optional()
-    .describe('The secret input list of the tool')
+    .describe('The secret input list of the tool'),
+  toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool')
 });
 
 export type ToolListItemType = z.infer<typeof ToolListItemSchema>;
