@@ -1,6 +1,6 @@
 declare namespace NodeJS {
   interface ProcessEnv {
-    S3_CUSTOM_ENDPOINT: string;
+    S3_EXTERNAL_BASE_URL: string;
     S3_ENDPOINT: string;
     S3_PORT: string;
     S3_USE_SSL: string;

@@ -51,7 +51,11 @@ export class S3Service {
     this.config = config;
 
     this.minioClient = new Minio.Client({
-      ...this.config,
+      endPoint: config.endPoint,
+      port: config.port,
+      useSSL: config.useSSL,
+      accessKey: config.accessKey,
+      secretKey: config.secretKey,
       transportAgent: process.env.HTTP_PROXY
         ? new HttpProxyAgent(process.env.HTTP_PROXY)
         : process.env.HTTPS_PROXY
@@ -69,7 +73,7 @@ export class S3Service {
         addLog.info(`Creating bucket: ${this.config.bucket}`);
         const [, err] = await catchError(() => this.minioClient.makeBucket(this.config.bucket));
         if (err) {
-          addLog.error(`Failed to create bucket: ${this.config.bucket}`);
+          addLog.warn(`Failed to create bucket: ${this.config.bucket}`);
           return Promise.reject(err);
         }
       }
@@ -139,9 +143,9 @@ export class S3Service {
         ? `:${this.config.port}`
         : '';
 
-    const customEndpoint = this.config.customEndpoint;
-    return customEndpoint
-      ? `${customEndpoint}/${objectName}`
+    const externalBaseUrl = this.config.externalBaseUrl;
+    return externalBaseUrl
+      ? `${externalBaseUrl}/${this.config.bucket}/${objectName}`
       : `${protocol}://${this.config.endPoint}${port}/${this.config.bucket}/${objectName}`;
   }
 
