@@ -20,6 +20,7 @@ export const LoadToolsByFilename = async (
   const rootMod = (await import(toolRootPath)).default as ToolSetType;
   const defaultIcon = `/imgs/tools/${filename.split('.')[0]}.svg`;
 
+  // Tool set
   if ('children' in rootMod || fs.existsSync(path.join(toolRootPath, 'children'))) {
     const toolsetId = isProd ? rootMod.toolId! : filename;
     const icon = rootMod.icon || defaultIcon;

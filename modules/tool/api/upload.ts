@@ -11,20 +11,25 @@ export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) 
   const { objectName } = body;
 
   await mongoSessionRun(async (session) => {
-    const toolId = await downloadTool(objectName);
-    await MongoPluginModel.create(
+    const toolId = await downloadTool(objectName, 'uploaded');
+    await MongoPluginModel.updateOne(
       {
-        toolId,
-        objectName,
-        type: pluginTypeEnum.Enum.tool
+        toolId
       },
       {
-        session
+        $set: {
+          objectName,
+          type: pluginTypeEnum.Enum.tool
+        }
+      },
+      {
+        session,
+        upsert: true
       }
     );
 
     await refreshSyncKey(SystemCacheKeyEnum.systemTool);
-    addLog.info(` Upload tool success: ${toolId}`);
+    addLog.info(`Upload tool success: ${toolId}`);
   });
 
   return {

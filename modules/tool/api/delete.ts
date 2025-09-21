@@ -23,7 +23,7 @@ export const deleteToolHandler = s.route(contract.tool.delete, async ({ body }) 
       };
     }
 
-    await fileUploadS3Server.removeFile(result.objectName);
+    await global._fileUploadS3Server.removeFile(result.objectName);
     await deleteLocalFileAndRemoveFromList(toolId);
   });
 

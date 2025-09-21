@@ -56,8 +56,9 @@ export async function downloadTool(objectName: string, dir: string = 'uploaded')
     const rootMod = (await import(filePath)).default as ToolSetType;
     return rootMod.toolId;
   }
+
   try {
-    const fullUrl = pluginFileS3Server.generateAccessUrl(objectName);
+    const fullUrl = await global._pluginFileS3Server.generateExternalUrl(objectName);
     const response = await fetch(fullUrl, {
       signal: AbortSignal.timeout(30000)
     });
@@ -69,10 +70,12 @@ export async function downloadTool(objectName: string, dir: string = 'uploaded')
     const filename = objectName.split('/')[1];
     const uploadPath = path.join(process.cwd(), 'dist', 'tools', dir);
 
+    // Upload folder exists
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
 
+    // Write file
     const filepath = path.join(uploadPath, filename);
     await pipeline(Readable.fromWeb(response.body as any), createWriteStream(filepath));
     const extractedToolId = await extractToolIdFromFile(filepath);

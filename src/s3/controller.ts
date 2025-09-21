@@ -136,17 +136,51 @@ export class S3Service {
     return randomBytes(16).toString('hex');
   }
 
-  public generateAccessUrl(objectName: string): string {
+  private isPublicReadBucket(policy: string): boolean {
+    const policyJson = JSON.parse(policy);
+    return policyJson.Statement.some(
+      (statement: any) => statement.Effect === 'Allow' && statement.Principal === '*'
+    );
+  }
+
+  // 公网可访问 url
+  async generateExternalUrl(objectName: string, expiry: number = 3600): Promise<string> {
+    const externalBaseUrl = this.config.externalBaseUrl;
+
+    // 获取桶策略
+    const policy = await this.minioClient.getBucketPolicy(this.config.bucket);
+    const isPublicBucket = this.isPublicReadBucket(policy);
+
+    if (!isPublicBucket) {
+      const url = await this.minioClient.presignedGetObject(this.config.bucket, objectName, expiry);
+      // 如果有 externalBaseUrl，需要把域名进行替换
+      if (this.config.externalBaseUrl) {
+        const urlObj = new URL(url);
+        const externalUrlObj = new URL(this.config.externalBaseUrl);
+
+        // 替换协议和域名，保留路径和查询参数
+        urlObj.protocol = externalUrlObj.protocol;
+        urlObj.hostname = externalUrlObj.hostname;
+        urlObj.port = externalUrlObj.port;
+
+        return urlObj.toString();
+      }
+
+      return url;
+    }
+
+    if (externalBaseUrl) {
+      return `${externalBaseUrl}/${this.config.bucket}/${objectName}`;
+    }
+
+    // Default url
     const protocol = this.config.useSSL ? 'https' : 'http';
     const port =
       this.config.port && this.config.port !== (this.config.useSSL ? 443 : 80)
         ? `:${this.config.port}`
         : '';
 
-    const externalBaseUrl = this.config.externalBaseUrl;
-    return externalBaseUrl
-      ? `${externalBaseUrl}/${this.config.bucket}/${objectName}`
-      : `${protocol}://${this.config.endPoint}${port}/${this.config.bucket}/${objectName}`;
+    return `${protocol}://${this.config.endPoint}${port}/${this.config.bucket}/${objectName}`;
   }
 
   async uploadFileAdvanced(input: FileInput): Promise<FileMetadata> {
@@ -236,7 +270,7 @@ export class S3Service {
         contentType,
         size: fileBuffer.length,
         uploadTime,
-        accessUrl: this.generateAccessUrl(objectName)
+        accessUrl: await this.generateExternalUrl(objectName)
       };
 
       return metadata;

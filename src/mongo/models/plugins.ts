@@ -19,11 +19,11 @@ export type MongoPluginSchemaType = z.infer<typeof PluginZodSchema>;
 
 const pluginMongooseSchema = new Schema({
   toolId: { type: String },
-  objectName: { type: String },
+  objectName: { type: String, required: true, unique: true },
   type: { type: String, required: true, enum: Object.values(pluginTypeEnum.Enum) }
 });
 
-pluginMongooseSchema.index({ objectName: 1 }, { unique: true });
+pluginMongooseSchema.index({ toolId: 1 }, { unique: true, sparse: true });
 pluginMongooseSchema.index({ type: 1 });
 
 export const MongoPluginModel = getMongoModel<MongoPluginSchemaType>(
