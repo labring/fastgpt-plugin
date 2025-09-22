@@ -23,9 +23,7 @@ export default s.route(contract.tool.upload.delete, async ({ query: { toolId: ra
         }
       };
     }
-
     await pluginFileS3Server.removeFile(result.objectName);
-    await deleteLocalFileAndRemoveFromList(toolId);
     await refreshSyncKey(SystemCacheKeyEnum.systemTool);
   });
 
@@ -36,35 +34,3 @@ export default s.route(contract.tool.upload.delete, async ({ query: { toolId: ra
     }
   };
 });
-
-async function deleteLocalFileAndRemoveFromList(toolId: string) {
-  const tool = getTool(toolId);
-  if (!tool) {
-    return Promise.reject(`Tool not found in tools list for toolId: ${toolId}`);
-  }
-
-  // Extract filename from toolDirName (format: "toolSource/filename")
-  const filePath = path.join(
-    process.cwd(),
-    'dist',
-    'tools',
-    'uploaded',
-    tool.toolDirName.split('/').pop()!
-  );
-
-  if (fs.existsSync(filePath)) {
-    await fs.promises.unlink(filePath);
-  } else {
-    addLog.warn(`Local file not found: ${filePath}`);
-  }
-
-  const initialLength = uploadedTools.length;
-  const filteredTools = uploadedTools.filter((t) => t.toolId !== toolId);
-
-  if (filteredTools.length < initialLength) {
-    uploadedTools.length = 0;
-    uploadedTools.push(...filteredTools);
-  } else {
-    addLog.warn(`Tool not found in tools list for removal: ${toolId}`);
-  }
-}

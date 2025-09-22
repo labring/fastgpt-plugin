@@ -314,4 +314,21 @@ export class S3Service {
       return Promise.reject(`Failed to generate Upload Presigned URL: ${getErrText(error)}`);
     }
   };
+
+  public async getFiles(prefix: string): Promise<string[]> {
+    const objectNames: string[] = [];
+    const stream = this.client.listObjectsV2(this.config.bucket, prefix, true);
+
+    for await (const obj of stream) {
+      if (obj.name) {
+        objectNames.push(obj.name);
+      }
+    }
+
+    return objectNames;
+  }
+
+  public removeFiles(objectNames: string[]) {
+    return this.client.removeObjects(this.config.bucket, objectNames);
+  }
 }

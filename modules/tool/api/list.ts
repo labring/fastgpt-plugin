@@ -8,6 +8,7 @@ import { SystemCacheKeyEnum } from '@/cache/type';
 export const getToolsHandler = s.route(contract.tool.list, async () => {
   // this list will only be called when syncKey is changed.
   const uploadedTools = await getCachedData(SystemCacheKeyEnum.systemTool);
+  // console.log(uploadedTools);
   return {
     status: 200,
     body: formatToolList([...builtinTools, ...uploadedTools])

@@ -6,27 +6,27 @@ import { MongoPluginModel, pluginTypeEnum } from '@/mongo/models/plugins';
 import { refreshSyncKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { addLog } from '@/utils/log';
+import { pluginFileS3Server } from '@/s3';
 
 export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   const { objectName } = body;
 
   await mongoSessionRun(async (session) => {
     const toolId = await downloadTool(objectName);
-    await MongoPluginModel.updateOne(
+    const oldTool = await MongoPluginModel.findOneAndUpdate(
       {
         toolId
       },
       {
-        $set: {
-          objectName,
-          type: pluginTypeEnum.Enum.tool
-        }
+        objectName,
+        type: pluginTypeEnum.Enum.tool
       },
       {
         session,
         upsert: true
       }
     );
+    if (oldTool?.objectName) pluginFileS3Server.removeFile(oldTool.objectName);
     await refreshSyncKey(SystemCacheKeyEnum.systemTool);
     addLog.info(`Upload tool success: ${toolId}`);
   });

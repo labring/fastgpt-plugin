@@ -23,7 +23,7 @@ export const LoadToolsByFilename = async (
 
   // Tool set
   if ('children' in rootMod || fs.existsSync(path.join(toolRootPath, 'children'))) {
-    const toolsetId = isProd ? rootMod.toolId! : filename;
+    const toolsetId = isProd || toolSource === 'uploaded' ? rootMod.toolId! : filename;
     const icon = rootMod.icon || defaultIcon;
 
     // is toolSet
