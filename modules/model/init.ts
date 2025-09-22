@@ -27,6 +27,7 @@ import siliconflow from './provider/Siliconflow/index';
 import sparkdesk from './provider/SparkDesk/index';
 import stepfun from './provider/StepFun/index';
 import yi from './provider/Yi/index';
+import deerapi from './provider/DeerAPI/index';
 
 import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
 import { modelsBuffer } from './constants';
@@ -62,7 +63,8 @@ const allProviders: ProviderConfigType[] = [
   siliconflow,
   sparkdesk,
   stepfun,
-  yi
+  yi,
+  deerapi
 ];
 
 export const initModels = () => {
