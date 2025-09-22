@@ -1,88 +1,58 @@
 import * as Minio from 'minio';
 import { randomBytes } from 'crypto';
-import { type S3ConfigType, type FileMetadata } from './config';
+import { type S3ConfigType, type FileMetadata, commonS3Config } from './config';
 import * as fs from 'fs';
 import * as path from 'path';
-import { z } from 'zod';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 import { catchError } from '@/utils/catch';
-import { HttpProxyAgent } from 'http-proxy-agent';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { mimeMap } from './const';
-
-export const FileInputSchema = z
-  .object({
-    url: z.string().url('Invalid URL format').optional(),
-    path: z.string().min(1, 'File path cannot be empty').optional(),
-    base64: z.string().min(1, 'Base64 data cannot be empty').optional(),
-    buffer: z
-      .union([
-        z.instanceof(Buffer, { message: 'Buffer is required' }),
-        z.instanceof(Uint8Array, { message: 'Uint8Array is required' })
-      ])
-      .transform((data) => {
-        if (data instanceof Uint8Array && !(data instanceof Buffer)) {
-          return Buffer.from(data);
-        }
-        return data;
-      })
-      .optional(),
-    defaultFilename: z.string().optional()
-  })
-  .refine(
-    (data) => {
-      const inputMethods = [data.url, data.path, data.base64, data.buffer].filter(Boolean);
-      return inputMethods.length === 1 && (!(data.base64 || data.buffer) || data.defaultFilename);
-    },
-    {
-      message: 'Provide exactly one input method. Filename required for base64/buffer inputs.'
-    }
-  );
-export type FileInput = z.infer<typeof FileInputSchema>;
-
-type GetUploadBufferResponse = { buffer: Buffer; filename: string };
+import {
+  FileInputSchema,
+  type FileInput,
+  type GetUploadBufferResponse,
+  type PresignedUrlInputType
+} from './type';
 
 export class S3Service {
-  private minioClient: Minio.Client;
+  private client: Minio.Client;
   private config: S3ConfigType;
 
-  constructor(config: S3ConfigType) {
-    this.config = config;
+  constructor(config: Partial<S3ConfigType>) {
+    this.config = {
+      ...commonS3Config,
+      ...config
+    } as S3ConfigType;
 
-    this.minioClient = new Minio.Client({
-      endPoint: config.endPoint,
-      port: config.port,
-      useSSL: config.useSSL,
-      accessKey: config.accessKey,
-      secretKey: config.secretKey,
-      transportAgent: process.env.HTTP_PROXY
-        ? new HttpProxyAgent(process.env.HTTP_PROXY)
-        : process.env.HTTPS_PROXY
-          ? new HttpsProxyAgent(process.env.HTTPS_PROXY)
-          : undefined
+    this.client = new Minio.Client({
+      endPoint: this.config.endPoint,
+      port: this.config.port,
+      useSSL: this.config.useSSL,
+      accessKey: this.config.accessKey,
+      secretKey: this.config.secretKey,
+      transportAgent: this.config.transportAgent
     });
   }
 
   async initialize() {
     const [, err] = await catchError(async () => {
       addLog.info(`Checking bucket: ${this.config.bucket}`);
-      const bucketExists = await this.minioClient.bucketExists(this.config.bucket);
+      const bucketExists = await this.client.bucketExists(this.config.bucket);
 
       if (!bucketExists) {
         addLog.info(`Creating bucket: ${this.config.bucket}`);
-        const [, err] = await catchError(() => this.minioClient.makeBucket(this.config.bucket));
+        const [, err] = await catchError(() => this.client.makeBucket(this.config.bucket));
         if (err) {
           addLog.warn(`Failed to create bucket: ${this.config.bucket}`);
           return Promise.reject(err);
         }
       }
 
-      if (this.config.retentionDays) {
+      if (this.config.retentionDays && this.config.retentionDays > 0) {
         const Days = this.config.retentionDays;
         const [, err] = await catchError(() =>
           Promise.all([
-            this.minioClient.setBucketPolicy(
+            this.client.setBucketPolicy(
               this.config.bucket,
               JSON.stringify({
                 Version: '2012-10-17',
@@ -96,7 +66,7 @@ export class S3Service {
                 ]
               })
             ),
-            this.minioClient.setBucketLifecycle(this.config.bucket, {
+            this.client.setBucketLifecycle(this.config.bucket, {
               Rule: [
                 {
                   ID: 'AutoDeleteRule',
@@ -143,16 +113,25 @@ export class S3Service {
     );
   }
 
-  // 公网可访问 url
+  /**
+   * Get the file directly.
+   */
+  getFile(objectName: string) {
+    return this.client.getObject(this.config.bucket, objectName);
+  }
+
+  /**
+   *  Get public readable URL
+   */
   async generateExternalUrl(objectName: string, expiry: number = 3600): Promise<string> {
     const externalBaseUrl = this.config.externalBaseUrl;
 
     // 获取桶策略
-    const policy = await this.minioClient.getBucketPolicy(this.config.bucket);
+    const policy = await this.client.getBucketPolicy(this.config.bucket);
     const isPublicBucket = this.isPublicReadBucket(policy);
 
     if (!isPublicBucket) {
-      const url = await this.minioClient.presignedGetObject(this.config.bucket, objectName, expiry);
+      const url = await this.client.presignedGetObject(this.config.bucket, objectName, expiry);
       // 如果有 externalBaseUrl，需要把域名进行替换
       if (this.config.externalBaseUrl) {
         const urlObj = new URL(url);
@@ -251,18 +230,12 @@ export class S3Service {
       const uploadTime = new Date();
 
       const contentType = inferContentType(originalFilename);
-      await this.minioClient.putObject(
-        this.config.bucket,
-        objectName,
-        fileBuffer,
-        fileBuffer.length,
-        {
-          'Content-Type': contentType,
-          'Content-Disposition': `attachment; filename="${encodeURIComponent(originalFilename)}"`,
-          'x-amz-meta-original-filename': encodeURIComponent(originalFilename),
-          'x-amz-meta-upload-time': uploadTime.toISOString()
-        }
-      );
+      await this.client.putObject(this.config.bucket, objectName, fileBuffer, fileBuffer.length, {
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(originalFilename)}"`,
+        'x-amz-meta-original-filename': encodeURIComponent(originalFilename),
+        'x-amz-meta-upload-time': uploadTime.toISOString()
+      });
 
       const metadata: FileMetadata = {
         fileId,
@@ -290,7 +263,7 @@ export class S3Service {
   }
 
   async removeFile(objectName: string) {
-    await this.minioClient.removeObject(this.config.bucket, objectName);
+    await this.client.removeObject(this.config.bucket, objectName);
     addLog.info(`MinIO file deleted: ${this.config.bucket}/${objectName}`);
   }
 
@@ -299,9 +272,46 @@ export class S3Service {
    */
   async getDigest(objectName: string): Promise<string> {
     // Get the ETag of the object as its digest
-    const stat = await this.minioClient.statObject(this.config.bucket, objectName);
+    const stat = await this.client.statObject(this.config.bucket, objectName);
     // Remove quotes around ETag if present
     const etag = stat.etag.replace(/^"|"$/g, '');
     return etag;
   }
+
+  /**
+   * Generate a presigned URL for uploading a file to S3 service
+   */
+  generateUploadPresignedURL = async ({
+    filepath,
+    contentType,
+    metadata,
+    filename
+  }: PresignedUrlInputType) => {
+    const name = this.generateFileId();
+    const objectName = `${filepath}/${name}`;
+
+    try {
+      const policy = this.client.newPostPolicy();
+      policy.setBucket(this.config.bucket);
+      policy.setKey(objectName);
+      if (contentType) {
+        policy.setContentType(contentType);
+      }
+      if (this.config.maxFileSize) {
+        policy.setContentLengthRange(1, this.config.maxFileSize);
+      }
+      policy.setExpires(new Date(Date.now() + 10 * 60 * 1000)); // 10 mins
+
+      policy.setUserMetaData({
+        'original-filename': encodeURIComponent(filename),
+        'upload-time': new Date().toISOString(),
+        ...metadata
+      });
+
+      return { ...(await this.client.presignedPostPolicy(policy)), objectName };
+    } catch (error) {
+      addLog.error('Failed to generate Upload Presigned URL', error);
+      return Promise.reject(`Failed to generate Upload Presigned URL: ${getErrText(error)}`);
+    }
+  };
 }

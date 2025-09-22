@@ -2,14 +2,6 @@ import type { SystemCacheKeyEnum } from './type';
 import { randomUUID } from 'node:crypto';
 import { initCache } from './init';
 import { FASTGPT_REDIS_PREFIX, getGlobalRedisConnection } from '@/redis';
-
-export const refreshSyncKey = async (key: `${SystemCacheKeyEnum}`) => {
-  if (!global.systemCache) initCache();
-  const val = randomUUID();
-  const redis = getGlobalRedisConnection();
-  await redis.set(`${FASTGPT_REDIS_PREFIX}:SYNC_KEY:${key}`, val);
-};
-
 const getSynckey = async (key: `${SystemCacheKeyEnum}`) => {
   if (!global.systemCache) initCache();
   const redis = getGlobalRedisConnection();
@@ -21,15 +13,25 @@ const getSynckey = async (key: `${SystemCacheKeyEnum}`) => {
   return newVal;
 };
 
+export const refreshSyncKey = async (key: `${SystemCacheKeyEnum}`) => {
+  if (!global.systemCache) initCache();
+  const val = randomUUID();
+  const redis = getGlobalRedisConnection();
+  await redis.set(`${FASTGPT_REDIS_PREFIX}:SYNC_KEY:${key}`, val);
+};
+
 export const getCachedData = async (key: `${SystemCacheKeyEnum}`) => {
   if (!global.systemCache) initCache();
+
   const syncKey = await getSynckey(key);
   const isDisableCache = process.env.DISABLE_CACHE === 'true';
+
   if (global.systemCache[key].syncKey === syncKey && !isDisableCache) {
     return global.systemCache[key].data;
   }
-  const refreshedData = await global.systemCache[key].refreshFunc();
-  await refreshSyncKey(key);
-  global.systemCache[key].data = refreshedData;
+
+  global.systemCache[key].syncKey = syncKey;
+  global.systemCache[key].data = await global.systemCache[key].refreshFunc();
+
   return global.systemCache[key].data;
 };

@@ -7,13 +7,13 @@ import { builtinTools, uploadedTools } from './constants';
 import type { ToolSetType, ToolType } from './type';
 import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
-import { Readable } from 'stream';
 import * as fs from 'fs';
 import { initUploadedTool } from '@tool/init';
 import path from 'path';
 import { addLog } from '@/utils/log';
 import { getErrText } from './utils/err';
-import { pluginFileS3Server } from '@/s3/config';
+import { pluginFileS3Server } from '@/s3';
+import { UploadedToolBaseURL } from './utils';
 
 export function getTool(toolId: string): ToolType | undefined {
   const tools = [...builtinTools, ...uploadedTools];
@@ -36,14 +36,16 @@ export async function refreshUploadedTools() {
   }).lean();
 
   const deleteFiles = existsFiles.filter(
-    (item) => !tools.find((tool) => tool.objectName.split('/')[1] === item.split('/')[1])
+    (item) => !tools.find((tool) => tool.objectName.split('/').pop() === item.split('/').pop())
   );
 
-  const newFiles = tools.filter((item) => !existsFiles.includes(item.objectName.split('/')[1]));
+  const newFiles = tools.filter((item) => !existsFiles.includes(item.objectName.split('/').pop()!));
 
   // merge remove and download steps into one Promise.all
   await Promise.all([
-    ...deleteFiles.map((item) => fs.promises.unlink(item)),
+    ...deleteFiles.map((item) =>
+      fs.promises.unlink(path.join(UploadedToolBaseURL, item.split('/').pop()!))
+    ),
     ...newFiles.map((tool) => downloadTool(tool.objectName))
   ]);
 
@@ -51,33 +53,24 @@ export async function refreshUploadedTools() {
   return uploadedTools;
 }
 
-export async function downloadTool(objectName: string, dir: string = 'uploaded') {
+export async function downloadTool(objectName: string) {
+  const filename = objectName.split('/').pop() as string;
   async function extractToolIdFromFile(filePath: string) {
     const rootMod = (await import(filePath)).default as ToolSetType;
     return rootMod.toolId;
   }
 
   try {
-    const fullUrl = await global._pluginFileS3Server.generateExternalUrl(objectName);
-    const response = await fetch(fullUrl, {
-      signal: AbortSignal.timeout(30000)
-    });
-
-    if (!response.ok) {
-      return Promise.reject(`Download failed: ${response.status} ${response.statusText}`);
-    }
-
-    const filename = objectName.split('/')[1];
-    const uploadPath = path.join(process.cwd(), 'dist', 'tools', dir);
+    const uploadPath = path.join(process.cwd(), 'dist', 'tools', 'uploaded');
 
     // Upload folder exists
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
 
-    // Write file
     const filepath = path.join(uploadPath, filename);
-    await pipeline(Readable.fromWeb(response.body as any), createWriteStream(filepath));
+    await pipeline(await pluginFileS3Server.getFile(objectName), createWriteStream(filepath));
+
     const extractedToolId = await extractToolIdFromFile(filepath);
     if (!extractedToolId) return Promise.reject('Failed to extract toolId from file');
 

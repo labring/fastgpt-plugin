@@ -1,17 +1,17 @@
 import { s } from '@/router/init';
 import { contract } from '@/contract';
-import { MongoPluginModel, pluginTypeEnum } from '@/mongo/models/plugins';
+import { mongoSessionRun } from '@/mongo/utils';
 import { downloadTool } from '@tool/controller';
+import { MongoPluginModel, pluginTypeEnum } from '@/mongo/models/plugins';
 import { refreshSyncKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
-import { mongoSessionRun } from '@/mongo/utils';
 import { addLog } from '@/utils/log';
 
-export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) => {
+export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   const { objectName } = body;
 
   await mongoSessionRun(async (session) => {
-    const toolId = await downloadTool(objectName, 'uploaded');
+    const toolId = await downloadTool(objectName);
     await MongoPluginModel.updateOne(
       {
         toolId
@@ -27,7 +27,6 @@ export const uploadToolHandler = s.route(contract.tool.upload, async ({ body }) 
         upsert: true
       }
     );
-
     await refreshSyncKey(SystemCacheKeyEnum.systemTool);
     addLog.info(`Upload tool success: ${toolId}`);
   });
