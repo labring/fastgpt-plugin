@@ -1,5 +1,5 @@
 import { main } from './src';
-import { SQLServerInputSchema, SQLDbOutputSchema } from '@tool/packages/sql/types';
+import { SQLServerInputSchema, SQLDbOutputSchema } from '@tool/packages/dbops/types';
 import config from './config';
 import { exportTool } from '@tool/utils/tool';
 

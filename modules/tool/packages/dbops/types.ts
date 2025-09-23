@@ -41,16 +41,14 @@ export const ClickHouseInputSchema = z.object({
 export type ClickHouseInputType = z.infer<typeof ClickHouseInputSchema>;
 
 export const OracleInputSchema = z.object({
-  ...BaseSQLDbInputSchema.shape,
-  serviceName: z.string().optional(),
-  sid: z.string().optional(),
-  tns: z.string().optional()
+  ...BaseSQLDbInputSchema.pick({
+    username: true,
+    password: true,
+    sql: true,
+    maxConnections: true,
+    connectionTimeout: true
+  }).shape,
+  connectString: z.string().min(1, 'connectString is required')
 });
-export const OracleInputRefinedSchema = OracleInputSchema.refine(
-  (data) => data.serviceName || data.sid || data.tns,
-  {
-    message: 'At least one of `serviceName`, `sid`, or `tns` is required'
-  }
-);
 
 export type OracleInputType = z.infer<typeof OracleInputSchema>;

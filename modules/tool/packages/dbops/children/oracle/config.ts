@@ -15,18 +15,6 @@ export default defineTool({
   courseUrl: 'https://www.oracle.com/',
   secretInputConfig: [
     {
-      key: 'host',
-      label: '主机名',
-      required: true,
-      inputType: 'input'
-    },
-    {
-      key: 'port',
-      label: '数据库连接端口号',
-      required: true,
-      inputType: 'numberInput'
-    },
-    {
       key: 'username',
       label: '数据库账号',
       required: true,
@@ -39,27 +27,9 @@ export default defineTool({
       inputType: 'secret'
     },
     {
-      key: 'serviceName',
-      label: 'Service Name',
-      required: false,
-      inputType: 'input'
-    },
-    {
-      key: 'sid',
-      label: 'SID',
-      required: false,
-      inputType: 'input'
-    },
-    {
-      key: 'tns',
-      label: 'TNS',
-      required: false,
-      inputType: 'input'
-    },
-    {
-      key: 'database',
-      label: '数据库名称',
-      required: false,
+      key: 'connectString',
+      label: 'connectString',
+      required: true,
       inputType: 'input'
     },
     {

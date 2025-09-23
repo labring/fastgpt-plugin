@@ -1,4 +1,4 @@
-import type { SQLServerInputType, SQLDbOutputType } from '@tool/packages/sql/types';
+import type { SQLServerInputType, SQLDbOutputType } from '@tool/packages/dbops/types';
 import mssql from 'mssql';
 
 export async function main({

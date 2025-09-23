@@ -1,11 +1,11 @@
 import { main } from './src';
-import { ClickHouseInputSchema, SQLDbOutputSchema } from '@tool/packages/sql/types';
+import { OracleInputSchema, SQLDbOutputSchema } from '@tool/packages/dbops/types';
 import config from './config';
 import { exportTool } from '@tool/utils/tool';
 
 export default exportTool({
   toolCb: main,
-  InputType: ClickHouseInputSchema,
+  InputType: OracleInputSchema,
   OutputType: SQLDbOutputSchema,
   config
 });

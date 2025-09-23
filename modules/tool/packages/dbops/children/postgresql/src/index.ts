@@ -1,4 +1,4 @@
-import type { PostgreSQLInputType, SQLDbOutputType } from '@tool/packages/sql/types';
+import type { PostgreSQLInputType, SQLDbOutputType } from '@tool/packages/dbops/types';
 import postgres from 'postgres';
 
 export async function main({

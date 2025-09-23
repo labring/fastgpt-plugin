@@ -1,11 +1,11 @@
 import { main } from './src';
-import { OracleInputRefinedSchema, SQLDbOutputSchema } from '@tool/packages/sql/types';
+import { PostgreSQLInputSchema, SQLDbOutputSchema } from '@tool/packages/dbops/types';
 import config from './config';
 import { exportTool } from '@tool/utils/tool';
 
 export default exportTool({
   toolCb: main,
-  InputType: OracleInputRefinedSchema,
+  InputType: PostgreSQLInputSchema,
   OutputType: SQLDbOutputSchema,
   config
 });

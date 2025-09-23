@@ -1,28 +1,15 @@
-import type { OracleInputType, SQLDbOutputType } from '@tool/packages/sql/types';
+import type { OracleInputType, SQLDbOutputType } from '@tool/packages/dbops/types';
 import oracle from 'oracledb';
 
 export async function main({
-  serviceName,
-  sid,
-  tns,
-  host,
-  port,
+  sql: _sql,
+  connectString,
   username,
   password,
-  database,
-  sql: _sql,
   maxConnections,
   connectionTimeout
 }: OracleInputType): Promise<SQLDbOutputType> {
   try {
-    const connectString: string = (() => {
-      if (tns) return tns;
-      const hostname = `${host}:${port}`;
-      if (serviceName) return `${hostname}/${serviceName}`;
-      else if (sid) return `${hostname}/${sid}`;
-      else if (database) return `${hostname}/${database}`;
-      else throw new Error('Invalid connection parameters: serviceName, sid, or tns required');
-    })();
     const pool = await oracle.createPool({
       connectString,
       user: username,
