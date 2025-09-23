@@ -66,23 +66,25 @@ export async function downloadTool(objectName: string) {
     return rootMod.toolId;
   }
 
+  const uploadPath = path.join(process.cwd(), 'dist', 'tools', 'uploaded');
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+  }
+
+  const filepath = path.join(uploadPath, filename);
+
   try {
-    const uploadPath = path.join(process.cwd(), 'dist', 'tools', 'uploaded');
-
-    // Upload folder exists
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-
-    const filepath = path.join(uploadPath, filename);
     await pipeline(await pluginFileS3Server.getFile(objectName), createWriteStream(filepath));
 
-    const extractedToolId = await extractToolIdFromFile(filepath);
-    if (!extractedToolId) return Promise.reject('Failed to extract toolId from file');
+    const toolId = await extractToolIdFromFile(filepath);
+    if (!toolId) return Promise.reject('Failed to extract toolId from file');
 
-    return extractedToolId;
+    return toolId;
   } catch (error) {
+    // clean the undownloaded file
+    if (fs.existsSync(filepath)) {
+      await fs.promises.unlink(filepath);
+    }
     addLog.error(`Failed to download/install plugin:`, getErrText(error));
-    return Promise.reject(error);
   }
 }
