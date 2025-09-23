@@ -1,8 +1,8 @@
 import z from 'zod';
-import { FileInputSchema } from '@/s3/controller';
 import { FileMetadataSchema, type FileMetadata } from '@/s3/config';
 import { StreamDataSchema } from '@tool/type/tool';
 import { ToolCallbackReturnSchema } from '@tool/type/tool';
+import { FileInputSchema } from '@/s3/type';
 
 declare global {
   var uploadFileResponseFn: (data: { data?: FileMetadata; error?: string }) => void | undefined;

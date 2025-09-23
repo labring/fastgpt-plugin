@@ -5,24 +5,25 @@ import { builtinTools, uploadedTools } from './constants';
 import fs from 'fs';
 import { addLog } from '@/utils/log';
 import { ToolTypeEnum } from './type/tool';
+import { BuiltInToolBaseURL, UploadedToolBaseURL } from './utils';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (
-  basePath: string,
   filename: string,
   toolSource: 'built-in' | 'uploaded' = 'built-in'
 ): Promise<ToolType[]> => {
   const tools: ToolType[] = [];
 
-  const toolRootPath = path.join(basePath, filename);
+  const basepath = toolSource === 'uploaded' ? UploadedToolBaseURL : BuiltInToolBaseURL;
+  const toolRootPath = path.join(basepath, filename);
   const rootMod = (await import(toolRootPath)).default as ToolSetType;
   const defaultIcon = `/imgs/tools/${filename.split('.')[0]}.svg`;
 
   // Tool set
   if ('children' in rootMod || fs.existsSync(path.join(toolRootPath, 'children'))) {
-    const toolsetId = isProd ? rootMod.toolId! : filename;
+    const toolsetId = isProd || toolSource === 'uploaded' ? rootMod.toolId! : filename;
     const icon = rootMod.icon || defaultIcon;
 
     // is toolSet
@@ -53,7 +54,8 @@ export const LoadToolsByFilename = async (
       return children;
     };
 
-    const children = isProd ? rootMod.children : await getChildren(toolRootPath);
+    const children =
+      isProd || toolSource === 'uploaded' ? rootMod.children : await getChildren(toolRootPath);
 
     for (const child of children) {
       const toolId = child.toolId!;
@@ -86,21 +88,19 @@ export const LoadToolsByFilename = async (
   return tools;
 };
 
-async function initBuiltinTools() {
-  const basePath = isProd
-    ? path.join(process.cwd(), 'dist', 'tools', 'built-in')
-    : path.join(__dirname, 'packages');
-
+async function initBuiltInTools() {
   // Create directory if it doesn't exist
-  if (!fs.existsSync(basePath)) {
-    addLog.info(`Creating built-in tools directory: ${basePath}`);
-    fs.mkdirSync(basePath, { recursive: true });
+  if (!fs.existsSync(BuiltInToolBaseURL)) {
+    addLog.info(`Creating built-in tools directory: ${BuiltInToolBaseURL}`);
+    fs.mkdirSync(BuiltInToolBaseURL, { recursive: true });
   }
 
   builtinTools.length = 0;
-  const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
+  const toolDirs = fs
+    .readdirSync(BuiltInToolBaseURL)
+    .filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
-    const tmpTools = await LoadToolsByFilename(basePath, tool, 'built-in');
+    const tmpTools = await LoadToolsByFilename(tool, 'built-in');
     builtinTools.push(...tmpTools);
   }
 
@@ -110,21 +110,19 @@ async function initBuiltinTools() {
 }
 
 export async function initUploadedTool() {
-  const basePath = isProd
-    ? path.join(process.cwd(), 'dist', 'tools', 'uploaded')
-    : path.join(__dirname, '..', '..', 'dist', 'tools', 'uploaded');
-
   // Create directory if it doesn't exist
-  if (!fs.existsSync(basePath)) {
-    addLog.info(`Creating uploaded tools directory: ${basePath}`);
-    fs.mkdirSync(basePath, { recursive: true });
+  if (!fs.existsSync(UploadedToolBaseURL)) {
+    addLog.info(`Creating uploaded tools directory: ${UploadedToolBaseURL}`);
+    fs.mkdirSync(UploadedToolBaseURL, { recursive: true });
   }
 
   uploadedTools.length = 0;
 
-  const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
+  const toolDirs = fs
+    .readdirSync(UploadedToolBaseURL)
+    .filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
-    const tmpTools = await LoadToolsByFilename(basePath, tool, 'uploaded');
+    const tmpTools = await LoadToolsByFilename(tool, 'uploaded');
     uploadedTools.push(...tmpTools);
   }
 
@@ -133,4 +131,4 @@ export async function initUploadedTool() {
   );
 }
 
-export const initTools = () => Promise.all([initBuiltinTools(), initUploadedTool()]);
+export const initTools = () => Promise.all([initBuiltInTools(), initUploadedTool()]);

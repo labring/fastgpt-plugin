@@ -1,5 +1,5 @@
 import type { FileMetadata } from '@/s3/config';
-import type { FileInput } from '@/s3/controller';
+import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
 
 export const uploadFile = async (data: FileInput) => {
