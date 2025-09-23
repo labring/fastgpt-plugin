@@ -28,7 +28,7 @@ export function getToolType(): z.infer<typeof ToolTypeListSchema> {
 }
 
 export async function refreshUploadedTools() {
-  addLog.info('refreshUploadedTools');
+  addLog.info('Refreshing uploaded tools');
   const existsFiles = uploadedTools.map((item) => item.toolDirName);
 
   const tools = await MongoPluginModel.find({
@@ -41,10 +41,16 @@ export async function refreshUploadedTools() {
 
   const newFiles = tools.filter((item) => !existsFiles.includes(item.objectName.split('/').pop()!));
 
+  const removeFile = async (file: string) => {
+    if (fs.existsSync(file)) {
+      await fs.promises.unlink(file);
+    }
+  };
+
   // merge remove and download steps into one Promise.all
   await Promise.all([
     ...deleteFiles.map((item) =>
-      fs.promises.unlink(path.join(UploadedToolBaseURL, item.split('/').pop()!))
+      removeFile(path.join(UploadedToolBaseURL, item.split('/').pop()!))
     ),
     ...newFiles.map((tool) => downloadTool(tool.objectName))
   ]);

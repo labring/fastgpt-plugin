@@ -4,7 +4,7 @@ import { SystemCacheKeyEnum } from './type';
 export const initCache = () => {
   global.systemCache = {
     [SystemCacheKeyEnum.systemTool]: {
-      syncKey: '',
+      versionKey: '',
       data: [],
       refreshFunc: refreshUploadedTools
     }

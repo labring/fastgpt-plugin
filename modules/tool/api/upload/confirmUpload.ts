@@ -3,7 +3,7 @@ import { contract } from '@/contract';
 import { mongoSessionRun } from '@/mongo/utils';
 import { downloadTool } from '@tool/controller';
 import { MongoPluginModel, pluginTypeEnum } from '@/mongo/models/plugins';
-import { refreshSyncKey } from '@/cache';
+import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { addLog } from '@/utils/log';
 import { pluginFileS3Server } from '@/s3';
@@ -27,7 +27,7 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
       }
     );
     if (oldTool?.objectName) pluginFileS3Server.removeFile(oldTool.objectName);
-    await refreshSyncKey(SystemCacheKeyEnum.systemTool);
+    await refreshVersionKey(SystemCacheKeyEnum.systemTool);
     addLog.info(`Upload tool success: ${toolId}`);
   });
 

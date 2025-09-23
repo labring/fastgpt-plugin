@@ -2,13 +2,8 @@ import { contract } from '@/contract';
 import { MongoPluginModel } from '@/mongo/models/plugins';
 import { mongoSessionRun } from '@/mongo/utils';
 import { s } from '@/router/init';
-import { getTool } from '@tool/controller';
-import path from 'path';
-import fs from 'fs';
-import { addLog } from '@/utils/log';
-import { uploadedTools } from '@tool/constants';
 import { pluginFileS3Server } from '@/s3';
-import { refreshSyncKey } from '@/cache';
+import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 
 export default s.route(contract.tool.upload.delete, async ({ query: { toolId: rawToolId } }) => {
@@ -24,7 +19,7 @@ export default s.route(contract.tool.upload.delete, async ({ query: { toolId: ra
       };
     }
     await pluginFileS3Server.removeFile(result.objectName);
-    await refreshSyncKey(SystemCacheKeyEnum.systemTool);
+    await refreshVersionKey(SystemCacheKeyEnum.systemTool);
   });
 
   return {

@@ -5,19 +5,19 @@ import { builtinTools, uploadedTools } from './constants';
 import fs from 'fs';
 import { addLog } from '@/utils/log';
 import { ToolTypeEnum } from './type/tool';
-import { ToolBasePath, UploadedToolBaseURL } from './utils';
+import { BuiltInToolBaseURL, UploadedToolBaseURL } from './utils';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (
-  basePath: string,
   filename: string,
   toolSource: 'built-in' | 'uploaded' = 'built-in'
 ): Promise<ToolType[]> => {
   const tools: ToolType[] = [];
 
-  const toolRootPath = path.join(basePath, filename);
+  const basepath = toolSource === 'uploaded' ? UploadedToolBaseURL : BuiltInToolBaseURL;
+  const toolRootPath = path.join(basepath, filename);
   const rootMod = (await import(toolRootPath)).default as ToolSetType;
   const defaultIcon = `/imgs/tools/${filename.split('.')[0]}.svg`;
 
@@ -89,18 +89,18 @@ export const LoadToolsByFilename = async (
 };
 
 async function initBuiltInTools() {
-  const basePath = ToolBasePath;
-
   // Create directory if it doesn't exist
-  if (!fs.existsSync(basePath)) {
-    addLog.info(`Creating built-in tools directory: ${basePath}`);
-    fs.mkdirSync(basePath, { recursive: true });
+  if (!fs.existsSync(BuiltInToolBaseURL)) {
+    addLog.info(`Creating built-in tools directory: ${BuiltInToolBaseURL}`);
+    fs.mkdirSync(BuiltInToolBaseURL, { recursive: true });
   }
 
   builtinTools.length = 0;
-  const toolDirs = fs.readdirSync(basePath).filter((file) => !filterToolList.includes(file));
+  const toolDirs = fs
+    .readdirSync(BuiltInToolBaseURL)
+    .filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
-    const tmpTools = await LoadToolsByFilename(basePath, tool, 'built-in');
+    const tmpTools = await LoadToolsByFilename(tool, 'built-in');
     builtinTools.push(...tmpTools);
   }
 
@@ -122,7 +122,7 @@ export async function initUploadedTool() {
     .readdirSync(UploadedToolBaseURL)
     .filter((file) => !filterToolList.includes(file));
   for (const tool of toolDirs) {
-    const tmpTools = await LoadToolsByFilename(UploadedToolBaseURL, tool, 'uploaded');
+    const tmpTools = await LoadToolsByFilename(tool, 'uploaded');
     uploadedTools.push(...tmpTools);
   }
 
