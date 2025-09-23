@@ -1,10 +1,10 @@
 coverage
 .env
-.env.local
 dist
 node_modules
 .DS_Store
 public/imgs/
-.local
 pnpm-lock.yaml
-local/
+.local
+*.local
+*.local.*

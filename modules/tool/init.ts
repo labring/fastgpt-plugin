@@ -61,6 +61,19 @@ export const LoadToolsByFilename = async (
     for (const child of children) {
       const toolId = child.toolId!;
 
+      let childIcon = icon;
+      if (!isProd) {
+        const childDirName = toolId.split('/').pop();
+        const childLogoPath = path.join(toolRootPath, 'children', childDirName!, 'logo.svg');
+        if (fs.existsSync(childLogoPath)) {
+          childIcon = `/imgs/tools/${filename}/${childDirName}.svg`;
+        }
+      } else {
+        if (child.icon) {
+          childIcon = child.icon;
+        }
+      }
+
       tools.push({
         ...child,
         toolId,
@@ -68,9 +81,9 @@ export const LoadToolsByFilename = async (
         type: rootMod.type,
         courseUrl: rootMod.courseUrl,
         author: rootMod.author,
-        icon,
         toolDirName: `${toolSource}/${filename}`,
-        toolSource
+        toolSource,
+        icon: childIcon
       });
     }
   } else {
