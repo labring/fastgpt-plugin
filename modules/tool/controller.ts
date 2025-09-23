@@ -74,17 +74,20 @@ export async function downloadTool(objectName: string) {
   const filepath = path.join(uploadPath, filename);
 
   try {
-    await pipeline(await pluginFileS3Server.getFile(objectName), createWriteStream(filepath));
-
-    const toolId = await extractToolIdFromFile(filepath);
-    if (!toolId) return Promise.reject('Failed to extract toolId from file');
-
-    return toolId;
-  } catch (error) {
-    // clean the undownloaded file
+    await pipeline(await pluginFileS3Server.getFile(objectName), createWriteStream(filepath)).catch(
+      (err) => {
+        addLog.warn(`Download plugin file: ${objectName} from S3 error: ${getErrText(err)}`);
+        return Promise.reject(err);
+      }
+    );
+    const toolId = await extractToolIdFromFile(filepath).catch((err) => {
+      addLog.warn(`Can not parse the tool file: ${filepath}, ${getErrText(err)}`);
+      return Promise.reject(err);
+    });
+    addLog.debug(`Downloaded tool: ${toolId}`);
+  } catch {
     if (fs.existsSync(filepath)) {
       await fs.promises.unlink(filepath);
     }
-    addLog.error(`Failed to download/install plugin:`, getErrText(error));
   }
 }
