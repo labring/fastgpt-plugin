@@ -13,6 +13,7 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
 
   await mongoSessionRun(async (session) => {
     const toolId = await downloadTool(objectName);
+    if (!toolId) return Promise.reject('Can not parse ToolId from the tool, installation failed.');
     const oldTool = await MongoPluginModel.findOneAndUpdate(
       {
         toolId
