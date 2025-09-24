@@ -16,6 +16,7 @@ import {
 
 export class S3Service {
   private client: Minio.Client;
+  private externalClient?: Minio.Client;
   private config: S3ConfigType;
 
   constructor(config: Partial<S3ConfigType>) {
@@ -32,6 +33,22 @@ export class S3Service {
       secretKey: this.config.secretKey,
       transportAgent: this.config.transportAgent
     });
+
+    this.externalClient = this.config.externalBaseUrl
+      ? (() => {
+          const urlObj = new URL(this.config.externalBaseUrl);
+          const endPoint = urlObj.hostname;
+          const useSSL = urlObj.protocol === 'https';
+          return new Minio.Client({
+            endPoint,
+            port: urlObj.port ? parseInt(urlObj.port) : useSSL ? 443 : 80,
+            useSSL,
+            accessKey: this.config.accessKey,
+            secretKey: this.config.secretKey,
+            transportAgent: this.config.transportAgent
+          });
+        })()
+      : undefined;
   }
 
   async initialize() {
@@ -290,8 +307,10 @@ export class S3Service {
     const name = this.generateFileId();
     const objectName = `${filepath}/${name}`;
 
+    const client = this.externalClient ?? this.client;
+
     try {
-      const policy = this.client.newPostPolicy();
+      const policy = client.newPostPolicy();
       policy.setBucket(this.config.bucket);
       policy.setKey(objectName);
       if (contentType) {
@@ -308,7 +327,19 @@ export class S3Service {
         ...metadata
       });
 
-      return { ...(await this.client.presignedPostPolicy(policy)), objectName };
+      const res = await client.presignedPostPolicy(policy);
+      const postURL = (() => {
+        if (this.config.externalBaseUrl) {
+          return `${this.config.externalBaseUrl}/${this.config.bucket}`;
+        } else {
+          return res.postURL;
+        }
+      })();
+      return {
+        postURL,
+        formData: res.formData,
+        objectName
+      };
     } catch (error) {
       addLog.error('Failed to generate Upload Presigned URL', error);
       return Promise.reject(`Failed to generate Upload Presigned URL: ${getErrText(error)}`);

@@ -18,7 +18,8 @@ export const pluginFileS3Server = (() => {
   if (!global._pluginFileS3Server) {
     global._pluginFileS3Server = new S3Service({
       maxFileSize: 50 * 1024 * 1024, // 默认 50MB
-      bucket: process.env.S3_PLUGIN_BUCKET || 'plugin_files'
+      bucket: process.env.S3_PLUGIN_BUCKET || 'plugin_files',
+      externalBaseUrl: process.env.S3_EXTERNAL_BASE_URL
     });
   }
   return global._pluginFileS3Server;

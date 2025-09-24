@@ -27,6 +27,16 @@ export function getToolType(): z.infer<typeof ToolTypeListSchema> {
   }));
 }
 
+const removeFile = async (file: string) => {
+  try {
+    if (fs.existsSync(file)) {
+      await fs.promises.unlink(file);
+    }
+  } catch (err) {
+    addLog.warn(` delele File Error, ${getErrText(err)} `);
+  }
+};
+
 export async function refreshUploadedTools() {
   addLog.info('Refreshing uploaded tools');
   const existsFiles = uploadedTools.map((item) => item.toolDirName);
@@ -40,12 +50,6 @@ export async function refreshUploadedTools() {
   );
 
   const newFiles = tools.filter((item) => !existsFiles.includes(item.objectName.split('/').pop()!));
-
-  const removeFile = async (file: string) => {
-    if (fs.existsSync(file)) {
-      await fs.promises.unlink(file);
-    }
-  };
 
   // merge remove and download steps into one Promise.all
   await Promise.all([
@@ -85,9 +89,8 @@ export async function downloadTool(objectName: string) {
       return Promise.reject(err);
     });
     addLog.debug(`Downloaded tool: ${toolId}`);
+    return toolId;
   } catch {
-    if (fs.existsSync(filepath)) {
-      await fs.promises.unlink(filepath);
-    }
+    await removeFile(filepath);
   }
 }

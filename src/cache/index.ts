@@ -1,9 +1,9 @@
 import type { SystemCacheKeyEnum } from './type';
 import { randomUUID } from 'node:crypto';
 import { initCache } from './init';
-import { FASTGPT_REDIS_PREFIX, getGlobalRedisConnection } from '@/redis';
+import { getGlobalRedisConnection } from '@/redis';
 
-const cachePrefix = `${FASTGPT_REDIS_PREFIX}:VERSION_KEY:`;
+const cachePrefix = `VERSION_KEY:`;
 
 const getVersionKey = async (key: `${SystemCacheKeyEnum}`) => {
   if (!global.systemCache) initCache();

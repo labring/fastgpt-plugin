@@ -6,6 +6,7 @@ import fs from 'fs';
 import { addLog } from '@/utils/log';
 import { ToolTypeEnum } from './type/tool';
 import { BuiltInToolBaseURL, UploadedToolBaseURL } from './utils';
+import { refreshUploadedTools } from './controller';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
@@ -131,4 +132,4 @@ export async function initUploadedTool() {
   );
 }
 
-export const initTools = () => Promise.all([initBuiltInTools(), initUploadedTool()]);
+export const initTools = async () => Promise.all([initBuiltInTools(), refreshUploadedTools()]);
