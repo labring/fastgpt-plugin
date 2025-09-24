@@ -25,22 +25,19 @@ export const html2md = (html: string) => {
     linkStyle: 'inlined',
     linkReferenceStyle: 'full'
   });
-  const start = Date.now();
-  console.log(start);
+
   turndownService.remove(['i', 'script', 'iframe', 'style']);
+
   turndownService.use(turndownPluginGfm.gfm);
 
   const md = turndownService.turndown(html);
 
-  // Optimized regex processing - combine both patterns and use single pass
   const formatMd = md.replace(
     /(!\[([^\]]*)\]|\[([^\]]*)\])(\([^)]*\))/g,
     (match, prefix, imageAlt, linkAlt, url) => {
-      // Determine if it's an image or link, and get the appropriate alt text
       const altText = imageAlt !== undefined ? imageAlt : linkAlt;
       const cleanAltText = altText.replace(/\n+/g, ' ').trim();
 
-      // Return the appropriate format
       return imageAlt !== undefined ? `![${cleanAltText}]${url}` : `[${cleanAltText}]${url}`;
     }
   );
