@@ -132,4 +132,4 @@ export async function initUploadedTool() {
   );
 }
 
-export const initTools = async () => Promise.all([initBuiltInTools(), refreshUploadedTools]);
+export const initTools = async () => Promise.all([initBuiltInTools(), refreshUploadedTools()]);
