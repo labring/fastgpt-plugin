@@ -60,8 +60,8 @@ export class S3Service {
         addLog.info(`Creating bucket: ${this.config.bucket}`);
         const [, err] = await catchError(() => this.client.makeBucket(this.config.bucket));
         if (err) {
-          addLog.warn(`Failed to create bucket: ${this.config.bucket}`);
-          return Promise.reject(err);
+          addLog.error(`Failed to create bucket: ${this.config.bucket}`);
+          return;
         }
       }
 
