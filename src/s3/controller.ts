@@ -51,7 +51,7 @@ export class S3Service {
       : undefined;
   }
 
-  async initialize() {
+  async initialize(policy: 'public' | 'private') {
     const [, err] = await catchError(async () => {
       addLog.info(`Checking bucket: ${this.config.bucket}`);
       const bucketExists = await this.client.bucketExists(this.config.bucket);
@@ -65,41 +65,65 @@ export class S3Service {
         }
       }
 
-      if (this.config.retentionDays && this.config.retentionDays > 0) {
-        const Days = this.config.retentionDays;
-        const [, err] = await catchError(() =>
-          Promise.all([
-            this.client.setBucketPolicy(
-              this.config.bucket,
-              JSON.stringify({
-                Version: '2012-10-17',
-                Statement: [
-                  {
-                    Effect: 'Allow',
-                    Principal: '*',
-                    Action: ['s3:GetObject'],
-                    Resource: [`arn:aws:s3:::${this.config.bucket}/*`]
-                  }
-                ]
-              })
-            ),
-            this.client.setBucketLifecycle(this.config.bucket, {
-              Rule: [
+      const [_, err] = await catchError(async () => {
+        if (policy === 'public') {
+          return this.client.setBucketPolicy(
+            this.config.bucket,
+            JSON.stringify({
+              Version: '2012-10-17',
+              Statement: [
                 {
-                  ID: 'AutoDeleteRule',
-                  Status: 'Enabled',
-                  Expiration: {
-                    Days,
-                    DeleteMarker: false,
-                    DeleteAll: false
-                  }
+                  Effect: 'Allow',
+                  Principal: '*',
+                  Action: ['s3:GetObject'],
+                  Resource: [`arn:aws:s3:::${this.config.bucket}/*`]
                 }
               ]
             })
-          ])
+          );
+        }
+        if (policy === 'private') {
+          return this.client.setBucketPolicy(
+            this.config.bucket,
+            JSON.stringify({
+              Version: '2012-10-17',
+              Statement: []
+            })
+          );
+        }
+      });
+      if (err) {
+        addLog.warn(`Failed to set bucket policy: ${this.config.bucket}`);
+      }
+
+      // Update bucket lifecycle
+      if (this.config.retentionDays && this.config.retentionDays > 0) {
+        const Days = this.config.retentionDays;
+        const [, err] = await catchError(() =>
+          this.client.setBucketLifecycle(this.config.bucket, {
+            Rule: [
+              {
+                ID: 'AutoDeleteRule',
+                Status: 'Enabled',
+                Expiration: {
+                  Days,
+                  DeleteMarker: false,
+                  DeleteAll: false
+                }
+              }
+            ]
+          })
         );
         if (err) {
-          addLog.warn(`Failed to set bucket policy: ${this.config.bucket}`);
+          addLog.warn(`Failed to set bucket lifecycle: ${this.config.bucket}`);
+        }
+      } else {
+        // Remove bucket policy to make it private
+        const [, err] = await catchError(() =>
+          this.client.removeBucketLifecycle(this.config.bucket)
+        );
+        if (err) {
+          addLog.warn(`Failed to remove bucket lifecycle: ${this.config.bucket}`);
         }
       }
 

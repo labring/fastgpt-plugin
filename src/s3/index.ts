@@ -10,7 +10,7 @@ export const fileUploadS3Server = (() => {
       bucket: process.env.S3_TOOL_BUCKET || 'fastgpt-tool',
       externalBaseUrl: process.env.S3_EXTERNAL_BASE_URL
     });
-    global._fileUploadS3Server.initialize();
+    global._fileUploadS3Server.initialize('public');
   }
   return global._fileUploadS3Server;
 })();
@@ -22,7 +22,7 @@ export const pluginFileS3Server = (() => {
       bucket: process.env.S3_PLUGIN_BUCKET || 'fastgpt-plugin',
       externalBaseUrl: process.env.S3_EXTERNAL_BASE_URL
     });
-    global._pluginFileS3Server.initialize();
+    global._pluginFileS3Server.initialize('private');
   }
   return global._pluginFileS3Server;
 })();
