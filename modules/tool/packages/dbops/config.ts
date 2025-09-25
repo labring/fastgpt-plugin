@@ -6,7 +6,6 @@ export default defineToolSet({
     'zh-CN': '数据库操作',
     en: 'Database Operations'
   },
-  author: 'FastGPT',
   type: ToolTypeEnum.tools,
   icon: 'core/workflow/template/datasource',
   description: {
