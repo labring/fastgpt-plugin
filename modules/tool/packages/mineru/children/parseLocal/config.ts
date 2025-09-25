@@ -90,7 +90,10 @@ export default defineTool({
             { label: 'pipeline', value: 'pipeline' },
             { label: 'vlm-transformers', value: 'vlm-transformers' },
             { label: 'vlm-sglang-engine', value: 'vlm-sglang-engine' },
-            { label: 'vlm-sglang-client', value: 'vlm-sglang-client' }
+            { label: 'vlm-sglang-client', value: 'vlm-sglang-client' },
+            { label: 'vllm-async-engine', value: 'vllm-async-engine' },
+            { label: 'vllm-engine', value: 'vllm-engine' },
+            { label: 'http-client', value: 'http-client' }
           ],
           defaultValue: 'pipeline'
         },
