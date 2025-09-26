@@ -36,9 +36,13 @@ export default defineTool({
       outputs: [
         {
           valueType: WorkflowIOValueTypeEnum.string,
+          key: 'title',
+          label: '网页标题'
+        },
+        {
+          valueType: WorkflowIOValueTypeEnum.string,
           key: 'result',
-          label: 'result',
-          description: '获取的网页内容'
+          label: '网页内容'
         }
       ]
     }
