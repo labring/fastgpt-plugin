@@ -40,6 +40,30 @@ export async function copyIcons(options: CopyIconOptions): Promise<number> {
       console.log(`📦 ${logPrefix}: ${path.relative(process.cwd(), logoTarget)}`);
       copiedCount++;
     }
+
+    const childrenDir = path.join(itemDir, 'children');
+    if (fs.existsSync(childrenDir) && fs.statSync(childrenDir).isDirectory()) {
+      const childrenTargetDir = path.join(targetDir, item);
+      if (!fs.existsSync(childrenTargetDir)) {
+        fs.mkdirSync(childrenTargetDir, { recursive: true });
+      }
+
+      const children = fs.readdirSync(childrenDir);
+      for (const child of children) {
+        const childDir = path.join(childrenDir, child);
+        if (!fs.existsSync(childDir) || !fs.statSync(childDir).isDirectory()) {
+          continue;
+        }
+
+        const childLogoPath = path.join(childDir, 'logo.svg');
+        if (fs.existsSync(childLogoPath)) {
+          const childLogoTarget = path.join(childrenTargetDir, `${child}.svg`);
+          fs.cpSync(childLogoPath, childLogoTarget);
+          console.log(`📦 ${logPrefix}: ${path.relative(process.cwd(), childLogoTarget)}`);
+          copiedCount++;
+        }
+      }
+    }
   }
 
   return copiedCount;
