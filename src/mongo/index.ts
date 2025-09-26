@@ -63,6 +63,7 @@ const syncMongoIndex = async (model: Model<any>) => {
 export const ReadPreference = connectionMongo.mongo.ReadPreference;
 
 export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose> {
+  console.log('url ===========', url);
   if (db.connection.readyState !== 0) {
     return db;
   }

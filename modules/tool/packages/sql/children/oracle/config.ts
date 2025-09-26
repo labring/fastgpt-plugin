@@ -39,27 +39,9 @@ export default defineTool({
       inputType: 'secret'
     },
     {
-      key: 'serviceName',
-      label: 'Service Name',
-      required: false,
-      inputType: 'input'
-    },
-    {
-      key: 'sid',
-      label: 'SID',
-      required: false,
-      inputType: 'input'
-    },
-    {
-      key: 'tns',
-      label: 'TNS',
-      required: false,
-      inputType: 'input'
-    },
-    {
-      key: 'database',
-      label: '数据库名称',
-      required: false,
+      key: 'connectString',
+      label: 'Connect String',
+      required: true,
       inputType: 'input'
     },
     {
