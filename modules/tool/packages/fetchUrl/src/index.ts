@@ -2,13 +2,13 @@ import { isIPv6 } from 'net';
 import { z } from 'zod';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
-import { getErrText } from '@tool/utils/err';
 import TurndownService from 'turndown';
+import { serviceRequestMaxContentLength } from '@tool/constants';
+
 // @ts-ignore
 const turndownPluginGfm = require('joplin-turndown-plugin-gfm');
 
 // Update content size limits
-const MAX_CONTENT_SIZE = 20 * 1024 * 1024; // 20MB limit
 const MAX_TEXT_LENGTH = 100 * 1000; // 100k characters limit
 
 export const html2md = (html: string) => {
@@ -187,54 +187,39 @@ export const urlsFetch = async ({
   url: string;
   selector?: string;
 }): Promise<{
-  url: string;
   title: string;
   content: string;
-  selector?: string;
 }> => {
   const isInternal = isInternalAddress(url);
   if (isInternal) {
     return {
-      url,
       title: '',
-      content: 'Cannot fetch internal url',
-      selector: ''
+      content: 'Cannot fetch internal url'
     };
   }
 
-  try {
-    const fetchRes = await axios.get(url, {
-      timeout: 30000,
-      maxContentLength: MAX_CONTENT_SIZE, // 20MB limit
-      maxBodyLength: MAX_CONTENT_SIZE,
-      responseType: 'text'
-    });
+  const fetchRes = await axios.get(url, {
+    timeout: 30000,
+    maxContentLength: serviceRequestMaxContentLength,
+    maxBodyLength: serviceRequestMaxContentLength,
+    responseType: 'text'
+  });
 
-    if (fetchRes.data && fetchRes.data.length > MAX_CONTENT_SIZE) {
-      return Promise.reject('Content size exceeds 20MB limit');
-    }
-
-    const $ = cheerio.load(fetchRes.data);
-    const { title, html, usedSelector } = cheerioToHtml({
-      fetchUrl: url,
-      $,
-      selector
-    });
-
-    return {
-      url,
-      title,
-      content: html2md(html),
-      selector: usedSelector
-    };
-  } catch (error) {
-    return {
-      url,
-      title: '',
-      content: getErrText(error),
-      selector: ''
-    };
+  if (fetchRes.data && fetchRes.data.length > serviceRequestMaxContentLength) {
+    return Promise.reject(`Content size exceeds ${serviceRequestMaxContentLength} limit`);
   }
+
+  const $ = cheerio.load(fetchRes.data);
+  const { title, html, usedSelector } = cheerioToHtml({
+    fetchUrl: url,
+    $,
+    selector
+  });
+
+  return {
+    title,
+    content: html2md(html)
+  };
 };
 
 export const InputType = z.object({
@@ -242,16 +227,18 @@ export const InputType = z.object({
 });
 
 export const OutputType = z.object({
+  title: z.string().optional(),
   result: z.string()
 });
 
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  const { content } = await urlsFetch({
+  const { title, content } = await urlsFetch({
     url: props.url,
     selector: 'body'
   });
 
   return {
+    title,
     result: content
   };
 }
