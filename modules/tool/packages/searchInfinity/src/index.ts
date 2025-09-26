@@ -107,7 +107,7 @@ async function generateVolcengineSignature(accessKey: string, secretKey: string,
 
   const stringToSign = `HMAC-SHA256\n${xDate}\n${credentialScope}\n${canonicalRequestHash}`;
 
-  const hmacSha256 = async (key: Uint8Array, content: string) => {
+  const hmacSha256 = async (key: BufferSource, content: string) => {
     return new Uint8Array(
       await crypto.subtle.sign(
         'HMAC',
