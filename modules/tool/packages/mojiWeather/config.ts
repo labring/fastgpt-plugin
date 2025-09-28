@@ -13,5 +13,14 @@ export default defineToolSet({
   },
   toolDescription:
     'tool description for ai to use, fallback to English description if not provided',
-  icon: '/imgs/tools/mojiWeather.svg'
+  icon: '/imgs/tools/mojiWeather.svg',
+  secretInputConfig: [
+    {
+      key: 'apiKey',
+      label: '墨迹天气API密钥',
+      description: '墨迹天气API密钥，用于访问天气服务',
+      required: true,
+      inputType: 'secret'
+    }
+  ]
 });

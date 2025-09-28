@@ -3,6 +3,7 @@ import { searchCity } from '../../../src/utils/searchCity';
 import { getWeatherIn15Days } from '../../../src/utils/getWeather';
 
 export const InputType = z.object({
+  apiKey: z.string().min(1, 'API密钥不能为空').describe('墨迹天气API密钥'),
   city: z.string(),
   end_time: z.string(),
   province: z.string(),
@@ -43,6 +44,7 @@ export const OutputType = z.object({
 });
 
 export async function tool({
+  apiKey,
   city,
   end_time,
   province,
@@ -57,7 +59,7 @@ export async function tool({
   }
 
   try {
-    const weatherIn15Days = await getWeatherIn15Days(cityId);
+    const weatherIn15Days = await getWeatherIn15Days(cityId, apiKey);
     const forecastsInRange = weatherIn15Days.filter((item: { predictDate: string }) => {
       const predictDate = item.predictDate;
       return predictDate >= start_time && predictDate <= end_time;

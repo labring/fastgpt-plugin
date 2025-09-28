@@ -30,18 +30,16 @@ type WeatherIn15Days = [
   }
 ];
 
-export async function getWeatherIn15Days(cityId: string) {
+export async function getWeatherIn15Days(cityId: string, apiKey: string) {
   const baseUrl = 'http://aliv18.data.moji.com';
   const path = '/whapi/json/alicityweather/forecast15days';
-  // auth value
-  const AppCode = 'a13de8269f304f9fb9376eb4e2a988b6';
 
   const formData = new FormData();
   formData.set('cityId', cityId);
 
   const res = await axios.post(`${baseUrl}${path}`, formData, {
     headers: {
-      Authorization: `APPCODE ${AppCode}`
+      Authorization: `APPCODE ${apiKey}`
     },
     timeout: 10000
   });
