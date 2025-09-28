@@ -1,14 +1,23 @@
 import { z } from 'zod';
 
 export const BaseSQLDbInputSchema = z.object({
-  sql: z.string().min(1, 'SQL is required'),
+  sql: z
+    .string()
+    .min(1, 'SQL is required')
+    .transform((val) => (val.endsWith(';') ? val.slice(0, -1) : val)),
   host: z.string().min(1, 'Host is required'),
   port: z.coerce.number().int().positive().max(65535, 'Port number must be between 1 and 65535'),
   database: z.string().min(1, 'Database is required').optional(),
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
-  connectionTimeout: z.coerce.number().int().nonnegative().default(30_000),
-  maxConnections: z.coerce.number().int().nonnegative().default(10)
+  connectionTimeout: z.coerce
+    .number()
+    .nonnegative()
+    .transform((val) => (val ? val : 3e4)),
+  maxConnections: z.coerce
+    .number()
+    .nonnegative()
+    .transform((val) => (val ? val : 10))
 });
 export type BaseSQLDbInputType = z.infer<typeof BaseSQLDbInputSchema>;
 
