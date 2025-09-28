@@ -7,3 +7,4 @@ node_modules
 public/imgs/
 .local
 pnpm-lock.yaml
+local/

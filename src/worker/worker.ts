@@ -1,10 +1,9 @@
 import { parentPort } from 'worker_threads';
-import path from 'path';
-import { LoadToolsByFilename } from '@tool/init';
-import { isProd } from '@/constants';
 import { getErrText } from '@tool/utils/err';
 import type { Main2WorkerMessageType } from './type';
 import { setupProxy } from '@/utils/setupProxy';
+import { LoadToolsByFilename } from '@tool/utils';
+
 setupProxy();
 
 // rewrite console.log to send to parent
@@ -15,15 +14,17 @@ console.log = (...args: any[]) => {
   });
 };
 
-const basePath = isProd
-  ? process.env.TOOLS_DIR || path.join(process.cwd(), 'dist', 'tools')
-  : path.join(process.cwd(), 'modules', 'tool', 'packages');
-
 parentPort?.on('message', async (params: Main2WorkerMessageType) => {
   const { type, data } = params;
   switch (type) {
     case 'runTool': {
-      const tools = await LoadToolsByFilename(basePath, data.toolDirName);
+      // Extract toolSource and filename from toolDirName (format: "toolSource/filename")
+      const [toolSource, filename] = data.toolDirName.split('/') as [
+        'uploaded' | 'built-in',
+        string
+      ];
+
+      const tools = await LoadToolsByFilename(filename, toolSource);
 
       const tool = tools.find((tool) => tool.toolId === data.toolId);
 

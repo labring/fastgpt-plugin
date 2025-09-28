@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { I18nStringSchema } from '@/type/i18n';
 import { InputConfigSchema, InputSchema, OutputSchema } from './fastgpt';
-import type { ToolTypeListSchema } from '@tool/controller';
 
 /* Call back type */
 export const SystemVarSchema = z.object({
@@ -212,6 +211,7 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
     parentId: z.string().optional().describe('The parent id of the tool'),
     toolDirName: z.string(),
 
+    toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool'),
     // ToolSet Parent
     secretInputConfig: z
       .array(InputConfigSchema)

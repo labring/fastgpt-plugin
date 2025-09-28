@@ -1,28 +1,27 @@
 import { z } from 'zod';
-import { S3Service } from './controller';
+import type { ClientOptions } from 'minio';
+import { HttpProxyAgent } from 'http-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
-export type FileConfig = {
-  maxFileSize: number; // 文件大小限制（字节）
-  retentionDays: number; // 保留天数（由 MinIO 生命周期策略自动管理）
-  endpoint: string; // MinIO endpoint
-  port?: number; // MinIO port
-  useSSL: boolean; // 是否使用SSL
-  accessKey: string; // MinIO access key
-  secretKey: string; // MinIO secret key
+export type S3ConfigType = {
+  maxFileSize?: number; // 文件大小限制（字节）
+  retentionDays?: number; // 保留天数（由 S3 生命周期策略自动管理）
+  externalBaseUrl?: string; // 自定义域名
   bucket: string; // 存储桶名称
-};
+} & ClientOptions;
 
-// 默认配置（动态从环境变量读取）
-export const defaultFileConfig: FileConfig = {
-  maxFileSize: process.env.MAX_FILE_SIZE ? parseInt(process.env.MAX_FILE_SIZE) : 20 * 1024 * 1024, // 默认 20MB
-  retentionDays: process.env.RETENTION_DAYS ? parseInt(process.env.RETENTION_DAYS) : 15, // 默认保留15天
-  endpoint: process.env.MINIO_ENDPOINT || 'localhost',
-  port: process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : 9000,
-  useSSL: process.env.MINIO_USE_SSL === 'true',
-  accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-  secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
-  bucket: process.env.MINIO_BUCKET || 'files'
-};
+export const commonS3Config: Partial<S3ConfigType> = {
+  endPoint: process.env.S3_ENDPOINT || 'localhost',
+  port: process.env.S3_PORT ? parseInt(process.env.S3_PORT) : 9000,
+  useSSL: process.env.S3_USE_SSL === 'true',
+  accessKey: process.env.S3_ACCESS_KEY || 'minioadmin',
+  secretKey: process.env.S3_SECRET_KEY || 'minioadmin',
+  transportAgent: process.env.HTTP_PROXY
+    ? new HttpProxyAgent(process.env.HTTP_PROXY)
+    : process.env.HTTPS_PROXY
+      ? new HttpsProxyAgent(process.env.HTTPS_PROXY)
+      : undefined
+} as const;
 
 export const FileMetadataSchema = z.object({
   fileId: z.string(),
@@ -34,12 +33,3 @@ export const FileMetadataSchema = z.object({
 });
 
 export type FileMetadata = z.infer<typeof FileMetadataSchema>;
-
-export const initS3Server = () => {
-  global.s3Server = new S3Service(defaultFileConfig);
-  return global.s3Server.initialize();
-};
-
-declare global {
-  var s3Server: S3Service;
-}

@@ -5,6 +5,7 @@ import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
+import { fileUploadS3Server } from '@/s3';
 
 type WorkerQueueItem = {
   id: string;
@@ -199,7 +200,7 @@ export async function dispatchWithNewWorker(data: {
         console.log(...logData);
       } else if (type === 'uploadFile') {
         try {
-          const result = await global.s3Server.uploadFileAdvanced({
+          const result = await fileUploadS3Server.uploadFileAdvanced({
             ...data,
             ...(data.buffer ? { buffer: Buffer.from(data.buffer) } : {})
           });

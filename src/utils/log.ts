@@ -45,11 +45,11 @@ const LOG_LEVEL = (() => {
 
 /* add logger */
 export const addLog = {
-  log(level: LogLevelEnum, msg: string, obj: Record<string, any> = {}) {
+  log(level: LogLevelEnum, msg: string, obj?: Record<string, any>) {
     if (level < LOG_LEVEL) return;
 
     const stringifyObj = JSON.stringify(obj);
-    const isEmpty = Object.keys(obj).length === 0;
+    const isEmpty = !obj || Object.keys(obj).length === 0;
 
     console.log(
       `${logMap[level].levelLog} ${format(Date.now(), 'yyyy-MM-dd HH:mm:ss')}: ${msg} ${
@@ -57,7 +57,7 @@ export const addLog = {
       }`
     );
 
-    if (level === LogLevelEnum.error) console.log(obj);
+    if (level === LogLevelEnum.error && obj) console.log(obj);
 
     const logger = getLogger();
     if (logger) {
@@ -81,22 +81,28 @@ export const addLog = {
     this.log(LogLevelEnum.warn, msg, obj);
   },
   error(msg: string, error?: any) {
-    this.log(LogLevelEnum.error, msg, {
-      message: error?.message || error,
-      stack: error?.stack,
-      ...(error?.config && {
-        config: {
-          headers: error.config.headers,
-          url: error.config.url,
-          data: error.config.data
-        }
-      }),
-      ...(error?.response && {
-        response: {
-          status: error.response.status,
-          statusText: error.response.statusText
-        }
-      })
-    });
+    this.log(
+      LogLevelEnum.error,
+      msg,
+      error
+        ? {
+            message: error?.message || error,
+            stack: error?.stack,
+            ...(error?.config && {
+              config: {
+                headers: error.config.headers,
+                url: error.config.url,
+                data: error.config.data
+              }
+            }),
+            ...(error?.response && {
+              response: {
+                status: error.response.status,
+                statusText: error.response.statusText
+              }
+            })
+          }
+        : undefined
+    );
   }
 };

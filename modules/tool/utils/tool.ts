@@ -48,11 +48,11 @@ export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
 
 export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItemType[] {
   return list.map((item, index) => ({
-    id: item.toolId,
-    parentId: item.parentId,
     author: item.author,
-    courseUrl: item.courseUrl,
     name: item.name,
+    parentId: item.parentId,
+    courseUrl: item.courseUrl,
+    id: item.toolId,
     avatar: item.icon,
     versionList: item.versionList,
     description: item.description,
@@ -64,6 +64,7 @@ export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItem
     originCost: 0,
     currentCost: 0,
     hasTokenFee: false,
-    secretInputConfig: item.secretInputConfig
+    secretInputConfig: item.secretInputConfig,
+    toolSource: item.toolSource
   }));
 }
