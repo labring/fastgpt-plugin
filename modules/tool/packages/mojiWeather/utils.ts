@@ -1,12 +1,11 @@
 import { POST } from '@tool/utils/request';
-import { WeatherApiResponseSchema } from './types';
 import type { WeatherItem, WeatherApiResponse } from './types';
 import citiesData from './cities.json';
 
 export interface CityInfo {
-  province: string;
-  city: string;
-  towns: string;
+  province: string | undefined;
+  city: string | undefined;
+  towns: string | undefined;
 }
 
 // normalize the city name
@@ -75,7 +74,6 @@ export async function getWeatherIn15Days(cityId: string, apiKey: string): Promis
     },
     timeout: 10000
   });
-
-  const validatedResponse = WeatherApiResponseSchema.parse(res);
-  return validatedResponse.data.forecast;
+  const weatherData = res.data.data.forecast;
+  return weatherData;
 }
