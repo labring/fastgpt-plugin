@@ -22,21 +22,24 @@ export default defineTool({
           label: '省份',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
-          description: '省份名称，如：浙江省'
+          description: '省份名称，如：浙江省',
+          toolDescription: '省份名称'
         },
         {
           key: 'city',
           label: '城市',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
-          description: '城市名称，如：杭州市'
+          description: '城市名称，如：杭州市',
+          toolDescription: '城市名称'
         },
         {
           key: 'towns',
           label: '区县',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
-          description: '区县名称，如：余杭区'
+          description: '区县名称，如：余杭区',
+          toolDescription: '区县名称'
         },
         {
           key: 'start_time',
@@ -44,7 +47,8 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           description: '开始日期，格式：YYYY-MM-DD，如：2024-07-18',
-          placeholder: '格式：YYYY-MM-DD，如：2024-07-18'
+          placeholder: '格式：YYYY-MM-DD，如：2024-07-18',
+          toolDescription: '开始日期'
         },
         {
           key: 'end_time',
@@ -52,7 +56,8 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           description: '结束日期，格式：YYYY-MM-DD，如：2024-07-20',
-          placeholder: '格式：YYYY-MM-DD，如：2024-07-20'
+          placeholder: '格式：YYYY-MM-DD，如：2024-07-20',
+          toolDescription: '结束日期'
         }
       ],
       outputs: [

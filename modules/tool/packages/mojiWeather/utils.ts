@@ -1,4 +1,7 @@
-import citiesData from '../data/cities.json';
+import { POST } from '@tool/utils/request';
+import { WeatherApiResponseSchema } from './types';
+import type { WeatherItem, WeatherApiResponse } from './types';
+import citiesData from './cities.json';
 
 export interface CityInfo {
   province: string;
@@ -25,14 +28,9 @@ function normalize(name: string): string {
     '市',
     '省'
   ];
-  let res = trimmed;
-  for (const s of suffixes) {
-    if (res.endsWith(s)) {
-      res = res.slice(0, res.length - s.length);
-      break;
-    }
-  }
-  return res;
+
+  const foundSuffix = suffixes.find((suffix) => trimmed.endsWith(suffix));
+  return foundSuffix ? trimmed.slice(0, trimmed.length - foundSuffix.length) : trimmed;
 }
 
 // fuzzy match city
@@ -62,4 +60,22 @@ export function searchCity(cityInfo: CityInfo): string | null {
     }
   }
   return null;
+}
+
+export async function getWeatherIn15Days(cityId: string, apiKey: string): Promise<WeatherItem[]> {
+  const baseUrl = 'http://aliv18.data.moji.com';
+  const path = '/whapi/json/alicityweather/forecast15days';
+
+  const formData = new FormData();
+  formData.set('cityId', cityId);
+
+  const res = await POST<WeatherApiResponse>(`${baseUrl}${path}`, formData, {
+    headers: {
+      Authorization: `APPCODE ${apiKey}`
+    },
+    timeout: 10000
+  });
+
+  const validatedResponse = WeatherApiResponseSchema.parse(res);
+  return validatedResponse.data.forecast;
 }
