@@ -8,6 +8,7 @@ export type S3ConfigType = {
   retentionDays?: number; // 保留天数（由 S3 生命周期策略自动管理）
   externalBaseUrl?: string; // 自定义域名
   bucket: string; // 存储桶名称
+  isPublicRead: boolean;
 } & ClientOptions;
 
 export const commonS3Config: Partial<S3ConfigType> = {

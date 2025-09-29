@@ -147,13 +147,6 @@ export class S3Service {
     return randomBytes(16).toString('hex');
   }
 
-  private isPublicReadBucket(policy: string): boolean {
-    const policyJson = JSON.parse(policy);
-    return policyJson.Statement.some(
-      (statement: any) => statement.Effect === 'Allow' && statement.Principal === '*'
-    );
-  }
-
   /**
    * Get the file directly.
    */
@@ -167,11 +160,8 @@ export class S3Service {
   async generateExternalUrl(objectName: string, expiry: number = 3600): Promise<string> {
     const externalBaseUrl = this.config.externalBaseUrl;
 
-    // 获取桶策略
-    const policy = await this.client.getBucketPolicy(this.config.bucket);
-    const isPublicBucket = this.isPublicReadBucket(policy);
-
-    if (!isPublicBucket) {
+    // Private
+    if (!this.config.isPublicRead) {
       const url = await this.client.presignedGetObject(this.config.bucket, objectName, expiry);
       // 如果有 externalBaseUrl，需要把域名进行替换
       if (this.config.externalBaseUrl) {

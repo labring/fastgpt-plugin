@@ -1,5 +1,5 @@
 {
-  "name": "@fastgpt-plugins/tool-base64to-image",
+  "name": "@fastgpt-plugins/tool-base64-decode",
   "module": "index.ts",
   "type": "module",
   "scripts": {

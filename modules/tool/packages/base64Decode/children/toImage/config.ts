@@ -9,10 +9,10 @@ export default defineTool({
   },
   type: ToolTypeEnum.tools,
   description: {
-    'zh-CN': '输入 Base64 编码的图片，输出图片可访问链接。',
-    en: 'Enter a Base64-encoded image and get a directly accessible image link.'
+    'zh-CN': '将 Base64 编码的字符串转换为图片。',
+    en: 'Enter a Base64-encoded string and get a image.'
   },
-  toolDescription: 'Enter a Base64-encoded image and get a directly accessible image link.',
+  toolDescription: 'Base64-encoded to image',
   versionList: [
     {
       value: '0.1.0',
@@ -30,19 +30,8 @@ export default defineTool({
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'url',
           label: '图片 URL',
-          description: '可访问的图片地址: http://example.com'
-        },
-        {
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'type',
-          label: 'MIME 类型',
-          description: 'MIME 类型'
-        },
-        {
-          valueType: WorkflowIOValueTypeEnum.number,
-          key: 'size',
-          label: '图片大小（B）',
-          description: '图片大小（B）'
+          description: '可访问的图片地址: http://example.com',
+          required: true
         }
       ]
     }

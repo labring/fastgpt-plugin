@@ -10,9 +10,10 @@ import { setupProxy } from './utils/setupProxy';
 import { initWorkflowTemplates } from '@workflow/init';
 import { connectMongo, connectionMongo, MONGO_URL } from '@/mongo';
 
+const requestSizeLimit = '10mb';
 const app = express().use(
-  express.json(),
-  express.urlencoded({ extended: true }),
+  express.json({ limit: requestSizeLimit }),
+  express.urlencoded({ extended: true, limit: requestSizeLimit }),
   express.static('public', { maxAge: isProd ? '1d' : '0', etag: true, lastModified: true })
 );
 

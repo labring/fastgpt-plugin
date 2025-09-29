@@ -80,9 +80,7 @@ export const InputType = z.object({
 });
 
 export const OutputType = z.object({
-  url: z.string(),
-  type: z.string(),
-  size: z.number()
+  url: z.string()
 });
 
 /**
@@ -99,6 +97,7 @@ export async function tool({
       return match[1];
     }
     const detectedType = detectImageMimeType(base64);
+
     if (!detectedType) {
       throw new Error('Image Type unknown');
     }
@@ -116,8 +115,6 @@ export async function tool({
   const meta = await uploadFile({ base64, defaultFilename: filename });
 
   return {
-    url: meta.accessUrl,
-    type: meta.contentType,
-    size: meta.size
+    url: meta.accessUrl
   };
 }

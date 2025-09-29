@@ -28,6 +28,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'qwen3-max',
+      maxContext: 1024000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'qwen-plus',
       maxContext: 128000,
       maxTokens: 8000,
@@ -229,6 +241,18 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: false,
       toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3-coder-plus',
+      maxContext: 1024000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: false,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
