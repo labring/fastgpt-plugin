@@ -3,6 +3,7 @@ import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastg
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
+  courseUrl: 'https://wiki.yoo-ai.com/api/guide.html',
   name: {
     'zh-CN': '必优ChatPPT',
     en: 'ChatPPT'
@@ -34,7 +35,8 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           description: '生成PPT的描述文本',
-          toolDescription: '生成PPT的描述文本'
+          toolDescription: '生成PPT的描述文本',
+          placeholder: '描述PPT内容, 如: 生成一个关于人工智能的PPT'
         },
         {
           key: 'color',
@@ -42,7 +44,8 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           description: 'PPT的主题色',
-          toolDescription: 'PPT的主题色'
+          toolDescription: 'PPT的主题色',
+          placeholder: '直接填写自然语言描述主题色, 如: 蓝色'
         }
       ],
       outputs: [

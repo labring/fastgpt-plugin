@@ -13,9 +13,15 @@ export const OutputType = z.object({
 
 export async function tool({ apiKey, text, color }: z.infer<typeof InputType>) {
   const token = `Bearer ${apiKey}`;
-  const id = await createPPT(token, text, color);
-  const pptEditUrl = await getPPTPreviewUrl(token, id);
-  return {
-    preview_url: pptEditUrl
-  };
+  try {
+    const id = await createPPT(token, text, color);
+    const pptEditUrl = await getPPTPreviewUrl(token, id);
+    return {
+      preview_url: pptEditUrl
+    };
+  } catch (error) {
+    return Promise.reject(
+      error instanceof Error ? `Create PPT failed: ${error.message.split(':')[0]}` : String(error)
+    );
+  }
 }

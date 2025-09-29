@@ -37,7 +37,10 @@ export async function createPPT(token: string, text: string, color: string): Pro
       }
     }
   );
-  const id = res.data.data.id;
+  const id = res?.data?.data?.id;
+  if (!id || typeof id !== 'string') {
+    return Promise.reject('Failed to create PPT: empty id');
+  }
   return id;
 }
 
@@ -51,7 +54,9 @@ export async function getPPTPreviewUrl(token: string, id: string): Promise<strin
       Authorization: token
     }
   });
-  const pptResult = res.data.data;
-  const preview_url = pptResult.preview_url;
+  const preview_url = res?.data?.data?.preview_url;
+  if (!preview_url || typeof preview_url !== 'string') {
+    return Promise.reject('Failed to fetch PPT preview url');
+  }
   return preview_url;
 }
