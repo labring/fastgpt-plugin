@@ -3,11 +3,34 @@ import path from 'path';
 import type { ToolConfigWithCbType, ToolSetType, ToolType } from './type';
 import { ToolTypeEnum } from 'sdk/client';
 import fs from 'fs';
+import { iconFormats } from './utils/icon';
 
 export const UploadedToolBaseURL = path.join(process.cwd(), 'dist', 'tools', 'uploaded');
 export const BuiltInToolBaseURL = isProd
   ? path.join(process.cwd(), 'dist', 'tools', 'built-in')
   : path.join(process.cwd(), 'modules', 'tool', 'packages');
+
+// Supported image formats for tool icons
+
+/**
+ * Find tool icon with supported formats in the public directory
+ * @param toolName Tool name (without extension)
+ * @returns Icon path if found, default svg path otherwise
+ */
+function findToolIcon(toolName: string): string {
+  const iconBasePath = path.join(process.cwd(), 'dist', 'public', 'imgs', 'tools');
+
+  // Check for existing icon files with different formats
+  for (const format of iconFormats) {
+    const iconPath = path.join(iconBasePath, `${toolName}.${format}`);
+    if (fs.existsSync(iconPath)) {
+      return `/imgs/tools/${toolName}.${format}`;
+    }
+  }
+
+  // Return default svg path if no icon found
+  return `/imgs/tools/${toolName}.svg`;
+}
 
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (
@@ -19,7 +42,8 @@ export const LoadToolsByFilename = async (
   const basepath = toolSource === 'uploaded' ? UploadedToolBaseURL : BuiltInToolBaseURL;
   const toolRootPath = path.join(basepath, filename);
   const rootMod = (await import(toolRootPath)).default as ToolSetType;
-  const defaultIcon = `/imgs/tools/${filename.split('.')[0]}.svg`;
+  const toolName = filename.split('.')[0];
+  const defaultIcon = findToolIcon(toolName);
 
   // Tool set
   if ('children' in rootMod || fs.existsSync(path.join(toolRootPath, 'children'))) {
