@@ -26,9 +26,7 @@ export async function tool({
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const cityId = searchCity({ city, province, towns });
   if (!cityId) {
-    return {
-      data: []
-    };
+    return Promise.reject('Can not find city');
   }
 
   try {
