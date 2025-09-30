@@ -14,22 +14,19 @@ export const BuiltInToolBaseURL = isProd
 
 /**
  * Find tool icon with supported formats in the public directory
- * @param toolName Tool name (without extension)
+ * @param toolId Tool name (without extension)
  * @returns Icon path if found, default svg path otherwise
  */
-function findToolIcon(toolName: string): string {
+function findToolIcon(toolId: string) {
   const iconBasePath = path.join(process.cwd(), 'dist', 'public', 'imgs', 'tools');
 
   // Check for existing icon files with different formats
   for (const format of iconFormats) {
-    const iconPath = path.join(iconBasePath, `${toolName}.${format}`);
+    const iconPath = path.join(iconBasePath, `${toolId}.${format}`);
     if (fs.existsSync(iconPath)) {
-      return `/imgs/tools/${toolName}.${format}`;
+      return `/imgs/tools/${toolId}.${format}`;
     }
   }
-
-  // Return default svg path if no icon found
-  return `/imgs/tools/${toolName}.svg`;
 }
 
 // Load tool or toolset and its children
@@ -42,26 +39,23 @@ export const LoadToolsByFilename = async (
   const basepath = toolSource === 'uploaded' ? UploadedToolBaseURL : BuiltInToolBaseURL;
   const toolRootPath = path.join(basepath, filename);
   const rootMod = (await import(toolRootPath)).default as ToolSetType;
-  const toolName = filename.split('.')[0];
-  const defaultIcon = findToolIcon(toolName);
 
   // Tool set
   if ('children' in rootMod || fs.existsSync(path.join(toolRootPath, 'children'))) {
     const toolsetId = isProd || toolSource === 'uploaded' ? rootMod.toolId! : filename;
-    const icon = rootMod.icon || defaultIcon;
+    const parentIcon = rootMod.icon || findToolIcon(toolsetId)!;
 
-    // is toolSet
+    // push parent
     tools.push({
       ...rootMod,
       type: rootMod.type || ToolTypeEnum.other,
       toolId: toolsetId,
-      icon,
+      icon: parentIcon,
       toolDirName: `${toolSource}/${filename}`,
       toolSource,
       cb: () => Promise.resolve({}),
       versionList: []
     });
-    // Push children
     const getChildren = async (toolRootPath: string) => {
       const childrenPath = path.join(toolRootPath, 'children');
       const files = fs.readdirSync(childrenPath);
@@ -83,6 +77,7 @@ export const LoadToolsByFilename = async (
 
     for (const child of children) {
       const toolId = child.toolId!;
+      const childIcon = findToolIcon(toolId) || parentIcon;
 
       tools.push({
         ...child,
@@ -91,18 +86,19 @@ export const LoadToolsByFilename = async (
         type: rootMod.type,
         courseUrl: rootMod.courseUrl,
         author: rootMod.author,
-        icon: findToolIcon(toolId),
+        icon: childIcon,
         toolDirName: `${toolSource}/${filename}`,
         toolSource
       });
     }
   } else {
     const tool = (await import(toolRootPath)).default as ToolConfigWithCbType;
+    const icon = tool.icon || findToolIcon(tool.toolId!) || '';
 
     tools.push({
       ...tool,
       type: tool.type || ToolTypeEnum.tools,
-      icon: tool.icon || defaultIcon,
+      icon,
       toolId: tool.toolId || filename,
       toolDirName: `${toolSource}/${filename}`,
       toolSource
