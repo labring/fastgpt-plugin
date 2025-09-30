@@ -20,8 +20,6 @@ export async function tool({ apiKey, text, color }: z.infer<typeof InputType>) {
       preview_url: pptEditUrl
     };
   } catch (error) {
-    return Promise.reject(
-      error instanceof Error ? `Create PPT failed: ${error.message.split(':')[0]}` : String(error)
-    );
+    return Promise.reject(error);
   }
 }
