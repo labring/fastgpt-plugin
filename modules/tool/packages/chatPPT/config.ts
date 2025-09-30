@@ -14,7 +14,6 @@ export default defineTool({
     en: 'ChatPPT, one-click generate PPT'
   },
   toolDescription: 'ChatPPT, one-click generate PPT',
-  icon: '/imgs/tools/chatPPT.svg',
   secretInputConfig: [
     {
       key: 'apiKey',
