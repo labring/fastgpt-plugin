@@ -56,7 +56,7 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           description: '结束日期，格式：YYYY-MM-DD，如：2024-07-20',
-          placeholder: '格式：YYYY-MM-DD，如：2024-07-20',
+          placeholder: '格式：YYYY-MM-DD，如：2024-07-20，最多获取未来15天的天气数据',
           toolDescription: '结束日期'
         }
       ],

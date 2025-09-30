@@ -6,6 +6,7 @@ export default defineToolSet({
     'zh-CN': '墨迹天气',
     en: 'Moji Weather'
   },
+  courseUrl: 'https://www.mojicb.com/apis',
   type: ToolTypeEnum.tools,
   description: {
     'zh-CN': '墨迹天气工具集，提供天气查询相关功能',
