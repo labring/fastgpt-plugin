@@ -6,7 +6,7 @@ export default defineToolSet({
     'zh-CN': 'libulibu 工具集',
     en: 'Libulibu Tool Set'
   },
-  type: ToolTypeEnum.tools,
+  type: ToolTypeEnum.multimodal,
   description: {
     'zh-CN': 'libulibu 工具集',
     en: 'Libulibu Tool Set'

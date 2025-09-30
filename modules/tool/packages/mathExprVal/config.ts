@@ -7,7 +7,7 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
-  type: ToolTypeEnum.tools,
+  type: ToolTypeEnum.scientific,
   name: {
     'zh-CN': '数学公式执行',
     en: 'Mathematical Expression Execution'
