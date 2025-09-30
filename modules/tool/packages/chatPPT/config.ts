@@ -8,7 +8,7 @@ export default defineTool({
     'zh-CN': '必优ChatPPT',
     en: 'ChatPPT'
   },
-  type: ToolTypeEnum.tools,
+  type: ToolTypeEnum.productivity,
   description: {
     'zh-CN': '必优ChatPPT，一键生成PPT',
     en: 'ChatPPT, one-click generate PPT'

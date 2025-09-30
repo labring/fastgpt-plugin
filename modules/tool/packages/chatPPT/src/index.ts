@@ -31,11 +31,12 @@ type CreatePPTResponse = {
   preview_url: string;
 };
 
+const CHATPPT_BASE_URL = 'https://saas.api.yoo-ai.com';
+
 export async function tool({ apiKey, text, color }: z.infer<typeof InputType>) {
   const token = `Bearer ${apiKey}`;
-  const CHATPPT_BASE_URL = 'https://saas.api.yoo-ai.com';
 
-  const createPPTRes = await POST<{ data: { id: string } }>(
+  const { data: createPPTRes } = await POST<{ data: { id: string } }>(
     `${CHATPPT_BASE_URL}/apps/ppt-create`,
     {
       text,
@@ -48,12 +49,13 @@ export async function tool({ apiKey, text, color }: z.infer<typeof InputType>) {
       }
     }
   );
-  const id = createPPTRes?.data?.data?.id;
+
+  const id = createPPTRes?.data?.id;
   if (!id || typeof id !== 'string') {
     return Promise.reject('Failed to create PPT: empty id');
   }
 
-  const getPPTUrlRes = await GET<{ data: CreatePPTResponse }>(
+  const { data: getPPTUrlRes } = await GET<{ data: CreatePPTResponse }>(
     `${CHATPPT_BASE_URL}/apps/ppt-result`,
     {
       params: {
@@ -64,7 +66,7 @@ export async function tool({ apiKey, text, color }: z.infer<typeof InputType>) {
       }
     }
   );
-  const preview_url = getPPTUrlRes?.data?.data?.preview_url;
+  const preview_url = getPPTUrlRes?.data?.preview_url;
   if (!preview_url || typeof preview_url !== 'string') {
     return Promise.reject('Failed to fetch PPT preview url');
   }
