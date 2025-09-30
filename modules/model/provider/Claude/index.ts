@@ -5,6 +5,17 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'claude-sonnet-4-5-20250929',
+      maxContext: 200000,
+      maxTokens: 8000,
+      quoteMaxToken: 100000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'claude-sonnet-4-20250514',
       maxContext: 200000,
       maxTokens: 8000,
