@@ -18,7 +18,9 @@ export const BuiltInToolBaseURL = isProd
  * @returns Icon path if found, default svg path otherwise
  */
 function findToolIcon(toolId: string) {
-  const iconBasePath = path.join(process.cwd(), 'dist', 'public', 'imgs', 'tools');
+  const iconBasePath = isProd
+    ? path.join(process.cwd(), 'dist', 'public', 'imgs', 'tools')
+    : path.join(process.cwd(), 'public', 'imgs', 'tools');
 
   // Check for existing icon files with different formats
   for (const format of iconFormats) {
@@ -93,13 +95,15 @@ export const LoadToolsByFilename = async (
     }
   } else {
     const tool = (await import(toolRootPath)).default as ToolConfigWithCbType;
-    const icon = tool.icon || findToolIcon(tool.toolId!) || '';
+    // NOTE: fallback to filename only when the plugin service running in dev mode.
+    const toolId = tool.toolId || filename;
+    const icon = tool.icon || findToolIcon(toolId) || '';
 
     tools.push({
       ...tool,
       type: tool.type || ToolTypeEnum.tools,
       icon,
-      toolId: tool.toolId || filename,
+      toolId,
       toolDirName: `${toolSource}/${filename}`,
       toolSource
     });
