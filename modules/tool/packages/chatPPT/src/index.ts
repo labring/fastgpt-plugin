@@ -4,7 +4,7 @@ import { POST, GET } from '@tool/utils/request';
 export const InputType = z.object({
   apiKey: z.string(),
   text: z.string(),
-  color: z.string()
+  color: z.string().optional()
 });
 
 export const OutputType = z.object({
