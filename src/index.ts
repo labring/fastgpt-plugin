@@ -12,7 +12,7 @@ import { connectMongo, connectionMongo, MONGO_URL } from '@/mongo';
 import { refreshVersionKey } from './cache';
 import { SystemCacheKeyEnum } from './cache/type';
 
-const requestSizeLimit = '10mb';
+const requestSizeLimit = `${Number(process.env.MAX_API_SIZE || 10)}mb`;
 const app = express().use(
   express.json({ limit: requestSizeLimit }),
   express.urlencoded({ extended: true, limit: requestSizeLimit }),
