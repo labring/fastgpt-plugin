@@ -11,8 +11,7 @@ export default defineToolSet({
     'zh-CN': '墨迹天气工具集，提供天气查询相关功能',
     en: 'Moji Weather toolset providing weather query functionality'
   },
-  toolDescription:
-    'tool description for ai to use, fallback to English description if not provided',
+  toolDescription: 'Moji Weather toolset providing weather query functionality',
   icon: '/imgs/tools/mojiWeather.svg',
   secretInputConfig: [
     {
