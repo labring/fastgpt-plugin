@@ -50,8 +50,6 @@ export async function tool({
       data: forecastsInRange
     };
   } catch {
-    return {
-      data: []
-    };
+    return Promise.reject('No weather data available');
   }
 }
