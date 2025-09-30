@@ -91,7 +91,7 @@ export const LoadToolsByFilename = async (
         type: rootMod.type,
         courseUrl: rootMod.courseUrl,
         author: rootMod.author,
-        icon,
+        icon: findToolIcon(toolId),
         toolDirName: `${toolSource}/${filename}`,
         toolSource
       });

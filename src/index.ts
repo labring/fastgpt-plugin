@@ -9,6 +9,8 @@ import { initModels } from '@model/init';
 import { setupProxy } from './utils/setupProxy';
 import { initWorkflowTemplates } from '@workflow/init';
 import { connectMongo, connectionMongo, MONGO_URL } from '@/mongo';
+import { refreshVersionKey } from './cache';
+import { SystemCacheKeyEnum } from './cache/type';
 
 const requestSizeLimit = '10mb';
 const app = express().use(
@@ -34,6 +36,7 @@ try {
 
 // Modules
 await Promise.all([initTools(), initModels(), initWorkflowTemplates()]);
+await refreshVersionKey(SystemCacheKeyEnum.systemTool);
 
 const PORT = parseInt(process.env.PORT || '3000');
 const server = app.listen(PORT, (error?: Error) => {
