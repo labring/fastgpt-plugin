@@ -35,7 +35,8 @@ export default defineTool({
           valueType: WorkflowIOValueTypeEnum.string,
           description: '生成PPT的描述文本',
           toolDescription: '生成PPT的描述文本',
-          placeholder: '描述PPT内容, 如: 生成一个关于人工智能的PPT'
+          placeholder: '描述PPT内容, 如: 生成一个关于人工智能的PPT',
+          required: true
         },
         {
           key: 'color',
