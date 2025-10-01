@@ -6,6 +6,7 @@ import { StreamMessageTypeEnum } from '../type/tool';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 import { recordToolExecution } from '@/utils/signoz';
+import { input } from 'node_modules/@inquirer/prompts/dist/commonjs';
 
 export const runToolStreamHandler = async (
   req: Request,
@@ -27,16 +28,28 @@ export const runToolStreamHandler = async (
   try {
     addLog.debug(`Run tool start`, { toolId, inputs, systemVar });
 
-    const result = await dispatchWithNewWorker({
-      toolId,
-      inputs,
-      systemVar,
-      onMessage: (e) =>
-        streamManager.sendMessage({
-          type: StreamMessageTypeEnum.stream,
-          data: e
-        })
-    });
+    const result = await (async () => {
+      if (toolId === 'delay') {
+        return await tool.cb(inputs, {
+          systemVar,
+          streamResponse: (e) =>
+            streamManager.sendMessage({
+              type: StreamMessageTypeEnum.stream,
+              data: e
+            })
+        });
+      }
+      return await dispatchWithNewWorker({
+        toolId,
+        inputs,
+        systemVar,
+        onMessage: (e) =>
+          streamManager.sendMessage({
+            type: StreamMessageTypeEnum.stream,
+            data: e
+          })
+      });
+    })();
 
     streamManager.sendMessage({
       type: StreamMessageTypeEnum.response,
