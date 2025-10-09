@@ -10,12 +10,12 @@ import { ToolTypeEnum } from '@tool/type/tool';
 export default defineTool({
   type: ToolTypeEnum.search,
   name: {
-    'zh-CN': 'Search XNG 搜索',
+    'zh-CN': 'SearXNG 搜索',
     en: 'Search XNG'
   },
   description: {
-    'zh-CN': '使用 Search XNG 服务进行搜索。',
-    en: 'Use Search XNG service for search.'
+    'zh-CN': '使用 SearXNG 服务进行搜索。',
+    en: 'Use SearXNG service for search.'
   },
   icon: 'core/workflow/template/searxng',
   courseUrl: '/docs/introduction/guide/plugins/searxng_plugin_guide/',
