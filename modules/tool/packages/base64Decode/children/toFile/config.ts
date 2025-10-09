@@ -22,7 +22,8 @@ export default defineTool({
           key: 'base64',
           label: 'Base64 字符串',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          valueType: WorkflowIOValueTypeEnum.string
+          valueType: WorkflowIOValueTypeEnum.string,
+          required: true
         }
       ],
       outputs: [

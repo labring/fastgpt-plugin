@@ -94,7 +94,9 @@ export async function tool({
     const detectedType = detectFileType(base64);
 
     if (!detectedType) {
-      throw new Error('File Type unknown');
+      throw new Error(
+        'File Type unknown, current supported file types: pdf, docx, xlsx, pptx, zip, csv, html, txt'
+      );
     }
     return detectedType;
   })();
