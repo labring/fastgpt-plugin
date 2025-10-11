@@ -3,6 +3,7 @@ import { watch } from 'fs/promises';
 import { $ } from 'bun';
 import { addLog } from '@/utils/log';
 import { spawn, type Subprocess } from 'bun';
+import { basePath } from '../utils/const';
 
 // DevServer 类管理整个开发环境
 export class DevServer {
@@ -35,7 +36,7 @@ export class DevServer {
     }
 
     this.serverProcess = spawn({
-      cmd: ['bun', 'run', path.join(__dirname, '..', 'src', 'index.ts')],
+      cmd: ['bun', 'run', path.join(__dirname, '..', 'index.ts')],
       stdout: 'inherit',
       stderr: 'inherit',
       stdin: 'inherit'
@@ -55,8 +56,8 @@ export class DevServer {
    */
   private async startWatching() {
     const workpaths = [
-      { path: path.join(__dirname, '..', 'src'), name: 'src' },
-      { path: path.join(__dirname, '..', 'modules'), name: 'modules' }
+      { path: path.join(__dirname, '..'), name: 'runtime' },
+      { path: path.join(basePath, 'modules'), name: 'modules' }
     ];
 
     // 为每个目录启动监听

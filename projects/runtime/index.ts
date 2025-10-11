@@ -1,18 +1,19 @@
-import express from 'express';
-import { initOpenAPI } from './contract/openapi';
-import { initRouter } from './router';
-import { initTools } from '@tool/init';
-import { addLog } from './utils/log';
-import { isProd } from './constants';
-import { connectSignoz } from './utils/signoz';
+import { refreshVersionKey } from '@/cache';
+import { SystemCacheKeyEnum } from '@/cache/type';
+import { isProd } from '@/constants';
+import { initOpenAPI } from '@/contract/openapi';
+import { connectionMongo, connectMongo, MONGO_URL } from '@/mongo';
+import { initRouter } from '@/router';
+import { addLog } from '@/utils/log';
+import { setupProxy } from '@/utils/setupProxy';
+import { connectSignoz } from '@/utils/signoz';
 import { initModels } from '@model/init';
-import { setupProxy } from './utils/setupProxy';
+import { initTools } from '@tool/init';
 import { initWorkflowTemplates } from '@workflow/init';
-import { connectMongo, connectionMongo, MONGO_URL } from '@/mongo';
-import { refreshVersionKey } from './cache';
-import { SystemCacheKeyEnum } from './cache/type';
+import express from 'express';
 
 const requestSizeLimit = `${Number(process.env.MAX_API_SIZE || 10)}mb`;
+
 const app = express().use(
   express.json({ limit: requestSizeLimit }),
   express.urlencoded({ extended: true, limit: requestSizeLimit }),

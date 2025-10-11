@@ -1,0 +1,1 @@
+# FastGPT-plugin runtime

@@ -8,7 +8,7 @@ import { iconFormats } from './utils/icon';
 export const UploadedToolBaseURL = path.join(process.cwd(), 'dist', 'tools', 'uploaded');
 export const BuiltInToolBaseURL = isProd
   ? path.join(process.cwd(), 'dist', 'tools', 'built-in')
-  : path.join(process.cwd(), 'modules', 'tool', 'packages');
+  : path.join(process.cwd(), '..', '..', 'modules', 'tool', 'packages');
 
 // Supported image formats for tool icons
 

@@ -27,16 +27,6 @@ export function getToolType(): z.infer<typeof ToolTypeListSchema> {
   }));
 }
 
-const removeFile = async (file: string) => {
-  try {
-    if (fs.existsSync(file)) {
-      await fs.promises.unlink(file);
-    }
-  } catch (err) {
-    addLog.warn(` delele File Error, ${getErrText(err)} `);
-  }
-};
-
 export async function refreshUploadedTools() {
   addLog.info('Refreshing uploaded tools');
   const existsFiles = uploadedTools.map((item) => item.toolDirName);

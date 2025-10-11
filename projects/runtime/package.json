@@ -1,0 +1,19 @@
+{
+  "name": "@fastgpt/plugin-runtime",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run dev/index.ts",
+    "build:worker": "bun build --env=disable --outfile=dist/worker.js --target=node --minify ./lib/worker/worker.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/express": "^5.0.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

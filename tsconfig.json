@@ -27,7 +27,7 @@
     // Performance optimizations
     "baseUrl": "./",
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["./lib/*"],
       "@tool/*": ["./modules/tool/*"],
       "@model/*": ["./modules/model/*"],
       "@workflow/*": ["./modules/workflow/*"]

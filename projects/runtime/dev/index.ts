@@ -1,16 +1,24 @@
 import { isProd } from '@/constants';
-import { copyIcons } from 'modules/tool/utils/icon';
+import { copyIcons } from '@tool/utils/icon';
 import path from 'path';
 import { DevServer } from './devServer';
 import fs from 'fs/promises';
+import { basePath } from '../utils/const';
 
 async function copyDevIcons() {
   if (isProd) return;
 
-  const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
-  const publicImgsToolsDir = path.join(__dirname, '..', 'public', 'imgs', 'tools');
-  const modelsDir = path.join(__dirname, '..', 'modules', 'model', 'provider');
-  const publicImgsModelsDir = path.join(__dirname, '..', 'public', 'imgs', 'models');
+  const toolsDir = path.join(basePath, 'modules', 'tool', 'packages');
+  const publicImgsToolsDir = path.join(basePath, 'projects', 'runtime', 'public', 'imgs', 'tools');
+  const modelsDir = path.join(basePath, 'modules', 'model', 'provider');
+  const publicImgsModelsDir = path.join(
+    basePath,
+    'projects',
+    'runtime',
+    'public',
+    'imgs',
+    'models'
+  );
 
   // Copy tool and model icons in parallel
   await Promise.all([
@@ -28,7 +36,7 @@ async function copyDevIcons() {
 }
 
 async function checkToolDir() {
-  const toolsDir = path.join(__dirname, '..', 'modules', 'tool', 'packages');
+  const toolsDir = path.join(basePath, 'modules', 'tool', 'packages');
 
   try {
     const entries = await fs.readdir(toolsDir, { withFileTypes: true });
