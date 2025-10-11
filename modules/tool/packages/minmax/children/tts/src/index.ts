@@ -1,19 +1,18 @@
 import { z } from 'zod';
 import { POST, GET } from '@tool/utils/request';
 import { uploadFile } from '@tool/utils/uploadFile';
+import { delay } from '@tool/utils/delay';
 
 export const InputType = z.object({
   apiKey: z.string(),
   text: z.string().nonempty(),
   model: z.string().nonempty(),
-  voice_setting: z.object({
-    voice_id: z.string(),
-    speed: z.number(),
-    vol: z.number(),
-    pitch: z.number(),
-    emotion: z.string(),
-    en_normalization: z.boolean()
-  })
+  voice_id: z.string(),
+  speed: z.number(),
+  vol: z.number(),
+  pitch: z.number(),
+  emotion: z.string(),
+  english_normalization: z.boolean()
 });
 
 export const OutputType = z.object({
@@ -26,9 +25,13 @@ export async function tool({
   apiKey,
   text,
   model,
-  voice_setting
+  voice_id,
+  speed,
+  vol,
+  pitch,
+  emotion,
+  english_normalization
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  const { voice_id, speed, vol, pitch, emotion, en_normalization } = voice_setting;
   const headers = {
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json'
@@ -66,7 +69,7 @@ export async function tool({
           vol,
           pitch,
           emotion,
-          en_normalization
+          english_normalization
         },
         ...defaultSetting
       },
@@ -90,11 +93,11 @@ export async function tool({
           return statusData.file_id;
         }
         if (status === 'Failed') {
-          throw new Error('TTS task failed');
+          return Promise.reject('TTS task failed');
         }
-        await new Promise((r) => setTimeout(r, 1000));
+        await delay(1000);
       }
-      throw new Error('TTS task timeout');
+      return Promise.reject('TTS task timeout');
     };
     const file_id = await pollTaskStatus();
 

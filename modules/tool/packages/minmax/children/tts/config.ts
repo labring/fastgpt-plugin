@@ -1,29 +1,17 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   name: {
     'zh-CN': 'minmax 文本转语音',
     en: 'minmax Text-to-Speech'
   },
-  courseUrl: 'https://platform.minimaxi.com/document/quick_start',
-  type: ToolTypeEnum.tools,
   description: {
     'zh-CN': '使用MinMax平台将文本转换为高质量语音',
     en: 'Convert text to high-quality speech using MinMax platform'
   },
   toolDescription:
     'Convert text to speech using MinMax TTS API. Supports multiple voice settings and audio formats.',
-  secretInputConfig: [
-    {
-      key: 'apiKey',
-      label: 'API Key',
-      description: '可以在 minmax 官网获取',
-      required: true,
-      inputType: 'secret'
-    }
-  ],
   versionList: [
     {
       value: '0.1.0',
@@ -83,7 +71,8 @@ export default defineTool({
           label: '语速',
           renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.number,
-          required: false,
+          required: true,
+          description: '语速，范围为 0.5-2, 值越大语速越快',
           min: 0.5,
           max: 2,
           step: 0.1,
@@ -94,7 +83,8 @@ export default defineTool({
           label: '音量',
           renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.number,
-          required: false,
+          required: true,
+          description: '音量，范围为 0.1-10, 值越大音量越大',
           min: 0.1,
           max: 10,
           step: 0.1,
@@ -105,7 +95,8 @@ export default defineTool({
           label: '语调',
           renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.number,
-          required: false,
+          required: true,
+          description: '语调，范围为 -12-12, 值越大语调越高',
           min: -12,
           max: 12,
           step: 1,
@@ -116,7 +107,7 @@ export default defineTool({
           label: '情绪',
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
-          required: false,
+          required: true,
           defaultValue: 'auto',
           list: [
             { label: '自动(推荐)', value: 'auto' },
@@ -134,7 +125,8 @@ export default defineTool({
           label: '英文规范化',
           renderTypeList: [FlowNodeInputTypeEnum.switch],
           valueType: WorkflowIOValueTypeEnum.boolean,
-          required: false,
+          description: '支持英语文本规范化，开启后可提升数字阅读场景的性能，但会略微增加延迟',
+          required: true,
           defaultValue: false
         }
       ],

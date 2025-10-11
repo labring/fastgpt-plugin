@@ -1,5 +1,5 @@
 {
-  "name": "@fastgpt-plugins/tool-minmax-tts",
+  "name": "@fastgpt-plugins/tool-minmax",
   "module": "index.ts",
   "type": "module",
   "scripts": {
