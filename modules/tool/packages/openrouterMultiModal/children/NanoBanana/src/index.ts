@@ -5,7 +5,8 @@ import { uploadFile } from '@tool/utils/uploadFile';
 export const InputType = z.object({
   apiKey: z.string(),
   text: z.string(),
-  aspect_ratio: z.enum(['1:1', '2:3', '3:4', '4:3', '2:1', '3:2', '16:9', '9:16', '21:9', '9:21'])
+  aspect_ratio: z.enum(['1:1', '2:3', '3:4', '4:3', '2:1', '3:2', '16:9', '9:16', '21:9', '9:21']),
+  model: z.string().default('google/gemini-2.5-flash-image-preview')
 });
 
 export const OutputType = z.object({
@@ -17,18 +18,19 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 export async function tool({
   apiKey,
   text,
-  aspect_ratio
+  aspect_ratio,
+  model
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const token = `Bearer ${apiKey}`;
   const { data } = await POST(
     OPENROUTER_BASE_URL,
     {
-      model: 'google/gemini-2.5-flash-image-preview',
+      model,
       messages: [
         {
           role: 'user',
           content: text,
-          modalities: ['image', 'text'],
+          modalities: ['image'],
           image_config: {
             aspect_ratio: aspect_ratio
           }
@@ -44,7 +46,7 @@ export async function tool({
   );
 
   // modal response is a base64 string
-  const dataUrl = data.choices[0].message.images[0].image_url.url;
+  const dataUrl = data.choices?.[0]?.message?.images[0]?.image_url?.url;
   if (!dataUrl || !dataUrl.startsWith('data:')) {
     return Promise.reject('Failed to generate image');
   }
@@ -58,9 +60,7 @@ export async function tool({
   const defaultFilename = `image.${ext}`;
 
   const meta = await uploadFile({ base64: dataUrl, defaultFilename });
-  if (!meta.accessUrl) {
-    return Promise.reject('Failed to upload image');
-  }
+
   return {
     imageUrl: meta.accessUrl
   };

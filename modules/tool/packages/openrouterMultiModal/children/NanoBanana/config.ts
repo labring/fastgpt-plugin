@@ -46,14 +46,27 @@ export default defineTool({
             { label: '16:9', value: '16:9' },
             { label: '21:9', value: '21:9' }
           ]
+        },
+        {
+          key: 'model',
+          label: '模型',
+          renderTypeList: [FlowNodeInputTypeEnum.select],
+          defaultValue: 'google/gemini-2.5-flash-image-preview',
+          valueType: WorkflowIOValueTypeEnum.string,
+          required: true,
+          list: [
+            {
+              label: 'google/gemini-2.5-flash-image-preview',
+              value: 'google/gemini-2.5-flash-image-preview'
+            }
+          ]
         }
       ],
       outputs: [
         {
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'imageUrl',
-          label: '图片',
-          description: '生成的图片'
+          label: '图片链接'
         }
       ]
     }
