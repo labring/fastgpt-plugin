@@ -20,6 +20,7 @@ export default defineTool({
         {
           key: 'text',
           label: '文本内容',
+          toolDescription: '文本内容',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           required: true
