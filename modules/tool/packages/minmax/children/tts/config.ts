@@ -108,8 +108,7 @@ export default defineTool({
           label: '情绪',
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
-          required: true,
-          defaultValue: 'auto',
+          required: false,
           list: [
             { label: '高兴', value: 'happy' },
             { label: '悲伤', value: 'sad' },
