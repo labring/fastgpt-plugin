@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { getTool } from '@tool/controller';
 import { dispatchWithNewWorker } from '@/worker';
 import { StreamManager } from '../utils/stream';
-import { StreamMessageTypeEnum } from '../type/tool';
+import { StreamMessageTypeEnum, type RunToolSecondParamsType } from '../type/tool';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 import { recordToolExecution } from '@/utils/signoz';
@@ -25,18 +25,37 @@ export const runToolStreamHandler = async (
   }
   const streamManager = new StreamManager(res);
   try {
-    addLog.debug(`Run tool start`, { toolId, inputs, systemVar });
-
-    const result = await dispatchWithNewWorker({
-      toolId,
-      inputs,
-      systemVar,
-      onMessage: (e) =>
+    const result = await (async () => {
+      const streamResponse: RunToolSecondParamsType['streamResponse'] = (e) =>
         streamManager.sendMessage({
           type: StreamMessageTypeEnum.stream,
           data: e
-        })
-    });
+        });
+
+      if (tool.isWorkerRun === false) {
+        addLog.debug(`Run tool start`, { toolId, inputs, systemVar });
+        return tool
+          .cb(inputs, {
+            systemVar,
+            streamResponse
+          })
+          .then((res) => {
+            if (res.error) {
+              return Promise.reject(res.error);
+            }
+            return res;
+          });
+      }
+
+      addLog.debug(`Run tool start in worker`, { toolId, inputs, systemVar });
+
+      return dispatchWithNewWorker({
+        toolId,
+        inputs,
+        systemVar,
+        onMessage: streamResponse
+      });
+    })();
 
     streamManager.sendMessage({
       type: StreamMessageTypeEnum.response,

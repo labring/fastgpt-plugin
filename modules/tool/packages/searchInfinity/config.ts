@@ -7,6 +7,7 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
+  isWorkerRun: false,
   author: '火山引擎',
   name: {
     'zh-CN': '融合信息搜索',

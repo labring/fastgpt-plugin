@@ -2,6 +2,7 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
+  isWorkerRun: false,
   name: {
     'zh-CN': '每日天气',
     en: 'Daily Weather'

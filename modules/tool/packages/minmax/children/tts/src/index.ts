@@ -57,6 +57,7 @@ export async function tool({
       headers
     }
   );
+  console.log(syncData, 223232);
   if (syncData.base_resp.status_code !== 0) {
     return Promise.reject(
       ErrorCodeMap[syncData.base_resp.status_code as keyof typeof ErrorCodeMap]

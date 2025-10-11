@@ -7,6 +7,7 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
+  isWorkerRun: false,
   name: {
     'zh-CN': '博查搜索',
     en: 'Bocha Search'

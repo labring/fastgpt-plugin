@@ -7,6 +7,7 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
+  isWorkerRun: false,
   type: ToolTypeEnum.tools,
   name: {
     'zh-CN': 'Jina AI 网页解析',
