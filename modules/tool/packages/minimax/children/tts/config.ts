@@ -110,7 +110,9 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           required: false,
+          defaultValue: '',
           list: [
+            { label: '自动', value: '' },
             { label: '高兴', value: 'happy' },
             { label: '悲伤', value: 'sad' },
             { label: '愤怒', value: 'angry' },

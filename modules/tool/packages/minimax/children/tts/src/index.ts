@@ -1,17 +1,17 @@
 import { z } from 'zod';
 import { POST } from '@tool/utils/request';
 import { uploadFile } from '@tool/utils/uploadFile';
-import { ErrorCodeMap } from '@tool/packages/minmax/constants';
+import { ErrorCodeMap } from '@tool/packages/minimax/constants';
 
 export const InputType = z.object({
-  apiKey: z.string(),
+  apiKey: z.string().nonempty(),
   text: z.string().nonempty(),
   model: z.string().nonempty(),
   voice_id: z.string(),
-  speed: z.number(),
-  vol: z.number(),
-  pitch: z.number(),
-  emotion: z.string(),
+  speed: z.number().min(0.5).max(2),
+  vol: z.number().min(0.1).max(10),
+  pitch: z.number().min(-12).max(12),
+  emotion: z.enum(['', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm']),
   english_normalization: z.boolean()
 });
 
@@ -49,7 +49,7 @@ export async function tool({
         speed,
         vol,
         pitch,
-        emotion,
+        ...(emotion && { emotion }),
         english_normalization
       }
     },
@@ -57,7 +57,7 @@ export async function tool({
       headers
     }
   );
-  console.log(syncData, 223232);
+
   if (syncData.base_resp.status_code !== 0) {
     return Promise.reject(
       ErrorCodeMap[syncData.base_resp.status_code as keyof typeof ErrorCodeMap]
