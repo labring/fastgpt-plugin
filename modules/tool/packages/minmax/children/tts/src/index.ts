@@ -1,25 +1,16 @@
 import { z } from 'zod';
-import { POST, GET } from '@tool/utils/request';
+import { POST } from '@tool/utils/request';
 import { uploadFile } from '@tool/utils/uploadFile';
-import { delay } from '@tool/utils/delay';
-import { addLog } from '@/utils/log';
 
 export const InputType = z.object({
-  apiKey: z.string().nonempty(),
+  apiKey: z.string(),
   text: z.string().nonempty(),
-  model: z.enum([
-    'speech-2.5-hd-preview',
-    'speech-2.5-turbo-preview',
-    'speech-02-hd',
-    'speech-02-turbo',
-    'speech-01-hd',
-    'speech-01-turbo'
-  ]),
-  voice_id: z.enum(['male-qn-qingse', 'male-qn-jingying', 'female-shaonv', 'female-chengshu']),
-  speed: z.number().min(0.5).max(2),
-  vol: z.number().min(0.1).max(10),
-  pitch: z.number().min(-12).max(12),
-  emotion: z.enum(['auto', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm']),
+  model: z.string().nonempty(),
+  voice_id: z.string(),
+  speed: z.number(),
+  vol: z.number(),
+  pitch: z.number(),
+  emotion: z.string(),
   english_normalization: z.boolean()
 });
 
@@ -44,31 +35,13 @@ export async function tool({
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json'
   };
-  // these params are advanced settings, now not allow user to customize
-  const defaultSetting = {
-    pronunciation_dict: {
-      tone: []
-    },
-    audio_setting: {
-      audio_sample_rate: 32000,
-      bitrate: 128000,
-      format: 'mp3',
-      channel: 2
-    },
-    voice_modify: {
-      pitch: 0,
-      intensity: 0,
-      timbre: 0,
-      sound_effects: 'spacious_echo'
-    }
-  };
 
-  // 1. Create tts task
-  const { data: taskData } = await POST(
-    `${MINIMAX_BASE_URL}/t2a_async_v2`,
+  const { data: syncData } = await POST(
+    `${MINIMAX_BASE_URL}/t2a_v2`,
     {
       model,
       text,
+      stream: false,
       language_boost: 'auto',
       voice_setting: {
         voice_id,
@@ -77,53 +50,58 @@ export async function tool({
         pitch,
         emotion,
         english_normalization
-      },
-      ...defaultSetting
+      }
     },
     {
       headers
     }
   );
+  if (syncData.base_resp.status_code !== 0) {
+    return Promise.reject(
+      ErrorCodeMap[syncData.base_resp.status_code as keyof typeof ErrorCodeMap]
+    );
+  }
 
-  const task_id = taskData.task_id;
-  console.log(taskData, 222);
-  // 2. Polling task status until success or failed
-  // file can be downloaded when task status is success
-  const pollTaskStatus = async () => {
-    const maxRetries = 180;
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        await delay(2000);
-        const { data: statusData } = await GET(`${MINIMAX_BASE_URL}/query/t2a_async_query_v2`, {
-          params: { task_id },
-          headers
-        });
-        const status = statusData.status;
-        if (status === 'Success') {
-          return statusData.file_id;
-        }
-        if (status === 'Failed') {
-          return Promise.reject('TTS task failed');
-        }
-      } catch (error) {
-        addLog.error('TTS task polling failed', { error });
-      }
-    }
-    return Promise.reject('TTS task timeout');
-  };
-  const file_id = await pollTaskStatus();
-
-  // 3. Retrieve file content
-  const { data: fileBuffer } = await GET(`${MINIMAX_BASE_URL}/files/retrieve_content`, {
-    params: { file_id },
-    headers,
-    responseType: 'arrayBuffer'
-  });
+  // convert hex audio data to buffer
+  const hexAudioData = syncData.data.audio;
+  const audioBuffer = Buffer.from(hexAudioData, 'hex');
+  if (audioBuffer.length === 0) {
+    return Promise.reject('Failed to convert audio data');
+  }
 
   const { accessUrl: audioUrl } = await uploadFile({
-    buffer: Buffer.from(fileBuffer),
-    defaultFilename: 'tts.mp3'
+    buffer: audioBuffer,
+    defaultFilename: 'minimax_tts.mp3'
   });
+  if (!audioUrl) {
+    return Promise.reject('Failed to upload audio file');
+  }
 
   return { audioUrl };
 }
+
+const ErrorCodeMap = {
+  1000: '未知错误/系统默认错误',
+  1001: '请求超时',
+  1002: '请求频率超限',
+  1004: '未授权/Token不匹配/Cookie缺失',
+  1008: '余额不足',
+  1024: '内部错误',
+  1026: '输入内容涉敏',
+  1027: '输出内容涉敏',
+  1033: '系统错误/下游服务错误',
+  1039: 'Token限制',
+  1041: '连接数限制',
+  1042: '不可见字符比例超限/非法字符超过10%',
+  1043: 'ASR相似度检查失败',
+  1044: '克隆提示词相似度检查失败',
+  2013: '参数错误',
+  20132: '语音克隆样本或voice_id参数错误',
+  2037: '语音时长不符合要求(太长或太短)',
+  2038: '用户语音克隆功能被禁用',
+  2039: '语音克隆voice_id重复',
+  2042: '无权访问该voice_id',
+  2045: '请求频率增长超限',
+  2048: '语音克隆提示音频太长',
+  2049: '无效的API Key'
+};

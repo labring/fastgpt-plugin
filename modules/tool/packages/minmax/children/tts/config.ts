@@ -111,14 +111,13 @@ export default defineTool({
           required: true,
           defaultValue: 'auto',
           list: [
-            { label: '自动(推荐)', value: 'auto' },
-            { label: '高兴 happy', value: 'happy' },
-            { label: '悲伤 sad', value: 'sad' },
-            { label: '愤怒 angry', value: 'angry' },
-            { label: '害怕 fearful', value: 'fearful' },
-            { label: '厌恶 disgusted', value: 'disgusted' },
-            { label: '惊讶 surprised', value: 'surprised' },
-            { label: '中性 calm', value: 'calm' }
+            { label: '高兴', value: 'happy' },
+            { label: '悲伤', value: 'sad' },
+            { label: '愤怒', value: 'angry' },
+            { label: '害怕', value: 'fearful' },
+            { label: '厌恶', value: 'disgusted' },
+            { label: '惊讶', value: 'surprised' },
+            { label: '中性', value: 'calm' }
           ]
         },
         {
