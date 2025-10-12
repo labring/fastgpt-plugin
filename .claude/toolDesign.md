@@ -1076,6 +1076,7 @@ describe('ToolName Tests', () => {
 ## 12. 代码规范
 
 * 采用小驼峰命名规范。
+* 类型引入需要强制什么 type，例如 import {type xx} from xxx;
 
 ## 13. 工具开发流程
 
