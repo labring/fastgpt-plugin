@@ -7,18 +7,9 @@ export const InputType = z
   .object({
     authorization: z.string().describe('API token (without Bearer), e.g., sk-xxxx'),
     prompt: z.string().describe('Text prompt for image generation'),
-    image_size: z
-      .enum([
-        '1328x1328',
-        '1664x928',
-        '928x1664',
-        '1472x1140',
-        '1140x1472',
-        '1584x1056',
-        '1056x1584'
-      ])
-      .default('1328x1328')
-      .describe('Image size'),
+    image: z.string().describe('Reference image 1 (URL or base64 format)'),
+    image2: z.string().optional().describe('Reference image 2 (URL or base64 format)'),
+    image3: z.string().optional().describe('Reference image 3 (URL or base64 format)'),
     negative_prompt: z
       .string()
       .optional()
@@ -51,18 +42,21 @@ const ERROR_MESSAGES = {
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   // Hardcoded API URL
   const url = 'https://api.siliconflow.cn/v1/images/generations';
-  const { authorization, ...params } = props;
+  const { authorization, prompt, image, image2, image3, seed, negative_prompt } = props;
 
   // Build request body, filtering out undefined values
-  const body = Object.fromEntries(
-    Object.entries({
-      model: 'Qwen/Qwen-Image',
-      prompt: params.prompt,
-      image_size: params.image_size,
-      negative_prompt: params.negative_prompt,
-      seed: params.seed
-    }).filter(([, value]) => value !== undefined)
-  );
+  // According to API docs, image2 and image3 should be arrays
+  const bodyData: Record<string, any> = {
+    model: 'Qwen/Qwen-Image-Edit-2509',
+    prompt,
+    image,
+    ...(image2 && { image2 }),
+    ...(image3 && { image3 }),
+    ...(negative_prompt && { negative_prompt }),
+    ...(seed !== undefined && { seed })
+  };
+
+  const body = bodyData;
 
   const { data } = await POST<{
     code: number;
