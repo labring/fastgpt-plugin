@@ -1,5 +1,5 @@
 {
-  "name": "fastgpt-tools-youtube",
+  "name": "@fastgpt-plugin/youtube",
   "module": "index.ts",
   "type": "module",
   "scripts": {

@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "types": ["vite/client", "bun"], // 确保包含 Vite 和 Bun 的类型定义
-
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
@@ -37,16 +35,5 @@
       "@workflow/*": ["./modules/workflow/*"]
     }
   },
-  "include": [
-    "modules/**/*.ts",
-    "modules/**/*.d.ts",
-    "scripts/**/*.ts",
-    "scripts/**/*.d.ts",
-    "sdk/**/*.ts",
-    "sdk/**/*.d.ts",
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "test/**/*.ts",
-    "test/**/*.d.ts"
-  ]
+  "include": ["modules/**/*.ts", "scripts/**/*.ts", "sdk/**/*.ts", "src/**/*.ts", "test/**/*.ts"]
 }

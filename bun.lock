@@ -266,6 +266,19 @@
         "typescript": "^5.0.0",
       },
     },
+    "modules/tool/packages/feishuBitable": {
+      "name": "@tool/feishuBitable",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "^3.24.3",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5.0.0",
+      },
+    },
     "modules/tool/packages/feishuTable": {
       "name": "@tool/feishuTable",
       "version": "0.1.0",
@@ -550,7 +563,7 @@
       },
     },
     "modules/tool/packages/stability": {
-      "name": "@fastgpt-plugins/tool-stability",
+      "name": "@fastgpt-plugins/stability",
       "dependencies": {
         "zod": "^3.24.3",
       },
@@ -587,7 +600,7 @@
       },
     },
     "modules/tool/packages/youtube": {
-      "name": "fastgpt-tools-youtube",
+      "name": "@fastgpt-plugin/youtube",
       "dependencies": {
         "youtube-caption-extractor": "^1.9.1",
         "zod": "^3.24.3",
@@ -845,6 +858,10 @@
 
     "@fast-csv/parse": ["@fast-csv/parse@4.3.6", "https://registry.npmmirror.com/@fast-csv/parse/-/parse-4.3.6.tgz", { "dependencies": { "@types/node": "^14.0.1", "lodash.escaperegexp": "^4.1.2", "lodash.groupby": "^4.6.0", "lodash.isfunction": "^3.0.9", "lodash.isnil": "^4.0.0", "lodash.isundefined": "^3.0.1", "lodash.uniq": "^4.5.0" } }, "sha512-uRsLYksqpbDmWaSmzvJcuApSEe38+6NQZBUsuAyMZKqHxH0g1wcJgsKUvN3WC8tewaqFjBMMGrkHmC+T7k8LvA=="],
 
+    "@fastgpt-plugin/youtube": ["@fastgpt-plugin/youtube@workspace:modules/tool/packages/youtube"],
+
+    "@fastgpt-plugins/stability": ["@fastgpt-plugins/stability@workspace:modules/tool/packages/stability"],
+
     "@fastgpt-plugins/tool-ali-model-studio": ["@fastgpt-plugins/tool-ali-model-studio@workspace:modules/tool/packages/aliModelStudio"],
 
     "@fastgpt-plugins/tool-base64-decode": ["@fastgpt-plugins/tool-base64-decode@workspace:modules/tool/packages/base64Decode"],
@@ -862,8 +879,6 @@
     "@fastgpt-plugins/tool-perplexity": ["@fastgpt-plugins/tool-perplexity@workspace:modules/tool/packages/perplexity"],
 
     "@fastgpt-plugins/tool-search-infinity": ["@fastgpt-plugins/tool-search-infinity@workspace:modules/tool/packages/searchInfinity"],
-
-    "@fastgpt-plugins/tool-stability": ["@fastgpt-plugins/tool-stability@workspace:modules/tool/packages/stability"],
 
     "@fastgpt-sdk/plugin": ["@fastgpt-sdk/plugin@workspace:sdk"],
 
@@ -1130,6 +1145,8 @@
     "@smithy/uuid": ["@smithy/uuid@1.1.0", "https://registry.npmmirror.com/@smithy/uuid/-/uuid-1.1.0.tgz", { "dependencies": { "tslib": "^2.6.2" } }, "sha512-4aUIteuyxtBUhVdiQqcDhKFitwfd9hqoSDYY2KRXiWtgoWJ9Bmise+KfEPDiVHWeJepvF8xJO9/9+WDIciMFFw=="],
 
     "@tediousjs/connection-string": ["@tediousjs/connection-string@0.5.0", "https://registry.npmmirror.com/@tediousjs/connection-string/-/connection-string-0.5.0.tgz", {}, "sha512-7qSgZbincDDDFyRweCIEvZULFAw5iz/DeunhvuxpL31nfntX3P4Yd4HkHBRg9H8CdqY1e5WFN1PZIz/REL9MVQ=="],
+
+    "@tool/feishuBitable": ["@tool/feishuBitable@workspace:modules/tool/packages/feishuBitable"],
 
     "@tool/feishuTable": ["@tool/feishuTable@workspace:modules/tool/packages/feishuTable"],
 
@@ -1612,8 +1629,6 @@
     "fastgpt-tools-tavily": ["fastgpt-tools-tavily@workspace:modules/tool/packages/tavily"],
 
     "fastgpt-tools-wiki": ["fastgpt-tools-wiki@workspace:modules/tool/packages/wiki"],
-
-    "fastgpt-tools-youtube": ["fastgpt-tools-youtube@workspace:modules/tool/packages/youtube"],
 
     "fastq": ["fastq@1.19.1", "https://registry.npmmirror.com/fastq/-/fastq-1.19.1.tgz", { "dependencies": { "reusify": "^1.0.4" } }, "sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ=="],
 
