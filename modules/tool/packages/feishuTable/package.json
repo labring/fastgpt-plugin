@@ -7,7 +7,7 @@
     "build": "bun ../../../../scripts/build.ts"
   },
   "dependencies": {
-    "zod": "^3.22.4"
+    "zod": "^3.24.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

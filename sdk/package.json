@@ -17,7 +17,7 @@
   "dependencies": {
     "@fortaine/fetch-event-source": "^3.0.6",
     "@ts-rest/core": "^3.52.1",
-    "zod": "^3.25.40"
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "bun-plugin-dts": "^0.3.0"
