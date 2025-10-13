@@ -237,7 +237,7 @@ async function parseMarkdownToPptx(markdown: string): Promise<Buffer> {
     const token = tokens[i];
 
     if (token.type === 'heading_open') {
-      // if current slide and yPosition is greater than 1, set current slide to null and yPosition to 0.5
+      // if current slide exists and yPosition is greater than 1, set current slide to null and yPosition to 0.5
       if (currentSlide && yPosition > 1) {
         currentSlide = null;
         yPosition = 0.5;
