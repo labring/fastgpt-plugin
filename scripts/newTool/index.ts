@@ -85,5 +85,10 @@ const nameFormatToKebabCase = (name: string) =>
 packageJson.name = `@fastgpt-plugins/tool-${nameFormatToKebabCase(name)}`;
 fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
+// 4. Copy DESIGN.md to dir
+const designMdPath = toolDir + '/DESIGN.md';
+copyTemplate(path.join(__dirname, 'DESIGN.md'), designMdPath);
+
 // output success message
 console.log(`Tool/Toolset created successfully! 🎉`);
+console.log(`You can edit the ${designMdPath}, and code with AI`);

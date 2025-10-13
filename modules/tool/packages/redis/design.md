@@ -509,7 +509,7 @@ export default exportTool({
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "vitest": "^1.0.0"
+    "vitest": "3.1.2"
   }
 }
 ```

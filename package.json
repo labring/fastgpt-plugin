@@ -12,7 +12,7 @@
     "start": "NODE_ENV=production node --env-file-if-exists=.env.local dist/index.js",
     "dev": "bun run ./scripts/dev.ts",
     "test": "vitest run",
-    "lint": "bun eslint --fix",
+    "lint": "node_modules/.bin/eslint --fix",
     "prettier": "prettier --write \"./**/*.{ts,js,json}\"",
     "new:tool": "bun ./scripts/newTool/index.ts"
   },
