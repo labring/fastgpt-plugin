@@ -6,7 +6,7 @@
     "build": "bun ../../../../scripts/build.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.2.2",
     "@types/oracledb": "^6.9.1"
   },
   "peerDependencies": {

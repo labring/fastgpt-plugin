@@ -16,7 +16,7 @@
     "pptxgenjs": "^4.0.1"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.2.2",
     "@types/markdown-it": "^13.0.7",
     "@types/minio": "^7.1.1",
     "typescript": "^5.0.0"
