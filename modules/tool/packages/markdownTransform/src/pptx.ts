@@ -302,7 +302,7 @@ async function parseMarkdownToPptx(markdown: string): Promise<Buffer> {
     }
 
     if (token.type === 'fence') {
-      // if current slide is null, add a new slide and set yPosition to 0.5
+      // if there is no current slide, add a new slide and set yPosition to 0.5
       if (!currentSlide) {
         currentSlide = pptx.addSlide();
         yPosition = 0.5;
