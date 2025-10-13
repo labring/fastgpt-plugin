@@ -33,5 +33,5 @@
       "@workflow/*": ["./modules/workflow/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.d.ts"]
+  "include": ["modules/**/*.ts", "scripts/**/*.ts", "sdk/**/*.ts", "src/**/*.ts", "test/**/*.ts"]
 }
