@@ -37,6 +37,16 @@
       "@workflow/*": ["./modules/workflow/*"]
     }
   },
-  "include": ["src/**/*.ts", "modules/**/*.ts", "sdk/**/*.ts", "scripts/**/*.ts", "**/*.d.ts"],
-  "exclude": ["node_modules", "dist", "**/node_modules", "**/dist"]
+  "include": [
+    "modules/**/*.ts",
+    "modules/**/*.d.ts",
+    "scripts/**/*.ts",
+    "scripts/**/*.d.ts",
+    "sdk/**/*.ts",
+    "sdk/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "test/**/*.ts",
+    "test/**/*.d.ts"
+  ]
 }

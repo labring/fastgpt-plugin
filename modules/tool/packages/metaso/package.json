@@ -3,14 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "bun ../../../../scripts/build.ts",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "build": "bun ../../../../scripts/build.ts"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "vitest": "3.1.2"
+    "@types/node": "^20.10.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
