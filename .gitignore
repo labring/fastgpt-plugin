@@ -3,6 +3,7 @@ coverage
 dist
 node_modules
 .DS_Store
+.tsbuildinfo
 public/imgs/
 pnpm-lock.yaml
 .local

@@ -235,27 +235,13 @@ export async function tool({
   apiKey,
   inputKey
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  try {
-    // 业务逻辑实现
-    const result = await performOperation(inputKey, apiKey);
+  // 业务逻辑实现
+  const result = await performOperation(inputKey, apiKey);
 
-    return {
-      outputKey: result,
-      success: true
-    };
-
-  } catch (error) {
-    // 错误处理
-    return Promise.reject(handleError(error));
-  }
-}
-
-// 错误处理函数
-function handleError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return 'Unknown error occurred';
+  return {
+    outputKey: result,
+    success: true
+  };
 }
 ```
 
@@ -381,14 +367,13 @@ export async function tool({
   apiKey,
   param1
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
+  // 执行业务逻辑
+  const result = await client.operation(param1);
 
-    // 执行业务逻辑
-    const result = await client.operation(param1);
-
-    return {
-        result,
-        success: true
-    };
+  return {
+      result,
+      success: true
+  };
 }
 
 // 工具回调函数（需处理错误/关闭链接）

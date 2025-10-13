@@ -25,6 +25,10 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
+
+    // Performance optimizations
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
     "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"],
@@ -33,5 +37,6 @@
       "@workflow/*": ["./modules/workflow/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.d.ts"]
+  "include": ["src/**/*.ts", "modules/**/*.ts", "sdk/**/*.ts", "scripts/**/*.ts", "**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "**/node_modules", "**/dist"]
 }
