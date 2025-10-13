@@ -106,7 +106,7 @@ async function processImageFromText(text: string, slide: PptxGenJS.Slide): Promi
   } catch (error) {
     console.warn(`processImageFromText error: ${src}`, error);
     const errorSegments = [
-      createRichText(`processImageFromText error: ${alt || src}]`, {
+      createRichText(`processImageFromText error: ${alt || src}`, {
         size: slideStyles.error.fontSize,
         color: slideStyles.error.color
       })
