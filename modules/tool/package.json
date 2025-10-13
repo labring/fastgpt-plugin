@@ -1,0 +1,11 @@
+{
+  "name": "@fastgpt-plugin/modules-tool",
+  "devDependencies": {
+    "@babel/preset-typescript": "^7.27.1"
+  },
+  "dependencies": {
+    "@babel/generator": "^7.28.3",
+    "@babel/parser": "^7.28.4",
+    "@babel/traverse": "^7.28.4"
+  }
+}

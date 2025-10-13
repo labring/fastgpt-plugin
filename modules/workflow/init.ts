@@ -20,7 +20,8 @@ export const initWorkflowTemplates = async () => {
 
     const templatePath = join(publicWorkflowsPath, item.name);
 
-    const fileContent = await readFile(templatePath, 'utf-8');
+    const fileBuffer = await readFile(templatePath, 'utf-8');
+    const fileContent = fileBuffer.toString();
     const templateData = JSON.parse(fileContent);
 
     const template = {

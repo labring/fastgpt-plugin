@@ -14,6 +14,7 @@ import { addLog } from '@/utils/log';
 import { getErrText } from './utils/err';
 import { pluginFileS3Server } from '@/s3';
 import { UploadedToolBaseURL } from './utils';
+import { removeFile } from '@/utils/fs';
 
 export function getTool(toolId: string): ToolType | undefined {
   const tools = [...builtinTools, ...uploadedTools];
@@ -69,7 +70,7 @@ export async function downloadTool(objectName: string) {
 
   try {
     await pipeline(await pluginFileS3Server.getFile(objectName), createWriteStream(filepath)).catch(
-      (err) => {
+      (err: any) => {
         addLog.warn(`Download plugin file: ${objectName} from S3 error: ${getErrText(err)}`);
         return Promise.reject(err);
       }

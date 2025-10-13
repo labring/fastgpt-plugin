@@ -27,7 +27,7 @@ export const pkg = async (dir: string, dist: string) => {
       } else if (entry.isFile()) {
         // Read file and add to zip
         const fileContent = await fs.readFile(fullPath);
-        zip.file(relativePath, fileContent);
+        zip.file(relativePath, new Uint8Array(fileContent));
       }
     }
   }
@@ -45,7 +45,7 @@ export const pkg = async (dir: string, dist: string) => {
   const distPath = dist.endsWith('.pkg') ? dist : `${dist}.pkg`;
 
   // Write to disk
-  await fs.writeFile(distPath, content);
+  await fs.writeFile(distPath, new Uint8Array(content));
   return distPath;
 };
 
@@ -59,7 +59,7 @@ export const unpkg = async (pkgPath: string, dist: string) => {
   const pkgData = await fs.readFile(pkgPath);
 
   // Load zip data
-  const zip = await JSZip.loadAsync(pkgData);
+  const zip = await JSZip.loadAsync(new Uint8Array(pkgData));
 
   // Ensure output directory exists
   await fs.mkdir(dist, { recursive: true });
@@ -83,7 +83,7 @@ export const unpkg = async (pkgPath: string, dist: string) => {
         await fs.mkdir(parentDir, { recursive: true });
 
         // Write file
-        await fs.writeFile(outputPath, content);
+        await fs.writeFile(outputPath, new Uint8Array(content));
       }
     })();
 

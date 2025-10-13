@@ -376,7 +376,7 @@ export async function docxTool({
 
   const docBuffer = await Packer.toBuffer(doc);
   const filename = `markdown-to-docx.docx`;
-  const buf = Buffer.from(docBuffer);
+  const buf = Buffer.from(new Uint8Array(docBuffer));
 
   const result = await uploadFile({
     buffer: buf,
