@@ -388,10 +388,9 @@ async function parseMarkdownToPptx(markdown: string): Promise<Buffer> {
         }
 
         for (const imageMarkdown of hasImages) {
-          if (currentSlide) {
-            currentSlide = pptx.addSlide();
-            await processImageFromText(imageMarkdown, currentSlide);
-          }
+          // Always create a new slide for each image, but do not overwrite currentSlide
+          const imageSlide = pptx.addSlide();
+          await processImageFromText(imageMarkdown, imageSlide);
         }
       }
 
