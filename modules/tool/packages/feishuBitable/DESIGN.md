@@ -41,7 +41,7 @@
 ## 工具目录结构
 
 ```
-modules/tool/packages/feishuTable/
+modules/tool/packages/feishuBiTable/
 ├── index.ts                          # 工具集导出主文件
 ├── config.ts                         # 工具集配置文件
 ├── package.json                      # 依赖管理

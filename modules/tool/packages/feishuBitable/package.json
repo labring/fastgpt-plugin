@@ -1,5 +1,5 @@
 {
-  "name": "@tool/feishuBitable",
+  "name": "@fastgpt-plugin/feishuBitable",
   "version": "0.1.0",
   "description": "Feishu Bitable toolset for FastGPT",
   "main": "index.ts",
