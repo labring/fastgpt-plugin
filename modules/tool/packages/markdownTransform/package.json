@@ -12,7 +12,8 @@
     "docx": "^8.5.0",
     "exceljs": "^4.4.0",
     "axios": "^1.6.0",
-    "markdown-it": "^13.0.1"
+    "markdown-it": "^13.0.1",
+    "pptxgenjs": "^4.0.1"
   },
   "devDependencies": {
     "@types/bun": "latest",
