@@ -71,7 +71,6 @@ function createRichText(
   return {
     text,
     options: {
-      size: options.size && !isNaN(options.size) ? options.size : undefined,
       ...options
     }
   };
