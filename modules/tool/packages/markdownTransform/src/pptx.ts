@@ -362,7 +362,7 @@ async function parseMarkdownToPptx(markdown: string): Promise<Buffer> {
               paragraphText += `*${next.content}*`;
               j++;
             }
-            // in pptx, images will be treated as paragraph content, not inline content
+            // in PPTX, images will be treated as paragraph content, not inline content
           } else if (child.type === 'image') {
             const alt = child.attrGet('alt') || '';
             const src = child.attrGet('src');
