@@ -2,6 +2,7 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
+  isWorkerRun: false,
   name: {
     'zh-CN': '百度搜索',
     en: 'Baidu Search'

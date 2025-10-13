@@ -2,6 +2,7 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
+  isWorkerRun: false,
   name: {
     'zh-CN': 'minmax 文本转语音',
     en: 'minmax Text-to-Speech'
@@ -108,17 +109,17 @@ export default defineTool({
           label: '情绪',
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
-          required: true,
-          defaultValue: 'auto',
+          required: false,
+          defaultValue: '',
           list: [
-            { label: '自动(推荐)', value: 'auto' },
-            { label: '高兴 happy', value: 'happy' },
-            { label: '悲伤 sad', value: 'sad' },
-            { label: '愤怒 angry', value: 'angry' },
-            { label: '害怕 fearful', value: 'fearful' },
-            { label: '厌恶 disgusted', value: 'disgusted' },
-            { label: '惊讶 surprised', value: 'surprised' },
-            { label: '中性 calm', value: 'calm' }
+            { label: '自动', value: '' },
+            { label: '高兴', value: 'happy' },
+            { label: '悲伤', value: 'sad' },
+            { label: '愤怒', value: 'angry' },
+            { label: '害怕', value: 'fearful' },
+            { label: '厌恶', value: 'disgusted' },
+            { label: '惊讶', value: 'surprised' },
+            { label: '中性', value: 'calm' }
           ]
         },
         {

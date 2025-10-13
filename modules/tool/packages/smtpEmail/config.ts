@@ -8,6 +8,7 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
+  isWorkerRun: false,
   type: ToolTypeEnum.communication,
   name: {
     'zh-CN': 'Email 邮件发送',

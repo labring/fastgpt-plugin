@@ -2,6 +2,7 @@ import { defineToolSet } from '@tool/type';
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineToolSet({
+  isWorkerRun: false,
   name: {
     'zh-CN': 'Doc2X 服务',
     en: 'Doc2X Service'

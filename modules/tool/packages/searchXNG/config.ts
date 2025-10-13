@@ -8,6 +8,7 @@ import {
 import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
+  isWorkerRun: false,
   type: ToolTypeEnum.search,
   name: {
     'zh-CN': 'SearXNG 搜索',

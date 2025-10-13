@@ -6,6 +6,7 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
+  isWorkerRun: false,
   name: {
     'zh-CN': 'DuckDuckGo 网络搜索',
     en: 'DuckDuckGo Network Search'
