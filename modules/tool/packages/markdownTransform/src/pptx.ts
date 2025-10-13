@@ -87,11 +87,11 @@ async function processImageFromText(text: string, slide: PptxGenJS.Slide): Promi
     const originalDimensions = getImageDimensions(imageBuffer);
     const displaySize = calculateDisplaySize(originalDimensions.width, originalDimensions.height);
 
-    // PptxGenJS use inches as unit, so need to convert pixels to inches
+    // PptxGenJS uses inches as unit, so need to convert pixels to inches
     const dpi = 96;
     const widthInches = displaySize.width / dpi;
     const heightInches = displaySize.height / dpi;
-    // PptxGenJS use base64 as data format, can not use imageBuffer directly
+    // PptxGenJS uses base64 as data format, cannot use imageBuffer directly
     const imageData = `data:image/${getImageExtension(src)};base64,${imageBuffer.toString('base64')}`;
 
     slide.addImage({
