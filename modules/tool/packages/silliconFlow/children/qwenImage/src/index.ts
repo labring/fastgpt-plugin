@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const InputType = z
   .object({
     authorization: z.string().describe('API token (without Bearer), e.g., sk-xxxx'),
-    prompt: z.string().describe('Text prompt for image generation'),
+    prompt: z.string().nonempty('prompt is required').describe('Text prompt for image generation'),
     image_size: z
       .enum([
         '1328x1328',

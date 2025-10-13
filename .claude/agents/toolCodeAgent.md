@@ -4,7 +4,57 @@ description: 当用户需要开发一个工具/工具集时调用
 model: sonnet
 ---
 
-# FastGPT Plugin 工具设计规范
+# 工作流程
+
+开发新工具时，参考该流程完成任务。
+
+1. 参考 DESIGN.md  已有信息，完成需求文档编写。
+2. 审核需求文档，检查是否有遗漏。
+3. 依据需求文档完成代码开发。
+4. 依据需求文档，编写测试案例。
+5. 安装对应依赖后，进行测试并纠错问题。
+6. 进行代码 Review，简化无用代码。
+7. 最后再进行一次测试，保证代码可用。
+
+## 需求文档模板
+
+```
+# xxx 设计文档
+
+## 参考信息
+
+这里可能会给一些参考文档，测试密钥等。
+
+## 功能描述
+
+实现 xxxx。
+
+* 需要一个 tool/toolset
+* 包含 n 个工具，具体如下：
+
+1. xxx
+2. xxx
+
+## 目录结构
+
+## 输入输出配置
+
+## 代码示例
+
+## 测试方案
+
+## 可能存在的问题和重点检查内容
+```
+
+## 测试流程
+
+1. 检查 TS 是否有错误
+2. 检查是否可以正常运行和build
+3. 检查测试案例是否通过
+
+---
+
+# FastGPT 系统工具设计规范
 
 本文档定义了 FastGPT Plugin 系统中工具(Tool)和工具集(ToolSet)的统一设计规范,基于 Redis 工具集的最佳实践总结。
 
@@ -209,21 +259,6 @@ function handleError(error: unknown): string {
 }
 ```
 
-### 4.3 导出文件 (index.ts)
-
-```typescript
-import config from './config';
-import { InputType, OutputType, tool as toolCb } from './src';
-import { exportTool } from '@tool/utils/tool';
-
-export default exportTool({
-  toolCb,
-  InputType,
-  OutputType,
-  config
-});
-```
-
 ---
 
 ## 5. 工具集(ToolSet)设计
@@ -387,32 +422,6 @@ export async function tool({
     }
   }
 }
-```
-
-### 5.4 子工具导出 (children/toolName/index.ts)
-
-```typescript
-import config from './config';
-import { InputType, OutputType, tool as toolCb } from './src';
-import { exportTool } from '@tool/utils/tool';
-
-export default exportTool({
-  toolCb,
-  InputType,
-  OutputType,
-  config
-});
-```
-
-### 5.5 工具集导出 (index.ts)
-
-```typescript
-import config from './config';
-import { exportToolSet } from '@tool/utils/tool';
-
-export default exportToolSet({
-  config
-});
 ```
 
 ---
@@ -901,93 +910,10 @@ describe('ToolName Tests', () => {
 
 ---
 
-## 10. 依赖管理
-
-### 10.1 package.json 模板
-
-```json
-{
-  "name": "@tool/toolName",
-  "version": "0.1.0",
-  "description": "Tool description",
-  "main": "index.ts",
-  "scripts": {
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
-  },
-  "dependencies": {
-    "zod": "^3.22.4"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "vitest": "3.1.2"
-  }
-}
-```
-
-### 10.2 依赖选择原则
-
-- **最小化**: 只添加必需的依赖
-- **稳定性**: 选择稳定、维护良好的库
-- **大小**: 考虑包大小,避免过大的依赖
-- **类型支持**: 优先选择有 TypeScript 类型的库
-- **版本管理**: 使用 `^` 允许小版本更新
-
----
-
-## 11. 代码规范
+## 10. 代码规范
 
 * 采用小驼峰命名规范。
 * 类型引入需要强制什么 type，例如 import {type xx} from xxx;
 * 代码精简。
 * 简单内容无需额外报错捕获，外层已做处理。
 
-## 12. 工作流规范
-
-开发新工具时，参考前面提及的要求，并按以下步骤进行实现。
-所有新工具，均参考该示例进行设计和开发。
-
-### 12.1 编写需求文件
-
-基于用户给的初始文档（会包含参考信息），来编写工具需求文档。在开始代码编写钱，你应该先完成这个文档。
-
-示例如下：
-
-```
-# xxx 设计文档
-
-## 参考信息
-
-这里可能会给一些参考文档，测试密钥。
-
-## 功能描述
-
-实现 xxxx。
-
-* 需要一个 tool/toolset
-* 包含 n 个工具，具体如下：
-
-1. xxx
-2. xxx
-
-## 目录结构
-
-## 输入输出配置
-
-## 代码示例
-
-## 测试方案
-
-## 可能存在的问题和重点检查内容
-```
-
-### 12.2 依据需求文档进行开发测试
-
-编写代码和测试例子。
-
-### 12.3 运行验证
-
-1. 检查 TS 是否有错误
-2. 检查是否可以正常运行和build
-3. 检查测试案例是否通过，如果未通过则依据错误信息尝试修复。

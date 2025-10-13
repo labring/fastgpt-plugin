@@ -30,6 +30,7 @@ export default defineTool({
         {
           key: 'lang',
           label: '字幕语言',
+          description: '不一定有对应字幕，不存在的话可能默认会返回英文。',
           valueType: WorkflowIOValueTypeEnum.string,
           defaultValue: 'zh-CN',
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
