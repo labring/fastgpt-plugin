@@ -201,7 +201,7 @@ async function parseTableTokens(
             };
             row.push(cellObject);
           } else {
-            // if empty cell, push empty object to row
+            // if cell is empty, push empty object to row
             row.push({
               text: '',
               options: {
