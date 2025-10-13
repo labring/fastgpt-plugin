@@ -75,16 +75,7 @@
         "@babel/preset-typescript": "^7.27.1",
       },
     },
-    "projects/marketplace": {
-      "name": "marketplace",
-      "devDependencies": {
-        "@types/bun": "latest",
-      },
-      "peerDependencies": {
-        "typescript": "^5.0.0",
-      },
-    },
-    "projects/runtime": {
+    "runtime": {
       "name": "@fastgpt/plugin-runtime",
       "dependencies": {
         "express": "^5.1.0",
@@ -251,7 +242,7 @@
 
     "@fastgpt-sdk/plugin": ["@fastgpt-sdk/plugin@workspace:sdk"],
 
-    "@fastgpt/plugin-runtime": ["@fastgpt/plugin-runtime@workspace:projects/runtime"],
+    "@fastgpt/plugin-runtime": ["@fastgpt/plugin-runtime@workspace:runtime"],
 
     "@fortaine/fetch-event-source": ["@fortaine/fetch-event-source@3.0.6", "", {}, "sha512-621GAuLMvKtyZQ3IA6nlDWhV1V/7PGOTNIGLUifxt0KzM+dZIweJ6F3XvQF3QnqeNfS1N7WQ0Kil1Di/lhChEw=="],
 
@@ -910,8 +901,6 @@
     "magicast": ["magicast@0.3.5", "", { "dependencies": { "@babel/parser": "^7.25.4", "@babel/types": "^7.25.4", "source-map-js": "^1.2.0" } }, "sha512-L0WhttDl+2BOsybvEOLK7fW3UA0OQ0IQ2d6Zl2x/a6vVRs3bAY0ECOSHHeL5jD+SbOpOCUEi0y1DgHEn9Qn1AQ=="],
 
     "make-dir": ["make-dir@4.0.0", "", { "dependencies": { "semver": "^7.5.3" } }, "sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw=="],
-
-    "marketplace": ["marketplace@workspace:projects/marketplace"],
 
     "math-intrinsics": ["math-intrinsics@1.1.0", "", {}, "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="],
 
