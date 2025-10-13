@@ -3,7 +3,7 @@ import { POST } from '@tool/utils/request';
 
 export const InputType = z.object({
   apiKey: z.string().describe('Doubao Seedream API Key'),
-  modelID: z.string().nonempty().describe('modal ID'),
+  modelID: z.string().nonempty().describe('model ID'),
   prompt: z.string().nonempty().describe('describe the desired image content'),
   size: z.string().optional().describe('aspect ratio of the generated content'),
   seed: z.number().optional().describe('Random seed to control the randomness of model generation'),
