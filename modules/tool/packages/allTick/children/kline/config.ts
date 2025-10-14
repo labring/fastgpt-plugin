@@ -40,7 +40,49 @@ export default defineTool({
             '• 9: 周K线\n' +
             '• 10: 月K线\n' +
             '注：查询昨日收盘价请使用日K线（8）',
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
+          list: [
+            {
+              label: '1分钟线',
+              value: '1'
+            },
+            {
+              label: '5分钟线',
+              value: '2'
+            },
+            {
+              label: '15分钟线',
+              value: '3'
+            },
+            {
+              label: '30分钟线',
+              value: '4'
+            },
+            {
+              label: '1小时线',
+              value: '5'
+            },
+            {
+              label: '2小时线',
+              value: '6'
+            },
+            {
+              label: '4小时线',
+              value: '7'
+            },
+            {
+              label: '日K线',
+              value: '8'
+            },
+            {
+              label: '周K线',
+              value: '9'
+            },
+            {
+              label: '月K线',
+              value: '10'
+            }
+          ],
           valueType: WorkflowIOValueTypeEnum.number
         },
         {
@@ -69,14 +111,24 @@ export default defineTool({
           label: '复权类型',
           description:
             '股票数据的复权处理方式（仅对股票类产品有效）：\n• 0: 不复权（除权）\n• 1: 前复权\n注：目前仅支持不复权模式（0）',
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
+          list: [
+            {
+              label: '不复权（除权）',
+              value: '0'
+            },
+            {
+              label: '前复权',
+              value: '1'
+            }
+          ],
           valueType: WorkflowIOValueTypeEnum.number
         },
         {
           key: 'is_stock',
-          label: '股票类产品标识',
+          label: '股票类产品开关',
           description: '标识当前查询的产品是否为股票类型，用于系统选择合适的API接口进行数据查询',
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.switch, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.boolean
         }
       ],

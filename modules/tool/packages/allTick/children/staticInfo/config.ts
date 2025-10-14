@@ -18,12 +18,11 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          key: 'symbol_list',
-          label: '股票代码列表',
-          description:
-            '股票代码列表，支持美股、港股、A股，格式如：[{"code":"857.HK"},{"code":"UNH.US"},{"code":"000001.SZ"}]',
+          key: 'symbol',
+          label: '股票代码',
+          description: '股票代码，支持美股、港股、A股，如："857.HK","UNH.US","000001.SZ"',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          valueType: WorkflowIOValueTypeEnum.arrayObject
+          valueType: WorkflowIOValueTypeEnum.string
         }
       ],
       outputs: [

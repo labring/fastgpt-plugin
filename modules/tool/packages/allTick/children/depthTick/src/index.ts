@@ -3,14 +3,7 @@ import { z } from 'zod';
 // Input parameter schema
 export const InputType = z.object({
   token: z.string().min(1, 'Please provide a valid API token'),
-  symbol_list: z
-    .array(
-      z.object({
-        code: z.string().min(1, 'Please provide product code, e.g.: 857.HK, UNH.US')
-      })
-    )
-    .min(1, 'At least one product code is required')
-    .max(50, 'Maximum 50 product codes supported'),
+  symbol: z.string().min(1, 'Please provide product code, e.g.: 857.HK, UNH.US'),
   is_stock: z
     .boolean()
     .optional()
@@ -65,7 +58,7 @@ function buildQueryData(params: z.infer<typeof InputType>) {
   return {
     trace: generateTrace(),
     data: {
-      symbol_list: params.symbol_list
+      symbol_list: [{ code: params.symbol }]
     }
   };
 }

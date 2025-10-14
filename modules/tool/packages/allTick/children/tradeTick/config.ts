@@ -18,18 +18,17 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          key: 'symbol_list',
-          label: '产品代码列表',
-          description:
-            '支持股票、外汇、贵金属、加密货币等，格式如：[{"code":"857.HK"},{"code":"UNH.US"}]',
+          key: 'symbol',
+          label: '产品代码',
+          description: '支持股票、外汇、贵金属、加密货币等，如："857.HK","UNH.US"',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          valueType: WorkflowIOValueTypeEnum.arrayObject
+          valueType: WorkflowIOValueTypeEnum.string
         },
         {
           key: 'is_stock',
           label: '是否为股票类产品',
           description: '是否为股票类产品，决定使用哪个API端点。股票类包括：A股、港股、美股等',
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.switch, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.boolean
         }
       ],
