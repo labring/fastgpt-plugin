@@ -4,21 +4,21 @@ import { ToolTypeEnum } from '@tool/type/tool';
 
 export default defineTool({
   name: {
-    'zh-CN': '豆包 Seedream 绘图',
+    'zh-CN': 'Seedream 4.0 绘图',
     en: 'Seedream Image Generation Model'
   },
   courseUrl: 'https://www.volcengine.com/docs/82379/1541523',
   type: ToolTypeEnum.multimodal,
   description: {
-    'zh-CN': '豆包 Seedream 图片生成模型',
+    'zh-CN': '豆包 Seedream 4.0 图片生成模型',
     en: 'Seedream Image Generation Model'
   },
-  toolDescription: '豆包Seedream图片生成模型',
+  toolDescription: 'Seedream 4.0 图片生成模型',
   secretInputConfig: [
     {
       key: 'apiKey',
       label: 'API Key',
-      description: '豆包Seedream图片生成模型',
+      description: '豆包Seedream 4.0 图片生成模型',
       required: true,
       inputType: 'secret'
     }
@@ -29,12 +29,11 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          key: 'modelID',
-          label: '模型ID',
+          key: 'model',
+          label: '模型',
           renderTypeList: [FlowNodeInputTypeEnum.select],
           valueType: WorkflowIOValueTypeEnum.string,
-          description: '模型ID',
-          toolDescription: '模型ID',
+          description: '模型',
           defaultValue: 'doubao-seedream-4-0-250828',
           list: [{ label: 'Doubao-Seedream-4.0', value: 'doubao-seedream-4-0-250828' }],
           required: true
@@ -95,8 +94,8 @@ export default defineTool({
         {
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'image',
-          label: '生成的图片',
-          description: '生成的图片'
+          label: '生成的图片链接',
+          description: '生成的图片链接'
         }
       ]
     }
