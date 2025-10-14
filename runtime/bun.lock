@@ -4,7 +4,7 @@
     "": {
       "name": "runtime",
       "devDependencies": {
-        "@types/bun": "latest",
+        "@types/bun": "v1.2.23",
       },
       "peerDependencies": {
         "typescript": "^5.0.0",

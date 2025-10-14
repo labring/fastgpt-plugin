@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "prepare": "husky install",
-    "build:runtime": "bun --cwd projects/runtime build",
-    "dev:runtime": "bun --cwd projects/runtime dev",
+    "build:runtime": "bun --cwd runtime build",
+    "dev:runtime": "bun --cwd runtime dev",
     "test": "vitest run",
     "lint": "node_modules/.bin/eslint --fix",
     "prettier": "prettier --write \"./**/*.{ts,js,json}\"",
@@ -51,7 +51,7 @@
     "vitest": "3.1.2"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   },
   "workspaces": [
     "sdk",

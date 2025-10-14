@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import fs from 'fs/promises';
 import path from 'path';
+import { ensureDir } from './fs';
 
 /**
  * Pack a directory into a .pkg file
@@ -62,7 +63,7 @@ export const unpkg = async (pkgPath: string, dist: string) => {
   const zip = await JSZip.loadAsync(new Uint8Array(pkgData));
 
   // Ensure output directory exists
-  await fs.mkdir(dist, { recursive: true });
+  await ensureDir(dist);
 
   // Extract all files
   const filePromises: Promise<void>[] = [];

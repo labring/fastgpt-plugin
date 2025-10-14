@@ -11,7 +11,7 @@ import { join } from 'node:path';
 await $`bun run build:worker`;
 // 2. move templates
 await cp(
-  join(__dirname, '..', '..', '..', 'modules', 'workflow', 'templates'),
+  join(__dirname, '..', '..', 'modules', 'workflow', 'templates'),
   join(__dirname, '..', 'dist', 'workflows'),
   {
     recursive: true

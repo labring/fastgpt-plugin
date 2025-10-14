@@ -4,50 +4,22 @@ import fs from 'fs';
 import { addLog } from '@/utils/log';
 import { BuiltInToolBaseURL, LoadToolsByFilename, UploadedToolBaseURL } from './utils';
 import { refreshUploadedTools } from './controller';
+import { basePath } from 'runtime/utils/const';
+import { join } from 'path';
+import { readdir } from 'fs/promises';
+import { unpkg } from '@/utils/zip';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
-async function initBuiltInTools() {
-  // Create directory if it doesn't exist
-  if (!fs.existsSync(BuiltInToolBaseURL)) {
-    addLog.info(`Creating built-in tools directory: ${BuiltInToolBaseURL}`);
-    fs.mkdirSync(BuiltInToolBaseURL, { recursive: true });
-  }
+const toolPkgsDir = join(basePath, 'dist', 'pkgs', 'tool');
+const toolDir = join(basePath, 'dist', 'tools');
 
-  builtinTools.length = 0;
-  const toolDirs = fs
-    .readdirSync(BuiltInToolBaseURL)
-    .filter((file) => !filterToolList.includes(file));
-  for (const tool of toolDirs) {
-    const tmpTools = await LoadToolsByFilename(tool, 'built-in');
-    builtinTools.push(...tmpTools);
-  }
-
-  addLog.info(
-    `Load builtin tools in ${isProd ? 'production' : 'development'} env, total: ${toolDirs.length}`
+export async function initTools() {
+  // 1. get all tool pkgs
+  const pkgs = await readdir(toolPkgsDir);
+  const promises = pkgs.map((pkg) =>
+    unpkg(join(toolPkgsDir, pkg), join(toolDir, pkg.replace('.pkg', '')))
   );
+  await Promise.all(promises);
+  // 2. read the tools
 }
-
-export async function initUploadedTool() {
-  // Create directory if it doesn't exist
-  if (!fs.existsSync(UploadedToolBaseURL)) {
-    addLog.info(`Creating uploaded tools directory: ${UploadedToolBaseURL}`);
-    fs.mkdirSync(UploadedToolBaseURL, { recursive: true });
-  }
-
-  uploadedTools.length = 0;
-
-  const toolDirs = fs
-    .readdirSync(UploadedToolBaseURL)
-    .filter((file) => !filterToolList.includes(file));
-  for (const tool of toolDirs) {
-    const tmpTools = await LoadToolsByFilename(tool, 'uploaded');
-    uploadedTools.push(...tmpTools);
-  }
-
-  addLog.info(
-    `Load uploaded tools in ${isProd ? 'production' : 'development'} env, total: ${toolDirs.length}`
-  );
-}
-
-export const initTools = async () => Promise.all([initBuiltInTools(), refreshUploadedTools()]);

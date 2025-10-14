@@ -24,17 +24,17 @@ export async function buildTool(toolDirname: string) {
     outdir: cacheDir,
     target: 'node',
     plugins: [autoToolIdPlugin],
-    naming: toolDir + '.js',
+    naming: 'index.js',
     minify: true
   });
 
   // 2. move README.md, assets/* into the cache dir
   if (await exists(join(toolDir, 'README.md'))) {
-    cp(join(toolDir, 'README.md'), join(cacheDir, 'README.md'));
+    await cp(join(toolDir, 'README.md'), join(cacheDir, 'README.md'));
   }
 
   if (await exists(join(toolDir, 'assets'))) {
-    cp(join(toolDir, 'assets'), join(cacheDir, 'assets'));
+    await cp(join(toolDir, 'assets'), join(cacheDir, 'assets'), { recursive: true });
   }
 
   // 3. zip the cache dir into a .pkg file

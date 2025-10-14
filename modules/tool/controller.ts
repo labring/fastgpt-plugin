@@ -8,7 +8,6 @@ import type { ToolSetType, ToolType } from './type';
 import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import * as fs from 'fs';
-import { initUploadedTool } from '@tool/init';
 import path from 'path';
 import { addLog } from '@/utils/log';
 import { getErrText } from './utils/err';
@@ -50,7 +49,6 @@ export async function refreshUploadedTools() {
     ...newFiles.map((tool) => downloadTool(tool.objectName))
   ]);
 
-  await initUploadedTool();
   return uploadedTools;
 }
 

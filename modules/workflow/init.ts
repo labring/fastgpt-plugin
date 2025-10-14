@@ -9,7 +9,7 @@ export const workflows: TemplateListType = [];
 export const initWorkflowTemplates = async () => {
   const publicWorkflowsPath = isProd
     ? join(process.cwd(), 'dist', 'workflows')
-    : join(process.cwd(), '..', '..', 'modules', 'workflow', 'templates');
+    : join(process.cwd(), '..', 'modules', 'workflow', 'templates');
 
   // according to the environment to decide to read the way
   const items = await readdir(publicWorkflowsPath, { withFileTypes: true });

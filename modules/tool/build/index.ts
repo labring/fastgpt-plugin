@@ -1,7 +1,8 @@
 import fs from 'fs/promises';
 import { buildTool, toolsSourceDir } from './build';
 import { join } from 'path';
-import { isProd } from '@/constants';
+
+const tool = process.argv[2] || '*';
 
 export const buildAllTools = async () => {
   // read all tools, and build them
@@ -15,6 +16,10 @@ export const buildAllTools = async () => {
   await Promise.all(promises);
 };
 
-if (!isProd) {
-  await buildAllTools();
+if (import.meta.main) {
+  if (tool === '*') {
+    await buildAllTools();
+  } else {
+    await buildTool(tool);
+  }
 }
