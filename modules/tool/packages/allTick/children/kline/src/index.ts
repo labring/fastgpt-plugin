@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { z } from 'zod';
 
 // Modified version (fixed)
@@ -132,7 +131,7 @@ export async function tool(params: z.infer<typeof InputType>): Promise<z.infer<t
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+      return Promise.reject(new Error(`HTTP error: ${response.status} ${response.statusText}`));
     }
 
     const responseData = await response.json();
