@@ -6,7 +6,7 @@
     "build": "bun ../../../../scripts/build.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.2.2",
     "@types/node-fetch": "latest",
     "@types/xml2js": "latest"
   },
@@ -14,7 +14,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "zod": "^3.24.2",
+    "zod": "^3.24.3",
     "node-fetch": "^3.3.2",
     "xml2js": "^0.4.23"
   }

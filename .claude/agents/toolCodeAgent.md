@@ -1,25 +1,62 @@
-# FastGPT Plugin 工具设计规范
+---
+name: toolCodeAgent
+description: 当用户需要开发一个工具/工具集时调用
+model: sonnet
+---
+
+# 工作流程
+
+开发新工具时，参考该流程完成任务。
+
+1. 参考 DESIGN.md  已有信息，完成需求文档编写。
+2. 审核需求文档，检查是否有遗漏。
+3. 依据需求文档完成代码开发。
+4. 依据需求文档，编写测试案例。
+5. 安装对应依赖后，进行测试并纠错问题。
+6. 进行代码 Review，简化无用代码。
+7. 最后再进行一次测试，保证代码可用。
+
+## 需求文档模板
+
+```
+# xxx 设计文档
+
+## 参考信息
+
+这里可能会给一些参考文档，测试密钥等。
+
+## 功能描述
+
+实现 xxxx。
+
+* 需要一个 tool/toolset
+* 包含 n 个工具，具体如下：
+
+1. xxx
+2. xxx
+
+## 目录结构
+
+## 输入输出配置
+
+## 代码示例
+
+## 测试方案
+
+## 可能存在的问题和重点检查内容
+```
+
+## 测试流程
+
+1. 检查 TS 是否有错误
+2. 检查是否可以正常运行和build
+3. 检查测试案例是否通过
+
+---
+
+# FastGPT 系统工具设计规范
 
 本文档定义了 FastGPT Plugin 系统中工具(Tool)和工具集(ToolSet)的统一设计规范,基于 Redis 工具集的最佳实践总结。
-
----
-
-## 目录
-
-- [1. 概述](#1-概述)
-- [2. 工具类型](#2-工具类型)
-- [3. 目录结构](#3-目录结构)
-- [4. 工具(Tool)设计](#4-工具tool设计)
-- [5. 工具集(ToolSet)设计](#5-工具集toolset设计)
-- [6. 共享模块设计](#6-共享模块设计)
-- [7. 配置规范](#7-配置规范)
-- [8. 业务逻辑实现](#8-业务逻辑实现)
-- [9. 错误处理](#9-错误处理)
-- [10. 测试规范](#10-测试规范)
-- [11. 依赖管理](#11-依赖管理)
-- [12. 最佳实践](#12-最佳实践)
-
----
 
 ## 1. 概述
 
@@ -116,7 +153,6 @@ export default defineTool({
   // 可选配置
   isWorkerRun: false,                    // 是否在 worker 中运行(默认 true)
   type: ToolTypeEnum.tools,              // 工具类型
-  icon: 'core/workflow/template/xxx',    // 图标路径
   author: 'Your Name',                   // 作者
   courseUrl: 'https://...',              // 文档链接
 
@@ -199,43 +235,14 @@ export async function tool({
   apiKey,
   inputKey
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  try {
-    // 业务逻辑实现
-    const result = await performOperation(inputKey, apiKey);
+  // 业务逻辑实现
+  const result = await performOperation(inputKey, apiKey);
 
-    return {
-      outputKey: result,
-      success: true
-    };
-
-  } catch (error) {
-    // 错误处理
-    return Promise.reject(handleError(error));
-  }
+  return {
+    outputKey: result,
+    success: true
+  };
 }
-
-// 错误处理函数
-function handleError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return 'Unknown error occurred';
-}
-```
-
-### 4.3 导出文件 (index.ts)
-
-```typescript
-import config from './config';
-import { InputType, OutputType, tool as toolCb } from './src';
-import { exportTool } from '@tool/utils/tool';
-
-export default exportTool({
-  toolCb,
-  InputType,
-  OutputType,
-  config
-});
 ```
 
 ---
@@ -264,7 +271,6 @@ export default defineToolSet({
   toolDescription: 'Description for AI to understand this toolset',
 
   // 可选配置
-  icon: 'core/workflow/template/xxx',
   author: 'Your Name',
   courseUrl: 'https://...',
 
@@ -355,7 +361,22 @@ export const OutputType = z.object({
   success: z.boolean()
 });
 
-// 工具回调函数
+// 工具回调函数（简单版，由上层自动处理错误）
+export async function tool({
+  connectionString,
+  apiKey,
+  param1
+}: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
+  // 执行业务逻辑
+  const result = await client.operation(param1);
+
+  return {
+      result,
+      success: true
+  };
+}
+
+// 工具回调函数（需处理错误/关闭链接）
 export async function tool({
   connectionString,
   apiKey,
@@ -388,39 +409,13 @@ export async function tool({
 }
 ```
 
-### 5.4 子工具导出 (children/toolName/index.ts)
-
-```typescript
-import config from './config';
-import { InputType, OutputType, tool as toolCb } from './src';
-import { exportTool } from '@tool/utils/tool';
-
-export default exportTool({
-  toolCb,
-  InputType,
-  OutputType,
-  config
-});
-```
-
-### 5.5 工具集导出 (index.ts)
-
-```typescript
-import config from './config';
-import { exportToolSet } from '@tool/utils/tool';
-
-export default exportToolSet({
-  config
-});
-```
-
 ---
 
-## 6. 共享模块设计
+## 6. 通用设计
 
 ### 6.1 客户端模块 (client.ts)
 
-用于工具集中的子工具共享连接逻辑。
+用于封装工具集中的子工具共享连接逻辑，比如数据库实例，请求实例封装。
 
 ```typescript
 import SomeClient from 'some-library';
@@ -519,6 +514,26 @@ export async function withTimeout<T>(
 ```
 
 ---
+
+### 6.3 错误处理 (error.ts)
+
+对于一个工具集来说，如果统一用的是同一家的 API，通常会有错误映射码，可以在该文件中声明，并统一做错误映射处理。如果是常见的错误，则无需该文件和报错捕获，直接抛错即可。
+
+如果不需要做错误映射， src/index.ts 逻辑处理中，无需 try catch，直接由上层自动捕获错误即可。
+
+```ts
+const errorMap = {
+  '400': '请求参数错误',
+  '401': '未授权',
+  '403': '禁止访问',
+  '404': '资源不存在',
+  '429': '请求频率超限',
+  '500': '服务器错误',
+  '502': '网关错误',
+  '503': '服务不可用',
+}
+```
+
 
 ## 7. 配置规范
 
@@ -709,14 +724,16 @@ secretInputConfig: [
 
 ### 8.2 输入验证
 
+如果用户未制定特殊校验，则无需增加额外自定义校验，使用下面常见的几种校验即可：
+
 ```typescript
 import { z } from 'zod';
 
 export const InputType = z.object({
   // 字符串验证
   name: z.string()
-    .min(1, 'Name cannot be empty')
-    .max(100, 'Name too long'),
+    .nonempty('Name cannot be empty') // 如果是长度限制：minLength(1, 'Name cannot be empty')
+    .maxLength(100, 'Name too long'),
 
   // 数字验证
   count: z.number()
@@ -815,169 +832,9 @@ export async function tool(input: z.infer<typeof InputType>) {
 }
 ```
 
-### 8.5 并发控制
+## 9. 测试规范
 
-```typescript
-import pLimit from 'p-limit';
-
-export async function tool(input: z.infer<typeof InputType>) {
-  const limit = pLimit(5); // 最多5个并发
-
-  const tasks = input.items.map(item =>
-    limit(() => processItem(item))
-  );
-
-  try {
-    const results = await Promise.all(tasks);
-    return { results, success: true };
-  } catch (error) {
-    return Promise.reject(handleError(error));
-  }
-}
-```
-
----
-
-## 9. 错误处理
-
-### 9.1 错误分类
-
-```typescript
-export enum ErrorType {
-  VALIDATION = 'VALIDATION_ERROR',
-  CONNECTION = 'CONNECTION_ERROR',
-  TIMEOUT = 'TIMEOUT_ERROR',
-  AUTH = 'AUTH_ERROR',
-  NOT_FOUND = 'NOT_FOUND_ERROR',
-  RATE_LIMIT = 'RATE_LIMIT_ERROR',
-  INTERNAL = 'INTERNAL_ERROR'
-}
-
-export class ToolError extends Error {
-  constructor(
-    public type: ErrorType,
-    message: string,
-    public details?: any
-  ) {
-    super(message);
-    this.name = 'ToolError';
-  }
-}
-```
-
-### 9.2 错误处理函数
-
-```typescript
-export function handleError(error: unknown): string {
-  // 已知的工具错误
-  if (error instanceof ToolError) {
-    return `[${error.type}] ${error.message}`;
-  }
-
-  // JavaScript Error
-  if (error instanceof Error) {
-    const message = error.message;
-
-    // 网络错误
-    if (message.includes('ECONNREFUSED')) {
-      return 'Connection refused. Please check the service is running.';
-    }
-    if (message.includes('ETIMEDOUT')) {
-      return 'Connection timeout. Please check network connectivity.';
-    }
-    if (message.includes('ENOTFOUND')) {
-      return 'Host not found. Please check the URL.';
-    }
-
-    // 认证错误
-    if (message.includes('401') || message.includes('Unauthorized')) {
-      return 'Authentication failed. Please check your credentials.';
-    }
-    if (message.includes('403') || message.includes('Forbidden')) {
-      return 'Access forbidden. Please check your permissions.';
-    }
-
-    // 资源错误
-    if (message.includes('404') || message.includes('Not Found')) {
-      return 'Resource not found.';
-    }
-
-    // 速率限制
-    if (message.includes('429') || message.includes('Rate Limit')) {
-      return 'Rate limit exceeded. Please try again later.';
-    }
-
-    // 服务器错误
-    if (message.includes('500') || message.includes('Internal Server Error')) {
-      return 'Server error. Please try again later.';
-    }
-
-    return error.message;
-  }
-
-  // 字符串错误
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  // 未知错误
-  return 'An unknown error occurred';
-}
-```
-
-### 9.3 错误重试
-
-```typescript
-async function retryOperation<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3,
-  delayMs: number = 1000
-): Promise<T> {
-  let lastError: Error;
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error as Error;
-
-      // 某些错误不需要重试
-      if (isNonRetryableError(error)) {
-        throw error;
-      }
-
-      // 最后一次重试失败
-      if (i === maxRetries - 1) {
-        break;
-      }
-
-      // 等待后重试
-      await new Promise(resolve => setTimeout(resolve, delayMs * (i + 1)));
-    }
-  }
-
-  throw lastError!;
-}
-
-function isNonRetryableError(error: unknown): boolean {
-  if (error instanceof Error) {
-    const message = error.message;
-    return (
-      message.includes('401') ||
-      message.includes('403') ||
-      message.includes('404') ||
-      message.includes('Invalid')
-    );
-  }
-  return false;
-}
-```
-
----
-
-## 10. 测试规范
-
-### 10.1 单元测试结构
+### 9.1 单元测试结构
 
 ```typescript
 // test/index.test.ts
@@ -1028,7 +885,7 @@ describe('ToolName Tests', () => {
 });
 ```
 
-### 10.2 测试最佳实践
+### 9.2 测试最佳实践
 
 - **独立性**: 每个测试独立,不依赖其他测试
 - **覆盖率**: 覆盖正常流程、边界情况、错误处理
@@ -1038,80 +895,10 @@ describe('ToolName Tests', () => {
 
 ---
 
-## 11. 依赖管理
-
-### 11.1 package.json 模板
-
-```json
-{
-  "name": "@tool/toolName",
-  "version": "0.1.0",
-  "description": "Tool description",
-  "main": "index.ts",
-  "scripts": {
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
-  },
-  "dependencies": {
-    "zod": "^3.22.4"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "vitest": "^1.0.0"
-  }
-}
-```
-
-### 11.2 依赖选择原则
-
-- **最小化**: 只添加必需的依赖
-- **稳定性**: 选择稳定、维护良好的库
-- **大小**: 考虑包大小,避免过大的依赖
-- **类型支持**: 优先选择有 TypeScript 类型的库
-- **版本管理**: 使用 `^` 允许小版本更新
-
----
-
-## 12. 代码规范
+## 10. 代码规范
 
 * 采用小驼峰命名规范。
+* 类型引入需要强制什么 type，例如 import {type xx} from xxx;
+* 代码精简。
+* 简单内容无需额外报错捕获，外层已做处理。
 
-## 13. 工具开发流程
-
-所有新工具，均参考该示例进行设计和开发。
-
-### 1. 编写设计文件
-
-示例如下：
-
-```
-# xxx 设计文档
-
-## 功能描述
-
-* 需要一个 tool/toolset
-* 如果是 toolset，需要列举出需要哪些子工具
-
-## 参考文档
-
-API 文档，官方教程等。
-
-## 工具目录结构
-
-## 输入输出配置
-
-## 代码示例
-
-## 测试示例
-
-## 可能存在的问题和重点检查内容
-```
-
-### 2. 参考示例文档进行开发测试
-
-### 3. 运行验证
-
-1. 检查测试案例是否通过
-2. 检查 TS 是否有错误
-3. 检查是否可以正常运行和build

@@ -29,14 +29,15 @@ export default defineTool({
         {
           key: 'format',
           label: '转换格式',
-          description: '需要转换的格式，支持 xlsx 和 docx',
-          toolDescription: '需要转换的格式，支持 xlsx 和 docx',
+          description: '需要转换的格式，支持 xlsx 和 docx 和 pptx',
+          toolDescription: '需要转换的格式，支持 xlsx 和 docx 和 pptx',
           required: true,
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           list: [
             { label: 'xlsx', value: 'xlsx' },
-            { label: 'docx', value: 'docx' }
+            { label: 'docx', value: 'docx' },
+            { label: 'pptx', value: 'pptx' }
           ]
         }
       ],

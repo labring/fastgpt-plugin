@@ -1,0 +1,17 @@
+{
+  "name": "@fastgpt-plugins/stability",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun ../../../../scripts/build.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "zod": "^3.24.3"
+  }
+}

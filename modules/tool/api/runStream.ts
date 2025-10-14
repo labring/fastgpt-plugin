@@ -61,7 +61,12 @@ export const runToolStreamHandler = async (
       type: StreamMessageTypeEnum.response,
       data: result
     });
-    addLog.debug(`Run tool '${toolId}' success`);
+
+    if (result.error) {
+      addLog.debug(`Run tool '${toolId}' failed`, { error: result.error });
+    } else {
+      addLog.debug(`Run tool '${toolId}' success`);
+    }
 
     recordToolExecution(toolId, 'success');
   } catch (error) {

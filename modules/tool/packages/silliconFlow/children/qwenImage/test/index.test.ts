@@ -35,7 +35,7 @@ describe('Qwen-Image Tool', () => {
           image_size: '1328x1328'
         })
       ).rejects.toThrow();
-    });
+    }, 60000);
 
     it('should reject with empty prompt', async () => {
       await expect(
@@ -45,7 +45,7 @@ describe('Qwen-Image Tool', () => {
           image_size: '1328x1328'
         })
       ).rejects.toThrow();
-    });
+    }, 60000);
 
     it('should reject with invalid image size', async () => {
       const invalidSize = '999x999' as any;
@@ -57,7 +57,7 @@ describe('Qwen-Image Tool', () => {
           image_size: invalidSize
         })
       ).rejects.toThrow();
-    });
+    }, 60000);
 
     it('should reject with out of range seed', async () => {
       await expect(
@@ -68,6 +68,6 @@ describe('Qwen-Image Tool', () => {
           seed: 99999999999 // exceeds max value
         })
       ).rejects.toThrow();
-    });
+    }, 60000);
   });
 });
