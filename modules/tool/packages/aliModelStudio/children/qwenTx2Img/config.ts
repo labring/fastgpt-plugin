@@ -22,16 +22,13 @@ export default defineTool({
       description: 'Default version',
       inputs: [
         {
-          key: 'generateType',
-          label: '生成类型',
-          description: '选择生成类型, 单图编辑只能输入1张图片, 多图融合可以输入1-3张图片',
-          renderTypeList: [FlowNodeInputTypeEnum.select],
+          key: 'prompt',
+          label: '正向提示词',
+          description: '描述期望生成的图像内容，支持中英文，长度不超过800个字符',
+          toolDescription: '文本提示词',
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
-          defaultValue: 'single',
-          list: [
-            { label: '单图编辑', value: 'single' },
-            { label: '多图融合', value: 'multiple' }
-          ]
+          required: true
         },
         {
           key: 'image1',
@@ -60,15 +57,7 @@ export default defineTool({
           valueType: WorkflowIOValueTypeEnum.string,
           required: false
         },
-        {
-          key: 'prompt',
-          label: '正向提示词',
-          description: '描述期望生成的图像内容，支持中英文，长度不超过800个字符',
-          toolDescription: '文本提示词',
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          valueType: WorkflowIOValueTypeEnum.string,
-          required: true
-        },
+
         {
           key: 'negative_prompt',
           label: '反向提示词',
@@ -76,13 +65,6 @@ export default defineTool({
           toolDescription: '反向提示词',
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string
-        },
-        {
-          key: 'watermark',
-          label: '水印',
-          description: '是否添加水印',
-          renderTypeList: [FlowNodeInputTypeEnum.switch],
-          valueType: WorkflowIOValueTypeEnum.boolean
         },
         {
           key: 'seed',
@@ -100,13 +82,8 @@ export default defineTool({
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'image',
           label: '生成的图片',
-          description: '生成图片的URL'
-        },
-        {
-          type: FlowNodeOutputTypeEnum.error,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'error',
-          label: '错误信息'
+          description: '生成图片的URL',
+          required: true
         }
       ]
     }

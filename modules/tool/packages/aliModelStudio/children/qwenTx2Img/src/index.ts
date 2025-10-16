@@ -3,9 +3,6 @@ import { POST } from '@tool/utils/request';
 
 export const InputType = z.object({
   apiKey: z.string().describe('Alibaba Cloud Qwen API Key'),
-  generateType: z
-    .enum(['single', 'multiple'])
-    .describe('Choose between single image editing and multiple image fusion'),
   image1: z.string().describe('First input image URL or Base64 encoded data (required)'),
   image2: z
     .string()
@@ -23,11 +20,6 @@ export const InputType = z.object({
     .describe(
       'Negative prompt describing content that should not appear in the image, up to 500 characters'
     ),
-  watermark: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe('Whether to add watermark, located at bottom right corner of image'),
   seed: z
     .number()
     .int()
@@ -54,13 +46,14 @@ type QwenResponse = {
 export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const url =
     'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
-  const { apiKey, generateType, image1, image2, image3, prompt, negative_prompt, watermark, seed } =
-    props;
+  const { apiKey, image1, image2, image3, prompt, negative_prompt, seed } = props;
 
-  const content =
-    generateType === 'single'
-      ? [{ image: image1 }, { text: prompt }]
-      : [{ image: image1 }, { image: image2 }, { image: image3 }, { text: prompt }];
+  const content = [
+    { image: image1 },
+    ...(image2 ? [{ image: image2 }] : []),
+    ...(image3 ? [{ image: image3 }] : []),
+    { text: prompt }
+  ];
 
   const requestBody = {
     model: 'qwen-image-edit',
@@ -74,7 +67,6 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
     },
     stream: false,
     negative_prompt,
-    watermark,
     seed
   };
 
@@ -87,10 +79,9 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
   });
 
   const image_url = data?.output?.choices[0]?.message?.content[0]?.image;
+
   if (!data || !image_url) {
-    return Promise.reject({
-      error: 'Failed to generate image'
-    });
+    return Promise.reject('Failed to generate image');
   }
 
   return {
