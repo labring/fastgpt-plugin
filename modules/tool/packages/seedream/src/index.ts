@@ -6,11 +6,7 @@ export const InputType = z.object({
   model: z.string().nonempty().describe('model name'),
   prompt: z.string().nonempty().describe('describe the desired image content'),
   size: z.string().optional().describe('aspect ratio of the generated content'),
-  seed: z.number().optional().describe('Random seed to control the randomness of model generation'),
-  watermark: z
-    .boolean()
-    .optional()
-    .describe('Whether to add watermark, located at bottom right corner of image')
+  seed: z.number().optional().describe('Random seed to control the randomness of model generation')
 });
 
 export const OutputType = z.object({
@@ -28,8 +24,7 @@ export async function tool({
   model,
   prompt,
   size,
-  seed,
-  watermark
+  seed
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const url = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
 
@@ -39,8 +34,7 @@ export async function tool({
       model,
       prompt,
       size,
-      seed,
-      watermark
+      seed
     },
     {
       headers: {

@@ -53,7 +53,6 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.select],
           valueType: WorkflowIOValueTypeEnum.string,
           description: '生成图像的尺寸信息',
-          toolDescription: '生成图像的尺寸信息',
           defaultValue: '1:1',
           list: [
             { label: '1:1', value: '2048x2048' },
@@ -73,20 +72,9 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.numberInput],
           valueType: WorkflowIOValueTypeEnum.number,
           description: '随机数种子, 用于控制模型生成内容的随机性',
-          toolDescription: '随机数种子, 用于控制模型生成内容的随机性',
           min: -1,
           max: 2147483647,
           defaultValue: -1,
-          required: false
-        },
-        {
-          key: 'watermark',
-          label: '水印',
-          renderTypeList: [FlowNodeInputTypeEnum.switch],
-          valueType: WorkflowIOValueTypeEnum.boolean,
-          description: '是否添加水印',
-          toolDescription: '是否添加水印',
-          defaultValue: true,
           required: false
         }
       ],
@@ -95,7 +83,8 @@ export default defineTool({
           valueType: WorkflowIOValueTypeEnum.string,
           key: 'image',
           label: '生成的图片链接',
-          description: '生成的图片链接'
+          description: '生成的图片链接',
+          required: true
         }
       ]
     }
