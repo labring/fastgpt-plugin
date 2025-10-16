@@ -2,17 +2,15 @@ import { z } from 'zod';
 import { POST, GET } from '@tool/utils/request';
 
 export const InputType = z.object({
+  baseUrl: z.string().optional().default('https://api.openai.com/v1'),
   apiKey: z.string().nonempty(),
   file: z.string().nonempty(),
-  model: z.string().nonempty(),
-  language: z.string().optional().default('zh')
+  model: z.string().nonempty()
 });
 
 export const OutputType = z.object({
   text: z.string()
 });
-
-const API_BASE_URL = 'https://api.gpt.ge';
 
 // convert file input (URL or base64) to File object
 async function inputToFile(file: string): Promise<File> {
@@ -40,10 +38,10 @@ async function inputToFile(file: string): Promise<File> {
 }
 
 export async function tool({
+  baseUrl,
   apiKey,
   file,
-  model,
-  language
+  model
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   // Convert file input to File object
   const audioFile = await inputToFile(file);
@@ -54,14 +52,13 @@ export async function tool({
   const formData = new FormData();
   formData.append('file', audioFile);
   formData.append('model', model);
-  // default language is zh
-  formData.append('language', language || 'zh');
 
-  const { data } = await POST(`${API_BASE_URL}/v1/audio/transcriptions`, formData, {
+  const { data } = await POST(`${baseUrl}/audio/transcriptions`, formData, {
     headers: {
       Authorization: `Bearer ${apiKey}`
     }
   });
+
   const text = data?.text;
   if (!text) {
     return Promise.reject('No transcription text found in response');
