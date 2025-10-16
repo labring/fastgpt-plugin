@@ -40,7 +40,11 @@ export default defineTool({
           key: 'model',
           label: '模型',
           toolDescription: 'Whisper model to use for transcription',
-          renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [
+            FlowNodeInputTypeEnum.select,
+            FlowNodeInputTypeEnum.input,
+            FlowNodeInputTypeEnum.reference
+          ],
           valueType: WorkflowIOValueTypeEnum.string,
           required: true,
           defaultValue: 'whisper-1',

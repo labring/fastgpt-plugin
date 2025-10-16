@@ -6,7 +6,11 @@ export const InputType = z.object({
   model: z.string().nonempty().describe('model name'),
   prompt: z.string().nonempty().describe('describe the desired image content'),
   size: z.string().optional().describe('aspect ratio of the generated content'),
-  seed: z.number().optional().describe('Random seed to control the randomness of model generation')
+  seed: z
+    .number()
+    .optional()
+    .default(0)
+    .describe('Random seed to control the randomness of model generation')
 });
 
 export const OutputType = z.object({
