@@ -40,7 +40,8 @@ export const Main2WorkerMessageSchema = z.discriminatedUnion('type', [
       toolId: z.string(),
       inputs: z.any(),
       systemVar: z.any(),
-      toolDirName: z.string()
+      filename: z.string(),
+      dev: z.boolean()
     })
   }),
   z.object({

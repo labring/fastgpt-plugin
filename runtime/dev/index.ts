@@ -3,7 +3,7 @@ import { copyIcons } from '@tool/utils/icon';
 import path from 'path';
 import { DevServer } from './devServer';
 import fs from 'fs/promises';
-import { basePath } from '../utils/const';
+import { basePath } from '@tool/constants';
 
 async function copyDevIcons() {
   if (isProd) return;

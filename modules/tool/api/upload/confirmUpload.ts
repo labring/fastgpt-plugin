@@ -1,19 +1,33 @@
+import { join } from 'path';
 import { s } from '@/router/init';
 import { contract } from '@/contract';
 import { mongoSessionRun } from '@/mongo/utils';
-import { downloadTool } from '@tool/controller';
 import { MongoPluginModel, pluginTypeEnum } from '@/mongo/models/plugins';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { addLog } from '@/utils/log';
 import { pluginFileS3Server } from '@/s3';
+import { downloadFile } from '@/utils/fs';
+import { toolTempDir, toolTempPkgDir } from '@tool/constants';
+import { unpkg } from '@/utils/zip';
 
 export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   const { objectName } = body;
+  const toolFilename = objectName.split('/').pop();
+  if (!toolFilename) return Promise.reject('Upload Tool Error: Bad objectname');
 
   await mongoSessionRun(async (session) => {
-    const toolId = await downloadTool(objectName);
+    const filepath = await downloadFile(objectName, toolTempPkgDir);
+    if (!filepath) return Promise.reject('Can not download tool file');
+
+    await unpkg(filepath, join(toolTempDir, toolFilename));
+
+    const toolId = (await import(join(toolTempDir, toolFilename, 'index.js'))).default.toolId as
+      | string
+      | undefined;
+
     if (!toolId) return Promise.reject('Can not parse ToolId from the tool, installation failed.');
+
     const oldTool = await MongoPluginModel.findOneAndUpdate(
       {
         toolId
@@ -27,6 +41,7 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
         upsert: true
       }
     );
+
     if (oldTool?.objectName) pluginFileS3Server.removeFile(oldTool.objectName);
     await refreshVersionKey(SystemCacheKeyEnum.systemTool);
     addLog.info(`Upload tool success: ${toolId}`);

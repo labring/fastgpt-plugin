@@ -1,4 +1,4 @@
-import { refreshUploadedTools } from '@tool/controller';
+import { initTools } from '@tool/init';
 import { SystemCacheKeyEnum } from './type';
 
 export const initCache = () => {
@@ -6,7 +6,7 @@ export const initCache = () => {
     [SystemCacheKeyEnum.systemTool]: {
       versionKey: '',
       data: [],
-      refreshFunc: refreshUploadedTools
+      refreshFunc: initTools
     }
   };
 };

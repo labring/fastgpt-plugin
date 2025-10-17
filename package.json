@@ -59,7 +59,7 @@
     "modules/*",
     "runtime"
   ],
-  "packageManager": "bun@1.3.0",
+  "packageManager": "bun@1.2.23",
   "lint-staged": {
     "./**/**/*.{ts}": [
       "npm run lint",

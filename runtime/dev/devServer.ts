@@ -3,7 +3,7 @@ import { watch } from 'fs/promises';
 import { $ } from 'bun';
 import { addLog } from '@/utils/log';
 import { spawn, type Subprocess } from 'bun';
-import { basePath } from '../utils/const';
+import { basePath } from '@tool/constants';
 
 // DevServer 类管理整个开发环境
 export class DevServer {

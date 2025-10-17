@@ -210,9 +210,8 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
 
     // Computed
     parentId: z.string().optional().describe('The parent id of the tool'),
-    toolDirName: z.string(),
+    toolFilename: z.string(),
 
-    toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool'),
     // ToolSet Parent
     secretInputConfig: z
       .array(InputConfigSchema)
@@ -234,8 +233,7 @@ export const ToolSetConfigSchema = ToolConfigSchema.omit({
 
 export const ToolSetSchema = ToolSchema.omit({
   cb: true,
-  parentId: true,
-  toolDirName: true
+  parentId: true
 })
   .merge(
     z.object({

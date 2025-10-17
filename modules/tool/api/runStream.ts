@@ -14,7 +14,7 @@ export const runToolStreamHandler = async (
 ): Promise<void> => {
   const { toolId, inputs, systemVar } = req.body;
 
-  const tool = getTool(toolId);
+  const tool = await getTool(toolId);
 
   if (!tool) {
     addLog.error('Tool not found', { toolId });

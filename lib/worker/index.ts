@@ -3,9 +3,10 @@ import { getTool } from 'modules/tool/controller';
 import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/tool';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
-import type { Worker2MainMessageType } from './type';
+import type { Main2WorkerMessageType, Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
 import { fileUploadS3Server } from '@/s3';
+import { devToolIds } from '@tool/constants';
 
 type WorkerQueueItem = {
   id: string;
@@ -166,7 +167,7 @@ export async function dispatchWithNewWorker(data: {
   onMessage?: (message: StreamDataType) => void; // streaming callback 可选
 }) {
   const { toolId, onMessage, ...workerData } = data; // 解构出 onMessage，剩余数据传给 worker
-  const tool = getTool(toolId);
+  const tool = await getTool(toolId);
 
   if (!tool || !tool.cb) {
     return Promise.reject(`Tool with ID ${toolId} not found or does not have a callback.`);
@@ -238,11 +239,12 @@ export async function dispatchWithNewWorker(data: {
     worker.postMessage({
       type: 'runTool',
       data: {
-        toolDirName: tool.toolDirName,
         toolId,
         inputs: workerData.inputs,
-        systemVar: workerData.systemVar
+        systemVar: workerData.systemVar,
+        filename: tool.toolFilename,
+        dev: devToolIds.has(toolId)
       }
-    });
+    } as Main2WorkerMessageType);
   });
 }

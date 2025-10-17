@@ -9,7 +9,7 @@ export default s.route(contract.tool.upload.getUploadURL, async ({ query: { file
     status: 200,
     body: await pluginFileS3Server.generateUploadPresignedURL({
       filepath: UploadToolsS3Path,
-      contentType: mimeMap['.js'],
+      contentType: mimeMap['.pkg'],
       filename
     })
   };
