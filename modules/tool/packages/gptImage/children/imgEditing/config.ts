@@ -22,7 +22,7 @@ export default defineTool({
           key: 'image',
           label: '原始图片',
           toolDescription: 'The original image to be edited (URL or base64)',
-          renderTypeList: [FlowNodeInputTypeEnum.textarea, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           required: true,
           description: '要编辑的原始图片，支持图片URL或base64编码，文件大小需小于4MB'
