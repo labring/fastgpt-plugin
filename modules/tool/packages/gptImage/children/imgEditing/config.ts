@@ -39,7 +39,6 @@ export default defineTool({
         {
           key: 'size',
           label: '图片尺寸',
-          toolDescription: 'The size of the image to be edited',
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           required: false,
@@ -53,7 +52,6 @@ export default defineTool({
         {
           key: 'quality',
           label: '图片质量',
-          toolDescription: 'The quality of the image to be edited',
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
           required: false,
