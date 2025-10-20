@@ -76,7 +76,8 @@
   "lint-staged": {
     "./**/**/*.{ts}": [
       "npm run lint",
-      "npm run prettier"
+      "npm run prettier",
+      "git add ."
     ]
   }
 }
