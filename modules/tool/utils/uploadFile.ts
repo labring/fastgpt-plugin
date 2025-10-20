@@ -5,7 +5,7 @@ import { parentPort } from 'worker_threads';
 export const uploadFile = async (data: FileInput) => {
   // 判断是否在 worker 线程中
   const isWorkerThread = typeof parentPort !== 'undefined' && parentPort !== null;
-  console.log(parentPort, isWorkerThread, 1111);
+
   if (isWorkerThread) {
     // 在 worker 线程中，通过 parentPort 发送消息
     return new Promise<FileMetadata>((resolve, reject) => {
