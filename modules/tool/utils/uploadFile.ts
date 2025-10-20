@@ -22,10 +22,32 @@ export const uploadFile = async (data: FileInput) => {
           reject('Unknow error');
         }
       };
-      parentPort?.postMessage({
-        type: 'uploadFile',
-        data
-      });
+
+      // Extract transferable objects (ArrayBuffer from Buffer/Uint8Array)
+      const transferList: ArrayBuffer[] = [];
+      if (data.buffer) {
+        if (Buffer.isBuffer(data.buffer)) {
+          const arrayBuffer = data.buffer.buffer.slice(
+            data.buffer.byteOffset,
+            data.buffer.byteOffset + data.buffer.byteLength
+          );
+          if (!(arrayBuffer instanceof SharedArrayBuffer)) {
+            transferList.push(arrayBuffer);
+          }
+        } else if (data.buffer instanceof Uint8Array) {
+          if (!(data.buffer.buffer instanceof SharedArrayBuffer)) {
+            transferList.push(data.buffer.buffer);
+          }
+        }
+      }
+
+      parentPort?.postMessage(
+        {
+          type: 'uploadFile',
+          data
+        },
+        transferList
+      );
     });
   } else {
     const { fileUploadS3Server } = await import('@/s3');
