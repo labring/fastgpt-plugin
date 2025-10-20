@@ -1,4 +1,3 @@
-import { fileUploadS3Server } from '@/s3';
 import type { FileMetadata } from '@/s3/config';
 import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
@@ -29,6 +28,7 @@ export const uploadFile = async (data: FileInput) => {
       });
     });
   } else {
+    const { fileUploadS3Server } = await import('@/s3');
     return await fileUploadS3Server.uploadFileAdvanced({
       ...data,
       ...(data.buffer ? { buffer: Buffer.from(data.buffer) } : {})
