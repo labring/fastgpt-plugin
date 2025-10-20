@@ -6,7 +6,7 @@ export default defineToolSet({
     'zh-CN': 'gpt-image 绘图',
     en: 'gpt-image Image Generation'
   },
-  courseUrl: 'https://api.gpt.ge/pricing',
+  courseUrl: 'https://platform.openai.com/docs/pricing',
   type: ToolTypeEnum.multimodal,
   icon: 'common/openai',
   description: {
@@ -15,6 +15,13 @@ export default defineToolSet({
   },
   toolDescription: 'gpt-image image generation tool set',
   secretInputConfig: [
+    {
+      key: 'baseUrl',
+      label: 'BaseUrl',
+      inputType: 'input',
+      description: '默认为：https://api.openai.com/v1',
+      defaultValue: 'https://api.openai.com/v1'
+    },
     {
       key: 'apiKey',
       label: 'API Key',

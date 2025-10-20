@@ -3,6 +3,7 @@ import { uploadFile } from '@tool/utils/uploadFile';
 import { POST, GET } from '@tool/utils/request';
 
 export const InputType = z.object({
+  baseUrl: z.string().optional().default('https://api.openai.com/v1'),
   apiKey: z.string().nonempty(),
   image: z.string().nonempty(),
   prompt: z.string().nonempty(),
@@ -13,8 +14,6 @@ export const InputType = z.object({
 export const OutputType = z.object({
   imageUrl: z.string()
 });
-
-const GPT_IMAGE_BASE_URL = 'https://api.gpt.ge';
 
 // convert image input (URL or base64) to Blob
 async function imageInputToBlob(imageInput: string): Promise<Blob> {
@@ -40,6 +39,7 @@ async function imageInputToBlob(imageInput: string): Promise<Blob> {
 }
 
 export async function tool({
+  baseUrl,
   apiKey,
   image,
   prompt,
@@ -54,7 +54,7 @@ export async function tool({
   formData.append('size', size);
   formData.append('quality', quality);
 
-  const { data } = await POST(`${GPT_IMAGE_BASE_URL}/v1/images/edits`, formData, {
+  const { data } = await POST(`${baseUrl}/v1/images/edits`, formData, {
     headers: {
       Authorization: `Bearer ${apiKey}`
     },

@@ -3,6 +3,7 @@ import { POST } from '@tool/utils/request';
 import { uploadFile } from '@tool/utils/uploadFile';
 
 export const InputType = z.object({
+  baseUrl: z.string().optional().default('https://api.openai.com/v1'),
   apiKey: z.string().nonempty(),
   prompt: z.string().nonempty(),
   size: z.string().default('1024x1024'),
@@ -15,9 +16,8 @@ export const OutputType = z.object({
   imageUrl: z.string()
 });
 
-const GPT_IMAGE_BASE_URL = 'https://api.gpt.ge';
-
 export async function tool({
+  baseUrl,
   apiKey,
   prompt,
   size,
@@ -31,7 +31,7 @@ export async function tool({
   };
 
   const { data } = await POST(
-    `${GPT_IMAGE_BASE_URL}/v1/images/generations`,
+    `${baseUrl}/v1/images/generations`,
     {
       model: 'gpt-image-1',
       prompt,
