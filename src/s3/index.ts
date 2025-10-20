@@ -20,7 +20,7 @@ export const pluginFileS3Server = (() => {
   if (!global._pluginFileS3Server) {
     global._pluginFileS3Server = new S3Service({
       maxFileSize: 50 * 1024 * 1024, // 默认 50MB
-      bucket: process.env.S3_PLUGIN_BUCKET || 'fastgpt-plugin',
+      bucket: process.env.S3_PRIVATE_BUCKET || 'fastgpt-private',
       externalBaseUrl: process.env.S3_EXTERNAL_BASE_URL,
       isPublicRead: false
     });
