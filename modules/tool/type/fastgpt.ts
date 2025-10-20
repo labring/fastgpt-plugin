@@ -84,6 +84,7 @@ export const InputConfigSchema = z.object({
   description: z.string().optional(),
   required: z.boolean().optional(),
   inputType: z.enum(['input', 'numberInput', 'secret', 'switch', 'select']),
+  defaultValue: z.any().optional(),
 
   // select
   list: z

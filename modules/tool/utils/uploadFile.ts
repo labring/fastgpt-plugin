@@ -1,4 +1,3 @@
-import { fileUploadS3Server } from '@/s3';
 import type { FileMetadata } from '@/s3/config';
 import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
@@ -23,12 +22,30 @@ export const uploadFile = async (data: FileInput) => {
           reject('Unknow error');
         }
       };
+
+      // Serialize buffer data to avoid transferList issues
+      // Convert Buffer/Uint8Array to a plain object that can be safely cloned
+      let serializedData: FileInput = data;
+      if (data.buffer) {
+        // Convert buffer to Uint8Array for safe serialization
+        const bufferArray =
+          data.buffer instanceof Uint8Array
+            ? Array.from(data.buffer)
+            : Array.from(Buffer.from(data.buffer));
+
+        serializedData = {
+          ...data,
+          buffer: new Uint8Array(bufferArray) as Buffer
+        };
+      }
+
       parentPort?.postMessage({
         type: 'uploadFile',
-        data
+        data: serializedData
       });
     });
   } else {
+    const { fileUploadS3Server } = await import('@/s3');
     return await fileUploadS3Server.uploadFileAdvanced({
       ...data,
       ...(data.buffer ? { buffer: Buffer.from(data.buffer) } : {})
