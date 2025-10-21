@@ -34,24 +34,30 @@ export class S3Service {
       transportAgent: this.config.transportAgent
     });
 
-    this.externalClient = this.config.externalBaseUrl
-      ? (() => {
-          const urlObj = new URL(this.config.externalBaseUrl);
-          const endPoint = urlObj.hostname;
-          const useSSL = urlObj.protocol === 'https';
-          return new Minio.Client({
-            endPoint,
-            port: urlObj.port ? parseInt(urlObj.port) : useSSL ? 443 : 80,
-            useSSL,
-            accessKey: this.config.accessKey,
-            secretKey: this.config.secretKey,
-            transportAgent: this.config.transportAgent
-          });
-        })()
-      : undefined;
+    if (this.config.externalBaseURL) {
+      const externalBaseURL = new URL(this.config.externalBaseURL);
+      const endpoint = externalBaseURL.hostname;
+      const useSSL = externalBaseURL.protocol === 'https:';
+
+      const externalPort = externalBaseURL.port
+        ? parseInt(externalBaseURL.port)
+        : useSSL
+          ? 443
+          : undefined; // https 默认 443，其他情况让 MinIO 客户端使用默认端口
+
+      this.externalClient = new Minio.Client({
+        useSSL: useSSL,
+        endPoint: endpoint,
+        port: externalPort,
+        accessKey: config.accessKey,
+        secretKey: config.secretKey,
+        transportAgent: config.transportAgent
+      });
+    }
   }
 
   async initialize(policy: 'public' | 'private') {
+    // Create bucket
     const [, err] = await catchError(async () => {
       addLog.info(`Checking bucket: ${this.config.bucket}`);
       const bucketExists = await this.client.bucketExists(this.config.bucket);
@@ -65,6 +71,7 @@ export class S3Service {
         }
       }
 
+      // Set bucket policy
       const [_, err] = await catchError(async () => {
         if (policy === 'public') {
           return this.client.setBucketPolicy(
@@ -94,37 +101,6 @@ export class S3Service {
       });
       if (err) {
         addLog.warn(`Failed to set bucket policy: ${this.config.bucket}`);
-      }
-
-      // Update bucket lifecycle
-      if (this.config.retentionDays && this.config.retentionDays > 0) {
-        const Days = this.config.retentionDays;
-        const [, err] = await catchError(() =>
-          this.client.setBucketLifecycle(this.config.bucket, {
-            Rule: [
-              {
-                ID: 'AutoDeleteRule',
-                Status: 'Enabled',
-                Expiration: {
-                  Days,
-                  DeleteMarker: false,
-                  DeleteAll: false
-                }
-              }
-            ]
-          })
-        );
-        if (err) {
-          addLog.warn(`Failed to set bucket lifecycle: ${this.config.bucket}`);
-        }
-      } else {
-        // Remove bucket policy to make it private
-        const [, err] = await catchError(() =>
-          this.client.removeBucketLifecycle(this.config.bucket)
-        );
-        if (err) {
-          addLog.warn(`Failed to remove bucket lifecycle: ${this.config.bucket}`);
-        }
       }
 
       addLog.info(`Bucket initialized, ${this.config.bucket} configured successfully.`);
@@ -158,15 +134,15 @@ export class S3Service {
    *  Get public readable URL
    */
   async generateExternalUrl(objectName: string, expiry: number = 3600): Promise<string> {
-    const externalBaseUrl = this.config.externalBaseUrl;
+    const externalBaseURL = this.config.externalBaseURL;
 
     // Private
     if (!this.config.isPublicRead) {
       const url = await this.client.presignedGetObject(this.config.bucket, objectName, expiry);
       // 如果有 externalBaseUrl，需要把域名进行替换
-      if (this.config.externalBaseUrl) {
+      if (this.config.externalBaseURL) {
         const urlObj = new URL(url);
-        const externalUrlObj = new URL(this.config.externalBaseUrl);
+        const externalUrlObj = new URL(this.config.externalBaseURL);
 
         // 替换协议和域名，保留路径和查询参数
         urlObj.protocol = externalUrlObj.protocol;
@@ -179,8 +155,9 @@ export class S3Service {
       return url;
     }
 
-    if (externalBaseUrl) {
-      return `${externalBaseUrl}/${this.config.bucket}/${objectName}`;
+    // Public
+    if (externalBaseURL) {
+      return `${externalBaseURL}/${this.config.bucket}/${objectName}`;
     }
 
     // Default url
@@ -343,8 +320,8 @@ export class S3Service {
 
       const res = await client.presignedPostPolicy(policy);
       const postURL = (() => {
-        if (this.config.externalBaseUrl) {
-          return `${this.config.externalBaseUrl}/${this.config.bucket}`;
+        if (this.config.externalBaseURL) {
+          return `${this.config.externalBaseURL}/${this.config.bucket}`;
         } else {
           return res.postURL;
         }

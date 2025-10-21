@@ -5,8 +5,7 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export type S3ConfigType = {
   maxFileSize?: number; // 文件大小限制（字节）
-  retentionDays?: number; // 保留天数（由 S3 生命周期策略自动管理）
-  externalBaseUrl?: string; // 自定义域名
+  externalBaseURL?: string; // 自定义域名
   bucket: string; // 存储桶名称
   isPublicRead: boolean;
 } & ClientOptions;
