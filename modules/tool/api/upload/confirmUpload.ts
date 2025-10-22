@@ -8,8 +8,9 @@ import { SystemCacheKeyEnum } from '@/cache/type';
 import { addLog } from '@/utils/log';
 import { pluginFileS3Server } from '@/s3';
 import { downloadFile } from '@/utils/fs';
-import { toolTempDir, toolTempPkgDir } from '@tool/constants';
+import { tempDir, tempPkgDir } from '@tool/constants';
 import { unpkg } from '@/utils/zip';
+import { exit } from 'process';
 
 export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   const { objectName } = body;
@@ -17,12 +18,12 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   if (!toolFilename) return Promise.reject('Upload Tool Error: Bad objectname');
 
   await mongoSessionRun(async (session) => {
-    const filepath = await downloadFile(objectName, toolTempPkgDir);
+    const filepath = await downloadFile(objectName, tempPkgDir);
     if (!filepath) return Promise.reject('Can not download tool file');
 
-    await unpkg(filepath, join(toolTempDir, toolFilename));
+    await unpkg(filepath, join(tempDir, toolFilename));
 
-    const toolId = (await import(join(toolTempDir, toolFilename, 'index.js'))).default.toolId as
+    const toolId = (await import(join(tempDir, toolFilename, 'index.js'))).default.toolId as
       | string
       | undefined;
 
@@ -30,11 +31,11 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
 
     const oldTool = await MongoPluginModel.findOneAndUpdate(
       {
-        toolId
+        toolId,
+        type: pluginTypeEnum.Enum.tool
       },
       {
-        objectName,
-        type: pluginTypeEnum.Enum.tool
+        objectName
       },
       {
         session,

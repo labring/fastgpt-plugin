@@ -5,7 +5,7 @@ export const initCache = () => {
   global.systemCache = {
     [SystemCacheKeyEnum.systemTool]: {
       versionKey: '',
-      data: [],
+      data: new Map(),
       refreshFunc: initTools
     }
   };

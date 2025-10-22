@@ -1,4 +1,5 @@
-import fs from 'fs/promises';
+import { readdir } from 'fs/promises';
+import { existsSync } from 'fs';
 import { buildTool, toolsSourceDir } from './build';
 import { join } from 'path';
 
@@ -6,10 +7,10 @@ const tool = process.argv[2] || '*';
 
 export const buildAllTools = async () => {
   // read all tools, and build them
-  const tools = await fs.readdir(toolsSourceDir);
+  const tools = await readdir(toolsSourceDir);
   const promises: Promise<void>[] = [];
   for await (const tool of tools) {
-    if (await fs.exists(join(toolsSourceDir, tool, 'index.ts'))) {
+    if (existsSync(join(toolsSourceDir, tool, 'index.ts'))) {
       promises.push(buildTool(tool));
     }
   }

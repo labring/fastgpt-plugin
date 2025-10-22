@@ -1,4 +1,4 @@
-import { getMongoModel } from '..';
+import { connectionMongo, getMongoModel } from '..';
 import { z } from 'zod';
 import { Schema } from 'mongoose';
 
@@ -26,7 +26,5 @@ const pluginMongooseSchema = new Schema({
 pluginMongooseSchema.index({ toolId: 1 }, { unique: true, sparse: true });
 pluginMongooseSchema.index({ type: 1 });
 
-export const MongoPluginModel = getMongoModel<MongoPluginSchemaType>(
-  'fastgpt_plugins',
-  pluginMongooseSchema
-);
+export const MongoPluginModel = getMongoModel('fastgpt_plugins', pluginMongooseSchema);
+// export const MongoPluginModel = connectionMongo.model('fastgpt_plugins', pluginMongooseSchema);

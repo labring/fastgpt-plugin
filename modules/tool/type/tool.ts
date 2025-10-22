@@ -207,6 +207,7 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
     toolId: z.string().describe('The unique id of the tool'),
     type: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
     icon: z.string().describe('The icon of the tool'),
+    readme: z.string().optional().describe('The README file content'),
 
     // Computed
     parentId: z.string().optional().describe('The parent id of the tool'),

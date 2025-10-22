@@ -1,44 +1,99 @@
 import { isProd } from '@/constants';
 import { join } from 'path';
-import type { ToolConfigWithCbType, ToolSetType, ToolType } from './type';
+import type { ToolSetType, ToolType } from './type';
 import { ToolTypeEnum } from 'sdk/client';
-import { iconFormats } from './utils/icon';
 import { addLog } from '@/utils/log';
-import { basePath, devToolIds } from './constants';
-import { exists } from 'fs/promises';
-import { readdir } from 'fs/promises';
-
-export const UploadedToolBaseURL = join(process.cwd(), 'dist', 'tools', 'uploaded');
-export const BuiltInToolBaseURL = isProd
-  ? join(process.cwd(), 'dist', 'tools', 'built-in')
-  : join(process.cwd(), '..', '..', 'modules', 'tool', 'packages');
-
-// Supported image formats for tool icons
+import { basePath, devToolIds, toolsDir, tempToolsDir } from './constants';
+import { readdir, rename, stat, readFile } from 'fs/promises';
+import { existsSync } from 'fs';
+import { ensureDir, moveDir } from '@/utils/fs';
+import { move } from 'fs-extra';
 
 /**
- * Find tool icon with supported formats in the public directory
- * @param toolId Tool name (without extension)
- * @returns Icon path if found, default svg path otherwise
+ * Move files from unzipped structure to dist directory
+ * toolRootPath: dist/tools/[filename]
+ * distAssetsDir: dist/public/fastgpt-plugins/tools/[filename]
+ * move files:
+ * - all logo.* including subdirs
+ * - assets dir
  */
-async function findToolIcon(toolId: string) {
-  const iconBasePath = isProd
-    ? join(process.cwd(), 'dist', 'public', 'imgs', 'tools')
-    : join(process.cwd(), 'public', 'imgs', 'tools');
+const moveAssetsFiles = async (toolRootPath: string, distAssetsPath: string) => {
+  await ensureDir(distAssetsPath);
+  const files = await readdir(toolRootPath);
+  const logos = [];
+  for (const file of files) {
+    if (file.startsWith('logo.') && (await stat(join(toolRootPath, file))).isFile()) {
+      logos.push(file);
+      continue;
+    }
 
-  // Check for existing icon files with different formats
-  for (const format of iconFormats) {
-    const iconPath = join(iconBasePath, `${toolId}.${format}`);
-    if (await exists(iconPath)) {
-      return `/imgs/tools/${toolId}.${format}`;
+    if ((await stat(join(toolRootPath, file))).isDirectory()) {
+      const subFiles = await readdir(join(toolRootPath, file));
+      const subLogos = await Promise.all(
+        subFiles.map(async (subFile) => {
+          if (
+            subFile.startsWith('logo.') &&
+            (await stat(join(toolRootPath, file, subFile))).isFile()
+          ) {
+            return join(file, subFile);
+          }
+          return null;
+        })
+      );
+      logos.push(...subLogos.filter((logo): logo is string => logo !== null));
     }
   }
-}
+
+  // move logos
+  await Promise.all(
+    logos.map(async (logo) => {
+      const src = join(toolRootPath, logo);
+      const dest = join(distAssetsPath, logo);
+      await moveDir(src, dest);
+    })
+  );
+
+  // move assets dir
+  if (existsSync(join(toolRootPath, 'assets'))) {
+    await rename(join(toolRootPath, 'assets'), join(distAssetsPath, 'assets'));
+  }
+
+  return logos;
+};
+
+const rewriteMDImagePath = (content: string, pathPrefix: string) => {
+  // 1. all relative path should concat with a pathPrefix
+  // 2. all URL should not be changed.
+  const regex = /(!\[.*?\]\()([^)]+)(\))/g;
+  return content.replace(regex, (match, p1, p2, p3) => {
+    // If the path is already an absolute URL or an absolute path, don't change it.
+    if (p2.startsWith('http://') || p2.startsWith('https://') || p2.startsWith('/')) {
+      return match;
+    }
+    // Otherwise, prepend the pathPrefix
+    return p1 + pathPrefix + p2 + p3;
+  });
+};
 
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]> => {
   const tools: ToolType[] = [];
-  const toolRootPath = join(basePath, 'dist', 'tools', filename);
-  const rootMod = (await import(toolRootPath)).default as ToolType | ToolSetType;
+  const toolTempRootPath = join(tempToolsDir, filename);
+
+  const distAssetsDir = join(basePath, 'dist', 'public', 'fastgpt-plugins', 'tools', filename);
+
+  const toolFilePath = join(toolsDir, `${filename}.js`);
+  await move(join(toolTempRootPath, 'index.js'), toolFilePath, { overwrite: true });
+
+  const readme = join(toolTempRootPath, 'README.md');
+  const readmeContent = existsSync(readme)
+    ? rewriteMDImagePath(await readFile(readme, 'utf-8'), distAssetsDir)
+    : undefined;
+
+  // First, copy files from pkg structure (logos from subdirectories, README.md)
+  const logos = await moveAssetsFiles(toolTempRootPath, distAssetsDir);
+
+  const rootMod = (await import(toolTempRootPath)).default as ToolType | ToolSetType;
 
   const checkRootModToolSet = (rootMod: ToolType | ToolSetType): rootMod is ToolSetType => {
     return 'children' in rootMod;
@@ -51,7 +106,8 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
       return [];
     }
 
-    const parentIcon = rootMod.icon || (await findToolIcon(toolsetId)) || '';
+    const parentLogoFile = logos.find((file) => file.startsWith('logo.'));
+    const parentIcon = rootMod.icon || parentLogoFile ? `${distAssetsDir}/${parentLogoFile}` : '';
 
     // push parent
     tools.push({
@@ -61,7 +117,8 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
       icon: parentIcon,
       toolFilename: `${filename}`,
       cb: () => Promise.resolve({}),
-      versionList: []
+      versionList: [],
+      readme: readmeContent
     });
 
     const children = rootMod.children;
@@ -72,7 +129,12 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
         addLog.error(`Can not parse toolId, filename: ${filename}`);
         continue;
       }
-      const childIcon = (await findToolIcon(toolId)) || parentIcon;
+
+      const childIconFile = logos.find((file) =>
+        file.startsWith(child.toolId.split('/').slice(1).join('/'))
+      );
+
+      const childIcon = child.icon || childIconFile ? `${distAssetsDir}/${childIconFile}` : '';
 
       tools.push({
         ...child,
@@ -86,21 +148,21 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
       });
     }
   } else {
-    // NOTE: fallback to filename only when the plugin service running in dev mode.
     const toolId = rootMod.toolId;
     if (!toolId) {
       addLog.error(`Can not parse toolId, filename: ${filename}`);
       return [];
     }
 
-    const icon = rootMod.icon || (await findToolIcon(toolId)) || '';
+    const icon = rootMod.icon || logos.length > 0 ? logos[0] : '';
 
     tools.push({
       ...rootMod,
       type: rootMod.type || ToolTypeEnum.tools,
       icon,
       toolId,
-      toolFilename: filename
+      toolFilename: filename,
+      readme: readmeContent
     });
   }
 
@@ -123,7 +185,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   const rootMod = (await import(toolPath)).default as ToolSetType | ToolType;
 
   const childrenPath = join(toolPath, 'children');
-  const isToolSet = await exists(childrenPath);
+  const isToolSet = existsSync(childrenPath);
 
   const toolsetId = rootMod.toolId || filename;
 

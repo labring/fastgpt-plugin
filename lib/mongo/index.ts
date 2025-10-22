@@ -1,6 +1,7 @@
 import { isProd } from '../constants';
 import { addLog } from '../utils/log';
-import mongoose, { type Mongoose, type Model } from 'mongoose';
+import type { Model, Schema, Mongoose as MongooseType } from 'mongoose';
+import { Mongoose } from 'mongoose';
 
 export const MONGO_URL = process.env.MONGODB_URI ?? '';
 
@@ -10,12 +11,12 @@ declare global {
 
 export const connectionMongo = (() => {
   if (!global.mongodb) {
-    global.mongodb = new mongoose.Mongoose();
+    global.mongodb = new Mongoose();
   }
   return global.mongodb;
 })();
 
-const addCommonMiddleware = (schema: mongoose.Schema) => {
+const addCommonMiddleware = (schema: Schema) => {
   const operations = [/^find/, 'save', 'create', /^update/, /^delete/];
 
   operations.forEach((op: any) => {
@@ -38,12 +39,12 @@ const addCommonMiddleware = (schema: mongoose.Schema) => {
   return schema;
 };
 
-export const getMongoModel = <T>(name: string, schema: mongoose.Schema) => {
-  if (connectionMongo.models[name]) return connectionMongo.models[name] as Model<T>;
+export const getMongoModel = <T extends Schema>(name: string, schema: T) => {
+  if (connectionMongo.models[name]) return connectionMongo.model(name, schema);
   if (!isProd) addLog.info(`Load model: ${name}`);
   addCommonMiddleware(schema);
 
-  const model = connectionMongo.model<T>(name, schema);
+  const model = connectionMongo.model(name, schema);
 
   syncMongoIndex(model);
 

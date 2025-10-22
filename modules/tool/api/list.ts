@@ -9,6 +9,6 @@ export const getToolsHandler = s.route(contract.tool.list, async () => {
   const data = await getCachedData(SystemCacheKeyEnum.systemTool);
   return {
     status: 200,
-    body: formatToolList(data)
+    body: formatToolList(Array.from(data.values()))
   };
 });

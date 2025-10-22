@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "description": "FastGPT Plugins",
   "dependencies": {
-    "jszip": "^3.10.1",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.203.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.203.0",
@@ -16,6 +15,12 @@
     "@opentelemetry/sdk-metrics": "^2.0.1",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
-    "@ts-rest/open-api": "^3.52.1"
+    "@ts-rest/open-api": "^3.52.1",
+    "fs-extra": "^11.3.2",
+    "jszip": "^3.10.1",
+    "mongoose": "^8.19.2"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4"
   }
 }

@@ -9,8 +9,9 @@ export const serviceRequestMaxContentLength =
   Number(process.env.SERVICE_REQUEST_MAX_CONTENT_LENGTH || 10) * 1024 * 1024; // 10MB
 
 export const toolPkgsDir = join(basePath, 'dist', 'pkgs', 'tool');
-export const toolDir = join(basePath, 'dist', 'tools');
-export const toolTempDir = join(basePath, 'dist', 'temp');
-export const toolTempPkgDir = join(toolTempDir, 'pkgs');
+export const toolsDir = join(basePath, 'dist', 'tools');
+export const tempDir = join(basePath, 'dist', 'temp');
+export const tempPkgDir = join(tempDir, 'pkgs');
+export const tempToolsDir = join(tempDir, 'tools');
 
 export const devToolIds: Set<string> = new Set();

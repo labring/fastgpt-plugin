@@ -6,11 +6,13 @@
   "scripts": {
     "prepare": "husky install",
     "build:runtime": "bun --cwd runtime build",
+    "build:tools": "bun --cwd modules/tool build",
     "dev:runtime": "bun --cwd runtime dev",
     "test": "vitest run",
     "lint": "node_modules/.bin/eslint --fix",
     "prettier": "prettier --write \"./**/*.{ts,js,json}\"",
-    "new:tool": "bun ./scripts/newTool/index.ts"
+    "new:tool": "bun ./scripts/newTool/index.ts",
+    "start": "NODE_ENV=production node --env-file-if-exists=runtime/.env.local dist/index.js"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.5.3",
@@ -27,7 +29,6 @@
     "ioredis": "^5.7.0",
     "json5": "^2.2.3",
     "minio": "^8.0.5",
-    "mongoose": "^8.16.4",
     "nanoid": "^5.1.5",
     "node-cron": "^4.2.1",
     "undici": "^7.13.0",

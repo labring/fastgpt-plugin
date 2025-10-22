@@ -8,16 +8,22 @@ import { addLog } from '@/utils/log';
 import { setupProxy } from '@/utils/setupProxy';
 import { connectSignoz } from '@/utils/signoz';
 import { initModels } from '@model/init';
+import { basePath } from '@tool/constants';
 import { initTools } from '@tool/init';
 import { initWorkflowTemplates } from '@workflow/init';
 import express from 'express';
+import { join } from 'path';
 
 const requestSizeLimit = `${Number(process.env.MAX_API_SIZE || 10)}mb`;
 
 const app = express().use(
   express.json({ limit: requestSizeLimit }),
   express.urlencoded({ extended: true, limit: requestSizeLimit }),
-  express.static('public', { maxAge: isProd ? '1d' : '0', etag: true, lastModified: true })
+  express.static(isProd ? 'public' : join(basePath, 'dist', 'public'), {
+    maxAge: isProd ? '1d' : '0',
+    etag: true,
+    lastModified: true
+  })
 );
 
 connectSignoz();

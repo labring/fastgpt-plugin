@@ -1,20 +1,24 @@
-import { mkdir, exists, unlink } from 'fs/promises';
+import { mkdir, unlink } from 'fs/promises';
+import { existsSync } from 'fs';
 import { addLog } from './log';
 import { getErrText } from '@tool/utils/err';
-import { join } from 'path';
+import { join, parse } from 'path';
 import { pipeline } from 'stream/promises';
 import { pluginFileS3Server } from '@/s3';
 import { createWriteStream } from 'fs';
+import { rm } from 'fs/promises';
+import { rename } from 'fs/promises';
+import { move } from 'fs-extra';
 
 export const ensureDir = async (path: string) => {
-  if (!(await exists(path))) {
+  if (!existsSync(path)) {
     await mkdir(path, { recursive: true });
   }
 };
 
 export const removeFile = async (file: string) => {
   try {
-    if (await exists(file)) {
+    if (existsSync(file)) {
       await unlink(file);
     }
   } catch (err) {
@@ -44,4 +48,19 @@ export async function downloadFile(objectName: string, downloadPath: string) {
     await removeFile(filepath);
     return false;
   }
+}
+
+export async function moveDir(src: string, dest: string) {
+  // use rename to move the dir
+  // 1. clean the dest
+  // 2. rename the src
+  try {
+    await rm(dest, { recursive: true, force: true });
+  } catch {
+    // do nothing
+  }
+  await move(src, dest);
+  // // 3. make the dirs
+  // await ensureDir(parse(dest).dir);
+  // await rename(src, dest);
 }
