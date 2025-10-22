@@ -1,6 +1,7 @@
 import type { FileMetadata } from '@/s3/config';
 import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
+import { getNanoid } from './string';
 
 export const uploadFile = async (data: FileInput) => {
   // 判断是否在 worker 线程中
@@ -12,8 +13,13 @@ export const uploadFile = async (data: FileInput) => {
       const timer = setTimeout(() => {
         reject('Upload file timeout');
       }, 120000);
-      global.uploadFileResponseFn = ({ data, error }) => {
+
+      if (!global.uploadFileResponseFnMap) {
+        global.uploadFileResponseFnMap = new Map();
+      }
+      const fn = ({ data, error }: { data?: FileMetadata; error?: string }) => {
         clearTimeout(timer);
+        global.uploadFileResponseFnMap.delete(id);
         if (error) {
           reject(error);
         } else if (data) {
@@ -22,6 +28,8 @@ export const uploadFile = async (data: FileInput) => {
           reject('Unknow error');
         }
       };
+      const id = getNanoid();
+      global.uploadFileResponseFnMap.set(id, fn);
 
       // Serialize buffer data to avoid transferList issues
       // Convert Buffer/Uint8Array to a plain object that can be safely cloned
@@ -41,7 +49,10 @@ export const uploadFile = async (data: FileInput) => {
 
       parentPort?.postMessage({
         type: 'uploadFile',
-        data: serializedData
+        data: {
+          id,
+          file: serializedData
+        }
       });
     });
   } else {

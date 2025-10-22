@@ -72,7 +72,10 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
       break;
     }
     case 'uploadFileResponse': {
-      global.uploadFileResponseFn?.(data);
+      const fn = global.uploadFileResponseFnMap.get(data.id);
+      if (fn) {
+        fn(data);
+      }
       break;
     }
   }

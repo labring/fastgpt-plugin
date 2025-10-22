@@ -9,6 +9,6 @@ export const replaceSensitiveText = (text: string) => {
   return text;
 };
 
-export const getNanoid = (length: number) => {
+export const getNanoid = (length: number = 12) => {
   return customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', length)();
 };

@@ -201,12 +201,13 @@ export async function dispatchWithNewWorker(data: {
       } else if (type === 'uploadFile') {
         try {
           const result = await fileUploadS3Server.uploadFileAdvanced({
-            ...data,
-            ...(data.buffer ? { buffer: Buffer.from(data.buffer) } : {})
+            ...data.file,
+            ...(data.file.buffer ? { buffer: Buffer.from(data.file.buffer) } : {})
           });
           worker.postMessage({
             type: 'uploadFileResponse',
             data: {
+              id: data.id,
               data: result
             }
           });
@@ -215,6 +216,7 @@ export async function dispatchWithNewWorker(data: {
           worker.postMessage({
             type: 'uploadFileResponse',
             data: {
+              id: data.id,
               error: `Tool upload file error: ${getErrText(error)}`
             }
           });

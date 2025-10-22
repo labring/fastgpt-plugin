@@ -5,7 +5,7 @@ import { ToolCallbackReturnSchema } from '@tool/type/tool';
 import { FileInputSchema } from '@/s3/type';
 
 declare global {
-  var uploadFileResponseFn: (data: { data?: FileMetadata; error?: string }) => void | undefined;
+  var uploadFileResponseFnMap: Map<string, (data: { data?: FileMetadata; error?: string }) => void>;
 }
 
 /**
@@ -14,7 +14,7 @@ declare global {
 export const Worker2MainMessageSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('uploadFile'),
-    data: FileInputSchema
+    data: z.object({ id: z.string(), file: FileInputSchema })
   }),
   z.object({
     type: z.literal('log'),
@@ -46,6 +46,7 @@ export const Main2WorkerMessageSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('uploadFileResponse'),
     data: z.object({
+      id: z.string(),
       data: FileMetadataSchema.optional(),
       error: z.string().optional()
     })
