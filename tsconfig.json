@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
-<<<<<<< HEAD
     "types": ["bun"],
-=======
->>>>>>> 63a791a (fix: tsc)
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",

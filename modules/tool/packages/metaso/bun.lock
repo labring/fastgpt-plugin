@@ -7,7 +7,7 @@
         "zod": "^3.24.2",
       },
       "devDependencies": {
-        "@types/bun": "v1.2.23",
+        "@types/bun": "latest",
         "vitest": "^1.0.0",
       },
       "peerDependencies": {

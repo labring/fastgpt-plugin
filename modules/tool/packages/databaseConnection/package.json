@@ -6,7 +6,7 @@
     "build": "bun ../../../../scripts/build.ts"
   },
   "devDependencies": {
-    "@types/bun": "v1.2.23",
+    "@types/bun": "latest",
     "@types/mssql": "^9.1.7",
     "@types/pg": "^8.15.2"
   },

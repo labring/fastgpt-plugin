@@ -9,7 +9,7 @@
     "build": "bun run build/index.ts"
   },
   "devDependencies": {
-    "@types/bun": "v1.2.23",
+    "@types/bun": "latest",
     "@types/express": "^5.0.1"
   },
   "peerDependencies": {

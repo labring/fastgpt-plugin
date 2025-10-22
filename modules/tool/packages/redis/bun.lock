@@ -8,7 +8,7 @@
         "zod": "^3.22.4",
       },
       "devDependencies": {
-        "@types/bun": "v1.2.23",
+        "@types/bun": "latest",
       },
     },
   },
