@@ -22,7 +22,7 @@ export default defineTool({
         {
           key: 'files',
           label: 'files',
-          renderTypeList: [FlowNodeInputTypeEnum.fileSelect, FlowNodeInputTypeEnum.reference],
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
           valueType: WorkflowIOValueTypeEnum.arrayString,
           required: true,
           description:
@@ -116,14 +116,8 @@ export default defineTool({
           renderTypeList: [FlowNodeInputTypeEnum.multipleSelect],
           valueType: WorkflowIOValueTypeEnum.arrayString,
           required: false,
-          description:
-            '指定额外格式，markdown、json为默认导出格式，无须设置，该参数仅支持docx、html、latex三种格式中的一个或多个',
           defaultValue: [],
-          list: [
-            { label: 'docx', value: 'docx' },
-            { label: 'html', value: 'html' },
-            { label: 'latex', value: 'latex' }
-          ]
+          list: [{ label: 'html', value: 'html' }]
         }
       ],
       outputs: [

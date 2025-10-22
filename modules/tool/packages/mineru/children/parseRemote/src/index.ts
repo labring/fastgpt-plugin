@@ -2,30 +2,33 @@ import { z } from 'zod';
 import JSZip from 'jszip';
 import { delay } from '@tool/utils/delay';
 import { uploadFile } from '@tool/utils/uploadFile';
+import { addLog } from '@/utils/log';
+import { retryFn } from '@tool/utils/function';
+import { getErrText } from '@tool/utils/err';
 
 export const InputType = z.object({
-  base_url: z.string(),
+  base_url: z.string().optional().default('https://mineru.net'),
   token: z.string(),
   files: z.array(z.string()),
   is_ocr: z.boolean().optional().default(false),
   enable_formula: z.boolean().optional().default(true),
   enable_table: z.boolean().optional().default(true),
   language: z.string().optional().default('ch'),
-  extra_formats: z.array(z.string()).optional().default([]),
-  model_version: z.string().optional().default('pipeline')
+  extra_formats: z
+    .array(z.enum(['html']))
+    .optional()
+    .default([]),
+  model_version: z.enum(['pipeline', 'fastapi']).optional().default('pipeline')
 });
 
+const OutputResultSchemaItem = z.object({
+  filename: z.string(),
+  errorMsg: z.string().optional(),
+  content: z.string().optional(),
+  html: z.string().optional()
+});
 export const OutputType = z.object({
-  result: z.array(
-    z.object({
-      content: z.string(),
-      content_list: z.array(z.any()),
-      images: z.record(z.string()),
-      docx: z.string().optional(),
-      html: z.string().optional(),
-      latex_content: z.string().optional()
-    })
-  )
+  result: z.array(OutputResultSchemaItem)
 });
 
 interface FileType {
@@ -43,7 +46,7 @@ interface BatchPayloadType {
   files: FileType[];
 }
 
-interface ApiResponseDataType<T extends Record<string, unknown>> {
+interface ApiResponseDataType<T> {
   code:
     | 0
     | 'A0202'
@@ -76,34 +79,18 @@ type BatchResponseDataType = ApiResponseDataType<{
   batch_id: string;
 }>;
 
-interface ExtractProgressType {
-  extracted_pages: number;
-  start_time: string;
-  total_pages: number;
-}
-
-interface ExtractResultItemType {
+type ExtractResultItemType = {
   file_name: string;
   state: 'done' | 'waiting-file' | 'pending' | 'running' | 'failed' | 'converting';
-  full_zip_url: string;
   err_msg: string;
-  data_id?: string;
-  extract_progress?: ExtractProgressType;
-}
-
+  full_zip_url: string;
+};
 type ExtractBatchType = ApiResponseDataType<{
   batch_id: string;
   extract_result: ExtractResultItemType[];
 }>;
 
-interface ExtracResultType {
-  content: string;
-  content_list: any[];
-  images: Record<string, string>;
-  docx?: string;
-  html?: string;
-  latex_content?: string;
-}
+type ParsedItemType = z.infer<typeof OutputResultSchemaItem>;
 
 type PropsType = z.infer<typeof InputType>;
 interface InnerPropsType extends PropsType {
@@ -147,6 +134,12 @@ async function fetchWithTimeout(
     clearTimeout(timeout);
   }
 }
+function replaceImageUrl(content: string, images: Record<string, string>) {
+  for (const [key, value] of Object.entries(images)) {
+    content = content.replace(new RegExp(`images/${key}`, 'g'), value);
+  }
+  return content;
+}
 
 async function batchParse(props: InnerPropsType): Promise<string> {
   const {
@@ -163,14 +156,14 @@ async function batchParse(props: InnerPropsType): Promise<string> {
   const url = new URL(base_url);
   const batchUrl = `${url.origin}/api/v4/extract/task/batch`;
   const payload: BatchPayloadType = {
-    enable_formula: enable_formula ?? true,
-    enable_table: enable_table ?? true,
-    language: language ?? 'ch',
-    model_version: model_version ?? 'pipeline',
-    extra_formats: extra_formats ?? [],
+    enable_formula,
+    enable_table,
+    language,
+    model_version,
+    extra_formats,
     files: files.map((file) => ({
       url: file,
-      is_ocr: is_ocr ?? false
+      is_ocr
     }))
   };
   const res = await fetchWithTimeout(
@@ -185,17 +178,94 @@ async function batchParse(props: InnerPropsType): Promise<string> {
   const data: BatchResponseDataType = await res.json();
 
   if (data.code !== 0) {
-    return Promise.reject(data.msg ?? ErrorCodeMap[data.code]);
+    throw new Error(data.msg || ErrorCodeMap[data.code] || 'Unknown error');
   }
 
   return data.data.batch_id;
 }
 
-async function extractResult(batchId: string, props: InnerPropsType): Promise<ExtracResultType[]> {
+async function extractResult(batchId: string, props: InnerPropsType): Promise<ParsedItemType[]> {
+  async function extractFromZip(zipUrl: string) {
+    const zipResponse = await fetchWithTimeout(
+      zipUrl,
+      {
+        method: 'GET'
+      },
+      60000
+    );
+
+    if (!zipResponse.ok) {
+      return Promise.reject(
+        `[MinerU][extractFromZip] download zip failed: ${zipResponse.status} ${zipResponse.statusText}`
+      );
+    }
+
+    const arrayBuffer = await zipResponse.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+
+    addLog.debug(`[MinerU]Get zip file success: ${zipUrl}`);
+
+    const result: { images: Record<string, string>; content: string; html: string } = {
+      images: {},
+      content: '',
+      html: ''
+    };
+
+    // Upload images (collect tasks)
+    const imageUploadTasks: Promise<void>[] = [];
+    zip.folder('images')?.forEach((relativePath, file) => {
+      imageUploadTasks.push(
+        (async () => {
+          const image = await file.async('base64');
+          const { accessUrl } = await uploadFile({
+            base64: image,
+            defaultFilename: file.name
+          });
+          result.images[relativePath] = accessUrl;
+        })()
+      );
+    });
+    await Promise.all(imageUploadTasks);
+    addLog.debug(`[MinerU]Upload images success`);
+
+    // Process files (collect tasks)
+    const fileProcessTasks: Promise<void>[] = [];
+    zip.forEach((_, file) => {
+      if (file.dir) return;
+
+      if (file.name.endsWith('.md')) {
+        fileProcessTasks.push(
+          (async () => {
+            result.content = await file.async('text');
+          })()
+        );
+      } else if (file.name.endsWith('.html')) {
+        fileProcessTasks.push(
+          (async () => {
+            result.html = await file.async('text');
+          })()
+        );
+      }
+    });
+    await Promise.all(fileProcessTasks);
+    addLog.debug(`[MinerU]Process files success`);
+
+    // Replace image URLs in markdown content after images are uploaded
+    if (result.content) {
+      result.content = replaceImageUrl(result.content, result.images);
+    }
+
+    return result;
+  }
+
   const { base_url, headers } = props;
   const MAX_RETRIES = 100;
+  const DELAY_MS = 5000;
   const url = new URL(base_url);
-  const queryFn = async () => {
+
+  let parseResult: ExtractResultItemType[] = [];
+
+  const checkResult = async () => {
     const extractResultUrl = `${url.origin}/api/v4/extract-results/batch/${batchId}`;
     const res = await fetchWithTimeout(
       extractResultUrl,
@@ -208,190 +278,74 @@ async function extractResult(batchId: string, props: InnerPropsType): Promise<Ex
     const data: ExtractBatchType = await res.json();
 
     if (data.code !== 0) {
-      return Promise.reject(data.msg ?? ErrorCodeMap[data.code]);
+      return Promise.reject(data.msg || ErrorCodeMap[data.code] || 'Unknown error');
     }
 
     return data.data.extract_result;
   };
-  const completedFiles = new Set<string>();
-  const result: ExtracResultType[] = [];
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const batchResult = await queryFn();
-      const failedItems = batchResult.filter((item) => item.state === 'failed');
+      parseResult = await checkResult();
 
-      if (failedItems.length > 0) {
-        const errorMessages = failedItems
-          .map((item) => item.err_msg ?? 'Extract failed')
-          .join('; ');
-        return Promise.reject(`Extract failed: ${errorMessages}`);
-      }
-
-      const newCompletedItems = batchResult.filter(
-        (item) => item.state === 'done' && !completedFiles.has(item.file_name)
+      const isFinished = parseResult.every(
+        (item) => item.state === 'done' || item.state === 'failed'
       );
 
-      if (newCompletedItems.length > 0) {
-        const extractedResults = await Promise.all(
-          newCompletedItems.map(async (item) => {
-            completedFiles.add(item.file_name);
-            return extractFromZip(item.full_zip_url);
-          })
-        );
-        result.push(...extractedResults);
-      }
-
-      if (completedFiles.size >= props.files.length) {
+      if (isFinished) {
         break;
       }
+
+      addLog.debug(`Wait ${DELAY_MS}ms to fetch result.`);
+
+      await delay(DELAY_MS);
     } catch (error) {
-      console.error(`Retry ${attempt} failed:`, error);
+      addLog.error(`[Attempt ${attempt}] Check result failed:`, error);
+      await delay(DELAY_MS);
+    }
+  }
 
-      if (attempt === MAX_RETRIES) {
-        throw error;
+  const parseZipResukt: ParsedItemType[] = await Promise.all(
+    parseResult.map(async (item) => {
+      if (item.state === 'done') {
+        try {
+          const result = await retryFn(() => extractFromZip(item.full_zip_url));
+          return {
+            filename: item.file_name,
+            content: result.content,
+            html: result.html
+          };
+        } catch (error) {
+          addLog.error(`Parse zip error`, error);
+          return {
+            filename: item.file_name,
+            errMsg: getErrText(error)
+          };
+        }
       }
-    }
 
-    if (completedFiles.size < props.files.length) {
-      await delay(5000);
-    }
-  }
+      return {
+        filename: item.file_name,
+        errMsg: item.err_msg
+      };
+    })
+  );
 
-  if (completedFiles.size < props.files.length) {
-    console.warn(
-      `Max retries reached. Completed ${completedFiles.size}/${props.files.length} files.`
-    );
-  }
-
-  return result;
-}
-
-function buildHeaders(token: string) {
-  return {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-    source: 'fastgpt'
-  };
-}
-
-async function extractFromZip(zipUrl: string): Promise<ExtracResultType> {
-  let res: Response;
-  try {
-    res = await fetchWithTimeout(
-      zipUrl,
-      {
-        method: 'GET'
-      },
-      60000
-    );
-  } catch (err: any) {
-    if (err?.name === 'AbortError') {
-      throw new Error(`[MinerU][extractFromZip] fetch timeout: ${zipUrl}`);
-    }
-
-    throw err;
-  }
-
-  if (!res.ok) {
-    throw new Error(
-      `[MinerU][extractFromZip] download zip failed: ${res.status} ${res.statusText}`
-    );
-  }
-
-  const arrayBuffer = await res.arrayBuffer();
-  const zip = await JSZip.loadAsync(arrayBuffer);
-  const result: ExtracResultType = {
-    images: {} as Record<string, string>,
-    content: '' as string,
-    content_list: [] as any[]
-  };
-  const imageUploadTasks: Promise<void>[] = [];
-  const fileProcessTasks: Promise<void>[] = [];
-  let markdownContent: string | undefined;
-  // Upload images (collect tasks)
-  zip.folder('images')?.forEach((relativePath, file) => {
-    imageUploadTasks.push(
-      (async () => {
-        const image = await file.async('base64');
-        const { accessUrl } = await uploadFile({
-          base64: image,
-          defaultFilename: file.name
-        });
-        result.images[relativePath] = accessUrl;
-      })()
-    );
-  });
-  // Process files (collect tasks)
-  zip.forEach((_, file) => {
-    if (!file.dir) {
-      if (file.name.endsWith('.md')) {
-        fileProcessTasks.push(
-          (async () => {
-            markdownContent = await file.async('text');
-            result.content = markdownContent;
-          })()
-        );
-      } else if (file.name.endsWith('.json') && file.name !== 'layout.json') {
-        fileProcessTasks.push(
-          (async () => {
-            result.content_list = JSON.parse(await file.async('text'));
-          })()
-        );
-      } else if (file.name.endsWith('.html')) {
-        fileProcessTasks.push(
-          (async () => {
-            result.html = await file.async('text');
-          })()
-        );
-      } else if (file.name.endsWith('.docx')) {
-        fileProcessTasks.push(
-          (async () => {
-            const { accessUrl } = await uploadFile({
-              buffer: await file.async('nodebuffer'),
-              defaultFilename: file.name
-            });
-            result.docx = accessUrl;
-          })()
-        );
-      } else if (file.name.endsWith('.tex')) {
-        fileProcessTasks.push(
-          (async () => {
-            result.latex_content = await file.async('text');
-          })()
-        );
-      }
-    }
-  });
-
-  await Promise.all(fileProcessTasks);
-  await Promise.all(imageUploadTasks);
-
-  if (markdownContent) {
-    result.content = replaceImageUrl(markdownContent, result.images);
-  }
-
-  return result;
-}
-
-function replaceImageUrl(content: string, images: Record<string, string>) {
-  for (const [key, value] of Object.entries(images)) {
-    content = content.replace(new RegExp(`images/${key}`, 'g'), value);
-  }
-  return content;
+  return parseZipResukt;
 }
 
 export async function tool(props: PropsType): Promise<z.infer<typeof OutputType>> {
   const { base_url, token } = props;
+
   const innerProps: InnerPropsType = {
     ...props,
-    headers: buildHeaders(token)
+    base_url: base_url || 'https://mineru.net',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      source: 'fastgpt'
+    }
   };
-
-  // Create batch request
-  if (!base_url) {
-    return Promise.reject('MinerU base url is required');
-  }
 
   const batchId = await batchParse(innerProps);
   const result = await extractResult(batchId, innerProps);

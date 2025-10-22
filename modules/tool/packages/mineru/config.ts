@@ -16,7 +16,7 @@ export default defineToolSet({
   secretInputConfig: [
     {
       key: 'base_url',
-      label: 'MinerU Base url',
+      label: 'Base url(Saas 服务不需要填写)',
       description: 'Example: https://mineru.net, http://127.0.0.1:8000',
       inputType: 'input'
     },

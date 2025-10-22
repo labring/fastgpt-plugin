@@ -315,6 +315,7 @@ export class S3Service {
       policy.setUserMetaData({
         'original-filename': encodeURIComponent(filename),
         'upload-time': new Date().toISOString(),
+        'content-disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
         ...metadata
       });
 
