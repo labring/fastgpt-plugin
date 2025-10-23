@@ -11,7 +11,7 @@ export const createHmac = (algorithm: string, secret: string) => {
   hmac.update(stringToSign, 'utf8');
   const signData = hmac.digest();
 
-  const sign = querystring.escape(Buffer.from(signData).toString('base64'));
+  const sign = querystring.escape(Buffer.from(new Uint8Array(signData)).toString('base64'));
 
   return {
     timestamp,

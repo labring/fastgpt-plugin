@@ -36,8 +36,7 @@ export const ToolListItemSchema = z.object({
   secretInputConfig: z
     .array(InputConfigSchema)
     .optional()
-    .describe('The secret input list of the tool'),
-  toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool')
+    .describe('The secret input list of the tool')
 });
 
 export type ToolListItemType = z.infer<typeof ToolListItemSchema>;

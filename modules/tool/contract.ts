@@ -50,6 +50,19 @@ export const toolUploadContract = c.router(
           message: z.string()
         })
       }
+    },
+    install: {
+      path: '/install',
+      method: 'POST',
+      description: 'Install a tool',
+      body: z.object({
+        url: z.string().url()
+      }),
+      responses: {
+        200: z.object({
+          message: z.string()
+        })
+      }
     }
   },
   {

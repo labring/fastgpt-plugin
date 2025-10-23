@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["bun"],
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
@@ -27,11 +28,15 @@
     // Performance optimizations
     "baseUrl": "./",
     "paths": {
-      "@/*": ["./src/*"],
-      "@tool/*": ["./modules/tool/*"],
-      "@model/*": ["./modules/model/*"],
-      "@workflow/*": ["./modules/workflow/*"]
-    }
+      "@/*": ["lib/*"],
+      "@tool/*": ["modules/tool/*"],
+      "@model/*": ["modules/model/*"],
+      "@workflow/*": ["modules/workflow/*"]
+    },
+
+    // Performance optimizations
+    "incremental": true,
+    "assumeChangesOnlyAffectDirectDependencies": true
   },
   "include": ["modules/**/*.ts", "scripts/**/*.ts", "sdk/**/*.ts", "src/**/*.ts", "test/**/*.ts"]
 }

@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/root/.bun \
     done
 
 # 构建
-RUN bun run build
+RUN bun run build:runtime
 
 # --------- runner -----------
 FROM node:22-alpine AS runner
@@ -25,7 +25,6 @@ RUN apk add --no-cache\
 
 # copy running files
 COPY --from=builder /app/dist/ ./dist/
-COPY --from=builder /app/dist/public/ ./public/
 
 ENV NODE_ENV=production
 ENV PORT=3000

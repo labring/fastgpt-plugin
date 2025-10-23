@@ -4,7 +4,7 @@ import { getTool } from '@tool/controller';
 import { formatToolList } from '@tool/utils/tool';
 
 export const getToolHandler = s.route(contract.tool.getTool, async ({ query: { toolId } }) => {
-  const tool = getTool(toolId);
+  const tool = await getTool(toolId);
 
   if (!tool) {
     return {

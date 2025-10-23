@@ -6,7 +6,7 @@
     "build": "bun ../../../../scripts/build.ts"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.2",
+    "@types/bun": "latest",
     "@types/nodemailer": "^6.4.17"
   },
   "peerDependencies": {

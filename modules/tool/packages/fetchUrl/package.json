@@ -6,7 +6,7 @@
     "build": "bun ../../../../scripts/build.ts"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.2",
+    "@types/bun": "latest",
     "@types/turndown": "^5.0.5"
   },
   "peerDependencies": {

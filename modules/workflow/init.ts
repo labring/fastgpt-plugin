@@ -1,7 +1,6 @@
 import { isProd } from '@/constants';
 import { addLog } from '@/utils/log';
-import { readFile } from 'fs/promises';
-import { readdir } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 import type { TemplateItemType, TemplateListType } from './type';
 
@@ -10,7 +9,7 @@ export const workflows: TemplateListType = [];
 export const initWorkflowTemplates = async () => {
   const publicWorkflowsPath = isProd
     ? join(process.cwd(), 'dist', 'workflows')
-    : join(process.cwd(), 'modules', 'workflow', 'templates');
+    : join(process.cwd(), '..', 'modules', 'workflow', 'templates');
 
   // according to the environment to decide to read the way
   const items = await readdir(publicWorkflowsPath, { withFileTypes: true });
@@ -21,7 +20,8 @@ export const initWorkflowTemplates = async () => {
 
     const templatePath = join(publicWorkflowsPath, item.name);
 
-    const fileContent = await readFile(templatePath, 'utf-8');
+    const fileBuffer = await readFile(templatePath, 'utf-8');
+    const fileContent = fileBuffer.toString();
     const templateData = JSON.parse(fileContent);
 
     const template = {

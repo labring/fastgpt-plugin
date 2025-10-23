@@ -511,7 +511,7 @@ export default exportTool({
     "typescript": "^5.0.0"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.2"
+    "@types/bun": "latest"
   }
 }
 ```

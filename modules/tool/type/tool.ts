@@ -207,12 +207,12 @@ export const ToolSchema = toolConfigWithCbSchema.merge(
     toolId: z.string().describe('The unique id of the tool'),
     type: z.nativeEnum(ToolTypeEnum).describe('The type of the tool'),
     icon: z.string().describe('The icon of the tool'),
+    readme: z.string().optional().describe('The README file content'),
 
     // Computed
     parentId: z.string().optional().describe('The parent id of the tool'),
-    toolDirName: z.string(),
+    toolFilename: z.string(),
 
-    toolSource: z.enum(['built-in', 'uploaded']).optional().describe('The source of the tool'),
     // ToolSet Parent
     secretInputConfig: z
       .array(InputConfigSchema)
@@ -234,8 +234,7 @@ export const ToolSetConfigSchema = ToolConfigSchema.omit({
 
 export const ToolSetSchema = ToolSchema.omit({
   cb: true,
-  parentId: true,
-  toolDirName: true
+  parentId: true
 })
   .merge(
     z.object({

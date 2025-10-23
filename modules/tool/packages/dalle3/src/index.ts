@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import axios from 'axios';
 import { getErrText } from '@tool/utils/err';
 import { uploadFile } from '@tool/utils/uploadFile';
 import { POST } from '@tool/utils/request';

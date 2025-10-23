@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getTool } from '@tool/controller';
-import { dispatchWithNewWorker } from '@/worker';
+import { dispatchWithNewWorker } from 'lib/worker';
 import { StreamManager } from '../utils/stream';
 import { StreamMessageTypeEnum, type RunToolSecondParamsType } from '../type/tool';
 import { addLog } from '@/utils/log';
@@ -14,7 +14,7 @@ export const runToolStreamHandler = async (
 ): Promise<void> => {
   const { toolId, inputs, systemVar } = req.body;
 
-  const tool = getTool(toolId);
+  const tool = await getTool(toolId);
 
   if (!tool) {
     addLog.error('Tool not found', { toolId });
