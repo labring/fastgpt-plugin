@@ -7,7 +7,7 @@ import { pkg } from '@/utils/zip';
 import { readdir, rm } from 'fs/promises';
 
 export const toolsSourceDir = join(__dirname, '..', 'packages');
-const distDir = join(__dirname, '..', 'dist');
+const distDir = join(__dirname, '..', '..', '..', 'dist');
 await ensureDir(distDir);
 await ensureDir(join(distDir, 'pkgs'));
 

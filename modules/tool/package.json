@@ -1,5 +1,9 @@
 {
   "name": "@fastgpt-plugin/modules-tool",
+  "scripts": {
+    "build": "bun run ./build/index.ts",
+    "build:marketplace": "bun run ./build/build-json.ts"
+  },
   "devDependencies": {
     "@babel/preset-typescript": "^7.27.1"
   },

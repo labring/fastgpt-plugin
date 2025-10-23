@@ -1,13 +1,18 @@
-import { isProd } from '@/constants';
 import { join } from 'path';
 import type { ToolSetType, ToolType } from './type';
 import { ToolTypeEnum } from 'sdk/client';
 import { addLog } from '@/utils/log';
-import { basePath, devToolIds, toolsDir, tempToolsDir } from './constants';
+import { basePath, toolsDir, tempToolsDir, tempPkgDir, tempDir } from './constants';
 import { readdir, rename, stat, readFile } from 'fs/promises';
 import { existsSync } from 'fs';
-import { ensureDir, moveDir } from '@/utils/fs';
+import { downloadFile, ensureDir, moveDir } from '@/utils/fs';
 import { move } from 'fs-extra';
+import { mongoSessionRun } from '@/mongo/utils';
+import { MongoPluginModel, pluginTypeEnum } from '@/mongo/models/plugins';
+import { pluginFileS3Server } from '@/s3';
+import { SystemCacheKeyEnum } from '@/cache/type';
+import { refreshVersionKey } from '@/cache';
+import { unpkg } from '@/utils/zip';
 
 /**
  * Move files from unzipped structure to dist directory
@@ -169,67 +174,40 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
   return tools;
 };
 
-/**
- * Load Tools in dev mode. Only avaliable in dev mode
- * @param filename
- */
-export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
-  if (isProd) {
-    addLog.error('Can not load dev tool in prod mode');
-    return [];
-  }
+export const confirmUpload = async (objectName: string) => {
+  const toolFilename = objectName.split('/').pop();
+  if (!toolFilename) return Promise.reject('Upload Tool Error: Bad objectname');
 
-  const tools: ToolType[] = [];
+  await mongoSessionRun(async (session) => {
+    const filepath = await downloadFile(objectName, tempPkgDir);
+    if (!filepath) return Promise.reject('Can not download tool file');
 
-  const toolPath = join(basePath, 'modules', 'tool', 'packages', filename);
-  const rootMod = (await import(toolPath)).default as ToolSetType | ToolType;
+    await unpkg(filepath, join(tempDir, toolFilename));
 
-  const childrenPath = join(toolPath, 'children');
-  const isToolSet = existsSync(childrenPath);
+    const toolId = (await import(join(tempDir, toolFilename, 'index.js'))).default.toolId as
+      | string
+      | undefined;
 
-  const toolsetId = rootMod.toolId || filename;
+    if (!toolId) return Promise.reject('Can not parse ToolId from the tool, installation failed.');
 
-  if (isToolSet) {
-    tools.push({
-      ...rootMod,
-      type: rootMod.type || ToolTypeEnum.other,
-      toolId: toolsetId,
-      icon: rootMod.icon,
-      toolFilename: filename,
-      cb: () => Promise.resolve({}),
-      versionList: []
-    });
-
-    const children: ToolType[] = [];
-
-    {
-      const files = await readdir(childrenPath);
-      for (const file of files) {
-        const childPath = join(childrenPath, file);
-        const childMod = (await import(childPath)).default as ToolType;
-        const toolId = childMod.toolId || `${toolsetId}/${file}`;
-        children.push({
-          ...childMod,
-          toolId,
-          toolFilename: filename
-        });
+    const oldTool = await MongoPluginModel.findOneAndUpdate(
+      {
+        toolId,
+        type: pluginTypeEnum.Enum.tool
+      },
+      {
+        objectName
+      },
+      {
+        session,
+        upsert: true
       }
-    }
+    );
 
-    tools.push(...children);
-  } else {
-    // is not toolset
-    tools.push({
-      ...(rootMod as ToolType),
-      type: rootMod.type || ToolTypeEnum.other,
-      toolId: toolsetId,
-      icon: rootMod.icon,
-      toolFilename: filename,
-      versionList: []
-    });
-  }
+    if (oldTool?.objectName) pluginFileS3Server.removeFile(oldTool.objectName);
+    await refreshVersionKey(SystemCacheKeyEnum.systemTool);
+    addLog.info(`Upload tool success: ${toolId}`);
+  });
 
-  tools.forEach((tool) => devToolIds.add(tool.toolId));
-
-  return tools;
+  return true;
 };
