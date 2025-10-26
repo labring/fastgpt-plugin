@@ -24,12 +24,12 @@ export const commonS3Config: Partial<S3ConfigType> = {
 } as const;
 
 export const FileMetadataSchema = z.object({
-  fileId: z.string(),
   originalFilename: z.string(),
   contentType: z.string(),
   size: z.number(),
   uploadTime: z.date(),
-  accessUrl: z.string()
+  accessUrl: z.string(),
+  objectName: z.string()
 });
 
 export type FileMetadata = z.infer<typeof FileMetadataSchema>;

@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 import type { ToolSetConfigType } from '@tool/type';
-import { ToolConfigSchema, ToolSchema, type RunToolSecondParamsType } from '@tool/type/tool';
-import type { ToolListItemType } from '@tool/type/api';
+import { ToolConfigSchema } from '@tool/type/tool';
+import type { RunToolSecondParamsType } from '@tool/type/req';
 
 export const exportTool = <T extends z.Schema, D extends z.Schema>({
   toolCb,
@@ -46,24 +46,20 @@ export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
   };
 };
 
-export function formatToolList(list: z.infer<typeof ToolSchema>[]): ToolListItemType[] {
-  return list.map((item, index) => ({
-    author: item.author,
-    name: item.name,
-    parentId: item.parentId,
-    courseUrl: item.courseUrl,
-    id: item.toolId,
-    avatar: item.icon,
-    versionList: item.versionList,
-    description: item.description,
-    toolDescription: item.toolDescription,
-    templateType: item.type,
-    pluginOrder: index,
-    isActive: item.isActive ?? true,
-    weight: index,
-    originCost: 0,
-    currentCost: 0,
-    hasTokenFee: false,
-    secretInputConfig: item.secretInputConfig
-  }));
-}
+// export function formatToolList(
+//   list: (z.infer<typeof ToolSchema> | z.infer<typeof ToolSetSchema>)[]
+// ): ToolListItemType[] {
+//   return list.map((item) => ({
+//     author: item.author,
+//     name: item.name,
+//     parentId: 'parentId' in item ? item.parentId : undefined,
+//     courseUrl: item.courseUrl,
+//     id: item.toolId,
+//     avatar: item.icon,
+//     versionList: item.versionList,
+//     description: item.description,
+//     toolDescription: item.toolDescription,
+//     templateType: item.tags?.[0],
+//     secretInputConfig: item.secretInputConfig
+//   }));
+// }

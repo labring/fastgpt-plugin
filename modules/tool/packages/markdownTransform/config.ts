@@ -1,13 +1,13 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   name: {
     'zh-CN': 'Markdown 转文件',
     en: 'Markdown to file'
   },
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   description: {
     'zh-CN': '将 Markdown 转成指定格式文件，返回的文件链接请及时下载。',
     en: 'Convert Markdown to specified format file, return the file link please download it in time.'

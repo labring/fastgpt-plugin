@@ -13,6 +13,9 @@ import {
   type GetUploadBufferResponse,
   type PresignedUrlInputType
 } from './type';
+import { pipeline } from 'stream/promises';
+import { createWriteStream } from 'fs';
+import { ensureDir, removeFile } from '@/utils/fs';
 
 export class S3Service {
   private client: Minio.Client;
@@ -157,7 +160,7 @@ export class S3Service {
 
     // Public
     if (externalBaseURL) {
-      return `${externalBaseURL}/${this.config.bucket}/${objectName}`;
+      return `${externalBaseURL}/${this.config.bucket}${objectName}`;
     }
 
     // Default url
@@ -233,8 +236,9 @@ export class S3Service {
         );
       }
 
-      const fileId = this.generateFileId();
-      const objectName = `${fileId}-${originalFilename}`;
+      // const fileId = this.generateFileId();
+      const prefix = (input.prefix?.endsWith('/') ? input.prefix : input.prefix + '/') ?? '';
+      const objectName = `${prefix}${input.keepRawFilename ? '' : this.generateFileId() + '-'}${originalFilename}`;
       const uploadTime = new Date();
 
       const contentType = inferContentType(originalFilename);
@@ -246,7 +250,7 @@ export class S3Service {
       });
 
       const metadata: FileMetadata = {
-        fileId,
+        objectName,
         originalFilename,
         contentType,
         size: fileBuffer.length,
@@ -353,5 +357,33 @@ export class S3Service {
 
   public removeFiles(objectNames: string[]) {
     return this.client.removeObjects(this.config.bucket, objectNames);
+  }
+
+  public getBucketName() {
+    return this.config.bucket;
+  }
+
+  public async downloadFile({
+    objectName,
+    downloadPath
+  }: {
+    objectName: string;
+    downloadPath: string;
+  }) {
+    const filename = objectName.split('/').pop() as string;
+    await ensureDir(downloadPath);
+    const filepath = path.join(downloadPath, filename);
+    try {
+      await pipeline(await this.getFile(objectName), createWriteStream(filepath)).catch(
+        (err: any) => {
+          addLog.warn(`Download plugin file: ${objectName} from S3 error: ${getErrText(err)}`);
+          return Promise.reject(err);
+        }
+      );
+      return filepath;
+    } catch {
+      await removeFile(filepath);
+      return undefined;
+    }
   }
 }

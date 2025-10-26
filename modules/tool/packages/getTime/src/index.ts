@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type RunToolSecondParamsType } from '@tool/type/tool';
+import type { RunToolSecondParamsType } from '@tool/type/req';
 
 export const InputType = z.object({});
 

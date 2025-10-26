@@ -4,7 +4,7 @@ import {
   type StreamDataType,
   type SystemVarType,
   type ToolCallbackReturnSchemaType
-} from '@tool/type/tool';
+} from '@tool/type/req';
 import {
   // refer to https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web
   EventStreamContentType,

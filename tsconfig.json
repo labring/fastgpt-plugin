@@ -38,5 +38,6 @@
     "incremental": true,
     "assumeChangesOnlyAffectDirectDependencies": true
   },
-  "include": ["modules/**/*.ts", "scripts/**/*.ts", "sdk/**/*.ts", "src/**/*.ts", "test/**/*.ts"]
+  "include": ["modules/**/*.ts", "scripts/**/*.ts", "sdk/**/*.ts", "src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["sdk/dist/**/*.ts"]
 }

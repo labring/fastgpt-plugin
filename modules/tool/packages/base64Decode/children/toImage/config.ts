@@ -1,13 +1,13 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   name: {
     'zh-CN': 'Base64 转图片',
     en: 'Base64 to Image'
   },
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   description: {
     'zh-CN': '将 Base64 编码的字符串转换为图片。',
     en: 'Enter a Base64-encoded string and get a image.'

@@ -1,5 +1,5 @@
 import { defineToolSet } from '@tool/type';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineToolSet({
   name: {
@@ -7,7 +7,7 @@ export default defineToolSet({
     en: 'OpenRouter Multi-Modal'
   },
   courseUrl: 'https://openrouter.ai/docs/quickstart',
-  type: ToolTypeEnum.multimodal,
+  tags: [ToolTagEnum.enum.multimodal],
   description: {
     'zh-CN': '这是一个OpenRouter 多模态工具集，支持调用多种OpenRouter平台提供的模型服务',
     en: 'This is an OpenRouter multi-modal tool set, supporting various model services provided by the OpenRouter platform'

@@ -5,11 +5,11 @@ import {
   SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   isWorkerRun: false,
-  type: ToolTypeEnum.communication,
+  tags: [ToolTagEnum.enum.communication],
   name: {
     'zh-CN': 'Email 邮件发送',
     en: 'SMTP Email'

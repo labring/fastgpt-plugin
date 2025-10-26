@@ -1,13 +1,13 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   name: {
     'zh-CN': 'Whisper 语音转文字',
     en: 'Whisper Speech-to-Text'
   },
-  type: ToolTypeEnum.multimodal,
+  tags: [ToolTagEnum.enum.multimodal],
   description: {
     'zh-CN': '使用 OpenAI Whisper 模型将音频文件转换为文字，支持多种音频格式和多语言识别',
     en: 'Convert audio files to text using OpenAI Whisper model, supporting multiple audio formats and multilingual recognition'

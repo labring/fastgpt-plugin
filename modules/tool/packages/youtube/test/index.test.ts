@@ -4,7 +4,7 @@ import tool from '..';
 test('YouTube toolset configuration', async () => {
   expect(tool.name).toBeDefined();
   expect(tool.description).toBeDefined();
-  expect(tool.type).toBe('entertainment');
+  expect(tool.tags).toContain('entertainment');
 
   // Check that toolset has proper i18n support
   expect(tool.name['zh-CN']).toBe('YouTube 工具集');

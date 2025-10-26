@@ -2,10 +2,10 @@ import type { Request, Response, NextFunction } from 'express';
 import { getTool } from '@tool/controller';
 import { dispatchWithNewWorker } from 'lib/worker';
 import { StreamManager } from '../utils/stream';
-import { StreamMessageTypeEnum, type RunToolSecondParamsType } from '../type/tool';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 import { recordToolExecution } from '@/utils/signoz';
+import { StreamMessageTypeEnum, type RunToolSecondParamsType } from '@tool/type/req';
 
 export const runToolStreamHandler = async (
   req: Request,

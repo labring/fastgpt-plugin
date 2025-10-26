@@ -4,10 +4,10 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  type: ToolTypeEnum.search,
+  tags: [ToolTagEnum.enum.search],
   name: {
     'zh-CN': 'ArXiv 论文检索',
     en: 'ArXiv Paper Search'

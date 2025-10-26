@@ -4,11 +4,11 @@ import {
   WorkflowIOValueTypeEnum,
   SystemInputKeyEnum
 } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   isWorkerRun: false,
-  type: ToolTypeEnum.search,
+  tags: [ToolTagEnum.enum.search],
   name: {
     'zh-CN': 'Jina AI 搜索',
     en: 'Jina AI Search'

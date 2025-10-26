@@ -1,5 +1,5 @@
 import { defineToolSet } from '@tool/type';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineToolSet({
   name: {
@@ -7,7 +7,7 @@ export default defineToolSet({
     en: 'Moji Weather'
   },
   courseUrl: 'https://www.mojicb.com/apis',
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   description: {
     'zh-CN': '墨迹天气工具集，提供天气查询相关功能',
     en: 'Moji Weather toolset providing weather query functionality'

@@ -5,11 +5,11 @@ import {
   SystemInputKeyEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   isWorkerRun: false,
-  type: ToolTypeEnum.search,
+  tags: [ToolTagEnum.enum.search],
   name: {
     'zh-CN': 'SearXNG 搜索',
     en: 'Search XNG'

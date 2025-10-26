@@ -1,9 +1,9 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   name: {
     'zh-CN': 'MinerU Saas 解析',
     en: 'MinerU Saas Parse'

@@ -1,10 +1,10 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   isWorkerRun: false,
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   name: {
     'zh-CN': '流程等待',
     en: 'Delay'

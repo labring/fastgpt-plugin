@@ -1,5 +1,5 @@
 import { defineToolSet } from '@tool/type';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineToolSet({
   name: {
@@ -7,7 +7,7 @@ export default defineToolSet({
     en: 'SearchApi'
   },
   courseUrl: 'https://www.searchapi.io/',
-  type: ToolTypeEnum.search,
+  tags: [ToolTagEnum.enum.search],
   description: {
     'zh-CN': 'SearchApi 服务',
     en: 'SearchApi Service'

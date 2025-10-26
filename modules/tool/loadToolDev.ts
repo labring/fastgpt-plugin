@@ -3,9 +3,9 @@ import { addLog } from '@/utils/log';
 import { existsSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { join } from 'path/posix';
-import { ToolTypeEnum } from 'sdk/client';
-import { basePath, devToolIds } from './constants';
+import { basePath, devToolIds, UploadToolsS3Path } from './constants';
 import type { ToolType, ToolSetType } from './type';
+import { ToolTagEnum } from './type/tags';
 
 /**
  * Load Tools in dev mode. Only avaliable in dev mode
@@ -31,9 +31,9 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   if (isToolSet) {
     tools.push({
       ...rootMod,
-      type: rootMod.type || ToolTypeEnum.other,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
-      icon: rootMod.icon,
+      icon: rootMod.icon ?? '',
       toolFilename: filename,
       cb: () => Promise.resolve({}),
       versionList: []
@@ -50,7 +50,8 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         children.push({
           ...childMod,
           toolId,
-          toolFilename: filename
+          toolFilename: filename,
+          icon: childMod.icon ?? ''
         });
       }
     }
@@ -60,15 +61,14 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     // is not toolset
     tools.push({
       ...(rootMod as ToolType),
-      type: rootMod.type || ToolTypeEnum.other,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
-      icon: rootMod.icon,
+      icon: rootMod.icon ?? '',
       toolFilename: filename,
       versionList: []
     });
   }
 
   tools.forEach((tool) => devToolIds.add(tool.toolId));
-
   return tools;
 };

@@ -4,7 +4,7 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   isWorkerRun: false,
@@ -13,7 +13,7 @@ export default defineTool({
     en: 'Bocha Search'
   },
   icon: 'core/workflow/template/bocha',
-  type: ToolTypeEnum.search,
+  tags: [ToolTagEnum.enum.search],
   description: {
     'zh-CN': '使用博查AI搜索引擎进行网络搜索。',
     en: 'Use Bocha AI search engine for web search.'

@@ -1,12 +1,12 @@
 import { defineToolSet } from '@tool/type';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineToolSet({
   name: {
     'zh-CN': 'Redis 缓存',
     en: 'Redis Cache'
   },
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   description: {
     'zh-CN': '提供 Redis 缓存的基本操作功能,包括获取、设置和删除',
     en: 'Provides basic Redis cache operations including get, set and delete'

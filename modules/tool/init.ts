@@ -1,65 +1,43 @@
-import { LoadToolsByFilename } from './utils';
 import { LoadToolsDev } from './loadToolDev';
-import { join, parse } from 'path';
+import { join } from 'path';
 import { readdir } from 'fs/promises';
-import { unpkg } from '@/utils/zip';
 import type { ToolMapType } from './type';
 import { isProd } from '@/constants';
-import { MongoPluginModel } from '@/mongo/models/plugins';
-import { downloadFile, ensureDir } from '@/utils/fs';
+import { MongoPlugin } from '@/mongo/models/plugins';
+import { ensureDir } from '@/utils/fs';
 import { addLog } from '@/utils/log';
-import { basePath, toolsDir, tempDir, tempPkgDir, tempToolsDir } from './constants';
-import { catchError } from '@/utils/catch';
-import { existsSync } from 'fs';
+import { basePath, toolsDir, tempDir, tempToolsDir, UploadToolsS3Path } from './constants';
+import { privateS3Server } from '@/s3';
+import { LoadToolsByFilename } from './utils';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
+/**
+ * Init tools when system starting.
+ * Download all pkgs from minio, load sideloaded pkgs
+ */
 export async function initTools() {
   await Promise.all([ensureDir(toolsDir), ensureDir(tempDir), ensureDir(tempToolsDir)]);
   // 1. download pkgs into pkg dir
   // 1.1 get tools from mongo
-  const toolsInMongo = await MongoPluginModel.find({
+  const toolsInMongo = await MongoPlugin.find({
     type: 'tool'
   }).lean();
   // 1.2 download it to temp dir
   await Promise.all(
-    toolsInMongo.map(async (tool) => {
-      await downloadFile(tool.objectName, tempPkgDir);
-    })
+    toolsInMongo.map((tool) =>
+      privateS3Server.downloadFile({
+        downloadPath: toolsDir,
+        objectName: `${UploadToolsS3Path}/${tool.toolId}.js`
+      })
+    )
   );
 
-  // 1.3 unpkg all files
-  const downloadedPkgs = existsSync(tempPkgDir)
-    ? (await readdir(tempPkgDir)).map((item) => join(tempPkgDir, item))
-    : [];
-  const sideLoadPath = join(basePath, 'dist', 'sideload', 'pkgs');
-  const sideloadedPkgs = existsSync(sideLoadPath)
-    ? (await readdir(sideLoadPath)).map((item) => join(sideLoadPath, item))
-    : [];
-
-  // console.log(downloadedPkgs, sideloadedPkgs);
-  await Promise.all(
-    [...downloadedPkgs, ...sideloadedPkgs].map(async (tool) => {
-      // unpkg it
-      const unpkgTarget = join(tempDir, 'tools', parse(tool).name);
-      await unpkg(tool, unpkgTarget);
-      // verify it
-      {
-        const [toolId, err] = await catchError(async () => {
-          const mod = (await import(join(unpkgTarget, 'index.js'))).default;
-          return mod.toolId;
-        });
-        if (err || !toolId) {
-          addLog.error(`Tool: ${tool} is invalid`);
-          return Promise.resolve();
-        }
-      }
-    })
-  );
   // 2. get all tool dirs
-  const files = await readdir(tempToolsDir);
+  const toolFiles = await readdir(toolsDir);
   const toolMap: ToolMapType = new Map();
-  const promises = files.map(async (filename) => {
+
+  const promises = toolFiles.map(async (filename) => {
     const loadedTools = await LoadToolsByFilename(filename);
     loadedTools.forEach((tool) => toolMap.set(tool.toolId, tool));
   });

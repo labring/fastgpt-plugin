@@ -1,4 +1,4 @@
-import { SystemVarSchema } from '@tool/type/tool';
+import { SystemVarSchema } from '@tool/type/req';
 import z from 'zod';
 
 export const getMockSystemVar = (

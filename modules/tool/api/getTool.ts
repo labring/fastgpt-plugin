@@ -1,7 +1,7 @@
 import { s } from '@/router/init';
 import { contract } from '@/contract';
 import { getTool } from '@tool/controller';
-import { formatToolList } from '@tool/utils/tool';
+import { ToolDetailSchema } from '@tool/type/api';
 
 export const getToolHandler = s.route(contract.tool.getTool, async ({ query: { toolId } }) => {
   const tool = await getTool(toolId);
@@ -15,6 +15,6 @@ export const getToolHandler = s.route(contract.tool.getTool, async ({ query: { t
 
   return {
     status: 200,
-    body: formatToolList([tool])[0]
+    body: ToolDetailSchema.parse(tool)
   };
 });

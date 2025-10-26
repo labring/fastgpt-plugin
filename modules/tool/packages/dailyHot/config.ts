@@ -1,13 +1,13 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   name: {
     'zh-CN': '热榜工具',
     en: 'Hot List Tool'
   },
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   description: {
     'zh-CN': '获取热榜信息，支持36氪、知乎、微博、掘金、头条等多个平台',
     en: 'Get hot list information from multiple platforms including 36kr, Zhihu, Weibo, Juejin, and Toutiao'

@@ -1,8 +1,6 @@
 import { parentPort } from 'worker_threads';
-import { getErrText } from '@tool/utils/err';
 import type { Main2WorkerMessageType } from './type';
-import { setupProxy } from '@/utils/setupProxy';
-import { LoadToolsByFilename } from '@tool/utils';
+import { setupProxy } from '../utils/setupProxy';
 
 setupProxy();
 

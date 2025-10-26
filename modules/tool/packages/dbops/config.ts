@@ -1,12 +1,12 @@
 import { defineToolSet } from '@tool/type';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineToolSet({
   name: {
     'zh-CN': '数据库操作',
     en: 'Database Operations'
   },
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   // icon: 'core/workflow/template/datasource',
   description: {
     'zh-CN':

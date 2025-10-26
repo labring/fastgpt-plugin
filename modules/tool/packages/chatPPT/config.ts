@@ -1,6 +1,6 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   isWorkerRun: false,
@@ -9,7 +9,7 @@ export default defineTool({
     'zh-CN': '必优ChatPPT',
     en: 'ChatPPT'
   },
-  type: ToolTypeEnum.productivity,
+  tags: [ToolTagEnum.enum.productivity],
   description: {
     'zh-CN': '必优ChatPPT，一键生成PPT',
     en: 'ChatPPT, one-click generate PPT'

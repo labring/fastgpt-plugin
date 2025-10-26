@@ -1,4 +1,4 @@
-import type { StreamMessageType } from '@tool/type/tool';
+import type { StreamMessageType } from '@tool/type/req';
 import type { Response } from 'express';
 
 export class StreamManager {

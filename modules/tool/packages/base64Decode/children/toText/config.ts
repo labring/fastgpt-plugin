@@ -4,14 +4,14 @@ import {
   FlowNodeOutputTypeEnum,
   WorkflowIOValueTypeEnum
 } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   name: {
     'zh-CN': 'Base64 转文本',
     en: 'Base64 to text'
   },
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   description: {
     'zh-CN': '将 Base64 编码的字符串转换为文本。',
     en: 'Enter a Base64-encoded string and get a text.'

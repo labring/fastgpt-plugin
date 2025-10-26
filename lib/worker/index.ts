@@ -1,12 +1,12 @@
 import { Worker } from 'worker_threads';
 import { getTool } from 'modules/tool/controller';
-import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/tool';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 import type { Main2WorkerMessageType, Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
-import { fileUploadS3Server } from '@/s3';
+import { publicS3Server } from '@/s3';
 import { devToolIds } from '@tool/constants';
+import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/req';
 
 type WorkerQueueItem = {
   id: string;
@@ -201,7 +201,7 @@ export async function dispatchWithNewWorker(data: {
         console.log(...logData);
       } else if (type === 'uploadFile') {
         try {
-          const result = await fileUploadS3Server.uploadFileAdvanced({
+          const result = await publicS3Server.uploadFileAdvanced({
             ...data.file,
             ...(data.file.buffer ? { buffer: Buffer.from(data.file.buffer) } : {})
           });

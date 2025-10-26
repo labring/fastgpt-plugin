@@ -1,13 +1,13 @@
 import { s } from '@/router/init';
 import { contract } from '@/contract';
-import { pluginFileS3Server } from '@/s3';
-import { getNanoid } from '@tool/utils/string';
 
 export default s.route(contract.tool.upload.install, async ({ body }) => {
-  await pluginFileS3Server.uploadFileAdvanced({
-    url: body.url,
-    defaultFilename: '/system/plugin/' + getNanoid()
-  });
+  const buffer = await (await fetch(body.url)).arrayBuffer();
+  // save the buffer to a file in tmpDir
+  // await privateS3Server.uploadFileAdvanced({
+  //   url: body.url,
+  //   defaultFilename: '/system/plugin/' + getNanoid()
+  // });
   return {
     status: 200,
     body: {

@@ -1,8 +1,6 @@
 import z from 'zod';
 import { FASTGPT_REDIS_PREFIX, getGlobalRedisConnection } from '.';
 
-export const lockEnum = z.enum(['cleanOrphanPlugin']);
-
 const lockPrefix = `${FASTGPT_REDIS_PREFIX}LOCK:`;
 
 export const acquireLock = async (key: z.infer<typeof lockEnum>, timeoutMs: number) => {

@@ -56,7 +56,7 @@ export const uploadFile = async (data: FileInput) => {
       });
     });
   } else {
-    const { fileUploadS3Server } = await import('@/s3');
+    const { publicS3Server: fileUploadS3Server } = await import('@/s3');
     return await fileUploadS3Server.uploadFileAdvanced({
       ...data,
       ...(data.buffer ? { buffer: data.buffer } : {})

@@ -3,13 +3,13 @@ import {
   ToolConfigSchema,
   ToolSchema,
   ToolSetConfigSchema,
-  type toolConfigWithCbSchema,
+  type ToolConfigWithCbSchema,
   type ToolSetSchema
 } from './tool';
 import { FlowNodeOutputTypeEnum } from './fastgpt';
 
 export type ToolConfigType = z.infer<typeof ToolConfigSchema>;
-export type ToolConfigWithCbType = z.infer<typeof toolConfigWithCbSchema>;
+export type ToolConfigWithCbType = z.infer<typeof ToolConfigWithCbSchema>;
 export function defineTool(tool: ToolConfigType) {
   const versionList = tool.versionList.map((version) => {
     return {

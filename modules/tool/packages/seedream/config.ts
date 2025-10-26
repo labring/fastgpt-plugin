@@ -1,6 +1,6 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   name: {
@@ -8,7 +8,7 @@ export default defineTool({
     en: 'Seedream Image Generation Model'
   },
   courseUrl: 'https://www.volcengine.com/docs/82379/1541523',
-  type: ToolTypeEnum.multimodal,
+  tags: [ToolTagEnum.enum.multimodal],
   description: {
     'zh-CN': '豆包 Seedream 4.0 图片生成模型',
     en: 'Seedream Image Generation Model'

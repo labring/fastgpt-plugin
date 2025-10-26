@@ -1,12 +1,12 @@
 import { defineToolSet } from '@tool/type';
-import { ToolTypeEnum } from '@tool/type/tool';
+import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineToolSet({
   name: {
     'zh-CN': '飞书多维表格',
     en: 'Feishu Bitable'
   },
-  type: ToolTypeEnum.tools,
+  tags: [ToolTagEnum.enum.tools],
   description: {
     'zh-CN': '提供飞书多维表格的完整操作功能，包括应用管理、数据表管理、记录 CRUD、字段配置查询',
     en: 'Provides comprehensive Feishu Bitable operations including app management, table management, record CRUD, and field configuration'

@@ -1,6 +1,6 @@
 import z from 'zod';
 import { c } from '@/contract/init';
-import { ToolListItemSchema, type ToolListItemType, ToolTypeListSchema } from './type/api';
+import { ToolDetailSchema, type ToolDetailItemType, ToolTypeListSchema } from './type/api';
 
 export const toolUploadContract = c.router(
   {
@@ -43,7 +43,7 @@ export const toolUploadContract = c.router(
       method: 'POST',
       description: 'Upload and install a tool plugin',
       body: z.object({
-        objectName: z.string()
+        toolId: z.string()
       }),
       responses: {
         200: z.object({
@@ -63,6 +63,16 @@ export const toolUploadContract = c.router(
           message: z.string()
         })
       }
+    },
+    parseUploadedTool: {
+      path: '/parseUploadedTool',
+      method: 'GET',
+      query: z.object({
+        objectName: z.string()
+      }),
+      responses: {
+        200: z.array(ToolDetailSchema)
+      }
     }
   },
   {
@@ -77,7 +87,7 @@ export const toolContract = c.router(
       method: 'GET',
       description: 'Get tools list',
       responses: {
-        200: c.type<Array<ToolListItemType>>()
+        200: c.type<Array<ToolDetailItemType>>()
       }
     },
     getTool: {
@@ -88,7 +98,7 @@ export const toolContract = c.router(
         toolId: z.string()
       }),
       responses: {
-        200: ToolListItemSchema
+        200: ToolDetailSchema
       }
     },
     getType: {
