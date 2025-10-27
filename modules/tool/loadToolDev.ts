@@ -150,7 +150,8 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           ...childMod,
           toolId,
           toolFilename: filename,
-          icon: childIcon
+          icon: childIcon,
+          parentId: toolsetId
         });
       }
     }
