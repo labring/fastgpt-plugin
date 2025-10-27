@@ -1,6 +1,6 @@
 import { isProd } from '../constants';
 import { addLog } from '../utils/log';
-import type { Model, Schema, Mongoose as MongooseType } from 'mongoose';
+import type { Model, Schema } from 'mongoose';
 import { Mongoose } from 'mongoose';
 
 export const MONGO_URL = process.env.MONGODB_URI ?? '';

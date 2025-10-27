@@ -9,6 +9,7 @@ import { addLog } from '@/utils/log';
 import { basePath, toolsDir, tempDir, tempToolsDir, UploadToolsS3Path } from './constants';
 import { privateS3Server } from '@/s3';
 import { LoadToolsByFilename } from './utils';
+import { stat } from 'fs/promises';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
@@ -46,6 +47,12 @@ export async function initTools() {
   // 3. read dev tools, if in dev mode
   if (!isProd && process.env.DISABLE_DEV_TOOLS !== 'true') {
     const dir = join(basePath, 'modules', 'tool', 'packages');
+    // skip if dir not exist
+    try {
+      await stat(dir);
+    } catch (e) {
+      return toolMap;
+    }
     const dirs = (await readdir(dir)).filter((filename) => !filterToolList.includes(filename));
     const devTools = (
       await Promise.all(

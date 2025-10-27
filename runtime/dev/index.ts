@@ -8,24 +8,15 @@ import { basePath } from '@tool/constants';
 async function copyDevIcons() {
   if (isProd) return;
 
-  const toolsDir = path.join(basePath, 'modules', 'tool', 'packages');
-  const publicImgsToolsDir = path.join(basePath, 'public', 'imgs', 'tools');
   const modelsDir = path.join(basePath, 'modules', 'model', 'provider');
   const publicImgsModelsDir = path.join(basePath, 'public', 'imgs', 'models');
 
   // Copy tool and model icons in parallel
-  await Promise.all([
-    copyIcons({
-      sourceDir: toolsDir,
-      targetDir: publicImgsToolsDir,
-      logPrefix: 'Copied dev tool icon'
-    }),
-    copyIcons({
-      sourceDir: modelsDir,
-      targetDir: publicImgsModelsDir,
-      logPrefix: 'Copied dev model icon'
-    })
-  ]);
+  await copyIcons({
+    sourceDir: modelsDir,
+    targetDir: publicImgsModelsDir,
+    logPrefix: 'Copied dev model icon'
+  });
 }
 
 async function checkToolDir() {
@@ -54,7 +45,7 @@ async function checkToolDir() {
 }
 
 await copyDevIcons();
-await checkToolDir();
+// await checkToolDir();
 
 const server = new DevServer();
 await server.start();
