@@ -7,8 +7,7 @@ import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { UploadToolsS3Path } from '@tool/constants';
 
-export default s.route(contract.tool.upload.delete, async ({ query: { toolId: rawToolId } }) => {
-  const toolId = rawToolId.split('-').slice(1).join('-');
+export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }) => {
   await mongoSessionRun(async (session) => {
     const result = await MongoPlugin.findOneAndDelete({ toolId }).session(session);
     if (!result || !result.toolId) {

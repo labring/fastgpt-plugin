@@ -3,6 +3,8 @@ import { contract } from '@/contract';
 import { MongoS3TTL } from '@/s3/ttl/schema';
 import { UploadToolsS3Path } from '@tool/constants';
 import { MongoPlugin } from '@/mongo/models/plugins';
+import { refreshVersionKey } from '@/cache';
+import { SystemCacheKeyEnum } from '@/cache/type';
 
 export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   const { toolIds } = body;
@@ -19,6 +21,8 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
       $regex: toolIds.map((toolId) => `^${UploadToolsS3Path}/${toolId}`).join('|')
     }
   });
+
+  await refreshVersionKey(SystemCacheKeyEnum.systemTool);
 
   return {
     status: 200,

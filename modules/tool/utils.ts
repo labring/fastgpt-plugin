@@ -8,6 +8,7 @@ import { tempPkgDir, tempToolsDir, toolsDir, UploadToolsS3Path } from './constan
 import type { ToolSetType, ToolType } from './type';
 import { ToolTagEnum } from './type/tags';
 import { ToolDetailSchema } from './type/api';
+import { catchError } from '@/utils/catch';
 
 /**
  * Move files from unzipped structure to dist directory
@@ -158,17 +159,14 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
   return parseMod({ rootMod, filename });
 };
 
-export const parseUploadedTool = async (objectName: string) => {
-  const toolFilename = objectName.split('/').pop();
-  if (!toolFilename) return Promise.reject('Upload Tool Error: Bad objectname');
-  const filepath = await privateS3Server.downloadFile({
-    downloadPath: tempPkgDir,
-    objectName: objectName
-  });
-
-  if (!filepath) return Promise.reject('Upload Tool Error: File not found');
-  const tempDir = join(tempToolsDir, toolFilename);
-  await unpkg(filepath, tempDir);
+export const parsePkg = async (filepath: string, setTTL: boolean = true) => {
+  const filename = filepath.split('/').pop() as string;
+  const tempDir = join(tempToolsDir, filename);
+  const [, err] = await catchError(() => unpkg(filepath, tempDir));
+  if (err) {
+    addLog.error(`Can not parse toolId, filename: ${filename}`);
+    return [];
+  }
   const mod = (await import(join(tempDir, 'index.js'))).default as ToolSetType | ToolType;
 
   // upload unpkged files (except index.js) to s3
@@ -193,11 +191,13 @@ export const parseUploadedTool = async (objectName: string) => {
 
       staticFileObjectNames.push(objectName);
 
-      await MongoS3TTL.create({
-        bucketName: publicS3Server.getBucketName(),
-        expiredTime: Date.now() + 3600000, // 1 hour
-        minioKey: objectName
-      });
+      if (setTTL) {
+        await MongoS3TTL.create({
+          bucketName: publicS3Server.getBucketName(),
+          expiredTime: Date.now() + 3600000, // 1 hour
+          minioKey: objectName
+        });
+      }
     })
   );
 
@@ -217,16 +217,24 @@ export const parseUploadedTool = async (objectName: string) => {
     });
   }
 
-  // 4. remove the uploaded pkg file
-  await privateS3Server.removeFile(objectName);
-
   const tools = await parseMod({
     rootMod: mod,
     filename: join(tempDir, 'index.js')
   });
   return tools.map((item) => ToolDetailSchema.parse(item));
-  // return tools.map((item) => {
-  //   const res = ToolDetailSchema.safeParse(item);
-  //   console.log(res.error?.message);
-  // });
+};
+
+export const parseUploadedTool = async (objectName: string) => {
+  const toolFilename = objectName.split('/').pop();
+  if (!toolFilename) return Promise.reject('Upload Tool Error: Bad objectname');
+  const filepath = await privateS3Server.downloadFile({
+    downloadPath: tempPkgDir,
+    objectName: objectName
+  });
+
+  if (!filepath) return Promise.reject('Upload Tool Error: File not found');
+  const tools = parsePkg(filepath);
+  // 4. remove the uploaded pkg file
+  await privateS3Server.removeFile(objectName);
+  return tools;
 };

@@ -56,7 +56,7 @@ export const toolUploadContract = c.router(
       method: 'POST',
       description: 'Install a tool',
       body: z.object({
-        url: z.string().url()
+        urls: z.array(z.string().url())
       }),
       responses: {
         200: z.object({
