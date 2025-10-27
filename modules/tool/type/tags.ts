@@ -15,7 +15,7 @@ export const ToolTagEnum = z.enum([
   'other'
 ]);
 
-export const ToolTypeMap = {
+export const ToolTagsNameMap = {
   [ToolTagEnum.enum.tools]: {
     en: 'tools',
     'zh-CN': '工具',

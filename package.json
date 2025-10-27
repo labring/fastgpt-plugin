@@ -8,6 +8,7 @@
     "build:runtime": "bun --cwd runtime build",
     "build:tools": "bun --cwd modules/tool build",
     "build:marketplace": "bun run build:tools && bun --cwd runtime build:marketplace",
+    "build:sdk": "bun run --cwd sdk build",
     "dev:runtime": "bun --cwd runtime dev",
     "test": "vitest run",
     "lint": "node_modules/.bin/eslint --fix",

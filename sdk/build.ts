@@ -1,6 +1,6 @@
 import dts from 'bun-plugin-dts';
 
-await Bun.build({
+const result = await Bun.build({
   entrypoints: ['./client.ts'],
   target: 'node',
   external: ['zod'],
@@ -9,3 +9,6 @@ await Bun.build({
 });
 
 export {};
+
+console.log('Build sdk completed successfully');
+console.log(result);

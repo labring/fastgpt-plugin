@@ -20,11 +20,9 @@ import { ToolDetailSchema } from './type/api';
 
 const parseMod = async ({
   rootMod,
-  staticFileObjectNames,
   filename
 }: {
   rootMod: ToolSetType | ToolType;
-  staticFileObjectNames: string[];
   filename: string;
 }) => {
   const tools: ToolType[] = [];
@@ -34,13 +32,9 @@ const parseMod = async ({
   if (checkRootModToolSet(rootMod)) {
     const toolsetId = rootMod.toolId;
 
-    const parentIconName = staticFileObjectNames.find((item) =>
-      item.startsWith(`${UploadToolsS3Path}/${toolsetId}/logo.`)
-    );
-
     const parentIcon =
       rootMod.icon ||
-      (parentIconName ? await publicS3Server.generateExternalUrl(parentIconName) : '');
+      (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/logo`));
 
     // push parent
     tools.push({
@@ -57,13 +51,12 @@ const parseMod = async ({
 
     for (const child of children) {
       const childToolId = child.toolId;
-      const childIconName = staticFileObjectNames.find((item) =>
-        item.startsWith(`${UploadToolsS3Path}/${toolsetId}/${childToolId}/logo.`)
-      );
 
       const childIcon =
         child.icon ||
-        (childIconName ? await publicS3Server.generateExternalUrl(childIconName) : '');
+        (await publicS3Server.generateExternalUrl(
+          `${UploadToolsS3Path}/${toolsetId}/${childToolId}/logo`
+        ));
 
       tools.push({
         ...child,
@@ -79,12 +72,9 @@ const parseMod = async ({
   } else {
     const toolId = rootMod.toolId;
 
-    const parentIconName = staticFileObjectNames.find((item) =>
-      item.startsWith(`${UploadToolsS3Path}/${toolId}/logo.`)
-    );
     const icon =
       rootMod.icon ||
-      (parentIconName ? await publicS3Server.generateExternalUrl(parentIconName) : '');
+      (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolId}/logo`));
 
     tools.push({
       ...rootMod,
@@ -165,11 +155,7 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
     addLog.error(`Can not parse toolId, filename: ${filename}`);
   }
 
-  const staticFileObjectNames = await publicS3Server.getFiles(
-    `${UploadToolsS3Path}/${rootMod.toolId}`
-  );
-
-  return parseMod({ rootMod, staticFileObjectNames, filename });
+  return parseMod({ rootMod, filename });
 };
 
 export const parseUploadedTool = async (objectName: string) => {
@@ -200,7 +186,7 @@ export const parseUploadedTool = async (objectName: string) => {
       // console.log(path, file);
       const { objectName } = await publicS3Server.uploadFileAdvanced({
         path,
-        defaultFilename: file,
+        defaultFilename: file.split('.').splice(0, -1).join('.'), // remove the extention name
         prefix: `${UploadToolsS3Path}/${mod.toolId}`,
         keepRawFilename: true
       });
@@ -236,7 +222,6 @@ export const parseUploadedTool = async (objectName: string) => {
 
   const tools = await parseMod({
     rootMod: mod,
-    staticFileObjectNames,
     filename: join(tempDir, 'index.js')
   });
   return tools.map((item) => ToolDetailSchema.parse(item));

@@ -26,4 +26,5 @@ export const ToolSimpleSchema = ToolDetailSchema.omit({
   versionList: true
 });
 
-export type ToolDetailItemType = z.infer<typeof ToolDetailSchema>;
+export type ToolDetailType = z.infer<typeof ToolDetailSchema>;
+export type ToolSimpleType = z.infer<typeof ToolSimpleSchema>;

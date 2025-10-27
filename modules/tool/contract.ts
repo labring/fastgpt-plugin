@@ -1,6 +1,6 @@
 import z from 'zod';
 import { c } from '@/contract/init';
-import { ToolDetailSchema, type ToolDetailItemType, ToolTypeListSchema } from './type/api';
+import { ToolDetailSchema, type ToolDetailType, ToolTypeListSchema } from './type/api';
 
 export const toolUploadContract = c.router(
   {
@@ -87,7 +87,7 @@ export const toolContract = c.router(
       method: 'GET',
       description: 'Get tools list',
       responses: {
-        200: c.type<Array<ToolDetailItemType>>()
+        200: c.type<Array<ToolDetailType>>()
       }
     },
     getTool: {
