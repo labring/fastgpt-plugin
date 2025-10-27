@@ -25,16 +25,16 @@ FastGPT 已有系统工具已经迁移到这个仓库，新工具也将在这个
 ## 系统工具基础设施
 
 - [x]  工具独立运行
-- [ ]  热插拔
+- [x]  热插拔
+- [x]  工具版本管理
+- [x]  SSE 流响应
 - [ ]  更优雅的 Secret 配置
 - [ ]  可视化调试
 - [ ]  反向调用 FastGPT
-- [ ]  工具版本管理
-- [ ]  SSE 流响应
 - [ ]  更多安全策略
 
 ## 文档
 
-- [系统工具开发指南](https://doc.tryfastgpt.ai/docs/introduction/guide/plugins/dev_system_tool)
-- [设计文档](https://doc.tryfastgpt.ai/docs/introduction/development/design/design_plugin)
+- [系统工具开发指南](https://doc.fastgpt.io/docs/introduction/guide/plugins/dev_system_tool)
+- [设计文档](https://doc.fastgpt.io/docs/introduction/development/design/design_plugin)
 - [开发规范](./dev_zh_CN.md)

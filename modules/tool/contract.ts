@@ -43,7 +43,7 @@ export const toolUploadContract = c.router(
       method: 'POST',
       description: 'Upload and install a tool plugin',
       body: z.object({
-        toolId: z.string()
+        toolIds: z.array(z.string())
       }),
       responses: {
         200: z.object({
