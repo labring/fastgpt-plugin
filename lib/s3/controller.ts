@@ -52,9 +52,9 @@ export class S3Service {
         useSSL: useSSL,
         endPoint: endpoint,
         port: externalPort,
-        accessKey: config.accessKey,
-        secretKey: config.secretKey,
-        transportAgent: config.transportAgent
+        accessKey: this.config.accessKey,
+        secretKey: this.config.secretKey,
+        transportAgent: this.config.transportAgent
       });
     }
   }
