@@ -41,3 +41,10 @@ export async function cleanTempDir() {
   await rm(tempDir, { recursive: true, force: true });
   await ensureDir(tempDir);
 }
+/**
+ * remove the dir and then create a new one
+ */
+export async function refreshDir(dir: string) {
+  await rm(dir, { recursive: true, force: true });
+  await ensureDir(dir);
+}

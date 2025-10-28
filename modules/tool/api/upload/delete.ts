@@ -8,7 +8,7 @@ import { SystemCacheKeyEnum } from '@/cache/type';
 import { UploadToolsS3Path } from '@tool/constants';
 
 export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }) => {
-  await mongoSessionRun(async (session) => {
+  return mongoSessionRun(async (session) => {
     const result = await MongoPlugin.findOneAndDelete({ toolId }).session(session);
     if (!result || !result.toolId) {
       return {
@@ -28,12 +28,11 @@ export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }
     ]);
 
     await refreshVersionKey(SystemCacheKeyEnum.systemTool);
+    return {
+      status: 200,
+      body: {
+        message: 'Tool deleted successfully'
+      }
+    };
   });
-
-  return {
-    status: 200,
-    body: {
-      message: 'Tool deleted successfully'
-    }
-  };
 });
