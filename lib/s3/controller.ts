@@ -136,7 +136,9 @@ export class S3Service {
   /**
    *  Get public readable URL
    */
-  async generateExternalUrl(objectName: string, expiry: number = 3600): Promise<string> {
+  async generateExternalUrl(_objectName: string, expiry: number = 3600): Promise<string> {
+    const objectName = _objectName.startsWith('/') ? _objectName.slice(1) : _objectName;
+
     const externalBaseURL = this.config.externalBaseURL;
 
     // Private
@@ -160,7 +162,7 @@ export class S3Service {
 
     // Public
     if (externalBaseURL) {
-      return `${externalBaseURL}/${this.config.bucket}${objectName}`;
+      return `${externalBaseURL}/${this.config.bucket}/${objectName}`;
     }
 
     // Default url
@@ -225,6 +227,8 @@ export class S3Service {
       originalFilename: string
     ): Promise<FileMetadata> => {
       const inferContentType = (filename: string) => {
+        if (input.contentType) return input.contentType;
+
         const ext = path.extname(filename).toLowerCase();
 
         return mimeMap[ext] || 'application/octet-stream';
@@ -274,7 +278,8 @@ export class S3Service {
     return await uploadFile(buffer, filename);
   }
 
-  async removeFile(objectName: string) {
+  async removeFile(_objectName: string) {
+    const objectName = _objectName.startsWith('/') ? _objectName.slice(1) : _objectName;
     await this.client.removeObject(this.config.bucket, objectName);
     addLog.info(`MinIO file deleted: ${this.config.bucket}/${objectName}`);
   }

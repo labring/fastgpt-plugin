@@ -3,12 +3,14 @@ import { MongoS3TTL } from '@/s3/ttl/schema';
 import { addLog } from '@/utils/log';
 import { unpkg } from '@/utils/zip';
 import { readdir, stat } from 'fs/promises';
-import { join } from 'path';
+import { join, parse } from 'path';
 import { tempPkgDir, tempToolsDir, toolsDir, UploadToolsS3Path } from './constants';
 import type { ToolSetType, ToolType } from './type';
 import { ToolTagEnum } from './type/tags';
 import { ToolDetailSchema } from './type/api';
 import { catchError } from '@/utils/catch';
+import { mimeMap } from '@/s3/const';
+import { MongoPlugin } from '@/mongo/models/plugins';
 
 /**
  * Move files from unzipped structure to dist directory
@@ -173,7 +175,6 @@ export const parsePkg = async (filepath: string, setTTL: boolean = true) => {
   // 1. get all files recursively
   const files = await readdir(tempDir, { recursive: true });
 
-  const staticFileObjectNames: string[] = [];
   // 2. upload
   await Promise.all(
     files.map(async (file) => {
@@ -181,15 +182,13 @@ export const parsePkg = async (filepath: string, setTTL: boolean = true) => {
       if ((await stat(filepath)).isDirectory() || file === 'index.js') return;
 
       const path = join(tempDir, file);
-      // console.log(path, file);
       const { objectName } = await publicS3Server.uploadFileAdvanced({
         path,
-        defaultFilename: file.split('.').splice(0, -1).join('.'), // remove the extention name
+        defaultFilename: file.split('.').slice(0, -1).join('.'), // remove the extention name
         prefix: `${UploadToolsS3Path}/${mod.toolId}`,
-        keepRawFilename: true
+        keepRawFilename: true,
+        contentType: mimeMap[parse(path).ext]
       });
-
-      staticFileObjectNames.push(objectName);
 
       if (setTTL) {
         await MongoS3TTL.create({
@@ -221,15 +220,29 @@ export const parsePkg = async (filepath: string, setTTL: boolean = true) => {
     rootMod: mod,
     filename: join(tempDir, 'index.js')
   });
+  const toolId = tools.find((tool) => !tool.parentId)?.toolId as string;
+  await MongoPlugin.updateOne(
+    {
+      toolId,
+      type: 'tool'
+    },
+    {
+      status: 'pending'
+    },
+    {
+      upsert: true
+    }
+  );
   return tools.map((item) => ToolDetailSchema.parse(item));
 };
 
 export const parseUploadedTool = async (objectName: string) => {
   const toolFilename = objectName.split('/').pop();
   if (!toolFilename) return Promise.reject('Upload Tool Error: Bad objectname');
+
   const filepath = await privateS3Server.downloadFile({
     downloadPath: tempPkgDir,
-    objectName: objectName
+    objectName
   });
 
   if (!filepath) return Promise.reject('Upload Tool Error: File not found');

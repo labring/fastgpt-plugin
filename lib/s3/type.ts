@@ -28,7 +28,8 @@ export const FileInputSchema = z
       .optional(),
     defaultFilename: z.string().optional(),
     prefix: z.string().optional(),
-    keepRawFilename: z.boolean().optional()
+    keepRawFilename: z.boolean().optional(),
+    contentType: z.string().optional()
   })
   .refine(
     (data) => {

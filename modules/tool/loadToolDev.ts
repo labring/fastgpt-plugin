@@ -2,12 +2,13 @@ import { isProd } from '@/constants';
 import { addLog } from '@/utils/log';
 import { existsSync } from 'fs';
 import { readdir } from 'fs/promises';
-import { join } from 'path';
+import { join, parse } from 'path';
 import { glob } from 'glob';
 import { basePath, devToolIds, UploadToolsS3Path } from './constants';
 import type { ToolType, ToolSetType } from './type';
 import { ToolTagEnum } from './type/tags';
 import { publicS3Server } from '@/s3';
+import { mimeMap } from '@/s3/const';
 
 /**
  * Load Tools in dev mode. Only avaliable in dev mode
@@ -38,7 +39,8 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           path: logoPath,
           defaultFilename: logoNameWithoutExt,
           prefix: UploadToolsS3Path + '/' + filename,
-          keepRawFilename: true
+          keepRawFilename: true,
+          contentType: mimeMap[parse(logoPath).ext]
         });
         addLog.info(
           `Uploaded logo file: ${logoPath} to ${UploadToolsS3Path}/${filename}/${logoNameWithoutExt}`

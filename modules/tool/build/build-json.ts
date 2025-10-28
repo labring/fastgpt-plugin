@@ -8,7 +8,7 @@ import { ToolDetailSchema } from 'sdk/client';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
-const S3BasePath = process.env.S3_BASE_PATH;
+const S3BasePath = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET}`;
 
 const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   const tools: ToolType[] = [];

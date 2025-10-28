@@ -16,5 +16,6 @@ export const mimeMap: Record<string, string> = {
   '.doc': 'application/msword',
   '.xls': 'application/vnd.ms-excel',
   '.ppt': 'application/vnd.ms-powerpoint',
-  '.js': 'application/javascript'
+  '.js': 'application/javascript',
+  '.md': 'text/markdown'
 };

@@ -14,7 +14,8 @@
     "lint": "node_modules/.bin/eslint --fix",
     "prettier": "prettier --write \"./**/*.{ts,js,json}\"",
     "new:tool": "bun ./scripts/newTool/index.ts",
-    "start": "NODE_ENV=production node --env-file-if-exists=runtime/.env.local dist/index.js"
+    "start": "NODE_ENV=production node --env-file-if-exists=runtime/.env.local dist/index.js",
+    "deploy:marketplace-data": "bun --env-file=.env.deploy ./scripts/deploy-marketplace.ts"
   },
   "devDependencies": {
     "@inquirer/prompts": "^7.5.3",
