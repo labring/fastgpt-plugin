@@ -8,13 +8,14 @@ import { writeFile } from 'fs/promises';
 import { MongoPlugin } from '@/mongo/models/plugins';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
+import { ensureDir } from '@/utils/fs';
 
 export default s.route(contract.tool.upload.install, async ({ body }) => {
   const downloadFunctions = body.urls.map((url) => async () => {
+    await ensureDir(tempPkgDir);
     const res = await fetch(url);
     const buffer = await res.arrayBuffer();
     const pkgSavePath = join(tempPkgDir, url.split('/').at(-1) as string);
-
     // Write the buffer directly to file
     await writeFile(pkgSavePath, Buffer.from(buffer));
 

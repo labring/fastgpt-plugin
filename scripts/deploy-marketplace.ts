@@ -24,32 +24,61 @@ async function main() {
   // read all files in dist/pkgs
   const pkgs = glob('dist/pkgs/*');
   for await (const pkg of pkgs) {
-    await client.write(`/pkgs/${pkg}`, Bun.file(`${pkg}`));
+    const filename = pkg.split('/').at(-1) as string;
+    await client.write(`/pkgs/${filename}`, Bun.file(`${pkg}`));
   }
 
   // write data.json
   await client.write(`/data.json`, Bun.file('./dist/tools.json'));
 
   const imgs = glob('modules/tool/packages/*/logo.*');
-  const childrenImgs = glob('modules/tool/packages/*/children/*/logo.*');
+  const childrenDirs = glob('modules/tool/packages/*/children/*');
   const readmes = glob('modules/tool/packages/*/README.md');
   const assets = glob('modules/tool/packages/*/assets/*');
 
   for await (const img of imgs) {
     const toolId = img.split('/').at(-2) as string;
-    const ext = img.split('.').at(-1) as string;
+    const ext = ('.' + img.split('.').at(-1)) as string;
     client.write(`${UploadToolsS3Path}/${toolId}/logo`, Bun.file(img), {
       type: mimeMap[ext]
     });
   }
 
-  for await (const img of childrenImgs) {
-    const toolId = img.split('/').at(-4) as string;
-    const childId = img.split('/').at(-2) as string;
-    const ext = img.split('.').at(-1) as string;
-    client.write(`${UploadToolsS3Path}/${toolId}/${childId}/logo`, Bun.file(img), {
-      type: mimeMap[ext]
-    });
+  // Handle children logos - use parent logo if child doesn't have its own logo
+  for await (const childDir of childrenDirs) {
+    const toolId = childDir.split('/').at(-3) as string;
+    const childId = childDir.split('/').at(-1) as string;
+
+    // Check if child has its own logo
+    const childLogoPattern = `${childDir}/logo.*`;
+    const childLogoFiles = [];
+    for await (const file of glob(childLogoPattern)) {
+      childLogoFiles.push(file);
+    }
+
+    if (childLogoFiles.length > 0) {
+      // Child has its own logo, use it
+      const childLogo = childLogoFiles[0];
+      const ext = ('.' + childLogo.split('.').at(-1)) as string;
+      client.write(`${UploadToolsS3Path}/${toolId}/${childId}/logo`, Bun.file(childLogo), {
+        type: mimeMap[ext]
+      });
+    } else {
+      // Child doesn't have logo, use parent's logo
+      const parentLogoPattern = `modules/tool/packages/${toolId}/logo.*`;
+      const parentLogoFiles = [];
+      for await (const file of glob(parentLogoPattern)) {
+        parentLogoFiles.push(file);
+      }
+
+      if (parentLogoFiles.length > 0) {
+        const parentLogo = parentLogoFiles[0];
+        const ext = ('.' + parentLogo.split('.').at(-1)) as string;
+        client.write(`${UploadToolsS3Path}/${toolId}/${childId}/logo`, Bun.file(parentLogo), {
+          type: mimeMap[ext]
+        });
+      }
+    }
   }
 
   // readme

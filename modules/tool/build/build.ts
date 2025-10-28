@@ -1,5 +1,5 @@
 import { ensureDir } from '@/utils/fs';
-import { join, parse } from 'path';
+import { join } from 'path';
 import { autoToolIdPlugin } from './plugin';
 import { cp } from 'fs/promises';
 import { existsSync } from 'fs';
@@ -39,12 +39,14 @@ export async function buildTool(toolDirname: string) {
     await cp(join(toolDir, 'assets'), join(cacheDir, 'assets'), { recursive: true });
   }
 
-  // find and copy logo file
+  // find and copy logo file from parent directory
   const files = await readdir(toolDir);
+  let parentLogoFile: string | null = null;
 
   for (const file of files) {
     if (file.startsWith('logo.')) {
       await cp(join(toolDir, file), join(cacheDir, file));
+      parentLogoFile = file;
     }
   }
 
@@ -58,11 +60,20 @@ export async function buildTool(toolDirname: string) {
     for (const childDir of childDirs) {
       const childPath = join(childrenDir, childDir);
       const files = await readdir(childPath);
+      let childHasLogo = false;
 
+      // Check if child has its own logo
       for (const file of files) {
         if (file.startsWith('logo.')) {
           await cp(join(childPath, file), join(cacheDir, childDir, file));
+          childHasLogo = true;
         }
+      }
+
+      // If child doesn't have logo but parent does, copy parent logo to child
+      if (!childHasLogo && parentLogoFile) {
+        await ensureDir(join(cacheDir, childDir));
+        await cp(join(toolDir, parentLogoFile), join(cacheDir, childDir, parentLogoFile));
       }
     }
   }

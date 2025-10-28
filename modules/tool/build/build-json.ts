@@ -2,6 +2,7 @@ import { basePath, UploadToolsS3Path } from '@tool/constants';
 import type { ToolSetType, ToolType } from '@tool/type';
 import { ToolTagEnum } from '@tool/type/tags';
 import { existsSync, writeFileSync } from 'fs';
+import { glob } from 'fs/promises';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
 import { ToolDetailSchema } from 'sdk/client';
@@ -51,7 +52,8 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           ...childMod,
           toolId,
           toolFilename: filename,
-          icon: childIcon
+          icon: childIcon,
+          parentId: toolsetId
         });
       }
     }
