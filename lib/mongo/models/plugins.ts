@@ -7,7 +7,7 @@ export const pluginTypeEnum = z.enum(['tool']);
 export const PluginZodSchema = z.object({
   type: z.literal('tool'),
   toolId: z.string(),
-  status: z.enum(['active', 'pending', 'inactive'])
+  status: z.enum(['active', 'pending'])
 });
 
 export type MongoPluginSchemaType = z.infer<typeof PluginZodSchema>;
