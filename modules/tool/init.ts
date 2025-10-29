@@ -10,14 +10,23 @@ import { basePath, toolsDir, UploadToolsS3Path } from './constants';
 import { privateS3Server } from '@/s3';
 import { LoadToolsByFilename } from './utils';
 import { stat } from 'fs/promises';
+import { getCachedData } from '@/cache';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
+
+declare global {
+  var isIniting: boolean;
+}
 
 /**
  * Init tools when system starting.
  * Download all pkgs from minio, load sideloaded pkgs
  */
 export async function initTools() {
+  if (global.isIniting) {
+    return systemCache.systemTool.data;
+  }
+  global.isIniting = true;
   await refreshDir(toolsDir);
   // 1. download pkgs into pkg dir
   // 1.1 get tools from mongo
@@ -66,5 +75,6 @@ export async function initTools() {
     }
   }
   addLog.info(`Load Tools: ${toolMap.size}`);
+  isIniting = false;
   return toolMap;
 }
