@@ -11,6 +11,7 @@ import { ToolDetailSchema } from './type/api';
 import { catchError } from '@/utils/catch';
 import { mimeMap } from '@/s3/const';
 import { MongoPlugin } from '@/mongo/models/plugins';
+import { addHours, addMinutes } from 'date-fns';
 
 /**
  * Move files from unzipped structure to dist directory
@@ -227,7 +228,8 @@ export const parsePkg = async (filepath: string, setTTL: boolean = true) => {
       type: 'tool'
     },
     {
-      status: 'pending'
+      status: 'pending',
+      ttl: addMinutes(new Date(), 10)
     },
     {
       upsert: true

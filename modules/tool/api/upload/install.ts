@@ -35,7 +35,9 @@ export default s.route(contract.tool.upload.install, async ({ body }) => {
       },
       type: 'tool'
     },
-    {},
+    {
+      status: 'active'
+    },
     {
       upsert: true
     }

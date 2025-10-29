@@ -36,6 +36,9 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
       {
         $set: {
           status: PluginZodSchema.shape.status.Enum.active
+        },
+        $unset: {
+          ttl: 1
         }
       },
       {
