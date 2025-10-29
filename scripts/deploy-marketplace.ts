@@ -89,7 +89,7 @@ async function main() {
 
   // assets
   for await (const asset of assets) {
-    const toolId = asset.split('/').at(-2) as string;
+    const toolId = asset.split('/').at(-3) as string;
     const assetName = asset.split('/').at(-1) as string;
     client.write(`${UploadToolsS3Path}/${toolId}/assets/${assetName}`, Bun.file(asset), {
       type: mimeMap[assetName.split('.').at(-1) as string]

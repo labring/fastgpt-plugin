@@ -13,7 +13,6 @@ export default defineToolSet({
     en: 'Moji Weather toolset providing weather query functionality'
   },
   toolDescription: 'Moji Weather toolset providing weather query functionality',
-  icon: '/imgs/tools/mojiWeather.svg',
   secretInputConfig: [
     {
       key: 'apiKey',

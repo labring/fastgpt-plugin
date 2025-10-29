@@ -6,7 +6,6 @@ export default defineToolSet({
     'zh-CN': 'Firecrawl',
     en: 'Firecrawl'
   },
-  icon: '',
   tags: [ToolTagEnum.enum.search],
   description: {
     'zh-CN': '使用从任何网站抓取的干净数据为您的AI应用程序提供动力。',
