@@ -10,7 +10,7 @@ import { addLog } from '@/utils/log';
 
 export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }) => {
   addLog.debug(`Deleting tool: ${toolId}`);
-  return mongoSessionRun(async (session) => {
+  const res = await mongoSessionRun(async (session) => {
     const result = await MongoPlugin.findOneAndDelete({ toolId }).session(session);
     if (!result || !result.toolId) {
       return {
@@ -18,7 +18,7 @@ export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }
         body: {
           error: `Tool with toolId ${toolId} not found in MongoDB`
         }
-      };
+      } as const;
     }
 
     await Promise.all([
@@ -28,14 +28,17 @@ export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }
         await publicS3Server.removeFiles(files);
       })()
     ]);
-
-    await refreshVersionKey(SystemCacheKeyEnum.systemTool);
-    addLog.debug(`Deleted tool: ${toolId}`);
-    return {
-      status: 200,
-      body: {
-        message: 'Tool deleted successfully'
-      }
-    };
   });
+
+  await refreshVersionKey(SystemCacheKeyEnum.systemTool);
+
+  if (res) return res;
+  addLog.debug(`Deleted tool: ${toolId}`);
+
+  return {
+    status: 200,
+    body: {
+      message: 'Tool deleted successfully'
+    }
+  };
 });

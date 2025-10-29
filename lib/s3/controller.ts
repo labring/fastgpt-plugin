@@ -16,6 +16,7 @@ import {
 import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import { ensureDir, removeFile } from '@/utils/fs';
+import { MongoS3TTL } from './ttl/schema';
 
 export class S3Service {
   private client: Minio.Client;
@@ -336,6 +337,12 @@ export class S3Service {
           return res.postURL;
         }
       })();
+
+      await MongoS3TTL.create({
+        bucketName: this.config.bucket,
+        expiredTime: new Date(Date.now() + 10 * 60 * 1000),
+        minioKey: objectName
+      });
       return {
         postURL,
         formData: res.formData,

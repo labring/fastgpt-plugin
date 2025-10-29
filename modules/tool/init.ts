@@ -6,7 +6,7 @@ import { isProd } from '@/constants';
 import { MongoPlugin } from '@/mongo/models/plugins';
 import { refreshDir } from '@/utils/fs';
 import { addLog } from '@/utils/log';
-import { basePath, toolsDir, tempDir, tempToolsDir, UploadToolsS3Path } from './constants';
+import { basePath, toolsDir, UploadToolsS3Path } from './constants';
 import { privateS3Server } from '@/s3';
 import { LoadToolsByFilename } from './utils';
 import { stat } from 'fs/promises';
@@ -18,7 +18,7 @@ const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 
  * Download all pkgs from minio, load sideloaded pkgs
  */
 export async function initTools() {
-  await Promise.all([refreshDir(toolsDir), refreshDir(tempDir), refreshDir(tempToolsDir)]);
+  await refreshDir(toolsDir);
   // 1. download pkgs into pkg dir
   // 1.1 get tools from mongo
   const toolsInMongo = await MongoPlugin.find({

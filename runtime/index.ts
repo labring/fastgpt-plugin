@@ -4,11 +4,12 @@ import { isProd } from '@/constants';
 import { initOpenAPI } from '@/contract/openapi';
 import { connectionMongo, connectMongo, MONGO_URL } from '@/mongo';
 import { initRouter } from '@/router';
+import { ensureDir, refreshDir } from '@/utils/fs';
 import { addLog } from '@/utils/log';
 import { setupProxy } from '@/utils/setupProxy';
 import { connectSignoz } from '@/utils/signoz';
 import { initModels } from '@model/init';
-import { basePath } from '@tool/constants';
+import { basePath, tempDir, tempToolsDir, toolsDir } from '@tool/constants';
 import { initTools } from '@tool/init';
 import { initWorkflowTemplates } from '@workflow/init';
 import express from 'express';
@@ -42,6 +43,7 @@ try {
 }
 
 // Modules
+await Promise.all([refreshDir(toolsDir), refreshDir(tempDir), ensureDir(tempToolsDir)]);
 await Promise.all([initTools(), initModels(), initWorkflowTemplates()]);
 await refreshVersionKey(SystemCacheKeyEnum.systemTool);
 

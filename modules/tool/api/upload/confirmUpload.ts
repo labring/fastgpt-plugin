@@ -26,19 +26,23 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   }
 
   await mongoSessionRun(async (session) => {
-    await MongoPlugin.updateMany(
-      {
-        toolId: {
-          $in: toolIds
-        },
-        type: pluginTypeEnum.Enum.tool
-      },
-      {},
+    const allToolsInstalled = (
+      await MongoPlugin.find({ type: pluginTypeEnum.Enum.tool }).lean()
+    ).map((tool) => tool.toolId);
+    // create all that not exists
+    await MongoPlugin.create(
+      toolIds
+        .filter((toolId) => !allToolsInstalled.includes(toolId))
+        .map((toolId) => ({
+          toolId,
+          type: pluginTypeEnum.Enum.tool
+        })),
       {
         session,
-        upsert: true
+        ordered: true
       }
     );
+
     // object move
     for await (const toolId of toolIds) {
       if (toolId) {

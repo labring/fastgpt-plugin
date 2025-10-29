@@ -170,8 +170,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon,
-      toolFilename: filename,
-      versionList: []
+      toolFilename: filename
     });
   }
 
