@@ -1,23 +1,22 @@
 import { s } from '@/router/init';
 import { contract } from '@/contract';
-import { MongoS3TTL } from '@/s3/ttl/schema';
 import { UploadToolsS3Path } from '@tool/constants';
-import { MongoPlugin, pluginTypeEnum, PluginZodSchema } from '@/mongo/models/plugins';
+import { MongoPlugin, pluginTypeEnum } from '@/mongo/models/plugins';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { mongoSessionRun } from '@/mongo/utils';
+import { addLog } from '@/utils/log';
+import { privateS3Server, publicS3Server } from '@/s3';
 
 export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   const { toolIds } = body;
+  addLog.debug(`Confirming uploaded tools: ${toolIds}`);
+  const pendingTools = await privateS3Server.getFiles(`${UploadToolsS3Path}/temp`);
+  const pendingToolIds = pendingTools
+    .map((item) => item.split('/').at(-1)?.split('.').at(0))
+    .filter((item): item is string => !!item);
 
-  const tools = await MongoPlugin.find({
-    toolId: {
-      $in: toolIds
-    },
-    type: pluginTypeEnum.Enum.tool
-  });
-
-  if (tools.length !== toolIds.length) {
+  if (pendingToolIds.some((item) => !toolIds.includes(item))) {
     return {
       status: 400,
       body: {
@@ -31,33 +30,33 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
       {
         toolId: {
           $in: toolIds
-        }
-      },
-      {
-        $set: {
-          status: PluginZodSchema.shape.status.Enum.active
         },
-        $unset: {
-          ttl: 1
-        }
+        type: pluginTypeEnum.Enum.tool
       },
+      {},
       {
-        session
+        session,
+        upsert: true
       }
     );
-    await MongoS3TTL.deleteMany(
-      {
-        minioKey: {
-          $regex: toolIds.map((toolId) => `^${UploadToolsS3Path}/${toolId}`).join('|')
-        }
-      },
-      {
-        session
+    // object move
+    for await (const toolId of toolIds) {
+      if (toolId) {
+        await publicS3Server.moveFiles(
+          `${UploadToolsS3Path}/temp/${toolId}`,
+          `${UploadToolsS3Path}/${toolId}`
+        );
+        await privateS3Server.moveFile(
+          `${UploadToolsS3Path}/temp/${toolId}.js`,
+          `${UploadToolsS3Path}/${toolId}.js`
+        );
       }
-    );
+    }
   });
 
   await refreshVersionKey(SystemCacheKeyEnum.systemTool);
+
+  addLog.debug(`Confirmed uploaded tools: ${toolIds}`);
 
   return {
     status: 200,

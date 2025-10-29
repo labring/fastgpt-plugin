@@ -391,4 +391,98 @@ export class S3Service {
       return undefined;
     }
   }
+
+  public async moveFiles(srcPath: string, distPath: string): Promise<void> {
+    try {
+      // Normalize paths to ensure they end with '/'
+      const normalizedSrcPath = srcPath.endsWith('/') ? srcPath : `${srcPath}/`;
+      const normalizedDistPath = distPath.endsWith('/') ? distPath : `${distPath}/`;
+
+      addLog.info(`Starting move operation from ${normalizedSrcPath} to ${normalizedDistPath}`);
+
+      // Get all objects in source directory
+      const sourceObjects = await this.getFiles(normalizedSrcPath);
+
+      if (sourceObjects.length === 0) {
+        addLog.warn(`No objects found in source directory: ${normalizedSrcPath}`);
+        return;
+      }
+
+      addLog.info(`Found ${sourceObjects.length} objects to move`);
+
+      // Prepare copy operations
+      const copyPromises = sourceObjects.map(async (sourceObjectName) => {
+        // Extract the relative path from source directory
+        const relativePath = sourceObjectName.replace(normalizedSrcPath, '');
+        const destinationObjectName = `${normalizedDistPath}${relativePath}`;
+
+        // Copy object to destination
+        await this.client.copyObject(
+          this.config.bucket,
+          destinationObjectName,
+          `${this.config.bucket}/${sourceObjectName}`
+        );
+
+        addLog.debug(`Copied: ${sourceObjectName} -> ${destinationObjectName}`);
+        return { sourceObjectName, destinationObjectName };
+      });
+
+      // Execute all copy operations
+      const copyResults = await Promise.all(copyPromises);
+      addLog.info(`Successfully copied ${copyResults.length} objects`);
+
+      // Delete source objects after successful copy
+      const sourceObjectNames = copyResults.map((result) => result.sourceObjectName);
+      await this.removeFiles(sourceObjectNames);
+
+      addLog.info(
+        `Successfully moved ${sourceObjectNames.length} objects from ${normalizedSrcPath} to ${normalizedDistPath}`
+      );
+    } catch (error) {
+      const errorMsg = getErrText(error);
+      addLog.error(`Failed to move files from ${srcPath} to ${distPath}: ${errorMsg}`);
+      return Promise.reject(error);
+    }
+  }
+
+  public async moveFile(srcObjectName: string, distObjectName: string): Promise<void> {
+    try {
+      // Normalize object names (remove leading slashes)
+      const normalizedSrcName = srcObjectName.startsWith('/')
+        ? srcObjectName.slice(1)
+        : srcObjectName;
+      const normalizedDistName = distObjectName.startsWith('/')
+        ? distObjectName.slice(1)
+        : distObjectName;
+
+      addLog.info(
+        `Starting single file move operation from ${normalizedSrcName} to ${normalizedDistName}`
+      );
+
+      // Check if source object exists
+      try {
+        await this.client.statObject(this.config.bucket, normalizedSrcName);
+      } catch (error) {
+        return Promise.reject(new Error(`Source object not found: ${normalizedSrcName}`));
+      }
+
+      // Copy object to destination
+      await this.client.copyObject(
+        this.config.bucket,
+        normalizedDistName,
+        `${this.config.bucket}/${normalizedSrcName}`
+      );
+
+      addLog.debug(`Copied: ${normalizedSrcName} -> ${normalizedDistName}`);
+
+      // Delete source object after successful copy
+      await this.client.removeObject(this.config.bucket, normalizedSrcName);
+
+      addLog.info(`Successfully moved file from ${normalizedSrcName} to ${normalizedDistName}`);
+    } catch (error) {
+      const errorMsg = getErrText(error);
+      addLog.error(`Failed to move file from ${srcObjectName} to ${distObjectName}: ${errorMsg}`);
+      return Promise.reject(error);
+    }
+  }
 }

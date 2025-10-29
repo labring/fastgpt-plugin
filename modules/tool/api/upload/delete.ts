@@ -6,8 +6,10 @@ import { privateS3Server, publicS3Server } from '@/s3';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { UploadToolsS3Path } from '@tool/constants';
+import { addLog } from '@/utils/log';
 
 export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }) => {
+  addLog.debug(`Deleting tool: ${toolId}`);
   return mongoSessionRun(async (session) => {
     const result = await MongoPlugin.findOneAndDelete({ toolId }).session(session);
     if (!result || !result.toolId) {
@@ -28,6 +30,7 @@ export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }
     ]);
 
     await refreshVersionKey(SystemCacheKeyEnum.systemTool);
+    addLog.debug(`Deleted tool: ${toolId}`);
     return {
       status: 200,
       body: {

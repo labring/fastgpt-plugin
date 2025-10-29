@@ -9,10 +9,12 @@ import { MongoPlugin } from '@/mongo/models/plugins';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { ensureDir } from '@/utils/fs';
+import { addLog } from '@/utils/log';
 
 export default s.route(contract.tool.upload.install, async ({ body }) => {
+  addLog.debug(`Installing tools: ${body.urls}`);
+  await ensureDir(tempPkgDir);
   const downloadFunctions = body.urls.map((url) => async () => {
-    await ensureDir(tempPkgDir);
     const res = await fetch(url);
     const buffer = await res.arrayBuffer();
     const pkgSavePath = join(tempPkgDir, url.split('/').at(-1) as string);
@@ -35,15 +37,14 @@ export default s.route(contract.tool.upload.install, async ({ body }) => {
       },
       type: 'tool'
     },
-    {
-      status: 'active'
-    },
+    {},
     {
       upsert: true
     }
   );
 
   await refreshVersionKey(SystemCacheKeyEnum.systemTool);
+  addLog.debug(`Success installed tools: ${toolIds}`);
 
   return {
     status: 200,

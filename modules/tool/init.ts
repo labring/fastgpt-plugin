@@ -22,8 +22,7 @@ export async function initTools() {
   // 1. download pkgs into pkg dir
   // 1.1 get tools from mongo
   const toolsInMongo = await MongoPlugin.find({
-    type: 'tool',
-    status: 'active'
+    type: 'tool'
   }).lean();
   // 1.2 download it to temp dir
   await Promise.all(

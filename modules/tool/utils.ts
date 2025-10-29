@@ -10,8 +10,6 @@ import { ToolTagEnum } from './type/tags';
 import { ToolDetailSchema } from './type/api';
 import { catchError } from '@/utils/catch';
 import { mimeMap } from '@/s3/const';
-import { MongoPlugin } from '@/mongo/models/plugins';
-import { addHours, addMinutes } from 'date-fns';
 
 /**
  * Move files from unzipped structure to dist directory
@@ -21,7 +19,6 @@ import { addHours, addMinutes } from 'date-fns';
  * - all logo.* including subdirs
  * - assets dir
  */
-
 const parseMod = async ({
   rootMod,
   filename
@@ -91,64 +88,6 @@ const parseMod = async ({
   return tools;
 };
 
-// const moveAssetsFiles = async (toolRootPath: string, distAssetsPath: string) => {
-//   await ensureDir(distAssetsPath);
-//   const files = await readdir(toolRootPath);
-//   const logos = [];
-//   for (const file of files) {
-//     if (file.startsWith('logo.') && (await stat(join(toolRootPath, file))).isFile()) {
-//       logos.push(file);
-//       continue;
-//     }
-
-//     if ((await stat(join(toolRootPath, file))).isDirectory()) {
-//       const subFiles = await readdir(join(toolRootPath, file));
-//       const subLogos = await Promise.all(
-//         subFiles.map(async (subFile) => {
-//           if (
-//             subFile.startsWith('logo.') &&
-//             (await stat(join(toolRootPath, file, subFile))).isFile()
-//           ) {
-//             return join(file, subFile);
-//           }
-//           return null;
-//         })
-//       );
-//       logos.push(...subLogos.filter((logo): logo is string => logo !== null));
-//     }
-//   }
-
-//   // move logos
-//   await Promise.all(
-//     logos.map(async (logo) => {
-//       const src = join(toolRootPath, logo);
-//       const dest = join(distAssetsPath, logo);
-//       await moveDir(src, dest);
-//     })
-//   );
-
-//   // move assets dir
-//   if (existsSync(join(toolRootPath, 'assets'))) {
-//     await rename(join(toolRootPath, 'assets'), join(distAssetsPath, 'assets'));
-//   }
-
-//   return logos;
-// };
-
-// const rewriteMDImagePath = (content: string, pathPrefix: string) => {
-//   // 1. all relative path should concat with a pathPrefix
-//   // 2. all URL should not be changed.
-//   const regex = /(!\[.*?\]\()([^)]+)(\))/g;
-//   return content.replace(regex, (match, p1, p2, p3) => {
-//     // If the path is already an absolute URL or an absolute path, don't change it.
-//     if (p2.startsWith('http://') || p2.startsWith('https://') || p2.startsWith('/')) {
-//       return match;
-//     }
-//     // Otherwise, prepend the pathPrefix
-//     return p1 + pathPrefix + p2 + p3;
-//   });
-// };
-
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]> => {
   const toolTempRootPath = join(toolsDir, filename);
@@ -162,7 +101,7 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
   return parseMod({ rootMod, filename });
 };
 
-export const parsePkg = async (filepath: string, setTTL: boolean = true) => {
+export const parsePkg = async (filepath: string, temp: boolean = true) => {
   const filename = filepath.split('/').pop() as string;
   const tempDir = join(tempToolsDir, filename);
   const [, err] = await catchError(() => unpkg(filepath, tempDir));
@@ -183,15 +122,18 @@ export const parsePkg = async (filepath: string, setTTL: boolean = true) => {
       if ((await stat(filepath)).isDirectory() || file === 'index.js') return;
 
       const path = join(tempDir, file);
+      const prefix = temp
+        ? `${UploadToolsS3Path}/temp/${mod.toolId}`
+        : `${UploadToolsS3Path}/${mod.toolId}`;
       const { objectName } = await publicS3Server.uploadFileAdvanced({
         path,
         defaultFilename: file.split('.').slice(0, -1).join('.'), // remove the extention name
-        prefix: `${UploadToolsS3Path}/${mod.toolId}`,
+        prefix,
         keepRawFilename: true,
         contentType: mimeMap[parse(path).ext]
       });
 
-      if (setTTL) {
+      if (temp) {
         await MongoS3TTL.create({
           bucketName: publicS3Server.getBucketName(),
           expiredTime: Date.now() + 3600000, // 1 hour
@@ -205,36 +147,24 @@ export const parsePkg = async (filepath: string, setTTL: boolean = true) => {
   {
     const { objectName } = await privateS3Server.uploadFileAdvanced({
       path: join(tempDir, 'index.js'),
-      prefix: UploadToolsS3Path,
+      prefix: temp ? `${UploadToolsS3Path}/temp` : UploadToolsS3Path,
       defaultFilename: mod.toolId + '.js',
       keepRawFilename: true
     });
 
-    await MongoS3TTL.create({
-      bucketName: privateS3Server.getBucketName(),
-      expiredTime: Date.now() + 3600000, // 1 hour
-      minioKey: objectName
-    });
+    if (temp)
+      await MongoS3TTL.create({
+        bucketName: privateS3Server.getBucketName(),
+        expiredTime: Date.now() + 3600000, // 1 hour
+        minioKey: objectName
+      });
   }
 
   const tools = await parseMod({
     rootMod: mod,
     filename: join(tempDir, 'index.js')
   });
-  const toolId = tools.find((tool) => !tool.parentId)?.toolId as string;
-  await MongoPlugin.updateOne(
-    {
-      toolId,
-      type: 'tool'
-    },
-    {
-      status: 'pending',
-      ttl: addMinutes(new Date(), 10)
-    },
-    {
-      upsert: true
-    }
-  );
+
   return tools.map((item) => ToolDetailSchema.parse(item));
 };
 
