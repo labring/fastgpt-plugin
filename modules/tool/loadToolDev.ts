@@ -56,7 +56,8 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         await publicS3Server.uploadFileAdvanced({
           path: readmeFile,
           prefix: UploadToolsS3Path + '/' + filename,
-          keepRawFilename: true
+          keepRawFilename: true,
+          contentType: 'text/markdown'
         });
         addLog.debug(
           `Uploaded README.md: ${readmeFile} to ${UploadToolsS3Path}/${filename}/README.md`
@@ -100,7 +101,6 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         try {
           // Find logo files using glob pattern for child tool
           const childLogoFiles = await glob(`${childPath}/logo.*`);
-          const childReadmeFile = join(childPath, 'README.md');
 
           // Upload child logo files if found
           for (const logoPath of childLogoFiles) {
@@ -111,29 +111,14 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
                 path: logoPath,
                 defaultFilename: logoNameWithoutExt,
                 prefix: UploadToolsS3Path + '/' + toolsetId + '/' + file,
-                keepRawFilename: true
+                keepRawFilename: true,
+                contentType: mimeMap['.' + logoFilename.split('.').pop()!]
               });
               addLog.debug(
                 `Uploaded child logo file: ${logoPath} to ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
               );
             } catch (error) {
               addLog.warn(`Failed to upload child logo file ${logoPath}: ${error}`);
-            }
-          }
-
-          // Upload child README.md if it exists
-          if (existsSync(childReadmeFile)) {
-            try {
-              await publicS3Server.uploadFileAdvanced({
-                path: childReadmeFile,
-                prefix: UploadToolsS3Path + '/' + toolsetId + '/' + file,
-                keepRawFilename: true
-              });
-              addLog.info(
-                `Uploaded child README.md: ${childReadmeFile} to ${UploadToolsS3Path}/${toolsetId}/${file}/README.md`
-              );
-            } catch (error) {
-              addLog.warn(`Failed to upload child README.md ${childReadmeFile}: ${error}`);
             }
           }
         } catch (error) {
