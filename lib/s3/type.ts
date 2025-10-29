@@ -4,7 +4,9 @@ export const PresignedUrlInputSchema = z.object({
   filepath: z.string(),
   filename: z.string(),
   contentType: z.string().optional(),
-  metadata: z.record(z.string()).optional()
+  metadata: z.record(z.string()).optional(),
+  maxSize: z.number().optional().describe('B'),
+  fileExpireMins: z.number().optional()
 });
 
 export type PresignedUrlInputType = z.infer<typeof PresignedUrlInputSchema>;
@@ -29,7 +31,8 @@ export const FileInputSchema = z
     defaultFilename: z.string().optional(),
     prefix: z.string().optional(),
     keepRawFilename: z.boolean().optional(),
-    contentType: z.string().optional()
+    contentType: z.string().optional(),
+    expireMins: z.number().optional()
   })
   .refine(
     (data) => {

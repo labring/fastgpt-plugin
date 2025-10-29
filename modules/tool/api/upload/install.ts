@@ -5,15 +5,13 @@ import { join } from 'path';
 import { batch } from '@/utils/parallel';
 import { parsePkg } from '@tool/utils';
 import { writeFile } from 'fs/promises';
-import { MongoPlugin } from '@/mongo/models/plugins';
+import { MongoPlugin, pluginTypeEnum } from '@/mongo/models/plugins';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
-import { ensureDir } from '@/utils/fs';
 import { addLog } from '@/utils/log';
 
 export default s.route(contract.tool.upload.install, async ({ body }) => {
   addLog.debug(`Installing tools: ${body.urls}`);
-  await ensureDir(tempPkgDir);
   const downloadFunctions = body.urls.map((url) => async () => {
     const res = await fetch(url);
     const buffer = await res.arrayBuffer();
@@ -30,16 +28,19 @@ export default s.route(contract.tool.upload.install, async ({ body }) => {
     <T>(item: T): item is NonNullable<T> => !!item
   );
 
-  await MongoPlugin.updateMany(
+  const allToolsInstalled = (await MongoPlugin.find({ type: pluginTypeEnum.Enum.tool }).lean()).map(
+    (tool) => tool.toolId
+  );
+  // create all that not exists
+  await MongoPlugin.create(
+    toolIds
+      .filter((toolId) => !allToolsInstalled.includes(toolId))
+      .map((toolId) => ({
+        toolId,
+        type: pluginTypeEnum.Enum.tool
+      })),
     {
-      toolId: {
-        $in: toolIds
-      },
-      type: 'tool'
-    },
-    {},
-    {
-      upsert: true
+      ordered: true
     }
   );
 

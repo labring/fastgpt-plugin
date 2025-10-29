@@ -2,7 +2,7 @@ import { I18nStringStrictSchema } from '@/type/i18n';
 import { z } from 'zod';
 import { ToolSchema, VersionListItemSchema } from './tool';
 
-export const ToolTypeListSchema = z.array(
+export const ToolTagListSchema = z.array(
   z.object({
     type: z.string(),
     name: I18nStringStrictSchema

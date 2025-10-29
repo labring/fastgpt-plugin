@@ -10,6 +10,7 @@ import { ToolTagEnum } from './type/tags';
 import { ToolDetailSchema } from './type/api';
 import { catchError } from '@/utils/catch';
 import { mimeMap } from '@/s3/const';
+import { rm } from 'fs/promises';
 
 /**
  * Move files from unzipped structure to dist directory
@@ -55,6 +56,7 @@ const parseMod = async ({
 
       const childIcon =
         child.icon ||
+        rootMod.icon ||
         (await publicS3Server.generateExternalUrl(
           `${UploadToolsS3Path}/${toolsetId}/${childToolId}/logo`
         ));
@@ -71,6 +73,7 @@ const parseMod = async ({
       });
     }
   } else {
+    // is not toolset
     const toolId = rootMod.toolId;
 
     const icon =
@@ -80,7 +83,7 @@ const parseMod = async ({
     tools.push({
       ...rootMod,
       tags: rootMod.tags || [ToolTagEnum.enum.tools],
-      icon: icon ?? '',
+      icon,
       toolId,
       toolFilename: filename
     });
@@ -90,12 +93,11 @@ const parseMod = async ({
 
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]> => {
-  const toolTempRootPath = join(toolsDir, filename);
-
-  const rootMod = (await import(toolTempRootPath)).default as ToolType | ToolSetType;
+  const rootMod = (await import(join(toolsDir, filename))).default as ToolType | ToolSetType;
 
   if (!rootMod.toolId) {
     addLog.error(`Can not parse toolId, filename: ${filename}`);
+    return [];
   }
 
   return parseMod({ rootMod, filename });
@@ -125,46 +127,40 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
       const prefix = temp
         ? `${UploadToolsS3Path}/temp/${mod.toolId}`
         : `${UploadToolsS3Path}/${mod.toolId}`;
-      const { objectName } = await publicS3Server.uploadFileAdvanced({
+      await publicS3Server.uploadFileAdvanced({
         path,
         defaultFilename: file.split('.').slice(0, -1).join('.'), // remove the extention name
         prefix,
         keepRawFilename: true,
-        contentType: mimeMap[parse(path).ext]
+        contentType: mimeMap[parse(path).ext],
+        ...(temp
+          ? {
+              expireMins: 60
+            }
+          : {})
       });
-
-      if (temp) {
-        await MongoS3TTL.create({
-          bucketName: publicS3Server.getBucketName(),
-          expiredTime: Date.now() + 3600000, // 1 hour
-          minioKey: objectName
-        });
-      }
     })
   );
 
   // 3. upload index.js to private bucket
-  {
-    const { objectName } = await privateS3Server.uploadFileAdvanced({
-      path: join(tempDir, 'index.js'),
-      prefix: temp ? `${UploadToolsS3Path}/temp` : UploadToolsS3Path,
-      defaultFilename: mod.toolId + '.js',
-      keepRawFilename: true
-    });
-
-    if (temp)
-      await MongoS3TTL.create({
-        bucketName: privateS3Server.getBucketName(),
-        expiredTime: Date.now() + 3600000, // 1 hour
-        minioKey: objectName
-      });
-  }
+  await privateS3Server.uploadFileAdvanced({
+    path: join(tempDir, 'index.js'),
+    prefix: temp ? `${UploadToolsS3Path}/temp` : UploadToolsS3Path,
+    defaultFilename: mod.toolId + '.js',
+    keepRawFilename: true,
+    ...(temp
+      ? {
+          expireMins: 60
+        }
+      : {})
+  });
 
   const tools = await parseMod({
     rootMod: mod,
     filename: join(tempDir, 'index.js')
   });
 
+  await Promise.all([rm(tempDir, { recursive: true }), rm(filepath)]);
   return tools.map((item) => ToolDetailSchema.parse(item));
 };
 

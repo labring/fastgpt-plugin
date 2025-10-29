@@ -1,4 +1,4 @@
-import { refreshVersionKey } from '@/cache';
+import { getCachedData, refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { isProd } from '@/constants';
 import { initOpenAPI } from '@/contract/openapi';
@@ -43,9 +43,16 @@ try {
 }
 
 // Modules
-await Promise.all([refreshDir(toolsDir), refreshDir(tempDir), ensureDir(tempToolsDir)]);
-await Promise.all([initTools(), initModels(), initWorkflowTemplates()]);
+await refreshDir(tempDir); // upload pkg files, unpkg, temp dir
+await ensureDir(tempToolsDir); // ensure the unpkged tools temp dir
+
 await refreshVersionKey(SystemCacheKeyEnum.systemTool);
+
+await Promise.all([
+  getCachedData(SystemCacheKeyEnum.systemTool), // init system tool
+  initModels(),
+  initWorkflowTemplates()
+]);
 
 const PORT = parseInt(process.env.PORT || '3000');
 const server = app.listen(PORT, (error?: Error) => {

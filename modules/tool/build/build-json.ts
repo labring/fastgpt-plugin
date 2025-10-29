@@ -46,7 +46,9 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         const toolId = childMod.toolId || `${toolsetId}/${file}`;
 
         const childIcon =
-          childMod.icon ?? `${S3BasePath}${UploadToolsS3Path}/${toolsetId}/${file}/logo`;
+          childMod.icon ??
+          rootMod.icon ??
+          `${S3BasePath}${UploadToolsS3Path}/${toolsetId}/${file}/logo`;
         children.push({
           ...childMod,
           toolId,

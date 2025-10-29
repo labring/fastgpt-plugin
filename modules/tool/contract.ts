@@ -1,6 +1,6 @@
 import z from 'zod';
 import { c } from '@/contract/init';
-import { ToolDetailSchema, type ToolDetailType, ToolTypeListSchema } from './type/api';
+import { ToolDetailSchema, type ToolDetailType, ToolTagListSchema } from './type/api';
 
 export const toolUploadContract = c.router(
   {
@@ -101,12 +101,12 @@ export const toolContract = c.router(
         200: ToolDetailSchema
       }
     },
-    getType: {
-      path: '/getType',
+    getTags: {
+      path: '/getTags',
       method: 'GET',
       description: 'Get tool type',
       responses: {
-        200: ToolTypeListSchema
+        200: ToolTagListSchema
       }
     },
     upload: toolUploadContract

@@ -17,6 +17,8 @@ import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import { ensureDir, removeFile } from '@/utils/fs';
 import { MongoS3TTL } from './ttl/schema';
+import { PluginBaseS3Prefix } from '@tool/constants';
+import { addMinutes } from 'date-fns';
 
 export class S3Service {
   private client: Minio.Client;
@@ -242,8 +244,16 @@ export class S3Service {
       }
 
       // const fileId = this.generateFileId();
-      const prefix = (input.prefix?.endsWith('/') ? input.prefix : input.prefix + '/') ?? '';
+      const prefix =
+        (input.prefix?.endsWith('/') ? input.prefix : input.prefix + '/') ?? PluginBaseS3Prefix;
       const objectName = `${prefix}${input.keepRawFilename ? '' : this.generateFileId() + '-'}${originalFilename}`;
+      if (input.expireMins) {
+        await MongoS3TTL.create({
+          bucketName: this.config.bucket,
+          expiredTime: addMinutes(new Date(), input.expireMins),
+          minioKey: objectName
+        });
+      }
       const uploadTime = new Date();
 
       const contentType = inferContentType(originalFilename);
@@ -303,10 +313,20 @@ export class S3Service {
     filepath,
     contentType,
     metadata,
-    filename
+    filename,
+    maxSize,
+    fileExpireMins
   }: PresignedUrlInputType) => {
     const name = this.generateFileId();
     const objectName = `${filepath}/${name}`;
+
+    if (fileExpireMins) {
+      await MongoS3TTL.create({
+        bucketName: this.config.bucket,
+        objectName,
+        expiredTime: addMinutes(new Date(), fileExpireMins)
+      });
+    }
 
     const client = this.externalClient ?? this.client;
 
@@ -317,8 +337,9 @@ export class S3Service {
       if (contentType) {
         policy.setContentType(contentType);
       }
-      if (this.config.maxFileSize) {
-        policy.setContentLengthRange(1, this.config.maxFileSize);
+      const _maxSize = maxSize || this.config.maxFileSize;
+      if (_maxSize) {
+        policy.setContentLengthRange(1, _maxSize);
       }
       policy.setExpires(new Date(Date.now() + 10 * 60 * 1000)); // 10 mins
 

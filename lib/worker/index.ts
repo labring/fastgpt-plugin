@@ -1,11 +1,10 @@
 import { Worker } from 'worker_threads';
 import { getTool } from 'modules/tool/controller';
 import { addLog } from '@/utils/log';
-import { isProd } from '@/constants';
 import type { Main2WorkerMessageType, Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
 import { publicS3Server } from '@/s3';
-import { devToolIds } from '@tool/constants';
+import { basePath, devToolIds } from '@tool/constants';
 import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/req';
 
 type WorkerQueueItem = {
@@ -174,7 +173,7 @@ export async function dispatchWithNewWorker(data: {
   }
 
   const isBun = typeof Bun !== 'undefined';
-  const workerPath = isProd ? './dist/worker.js' : `${process.cwd()}/dist/worker.js`;
+  const workerPath = `${basePath}/dist/worker.js`;
   const worker = new Worker(workerPath, {
     env: {
       NODE_ENV: process.env.NODE_ENV,
@@ -235,6 +234,17 @@ export async function dispatchWithNewWorker(data: {
       reject(err);
       worker.terminate();
     });
+
+    console.log(
+      {
+        toolId,
+        inputs: workerData.inputs,
+        systemVar: workerData.systemVar,
+        filename: tool.toolFilename,
+        dev: devToolIds.has(toolId)
+      },
+      '==============-=-=-=-=-=-'
+    );
 
     worker.postMessage({
       type: 'runTool',

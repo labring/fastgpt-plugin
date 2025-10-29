@@ -3,6 +3,7 @@ import type { Main2WorkerMessageType } from './type';
 import { setupProxy } from '../utils/setupProxy';
 import { LoadToolsByFilename } from '@tool/utils';
 import { getErrText } from '@tool/utils/err';
+import { LoadToolsDev } from '@tool/loadToolDev';
 
 setupProxy();
 
@@ -18,7 +19,9 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
   const { type, data } = params;
   switch (type) {
     case 'runTool': {
-      const tools = await LoadToolsByFilename(data.filename);
+      const tools = data.dev
+        ? await LoadToolsDev(data.filename)
+        : await LoadToolsByFilename(data.filename);
 
       const tool = tools.find((tool) => tool.toolId === data.toolId);
 

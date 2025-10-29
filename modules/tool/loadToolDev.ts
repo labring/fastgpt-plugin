@@ -9,6 +9,7 @@ import type { ToolType, ToolSetType } from './type';
 import { ToolTagEnum } from './type/tags';
 import { publicS3Server } from '@/s3';
 import { mimeMap } from '@/s3/const';
+import { file } from 'bun';
 
 /**
  * Load Tools in dev mode. Only avaliable in dev mode
@@ -85,7 +86,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon: parentIcon,
-      toolFilename: toolPath,
+      toolFilename: filename,
       cb: () => Promise.resolve({}),
       versionList: []
     });
@@ -162,7 +163,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         children.push({
           ...childMod,
           toolId,
-          toolFilename: toolPath,
+          toolFilename: filename,
           icon: childIcon,
           parentId: toolsetId
         });
@@ -181,7 +182,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon,
-      toolFilename: toolPath
+      toolFilename: filename
     });
   }
 

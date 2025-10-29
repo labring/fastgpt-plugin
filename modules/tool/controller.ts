@@ -1,6 +1,6 @@
 import { ToolTagEnum, ToolTagsNameMap } from './type/tags';
 import z from 'zod';
-import { ToolTypeListSchema } from './type/api';
+import { ToolTagListSchema } from './type/api';
 import type { ToolType } from './type';
 import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
@@ -18,7 +18,7 @@ export async function getTool(toolId: string): Promise<ToolType | undefined> {
   return tools.get(toolId);
 }
 
-export function getToolType(): z.infer<typeof ToolTypeListSchema> {
+export function getToolTags(): z.infer<typeof ToolTagListSchema> {
   return Object.entries(ToolTagsNameMap).map(([type, name]) => ({
     type: type as z.infer<typeof ToolTagEnum>,
     name
