@@ -42,7 +42,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           keepRawFilename: true,
           contentType: mimeMap[parse(logoPath).ext]
         });
-        addLog.info(
+        addLog.debug(
           `Uploaded logo file: ${logoPath} to ${UploadToolsS3Path}/${filename}/${logoNameWithoutExt}`
         );
       } catch (error) {
@@ -58,7 +58,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           prefix: UploadToolsS3Path + '/' + filename,
           keepRawFilename: true
         });
-        addLog.info(
+        addLog.debug(
           `Uploaded README.md: ${readmeFile} to ${UploadToolsS3Path}/${filename}/README.md`
         );
       } catch (error) {
@@ -84,7 +84,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon: parentIcon,
-      toolFilename: filename,
+      toolFilename: toolPath,
       cb: () => Promise.resolve({}),
       versionList: []
     });
@@ -113,7 +113,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
                 prefix: UploadToolsS3Path + '/' + toolsetId + '/' + file,
                 keepRawFilename: true
               });
-              addLog.info(
+              addLog.debug(
                 `Uploaded child logo file: ${logoPath} to ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
               );
             } catch (error) {
@@ -151,7 +151,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         children.push({
           ...childMod,
           toolId,
-          toolFilename: filename,
+          toolFilename: toolPath,
           icon: childIcon,
           parentId: toolsetId
         });
@@ -170,7 +170,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon,
-      toolFilename: filename
+      toolFilename: toolPath
     });
   }
 
