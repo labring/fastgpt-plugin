@@ -145,6 +145,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
 
         const childIcon =
           childMod.icon ??
+          rootMod.icon ??
           (await publicS3Server.generateExternalUrl(
             `${UploadToolsS3Path}/${toolsetId}/${file}/logo`
           ));
