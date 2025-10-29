@@ -56,9 +56,7 @@ const parseMod = async ({
       const childIcon =
         child.icon ||
         rootMod.icon ||
-        (await publicS3Server.generateExternalUrl(
-          `${UploadToolsS3Path}/${toolsetId}/${childToolId}/logo`
-        ));
+        (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${childToolId}/logo`));
 
       tools.push({
         ...child,
