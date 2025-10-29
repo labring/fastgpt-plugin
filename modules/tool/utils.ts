@@ -1,5 +1,4 @@
 import { privateS3Server, publicS3Server } from '@/s3';
-import { MongoS3TTL } from '@/s3/ttl/schema';
 import { addLog } from '@/utils/log';
 import { unpkg } from '@/utils/zip';
 import { readdir, stat } from 'fs/promises';

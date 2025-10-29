@@ -323,7 +323,7 @@ export class S3Service {
     if (fileExpireMins) {
       await MongoS3TTL.create({
         bucketName: this.config.bucket,
-        objectName,
+        minioKey: objectName,
         expiredTime: addMinutes(new Date(), fileExpireMins)
       });
     }
