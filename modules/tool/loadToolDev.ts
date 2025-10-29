@@ -102,23 +102,48 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           // Find logo files using glob pattern for child tool
           const childLogoFiles = await glob(`${childPath}/logo.*`);
 
-          // Upload child logo files if found
-          for (const logoPath of childLogoFiles) {
-            try {
-              const logoFilename = logoPath.split('/').pop()!;
-              const logoNameWithoutExt = logoFilename.split('.').slice(0, -1).join('.');
-              await publicS3Server.uploadFileAdvanced({
-                path: logoPath,
-                defaultFilename: logoNameWithoutExt,
-                prefix: UploadToolsS3Path + '/' + toolsetId + '/' + file,
-                keepRawFilename: true,
-                contentType: mimeMap['.' + logoFilename.split('.').pop()!]
-              });
-              addLog.debug(
-                `Uploaded child logo file: ${logoPath} to ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
-              );
-            } catch (error) {
-              addLog.warn(`Failed to upload child logo file ${logoPath}: ${error}`);
+          if (childLogoFiles.length > 0) {
+            // Child has its own logo, upload it
+            for (const logoPath of childLogoFiles) {
+              try {
+                const logoFilename = logoPath.split('/').pop()!;
+                const logoNameWithoutExt = logoFilename.split('.').slice(0, -1).join('.');
+                await publicS3Server.uploadFileAdvanced({
+                  path: logoPath,
+                  defaultFilename: logoNameWithoutExt,
+                  prefix: UploadToolsS3Path + '/' + toolsetId + '/' + file + '/',
+                  keepRawFilename: true,
+                  contentType: mimeMap['.' + logoFilename.split('.').pop()!]
+                });
+                addLog.debug(
+                  `Uploaded child logo file: ${logoPath} to ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
+                );
+              } catch (error) {
+                addLog.warn(`Failed to upload child logo file ${logoPath}: ${error}`);
+              }
+            }
+          } else {
+            // Child doesn't have logo, use parent's logo
+            const parentLogoFiles = await glob(`${toolPath}/logo.*`);
+            if (parentLogoFiles.length > 0) {
+              for (const parentLogoPath of parentLogoFiles) {
+                try {
+                  const logoFilename = parentLogoPath.split('/').pop()!;
+                  const logoNameWithoutExt = logoFilename.split('.').slice(0, -1).join('.');
+                  await publicS3Server.uploadFileAdvanced({
+                    path: parentLogoPath,
+                    defaultFilename: logoNameWithoutExt,
+                    prefix: UploadToolsS3Path + '/' + toolsetId + '/' + file + '/',
+                    keepRawFilename: true,
+                    contentType: mimeMap['.' + logoFilename.split('.').pop()!]
+                  });
+                  addLog.debug(
+                    `Uploaded parent logo to child: ${parentLogoPath} to ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
+                  );
+                } catch (error) {
+                  addLog.warn(`Failed to upload parent logo for child tool ${file}: ${error}`);
+                }
+              }
             }
           }
         } catch (error) {
