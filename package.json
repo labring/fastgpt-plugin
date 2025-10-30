@@ -10,7 +10,7 @@
     "test": "vitest run",
     "build:runtime": "bun --cwd runtime build",
     "start": "NODE_ENV=production node --env-file-if-exists=runtime/.env.local dist/index.js",
-    "build:pkg": "bun --cwd modules/tool build",
+    "build:pkg": "bun tsc && bun --cwd modules/tool build",
     "build:sdk": "bun run --cwd sdk build",
     "build:marketplace": "bun run build:pkg && bun ./modules/tool/build/build-json.ts",
     "deploy:marketplace-data": "bun --env-file=.env.marketplace.local ./scripts/deploy-marketplace.ts",
