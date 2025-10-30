@@ -12,6 +12,18 @@ const accessKey = process.env.S3_ACCESS_KEY;
 const bucket = process.env.S3_BUCKET;
 
 async function main() {
+  // Validate required environment variables
+  if (!endpoint || !secretKey || !accessKey || !bucket) {
+    console.error('❌ Missing required environment variables:');
+    if (!endpoint) console.error('  - S3_ENDPOINT');
+    if (!secretKey) console.error('  - S3_SECRET_KEY');
+    if (!accessKey) console.error('  - S3_ACCESS_KEY');
+    if (!bucket) console.error('  - S3_BUCKET');
+    process.exit(1);
+  }
+
+  console.log('🚀 Starting marketplace deployment...');
+
   const client = new S3Client({
     endpoint,
     accessKeyId: accessKey,
@@ -19,8 +31,10 @@ async function main() {
     bucket
   });
 
+  console.log('📦 Building marketplace packages...');
   await $`bun run build:marketplace`;
 
+  console.log('📤 Uploading packages to S3...');
   // read all files in dist/pkgs
   const pkgs = glob('dist/pkgs/*');
   for await (const pkg of pkgs) {
@@ -29,8 +43,10 @@ async function main() {
   }
 
   // write data.json
+  console.log('📤 Uploading tools.json...');
   await client.write(`/data.json`, Bun.file('./dist/tools.json'));
 
+  console.log('📤 Uploading logos and assets...');
   const imgs = glob('modules/tool/packages/*/logo.*');
   const childrenDirs = glob('modules/tool/packages/*/children/*');
   const readmes = glob('modules/tool/packages/*/README.md');
@@ -96,9 +112,17 @@ async function main() {
     });
   }
 
-  console.log('Assets uploaded successfully');
+  console.log('✅ Assets uploaded successfully');
 }
 
 if (import.meta.main) {
-  await main();
+  try {
+    await main();
+    console.log('✅ Marketplace deployment completed successfully!');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Marketplace deployment failed:');
+    console.error(error);
+    process.exit(1);
+  }
 }
