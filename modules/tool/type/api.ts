@@ -4,7 +4,7 @@ import { ToolSchema, VersionListItemSchema } from './tool';
 
 export const ToolTagListSchema = z.array(
   z.object({
-    type: z.string(),
+    id: z.string(),
     name: I18nStringStrictSchema
   })
 );
