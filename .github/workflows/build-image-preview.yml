@@ -26,27 +26,6 @@ jobs:
             /*
             !modules/tool/packages
 
-      # Get changed packages and test build
-      - name: Get changed files in PR
-        id: changed-files
-        uses: tj-actions/changed-files@v45
-        with:
-          files: modules/tool/packages/**
-
-      - name: Checkout changed packages
-        if: steps.changed-files.outputs.any_changed == 'true'
-        run: |
-          # Get list of changed packages
-          changed_packages=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | \
-            grep -oP 'modules/tool/packages/[^/]+' | \
-            sort -u)
-
-          # Checkout each changed package
-          for package in $changed_packages; do
-            echo "Checking out $package"
-            git sparse-checkout add "$package"
-          done
-
       - name: Setup bun
         if: steps.changed-files.outputs.any_changed == 'true'
         uses: oven-sh/setup-bun@v2
