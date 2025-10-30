@@ -1,6 +1,16 @@
+import { catchError } from '@/utils/catch';
 import { input, select } from '@inquirer/prompts';
+import { $ } from 'bun';
 import fs from 'fs';
 import path from 'path';
+
+const isSparseCheckout = await (async () => {
+  const [, err] = await catchError(() => $`git sparse-checkout list`.text());
+  if (err) {
+    return false;
+  }
+  return true;
+})();
 
 const isToolset =
   (await select({
@@ -46,8 +56,12 @@ if (!/^[a-z][a-zA-Z0-9]*$/.test(name)) {
   process.exit(1);
 }
 
-// 1. Create directory
 const toolDir = path.join(process.cwd(), 'modules', 'tool', 'packages', name);
+if (isSparseCheckout) {
+  await $`git sparse-checkout add /modules/tool/packages/${name}`;
+}
+
+// 1. Create directory
 if (fs.existsSync(toolDir)) {
   console.error('Tool already exists');
   process.exit(1);
@@ -88,7 +102,6 @@ fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 // 4. Copy DESIGN.md to dir
 const designMdPath = toolDir + '/DESIGN.md';
 copyTemplate(path.join(__dirname, 'DESIGN.md'), designMdPath);
-
 // output success message
 console.log(`Tool/Toolset created successfully! 🎉`);
 console.log(`You can edit the ${designMdPath}, and code with AI`);

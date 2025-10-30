@@ -1,0 +1,48 @@
+{
+  "name": "@fastgpt-plugin/create-dev",
+  "version": "0.0.1",
+  "description": "A CLI tool that can be used via bunx or directly from GitHub",
+  "type": "module",
+  "main": "index.ts",
+  "bin": {
+    "create-dev": "./index.ts"
+  },
+  "files": [
+    "index.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "fastgpt-plugin",
+    "cli",
+    "tool",
+    "automation",
+    "development"
+  ],
+  "author": {
+    "name": "FastGPT",
+    "url": "https://github.com/labring/FastGPT"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/labring/FastGPT"
+  },
+  "engines": {
+    "bun": ">=1.2.23"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "inquirer": "^9.2.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "eslint": "^8.52.0",
+    "prettier": "^3.0.3",
+    "bun-types": "latest"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
