@@ -1,18 +1,9 @@
 name: Deploy to Marketplace
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
-          - staging
+  push:
+    # branches: [main]
 
 jobs:
   deploy:
@@ -31,7 +22,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Install tool package dependencies
-        run: bun run ./scripts/install-all.ts
+        run: bun run install-all
 
       - name: Build and deploy to marketplace
         env:
@@ -45,13 +36,11 @@ jobs:
         if: success()
         run: |
           echo "🚀 Marketplace deployment completed successfully!"
-          echo "Environment: ${{ github.event.inputs.environment || 'default' }}"
           echo "Commit: ${{ github.sha }}"
 
       - name: Notify deployment failure
         if: failure()
         run: |
           echo "❌ Marketplace deployment failed!"
-          echo "Environment: ${{ github.event.inputs.environment || 'default' }}"
           echo "Commit: ${{ github.sha }}"
           exit 1

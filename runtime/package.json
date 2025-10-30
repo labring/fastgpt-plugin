@@ -4,10 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "bun run dev/index.ts",
-    "build:worker": "bun build --env=disable --outfile=../dist/worker.js --target=node --minify ../lib/worker/worker.ts",
-    "build:main": "bun build --env=disable --outfile=../dist/index.js --target=node --minify index.ts",
     "build": "bun run build/index.ts",
-    "build:marketplace": "bun run ../modules/tool/build/build-json.ts"
+    "build:worker": "bun build --env=disable --outfile=../dist/worker.js --target=node --minify ../lib/worker/worker.ts",
+    "build:main": "bun build --env=disable --outfile=../dist/index.js --target=node --minify index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

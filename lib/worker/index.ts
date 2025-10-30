@@ -235,17 +235,6 @@ export async function dispatchWithNewWorker(data: {
       worker.terminate();
     });
 
-    console.log(
-      {
-        toolId,
-        inputs: workerData.inputs,
-        systemVar: workerData.systemVar,
-        filename: tool.toolFilename,
-        dev: devToolIds.has(toolId)
-      },
-      '==============-=-=-=-=-=-'
-    );
-
     worker.postMessage({
       type: 'runTool',
       data: {

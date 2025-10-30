@@ -16,6 +16,7 @@
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
     "@ts-rest/open-api": "^3.52.1",
+    "@vercel/otel": "^1.9.2",
     "fs-extra": "^11.3.2",
     "jszip": "^3.10.1",
     "mongoose": "^8.19.2",

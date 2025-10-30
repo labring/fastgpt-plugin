@@ -1,4 +1,4 @@
-import { basePath, UploadToolsS3Path } from '@tool/constants';
+import { UploadToolsS3Path } from '@tool/constants';
 import type { ToolSetType, ToolType } from '@tool/type';
 import { ToolTagEnum } from '@tool/type/tags';
 import { existsSync, writeFileSync } from 'fs';
@@ -10,6 +10,7 @@ const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 
 
 const S3BasePath = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET}`;
 
+const basePath = process.cwd();
 const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   const tools: ToolType[] = [];
 
