@@ -9,9 +9,11 @@ import { MongoPlugin, pluginTypeEnum } from '@/mongo/models/plugins';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { addLog } from '@/utils/log';
+import { ensureDir } from '@/utils/fs';
 
 export default s.route(contract.tool.upload.install, async ({ body }) => {
   addLog.debug(`Installing tools: ${body.urls}`);
+  await ensureDir(tempPkgDir);
   const downloadFunctions = body.urls.map((url) => async () => {
     const res = await fetch(url);
     const buffer = await res.arrayBuffer();
