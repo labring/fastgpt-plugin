@@ -111,12 +111,31 @@ jobs:
           echo ""
           echo "Has relevant changes: $HAS_RELEVANT_CHANGES"
 
+      - name: Prepare sparse checkout
+        id: sparse-config
+        run: |
+          CONFIG="/*"$'\n'"!/modules/tool/packages"$'\n'"package.json"$'\n'"bun.lockb"
+
+          if [ -n "${{ steps.pr-files.outputs.package_changes }}" ]; then
+            for package in ${{ steps.pr-files.outputs.package_changes }}; do
+              CONFIG="$CONFIG"$'\n'"/modules/tool/packages/$package"
+            done
+          fi
+
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONFIG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "Final sparse checkout config:"
+          echo "$CONFIG"
+
       - name: Checkout code with sparse checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           sparse-checkout-cone-mode: false
-          sparse-checkout: ${{ steps.pr-files.outputs.sparse_config }}
+          sparse-checkout: |
+            ${{ steps.sparse-config.outputs.config }}
 
       - name: Verify sparse checkout
         run: |
