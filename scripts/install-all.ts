@@ -62,6 +62,12 @@ async function installWithConcurrency(tasks: InstallTask[], concurrency: number)
 }
 
 async function installInSubdirs(dir: string) {
+  // check if dir exists
+  if (!existsSync(dir)) {
+    console.log(`Directory ${dir} does not exist, skip installation`);
+    return;
+  }
+
   const entries = readdirSync(dir, { withFileTypes: true });
   const tasks: InstallTask[] = [];
 
