@@ -1,59 +1,3 @@
----
-name: toolCodeAgent
-description: 当用户需要开发一个工具/工具集时调用
-model: sonnet
----
-
-# 工作流程
-
-开发新工具时，参考该流程完成任务。
-
-1. 参考 DESIGN.md  已有信息，完成需求文档编写。
-2. 审核需求文档，检查是否有遗漏。
-3. 依据需求文档完成代码开发。
-4. 依据需求文档，编写测试案例。
-5. 安装对应依赖后，进行测试并纠错问题。
-6. 进行代码 Review，简化无用代码。
-7. 最后再进行一次测试，保证代码可用。
-
-## 需求文档模板
-
-```
-# xxx 设计文档
-
-## 参考信息
-
-这里可能会给一些参考文档，测试密钥等。
-
-## 功能描述
-
-实现 xxxx。
-
-* 需要一个 tool/toolset
-* 包含 n 个工具，具体如下：
-
-1. xxx
-2. xxx
-
-## 目录结构
-
-## 输入输出配置
-
-## 代码示例
-
-## 测试方案
-
-## 可能存在的问题和重点检查内容
-```
-
-## 测试流程
-
-1. 检查 TS 是否有错误
-2. 检查是否可以正常运行和build
-3. 检查测试案例是否通过
-
----
-
 # FastGPT 系统工具设计规范
 
 本文档定义了 FastGPT Plugin 系统中工具(Tool)和工具集(ToolSet)的统一设计规范,基于 Redis 工具集的最佳实践总结。
@@ -191,7 +135,7 @@ export default defineTool({
           required: true,
           valueType: WorkflowIOValueTypeEnum.string,
           renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          toolDescription: 'Input description for AI', // 可选，当该变量需要由 LLM 模型动态生成时才存在
+          toolDescription: 'Input description for AI', // 可选,当该变量需要由 LLM 模型动态生成时才存在
           defaultValue: 'default value',           // 可选
           placeholder: 'Enter value...',           // 可选
           maxLength: 1000                          // 可选,字符串最大长度
@@ -361,7 +305,7 @@ export const OutputType = z.object({
   success: z.boolean()
 });
 
-// 工具回调函数（简单版，由上层自动处理错误）
+// 工具回调函数(简单版,由上层自动处理错误)
 export async function tool({
   connectionString,
   apiKey,
@@ -376,7 +320,7 @@ export async function tool({
   };
 }
 
-// 工具回调函数（需处理错误/关闭链接）
+// 工具回调函数(需处理错误/关闭链接)
 export async function tool({
   connectionString,
   apiKey,
@@ -415,7 +359,7 @@ export async function tool({
 
 ### 6.1 客户端模块 (client.ts)
 
-用于封装工具集中的子工具共享连接逻辑，比如数据库实例，请求实例封装。
+用于封装工具集中的子工具共享连接逻辑,比如数据库实例,请求实例封装。
 
 ```typescript
 import SomeClient from 'some-library';
@@ -517,9 +461,9 @@ export async function withTimeout<T>(
 
 ### 6.3 错误处理 (error.ts)
 
-对于一个工具集来说，如果统一用的是同一家的 API，通常会有错误映射码，可以在该文件中声明，并统一做错误映射处理。如果是常见的错误，则无需该文件和报错捕获，直接抛错即可。
+对于一个工具集来说,如果统一用的是同一家的 API,通常会有错误映射码,可以在该文件中声明,并统一做错误映射处理。如果是常见的错误,则无需该文件和报错捕获,直接抛错即可。
 
-如果不需要做错误映射， src/index.ts 逻辑处理中，无需 try catch，直接由上层自动捕获错误即可。
+如果不需要做错误映射, src/index.ts 逻辑处理中,无需 try catch,直接由上层自动捕获错误即可。
 
 ```ts
 const errorMap = {
@@ -724,7 +668,7 @@ secretInputConfig: [
 
 ### 8.2 输入验证
 
-如果用户未制定特殊校验，则无需增加额外自定义校验，使用下面常见的几种校验即可：
+如果用户未制定特殊校验,则无需增加额外自定义校验,使用下面常见的几种校验即可:
 
 ```typescript
 import { z } from 'zod';
@@ -732,7 +676,7 @@ import { z } from 'zod';
 export const InputType = z.object({
   // 字符串验证
   name: z.string()
-    .nonempty('Name cannot be empty') // 如果是长度限制：minLength(1, 'Name cannot be empty')
+    .nonempty('Name cannot be empty') // 如果是长度限制:minLength(1, 'Name cannot be empty')
     .maxLength(100, 'Name too long'),
 
   // 数字验证
@@ -898,7 +842,6 @@ describe('ToolName Tests', () => {
 ## 10. 代码规范
 
 * 采用小驼峰命名规范。
-* 类型引入需要强制什么 type，例如 import {type xx} from xxx;
+* 类型引入需要强制什么 type,例如 import {type xx} from xxx;
 * 代码精简。
-* 简单内容无需额外报错捕获，外层已做处理。
-
+* 简单内容无需额外报错捕获,外层已做处理。
