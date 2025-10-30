@@ -145,3 +145,5 @@ modules/tool/type/tool.ts 下修改 `ToolTypeMap` 字段来增加类型枚举。
 
 1. modules/model/provider 找到对应模型提供商配置文件
 2. 按 ConfigModelItemSchema 数据类型填写配置即可
+
+
