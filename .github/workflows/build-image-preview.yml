@@ -17,25 +17,118 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout code
+      - name: Get PR changed files via API
+        id: pr-files
+        run: |
+          PR_NUMBER=${{ github.event.number }}
+          REPO=${{ github.repository }}
+          TOKEN=${{ secrets.GITHUB_TOKEN }}
+
+          # 获取 PR 修改的文件列表
+          RESPONSE=$(curl -s -H "Authorization: token $TOKEN" \
+            "https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/files")
+
+          # 提取文件路径
+          FILES=$(echo "$RESPONSE" | jq -r '.[].filename')
+
+          echo "All changed files:"
+          echo "$FILES"
+
+          # 检查是否有相关文件需要构建
+          HAS_RELEVANT_CHANGES=false
+
+          # 检查是否有根目录文件或配置文件变更
+          for file in $FILES; do
+            case "$file" in
+              "package.json"|"bun.lockb"|".github/workflows/"*"|yarn.lock|"pnpm-lock.yaml")
+                echo "Found relevant root file: $file"
+                HAS_RELEVANT_CHANGES=true
+                ;;
+              "modules/tool/packages/"*)
+                echo "Found package file: $file"
+                HAS_RELEVANT_CHANGES=true
+                ;;
+            esac
+          done
+
+          # 提取在 /modules/tool/packages 下变更的包目录
+          PACKAGE_CHANGES=""
+          for file in $FILES; do
+            if [[ "$file" == modules/tool/packages/* ]]; then
+              # 提取包名（modules/tool/packages/package-name/...）
+              PACKAGE_NAME=$(echo "$file" | sed 's|^modules/tool/packages/[^/]*/||' | cut -d'/' -f1)
+              if [[ -n "$PACKAGE_NAME" && "$PACKAGE_CHANGES" != *"$PACKAGE_NAME"* ]]; then
+                PACKAGE_CHANGES="$PACKAGE_CHANGES$PACKAGE_NAME "
+              fi
+            fi
+          done
+
+          # 构建稀疏检出配置
+          SPARSE_CONFIG="/*"$'\n'"!/modules/tool/packages"
+
+          # 为每个变更的包添加包含规则
+          for package in $PACKAGE_CHANGES; do
+            SPARSE_CONFIG="$SPARSE_CONFIG"$'\n'"/modules/tool/packages/$package"
+            echo "Adding package to sparse checkout: modules/tool/packages/$package"
+          done
+
+          # 总是需要包含根目录的关键文件
+          SPARSE_CONFIG="$SPARSE_CONFIG"$'\n'"package.json"$'\n'"bun.lockb"
+
+          # 保存到输出
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "package_changes<<EOF" >> $GITHUB_OUTPUT
+          echo "$PACKAGE_CHANGES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "sparse_config<<EOF" >> $GITHUB_OUTPUT
+          echo "$SPARSE_CONFIG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "has_relevant_changes=$HAS_RELEVANT_CHANGES" >> $GITHUB_OUTPUT
+
+          echo "Final sparse checkout config:"
+          echo "$SPARSE_CONFIG"
+          echo ""
+          echo "Has relevant changes: $HAS_RELEVANT_CHANGES"
+
+      - name: Checkout code with sparse checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /*
-            !modules/tool/packages
+          sparse-checkout: ${{ steps.pr-files.outputs.sparse_config }}
+
+      - name: Verify sparse checkout
+        run: |
+          echo "Workspace contents:"
+          find . -maxdepth 2 -type f -name "*.json" -o -name "*.lockb" | head -10
+          echo ""
+          echo "Package directories:"
+          ls -la modules/tool/packages/ 2>/dev/null || echo "No packages directory found"
+          echo ""
+          echo "Total workspace size:"
+          du -sh .
 
       - name: Setup bun
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if: steps.pr-files.outputs.has_relevant_changes == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.23
+
       - name: Install dependencies
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if: steps.pr-files.outputs.has_relevant_changes == 'true'
         run: bun install --frozen-lockfile && bun run install:plugins
+
+      - name: Type check
+        if: steps.pr-files.outputs.has_relevant_changes == 'true'
+        run: bun run type-check
+
       - name: Build pkg
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if: steps.pr-files.outputs.has_relevant_changes == 'true'
         run: bun run build:pkg
 
       - name: Set up Docker Buildx
