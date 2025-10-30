@@ -93,7 +93,7 @@ jobs:
           tool: issue-comment
           title: Preview Image Label
           body: |
-            Preview Images for this PR are:
+            Preview Images for this PR:
 
             ```
             ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
