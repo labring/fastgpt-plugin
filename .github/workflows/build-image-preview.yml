@@ -32,20 +32,12 @@ jobs:
           echo "All changed files:"
           echo "$FILES"
 
-          HAS_RELEVANT_CHANGES="false"
           PACKAGE_CHANGES=""
 
-          # Check for relevant changes and extract package names
+          # Extract package names from changed files
           for file in $FILES; do
-            if [ "$file" = "package.json" ] || [ "$file" = "bun.lock" ] || [ "$file" = "bun.lockb" ]; then
-              echo "Found relevant file: $file"
-              HAS_RELEVANT_CHANGES="true"
-            elif [[ "$file" == .github/workflows/* ]]; then
-              echo "Found workflow file: $file"
-              HAS_RELEVANT_CHANGES="true"
-            elif [[ "$file" == modules/tool/packages/* ]]; then
+            if [[ "$file" == modules/tool/packages/* ]]; then
               echo "Found package file: $file"
-              HAS_RELEVANT_CHANGES="true"
 
               # Extract package directory name
               PACKAGE_NAME=$(echo "$file" | cut -d'/' -f4)
@@ -63,27 +55,12 @@ jobs:
           done
 
           echo "Package changes detected: $PACKAGE_CHANGES"
-          echo "Has relevant changes: $HAS_RELEVANT_CHANGES"
-
           echo "package_changes=$PACKAGE_CHANGES" >> $GITHUB_OUTPUT
-          echo "has_relevant_changes=$HAS_RELEVANT_CHANGES" >> $GITHUB_OUTPUT
 
       - name: Set sparse checkout environment variable
         run: |
           echo "SPARSE_CHECKOUT_CONFIG<<EOF" >> $GITHUB_ENV
           echo "/*" >> $GITHUB_ENV
-          echo "!/modules/tool/packages/*" >> $GITHUB_ENV
-
-          # Add changed packages to sparse checkout
-          if [ -n "${{ steps.pr-files.outputs.package_changes }}" ]; then
-            for package in ${{ steps.pr-files.outputs.package_changes }}; do
-              if [ -n "$package" ]; then
-                echo "/modules/tool/packages/$package" >> $GITHUB_ENV
-                echo "/modules/tool/packages/$package/*" >> $GITHUB_ENV
-              fi
-            done
-          fi
-
           echo "EOF" >> $GITHUB_ENV
 
       - name: Checkout repository
@@ -94,17 +71,14 @@ jobs:
           sparse-checkout: ${{ env.SPARSE_CHECKOUT_CONFIG }}
 
       - name: Setup bun
-        if: steps.pr-files.outputs.has_relevant_changes == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.23
 
       - name: Install dependencies
-        if: steps.pr-files.outputs.has_relevant_changes == 'true'
         run: bun install --frozen-lockfile && bun run install:plugins
 
       - name: Build pkg
-        if: steps.pr-files.outputs.has_relevant_changes == 'true'
         run: bun run build:pkg
 
       - name: Set up Docker Buildx
@@ -118,7 +92,6 @@ jobs:
           password: ${{ secrets.ALI_HUB_PASSWORD }}
 
       - name: Build and push Docker image
-        if: steps.pr-files.outputs.has_relevant_changes == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -133,7 +106,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: Add PR comment on success
-        if: steps.pr-files.outputs.has_relevant_changes == 'true' && success()
+        if: success()
         uses: actions/github-script@v6
         with:
           script: |
@@ -174,19 +147,3 @@ jobs:
                 body: commentBody
               });
             }
-
-      - name: Add PR comment on skip
-        if: steps.pr-files.outputs.has_relevant_changes == 'false'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `
-              ℹ️ **Build Skipped** - No relevant changes found in this PR
-
-              This PR doesn't contain changes that require rebuilding (no package.json, bun.lockb, or plugin package changes).
-              `
-            });
