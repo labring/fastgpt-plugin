@@ -7,6 +7,13 @@ const tool = process.argv[2] || '*';
 
 export const buildAllTools = async () => {
   // read all tools, and build them
+  // check the existence of the tool directory
+
+  if (!existsSync(toolsSourceDir)) {
+    console.log(`Tool directory ${toolsSourceDir} does not exist, skip build`);
+    return;
+  }
+
   const tools = await readdir(toolsSourceDir);
   const promises: Promise<void>[] = [];
   for await (const tool of tools) {
