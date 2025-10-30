@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import { input, select } from '@inquirer/prompts';
 import { $ } from 'bun';
 import { existsSync } from 'fs';
