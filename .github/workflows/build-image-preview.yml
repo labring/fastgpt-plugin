@@ -35,18 +35,18 @@ jobs:
           echo "$FILES"
 
           # 检查是否有相关文件需要构建
-          HAS_RELEVANT_CHANGES=false
+          HAS_RELEVANT_CHANGES="false"
 
           # 检查是否有根目录文件或配置文件变更
           for file in $FILES; do
             case "$file" in
-              "package.json"|"bun.lockb"|".github/workflows/"*"|yarn.lock|"pnpm-lock.yaml")
+              "package.json"|"bun.lockb"|".github/workflows/"*"|"bun.lock"|yarn.lock|"pnpm-lock.yaml")
                 echo "Found relevant root file: $file"
-                HAS_RELEVANT_CHANGES=true
+                HAS_RELEVANT_CHANGES="true"
                 ;;
               "modules/tool/packages/"*)
                 echo "Found package file: $file"
-                HAS_RELEVANT_CHANGES=true
+                HAS_RELEVANT_CHANGES="true"
                 ;;
             esac
           done
@@ -57,38 +57,51 @@ jobs:
             if [[ "$file" == modules/tool/packages/* ]]; then
               # 提取包名（modules/tool/packages/package-name/...）
               PACKAGE_NAME=$(echo "$file" | sed 's|^modules/tool/packages/[^/]*/||' | cut -d'/' -f1)
-              if [[ -n "$PACKAGE_NAME" && "$PACKAGE_CHANGES" != *"$PACKAGE_NAME"* ]]; then
-                PACKAGE_CHANGES="$PACKAGE_CHANGES$PACKAGE_NAME "
+              if [[ -n "$PACKAGE_NAME" ]]; then
+                # 检查是否已经添加过这个包
+                if ! echo "$PACKAGE_CHANGES" | grep -q "$PACKAGE_NAME"; then
+                  if [ -z "$PACKAGE_CHANGES" ]; then
+                    PACKAGE_CHANGES="$PACKAGE_NAME"
+                  else
+                    PACKAGE_CHANGES="$PACKAGE_CHANGES $PACKAGE_NAME"
+                  fi
+                fi
               fi
             fi
           done
 
           # 构建稀疏检出配置
-          SPARSE_CONFIG="/*"$'\n'"!/modules/tool/packages"
+          SPARSE_CONFIG="/*"
+          SPARSE_CONFIG="$SPARSE_CONFIG"$'\n'"!/modules/tool/packages"
 
           # 为每个变更的包添加包含规则
           for package in $PACKAGE_CHANGES; do
-            SPARSE_CONFIG="$SPARSE_CONFIG"$'\n'"/modules/tool/packages/$package"
-            echo "Adding package to sparse checkout: modules/tool/packages/$package"
+            if [ -n "$package" ]; then
+              SPARSE_CONFIG="$SPARSE_CONFIG"$'\n'"/modules/tool/packages/$package"
+              echo "Adding package to sparse checkout: modules/tool/packages/$package"
+            fi
           done
 
           # 总是需要包含根目录的关键文件
-          SPARSE_CONFIG="$SPARSE_CONFIG"$'\n'"package.json"$'\n'"bun.lockb"
+          SPARSE_CONFIG="$SPARSE_CONFIG"$'\n'"package.json"
+          SPARSE_CONFIG="$SPARSE_CONFIG"$'\n'"bun.lockb"
 
           # 保存到输出
-          echo "files<<EOF" >> $GITHUB_OUTPUT
-          echo "$FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "files<<EOF"
+            echo "$FILES"
+            echo "EOF"
 
-          echo "package_changes<<EOF" >> $GITHUB_OUTPUT
-          echo "$PACKAGE_CHANGES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+            echo "package_changes<<EOF"
+            echo "$PACKAGE_CHANGES"
+            echo "EOF"
 
-          echo "sparse_config<<EOF" >> $GITHUB_OUTPUT
-          echo "$SPARSE_CONFIG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+            echo "sparse_config<<EOF"
+            echo "$SPARSE_CONFIG"
+            echo "EOF"
 
-          echo "has_relevant_changes=$HAS_RELEVANT_CHANGES" >> $GITHUB_OUTPUT
+            echo "has_relevant_changes=$HAS_RELEVANT_CHANGES"
+          } >> $GITHUB_OUTPUT
 
           echo "Final sparse checkout config:"
           echo "$SPARSE_CONFIG"
