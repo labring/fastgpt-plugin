@@ -11,9 +11,8 @@ export { ToolTagEnum, ToolTagsNameMap } from '@tool/type/tags';
 export { ModelProviders } from '@model/constants';
 
 export type { ToolType, ToolSetType } from '@tool/type';
-export {
-  ToolDetailSchema,
-  ToolSimpleSchema,
-  type ToolDetailType,
-  type ToolSimpleType
-} from '@tool/type/api';
+
+// Re-export schemas - separate statements to ensure proper type generation
+export { ToolDetailSchema } from '@tool/type/api';
+export { ToolSimpleSchema } from '@tool/type/api';
+export type { ToolDetailType, ToolSimpleType } from '@tool/type/api';
