@@ -20,7 +20,8 @@ export const commonS3Config: Partial<S3ConfigType> = {
     ? new HttpProxyAgent(process.env.HTTP_PROXY)
     : process.env.HTTPS_PROXY
       ? new HttpsProxyAgent(process.env.HTTPS_PROXY)
-      : undefined
+      : undefined,
+  pathStyle: process.env.S3_PATH_STYLE === 'false' ? false : true
 } as const;
 
 export const FileMetadataSchema = z.object({
