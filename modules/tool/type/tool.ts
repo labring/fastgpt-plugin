@@ -37,49 +37,41 @@ export const ToolConfigSchema = z
   })
   .describe('The Tool Config Schema');
 
-export const ToolConfigWithCbSchema = ToolConfigSchema.merge(
-  z.object({
-    cb: ToolCallbackType.describe('The callback function of the tool')
-  })
-);
+export const ToolConfigWithCbSchema = ToolConfigSchema.extend({
+  cb: ToolCallbackType.describe('The callback function of the tool')
+});
 
-export const ToolSchema = ToolConfigWithCbSchema.merge(
-  z.object({
-    // Required
-    toolId: z.string().describe('The unique id of the tool'),
-    tags: z.array(ToolTagEnum).optional().describe('The tags of the tool'),
-    icon: z.string().describe('The icon of the tool'),
+export const ToolSchema = ToolConfigWithCbSchema.extend({
+  // Required
+  toolId: z.string().describe('The unique id of the tool'),
+  tags: z.array(ToolTagEnum).optional().describe('The tags of the tool'),
+  icon: z.string().describe('The icon of the tool'),
 
-    // Computed
-    parentId: z.string().optional().describe('The parent id of the tool'),
-    toolFilename: z.string(),
+  // Computed
+  parentId: z.string().optional().describe('The parent id of the tool'),
+  toolFilename: z.string(),
 
-    // ToolSet Parent
-    secretInputConfig: z
-      .array(InputConfigSchema)
-      .optional()
-      .describe('The secret input list of the tool')
-  })
-);
+  // ToolSet Parent
+  secretInputConfig: z
+    .array(InputConfigSchema)
+    .optional()
+    .describe('The secret input list of the tool')
+});
 
 export const ToolSetConfigSchema = ToolConfigSchema.omit({
   versionList: true
 })
-  .merge(
-    z.object({
-      tags: z.array(ToolTagEnum).describe('The tags of the tool'),
-      children: z.array(ToolConfigWithCbSchema).optional().describe('The children of the tool set')
-    })
-  )
+  .extend({
+    tags: z.array(ToolTagEnum).describe('The tags of the tool'),
+    children: z.array(ToolConfigWithCbSchema).optional().describe('The children of the tool set')
+  })
   .describe('The ToolSet Config Schema');
 
 export const ToolSetSchema = ToolSchema.omit({
   cb: true,
   parentId: true
 })
-  .merge(
-    z.object({
-      children: z.array(ToolSchema).describe('The children of the tool set')
-    })
-  )
+  .extend({
+    children: z.array(ToolSchema).describe('The children of the tool set')
+  })
   .describe('The ToolSet Schema');
