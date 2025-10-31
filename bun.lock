@@ -93,17 +93,9 @@
     },
     "sdk": {
       "name": "@fastgpt-sdk/plugin",
-      "version": "0.2.6",
-      "dependencies": {
-        "@fortaine/fetch-event-source": "^3.0.6",
-        "@ts-rest/core": "3.52.1",
-        "zod": "^3.25.76",
-      },
+      "version": "0.2.12",
       "devDependencies": {
         "bun-plugin-dts": "^0.3.0",
-      },
-      "peerDependencies": {
-        "zod": "^3.25.76",
       },
     },
   },
@@ -249,8 +241,6 @@
     "@fastgpt-sdk/plugin": ["@fastgpt-sdk/plugin@workspace:sdk"],
 
     "@fastgpt/plugin-runtime": ["@fastgpt/plugin-runtime@workspace:runtime"],
-
-    "@fortaine/fetch-event-source": ["@fortaine/fetch-event-source@3.0.6", "", {}, "sha512-621GAuLMvKtyZQ3IA6nlDWhV1V/7PGOTNIGLUifxt0KzM+dZIweJ6F3XvQF3QnqeNfS1N7WQ0Kil1Di/lhChEw=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 
