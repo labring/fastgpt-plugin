@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 import { c } from '@/contract/init';
 import { type ListModelsType } from './api/type';
 import { type I18nStringStrictType } from '@/type/i18n';

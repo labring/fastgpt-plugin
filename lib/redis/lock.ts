@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 import { FASTGPT_REDIS_PREFIX, getGlobalRedisConnection } from '.';
 export const lockEnum = z.enum(['parsePkg']);
 const lockPrefix = `${FASTGPT_REDIS_PREFIX}LOCK:`;

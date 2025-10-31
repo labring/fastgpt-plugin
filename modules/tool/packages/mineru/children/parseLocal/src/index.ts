@@ -39,7 +39,7 @@ const ResultItemType = z.object({
 type ResultItemType = z.infer<typeof ResultItemType>;
 
 export const OutputType = z.object({
-  result: z.record(z.array(ResultItemType))
+  result: z.record(z.string(), z.array(ResultItemType))
 });
 
 function buildHeaders(token?: string) {

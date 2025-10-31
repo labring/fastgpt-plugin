@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 
 export const TemplateItemSchema = z.object({
   templateId: z.string().describe('The unique id of the template'),

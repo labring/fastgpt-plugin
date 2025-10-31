@@ -4,7 +4,7 @@ export const PresignedUrlInputSchema = z.object({
   filepath: z.string(),
   filename: z.string(),
   contentType: z.string().optional(),
-  metadata: z.record(z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
   maxSize: z.number().optional().describe('B'),
   fileExpireMins: z.number().optional()
 });

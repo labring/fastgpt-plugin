@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 import { c } from '@/contract/init';
 import { ToolDetailSchema, type ToolDetailType, ToolTagListSchema } from './type/api';
 

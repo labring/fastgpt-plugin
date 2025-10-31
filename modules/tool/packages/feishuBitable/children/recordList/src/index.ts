@@ -18,7 +18,7 @@ export const OutputType = z.object({
   records: z.array(
     z.object({
       recordId: z.string(),
-      fields: z.record(z.any())
+      fields: z.record(z.string(), z.any())
     })
   ),
   hasMore: z.boolean(),

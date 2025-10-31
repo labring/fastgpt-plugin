@@ -27,7 +27,7 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
 
   await mongoSessionRun(async (session) => {
     const allToolsInstalled = (
-      await MongoPlugin.find({ type: pluginTypeEnum.Enum.tool }).lean()
+      await MongoPlugin.find({ type: pluginTypeEnum.enum.tool }).lean()
     ).map((tool) => tool.toolId);
     // create all that not exists
     await MongoPlugin.create(
@@ -35,7 +35,7 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
         .filter((toolId) => !allToolsInstalled.includes(toolId))
         .map((toolId) => ({
           toolId,
-          type: pluginTypeEnum.Enum.tool
+          type: pluginTypeEnum.enum.tool
         })),
       {
         session,

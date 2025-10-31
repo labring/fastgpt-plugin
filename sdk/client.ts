@@ -1,3 +1,4 @@
+export { I18nStringSchema, I18nStringStrictSchema, type I18nStringStrictType } from '@/type/i18n';
 export { createClient } from '@/contract/client';
 
 // Tool run

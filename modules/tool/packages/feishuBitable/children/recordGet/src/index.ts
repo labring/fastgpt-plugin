@@ -12,7 +12,7 @@ export const InputType = z.object({
 
 export const OutputType = z.object({
   recordId: z.string(),
-  fields: z.record(z.any())
+  fields: z.record(z.string(), z.any())
 });
 
 export async function tool({

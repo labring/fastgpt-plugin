@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 import { FileMetadataSchema, type FileMetadata } from '@/s3/config';
 import { FileInputSchema } from '@/s3/type';
 import { StreamDataSchema, ToolCallbackReturnSchema } from '@tool/type/req';

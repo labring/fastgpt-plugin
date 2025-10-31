@@ -1,5 +1,5 @@
 import { ToolTagEnum, ToolTagsNameMap } from './type/tags';
-import z from 'zod';
+import { z } from 'zod';
 import { ToolTagListSchema } from './type/api';
 import type { ToolType } from './type';
 import { pipeline } from 'stream/promises';
