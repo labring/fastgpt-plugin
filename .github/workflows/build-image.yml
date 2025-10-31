@@ -88,20 +88,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to Docker Hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_NAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-
-      - name: Login to Ali Hub
-        uses: docker/login-action@v3
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: ${{ secrets.ALI_HUB_USERNAME }}
-          password: ${{ secrets.ALI_HUB_PASSWORD }}
-
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
@@ -110,16 +96,9 @@ jobs:
           GITHUB_LATEST="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:latest"
           GITHUB_SHA="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.sha }}"
 
-          ALI_TAG="${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.ref_name }}"
-          ALI_LATEST="${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:latest"
-          ALI_SHA="${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }}"
-
-          DOCKER_TAG="${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.ref_name }}"
-          DOCKER_LATEST="${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:latest"
-          DOCKER_SHA="${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin:${{ github.sha }}"
 
           # Create array of all tags
-          TAGS="$GITHUB_TAG $GITHUB_LATEST $GITHUB_SHA $ALI_TAG $ALI_LATEST $ALI_SHA $DOCKER_TAG $DOCKER_LATEST $DOCKER_SHA"
+          TAGS="$GITHUB_TAG $GITHUB_LATEST $GITHUB_SHA"
 
           # Create manifest list for each tag
           for TAG in $TAGS; do
