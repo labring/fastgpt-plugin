@@ -4,6 +4,7 @@ import { setupProxy } from '../utils/setupProxy';
 import { LoadToolsByFilename } from '@tool/utils';
 import { getErrText } from '@tool/utils/err';
 import { LoadToolsDev } from '@tool/loadToolDev';
+import type { ToolCallbackReturnSchemaType } from '@tool/type/req';
 
 setupProxy();
 
@@ -45,7 +46,7 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
         };
 
         // sendMessage is optinal
-        const result = await tool.cb(data.inputs, {
+        const result: ToolCallbackReturnSchemaType = await tool.cb(data.inputs, {
           systemVar: data.systemVar,
           streamResponse: sendMessage
         });

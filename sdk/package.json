@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-sdk/plugin",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "fastgpt-plugin sdk",
   "main": "dist/client.js",
   "types": "dist/client.d.ts",
@@ -16,13 +16,13 @@
   "license": "MIT",
   "dependencies": {
     "@fortaine/fetch-event-source": "^3.0.6",
-    "@ts-rest/core": "3.53.0-rc.1",
-    "zod": "^4.1.12"
+    "@ts-rest/core": "3.52.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "bun-plugin-dts": "^0.3.0"
   },
   "peerDependencies": {
-    "zod": "^4.1.12"
+    "zod": "^3.25.76"
   }
 }

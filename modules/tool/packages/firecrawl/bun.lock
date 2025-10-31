@@ -5,7 +5,7 @@
       "name": "fastgpt-tools-firecrawl",
       "dependencies": {
         "@mendable/firecrawl-js": "^1.27.0",
-        "zod": "^4.1.12",
+        "zod": "^3.25.76",
       },
       "devDependencies": {
         "@types/bun": "latest",

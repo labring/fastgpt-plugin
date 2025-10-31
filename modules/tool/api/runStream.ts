@@ -5,7 +5,12 @@ import { StreamManager } from '../utils/stream';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
 import { recordToolExecution } from '@/utils/signoz';
-import { StreamMessageTypeEnum, type RunToolSecondParamsType } from '@tool/type/req';
+import {
+  StreamMessageTypeEnum,
+  type RunToolSecondParamsType,
+  type ToolCallbackReturnSchemaType,
+  type StreamDataType
+} from '@tool/type/req';
 
 export const runToolStreamHandler = async (
   req: Request,
@@ -26,7 +31,7 @@ export const runToolStreamHandler = async (
   const streamManager = new StreamManager(res);
   try {
     const result = await (async () => {
-      const streamResponse: RunToolSecondParamsType['streamResponse'] = (e) =>
+      const streamResponse: RunToolSecondParamsType['streamResponse'] = (e: StreamDataType) =>
         streamManager.sendMessage({
           type: StreamMessageTypeEnum.stream,
           data: e
@@ -39,7 +44,7 @@ export const runToolStreamHandler = async (
             systemVar,
             streamResponse
           })
-          .then((res) => {
+          .then((res: ToolCallbackReturnSchemaType) => {
             if (res.error) {
               return Promise.reject(res.error);
             }

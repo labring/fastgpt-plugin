@@ -38,7 +38,7 @@
   },
   "peerDependencies": {
     "typescript": "^5.9.3",
-    "zod": "^4.1.12"
+    "zod": "^3.25.76"
   },
   "workspaces": [
     "sdk",
@@ -55,8 +55,8 @@
     ]
   },
   "dependencies": {
-    "@ts-rest/core": "3.53.0-rc.1",
-    "@ts-rest/express": "3.53.0-rc.1",
-    "@ts-rest/open-api": "3.53.0-rc.1"
+    "@ts-rest/core": "3.52.1",
+    "@ts-rest/express": "3.52.1",
+    "@ts-rest/open-api": "3.52.1"
   }
 }
