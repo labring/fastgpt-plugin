@@ -50,8 +50,8 @@ export const LLMModelItemSchema = PriceSchema.merge(BaseModelItemSchema).extend(
   useInEvaluation: z.boolean().optional(), // evaluation
 
   defaultSystemChatPrompt: z.string().optional(),
-  defaultConfig: z.record(z.any()).optional(),
-  fieldMap: z.record(z.string()).optional()
+  defaultConfig: z.record(z.string(), z.any()).optional(),
+  fieldMap: z.record(z.string(), z.string()).optional()
 });
 
 // Embedding 模型类型 schema
@@ -62,9 +62,9 @@ export const EmbeddingModelItemSchema = PriceSchema.merge(BaseModelItemSchema).e
   weight: z.number().optional(), // training weight
   hidden: z.boolean().optional(), // Disallow creation
   normalization: z.boolean().optional(), // normalization processing
-  defaultConfig: z.record(z.any()).optional(), // post request config
-  dbConfig: z.record(z.any()).optional(), // Custom parameters for storage
-  queryConfig: z.record(z.any()).optional() // Custom parameters for query
+  defaultConfig: z.record(z.string(), z.any()).optional(), // post request config
+  dbConfig: z.record(z.string(), z.any()).optional(), // Custom parameters for storage
+  queryConfig: z.record(z.string(), z.any()).optional() // Custom parameters for query
 });
 
 // Rerank 模型类型 schema

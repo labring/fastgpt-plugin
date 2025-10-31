@@ -13,7 +13,7 @@ export type MongoPluginSchemaType = z.infer<typeof PluginZodSchema>;
 
 const pluginMongooseSchema = new Schema({
   toolId: { type: String },
-  type: { type: String, required: true, enum: Object.values(pluginTypeEnum.Enum) }
+  type: { type: String, required: true, enum: Object.values(pluginTypeEnum.enum) }
 });
 
 pluginMongooseSchema.index({ toolId: 1 }, { unique: true, sparse: true });

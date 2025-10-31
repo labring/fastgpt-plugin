@@ -12,7 +12,7 @@ export const toolUploadContract = c.router(
       responses: {
         200: z.object({
           postURL: z.string(),
-          formData: z.record(z.any()),
+          formData: z.record(z.string(), z.any()),
           objectName: z.string()
         })
       },

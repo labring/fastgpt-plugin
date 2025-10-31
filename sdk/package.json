@@ -21,5 +21,8 @@
   },
   "devDependencies": {
     "bun-plugin-dts": "^0.3.0"
+  },
+  "peerDependencies": {
+    "zod": "^4.1.12"
   }
 }

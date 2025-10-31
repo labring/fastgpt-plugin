@@ -25,8 +25,8 @@ export const SystemVarSchema = z.object({
 export type SystemVarType = z.infer<typeof SystemVarSchema>;
 
 export const ToolCallbackReturnSchema = z.object({
-  error: z.union([z.string(), z.record(z.any())]).optional(),
-  output: z.record(z.any()).optional()
+  error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
+  output: z.record(z.string(), z.any()).optional()
 });
 
 export type ToolCallbackReturnSchemaType = z.infer<typeof ToolCallbackReturnSchema>;
@@ -66,12 +66,12 @@ export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
 
 export const runToolSecondParams = z.object({
   systemVar: SystemVarSchema,
-  streamResponse: z.function().args(StreamDataSchema).returns(z.void()) // sendMessage
+  streamResponse: z.function({ input: z.tuple([StreamDataSchema]), output: z.void() }) // sendMessage
 });
 
 export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
 
-export const ToolCallbackType = z
-  .function()
-  .args(z.any(), runToolSecondParams)
-  .returns(z.promise(ToolCallbackReturnSchema));
+export const ToolCallbackType = z.function({
+  input: z.tuple([z.any(), runToolSecondParams]),
+  output: z.promise(ToolCallbackReturnSchema)
+});
