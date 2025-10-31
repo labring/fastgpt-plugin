@@ -92,13 +92,13 @@ jobs:
         working-directory: /tmp/digests
         run: |
           # Define all tags for different registries
-          GITHUB_TAG="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.ref_name }}"
+
           GITHUB_LATEST="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:latest"
           GITHUB_SHA="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin:${{ github.sha }}"
 
 
           # Create array of all tags
-          TAGS="$GITHUB_TAG $GITHUB_LATEST $GITHUB_SHA"
+          TAGS=" $GITHUB_LATEST $GITHUB_SHA"
 
           # Create manifest list for each tag
           for TAG in $TAGS; do
