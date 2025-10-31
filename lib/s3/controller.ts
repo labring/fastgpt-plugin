@@ -37,7 +37,8 @@ export class S3Service {
       useSSL: this.config.useSSL,
       accessKey: this.config.accessKey,
       secretKey: this.config.secretKey,
-      transportAgent: this.config.transportAgent
+      transportAgent: this.config.transportAgent,
+      pathStyle: this.config.pathStyle
     });
 
     if (this.config.externalBaseURL) {
@@ -57,7 +58,8 @@ export class S3Service {
         port: externalPort,
         accessKey: this.config.accessKey,
         secretKey: this.config.secretKey,
-        transportAgent: this.config.transportAgent
+        transportAgent: this.config.transportAgent,
+        pathStyle: this.config.pathStyle
       });
     }
   }
