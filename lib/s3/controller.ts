@@ -37,7 +37,8 @@ export class S3Service {
       useSSL: this.config.useSSL,
       accessKey: this.config.accessKey,
       secretKey: this.config.secretKey,
-      transportAgent: this.config.transportAgent
+      transportAgent: this.config.transportAgent,
+      pathStyle: false
     });
 
     if (this.config.externalBaseURL) {
