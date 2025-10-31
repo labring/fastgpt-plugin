@@ -12,7 +12,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "zod": "^3.24.3",
+    "zod": "^4.1.12",
     "youtube-caption-extractor": "^1.9.1"
   }
 }

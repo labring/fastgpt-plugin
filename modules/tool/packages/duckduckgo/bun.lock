@@ -5,7 +5,7 @@
       "name": "dockdockgo",
       "dependencies": {
         "duck-duck-scrape": "^2.2.7",
-        "zod": "^3.24.3",
+        "zod": "^4.1.12",
       },
       "devDependencies": {
         "@types/bun": "latest",
