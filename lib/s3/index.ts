@@ -10,7 +10,6 @@ export const publicS3Server = (() => {
       externalBaseURL: process.env.S3_EXTERNAL_BASE_URL,
       isPublicRead: true
     });
-    global._publicS3Server.initialize('public');
   }
   return global._publicS3Server;
 })();
@@ -23,7 +22,6 @@ export const privateS3Server = (() => {
       externalBaseURL: process.env.S3_EXTERNAL_BASE_URL,
       isPublicRead: false
     });
-    global._privateS3Server.initialize('private');
   }
   return global._privateS3Server;
 })();
@@ -32,3 +30,8 @@ declare global {
   var _publicS3Server: S3Service;
   var _privateS3Server: S3Service;
 }
+
+export const initializeS3 = async () => {
+  await publicS3Server.initialize('public');
+  await privateS3Server.initialize('private');
+};

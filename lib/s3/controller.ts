@@ -119,10 +119,12 @@ export class S3Service {
         );
       } else if (errMsg.includes('Access Denied.')) {
         addLog.warn('Access Denied - check your access key and secret key');
-        return;
+      } else {
+        return Promise.reject(err);
       }
-      return Promise.reject(err);
     }
+
+    addLog.info(`Bucket ${this.config.bucket} initialized successfully.`);
   }
 
   private generateFileId(): string {
@@ -291,8 +293,10 @@ export class S3Service {
 
   async removeFile(_objectName: string) {
     const objectName = _objectName.startsWith('/') ? _objectName.slice(1) : _objectName;
+
+    addLog.debug(`MinIO file start delete: ${this.config.bucket}/${objectName}`);
     await this.client.removeObject(this.config.bucket, objectName);
-    addLog.info(`MinIO file deleted: ${this.config.bucket}/${objectName}`);
+    addLog.debug(`MinIO file deleted successfully: ${this.config.bucket}/${objectName}`);
   }
 
   /**

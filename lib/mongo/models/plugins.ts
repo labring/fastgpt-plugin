@@ -19,4 +19,4 @@ const pluginMongooseSchema = new Schema({
 pluginMongooseSchema.index({ toolId: 1 }, { unique: true, sparse: true });
 pluginMongooseSchema.index({ type: 1 });
 
-export const MongoPlugin = getMongoModel('fastgpt_plugins', pluginMongooseSchema);
+export const MongoPlugin = getMongoModel('system_plugins', pluginMongooseSchema);

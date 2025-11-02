@@ -4,13 +4,13 @@ import { isProd } from '@/constants';
 import { initOpenAPI } from '@/contract/openapi';
 import { connectionMongo, connectMongo, MONGO_URL } from '@/mongo';
 import { initRouter } from '@/router';
+import { initializeS3 } from '@/s3';
 import { ensureDir, refreshDir } from '@/utils/fs';
 import { addLog } from '@/utils/log';
 import { setupProxy } from '@/utils/setupProxy';
 import { connectSignoz } from '@/utils/signoz';
 import { initModels } from '@model/init';
-import { basePath, tempDir, tempToolsDir, toolsDir } from '@tool/constants';
-import { initTools } from '@tool/init';
+import { basePath, tempDir, tempToolsDir } from '@tool/constants';
 import { initWorkflowTemplates } from '@workflow/init';
 import express from 'express';
 import { join } from 'path';
@@ -42,11 +42,11 @@ try {
   process.exit(1);
 }
 
+await initializeS3();
+
 // Modules
 await refreshDir(tempDir); // upload pkg files, unpkg, temp dir
 await ensureDir(tempToolsDir); // ensure the unpkged tools temp dir
-
-await refreshVersionKey(SystemCacheKeyEnum.systemTool);
 
 await Promise.all([
   getCachedData(SystemCacheKeyEnum.systemTool), // init system tool

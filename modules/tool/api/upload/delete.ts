@@ -20,14 +20,13 @@ export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }
         }
       } as const;
     }
+    // Remove public files(Avatar,readme)
+    const files = await publicS3Server.getFiles(`${UploadToolsS3Path}/${result.toolId}`);
 
-    await Promise.all([
-      privateS3Server.removeFile(`${UploadToolsS3Path}/${result.toolId}.js`),
-      (async () => {
-        const files = await publicS3Server.getFiles(`${UploadToolsS3Path}/${result.toolId}`);
-        await publicS3Server.removeFiles(files);
-      })()
-    ]);
+    await publicS3Server.removeFiles(files);
+
+    // Remove private file(index.js)
+    await privateS3Server.removeFile(`${UploadToolsS3Path}/${result.toolId}.js`);
   });
 
   await refreshVersionKey(SystemCacheKeyEnum.systemTool);

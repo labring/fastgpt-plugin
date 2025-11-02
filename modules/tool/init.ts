@@ -10,7 +10,6 @@ import { basePath, toolsDir, UploadToolsS3Path } from './constants';
 import { privateS3Server } from '@/s3';
 import { LoadToolsByFilename } from './utils';
 import { stat } from 'fs/promises';
-import { getErrText } from './utils/err';
 import { getCachedData } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { batch } from '@/utils/parallel';
