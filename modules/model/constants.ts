@@ -7,7 +7,11 @@ export const modelsBuffer: {
   data: []
 };
 
-export const ModelProviderMap = {
+export type ModelProviderMap = {
+  [key: string]: I18nStringType;
+};
+
+export const ModelProviderMap: ModelProviderMap = {
   OpenAI: {
     en: 'OpenAI',
     'zh-CN': 'OpenAI',
