@@ -10,6 +10,7 @@ import { addLog } from '@/utils/log';
 import { setupProxy } from '@/utils/setupProxy';
 import { connectSignoz } from '@/utils/signoz';
 import { initModels } from '@model/init';
+import { initModelAvatars } from '@model/avatars';
 import { basePath, tempDir, tempToolsDir } from '@tool/constants';
 import { initWorkflowTemplates } from '@workflow/init';
 import express from 'express';
@@ -43,6 +44,9 @@ try {
 }
 
 await initializeS3();
+
+// Upload model provider avatars to S3
+await initModelAvatars();
 
 // Modules
 await refreshDir(tempDir); // upload pkg files, unpkg, temp dir
