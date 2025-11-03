@@ -9,7 +9,8 @@ import { addLog } from '@/utils/log';
 import { privateS3Server, publicS3Server } from '@/s3';
 
 export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
-  const { toolIds } = body;
+  const { toolIds: _toolIds } = body;
+  const toolIds = [...new Set(_toolIds)];
   addLog.debug(`Confirming uploaded tools: ${toolIds}`);
   const pendingTools = await privateS3Server.getFiles(`${UploadToolsS3Path}/temp`);
   const pendingToolIds = pendingTools
