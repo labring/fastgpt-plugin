@@ -202,13 +202,11 @@ export const ModelProviders = Object.entries(ModelProviderMap)
     return 0;
   });
 
-export type ModelProviderIdType = keyof typeof ModelProviderMap;
-
 export type AiproxyMapProviderType = Record<
   number,
   {
     name: I18nStringStrictType | string;
-    provider: ModelProviderIdType; // Use to sort,get avatar
+    provider?: string; // Use to sort,get avatar
     avatar?: string;
   }
 >;
