@@ -12,11 +12,13 @@ export const PluginZodSchema = z.object({
 export type MongoPluginSchemaType = z.infer<typeof PluginZodSchema>;
 
 const pluginMongooseSchema = new Schema({
-  toolId: { type: String },
-  type: { type: String, required: true, enum: Object.values(pluginTypeEnum.enum) }
+  toolId: { type: String, required: true },
+  type: { type: String, required: true, enum: Object.values(pluginTypeEnum.enum) },
+
+  // @deprecated
+  objectName: { type: String }
 });
 
-pluginMongooseSchema.index({ toolId: 1 }, { unique: true, sparse: true });
-pluginMongooseSchema.index({ type: 1 });
+pluginMongooseSchema.index({ type: 1, toolId: 1 }, { unique: true });
 
-export const MongoPlugin = getMongoModel('system_plugins', pluginMongooseSchema);
+export const MongoSystemPlugin = getMongoModel('system_plugins', pluginMongooseSchema);

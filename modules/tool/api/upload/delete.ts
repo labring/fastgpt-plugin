@@ -1,5 +1,5 @@
 import { contract } from '@/contract';
-import { MongoPlugin } from '@/mongo/models/plugins';
+import { MongoSystemPlugin } from '@/mongo/models/plugins';
 import { mongoSessionRun } from '@/mongo/utils';
 import { s } from '@/router/init';
 import { privateS3Server, publicS3Server } from '@/s3';
@@ -11,7 +11,7 @@ import { addLog } from '@/utils/log';
 export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }) => {
   addLog.debug(`Deleting tool: ${toolId}`);
   const res = await mongoSessionRun(async (session) => {
-    const result = await MongoPlugin.findOneAndDelete({ toolId }).session(session);
+    const result = await MongoSystemPlugin.findOneAndDelete({ toolId }).session(session);
     if (!result || !result.toolId) {
       return {
         status: 404,

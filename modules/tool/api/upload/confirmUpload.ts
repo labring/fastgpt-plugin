@@ -1,7 +1,7 @@
 import { s } from '@/router/init';
 import { contract } from '@/contract';
 import { UploadToolsS3Path } from '@tool/constants';
-import { MongoPlugin, pluginTypeEnum } from '@/mongo/models/plugins';
+import { MongoSystemPlugin, pluginTypeEnum } from '@/mongo/models/plugins';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { mongoSessionRun } from '@/mongo/utils';
@@ -28,10 +28,10 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
 
   await mongoSessionRun(async (session) => {
     const allToolsInstalled = (
-      await MongoPlugin.find({ type: pluginTypeEnum.enum.tool }).lean()
+      await MongoSystemPlugin.find({ type: pluginTypeEnum.enum.tool }).lean()
     ).map((tool) => tool.toolId);
     // create all that not exists
-    await MongoPlugin.create(
+    await MongoSystemPlugin.create(
       toolIds
         .filter((toolId) => !allToolsInstalled.includes(toolId))
         .map((toolId) => ({

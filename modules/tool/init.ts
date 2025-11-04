@@ -3,7 +3,7 @@ import { join } from 'path';
 import { readdir } from 'fs/promises';
 import type { ToolMapType } from './type';
 import { isProd } from '@/constants';
-import { MongoPlugin } from '@/mongo/models/plugins';
+import { MongoSystemPlugin } from '@/mongo/models/plugins';
 import { refreshDir } from '@/utils/fs';
 import { addLog } from '@/utils/log';
 import { basePath, toolsDir, UploadToolsS3Path } from './constants';
@@ -33,7 +33,7 @@ export async function initTools() {
     await refreshDir(toolsDir);
     // 1. download pkgs into pkg dir
     // 1.1 get tools from mongo
-    const toolsInMongo = await MongoPlugin.find({
+    const toolsInMongo = await MongoSystemPlugin.find({
       type: 'tool'
     }).lean();
 

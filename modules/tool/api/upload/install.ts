@@ -5,7 +5,7 @@ import { join } from 'path';
 import { batch } from '@/utils/parallel';
 import { parsePkg } from '@tool/utils';
 import { writeFile } from 'fs/promises';
-import { MongoPlugin, pluginTypeEnum } from '@/mongo/models/plugins';
+import { MongoSystemPlugin, pluginTypeEnum } from '@/mongo/models/plugins';
 import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { addLog } from '@/utils/log';
@@ -30,11 +30,11 @@ export default s.route(contract.tool.upload.install, async ({ body }) => {
     <T>(item: T): item is NonNullable<T> => !!item
   );
 
-  const allToolsInstalled = (await MongoPlugin.find({ type: pluginTypeEnum.enum.tool }).lean()).map(
-    (tool) => tool.toolId
-  );
+  const allToolsInstalled = (
+    await MongoSystemPlugin.find({ type: pluginTypeEnum.enum.tool }).lean()
+  ).map((tool) => tool.toolId);
   // create all that not exists
-  await MongoPlugin.create(
+  await MongoSystemPlugin.create(
     toolIds
       .filter((toolId) => !allToolsInstalled.includes(toolId))
       .map((toolId) => ({
