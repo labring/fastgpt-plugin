@@ -36,6 +36,8 @@ export async function initTools() {
     const toolsInMongo = await MongoPlugin.find({
       type: 'tool'
     }).lean();
+
+    addLog.debug(`Tools in mongo: ${toolsInMongo.length}`);
     // 1.2 download it to temp dir
     await batch(
       10,
@@ -49,6 +51,7 @@ export async function initTools() {
     );
 
     // 2. get all tool dirs
+    addLog.debug(`Load tool in local: ${toolsInMongo.length}`);
     const toolFiles = await readdir(toolsDir);
     const toolMap: ToolMapType = new Map();
 

@@ -9,7 +9,6 @@ import type { ToolType, ToolSetType } from './type';
 import { ToolTagEnum } from './type/tags';
 import { publicS3Server } from '@/s3';
 import { mimeMap } from '@/s3/const';
-import { file } from 'bun';
 
 /**
  * Load Tools in dev mode. Only avaliable in dev mode
@@ -44,7 +43,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           contentType: mimeMap[parse(logoPath).ext]
         });
         addLog.debug(
-          `Uploaded logo file: ${logoPath} to ${UploadToolsS3Path}/${filename}/${logoNameWithoutExt}`
+          `📦 Uploaded tool logo file: ${filename} -> ${UploadToolsS3Path}/${filename}/${logoNameWithoutExt}`
         );
       } catch (error) {
         addLog.warn(`Failed to upload logo file ${logoPath}: ${error}`);
@@ -117,7 +116,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
                   contentType: mimeMap['.' + logoFilename.split('.').pop()!]
                 });
                 addLog.debug(
-                  `Uploaded child logo file: ${logoPath} to ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
+                  `📦 Uploaded child logo file: ${toolsetId} -> ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
                 );
               } catch (error) {
                 addLog.warn(`Failed to upload child logo file ${logoPath}: ${error}`);
@@ -139,7 +138,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
                     contentType: mimeMap['.' + logoFilename.split('.').pop()!]
                   });
                   addLog.debug(
-                    `Uploaded parent logo to child: ${parentLogoPath} to ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
+                    `📦 Uploaded parent logo to child: ${toolsetId} -> ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
                   );
                 } catch (error) {
                   addLog.warn(`Failed to upload parent logo for child tool ${file}: ${error}`);

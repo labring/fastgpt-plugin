@@ -124,7 +124,7 @@ const uploadLogoFile = async (logoPath: string, providerName: string): Promise<v
     contentType: mimeType,
     defaultFilename: 'logo'
   });
-  addLog.info(
+  addLog.debug(
     `📦 Uploaded model avatar: ${providerName} -> ${`${UploadModelsS3Path}/${providerName}/logo`}`
   );
 };
@@ -149,29 +149,21 @@ export const initModelAvatars = async () => {
       addLog.info('Running in production mode, reading from dist/model/avatars...');
     }
 
-    let uploadedCount = 0;
-
-    for (const { path: logoPath, providerName } of logoItems) {
-      try {
+    await Promise.allSettled(
+      logoItems.map(async ({ path: logoPath, providerName }) => {
         if (!providerName) {
           addLog.warn(`Invalid logo path format: ${logoPath}`);
-          continue;
+          return;
         }
-
-        // Check if file exists before attempting to upload
         if (!existsSync(logoPath)) {
           addLog.warn(`Logo file not found: ${logoPath}, skipping ${providerName}`);
-          continue;
+          return;
         }
-
         await uploadLogoFile(logoPath, providerName);
-        uploadedCount++;
-      } catch (error) {
-        addLog.error(`Failed to upload model avatar for ${providerName}:`, error);
-      }
-    }
+      })
+    );
 
-    addLog.info(`✅ Model avatars initialization completed. Uploaded ${uploadedCount} avatars.`);
+    addLog.info(`✅ Model avatars initialization completed.`);
   } catch (error) {
     addLog.error('❌ Model avatars initialization failed:', error);
     throw error;

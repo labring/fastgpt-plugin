@@ -35,6 +35,7 @@ import openrouter from './provider/OpenRouter';
 import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
 import { modelsBuffer } from './constants';
 import { addLog } from '@/utils/log';
+import { initModelAvatars } from './avatars';
 
 // All providers array in alphabetical order
 const allProviders: ProviderConfigType[] = [
@@ -73,7 +74,9 @@ const allProviders: ProviderConfigType[] = [
   yi
 ];
 
-export const initModels = () => {
+export const initModels = async () => {
+  await initModelAvatars();
+
   modelsBuffer.data = allProviders
     .map((item) => {
       return item.list.map((model) => {
