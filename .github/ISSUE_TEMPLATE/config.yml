@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: FastGPT 官方文档
-    url: https://docs.fastgpt.in/
+    url: https://doc.fastgpt.io/
     about: 查看 FastGPT 官方文档了解更多信息
-  - name: FastGPT 社区讨论
-    url: https://github.com/labring/FastGPT/discussions
+  - name: FastGPT 飞书交流群
+    url: https://oss.laf.run/otnvvf-imgs/fastgpt-feishu1.png
     about: 在社区中讨论 FastGPT 相关问题
   - name: 插件开发指南
-    url: https://github.com/your-repo/fastgpt-plugins/blob/main/.claude/CLAUDE.md
+    url: https://doc.fastgpt.io/docs/introduction/guide/plugins/dev_system_tool
     about: 查看 FastGPT 插件开发指南
