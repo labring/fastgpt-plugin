@@ -90,7 +90,18 @@ const parseMod = async ({
 
 // Load tool or toolset and its children
 export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]> => {
-  const rootMod = (await import(join(toolsDir, filename))).default as ToolType | ToolSetType;
+  const moduleKey = join(toolsDir, filename);
+  const rootMod = (await import(moduleKey)).default as ToolType | ToolSetType;
+
+  // Clear module cache to prevent memory leak
+  // @ts-ignore - Bun doesn't have require.cache, Node.js does
+  if (typeof require !== 'undefined' && require.cache) {
+    try {
+      delete require.cache[require.resolve(moduleKey)];
+    } catch {
+      // Ignore if require.resolve fails
+    }
+  }
 
   if (!rootMod.toolId) {
     addLog.error(`Can not parse toolId, filename: ${filename}`);
@@ -108,7 +119,14 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
     addLog.error(`Can not parse toolId, filename: ${filename}`);
     return [];
   }
-  const mod = (await import(join(tempDir, 'index.js'))).default as ToolSetType | ToolType;
+  const moduleKey = join(tempDir, 'index.js');
+  const mod = (await import(moduleKey)).default as ToolSetType | ToolType;
+
+  // Clear module cache to prevent memory leak
+  // @ts-ignore - Bun doesn't have require.cache, Node.js does
+  if (typeof require !== 'undefined' && require.cache) {
+    delete require.cache[require.resolve(moduleKey)];
+  }
 
   // upload unpkged files (except index.js) to s3
   // 1. get all files recursively
