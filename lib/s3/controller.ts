@@ -130,7 +130,7 @@ export class S3Service {
   }
 
   private generateFileId(): string {
-    return randomBytes(16).toString('hex');
+    return randomBytes(8).toString('hex');
   }
 
   /**
@@ -248,8 +248,11 @@ export class S3Service {
       }
 
       // const fileId = this.generateFileId();
-      const prefix =
-        (input.prefix?.endsWith('/') ? input.prefix : input.prefix + '/') ?? PluginBaseS3Prefix;
+      const prefix = input.prefix
+        ? input.prefix?.endsWith('/')
+          ? input.prefix
+          : input.prefix + '/'
+        : PluginBaseS3Prefix;
       const objectName = `${prefix}${input.keepRawFilename ? '' : this.generateFileId() + '-'}${originalFilename}`;
       if (input.expireMins) {
         await MongoS3TTL.create({
