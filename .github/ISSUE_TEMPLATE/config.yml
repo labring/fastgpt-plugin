@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: FastGPT 官方文档
+    url: https://docs.fastgpt.in/
+    about: 查看 FastGPT 官方文档了解更多信息
+  - name: FastGPT 社区讨论
+    url: https://github.com/labring/FastGPT/discussions
+    about: 在社区中讨论 FastGPT 相关问题
+  - name: 插件开发指南
+    url: https://github.com/your-repo/fastgpt-plugins/blob/main/.claude/CLAUDE.md
+    about: 查看 FastGPT 插件开发指南
