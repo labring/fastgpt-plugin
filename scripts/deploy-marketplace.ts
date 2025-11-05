@@ -2,6 +2,7 @@
 // 2. upload to s3
 
 import { mimeMap } from '@/s3/const';
+import { pkg } from '@/utils/zip';
 import { UploadToolsS3Path } from '@tool/constants';
 import { $, S3Client } from 'bun';
 import { glob } from 'fs/promises';
@@ -113,6 +114,11 @@ async function main() {
   }
 
   console.log('✅ Assets uploaded successfully');
+
+  await pkg('./dist/pkgs', './dist/pkgs.pkg');
+  await client.write(`/pkgs.zip`, Bun.file('./dist/pkgs.pkg'));
+
+  console.log('✅ pkgs.zip uploaded successfully');
 }
 
 if (import.meta.main) {
