@@ -458,9 +458,8 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         // 只统计左栏的变更项，避免重复统计
         const leftColumnItems = document.querySelector('.column:first-child').querySelectorAll('.diff-item');
         leftColumnItems.forEach((item, index) => {
-          // 只统计真正有变更的内容（新增、删除、修改）
-          if (item.classList.contains('added') ||
-              item.classList.contains('removed') ||
+          // 只统计左栏的变更项（删除和修改）
+          if (item.classList.contains('removed') ||
               item.classList.contains('modified')) {
             changes.push(index);
           }
@@ -502,7 +501,9 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
           const rightColumnItem = document.querySelector('.column:last-child').querySelectorAll('.diff-item')[targetIndex];
 
           if (leftColumnItem && rightColumnItem) {
+            // 同时滚动左右两栏到对应位置
             leftColumnItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            rightColumnItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
             leftColumnItem.classList.add('highlight');
             rightColumnItem.classList.add('highlight');
 
@@ -565,20 +566,25 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
   const originalContent = diffs
     .map((diff, index) => {
       let content = '';
+      let badge = '';
       const typeClass = diff.type;
 
       if (diff.type === 'added') {
         // 新增的内容在左侧显示为空占位符
         content = '<div class="diff-paragraph empty-line"></div>';
-      } else if (diff.type === 'removed' || diff.type === 'modified') {
+      } else if (diff.type === 'removed') {
         content = `<div class="diff-paragraph">${escapeHtml(diff.original || '')}</div>`;
+        badge = '<span class="diff-badge badge-removed">删除</span>';
+      } else if (diff.type === 'modified') {
+        content = `<div class="diff-paragraph">${escapeHtml(diff.original || '')}</div>`;
+        badge = '<span class="diff-badge badge-removed">删除</span>';
       } else {
         content = `<div class="diff-paragraph">${escapeHtml(diff.original || '')}</div>`;
       }
 
       return `
       <div class="diff-item ${typeClass}" data-index="${index}">
-        ${diff.type !== 'unchanged' ? `<span class="diff-badge badge-${diff.type}">${diff.type === 'added' ? '新增' : diff.type === 'removed' ? '删除' : '修改'}</span>` : ''}
+        ${badge}
         ${content}
       </div>
     `;
@@ -589,20 +595,25 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
   const modifiedContent = diffs
     .map((diff, index) => {
       let content = '';
+      let badge = '';
       const typeClass = diff.type;
 
       if (diff.type === 'removed') {
         // 删除的内容在右侧显示为空占位符
         content = '<div class="diff-paragraph empty-line"></div>';
-      } else if (diff.type === 'added' || diff.type === 'modified') {
+      } else if (diff.type === 'added') {
         content = `<div class="diff-paragraph">${escapeHtml(diff.modified || '')}</div>`;
+        badge = '<span class="diff-badge badge-added">新增</span>';
+      } else if (diff.type === 'modified') {
+        content = `<div class="diff-paragraph">${escapeHtml(diff.modified || '')}</div>`;
+        badge = '<span class="diff-badge badge-added">新增</span>';
       } else {
         content = `<div class="diff-paragraph">${escapeHtml(diff.modified || '')}</div>`;
       }
 
       return `
       <div class="diff-item ${typeClass}" data-index="${index}">
-        ${diff.type !== 'unchanged' ? `<span class="diff-badge badge-${diff.type}">${diff.type === 'added' ? '新增' : diff.type === 'removed' ? '删除' : '修改'}</span>` : ''}
+        ${badge}
         ${content}
       </div>
     `;
