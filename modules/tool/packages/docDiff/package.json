@@ -1,0 +1,17 @@
+{
+  "name": "@fastgpt-plugins/tool-doc-diff",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun ../../../../scripts/build.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
+}

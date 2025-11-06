@@ -180,14 +180,21 @@ bun run install:plugins
 bun run build:pkg
 ```
 
-### 3. 生产部署
+### 3. 测试和部署
 ```bash
+# 运行测试
+bun run test
+
 # 构建生产版本
 bun run build:runtime
 
 # 启动生产服务
 bun run start
 ```
+
+**⚠️ 重要**: 
+- 测试命令使用 `bun run test` 而不是 `bun test`
+- 测试环境使用 Vitest 运行器，支持 mock 和覆盖率
 
 ## 快速适配指南
 
