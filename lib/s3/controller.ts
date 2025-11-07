@@ -249,11 +249,11 @@ export class S3Service {
 
       // const fileId = this.generateFileId();
       const prefix = input.prefix
-        ? input.prefix?.endsWith('/')
-          ? input.prefix
-          : input.prefix + '/'
+        ? !input.prefix?.endsWith('/')
+          ? input.prefix + '/'
+          : input.prefix
         : PluginBaseS3Prefix;
-      const objectName = `${prefix}${input.keepRawFilename ? '' : this.generateFileId() + '-'}${originalFilename}`;
+      const objectName = `${prefix}/${input.keepRawFilename ? '' : this.generateFileId() + '-'}${originalFilename}`;
       if (input.expireMins) {
         await MongoS3TTL.create({
           bucketName: this.config.bucket,
