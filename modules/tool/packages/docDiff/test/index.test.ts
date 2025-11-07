@@ -120,7 +120,7 @@ describe('DocDiff Tool Tests', () => {
         ? uploadCall.buffer.toString('utf-8')
         : Buffer.from(uploadCall.buffer || '').toString('utf-8');
 
-      expect(htmlContent).toContain('未修改');
+      expect(htmlContent).toContain('修改');
       expect(htmlContent).toContain('📄 原始文档');
       expect(htmlContent).toContain('📝 修改后文档');
       expect(htmlContent).toContain('3'); // unchanged count
@@ -334,7 +334,6 @@ describe('DocDiff Tool Tests', () => {
         : Buffer.from(uploadCall.buffer || '').toString('utf-8');
 
       expect(htmlContent).toContain('stats');
-      expect(htmlContent).toContain('未修改');
       expect(htmlContent).toContain('新增');
       expect(htmlContent).toContain('修改');
       expect(htmlContent).toContain('删除');

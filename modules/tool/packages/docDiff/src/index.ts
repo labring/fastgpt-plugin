@@ -273,6 +273,13 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         letter-spacing: -0.025em;
       }
 
+      .brand {
+        color: var(--text-tertiary);
+        font-weight: 400;
+        font-size: 0.85em;
+        margin-left: 8px;
+      }
+
       .timestamp {
         color: var(--text-tertiary);
         font-size: 13px;
@@ -314,9 +321,12 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
       .navigation {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 16px;
         padding: 12px 0;
+      }
+
+      .navigation:first-of-type {
+        justify-content: space-between;
       }
 
       .nav-group {
@@ -333,6 +343,7 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         border-radius: var(--radius-sm);
         padding: 2px;
         gap: 2px;
+        width: 100%;
       }
 
       .filter-tab {
@@ -463,7 +474,7 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        min-height: 48px;
+        min-height: 70px;
         box-sizing: border-box;
       }
 
@@ -594,6 +605,59 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         }
       }
 
+      /* 可折叠控制面板 */
+      .controls-collapse {
+        display: block;
+      }
+
+      .collapse-btn {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        border-radius: var(--radius-sm);
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin: 8px 0;
+      }
+
+      .collapse-btn:hover {
+        background: var(--bg-secondary);
+        border-color: var(--accent);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow);
+      }
+
+      .collapse-icon {
+        transition: transform 0.2s ease;
+        display: inline-block;
+        font-size: 10px;
+      }
+
+      .collapsed .collapse-icon {
+        transform: rotate(-90deg);
+      }
+
+      .collapsible-content {
+        max-height: 500px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.2s ease;
+        opacity: 1;
+        padding: 10px;
+      }
+
+      .collapsed .collapsible-content {
+        max-height: 0;
+        opacity: 0;
+      }
+
       /* 响应式设计 */
       @media (max-width: 768px) {
         .content-container {
@@ -623,6 +687,93 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
 
         .diff-paragraph {
           font-size: 13px;
+        }
+
+        /* 折叠时调整内容区域高度 */
+        .container.collapsed .content-container {
+          height: calc(100vh - 120px);
+        }
+
+        /* 折叠时简化导航 */
+        .collapsed .navigation {
+          padding: 8px 0;
+        }
+
+        .collapsed .nav-group {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .collapsed .filter-tabs {
+          order: 2;
+          width: 100%;
+          margin-top: 8px;
+        }
+
+        .collapsed .nav-btn:not(.lock-btn) {
+          font-size: 12px;
+          padding: 6px 12px;
+        }
+
+        .collapsed .counter {
+          font-size: 12px;
+          margin: 0 8px;
+        }
+      }
+
+      /* 超小屏幕优化 */
+      @media (max-width: 480px) {
+        .header {
+          padding: 12px;
+        }
+
+        .header h1 {
+          font-size: 18px;
+        }
+
+        .brand {
+          font-size: 0.8em;
+          margin-left: 6px;
+        }
+
+        .stats {
+          gap: 8px;
+        }
+
+        .stat-card {
+          min-width: 60px;
+          padding: 8px 10px;
+        }
+
+        .stat-number {
+          font-size: 16px;
+        }
+
+        .stat-label {
+          font-size: 11px;
+        }
+
+        .collapsed .navigation {
+          padding: 6px 0;
+        }
+
+        .collapsed .nav-btn:not(.lock-btn) {
+          font-size: 11px;
+          padding: 5px 10px;
+        }
+
+        .content-container {
+          padding: 0 12px 12px;
+          gap: 10px;
+        }
+
+        .diff-item {
+          padding: 10px 12px;
+          gap: 8px;
+        }
+
+        .diff-paragraph {
+          font-size: 12px;
         }
       }
 
@@ -919,6 +1070,31 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         }
       }
 
+      // 切换控制面板显示/隐藏
+      function toggleControls() {
+        const header = document.getElementById('header');
+        const container = document.getElementById('container');
+        const collapseBtn = document.getElementById('collapseBtn');
+        const collapseText = document.getElementById('collapseText');
+        const collapsibleContent = document.getElementById('collapsibleContent');
+
+        const isCollapsed = header.classList.contains('collapsed');
+
+        if (isCollapsed) {
+          // 展开控制面板
+          header.classList.remove('collapsed');
+          container.classList.remove('collapsed');
+          collapseText.textContent = '收起筛选栏';
+          collapseBtn.title = '收起筛选栏';
+        } else {
+          // 折叠控制面板
+          header.classList.add('collapsed');
+          container.classList.add('collapsed');
+          collapseText.textContent = '展开筛选栏';
+          collapseBtn.title = '展开筛选栏';
+        }
+      }
+
       // 页面加载完成后初始化
       document.addEventListener('DOMContentLoaded', function() {
         initChanges();
@@ -1016,53 +1192,65 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
       ${css}
     </head>
     <body>
-      <div class="container">
-        <div class="header">
+      <div class="container" id="container">
+        <div class="header" id="header">
           <div class="header-content">
-            <h1>${title}</h1>
+            <h1>${title} <span class="brand">by FastGPT</span></h1>
             <div class="timestamp">生成时间: ${timestamp}</div>
 
-            <div class="stats">
-              <div class="stat-card clickable" data-type="added">
-                <div class="stat-number added">${stats.added}</div>
-                <div class="stat-label">新增</div>
+            <div class="collapsible-content" id="collapsibleContent">
+              <div class="stats">
+                <div class="stat-card clickable" data-type="added">
+                  <div class="stat-number added">${stats.added}</div>
+                  <div class="stat-label">新增</div>
+                </div>
+                <div class="stat-card clickable" data-type="removed">
+                  <div class="stat-number removed">${stats.removed}</div>
+                  <div class="stat-label">删除</div>
+                </div>
+                <div class="stat-card clickable" data-type="modified">
+                  <div class="stat-number modified">${stats.modified}</div>
+                  <div class="stat-label">修改</div>
+                </div>
               </div>
-              <div class="stat-card clickable" data-type="removed">
-                <div class="stat-number removed">${stats.removed}</div>
-                <div class="stat-label">删除</div>
-              </div>
-              <div class="stat-card clickable" data-type="modified">
-                <div class="stat-number modified">${stats.modified}</div>
-                <div class="stat-label">修改</div>
+
+              <div class="navigation">
+                <div class="nav-group">
+                  <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">全部</button>
+                    <button class="filter-tab" data-filter="added">新增</button>
+                    <button class="filter-tab" data-filter="removed">删除</button>
+                    <button class="filter-tab" data-filter="modified">修改</button>
+                  </div>
+                </div>
               </div>
             </div>
 
+
             <div class="navigation">
+            <div class="controls-collapse">
+              <button class="collapse-btn" id="collapseBtn" onclick="toggleControls()">
+              <span class="collapse-icon">▲</span>
+                <span id="collapseText">收起筛选栏</span>
+              </button>
+            </div>
               <div class="nav-group">
-                <div class="filter-tabs">
-                  <button class="filter-tab active" data-filter="all">全部</button>
-                  <button class="filter-tab" data-filter="added">新增</button>
-                  <button class="filter-tab" data-filter="removed">删除</button>
-                  <button class="filter-tab" data-filter="modified">修改</button>
-                </div>
-                <div class="nav-group">
-                  <button id="prevBtn" class="nav-btn" onclick="previousChange()">
-                    ← 上一处
-                  </button>
-                  <div id="counter" class="counter">0 / 0</div>
-                  <button id="nextBtn" class="nav-btn" onclick="nextChange()">
-                    下一处 →
-                  </button>
-                </div>
+                <button id="prevBtn" class="nav-btn" onclick="previousChange()">
+                  ← 上一处
+                </button>
+                <div id="counter" class="counter">0 / 0</div>
+                <button id="nextBtn" class="nav-btn" onclick="nextChange()">
+                  下一处 →
+                </button>
               </div>
-              </div>
+            </div>
           </div>
         </div>
 
         <div class="content-container">
           <div class="column">
             <div class="column-header">
-            原始文档
+            📄 原始文档
             <button id="lockBtn" class="nav-btn lock-btn" onclick="toggleLock()" title="锁定左右滚动同步">
               <span id="lockIcon">🔓</span>
             </button>
@@ -1071,7 +1259,7 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
           </div>
           <div class="column">
             <div class="column-header">
-              <span>修改后文档</span>
+              <span>📝 修改后文档</span>
             </div>
             ${modifiedContent}
           </div>
@@ -1100,20 +1288,27 @@ function escapeHtml(text: string): string {
 }
 
 export async function tool(input: z.infer<typeof InputType>) {
-  const diffs = compareDocuments(input.originalText, input.modifiedText);
-  const html = generateHtmlReport(diffs, input.title);
+  // Zod 会自动验证输入，如果验证失败会抛出错误
+  const validatedInput = InputType.parse(input);
 
-  const { accessUrl } = await uploadFile({
+  const diffs = compareDocuments(validatedInput.originalText, validatedInput.modifiedText);
+  const html = generateHtmlReport(diffs, validatedInput.title);
+
+  const uploadResult = await uploadFile({
     buffer: Buffer.from(html, 'utf-8'),
     defaultFilename: 'docdiff_report.html',
     contentType: 'text/html'
   });
 
+  if (!uploadResult || !uploadResult.accessUrl) {
+    throw new Error('文件上传失败');
+  }
+
   // 过滤掉unchanged类型，只返回有变更的内容
   const filteredDiffs = diffs.filter((diff) => diff.type !== 'unchanged');
 
   return {
-    htmlUrl: accessUrl,
+    htmlUrl: uploadResult.accessUrl,
     diffs: filteredDiffs
   };
 }
