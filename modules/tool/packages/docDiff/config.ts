@@ -54,6 +54,12 @@ export default defineTool({
           key: 'htmlUrl',
           label: 'HTML 对比报告连接',
           description: '生成的 HTML 对比报告的访问连接'
+        },
+        {
+          valueType: WorkflowIOValueTypeEnum.arrayObject,
+          key: 'diffs',
+          label: '差异结果数组',
+          description: '过滤后的文档差异数组，包含新增、删除、修改的变更'
         }
       ]
     }
