@@ -119,6 +119,23 @@ async function main() {
   await client.write(`/pkgs.zip`, Bun.file('./dist/pkgs.pkg'));
 
   console.log('✅ pkgs.zip uploaded successfully');
+
+  if (!process.env.MARKETPLACE_BASE_URL || !process.env.MARKETPLACE_AUTH_TOKEN) {
+    console.error('❌ Missing required environment variables:');
+    if (!process.env.MARKETPLACE_BASE_URL) console.error('  - MARKETPLACE_BASE_URL');
+    if (!process.env.MARKETPLACE_AUTH_TOKEN) console.error('  - MARKETPLACE_AUTH_TOKEN');
+    process.exit(1);
+  }
+
+  console.log('🚀 Starting marketplace update...');
+
+  // update marketplace
+  await fetch(`${process.env.MARKETPLACE_BASE_URL}/api/admin/refresh`, {
+    method: 'GET',
+    headers: {
+      Authorization: process.env.MARKETPLACE_AUTH_TOKEN
+    }
+  });
 }
 
 if (import.meta.main) {
