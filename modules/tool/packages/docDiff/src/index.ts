@@ -1,10 +1,25 @@
 import { uploadFile } from '@tool/utils/uploadFile';
 import { z } from 'zod';
+import {
+  compareDocuments,
+  compareDocumentsWithTolerance,
+  type ParagraphDiff,
+  type LineBreakToleranceOptions
+} from './diffAlgorithm';
+import { applyFullNormalization } from './textNormalizer';
 
 export const InputType = z.object({
   originalText: z.string().min(1, '原始文档内容不能为空'),
   modifiedText: z.string().min(1, '修改后文档内容不能为空'),
-  title: z.string().optional().default('文档对比报告')
+  title: z.string().optional().default('文档对比报告'),
+  // 换行容差选项
+  lineTolerance: z
+    .object({
+      enableLineBreakTolerance: z.boolean().optional().default(true),
+      scanRange: z.number().optional().default(3),
+      toleranceThreshold: z.number().optional().default(0.95)
+    })
+    .optional()
 });
 
 export const OutputType = z.object({
@@ -24,6 +39,8 @@ export type InputType = {
   originalText: string;
   modifiedText: string;
   title?: string;
+  // 换行容差选项
+  lineTolerance?: LineBreakToleranceOptions;
 };
 
 // 输出类型
@@ -36,177 +53,6 @@ export type OutputType = {
     lineNumber: number;
   }[];
 };
-
-// 定义段落差异类型
-type DiffType = 'unchanged' | 'added' | 'removed' | 'modified';
-
-interface ParagraphDiff {
-  type: DiffType;
-  original?: string;
-  modified?: string;
-  lineNumber?: number;
-}
-
-// 分割文档为行
-function splitIntoLines(text: string): string[] {
-  return text.split('\n');
-}
-
-// 计算两个段的相似度
-function calculateSimilarity(text1: string, text2: string): number {
-  // 移除首尾空白字符
-  const clean1 = text1.trim();
-  const clean2 = text2.trim();
-
-  // 如果两行都为空，则完全相同
-  if (!clean1 && !clean2) return 1.0;
-  if (!clean1 || !clean2) return 0.0;
-
-  // 如果内容完全相同，直接返回1.0
-  if (clean1 === clean2) return 1.0;
-
-  // 移除所有空白字符并转换为小写进行比较
-  const chars1 = clean1.replace(/\s+/g, '').toLowerCase();
-  const chars2 = clean2.replace(/\s+/g, '').toLowerCase();
-
-  const longer = chars1.length > chars2.length ? chars1 : chars2;
-  const shorter = chars1.length > chars2.length ? chars2 : chars1;
-
-  if (longer.length === 0) return 1.0;
-
-  const matches = Array.from(longer).filter(
-    (char, index) => index < shorter.length && char === shorter[index]
-  ).length;
-
-  return matches / longer.length;
-}
-
-// 对比两个文档
-function compareDocuments(originalText: string, modifiedText: string): ParagraphDiff[] {
-  const originalLines = splitIntoLines(originalText);
-  const modifiedLines = splitIntoLines(modifiedText);
-
-  const diffs: ParagraphDiff[] = [];
-  let origIndex = 0;
-  let modIndex = 0;
-  let currentLineNumber = 1; // 使用连续的行号
-
-  while (origIndex < originalLines.length || modIndex < modifiedLines.length) {
-    const originalLine = originalLines[origIndex] || '';
-    const modifiedLine = modifiedLines[modIndex] || '';
-
-    // 如果其中一个文档已经处理完毕
-    if (origIndex >= originalLines.length) {
-      // 只有修改后的文档有内容，这是新增行
-      if (modifiedLine.trim()) {
-        // 只添加非空行
-        diffs.push({
-          type: 'added',
-          modified: modifiedLine,
-          lineNumber: currentLineNumber++
-        });
-      }
-      modIndex++;
-      continue;
-    }
-
-    if (modIndex >= modifiedLines.length) {
-      // 只有原始文档有内容，这是删除行
-      if (originalLine.trim()) {
-        // 只添加非空行
-        diffs.push({
-          type: 'removed',
-          original: originalLine,
-          lineNumber: currentLineNumber++
-        });
-      }
-      origIndex++;
-      continue;
-    }
-
-    // 如果两行都是空的，跳过
-    if (!originalLine.trim() && !modifiedLine.trim()) {
-      origIndex++;
-      modIndex++;
-      continue;
-    }
-
-    // 计算行相似度
-    const similarity = calculateSimilarity(originalLine, modifiedLine);
-
-    if (similarity > 0.9) {
-      // 完全相同的行，标记为unchanged
-      diffs.push({
-        type: 'unchanged',
-        original: originalLine,
-        modified: modifiedLine,
-        lineNumber: currentLineNumber++
-      });
-      origIndex++;
-      modIndex++;
-    } else if (similarity > 0.8) {
-      // 修改的行
-      diffs.push({
-        type: 'modified',
-        original: originalLine,
-        modified: modifiedLine,
-        lineNumber: currentLineNumber++
-      });
-      origIndex++;
-      modIndex++;
-    } else {
-      // 寻找最佳匹配
-      let bestMatchIndex = -1;
-      let bestSimilarity = 0;
-
-      for (let i = 0; i < Math.min(3, modifiedLines.length - modIndex); i++) {
-        const candidateSimilarity = calculateSimilarity(originalLine, modifiedLines[modIndex + i]);
-        if (candidateSimilarity > bestSimilarity) {
-          bestSimilarity = candidateSimilarity;
-          bestMatchIndex = i;
-        }
-      }
-
-      if (bestSimilarity > 0.6) {
-        // 找到匹配，先添加新增的行
-        for (let i = 0; i < bestMatchIndex; i++) {
-          const addedLine = modifiedLines[modIndex + i];
-          if (addedLine.trim()) {
-            // 只添加非空行
-            diffs.push({
-              type: 'added',
-              modified: addedLine,
-              lineNumber: currentLineNumber++
-            });
-          }
-        }
-
-        // 添加修改的行
-        diffs.push({
-          type: 'modified',
-          original: originalLine,
-          modified: modifiedLines[modIndex + bestMatchIndex],
-          lineNumber: currentLineNumber++
-        });
-        modIndex += bestMatchIndex + 1;
-        origIndex++;
-      } else {
-        // 没有找到匹配，可能是删除
-        if (originalLine.trim()) {
-          // 只添加非空行
-          diffs.push({
-            type: 'removed',
-            original: originalLine,
-            lineNumber: currentLineNumber++
-          });
-        }
-        origIndex++;
-      }
-    }
-  }
-
-  return diffs;
-}
 
 // 生成 HTML 报告
 function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
@@ -1291,7 +1137,22 @@ export async function tool(input: z.infer<typeof InputType>) {
   // Zod 会自动验证输入，如果验证失败会抛出错误
   const validatedInput = InputType.parse(input);
 
-  const diffs = compareDocuments(validatedInput.originalText, validatedInput.modifiedText);
+  // 1. 文本标准化预处理（使用默认配置）
+  const normalizedOriginal = applyFullNormalization(validatedInput.originalText);
+  const normalizedModified = applyFullNormalization(validatedInput.modifiedText);
+
+  // 2. 根据是否启用换行容差选择比较函数
+  let diffs: ParagraphDiff[];
+  if (validatedInput.lineTolerance?.enableLineBreakTolerance) {
+    diffs = compareDocumentsWithTolerance(
+      normalizedOriginal,
+      normalizedModified,
+      validatedInput.lineTolerance
+    );
+  } else {
+    diffs = compareDocuments(normalizedOriginal, normalizedModified);
+  }
+
   const html = generateHtmlReport(diffs, validatedInput.title);
 
   const uploadResult = await uploadFile({
