@@ -24,7 +24,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: false,
-      reasoning: false,
+      reasoning: true,
       toolChoice: true
     },
     {
@@ -36,7 +36,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: false,
-      reasoning: false,
+      reasoning: true,
       toolChoice: true
     },
     {
