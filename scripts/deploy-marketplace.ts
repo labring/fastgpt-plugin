@@ -127,15 +127,19 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('🚀 Starting marketplace update...');
-
-  // update marketplace
-  await fetch(`${process.env.MARKETPLACE_BASE_URL}/api/admin/refresh`, {
-    method: 'GET',
-    headers: {
-      Authorization: process.env.MARKETPLACE_AUTH_TOKEN
-    }
-  });
+  try {
+    console.log('🚀 Starting marketplace update...');
+    await fetch(`${process.env.MARKETPLACE_BASE_URL}/api/admin/refresh`, {
+      method: 'GET',
+      headers: {
+        Authorization: process.env.MARKETPLACE_AUTH_TOKEN
+      }
+    });
+    console.log('✅ Marketplace updated successfully');
+  } catch (error) {
+    console.error('❌ Marketplace update failed:');
+    console.error(error);
+  }
 }
 
 if (import.meta.main) {
