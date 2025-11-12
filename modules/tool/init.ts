@@ -8,11 +8,11 @@ import { refreshDir } from '@/utils/fs';
 import { addLog } from '@/utils/log';
 import { basePath, toolsDir, UploadToolsS3Path } from './constants';
 import { privateS3Server } from '@/s3';
-import { LoadToolsByFilename } from './utils';
 import { stat } from 'fs/promises';
 import { getCachedData } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { batch } from '@/utils/parallel';
+import { LoadToolsByFilename } from './loadToolProd';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 

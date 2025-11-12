@@ -12,36 +12,54 @@ const isSparseCheckout = await (async () => {
   return true;
 })();
 
-const isToolset =
-  (await select({
-    message: 'What kind of tool/toolset do you want to create?',
-    choices: [
-      {
-        name: 'Tool',
-        value: 'tool'
-      },
-      {
-        name: 'Toolset',
-        value: 'toolset'
-      }
-    ]
-  })) === 'toolset';
+const toolsNow = await fs.promises.readdir('modules/tool/packages');
 
-const name = await input({
-  message: 'What is the name of your tool/toolset?',
-  validate: (value) => {
-    if (value.length < 1) {
-      return 'Please enter a name';
+const createType = await select({
+  message: 'What kind of tool/toolset do you want to create?',
+  choices: [
+    {
+      name: 'Tool',
+      value: 'tool'
+    },
+    {
+      name: 'Toolset',
+      value: 'toolset'
+    },
+    {
+      name: 'child Tool for a existing toolset',
+      value: 'childTool'
     }
-    return true;
-  }
+  ] as const
 });
 
+const name =
+  createType === 'childTool'
+    ? await select({
+        message: 'What is the name of your tool?',
+        choices: toolsNow.map((tool) => ({
+          name: tool,
+          value: tool
+        }))
+      })
+    : await input({
+        message: 'What is the name of your tool/toolset?',
+        validate: (value) => {
+          if (value.length < 1) {
+            return 'Please enter a name';
+          }
+          return true;
+        }
+      });
+
 // name validation:
-// 1. less than 20 characters
+// 1. less than 30 characters
 // 2. camelCase
-if (name.length > 20) {
-  console.error('Tool name must be less than 20 characters');
+if (toolsNow.includes(name) && createType !== 'childTool') {
+  console.error(`Tool/Toolset already exists`);
+  process.exit(1);
+}
+if (name.length > 30) {
+  console.error('Tool name must be less than 30 characters');
   process.exit(1);
 }
 if (name.includes('-')) {
@@ -62,7 +80,7 @@ if (isSparseCheckout) {
 }
 
 // 1. Create directory
-if (fs.existsSync(toolDir)) {
+if (fs.existsSync(toolDir) && createType !== 'childTool') {
   console.error('Tool already exists');
   process.exit(1);
 } else {
@@ -83,25 +101,32 @@ const copyTemplate = (src: string, dest: string) => {
 
 // 2. Copy template to target directory
 const templateDir = path.join(__dirname, 'template');
-if (isToolset) {
-  copyTemplate(path.join(templateDir, 'toolSet'), toolDir);
+if (createType === 'childTool') {
+  copyTemplate(
+    path.join(templateDir, 'toolSet', 'children', 'tool'),
+    path.join(toolDir, 'children', 'newTool')
+  );
 } else {
-  copyTemplate(path.join(templateDir, 'tool'), toolDir);
+  if (createType === 'toolset') {
+    copyTemplate(path.join(templateDir, 'toolSet'), toolDir);
+  } else if (createType === 'tool') {
+    copyTemplate(path.join(templateDir, 'tool'), toolDir);
+  }
+
+  // 3. Rewrite new tool package.json
+  const packageJsonPath = toolDir + '/package.json';
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+
+  const nameFormatToKebabCase = (name: string) =>
+    name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+
+  packageJson.name = `@fastgpt-plugins/tool-${nameFormatToKebabCase(name)}`;
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+
+  // 4. Copy DESIGN.md to dir
+  const designMdPath = toolDir + '/DESIGN.md';
+  copyTemplate(path.join(__dirname, 'DESIGN.md'), designMdPath);
+  console.log(`You can edit the ${designMdPath}, and code with AI`);
 }
-
-// 3. Rewrite new tool package.json
-const packageJsonPath = toolDir + '/package.json';
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-
-const nameFormatToKebabCase = (name: string) =>
-  name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-
-packageJson.name = `@fastgpt-plugins/tool-${nameFormatToKebabCase(name)}`;
-fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-
-// 4. Copy DESIGN.md to dir
-const designMdPath = toolDir + '/DESIGN.md';
-copyTemplate(path.join(__dirname, 'DESIGN.md'), designMdPath);
 // output success message
-console.log(`Tool/Toolset created successfully! 🎉`);
-console.log(`You can edit the ${designMdPath}, and code with AI`);
+console.log(`Tool/Toolset created successfully at ${toolDir}! 🎉`);

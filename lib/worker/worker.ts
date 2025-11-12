@@ -1,10 +1,9 @@
 import { parentPort } from 'worker_threads';
 import type { Main2WorkerMessageType } from './type';
 import { setupProxy } from '../utils/setupProxy';
-import { LoadToolsByFilename } from '@tool/utils';
 import { getErrText } from '@tool/utils/err';
-import { LoadToolsDev } from '@tool/loadToolDev';
 import type { ToolCallbackReturnSchemaType } from '@tool/type/req';
+import { loadTool } from './loadTool';
 
 setupProxy();
 
@@ -20,11 +19,9 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
   const { type, data } = params;
   switch (type) {
     case 'runTool': {
-      const tools = data.dev
-        ? await LoadToolsDev(data.filename)
-        : await LoadToolsByFilename(data.filename);
-
-      const tool = tools.find((tool) => tool.toolId === data.toolId);
+      const tool = (await loadTool(data.filename, data.dev)).find(
+        (tool) => tool.toolId === data.toolId
+      );
 
       if (!tool || !tool.cb) {
         parentPort?.postMessage({

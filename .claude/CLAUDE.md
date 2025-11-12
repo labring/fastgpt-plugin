@@ -212,6 +212,68 @@ bun run start
 - 验证构建后的代码在 `dist` 目录中正确生成
 - 测试生产环境的启动和运行
 
+## 工具开发规范
+
+### 1. 错误处理规范
+**⚠️ 重要**: 工具函数内部不需要进行顶层的 try-catch，直接把错误抛出到外面处理
+
+```typescript
+// ✅ 正确：直接抛出错误
+export async function tool(input: ToolInput): Promise<ToolOutput> {
+  // 1. 获取 access_token
+  const result = await handleGetAuthToken({
+    grant_type: 'client_credential',
+    appid: input.appId!,
+    secret: input.appSecret!
+  });
+  
+  if ('errcode' in result && result.errcode !== 0) {
+    return {
+      error_message: `获取 access_token 失败: ${result.errmsg}`
+    };
+  }
+  
+  // 直接执行操作，让错误自然抛出
+  const processedData = await processData(result.access_token);
+  return processedData;
+}
+
+// ❌ 错误：顶层 try-catch
+export async function tool(input: ToolInput): Promise<ToolOutput> {
+  try {
+    // 业务逻辑
+    const result = await someOperation();
+    return result;
+  } catch (error) {
+    // 不要在这里处理所有错误
+    return {
+      error_message: error.message
+    };
+  }
+}
+```
+
+### 2. 测试规范
+**⚠️ 重要**: 测试应该使用 `bun run test` 而不是 `bun test`
+
+```bash
+# ✅ 正确的测试命令
+bun run test
+
+# ❌ 错误的测试命令
+bun test
+```
+
+### 3. 工具结构规范
+- 每个工具都应该有自己的目录：`children/toolName/`
+- 必须包含：`config.ts`, `src/index.ts`, `index.ts`
+- 可选包含：`test/index.test.ts`, `DESIGN.md`
+
+### 4. 认证处理规范
+- 优先使用传入的 `accessToken`
+- 未提供时，通过 `appId` 和 `appSecret` 自动获取
+- 使用 `lib/auth.js` 中封装的认证函数
+
 ## 最佳实践
 
 ### 1. 代码兼容性
@@ -228,6 +290,11 @@ bun run start
 - 运行 linting 和格式化
 - 执行完整的测试套件
 - 验证跨环境兼容性
+
+### 4. 错误处理
+- 工具函数内部避免顶层 try-catch
+- 让错误自然抛出，由外部处理
+- 对于已知的业务错误，返回结构化的错误信息
 
 ## 常见问题
 

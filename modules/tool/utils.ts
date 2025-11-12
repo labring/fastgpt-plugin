@@ -3,13 +3,13 @@ import { addLog } from '@/utils/log';
 import { unpkg } from '@/utils/zip';
 import { readdir, stat } from 'fs/promises';
 import { join, parse } from 'path';
-import { tempPkgDir, tempToolsDir, toolsDir, UploadToolsS3Path } from './constants';
+import { tempPkgDir, tempToolsDir, UploadToolsS3Path } from './constants';
 import type { ToolSetType, ToolType } from './type';
-import { ToolTagEnum } from './type/tags';
 import { ToolDetailSchema } from './type/api';
 import { catchError } from '@/utils/catch';
 import { mimeMap } from '@/s3/const';
 import { rm } from 'fs/promises';
+import { parseMod } from './parseMod';
 
 /**
  * Move files from unzipped structure to dist directory
@@ -19,86 +19,6 @@ import { rm } from 'fs/promises';
  * - all logo.* including subdirs
  * - assets dir
  */
-const parseMod = async ({
-  rootMod,
-  filename
-}: {
-  rootMod: ToolSetType | ToolType;
-  filename: string;
-}) => {
-  const tools: ToolType[] = [];
-  const checkRootModToolSet = (rootMod: ToolType | ToolSetType): rootMod is ToolSetType => {
-    return 'children' in rootMod;
-  };
-  if (checkRootModToolSet(rootMod)) {
-    const toolsetId = rootMod.toolId;
-
-    const parentIcon =
-      rootMod.icon ||
-      (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/logo`));
-
-    // push parent
-    tools.push({
-      ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.other],
-      toolId: toolsetId,
-      icon: parentIcon,
-      toolFilename: `${filename}`,
-      cb: () => Promise.resolve({}),
-      versionList: []
-    });
-
-    const children = rootMod.children;
-
-    for (const child of children) {
-      const childToolId = child.toolId;
-
-      const childIcon =
-        child.icon ||
-        rootMod.icon ||
-        (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${childToolId}/logo`));
-
-      tools.push({
-        ...child,
-        toolId: childToolId,
-        parentId: toolsetId,
-        tags: rootMod.tags,
-        courseUrl: rootMod.courseUrl,
-        author: rootMod.author,
-        icon: childIcon,
-        toolFilename: filename
-      });
-    }
-  } else {
-    // is not toolset
-    const toolId = rootMod.toolId;
-
-    const icon =
-      rootMod.icon ||
-      (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolId}/logo`));
-
-    tools.push({
-      ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.tools],
-      icon,
-      toolId,
-      toolFilename: filename
-    });
-  }
-  return tools;
-};
-
-// Load tool or toolset and its children
-export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]> => {
-  const rootMod = (await import(join(toolsDir, filename))).default as ToolType | ToolSetType;
-
-  if (!rootMod.toolId) {
-    addLog.error(`Can not parse toolId, filename: ${filename}`);
-    return [];
-  }
-
-  return parseMod({ rootMod, filename });
-};
 
 export const parsePkg = async (filepath: string, temp: boolean = true) => {
   const filename = filepath.split('/').pop() as string;
