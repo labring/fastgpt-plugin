@@ -120,14 +120,7 @@ async function main() {
 
   console.log('✅ pkgs.zip uploaded successfully');
 
-  if (!process.env.MARKETPLACE_BASE_URL || !process.env.MARKETPLACE_AUTH_TOKEN) {
-    console.error('❌ Missing required environment variables:');
-    if (!process.env.MARKETPLACE_BASE_URL) console.error('  - MARKETPLACE_BASE_URL');
-    if (!process.env.MARKETPLACE_AUTH_TOKEN) console.error('  - MARKETPLACE_AUTH_TOKEN');
-    process.exit(1);
-  }
-
-  try {
+  if (process.env.MARKETPLACE_BASE_URL && process.env.MARKETPLACE_AUTH_TOKEN) {
     console.log('🚀 Starting marketplace update...');
     await fetch(`${process.env.MARKETPLACE_BASE_URL}/api/admin/refresh`, {
       method: 'GET',
@@ -136,9 +129,6 @@ async function main() {
       }
     });
     console.log('✅ Marketplace updated successfully');
-  } catch (error) {
-    console.error('❌ Marketplace update failed:');
-    console.error(error);
   }
 }
 
