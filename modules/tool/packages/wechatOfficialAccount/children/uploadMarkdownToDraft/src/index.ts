@@ -45,7 +45,7 @@ export const InputType = z
     appId: z.string().optional(),
     secret: z.string().optional(),
 
-    // 必需参数 - 支持单个或多个
+  // 必需参数 - 支持单个或多个
     markdownContent: StringOrArray.refine(
       (val) => {
         if (Array.isArray(val)) {
@@ -108,7 +108,7 @@ export async function tool({
   needOpenComment = 0,
   onlyFansCanComment = 0
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  addLog.info(`${markdownContent}${typeof markdownContent}`);
+addLog.info(`${markdownContent}${typeof markdownContent}`);
   // 1. 获取 access_token
   let token = accessToken;
   if (!token) {
@@ -128,7 +128,7 @@ export async function tool({
     }
   }
 
-  // 2. 解析输入为数组格式（支持 JSON 编码的数组）
+// 2. 解析输入为数组格式（支持 JSON 编码的数组）
   const markdownContents = parseStringOrArray(markdownContent);
   const coverImages = parseStringOrArray(coverImage);
   const titles = title ? parseStringOrArray(title) : undefined;
@@ -255,7 +255,7 @@ async function processSingleArticle({
     }
   }
 
-  // 3. 处理封面图
+// 3. 处理封面图
   const thumbMediaId = await processCoverImage(token, coverImage);
 
   // 4. 构建文章对象
