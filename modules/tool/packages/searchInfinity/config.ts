@@ -52,7 +52,7 @@ export default defineTool({
           required: true,
           renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
           valueType: WorkflowIOValueTypeEnum.string,
-          defaultValue: 'web_summary',
+          defaultValue: 'web',
           list: [
             { label: 'web', value: 'web' },
             { label: 'web_summary', value: 'web_summary' }
