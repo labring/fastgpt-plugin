@@ -22,6 +22,82 @@ export default defineTool({
   courseUrl: 'https://bytedance.larkoffice.com/wiki/IBdwwBuBAiXlclkqExDcqdMinpg',
   versionList: [
     {
+      value: '0.2.0',
+      description: 'Default version',
+      inputs: [
+        {
+          key: 'query',
+          label: '搜索查询词',
+          description: '搜索查询词',
+          toolDescription: '搜索查询词',
+          required: true,
+          renderTypeList: [FlowNodeInputTypeEnum.reference, FlowNodeInputTypeEnum.input],
+          valueType: WorkflowIOValueTypeEnum.string
+        },
+        {
+          key: 'count',
+          label: '结果数量',
+          description: '返回结果的条数。可填范围：1-50，默认为10',
+          required: false,
+          renderTypeList: [FlowNodeInputTypeEnum.numberInput, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.number,
+          min: 1,
+          max: 50,
+          defaultValue: 10
+        },
+        {
+          key: 'searchType',
+          label: '搜索类型',
+          description: '搜索类型。可填范围：web, web_summary(带总结结果的web搜索)',
+          required: true,
+          renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string,
+          defaultValue: 'web_summary',
+          list: [
+            { label: 'web', value: 'web' },
+            { label: 'web_summary', value: 'web_summary' }
+          ]
+        },
+        {
+          key: 'sites',
+          label: '包含网站',
+          description: '指定搜索的site范围。多个域名使用|分隔，最多5个。例如：qq.com|m.163.com',
+          required: false,
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string
+        },
+        {
+          key: 'time_range',
+          label: '时间范围',
+          description: '搜索指定时间范围内的网页。支持：OneDay, OneWeek, OneMonth, OneYear',
+          required: false,
+          defaultValue: 'OneYear',
+          renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string,
+          list: [
+            { label: 'OneDay', value: 'OneDay' },
+            { label: 'OneWeek', value: 'OneWeek' },
+            { label: 'OneMonth', value: 'OneMonth' },
+            { label: 'OneYear', value: 'OneYear' }
+          ]
+        }
+      ],
+      outputs: [
+        {
+          valueType: WorkflowIOValueTypeEnum.arrayObject,
+          key: 'result',
+          label: '搜索结果',
+          description: '搜索返回的结果列表'
+        },
+        {
+          type: FlowNodeOutputTypeEnum.error,
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'error',
+          label: '错误信息'
+        }
+      ]
+    },
+    {
       value: '0.1.0',
       description: 'Default version',
       inputs: [

@@ -1,56 +1,80 @@
 import { getErrText } from '@tool/utils/err';
+import { POST } from '@tool/utils/request';
 import { z } from 'zod';
 
-export const InputType = z.object({
-  apiKey: z.string().optional(),
-  volcengineAccessKey: z.string().optional(),
-  volcengineSecretKey: z.string().optional(),
-  query: z.string(),
-  count: z
-    .number()
-    .optional()
-    .default(10)
-    .refine((val) => val >= 1 && val <= 50, {
-      message: 'count must be between 1 and 50'
-    }),
-  sites: z.string().optional().default(''),
-  time_range: z.string().optional().default('')
-});
+export const InputType = z
+  .object({
+    apiKey: z.string().optional(),
+    volcengineAccessKey: z.string().optional(),
+    volcengineSecretKey: z.string().optional(),
+    query: z.string().nonempty().max(100, 'Query cannot exceed 100 characters'),
+    count: z
+      .number()
+      .optional()
+      .default(10)
+      .refine((val) => val >= 1 && val <= 50, {
+        message: 'count must be between 1 and 50'
+      }),
+    searchType: z.enum(['web', 'web_summary']).optional().default('web'),
+    sites: z.string().optional().default(''),
+    time_range: z.string().optional().default('')
+  })
+  .refine(
+    ({ apiKey, volcengineAccessKey, volcengineSecretKey }) => {
+      return apiKey || (volcengineAccessKey && volcengineSecretKey);
+    },
+    {
+      message: 'Either apiKey or both volcengineAccessKey and volcengineSecretKey must be provided.'
+    }
+  );
 
 export const OutputType = z.object({
   result: z.array(
     z.object({
-      Title: z.string().nullable().optional(),
-      Content: z.string().nullable(),
+      Title: z.string(),
+      Content: z.string(),
       Url: z.string().nullable().optional(),
       SiteName: z.string().nullable().optional(),
-      PublishTime: z.string().nullable().optional()
+      PublishTime: z.string().nullable().optional(),
+      LogoUrl: z.string().nullable().optional(),
+      AuthInfoDes: z.string().nullable().optional()
     })
   )
 });
 
-function validateCredentials(
-  apiKey?: string,
-  volcengineAccessKey?: string,
-  volcengineSecretKey?: string
-) {
-  if (!apiKey && !(volcengineAccessKey && volcengineSecretKey)) {
-    throw new Error('Either API key or both Volcengine access key and secret key must be provided');
-  }
-}
+const SearchResultSchema = z.object({
+  Result: z.object({
+    ResultCount: z.number(),
+    WebResults: z.array(
+      z.object({
+        Id: z.string(),
+        Title: z.string(),
+        SiteName: z.string().nullable().optional(),
+        Url: z.string().nullable().optional(),
+        Snippet: z.string(),
+        Summary: z.string().nullable().optional(),
+        Content: z.string().nullable().optional(),
+        PublishTime: z.string().nullable().optional(),
+        LogoUrl: z.string().nullable().optional(),
+        AuthInfoDes: z.string().nullable().optional()
+      })
+    )
+  })
+});
+type SearchResultType = z.infer<typeof SearchResultSchema>;
 
-function determineAuthMethod(
+const determineAuthMethod = (
   apiKey?: string,
   volcengineAccessKey?: string,
   volcengineSecretKey?: string
-) {
+) => {
   if (apiKey) {
     return { method: 'api_key', baseUrl: 'https://open.feedcoopapi.com' };
   } else if (volcengineAccessKey && volcengineSecretKey) {
     return { method: 'volcengine', baseUrl: 'https://mercury.volcengineapi.com' };
   }
   throw new Error('Invalid authentication configuration');
-}
+};
 
 async function generateVolcengineSignature(accessKey: string, secretKey: string, requestObj: any) {
   const service = 'volc_torchlight_api';
@@ -145,27 +169,18 @@ export async function tool({
   volcengineSecretKey,
   query,
   count = 10,
+  searchType,
   sites = '',
   time_range = ''
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   try {
-    validateCredentials(apiKey, volcengineAccessKey, volcengineSecretKey);
-
-    if (!query || !query.trim()) {
-      throw new Error('Query cannot be empty');
-    }
-
-    if (query.length > 100) {
-      throw new Error('Query cannot exceed 100 characters');
-    }
-
     const auth = determineAuthMethod(apiKey, volcengineAccessKey, volcengineSecretKey);
 
     const requestData: any = {
       Query: query.trim(),
       SearchType: 'web',
       Count: count,
-      NeedSummary: true
+      NeedSummary: searchType === 'web_summary'
     };
 
     if (sites) {
@@ -173,80 +188,52 @@ export async function tool({
         .split('|')
         .map((s) => s.trim())
         .filter((s) => s);
-      if (siteList.length > 5) {
-        throw new Error('Maximum 5 sites allowed in filter');
-      }
-      requestData.Filter = { Sites: siteList.join('|') };
-    }
 
+      requestData.Filter = { Sites: siteList.slice(0, 5).join('|') };
+    }
     if (time_range) {
       requestData.TimeRange = time_range;
     }
 
-    let response;
+    const { data } = await (async () => {
+      if (auth.method === 'api_key') {
+        return await POST<SearchResultType>(`${auth.baseUrl}/search_api/web_search`, requestData, {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'X-Traffic-Tag': 'fast_gpt_search_web'
+          }
+        });
+      } else {
+        const headers = await generateVolcengineSignature(
+          volcengineAccessKey!,
+          volcengineSecretKey!,
+          requestData
+        );
 
-    if (auth.method === 'api_key') {
-      response = await fetch(`${auth.baseUrl}/search_api/web_search`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'X-Traffic-Tag': 'fast_gpt_search_web'
-        },
-        body: JSON.stringify(requestData)
-      });
-    } else {
-      const headers = await generateVolcengineSignature(
-        volcengineAccessKey!,
-        volcengineSecretKey!,
-        requestData
-      );
+        const queryParams = new URLSearchParams({
+          Action: 'WebSearch',
+          Version: '2025-01-01'
+        });
 
-      const queryParams = new URLSearchParams({
-        Action: 'WebSearch',
-        Version: '2025-01-01'
-      });
-
-      response = await fetch(`${auth.baseUrl}/?${queryParams}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestData)
-      });
-    }
-
-    if (!response.ok) {
-      return Promise.reject({
-        error: `HTTP error: ${response.status} ${response.statusText}`
-      });
-    }
-
-    const data = await response.json();
-
-    if (data?.ResponseMetadata?.Error?.Message) {
-      return Promise.reject({
-        error: data?.ResponseMetadata?.Error?.Message
-      });
-    }
-
-    const result = data?.Result?.WebResults;
-    if (!result) {
-      return Promise.reject({
-        error: 'Invalid response format: missing Result or WebResults'
-      });
-    }
+        return await POST<SearchResultType>(`${auth.baseUrl}/?${queryParams}`, requestData, {
+          headers
+        });
+      }
+    })();
 
     return {
-      result: result.map((item: any) => ({
+      result: data.Result.WebResults.map((item) => ({
         Title: item.Title,
         Content: item.Content || item.Summary || item.Snippet || '',
         Url: item.Url,
         SiteName: item.SiteName,
-        PublishTime: item.PublishTime
+        PublishTime: item.PublishTime,
+        LogoUrl: item.LogoUrl,
+        AuthInfoDes: item.AuthInfoDes
       }))
     };
   } catch (error) {
-    return Promise.reject({
-      error: getErrText(error)
-    });
+    return Promise.reject(getErrText(error));
   }
 }
