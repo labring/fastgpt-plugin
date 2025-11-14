@@ -33,7 +33,10 @@ describe('Tavily Extract Tool', () => {
       const result = await tool({
         tavilyApiKey: testApiKey,
         urls: 'https://example.com',
-        format: 'markdown'
+        format: 'markdown',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
 
       expect(result.results).toHaveLength(1);
@@ -44,7 +47,10 @@ describe('Tavily Extract Tool', () => {
       expect(mockClient.post).toHaveBeenCalledWith('/extract', {
         api_key: testApiKey,
         urls: 'https://example.com',
-        format: 'markdown'
+        format: 'markdown',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
     });
 
@@ -76,7 +82,10 @@ describe('Tavily Extract Tool', () => {
       const result = await tool({
         tavilyApiKey: testApiKey,
         urls: 'https://example1.com\nhttps://example2.com',
-        format: 'text'
+        format: 'text',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
 
       expect(result.results).toHaveLength(2);
@@ -85,7 +94,10 @@ describe('Tavily Extract Tool', () => {
       expect(mockClient.post).toHaveBeenCalledWith('/extract', {
         api_key: testApiKey,
         urls: ['https://example1.com', 'https://example2.com'],
-        format: 'text'
+        format: 'text',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
     });
 
@@ -117,14 +129,20 @@ describe('Tavily Extract Tool', () => {
       const result = await tool({
         tavilyApiKey: testApiKey,
         urls: 'https://example1.com\n\n\nhttps://example2.com\n',
-        format: 'markdown'
+        format: 'markdown',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
 
       expect(result.results).toHaveLength(2);
       expect(mockClient.post).toHaveBeenCalledWith('/extract', {
         api_key: testApiKey,
         urls: ['https://example1.com', 'https://example2.com'],
-        format: 'markdown'
+        format: 'markdown',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
     });
 
@@ -161,7 +179,10 @@ describe('Tavily Extract Tool', () => {
       const result = await tool({
         tavilyApiKey: testApiKey,
         urls: 'https://example1.com\nhttps://invalid.com\nhttps://timeout.com',
-        format: 'markdown'
+        format: 'markdown',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
 
       expect(result.results).toHaveLength(1);
@@ -181,7 +202,10 @@ describe('Tavily Extract Tool', () => {
         tool({
           tavilyApiKey: testApiKey,
           urls: '\n\n\n',
-          format: 'markdown'
+          format: 'markdown',
+          extract_depth: 'basic',
+          include_images: false,
+          include_favicon: false
         })
       ).rejects.toMatch('No valid URLs provided');
     });
@@ -195,7 +219,10 @@ describe('Tavily Extract Tool', () => {
         tool({
           tavilyApiKey: 'invalid-key',
           urls: 'https://example.com',
-          format: 'markdown'
+          format: 'markdown',
+          extract_depth: 'basic',
+          include_images: false,
+          include_favicon: false
         })
       ).rejects.toMatch('Invalid Tavily API key format');
     });
@@ -221,7 +248,10 @@ describe('Tavily Extract Tool', () => {
         tool({
           tavilyApiKey: testApiKey,
           urls: 'https://example.com',
-          format: 'markdown'
+          format: 'markdown',
+          extract_depth: 'basic',
+          include_images: false,
+          include_favicon: false
         })
       ).rejects.toMatch('Authentication failed');
     });
@@ -247,7 +277,10 @@ describe('Tavily Extract Tool', () => {
         tool({
           tavilyApiKey: testApiKey,
           urls: 'https://example.com',
-          format: 'markdown'
+          format: 'markdown',
+          extract_depth: 'basic',
+          include_images: false,
+          include_favicon: false
         })
       ).rejects.toMatch('Rate limit exceeded');
     });
@@ -275,13 +308,19 @@ describe('Tavily Extract Tool', () => {
       await tool({
         tavilyApiKey: testApiKey,
         urls: 'https://example.com',
-        format: 'markdown'
+        format: 'markdown',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
 
       expect(mockClient.post).toHaveBeenCalledWith('/extract', {
         api_key: testApiKey,
         urls: 'https://example.com',
-        format: 'markdown'
+        format: 'markdown',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
     });
   });
@@ -296,7 +335,10 @@ describe('Tavily Extract Tool', () => {
         const result = await tool({
           tavilyApiKey: process.env.TEST_TAVLIY_KEY!,
           urls: 'https://example.com',
-          format: 'markdown'
+          format: 'markdown',
+          extract_depth: 'basic',
+          include_images: false,
+          include_favicon: false
         });
 
         expect(result.results.length).toBeGreaterThan(0);
@@ -314,7 +356,10 @@ describe('Tavily Extract Tool', () => {
         const result = await tool({
           tavilyApiKey: process.env.TEST_TAVLIY_KEY!,
           urls: 'https://example.com\nhttps://www.iana.org',
-          format: 'text'
+          format: 'text',
+          extract_depth: 'basic',
+          include_images: false,
+          include_favicon: false
         });
 
         expect(result.results.length).toBeGreaterThan(0);
@@ -336,7 +381,10 @@ describe('Tavily Extract Tool', () => {
         const result = await tool({
           tavilyApiKey: process.env.TEST_TAVLIY_KEY!,
           urls: 'https://this-url-does-not-exist-12345.invalid',
-          format: 'markdown'
+          format: 'markdown',
+          extract_depth: 'basic',
+          include_images: false,
+          include_favicon: false
         });
 
         // Should either fail completely or report in failedUrls

@@ -11,7 +11,10 @@ describe('Tavily Extract Simple Test', () => {
       const result = await tool({
         tavilyApiKey: testApiKey!,
         urls: 'https://doc.fastgpt.io/docs/introduction',
-        format: 'markdown'
+        format: 'markdown',
+        extract_depth: 'basic',
+        include_images: false,
+        include_favicon: false
       });
 
       // 验证是否成功获取内容

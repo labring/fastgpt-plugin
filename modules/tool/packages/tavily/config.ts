@@ -14,13 +14,14 @@ export default defineToolSet({
   toolDescription: `A Tavily AI search toolset with SEARCH and EXTRACT operations.
     Use these tools to perform AI-powered web searches with advanced filtering
     and extract structured content from web pages.`,
-
+  courseUrl: 'https://app.tavily.com',
   // 共享密钥配置 - 所有子工具共享
   secretInputConfig: [
     {
       key: 'tavilyApiKey',
       label: 'Tavily API Key',
-      description: 'Tavily API 密钥 (格式: tvly-xxxxxxxxxxxxxxxxxxxxxxxx)',
+      description:
+        'Tavily API 密钥 (格式: tvly-xxxxxxxxxxxxxxxxxxxxxxxx), 在 https://app.tavily.com 获取',
       required: true,
       inputType: 'secret'
     }

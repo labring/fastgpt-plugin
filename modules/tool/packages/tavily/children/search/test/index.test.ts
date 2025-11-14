@@ -44,7 +44,15 @@ describe('Tavily Search Tool', () => {
         query: 'test query',
         searchDepth: 'basic',
         maxResults: 5,
-        includeAnswer: true
+        includeAnswer: true,
+        searchTopic: 'general',
+        includeRawContent: 'none',
+        timeRange: 'none',
+        includeImages: false,
+        includeImageDescriptions: false,
+        includeFavicon: false,
+        includeDomains: [],
+        excludeDomains: []
       });
 
       expect(result.answer).toBe('Test answer');
@@ -56,7 +64,15 @@ describe('Tavily Search Tool', () => {
         query: 'test query',
         search_depth: 'basic',
         max_results: 5,
-        include_answer: true
+        include_answer: true,
+        topic: 'general',
+        include_raw_content: false,
+        time_range: undefined,
+        include_images: false,
+        include_image_descriptions: false,
+        include_favicon: false,
+        include_domains: [],
+        exclude_domains: []
       });
     });
 
@@ -88,7 +104,15 @@ describe('Tavily Search Tool', () => {
         query: 'advanced query',
         searchDepth: 'advanced',
         maxResults: 10,
-        includeAnswer: false
+        includeAnswer: false,
+        searchTopic: 'general',
+        includeRawContent: 'none',
+        timeRange: 'none',
+        includeImages: false,
+        includeImageDescriptions: false,
+        includeFavicon: false,
+        includeDomains: [],
+        excludeDomains: []
       });
 
       expect(result.results).toHaveLength(1);
@@ -98,7 +122,15 @@ describe('Tavily Search Tool', () => {
         query: 'advanced query',
         search_depth: 'advanced',
         max_results: 10,
-        include_answer: false
+        include_answer: false,
+        topic: 'general',
+        include_raw_content: false,
+        time_range: undefined,
+        include_images: false,
+        include_image_descriptions: false,
+        include_favicon: false,
+        include_domains: [],
+        exclude_domains: []
       });
     });
 
@@ -122,7 +154,15 @@ describe('Tavily Search Tool', () => {
         query: 'no results query',
         searchDepth: 'basic',
         maxResults: 5,
-        includeAnswer: false
+        includeAnswer: false,
+        searchTopic: 'general',
+        includeRawContent: 'none',
+        timeRange: 'none',
+        includeImages: false,
+        includeImageDescriptions: false,
+        includeFavicon: false,
+        includeDomains: [],
+        excludeDomains: []
       });
 
       expect(result.results).toEqual([]);
@@ -140,7 +180,15 @@ describe('Tavily Search Tool', () => {
           query: 'test',
           searchDepth: 'basic',
           maxResults: 5,
-          includeAnswer: false
+          includeAnswer: false,
+          searchTopic: 'general',
+          includeRawContent: 'none',
+          timeRange: 'none',
+          includeImages: false,
+          includeImageDescriptions: false,
+          includeFavicon: false,
+          includeDomains: [],
+          excludeDomains: []
         })
       ).rejects.toMatch('Invalid Tavily API key format');
     });
@@ -168,7 +216,15 @@ describe('Tavily Search Tool', () => {
           query: 'test',
           searchDepth: 'basic',
           maxResults: 5,
-          includeAnswer: false
+          includeAnswer: false,
+          searchTopic: 'general',
+          includeRawContent: 'none',
+          timeRange: 'none',
+          includeImages: false,
+          includeImageDescriptions: false,
+          includeFavicon: false,
+          includeDomains: [],
+          excludeDomains: []
         })
       ).rejects.toMatch('Authentication failed');
     });
@@ -196,7 +252,15 @@ describe('Tavily Search Tool', () => {
           query: 'test',
           searchDepth: 'basic',
           maxResults: 5,
-          includeAnswer: false
+          includeAnswer: false,
+          searchTopic: 'general',
+          includeRawContent: 'none',
+          timeRange: 'none',
+          includeImages: false,
+          includeImageDescriptions: false,
+          includeFavicon: false,
+          includeDomains: [],
+          excludeDomains: []
         })
       ).rejects.toMatch('Rate limit exceeded');
     });
@@ -222,7 +286,15 @@ describe('Tavily Search Tool', () => {
           query: 'test',
           searchDepth: 'basic',
           maxResults: 5,
-          includeAnswer: false
+          includeAnswer: false,
+          searchTopic: 'general',
+          includeRawContent: 'none',
+          timeRange: 'none',
+          includeImages: false,
+          includeImageDescriptions: false,
+          includeFavicon: false,
+          includeDomains: [],
+          excludeDomains: []
         })
       ).rejects.toMatch('Request timeout');
     });
@@ -240,7 +312,15 @@ describe('Tavily Search Tool', () => {
           query: 'TypeScript programming language',
           searchDepth: 'basic',
           maxResults: 3,
-          includeAnswer: false
+          includeAnswer: false,
+          searchTopic: 'general',
+          includeRawContent: 'none',
+          timeRange: 'none',
+          includeImages: false,
+          includeImageDescriptions: false,
+          includeFavicon: false,
+          includeDomains: [],
+          excludeDomains: []
         });
 
         expect(result.results.length).toBeGreaterThan(0);
@@ -260,7 +340,15 @@ describe('Tavily Search Tool', () => {
           query: 'What is artificial intelligence?',
           searchDepth: 'basic',
           maxResults: 5,
-          includeAnswer: true
+          includeAnswer: true,
+          searchTopic: 'general',
+          includeRawContent: 'none',
+          timeRange: 'none',
+          includeImages: false,
+          includeImageDescriptions: false,
+          includeFavicon: false,
+          includeDomains: [],
+          excludeDomains: []
         });
 
         expect(result.answer).toBeDefined();
@@ -278,7 +366,15 @@ describe('Tavily Search Tool', () => {
           query: 'latest developments in quantum computing',
           searchDepth: 'advanced',
           maxResults: 5,
-          includeAnswer: true
+          includeAnswer: true,
+          searchTopic: 'general',
+          includeRawContent: 'none',
+          timeRange: 'none',
+          includeImages: false,
+          includeImageDescriptions: false,
+          includeFavicon: false,
+          includeDomains: [],
+          excludeDomains: []
         });
 
         expect(result.results.length).toBeGreaterThan(0);

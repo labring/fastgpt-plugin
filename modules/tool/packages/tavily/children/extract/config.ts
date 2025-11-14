@@ -16,6 +16,94 @@ export default defineTool({
 
   versionList: [
     {
+      value: '0.1.1',
+      description: '支持高级配置',
+      inputs: [
+        {
+          key: 'urls',
+          label: 'URL 地址',
+          description: '单个或多个 URL (多个用换行分隔)',
+          required: true,
+          valueType: WorkflowIOValueTypeEnum.string,
+          renderTypeList: [FlowNodeInputTypeEnum.textarea, FlowNodeInputTypeEnum.reference],
+          toolDescription: 'Single URL or multiple URLs (one per line)'
+        },
+        {
+          key: 'extract_depth',
+          label: '提取深度',
+          valueType: WorkflowIOValueTypeEnum.string,
+          renderTypeList: [FlowNodeInputTypeEnum.select],
+          defaultValue: 'basic',
+          list: [
+            {
+              label: '基础',
+              value: 'basic'
+            },
+            {
+              label: '高级',
+              value: 'advanced'
+            }
+          ]
+        },
+        {
+          key: 'format',
+          label: '输出格式',
+          description: '内容输出格式',
+          valueType: WorkflowIOValueTypeEnum.string,
+          defaultValue: 'markdown',
+          renderTypeList: [FlowNodeInputTypeEnum.select],
+          list: [
+            { label: 'Markdown', value: 'markdown' },
+            { label: 'Text', value: 'text' }
+          ]
+        },
+        {
+          key: 'include_images',
+          label: '包含图片',
+          valueType: WorkflowIOValueTypeEnum.boolean,
+          defaultValue: false,
+          renderTypeList: [FlowNodeInputTypeEnum.switch]
+        },
+        {
+          key: 'include_favicon',
+          label: '包含 favicon',
+          valueType: WorkflowIOValueTypeEnum.boolean,
+          defaultValue: false,
+          renderTypeList: [FlowNodeInputTypeEnum.switch]
+        },
+        {
+          key: 'timeout',
+          label: '超时时间（秒）',
+          description: '最大等待时间（1-60秒），根据提取深度设置默认值',
+          valueType: WorkflowIOValueTypeEnum.number,
+          min: 1,
+          max: 60,
+          renderTypeList: [FlowNodeInputTypeEnum.numberInput],
+          toolDescription: 'Maximum time in seconds to wait before timing out (1-60)'
+        }
+      ],
+      outputs: [
+        {
+          key: 'results',
+          label: '提取结果',
+          description: '成功提取的内容数组',
+          valueType: WorkflowIOValueTypeEnum.arrayObject
+        },
+        {
+          key: 'successCount',
+          label: '成功数量',
+          description: '成功提取的 URL 数量',
+          valueType: WorkflowIOValueTypeEnum.number
+        },
+        {
+          key: 'failedUrls',
+          label: '失败列表',
+          description: '提取失败的 URL 及原因',
+          valueType: WorkflowIOValueTypeEnum.arrayString
+        }
+      ]
+    },
+    {
       value: '0.1.0',
       description: 'Initial version with content extraction',
       inputs: [
