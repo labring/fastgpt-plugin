@@ -74,8 +74,8 @@ const allProviders: ProviderConfigType[] = [
   yi
 ];
 
-export const initModels = async () => {
-  await initModelAvatars();
+export const initModels = async (reboot: boolean = false) => {
+  if (!reboot) await initModelAvatars();
 
   modelsBuffer.data = allProviders
     .map((item) => {

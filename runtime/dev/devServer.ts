@@ -10,6 +10,7 @@ export class DevServer {
   private serverProcess: Subprocess | null = null;
   private isRestarting = false;
   private debounceTimer: Timer | null = null;
+  private isFirstStart = true;
 
   // 启动开发环境
   async start() {
@@ -35,12 +36,18 @@ export class DevServer {
       await this.stopServer();
     }
 
+    const cmd = this.isFirstStart
+      ? ['bun', 'run', path.join(__dirname, '..', 'index.ts')]
+      : ['bun', 'run', path.join(__dirname, '..', 'index.ts'), '--reboot'];
+
     this.serverProcess = spawn({
-      cmd: ['bun', 'run', path.join(__dirname, '..', 'index.ts')],
+      cmd,
       stdout: 'inherit',
       stderr: 'inherit',
       stdin: 'inherit'
     });
+
+    this.isFirstStart = false;
   }
 
   // 停止服务器进程

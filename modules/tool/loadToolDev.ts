@@ -31,27 +31,29 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     const readmeFile = join(toolPath, 'README.md');
 
     // Upload logo files if found
-    for (const logoPath of logoFiles) {
-      try {
-        const logoFilename = logoPath.split('/').pop()!;
-        const logoNameWithoutExt = logoFilename.split('.').slice(0, -1).join('.');
-        await publicS3Server.uploadFileAdvanced({
-          path: logoPath,
-          defaultFilename: logoNameWithoutExt,
-          prefix: UploadToolsS3Path + '/' + filename,
-          keepRawFilename: true,
-          contentType: mimeMap[parse(logoPath).ext]
-        });
-        addLog.debug(
-          `📦 Uploaded tool logo file: ${filename} -> ${UploadToolsS3Path}/${filename}/${logoNameWithoutExt}`
-        );
-      } catch (error) {
-        addLog.warn(`Failed to upload logo file ${logoPath}: ${error}`);
+    if (!global.isReboot) {
+      for (const logoPath of logoFiles) {
+        try {
+          const logoFilename = logoPath.split('/').pop()!;
+          const logoNameWithoutExt = logoFilename.split('.').slice(0, -1).join('.');
+          await publicS3Server.uploadFileAdvanced({
+            path: logoPath,
+            defaultFilename: logoNameWithoutExt,
+            prefix: UploadToolsS3Path + '/' + filename,
+            keepRawFilename: true,
+            contentType: mimeMap[parse(logoPath).ext]
+          });
+          addLog.debug(
+            `📦 Uploaded tool logo file: ${filename} -> ${UploadToolsS3Path}/${filename}/${logoNameWithoutExt}`
+          );
+        } catch (error) {
+          addLog.warn(`Failed to upload logo file ${logoPath}: ${error}`);
+        }
       }
     }
 
     // Upload README.md if it exists
-    if (existsSync(readmeFile)) {
+    if (existsSync(readmeFile) && !global.isReboot) {
       try {
         await publicS3Server.uploadFileAdvanced({
           path: readmeFile,
@@ -102,7 +104,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           // Find logo files using glob pattern for child tool
           const childLogoFiles = await glob(`${childPath}/logo.*`);
 
-          if (childLogoFiles.length > 0) {
+          if (childLogoFiles.length > 0 && !global.isReboot) {
             // Child has its own logo, upload it
             for (const logoPath of childLogoFiles) {
               try {
@@ -125,7 +127,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           } else {
             // Child doesn't have logo, use parent's logo
             const parentLogoFiles = await glob(`${toolPath}/logo.*`);
-            if (parentLogoFiles.length > 0) {
+            if (parentLogoFiles.length > 0 && !global.isReboot) {
               for (const parentLogoPath of parentLogoFiles) {
                 try {
                   const logoFilename = parentLogoPath.split('/').pop()!;
@@ -188,3 +190,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   tools.forEach((tool) => devToolIds.add(tool.toolId));
   return tools;
 };
+
+declare global {
+  var isReboot: boolean;
+}
