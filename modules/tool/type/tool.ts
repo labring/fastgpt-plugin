@@ -51,6 +51,7 @@ export const ToolSchema = ToolConfigWithCbSchema.extend({
   parentId: z.string().optional().describe('The parent id of the tool'),
   toolFilename: z.string(),
 
+  version: z.string().describe('The version hash of the tool'),
   // ToolSet Parent
   secretInputConfig: z
     .array(InputConfigSchema)

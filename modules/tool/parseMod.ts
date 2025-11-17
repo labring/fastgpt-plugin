@@ -2,6 +2,7 @@ import { ToolTagEnum } from 'sdk/client';
 import { UploadToolsS3Path } from './constants';
 import type { ToolSetType, ToolType } from './type';
 import { PublicBucketBaseURL } from '@/s3/const';
+import { generateToolVersion, generateToolSetVersion } from './utils/tool';
 
 export const getIconPath = (name: string) => `${PublicBucketBaseURL}${UploadToolsS3Path}/${name}`;
 
@@ -21,17 +22,6 @@ export const parseMod = async ({
 
     const parentIcon = rootMod.icon || getIconPath(`${toolsetId}/logo`);
 
-    // push parent
-    tools.push({
-      ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.other],
-      toolId: toolsetId,
-      icon: parentIcon,
-      toolFilename: `${filename}`,
-      cb: () => Promise.resolve({}),
-      versionList: []
-    });
-
     const children = rootMod.children;
 
     for (const child of children) {
@@ -39,6 +29,8 @@ export const parseMod = async ({
 
       const childIcon = child.icon || rootMod.icon || getIconPath(`${childToolId}/logo`);
 
+      // Generate version for child tool
+      const childVersion = child.version ?? '';
       tools.push({
         ...child,
         toolId: childToolId,
@@ -47,9 +39,22 @@ export const parseMod = async ({
         courseUrl: rootMod.courseUrl,
         author: rootMod.author,
         icon: childIcon,
-        toolFilename: filename
+        toolFilename: filename,
+        version: childVersion
       });
     }
+
+    // push parent
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      toolId: toolsetId,
+      icon: parentIcon,
+      toolFilename: `${filename}`,
+      cb: () => Promise.resolve({}),
+      versionList: [],
+      version: generateToolSetVersion(children) || ''
+    });
   } else {
     // is not toolset
     const toolId = rootMod.toolId;
@@ -61,7 +66,8 @@ export const parseMod = async ({
       tags: rootMod.tags || [ToolTagEnum.enum.tools],
       icon,
       toolId,
-      toolFilename: filename
+      toolFilename: filename,
+      version: rootMod.version ?? ''
     });
   }
   return tools;

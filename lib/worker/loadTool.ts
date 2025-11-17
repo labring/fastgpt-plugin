@@ -8,6 +8,7 @@ import { ToolTagEnum } from '@tool/type/tags';
 import { existsSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
+import { generateToolVersion, generateToolSetVersion } from '@tool/utils/tool';
 
 const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   if (isProd) {
@@ -28,16 +29,6 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   const parentIcon = rootMod.icon ?? getIconPath(`${toolsetId}/logo`);
 
   if (isToolSet) {
-    tools.push({
-      ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.other],
-      toolId: toolsetId,
-      icon: parentIcon,
-      toolFilename: filename,
-      cb: () => Promise.resolve({}),
-      versionList: []
-    });
-
     const children: ToolType[] = [];
 
     {
@@ -49,27 +40,54 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         const toolId = childMod.toolId || `${toolsetId}/${file}`;
 
         const childIcon = childMod.icon ?? rootMod.icon ?? getIconPath(`${toolsetId}/${file}/logo`);
+
+        // Generate version for child tool
+        const childVersion = childMod.versionList
+          ? generateToolVersion(childMod.versionList)
+          : generateToolVersion([]);
+
         children.push({
           ...childMod,
           toolId,
           toolFilename: filename,
           icon: childIcon,
-          parentId: toolsetId
+          parentId: toolsetId,
+          version: childVersion
         });
       }
     }
+
+    // Generate version for tool set based on children
+    const toolSetVersion = generateToolSetVersion(children);
+
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      toolId: toolsetId,
+      icon: parentIcon,
+      toolFilename: filename,
+      cb: () => Promise.resolve({}),
+      versionList: [],
+      version: toolSetVersion
+    });
 
     tools.push(...children);
   } else {
     // is not toolset
     const icon = rootMod.icon ?? getIconPath(`${toolsetId}/logo`);
 
+    // Generate version for single tool
+    const toolVersion = (rootMod as any).versionList
+      ? generateToolVersion((rootMod as any).versionList)
+      : generateToolVersion([]);
+
     tools.push({
       ...(rootMod as ToolType),
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon,
-      toolFilename: filename
+      toolFilename: filename,
+      version: toolVersion
     });
   }
 

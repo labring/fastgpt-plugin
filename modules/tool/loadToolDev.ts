@@ -9,6 +9,7 @@ import type { ToolType, ToolSetType } from './type';
 import { ToolTagEnum } from './type/tags';
 import { publicS3Server } from '@/s3';
 import { mimeMap } from '@/s3/const';
+import { generateToolVersion, generateToolSetVersion } from './utils/tool';
 
 /**
  * Load Tools in dev mode. Only avaliable in dev mode
@@ -82,16 +83,6 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/logo`));
 
   if (isToolSet) {
-    tools.push({
-      ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.other],
-      toolId: toolsetId,
-      icon: parentIcon,
-      toolFilename: filename,
-      cb: () => Promise.resolve({}),
-      versionList: []
-    });
-
     const children: ToolType[] = [];
 
     {
@@ -161,15 +152,36 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           (await publicS3Server.generateExternalUrl(
             `${UploadToolsS3Path}/${toolsetId}/${file}/logo`
           ));
+
+        // Generate version for child tool
+        const childVersion = childMod.versionList
+          ? generateToolVersion(childMod.versionList)
+          : generateToolVersion([]);
+
         children.push({
           ...childMod,
           toolId,
           toolFilename: filename,
           icon: childIcon,
-          parentId: toolsetId
+          parentId: toolsetId,
+          version: childVersion
         });
       }
     }
+
+    // Generate version for tool set based on children
+    const toolSetVersion = generateToolSetVersion(children);
+
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      toolId: toolsetId,
+      icon: parentIcon,
+      toolFilename: filename,
+      cb: () => Promise.resolve({}),
+      versionList: [],
+      version: toolSetVersion ?? ''
+    });
 
     tools.push(...children);
   } else {
@@ -178,12 +190,18 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
       rootMod.icon ??
       (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/logo`));
 
+    // Generate version for single tool
+    const toolVersion = (rootMod as any).versionList
+      ? generateToolVersion((rootMod as any).versionList)
+      : generateToolVersion([]);
+
     tools.push({
       ...(rootMod as ToolType),
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon,
-      toolFilename: filename
+      toolFilename: filename,
+      version: toolVersion
     });
   }
 
