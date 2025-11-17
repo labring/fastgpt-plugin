@@ -37,8 +37,7 @@ export const parseMod = async ({
     for (const child of children) {
       const childToolId = child.toolId;
 
-      const childIcon =
-        child.icon || rootMod.icon || getIconPath(`${toolsetId}/${childToolId}/logo`);
+      const childIcon = child.icon || rootMod.icon || getIconPath(`${childToolId}/logo`);
 
       tools.push({
         ...child,
