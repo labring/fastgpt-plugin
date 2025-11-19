@@ -1,4 +1,4 @@
-import { getCachedData } from '@/cache';
+import { refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { isProd } from '@/constants';
 import { initOpenAPI } from '@/contract/openapi';
@@ -51,7 +51,7 @@ async function main(reboot: boolean = false) {
   await ensureDir(tempToolsDir); // ensure the unpkged tools temp dir
 
   await Promise.all([
-    getCachedData(SystemCacheKeyEnum.systemTool), // init system tool
+    refreshVersionKey(SystemCacheKeyEnum.systemTool), // init system tool
     initModels(reboot),
     initWorkflowTemplates()
   ]);

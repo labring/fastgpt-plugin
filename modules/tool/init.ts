@@ -82,11 +82,11 @@ export async function initTools() {
     }
 
     addLog.info(`Load Tools: ${toolMap.size}`);
-    isIniting = false;
+    global.isIniting = false;
     return toolMap;
   } catch (e) {
     addLog.error(`Init Tools Error:`, e);
-    isIniting = false;
+    global.isIniting = false;
     return getCachedData(SystemCacheKeyEnum.systemTool);
   }
 }
