@@ -30,7 +30,7 @@ export const parseMod = async ({
       const childIcon = child.icon || rootMod.icon || getIconPath(`${childToolId}/logo`);
 
       // Generate version for child tool
-      const childVersion = child.version ?? '';
+      const childVersion = generateToolVersion(child.versionList);
       tools.push({
         ...child,
         toolId: childToolId,
@@ -67,7 +67,7 @@ export const parseMod = async ({
       icon,
       toolId,
       toolFilename: filename,
-      version: rootMod.version ?? ''
+      version: generateToolVersion(rootMod.versionList)
     });
   }
   return tools;

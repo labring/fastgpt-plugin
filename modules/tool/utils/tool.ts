@@ -47,14 +47,7 @@ export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
   };
 };
 
-/**
- * Generate version hash for a single tool based on versionList
- * @param versionList - Array of version objects with value field
- * @returns First 8 characters of SHA256 hash of concatenated version values
- */
-export function generateToolVersion(
-  versionList: Array<{ value: string; description?: string; inputs: any[]; outputs: any[] }>
-): string {
+export function generateToolVersion(versionList: Array<{ value: string }>): string {
   const versionString = versionList.map((v) => v.value).join('');
   return createHash('sha256').update(versionString).digest('hex').substring(0, 8);
 }
@@ -69,11 +62,10 @@ export function generateToolSetVersion(children: ToolType[]) {
     return undefined;
   }
 
-  const childVersions = children.map((child) => child.version || '').sort();
+  const childVersions = children
+    .map((child) => generateToolVersion(child.versionList) || '')
+    .sort();
   const versionString = childVersions.join('');
-  if (versionString.length === 0) {
-    return undefined;
-  }
 
   return createHash('sha256').update(versionString).digest('hex').substring(0, 8);
 }
