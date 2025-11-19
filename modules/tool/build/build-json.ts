@@ -59,7 +59,7 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     }
 
     // Generate version for tool set based on children
-    const toolSetVersion = generateToolSetVersion(children);
+    const toolSetVersion = generateToolSetVersion(children) ?? '';
 
     tools.push({
       ...rootMod,
