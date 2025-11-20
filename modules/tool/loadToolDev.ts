@@ -21,6 +21,12 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     return [];
   }
 
+  const uploadStatic =
+    !global.isReboot || // do not upload while hot restart
+    global.staticUploaded; // neither upload again (not hot restart, just refresh the cache)
+
+  global.staticUploaded = true;
+
   const tools: ToolType[] = [];
 
   const toolPath = join(basePath, 'modules', 'tool', 'packages', filename);
@@ -32,7 +38,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     const readmeFile = join(toolPath, 'README.md');
 
     // Upload logo files if found
-    if (!global.isReboot) {
+    if (uploadStatic) {
       for (const logoPath of logoFiles) {
         try {
           const logoFilename = logoPath.split('/').pop()!;
@@ -54,7 +60,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     }
 
     // Upload README.md if it exists
-    if (existsSync(readmeFile) && !global.isReboot) {
+    if (existsSync(readmeFile) && uploadStatic) {
       try {
         await publicS3Server.uploadFileAdvanced({
           path: readmeFile,
@@ -95,7 +101,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           // Find logo files using glob pattern for child tool
           const childLogoFiles = await glob(`${childPath}/logo.*`);
 
-          if (childLogoFiles.length > 0 && !global.isReboot) {
+          if (childLogoFiles.length > 0 && uploadStatic) {
             // Child has its own logo, upload it
             for (const logoPath of childLogoFiles) {
               try {
@@ -118,7 +124,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           } else {
             // Child doesn't have logo, use parent's logo
             const parentLogoFiles = await glob(`${toolPath}/logo.*`);
-            if (parentLogoFiles.length > 0 && !global.isReboot) {
+            if (parentLogoFiles.length > 0 && uploadStatic) {
               for (const parentLogoPath of parentLogoFiles) {
                 try {
                   const logoFilename = parentLogoPath.split('/').pop()!;
@@ -211,4 +217,5 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
 
 declare global {
   var isReboot: boolean;
+  var staticUploaded: boolean;
 }
