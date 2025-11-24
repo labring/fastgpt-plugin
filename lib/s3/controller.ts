@@ -385,6 +385,9 @@ export class S3Service {
   };
 
   public async getFiles(prefix: string): Promise<string[]> {
+    if (prefix.startsWith('/')) {
+      prefix = prefix.slice(1);
+    }
     const objectNames: string[] = [];
     const stream = this.client.listObjectsV2(this.config.bucket, prefix, true);
 
@@ -431,7 +434,9 @@ export class S3Service {
 
   public async moveFiles(srcPath: string, distPath: string): Promise<void> {
     try {
-      // Normalize paths to ensure they end with '/'
+      if (srcPath.startsWith('/')) {
+        srcPath = srcPath.slice(1);
+      }
       const normalizedSrcPath = srcPath.endsWith('/') ? srcPath : `${srcPath}/`;
       const normalizedDistPath = distPath.endsWith('/') ? distPath : `${distPath}/`;
 
