@@ -8,10 +8,12 @@ export const getIconPath = (name: string) => `${PublicBucketBaseURL}${UploadTool
 
 export const parseMod = async ({
   rootMod,
-  filename
+  filename,
+  temp = false
 }: {
   rootMod: ToolSetType | ToolType;
   filename: string;
+  temp?: boolean;
 }) => {
   const tools: ToolType[] = [];
   const checkRootModToolSet = (rootMod: ToolType | ToolSetType): rootMod is ToolSetType => {
@@ -20,14 +22,15 @@ export const parseMod = async ({
   if (checkRootModToolSet(rootMod)) {
     const toolsetId = rootMod.toolId;
 
-    const parentIcon = rootMod.icon || getIconPath(`${toolsetId}/logo`);
+    const parentIcon = rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${toolsetId}/logo`);
 
     const children = rootMod.children;
 
     for (const child of children) {
       const childToolId = child.toolId;
 
-      const childIcon = child.icon || rootMod.icon || getIconPath(`${childToolId}/logo`);
+      const childIcon =
+        child.icon || rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${childToolId}/logo`);
 
       // Generate version for child tool
       const childVersion = generateToolVersion(child.versionList);
@@ -59,7 +62,7 @@ export const parseMod = async ({
     // is not toolset
     const toolId = rootMod.toolId;
 
-    const icon = rootMod.icon || getIconPath(`${toolId}/logo`);
+    const icon = rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${toolId}/logo`);
 
     tools.push({
       ...rootMod,

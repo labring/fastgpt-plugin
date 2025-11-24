@@ -74,7 +74,8 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
 
   const tools = await parseMod({
     rootMod: mod,
-    filename: join(tempDir, 'index.js')
+    filename: join(tempDir, 'index.js'),
+    temp
   });
 
   await Promise.all([rm(tempDir, { recursive: true }), rm(filepath)]);
@@ -91,7 +92,7 @@ export const parseUploadedTool = async (objectName: string) => {
   });
 
   if (!filepath) return Promise.reject('Upload Tool Error: File not found');
-  const tools = await parsePkg(filepath);
+  const tools = await parsePkg(filepath, true);
   // 4. remove the uploaded pkg file
   await privateS3Server.removeFile(objectName);
   return tools;

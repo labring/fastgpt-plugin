@@ -22,4 +22,4 @@ export const mimeMap: Record<string, string> = {
 
 export const PublicBucketBaseURL = process.env.S3_EXTERNAL_BASE_URL
   ? `${process.env.S3_EXTERNAL_BASE_URL}/${process.env.S3_PUBLIC_BUCKET}`
-  : `${process.env.S3_USE_SSL ? 'https' : 'http'}://${process.env.S3_ENDPOINT}/${process.env.S3_PUBLIC_BUCKET}`;
+  : `${process.env.S3_USE_SSL === 'true' ? 'https' : 'http'}://${process.env.S3_ENDPOINT}:${process.env.S3_PORT}/${process.env.S3_PUBLIC_BUCKET}`;
