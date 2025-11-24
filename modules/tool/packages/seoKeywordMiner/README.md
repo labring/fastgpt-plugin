@@ -77,5 +77,3 @@
 - `page_index`: 页码索引（工具自动计算）
 
 基于官方PHP示例代码实现，确保与5118 API完全兼容。
-
-![SEO Keywords](https://picsum.photos/800/400?random=1)
