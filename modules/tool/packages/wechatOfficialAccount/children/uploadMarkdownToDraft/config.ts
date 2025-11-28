@@ -14,7 +14,7 @@ export default defineTool({
     '将 Markdown 内容转换为微信公众号图文消息格式，自动处理图片上传和封面图，然后保存到草稿箱。支持标题、作者、摘要等信息的自定义配置。',
   versionList: [
     {
-value: '0.2.0',
+      value: '0.2.0',
       description: '批量上传版本（支持多篇文档）',
       inputs: [
         {
