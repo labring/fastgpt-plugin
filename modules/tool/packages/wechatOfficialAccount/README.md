@@ -2,6 +2,7 @@
 
 按照如图所示的方式获取密钥
 ![](./assets/get-secrets.jpg)
+<<<<<<< HEAD
 
 在 FastGPT 云服务版本使用时
 海外版用户（cloud.fastgpt.io）可以填写下面的 IP 白名单：
@@ -61,3 +62,5 @@
 121.43.126.202
 120.26.144.37
 ```
+=======
+>>>>>>> 75649c4 (feat: new tool wechat official account toolset; fix: worker)
