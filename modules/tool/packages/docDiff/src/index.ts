@@ -10,7 +10,9 @@ import { applyFullNormalization } from './textNormalizer';
 
 export const InputType = z.object({
   originalText: z.string().min(1, '原始文档内容不能为空'),
+  originalTitle: z.string().optional().default('原始文档'),
   modifiedText: z.string().min(1, '修改后文档内容不能为空'),
+  modifiedTitle: z.string().optional().default('修改后文档'),
   title: z.string().optional().default('文档对比报告'),
   // 换行容差选项
   lineTolerance: z
@@ -34,10 +36,12 @@ export const OutputType = z.object({
   )
 });
 
-// 输入类型：title 是可选的
+// 输入类型
 export type InputType = {
   originalText: string;
+  originalTitle?: string;
   modifiedText: string;
+  modifiedTitle?: string;
   title?: string;
   // 换行容差选项
   lineTolerance?: LineBreakToleranceOptions;
@@ -55,7 +59,12 @@ export type OutputType = {
 };
 
 // 生成 HTML 报告
-function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
+function generateHtmlReport(
+  diffs: ParagraphDiff[],
+  title: string,
+  originalTitle: string,
+  modifiedTitle: string
+): string {
   const timestamp = new Date().toLocaleString('zh-CN');
 
   const css = `
@@ -339,38 +348,6 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         animation: highlight-pulse 2s ease-out forwards;
       }
 
-      .diff-badge {
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border);
-        padding: 4px 8px;
-        border-radius: var(--radius-sm);
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: nowrap;
-        flex-shrink: 0;
-        margin-top: 2px;
-      }
-
-      .badge-added {
-        color: var(--accent);
-        border-color: var(--accent);
-        background: rgba(37, 99, 235, 0.08);
-      }
-
-      .badge-removed {
-        color: var(--danger);
-        border-color: var(--danger);
-        background: rgba(239, 68, 68, 0.08);
-      }
-
-      .badge-modified {
-        color: var(--warning);
-        border-color: var(--warning);
-        background: rgba(245, 158, 11, 0.08);
-      }
-
       .diff-paragraph {
         font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
         font-size: 14px;
@@ -643,32 +620,6 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         content: "·";
         display: block;
         text-align: center;
-      }
-
-      .diff-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.7em;
-        font-weight: 500;
-        text-transform: uppercase;
-      }
-
-      .badge-added {
-        background: #2196F3;
-        color: white;
-      }
-
-      .badge-removed {
-        background: #F44336;
-        color: white;
-      }
-
-      .badge-modified {
-        background: #FF9800;
-        color: white;
       }
 
 
@@ -975,25 +926,17 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
   const originalContent = diffs
     .map((diff, index) => {
       let content = '';
-      let badge = '';
       const typeClass = diff.type;
 
       if (diff.type === 'added') {
         // 新增的内容在左侧显示为空占位符
         content = '<div class="diff-paragraph empty-line"></div>';
-      } else if (diff.type === 'removed') {
-        content = `<div class="diff-paragraph">${escapeHtml(diff.original || '')}</div>`;
-        badge = '<span class="diff-badge badge-removed">删除</span>';
-      } else if (diff.type === 'modified') {
-        content = `<div class="diff-paragraph">${escapeHtml(diff.original || '')}</div>`;
-        badge = '<span class="diff-badge badge-modified">修改</span>';
       } else {
         content = `<div class="diff-paragraph">${escapeHtml(diff.original || '')}</div>`;
       }
 
       return `
       <div class="diff-item ${typeClass}" data-index="${index}">
-        ${badge}
         ${content}
       </div>
     `;
@@ -1004,25 +947,17 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
   const modifiedContent = diffs
     .map((diff, index) => {
       let content = '';
-      let badge = '';
       const typeClass = diff.type;
 
       if (diff.type === 'removed') {
         // 删除的内容在右侧显示为空占位符
         content = '<div class="diff-paragraph empty-line"></div>';
-      } else if (diff.type === 'added') {
-        content = `<div class="diff-paragraph">${escapeHtml(diff.modified || '')}</div>`;
-        badge = '<span class="diff-badge badge-added">新增</span>';
-      } else if (diff.type === 'modified') {
-        content = `<div class="diff-paragraph">${escapeHtml(diff.modified || '')}</div>`;
-        badge = '<span class="diff-badge badge-modified">修改</span>';
       } else {
         content = `<div class="diff-paragraph">${escapeHtml(diff.modified || '')}</div>`;
       }
 
       return `
       <div class="diff-item ${typeClass}" data-index="${index}">
-        ${badge}
         ${content}
       </div>
     `;
@@ -1096,7 +1031,7 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
         <div class="content-container">
           <div class="column">
             <div class="column-header">
-            📄 原始文档
+            📄 ${originalTitle}
             <button id="lockBtn" class="nav-btn lock-btn" onclick="toggleLock()" title="锁定左右滚动同步">
               <span id="lockIcon">🔓</span>
             </button>
@@ -1105,7 +1040,7 @@ function generateHtmlReport(diffs: ParagraphDiff[], title: string): string {
           </div>
           <div class="column">
             <div class="column-header">
-              <span>📝 修改后文档</span>
+              <span>📝 ${modifiedTitle}</span>
             </div>
             ${modifiedContent}
           </div>
@@ -1153,7 +1088,12 @@ export async function tool(input: z.infer<typeof InputType>) {
     diffs = compareDocuments(normalizedOriginal, normalizedModified);
   }
 
-  const html = generateHtmlReport(diffs, validatedInput.title);
+  const html = generateHtmlReport(
+    diffs,
+    validatedInput.title,
+    validatedInput.originalTitle,
+    validatedInput.modifiedTitle
+  );
 
   const uploadResult = await uploadFile({
     buffer: Buffer.from(html, 'utf-8'),

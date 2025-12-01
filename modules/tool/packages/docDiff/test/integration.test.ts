@@ -7,10 +7,14 @@ describe('docDiff 工具集成测试', () => {
       originalText: `第1行
 第2行
 第3行`,
+      originalTitle: '原始文档',
+
       modifiedText: `新插入的行
 第1行
 第2行
 第3行`,
+      modifiedTitle: '修改后文档',
+
       title: '开头插入测试'
     });
 
@@ -29,10 +33,14 @@ describe('docDiff 工具集成测试', () => {
       originalText: `这是原始文档的第一行
 这是要修改的行
 这是第三行`,
+      originalTitle: '原始文档',
+
       modifiedText: `这是原始文档的第一行
 这是修改后的行
 这是新增的行
 这是第三行`,
+      modifiedTitle: '修改后文档',
+
       title: '复杂场景测试'
     });
 
@@ -49,7 +57,11 @@ describe('docDiff 工具集成测试', () => {
   it('应该能处理只有一行的文档对比', async () => {
     const result = await tool({
       originalText: '单行内容',
+      originalTitle: '原始文档',
+
       modifiedText: '修改后的单行内容',
+      modifiedTitle: '修改后文档',
+
       title: '单行文档测试'
     });
 
@@ -60,7 +72,11 @@ describe('docDiff 工具集成测试', () => {
   it('应该能处理相同文档', async () => {
     const result = await tool({
       originalText: '相同内容',
+      originalTitle: '原始文档',
+
       modifiedText: '相同内容',
+      modifiedTitle: '修改后文档',
+
       title: '相同文档测试'
     });
 

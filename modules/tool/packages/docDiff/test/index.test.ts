@@ -22,7 +22,9 @@ describe('DocDiff Tool Tests', () => {
       await expect(
         tool({
           originalText: '',
+          originalTitle: '原始文档',
           modifiedText: 'Some content',
+          modifiedTitle: '修改后文档',
           title: ''
         })
       ).rejects.toThrow('原始文档内容不能为空');
@@ -32,7 +34,9 @@ describe('DocDiff Tool Tests', () => {
       await expect(
         tool({
           originalText: 'Some content',
+          originalTitle: '原始文档',
           modifiedText: '',
+          modifiedTitle: '修改后文档',
           title: ''
         })
       ).rejects.toThrow('修改后文档内容不能为空');
@@ -51,7 +55,9 @@ describe('DocDiff Tool Tests', () => {
 
       const result = await tool({
         originalText: '# Test Document\n\nThis is a test.',
+        originalTitle: '原始文档',
         modifiedText: '# Test Document\n\nThis is a modified test.',
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
@@ -80,7 +86,9 @@ describe('DocDiff Tool Tests', () => {
 
       const result = await tool({
         originalText: '# Test Document\n\nThis is a test.',
+        originalTitle: '原始文档',
         modifiedText: '# Test Document\n\nThis is a modified test.',
+        modifiedTitle: '修改后文档',
         title: '自定义对比报告'
       });
 
@@ -108,7 +116,9 @@ describe('DocDiff Tool Tests', () => {
       const content = '# Test Document\n\nThis is a test.\n\nAnother paragraph.';
       const result = await tool({
         originalText: content,
+        originalTitle: '原始文档',
         modifiedText: content,
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
@@ -142,7 +152,9 @@ describe('DocDiff Tool Tests', () => {
         '# Original Document\n\nFirst paragraph.\n\nSecond paragraph.\n\nThird paragraph.';
       const result = await tool({
         originalText: original,
+        originalTitle: '原始文档',
         modifiedText: modified,
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
@@ -174,7 +186,9 @@ describe('DocDiff Tool Tests', () => {
       const modified = '# Original Document\n\nFirst paragraph.';
       const result = await tool({
         originalText: original,
+        originalTitle: '原始文档',
         modifiedText: modified,
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
@@ -205,7 +219,9 @@ describe('DocDiff Tool Tests', () => {
       const modified = '# Test Document\n\nThis is the modified text.';
       const result = await tool({
         originalText: original,
+        originalTitle: '原始文档',
         modifiedText: modified,
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
@@ -236,7 +252,9 @@ describe('DocDiff Tool Tests', () => {
 
       await tool({
         originalText: '# Test\n\nContent.',
+        originalTitle: '原始文档',
         modifiedText: '# Test\n\nModified content.',
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
@@ -265,7 +283,11 @@ describe('DocDiff Tool Tests', () => {
 
       await tool({
         originalText: '# Test\n\nContent.',
+        originalTitle: '原始文档',
+
         modifiedText: '# Test\n\nModified content.',
+        modifiedTitle: '修改后文档',
+
         title: 'Test Report'
       });
 
@@ -294,7 +316,11 @@ describe('DocDiff Tool Tests', () => {
 
       await tool({
         originalText: '# Test\n\nContent.',
+        originalTitle: '原始文档',
+
         modifiedText: '# Test\n\nModified content.',
+        modifiedTitle: '修改后文档',
+
         title: 'Test Report'
       });
 
@@ -324,7 +350,11 @@ describe('DocDiff Tool Tests', () => {
 
       await tool({
         originalText: '# Test\n\nContent.',
+        originalTitle: '原始文档',
+
         modifiedText: '# Test\n\nModified content.\n\nNew content.',
+        modifiedTitle: '修改后文档',
+
         title: 'Test Report'
       });
 
@@ -352,7 +382,11 @@ describe('DocDiff Tool Tests', () => {
 
       await tool({
         originalText: '# Test\n\nContent.',
+        originalTitle: '原始文档',
+
         modifiedText: '# Test\n\nModified content.',
+        modifiedTitle: '修改后文档',
+
         title: 'Test Report'
       });
 
@@ -382,7 +416,9 @@ describe('DocDiff Tool Tests', () => {
       const modified = '# Test\n\nParagraph with multiple spaces.\n\nNew line test.';
       const result = await tool({
         originalText: original,
+        originalTitle: '原始文档',
         modifiedText: modified,
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
@@ -404,7 +440,9 @@ describe('DocDiff Tool Tests', () => {
       const modified = '# Test\n\n\n\nParagraph after empty lines.';
       const result = await tool({
         originalText: original,
+        originalTitle: '原始文档',
         modifiedText: modified,
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
@@ -427,7 +465,9 @@ describe('DocDiff Tool Tests', () => {
       const modified = `# Test\n\n${longText} modified`;
       const result = await tool({
         originalText: original,
+        originalTitle: '原始文档',
         modifiedText: modified,
+        modifiedTitle: '修改后文档',
         title: 'Test Report'
       });
 
