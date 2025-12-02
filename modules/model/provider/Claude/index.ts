@@ -27,6 +27,17 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'claude-opus-4-5-20251101',
+      maxContext: 200000,
+      maxTokens: 32000,
+      quoteMaxToken: 100000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'claude-opus-4-1-20250805',
       maxContext: 200000,
       maxTokens: 32000,
