@@ -1,3 +1,4 @@
+
 import alicloud from './provider/AliCloud';
 import baai from './provider/BAAI';
 import baichuan from './provider/Baichuan';
@@ -31,6 +32,7 @@ import ai360 from './provider/ai360';
 import huggingface from './provider/HuggingFace';
 import novita from './provider/novita';
 import openrouter from './provider/OpenRouter';
+import deerapi from './provider/DeerAPI/index';
 
 import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
 import { modelsBuffer } from './constants';
@@ -71,7 +73,8 @@ const allProviders: ProviderConfigType[] = [
   siliconflow,
   sparkdesk,
   stepfun,
-  yi
+  yi,
+  deerapi
 ];
 
 export const initModels = async (reboot: boolean = false) => {
