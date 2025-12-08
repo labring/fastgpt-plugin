@@ -5,6 +5,30 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'glm-4.6',
+      maxContext: 200000,
+      maxTokens: 130000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'glm-4.6v',
+      maxContext: 128000,
+      maxTokens: 16000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'glm-4.5',
       maxContext: 128000,
       maxTokens: 96000,
@@ -13,12 +37,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true,
-      defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
-      }
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -30,12 +49,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true,
-      defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
-      }
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -47,12 +61,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true,
-      defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
-      }
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -64,12 +73,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true,
-      defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
-      }
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -81,12 +85,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true,
-      defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
-      }
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
