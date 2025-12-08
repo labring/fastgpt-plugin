@@ -5,6 +5,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'deepseek-v3.2',
+      maxContext: 125000,
+      maxTokens: 32000,
+      quoteMaxToken: 120000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'deepseek-chat',
       maxContext: 64000,
       maxTokens: 8000,
@@ -62,18 +74,6 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'deepseek-v3.2',
-      maxContext: 125000,
-      maxTokens: 32000,
-      quoteMaxToken: 120000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: false,
-      reasoning: true,
       toolChoice: true
     }
   ]
