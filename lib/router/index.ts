@@ -9,6 +9,14 @@ import { authTokenMiddleware } from './middleware/auth';
 import { workflowRouter } from '@workflow/router';
 
 export const initRouter = (app: Express) => {
+  // Register health check endpoint (no auth required)
+  app.get('/health', (_req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   const router = s.router(contract, {
     tool: toolRouter,
     model: modelRouter,
