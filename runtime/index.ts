@@ -1,4 +1,4 @@
-import { getCachedData } from '@/cache';
+import { getCachedData, refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { isProd } from '@/constants';
 import { initOpenAPI } from '@/contract/openapi';
@@ -51,7 +51,12 @@ async function main(reboot: boolean = false) {
   await ensureDir(tempToolsDir); // ensure the unpkged tools temp dir
 
   await Promise.all([
-    getCachedData(SystemCacheKeyEnum.systemTool), // init system tool
+    /**
+     * Do NOT change this.
+     * Refresh the versionkey after restarting is expected.
+     * Otherwise, the service restarting could NOT trigger the refresh of FastGPT main service cache refreshing.
+     */
+    refreshVersionKey(SystemCacheKeyEnum.systemTool),
     initModels(reboot),
     initWorkflowTemplates()
   ]);
