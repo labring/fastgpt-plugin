@@ -18,7 +18,7 @@ export const InputType = z.object({
     .array(z.enum(['html']))
     .optional()
     .default([]),
-  model_version: z.enum(['pipeline', 'fastapi']).optional().default('pipeline')
+  model_version: z.enum(['pipeline', 'vlm']).optional().default('pipeline')
 });
 
 const OutputResultSchemaItem = z.object({
