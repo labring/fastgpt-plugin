@@ -57,6 +57,10 @@
   "dependencies": {
     "@ts-rest/core": "3.52.1",
     "@ts-rest/express": "3.52.1",
-    "@ts-rest/open-api": "3.52.1"
+    "@ts-rest/open-api": "3.52.1",
+    "@types/cheerio": "^0.22.35",
+    "@types/marked": "^5.0.2",
+    "cheerio": "^1.1.0",
+    "marked": "^17.0.1"
   }
 }

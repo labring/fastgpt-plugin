@@ -269,6 +269,10 @@ bun test
 - 必须包含：`config.ts`, `src/index.ts`, `index.ts`
 - 可选包含：`test/index.test.ts`, `DESIGN.md`
 
+### 4. 认证处理规范
+- 优先使用传入的 `accessToken`
+- 未提供时，通过 `appId` 和 `appSecret` 自动获取
+- 使用 `lib/auth.js` 中封装的认证函数
 ## 最佳实践
 
 ### 1. 代码兼容性

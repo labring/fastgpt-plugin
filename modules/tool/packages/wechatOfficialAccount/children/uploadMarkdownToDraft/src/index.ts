@@ -248,7 +248,9 @@ async function processSingleArticle({
   for (const imageUrl of imageUrls) {
     try {
       const wechatImageUrl = await uploadImageToWeChat(token, imageUrl);
-      processedHtml = processedHtml.replace(imageUrl, wechatImageUrl);
+      // 使用正则表达式全局替换，确保同一图片 URL 的所有出现都被替换
+      const escapedUrl = imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      processedHtml = processedHtml.replace(new RegExp(escapedUrl, 'g'), wechatImageUrl);
     } catch (error) {
       console.warn(`上传图片失败: ${imageUrl}`, error);
       // 保持原链接，继续处理其他图片
