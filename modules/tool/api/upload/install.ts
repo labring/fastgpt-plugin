@@ -47,7 +47,7 @@ export default s.route(contract.tool.upload.install, async ({ body }) => {
   );
 
   await refreshVersionKey(SystemCacheKeyEnum.systemTool);
-  addLog.debug(`Success installed tools: ${toolIds}`);
+  addLog.info(`Success installed tools: ${toolIds}`);
 
   return {
     status: 200,
