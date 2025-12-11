@@ -20,7 +20,8 @@ function getExcelImageExtension(url: string): 'png' | 'jpeg' | 'gif' {
 }
 
 export const InputType = z.object({
-  markdown: z.string().describe('Markdown content to convert')
+  markdown: z.string().describe('Markdown content to convert'),
+  filename: z.string().optional().describe('Custom filename without extension')
 });
 
 async function processLineWithImages(
@@ -331,12 +332,13 @@ async function createExcelFromMarkdown(markdown: string): Promise<Buffer> {
 export async function xlsxTool(
   input: z.infer<typeof InputType>
 ): Promise<z.infer<typeof OutputType>> {
-  const { markdown } = input;
+  const { markdown, filename } = input;
   try {
     const xlsxBuffer = await createExcelFromMarkdown(markdown);
+    const finalFilename = filename ? `${filename}.xlsx` : `markdown-to-excel.xlsx`;
     const result = await uploadFile({
       buffer: xlsxBuffer,
-      defaultFilename: `markdown-to-excel.xlsx`
+      defaultFilename: finalFilename
     });
 
     return { url: result.accessUrl };

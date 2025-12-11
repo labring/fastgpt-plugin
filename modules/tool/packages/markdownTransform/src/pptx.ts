@@ -11,7 +11,8 @@ import {
 } from './shared';
 
 export const InputType = z.object({
-  markdown: z.string().describe('Markdown content to convert')
+  markdown: z.string().describe('Markdown content to convert'),
+  filename: z.string().optional().describe('Custom filename without extension')
 });
 
 // slide styles config
@@ -444,12 +445,12 @@ async function parseMarkdownToPptx(markdown: string): Promise<Buffer> {
 export async function pptxTool(
   input: z.infer<typeof InputType>
 ): Promise<z.infer<typeof OutputType>> {
-  const { markdown } = input;
+  const { markdown, filename } = input;
   const pptxBuffer = await parseMarkdownToPptx(markdown);
-  const filename = `markdown-to-pptx.pptx`;
+  const finalFilename = filename ? `${filename}.pptx` : `markdown-to-pptx.pptx`;
   const result = await uploadFile({
     buffer: pptxBuffer,
-    defaultFilename: filename
+    defaultFilename: finalFilename
   });
   if (!result.accessUrl) {
     return Promise.reject('Upload failed: No access URL in result');
