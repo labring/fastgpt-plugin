@@ -37,6 +37,16 @@ function parseStringOrArray(val: unknown): string[] {
 // 辅助类型：支持字符串或字符串数组（用于输入验证）
 const StringOrArray = z.union([z.string(), z.array(z.string())]);
 
+// 辅助类型：支持数字、字符串(可解析为数字)或它们的数组
+const NumberOrStringArray = z
+  .union([z.number(), z.string(), z.array(z.union([z.number(), z.string()]))])
+  .transform((val) => {
+    if (Array.isArray(val)) {
+      return val.map((item) => (typeof item === 'string' ? parseInt(item, 10) : item));
+    }
+    return typeof val === 'string' ? parseInt(val, 10) : val;
+  });
+
 export const InputType = z
   .object({
     // 认证参数（二选一）
@@ -69,14 +79,8 @@ export const InputType = z
     author: StringOrArray.optional(),
     digest: StringOrArray.optional(),
     contentSourceUrl: StringOrArray.optional(),
-    needOpenComment: z
-      .union([z.number(), z.array(z.number())])
-      .optional()
-      .default(0),
-    onlyFansCanComment: z
-      .union([z.number(), z.array(z.number())])
-      .optional()
-      .default(0)
+    needOpenComment: NumberOrStringArray.optional().default(0),
+    onlyFansCanComment: NumberOrStringArray.optional().default(0)
   })
   .refine(
     (data) => {
