@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { handleGetAuthToken, handleBatchGetDraft } from '../../../lib/handler';
-import { addLog } from '@/utils/log';
 
 export const InputType = z
   .object({
@@ -76,16 +75,6 @@ export async function tool({
   }
 
   const result = await handleBatchGetDraft(params);
-
-  if ('errcode' in result && result.errcode !== 0) {
-    return {
-      error_message: `获取草稿列表失败: ${result.errmsg} (错误码: ${result.errcode})`
-    };
-  }
-
-  addLog.info(
-    `Successfully retrieved ${result.item_count} drafts out of ${result.total_count} total`
-  );
 
   return {
     total_count: result.total_count,
