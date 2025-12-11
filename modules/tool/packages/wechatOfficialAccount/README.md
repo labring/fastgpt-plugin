@@ -1,4 +1,5 @@
 # 获取密钥
+在[微信开发者平台](https://developers.weixin.qq.com) 登陆，选择“公众号”
 
 按照如图所示的方式获取密钥
 ![](./assets/get-secrets.jpg)

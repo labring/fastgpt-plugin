@@ -8,7 +8,6 @@ import {
   downloadImageFromUrl
 } from '../../../lib/handler';
 import { addInlineStyles } from './styles';
-import { addLog } from '@/utils/log';
 
 // 辅助函数：解析字符串或字符串数组，支持 JSON 编码的数组
 function parseStringOrArray(val: unknown): string[] {
@@ -108,7 +107,6 @@ export async function tool({
   needOpenComment = 0,
   onlyFansCanComment = 0
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  addLog.info(`${markdownContent}${typeof markdownContent}`);
   // 1. 获取 access_token
   let token = accessToken;
   if (!token) {
@@ -248,8 +246,15 @@ async function processSingleArticle({
   for (const imageUrl of imageUrls) {
     try {
       const wechatImageUrl = await uploadImageToWeChat(token, imageUrl);
+      // HTML 中的 URL 是编码后的（& 变成 &amp;），所以替换时也需要使用编码后的 URL
+      const encodedUrl = imageUrl
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
       // 使用正则表达式全局替换，确保同一图片 URL 的所有出现都被替换
-      const escapedUrl = imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapedUrl = encodedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       processedHtml = processedHtml.replace(new RegExp(escapedUrl, 'g'), wechatImageUrl);
     } catch (error) {
       console.warn(`上传图片失败: ${imageUrl}`, error);
@@ -327,6 +332,7 @@ function sanitizeAndAddStyles(html: string): string {
 
 /**
  * 提取图片链接
+ * 注意：HTML 中的 & 会被转义为 &amp;，需要解码
  */
 function extractImageUrls(html: string): string[] {
   const imgRegex = /<img[^>]+src="([^"]+)"/g;
@@ -334,7 +340,14 @@ function extractImageUrls(html: string): string[] {
   let match;
 
   while ((match = imgRegex.exec(html)) !== null) {
-    urls.push(match[1]);
+    // 解码 HTML 实体，将 &amp; 转回 &
+    const decodedUrl = match[1]
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    urls.push(decodedUrl);
   }
 
   return urls;
