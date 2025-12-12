@@ -17,7 +17,7 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
     .map((item) => item.split('/').at(-1)?.split('.').at(0))
     .filter((item): item is string => !!item);
 
-  if (pendingToolIds.some((item) => !toolIds.includes(item))) {
+  if (!pendingToolIds.some((item) => toolIds.includes(item))) {
     return {
       status: 400,
       body: {
