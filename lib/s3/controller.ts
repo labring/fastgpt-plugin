@@ -151,22 +151,8 @@ export class S3Service {
     const externalBaseURL = this.config.externalBaseURL;
 
     // Private
-    if (!this.config.isPublicRead) {
-      const url = await this.client.presignedGetObject(this.config.bucket, objectName, expiry);
-      // 如果有 externalBaseUrl，需要把域名进行替换
-      if (this.config.externalBaseURL) {
-        const urlObj = new URL(url);
-        const externalUrlObj = new URL(this.config.externalBaseURL);
-
-        // 替换协议和域名，保留路径和查询参数
-        urlObj.protocol = externalUrlObj.protocol;
-        urlObj.hostname = externalUrlObj.hostname;
-        urlObj.port = externalUrlObj.port;
-
-        return urlObj.toString();
-      }
-
-      return url;
+    if (!this.config.isPublicRead && this.externalClient) {
+      return await this.externalClient.presignedGetObject(this.config.bucket, objectName, expiry);
     }
 
     // Public
@@ -331,13 +317,11 @@ export class S3Service {
     const name = this.generateFileId();
     const objectName = `${filepath}/${name}`;
 
-    if (fileExpireMins) {
-      await MongoS3TTL.create({
-        bucketName: this.config.bucket,
-        minioKey: objectName,
-        expiredTime: addMinutes(new Date(), fileExpireMins)
-      });
-    }
+    await MongoS3TTL.create({
+      bucketName: this.config.bucket,
+      minioKey: objectName,
+      expiredTime: addMinutes(new Date(), fileExpireMins ?? 60)
+    });
 
     const client = this.externalClient ?? this.client;
 
@@ -370,11 +354,6 @@ export class S3Service {
         }
       })();
 
-      await MongoS3TTL.create({
-        bucketName: this.config.bucket,
-        expiredTime: new Date(Date.now() + 10 * 60 * 1000),
-        minioKey: objectName
-      });
       return {
         postURL,
         formData: res.formData,
