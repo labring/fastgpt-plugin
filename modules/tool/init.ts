@@ -30,6 +30,9 @@ export async function initTools() {
   }
   global.isIniting = true;
   try {
+    const start = Date.now();
+    addLog.info(`Load tool start`);
+
     await refreshDir(toolsDir);
     // 1. download pkgs into pkg dir
     // 1.1 get tools from mongo
@@ -75,7 +78,7 @@ export async function initTools() {
       }
     }
 
-    addLog.info(`Load tools finish: ${toolMap.size}`);
+    addLog.info(`Load tools finish: ${toolMap.size}, time: ${Date.now() - start}ms`);
     global.isIniting = false;
     return toolMap;
   } catch (e) {
