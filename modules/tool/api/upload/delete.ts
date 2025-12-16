@@ -9,7 +9,6 @@ import { UploadToolsS3Path } from '@tool/constants';
 import { addLog } from '@/utils/log';
 
 export default s.route(contract.tool.upload.delete, async ({ query: { toolId } }) => {
-  addLog.debug(`Deleting tool: ${toolId}`);
   const res = await mongoSessionRun(async (session) => {
     const result = await MongoSystemPlugin.findOneAndDelete({ toolId }).session(session);
     if (!result || !result.toolId) {

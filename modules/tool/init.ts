@@ -30,6 +30,9 @@ export async function initTools() {
   }
   global.isIniting = true;
   try {
+    const start = Date.now();
+    addLog.info(`Load tools start`);
+
     await refreshDir(toolsDir);
     // 1. download pkgs into pkg dir
     // 1.1 get tools from mongo
@@ -38,28 +41,22 @@ export async function initTools() {
     }).lean();
 
     addLog.debug(`Tools in mongo: ${toolsInMongo.length}`);
-    // 1.2 download it to temp dir
-    await batch(
-      10,
-      toolsInMongo.map(
-        (tool) => () =>
-          privateS3Server.downloadFile({
-            downloadPath: toolsDir,
-            objectName: `${UploadToolsS3Path}/${tool.toolId}.js`
-          })
-      )
-    );
-
-    // 2. get all tool dirs
-    addLog.debug(`Load tool in local: ${toolsInMongo.length}`);
-    const toolFiles = await readdir(toolsDir);
     const toolMap: ToolMapType = new Map();
 
-    const promises = toolFiles.map(async (filename) => {
-      const loadedTools = await LoadToolsByFilename(filename);
-      loadedTools.forEach((tool) => toolMap.set(tool.toolId, tool));
-    });
-    await Promise.all(promises);
+    // 2 download it to temp dir, and parse it
+    await batch(
+      10,
+      toolsInMongo.map((tool) => async () => {
+        const filepath = await privateS3Server.downloadFile({
+          downloadPath: toolsDir,
+          objectName: `${UploadToolsS3Path}/${tool.toolId}.js`
+        });
+        if (!filepath) return;
+        const filename = filepath.replace(`${toolsDir}/`, '');
+        const loadedTools = await LoadToolsByFilename(filename);
+        loadedTools.forEach((tool) => toolMap.set(tool.toolId, tool));
+      })
+    );
 
     // 3. read dev tools, if in dev mode
     if (!isProd && process.env.DISABLE_DEV_TOOLS !== 'true') {
@@ -81,11 +78,11 @@ export async function initTools() {
       }
     }
 
-    addLog.info(`Load Tools: ${toolMap.size}`);
+    addLog.info(`Load tools finish: ${toolMap.size}, time: ${Date.now() - start}ms`);
     global.isIniting = false;
     return toolMap;
   } catch (e) {
-    addLog.error(`Init Tools Error:`, e);
+    addLog.error(`Load tools Error:`, e);
     global.isIniting = false;
     return getCachedData(SystemCacheKeyEnum.systemTool);
   }
