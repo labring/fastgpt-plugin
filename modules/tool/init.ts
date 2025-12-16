@@ -38,26 +38,18 @@ export async function initTools() {
     }).lean();
 
     addLog.debug(`Tools in mongo: ${toolsInMongo.length}`);
-    // 1.2 download it to temp dir
-    await batch(
-      10,
-      toolsInMongo.map(
-        (tool) => () =>
-          privateS3Server.downloadFile({
-            downloadPath: toolsDir,
-            objectName: `${UploadToolsS3Path}/${tool.toolId}.js`
-          })
-      )
-    );
-
-    // 2. get all tool dirs
-    addLog.debug(`Find tool in local: ${toolsInMongo.length}`);
-    const toolFiles = await readdir(toolsDir);
     const toolMap: ToolMapType = new Map();
 
+    // 2 download it to temp dir, and parse it
     await batch(
       10,
-      toolFiles.map((filename) => async () => {
+      toolsInMongo.map((tool) => async () => {
+        const filepath = await privateS3Server.downloadFile({
+          downloadPath: toolsDir,
+          objectName: `${UploadToolsS3Path}/${tool.toolId}.js`
+        });
+        if (!filepath) return;
+        const filename = filepath.replace(`${toolsDir}/`, '');
         const loadedTools = await LoadToolsByFilename(filename);
         loadedTools.forEach((tool) => toolMap.set(tool.toolId, tool));
       })
