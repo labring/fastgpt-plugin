@@ -51,7 +51,7 @@ export async function initTools() {
     );
 
     // 2. get all tool dirs
-    addLog.debug(`Load tool in local: ${toolsInMongo.length}`);
+    addLog.debug(`Find tool in local: ${toolsInMongo.length}`);
     const toolFiles = await readdir(toolsDir);
     const toolMap: ToolMapType = new Map();
 
@@ -81,7 +81,7 @@ export async function initTools() {
       }
     }
 
-    addLog.info(`Load Tools: ${toolMap.size}`);
+    addLog.info(`Load tools finish: ${toolMap.size}`);
     global.isIniting = false;
     return toolMap;
   } catch (e) {
