@@ -31,7 +31,7 @@ export async function initTools() {
   global.isIniting = true;
   try {
     const start = Date.now();
-    addLog.info(`Load tool start`);
+    addLog.info(`Load tools start`);
 
     await refreshDir(toolsDir);
     // 1. download pkgs into pkg dir
@@ -82,7 +82,7 @@ export async function initTools() {
     global.isIniting = false;
     return toolMap;
   } catch (e) {
-    addLog.error(`Init Tools Error:`, e);
+    addLog.error(`Load tools Error:`, e);
     global.isIniting = false;
     return getCachedData(SystemCacheKeyEnum.systemTool);
   }
