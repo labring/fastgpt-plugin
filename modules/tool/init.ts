@@ -55,11 +55,13 @@ export async function initTools() {
     const toolFiles = await readdir(toolsDir);
     const toolMap: ToolMapType = new Map();
 
-    const promises = toolFiles.map(async (filename) => {
-      const loadedTools = await LoadToolsByFilename(filename);
-      loadedTools.forEach((tool) => toolMap.set(tool.toolId, tool));
-    });
-    await Promise.all(promises);
+    await batch(
+      10,
+      toolFiles.map((filename) => async () => {
+        const loadedTools = await LoadToolsByFilename(filename);
+        loadedTools.forEach((tool) => toolMap.set(tool.toolId, tool));
+      })
+    );
 
     // 3. read dev tools, if in dev mode
     if (!isProd && process.env.DISABLE_DEV_TOOLS !== 'true') {
