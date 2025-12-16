@@ -45,7 +45,7 @@ export async function initTools() {
 
     // 2 download it to temp dir, and parse it
     await batch(
-      10,
+      50,
       toolsInMongo.map((tool) => async () => {
         const filepath = await privateS3Server.downloadFile({
           downloadPath: toolsDir,
