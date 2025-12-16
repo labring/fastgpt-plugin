@@ -5,7 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: 'gpt-5.1',
+      model: 'gpt-5.2',
       maxContext: 400000,
       maxTokens: 128000,
       quoteMaxToken: 400000,
