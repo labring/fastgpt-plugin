@@ -14,6 +14,51 @@ export default defineTool({
   },
   versionList: [
     {
+      value: '0.2.0',
+      description: '支持自定义文件名',
+      inputs: [
+        {
+          key: 'markdown',
+          label: 'Markdown 内容',
+          description: '要转换的 Markdown 内容',
+          toolDescription: '要转换的 Markdown 内容',
+          required: true,
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string
+        },
+        {
+          key: 'format',
+          label: '转换格式',
+          description: '需要转换的格式，支持 xlsx 和 docx 和 pptx',
+          toolDescription: '需要转换的格式，支持 xlsx 和 docx 和 pptx',
+          required: true,
+          renderTypeList: [FlowNodeInputTypeEnum.select, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string,
+          list: [
+            { label: 'xlsx', value: 'xlsx' },
+            { label: 'docx', value: 'docx' },
+            { label: 'pptx', value: 'pptx' }
+          ]
+        },
+        {
+          key: 'filename',
+          label: '文件名',
+          description: '自定义文件名（不包含扩展名）',
+          toolDescription: '自定义文件名（不包含扩展名）',
+          required: false,
+          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+          valueType: WorkflowIOValueTypeEnum.string
+        }
+      ],
+      outputs: [
+        {
+          valueType: WorkflowIOValueTypeEnum.string,
+          key: 'url',
+          label: '文件链接'
+        }
+      ]
+    },
+    {
       value: '0.1.0',
       description: 'Default version',
       inputs: [

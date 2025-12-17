@@ -23,7 +23,8 @@ import {
 } from './shared';
 
 export const InputType = z.object({
-  markdown: z.string().describe('Markdown content to convert')
+  markdown: z.string().describe('Markdown content to convert'),
+  filename: z.string().optional().describe('Custom filename without extension')
 });
 
 function createTextRun(
@@ -423,7 +424,8 @@ async function parseMarkdownToParagraphs(markdown: string): Promise<(Paragraph |
 }
 
 export async function docxTool({
-  markdown
+  markdown,
+  filename
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const elements = await parseMarkdownToParagraphs(markdown);
 
@@ -437,12 +439,12 @@ export async function docxTool({
   });
 
   const docBuffer = await Packer.toBuffer(doc);
-  const filename = `markdown-to-docx.docx`;
+  const finalFilename = filename ? `${filename}.docx` : `markdown-to-docx.docx`;
   const buf = Buffer.from(new Uint8Array(docBuffer));
 
   const result = await uploadFile({
     buffer: buf,
-    defaultFilename: filename
+    defaultFilename: finalFilename
   });
 
   if (!result.accessUrl) {

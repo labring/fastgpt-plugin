@@ -6,21 +6,23 @@ import { OutputType } from './type';
 
 export const InputType = z.object({
   format: z.enum(['xlsx', 'docx', 'pptx']),
-  markdown: z.string()
+  markdown: z.string(),
+  filename: z.string().optional()
 });
 
 export async function tool({
   format,
-  markdown
+  markdown,
+  filename
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   if (format === 'xlsx') {
-    return xlsxTool({ markdown });
+    return xlsxTool({ markdown, filename });
   }
   if (format === 'docx') {
-    return docxTool({ markdown });
+    return docxTool({ markdown, filename });
   }
   if (format === 'pptx') {
-    return pptxTool({ markdown });
+    return pptxTool({ markdown, filename });
   }
   return Promise.reject('Invalid format');
 }

@@ -70,7 +70,6 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
       versionList: [],
       version: toolSetVersion
     });
-
     tools.push(...children);
   } else {
     // is not toolset
@@ -80,7 +79,6 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     const toolVersion = (rootMod as any).versionList
       ? generateToolVersion((rootMod as any).versionList)
       : generateToolVersion([]);
-
     tools.push({
       ...(rootMod as ToolType),
       tags: rootMod.tags || [ToolTagEnum.enum.other],

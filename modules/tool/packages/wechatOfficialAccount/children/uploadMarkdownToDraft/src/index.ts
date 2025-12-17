@@ -8,7 +8,6 @@ import {
   downloadImageFromUrl
 } from '../../../lib/handler';
 import { addInlineStyles } from './styles';
-import { addLog } from '@/utils/log';
 
 // 辅助函数：解析字符串或字符串数组，支持 JSON 编码的数组
 function parseStringOrArray(val: unknown): string[] {
@@ -37,6 +36,16 @@ function parseStringOrArray(val: unknown): string[] {
 
 // 辅助类型：支持字符串或字符串数组（用于输入验证）
 const StringOrArray = z.union([z.string(), z.array(z.string())]);
+
+// 辅助类型：支持数字、字符串(可解析为数字)或它们的数组
+const NumberOrStringArray = z
+  .union([z.number(), z.string(), z.array(z.union([z.number(), z.string()]))])
+  .transform((val) => {
+    if (Array.isArray(val)) {
+      return val.map((item) => (typeof item === 'string' ? parseInt(item, 10) : item));
+    }
+    return typeof val === 'string' ? parseInt(val, 10) : val;
+  });
 
 export const InputType = z
   .object({
@@ -70,14 +79,8 @@ export const InputType = z
     author: StringOrArray.optional(),
     digest: StringOrArray.optional(),
     contentSourceUrl: StringOrArray.optional(),
-    needOpenComment: z
-      .union([z.number(), z.array(z.number())])
-      .optional()
-      .default(0),
-    onlyFansCanComment: z
-      .union([z.number(), z.array(z.number())])
-      .optional()
-      .default(0)
+    needOpenComment: NumberOrStringArray.optional().default(0),
+    onlyFansCanComment: NumberOrStringArray.optional().default(0)
   })
   .refine(
     (data) => {
@@ -108,7 +111,6 @@ export async function tool({
   needOpenComment = 0,
   onlyFansCanComment = 0
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
-  addLog.info(`${markdownContent}${typeof markdownContent}`);
   // 1. 获取 access_token
   let token = accessToken;
   if (!token) {
@@ -248,7 +250,16 @@ async function processSingleArticle({
   for (const imageUrl of imageUrls) {
     try {
       const wechatImageUrl = await uploadImageToWeChat(token, imageUrl);
-      processedHtml = processedHtml.replace(imageUrl, wechatImageUrl);
+      // HTML 中的 URL 是编码后的（& 变成 &amp;），所以替换时也需要使用编码后的 URL
+      const encodedUrl = imageUrl
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+      // 使用正则表达式全局替换，确保同一图片 URL 的所有出现都被替换
+      const escapedUrl = encodedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      processedHtml = processedHtml.replace(new RegExp(escapedUrl, 'g'), wechatImageUrl);
     } catch (error) {
       console.warn(`上传图片失败: ${imageUrl}`, error);
       // 保持原链接，继续处理其他图片
@@ -325,6 +336,7 @@ function sanitizeAndAddStyles(html: string): string {
 
 /**
  * 提取图片链接
+ * 注意：HTML 中的 & 会被转义为 &amp;，需要解码
  */
 function extractImageUrls(html: string): string[] {
   const imgRegex = /<img[^>]+src="([^"]+)"/g;
@@ -332,7 +344,14 @@ function extractImageUrls(html: string): string[] {
   let match;
 
   while ((match = imgRegex.exec(html)) !== null) {
-    urls.push(match[1]);
+    // 解码 HTML 实体，将 &amp; 转回 &
+    const decodedUrl = match[1]
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    urls.push(decodedUrl);
   }
 
   return urls;
