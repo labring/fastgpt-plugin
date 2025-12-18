@@ -4,33 +4,67 @@
 import { mimeMap } from '@/s3/const';
 import { pkg } from '@/utils/zip';
 import { UploadToolsS3Path } from '@tool/constants';
-import { $, S3Client } from 'bun';
+import { $ } from 'bun';
 import { glob } from 'fs/promises';
-
-const endpoint = process.env.S3_ENDPOINT; // should be http://localhost:9000
-const secretKey = process.env.S3_SECRET_KEY;
-const accessKey = process.env.S3_ACCESS_KEY;
-const bucket = process.env.S3_BUCKET;
+import {
+  createStorage,
+  MinioStorageAdapter,
+  type IAwsS3CompatibleStorageOptions,
+  type ICosStorageOptions,
+  type IOssStorageOptions
+} from '@fastgpt-sdk/storage';
+import { createDefaultStorageOptions } from '@/s3/config';
 
 async function main() {
-  // Validate required environment variables
-  if (!endpoint || !secretKey || !accessKey || !bucket) {
-    console.error('❌ Missing required environment variables:');
-    if (!endpoint) console.error('  - S3_ENDPOINT');
-    if (!secretKey) console.error('  - S3_SECRET_KEY');
-    if (!accessKey) console.error('  - S3_ACCESS_KEY');
-    if (!bucket) console.error('  - S3_BUCKET');
-    process.exit(1);
+  let config: any;
+  const { vendor, publicBucket, credentials, region, ...options } = createDefaultStorageOptions();
+  if (vendor === 'minio') {
+    config = {
+      region,
+      vendor,
+      credentials,
+      forcePathStyle: true,
+      endpoint: options.endpoint!,
+      maxRetries: options.maxRetries!
+    } as Omit<IAwsS3CompatibleStorageOptions, 'bucket'>;
+  } else if (vendor === 'aws-s3') {
+    config = {
+      region,
+      vendor,
+      credentials,
+      endpoint: options.endpoint!,
+      maxRetries: options.maxRetries!
+    } as Omit<IAwsS3CompatibleStorageOptions, 'bucket'>;
+  } else if (vendor === 'cos') {
+    config = {
+      region,
+      vendor,
+      credentials,
+      proxy: options.proxy,
+      domain: options.domain,
+      protocol: options.protocol,
+      useAccelerate: options.useAccelerate
+    } as Omit<ICosStorageOptions, 'bucket'>;
+  } else if (vendor === 'oss') {
+    config = {
+      region,
+      vendor,
+      credentials,
+      endpoint: options.endpoint!,
+      cname: options.cname,
+      internal: options.internal,
+      secure: options.secure,
+      enableProxy: options.enableProxy
+    } as Omit<IOssStorageOptions, 'bucket'>;
   }
 
   console.log('🚀 Starting marketplace deployment...');
 
-  const client = new S3Client({
-    endpoint,
-    accessKeyId: accessKey,
-    secretAccessKey: secretKey,
-    bucket
-  });
+  const storage = createStorage({ bucket: publicBucket, ...config });
+  await storage.ensureBucket();
+  if (vendor === 'minio') {
+    await (storage as MinioStorageAdapter).ensurePublicBucketPolicy();
+  }
 
   console.log('📦 Building marketplace packages...');
   await $`bun run build:marketplace`;
@@ -40,12 +74,18 @@ async function main() {
   const pkgs = glob('dist/pkgs/*');
   for await (const pkg of pkgs) {
     const filename = pkg.split('/').at(-1) as string;
-    await client.write(`/pkgs/${filename}`, Bun.file(`${pkg}`));
+    await storage.uploadObject({
+      key: `pkgs/${filename}`,
+      body: Buffer.from(await Bun.file(`${pkg}`).arrayBuffer())
+    });
   }
 
   // write data.json
   console.log('📤 Uploading tools.json...');
-  await client.write(`/data.json`, Bun.file('./dist/tools.json'));
+  await storage.uploadObject({
+    key: `/data.json`,
+    body: Buffer.from(await Bun.file('./dist/tools.json').arrayBuffer())
+  });
 
   console.log('📤 Uploading logos and assets...');
   const imgs = glob('modules/tool/packages/*/logo.*');
@@ -56,8 +96,10 @@ async function main() {
   for await (const img of imgs) {
     const toolId = img.split('/').at(-2) as string;
     const ext = ('.' + img.split('.').at(-1)) as string;
-    client.write(`${UploadToolsS3Path}/${toolId}/logo`, Bun.file(img), {
-      type: mimeMap[ext]
+    storage.uploadObject({
+      key: `${UploadToolsS3Path}/${toolId}/logo`,
+      body: Buffer.from(await Bun.file(img).arrayBuffer()),
+      contentType: mimeMap[ext]
     });
   }
 
@@ -77,8 +119,10 @@ async function main() {
       // Child has its own logo, use it
       const childLogo = childLogoFiles[0];
       const ext = ('.' + childLogo.split('.').at(-1)) as string;
-      client.write(`${UploadToolsS3Path}/${toolId}/${childId}/logo`, Bun.file(childLogo), {
-        type: mimeMap[ext]
+      storage.uploadObject({
+        key: `${UploadToolsS3Path}/${toolId}/${childId}/logo`,
+        body: Buffer.from(await Bun.file(childLogo).arrayBuffer()),
+        contentType: mimeMap[ext]
       });
     } else {
       // Child doesn't have logo, use parent's logo
@@ -91,8 +135,10 @@ async function main() {
       if (parentLogoFiles.length > 0) {
         const parentLogo = parentLogoFiles[0];
         const ext = ('.' + parentLogo.split('.').at(-1)) as string;
-        client.write(`${UploadToolsS3Path}/${toolId}/${childId}/logo`, Bun.file(parentLogo), {
-          type: mimeMap[ext]
+        storage.uploadObject({
+          key: `${UploadToolsS3Path}/${toolId}/${childId}/logo`,
+          body: Buffer.from(await Bun.file(parentLogo).arrayBuffer()),
+          contentType: mimeMap[ext]
         });
       }
     }
@@ -101,22 +147,30 @@ async function main() {
   // readme
   for await (const readme of readmes) {
     const toolId = readme.split('/').at(-2) as string;
-    client.write(`${UploadToolsS3Path}/${toolId}/README.md`, Bun.file(readme));
+    storage.uploadObject({
+      key: `${UploadToolsS3Path}/${toolId}/README.md`,
+      body: Buffer.from(await Bun.file(readme).arrayBuffer())
+    });
   }
 
   // assets
   for await (const asset of assets) {
     const toolId = asset.split('/').at(-3) as string;
     const assetName = asset.split('/').at(-1) as string;
-    client.write(`${UploadToolsS3Path}/${toolId}/assets/${assetName}`, Bun.file(asset), {
-      type: mimeMap[assetName.split('.').at(-1) as string]
+    storage.uploadObject({
+      key: `${UploadToolsS3Path}/${toolId}/assets/${assetName}`,
+      body: Buffer.from(await Bun.file(asset).arrayBuffer()),
+      contentType: mimeMap[assetName.split('.').at(-1) as string]
     });
   }
 
   console.log('✅ Assets uploaded successfully');
 
   await pkg('./dist/pkgs', './dist/pkgs.pkg');
-  await client.write(`/pkgs.zip`, Bun.file('./dist/pkgs.pkg'));
+  await storage.uploadObject({
+    key: `pkgs.zip`,
+    body: Buffer.from(await Bun.file('./dist/pkgs.pkg').arrayBuffer())
+  });
 
   console.log('✅ pkgs.zip uploaded successfully');
 
