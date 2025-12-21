@@ -18,9 +18,11 @@ const REDIS_BASE_OPTION = {
   // Reconnect on specific errors (Redis master-slave switch, network issues)
   reconnectOnError: (err: any) => {
     const reconnectErrors = ['READONLY', 'ECONNREFUSED', 'ETIMEDOUT', 'ECONNRESET'];
-    const shouldReconnect = reconnectErrors.some((errType) => err.message.includes(errType));
+    const message = typeof err?.message === 'string' ? err.message : String(err ?? '');
+
+    const shouldReconnect = reconnectErrors.some((errType) => message.includes(errType));
     if (shouldReconnect) {
-      addLog.warn(`Redis reconnecting due to error: ${err.message}`);
+      addLog.warn(`Redis reconnecting due to error: ${message}`);
     }
     return shouldReconnect;
   },
