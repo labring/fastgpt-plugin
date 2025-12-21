@@ -72,40 +72,27 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
     throw new Error(`Invalid MongoDB connection URL: ${url}`);
   }
 
-  addLog.info(`connecting to ${isProd ? 'MongoDB' : url}`);
+  console.log(`connecting to ${isProd ? 'MongoDB' : url}`);
 
   try {
     db.connection.removeAllListeners('error');
     db.connection.removeAllListeners('disconnected');
     db.set('strictQuery', 'throw');
 
-    db.connection.on('error', async (error: any) => {
-      addLog.error('mongo error', error);
-      try {
-        if (db.connection.readyState !== 0) {
-          await db.disconnect();
-          await delay(1000);
-          await connectMongo(db, url);
-        }
-      } catch (_error) {
-        addLog.error('Error during reconnection:', _error);
-      }
+    // Log errors but don't reconnect here to avoid duplicate reconnection
+    db.connection.on('error', (error: any) => {
+      console.error('mongo error', error);
     });
 
+    db.connection.on('connected', () => {
+      console.log('mongo connected');
+    });
+    // Handle reconnection on disconnect
     db.connection.on('disconnected', async () => {
-      addLog.warn('mongo disconnected');
-      try {
-        if (db.connection.readyState !== 0) {
-          await db.disconnect();
-          await delay(1000);
-          await connectMongo(db, url);
-        }
-      } catch (_error) {
-        addLog.error('Error during reconnection:', _error);
-      }
+      console.error('mongo disconnected');
     });
 
-    const options = {
+    await db.connect(url, {
       bufferCommands: true,
       maxPoolSize: Math.max(30, Number(process.env.MONGO_MAX_LINK || 20)),
       minPoolSize: 20,
@@ -116,12 +103,9 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
       retryWrites: true,
       retryReads: true,
       serverSelectionTimeoutMS: 60000,
-      heartbeatFrequencyMS: 20000,
+      heartbeatFrequencyMS: 5000, // 5s 进行一次健康检查
       maxStalenessSeconds: 120
-    };
-
-    await db.connect(url, options);
-    addLog.info('mongo connected');
+    });
     return db;
   } catch (error) {
     addLog.error('Mongo connect error', error);
