@@ -72,7 +72,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
     throw new Error(`Invalid MongoDB connection URL: ${url}`);
   }
 
-  addLog.info(`connecting to ${isProd ? 'MongoDB' : url}`);
+  console.log(`connecting to ${isProd ? 'MongoDB' : url}`);
 
   try {
     db.connection.removeAllListeners('error');
@@ -81,15 +81,15 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
 
     // Log errors but don't reconnect here to avoid duplicate reconnection
     db.connection.on('error', (error: any) => {
-      addLog.error('mongo error', error);
+      console.error('mongo error', error);
     });
 
     db.connection.on('connected', () => {
-      addLog.info('mongo connected');
+      console.log('mongo connected');
     });
     // Handle reconnection on disconnect
     db.connection.on('disconnected', async () => {
-      addLog.error('mongo disconnected');
+      console.error('mongo disconnected');
     });
 
     await db.connect(url, {
