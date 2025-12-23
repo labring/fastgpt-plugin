@@ -35,7 +35,8 @@ const setConfig = () => {
       vendor,
       credentials,
       endpoint: options.endpoint!,
-      maxRetries: options.maxRetries!
+      maxRetries: options.maxRetries!,
+      forcePathStyle: options.forcePathStyle
     } as Omit<IAwsS3CompatibleStorageOptions, 'bucket'>;
     externalConfig = {
       ...config,
