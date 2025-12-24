@@ -14,7 +14,6 @@ import { initWorkflowTemplates } from '@workflow/init';
 import express from 'express';
 import { join } from 'path';
 import { setupGlobalErrorHandling } from './utils/error';
-import '@/s3';
 
 const requestSizeLimit = `${Number(process.env.MAX_API_SIZE || 10)}mb`;
 
