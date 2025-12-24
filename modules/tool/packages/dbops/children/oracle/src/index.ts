@@ -24,10 +24,7 @@ export async function main({
     await sql.close();
     await pool.close();
     return {
-      result: {
-        rows: result?.rows ?? [],
-        metaData: result?.metaData ?? []
-      }
+      result: JSON.parse(JSON.stringify(result))
     };
   } catch (error: unknown) {
     if (error instanceof Error) {
