@@ -5,6 +5,7 @@ import {
   type IOssStorageOptions,
   type IStorageOptions
 } from '@fastgpt-sdk/storage';
+import { addLog } from '@/utils/log';
 
 export const FileMetadataSchema = z.object({
   originalFilename: z.string(),
@@ -19,6 +20,8 @@ export type FileMetadata = z.infer<typeof FileMetadataSchema>;
 
 export function createDefaultStorageOptions() {
   const vendor = (process.env.STORAGE_VENDOR || 'minio') as IStorageOptions['vendor'];
+
+  addLog.debug(`Load configuration of '${vendor}' Vendor`);
 
   switch (vendor) {
     case 'minio': {
