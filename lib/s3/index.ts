@@ -71,7 +71,7 @@ const getConfig = () => {
   throw new Error(`Not supported vendor: ${vendor}`);
 };
 
-const createS3Service = (bucket: string, isPublic: boolean) => {
+const createS3Service = async (bucket: string, isPublic: boolean) => {
   const { config, externalConfig, externalBaseUrl } = getConfig();
 
   const client = createStorage({ bucket, ...config } as IStorageOptions);
@@ -87,41 +87,37 @@ const createS3Service = (bucket: string, isPublic: boolean) => {
     }
   };
 
-  client
-    .ensureBucket()
-    .then(() => {
-      if (isPublic) ensurePublicPolicy(client);
-    })
-    .catch((err) => {
-      addLog.error(`Failed to ensure bucket "${bucket}" exists:`, err);
-    });
+  try {
+    await client.ensureBucket();
+    if (isPublic) ensurePublicPolicy(client);
+  } catch (error) {
+    addLog.error(`Failed to ensure bucket "${bucket}" exists:`, error);
+    addLog.debug(`Storage client:`, client);
+  }
 
-  if (externalClient) {
-    externalClient
-      .ensureBucket()
-      .then(() => {
-        if (isPublic) ensurePublicPolicy(externalClient);
-      })
-      .catch((err) => {
-        addLog.error(`Failed to ensure external bucket "${bucket}" exists:`, err);
-      });
+  try {
+    await externalClient?.ensureBucket();
+    if (isPublic && externalClient) ensurePublicPolicy(externalClient);
+  } catch (error) {
+    addLog.error(`Failed to ensure bucket "${bucket}" exists:`, error);
+    addLog.debug(`Storage client:`, externalClient);
   }
 
   return new S3Service(client, externalClient);
 };
 
-export const publicS3Server = (() => {
+export const publicS3Server = await (async () => {
   if (!global._publicS3Server) {
     const { publicBucket } = getConfig();
-    global._publicS3Server = createS3Service(publicBucket, true);
+    global._publicS3Server = await createS3Service(publicBucket, true);
   }
   return global._publicS3Server;
 })();
 
-export const privateS3Server = (() => {
+export const privateS3Server = await (async () => {
   if (!global._privateS3Server) {
     const { privateBucket } = getConfig();
-    global._privateS3Server = createS3Service(privateBucket, false);
+    global._privateS3Server = await createS3Service(privateBucket, false);
   }
   return global._privateS3Server;
 })();

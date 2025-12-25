@@ -42,7 +42,7 @@
       "name": "@fastgpt-plugin/packages",
       "version": "1.0.0",
       "dependencies": {
-        "@fastgpt-sdk/storage": "0.5.4",
+        "@fastgpt-sdk/storage": "0.5.7",
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/api-logs": "^0.203.0",
         "@opentelemetry/exporter-logs-otlp-http": "^0.203.0",
@@ -1757,7 +1757,7 @@
 
     "@eslint/plugin-kit/@eslint/core": ["@eslint/core@0.13.0", "", { "dependencies": { "@types/json-schema": "^7.0.15" } }, "sha512-yfkgDw1KR66rkT5A8ci4irzDysN7FRpq3ttJolR88OqQikAWqwA8j5VZyas+vjyBNFIJ7MfybJ9plMILI2UrCw=="],
 
-    "@fastgpt-plugin/packages/@fastgpt-sdk/storage": ["@fastgpt-sdk/storage@0.5.4", "", { "dependencies": { "@aws-sdk/client-s3": "^3.948.0", "@aws-sdk/lib-storage": "^3.948.0", "@aws-sdk/s3-request-presigner": "^3.952.0", "ali-oss": "^6.23.0", "cos-nodejs-sdk-v5": "^2.15.4", "es-toolkit": "^1.43.0", "vitest": "^4.0.16" } }, "sha512-vjzwm3vSCcr44GUl7K+tqKVsEzx+LZoH2csr+J6eZE5yyTyouQYDxcZswseNJcriw0orSGJYtK/iFq26Ix+cuw=="],
+    "@fastgpt-plugin/packages/@fastgpt-sdk/storage": ["@fastgpt-sdk/storage@0.5.7", "", { "dependencies": { "@aws-sdk/client-s3": "^3.948.0", "@aws-sdk/lib-storage": "^3.948.0", "@aws-sdk/s3-request-presigner": "^3.952.0", "ali-oss": "^6.23.0", "cos-nodejs-sdk-v5": "^2.15.4", "es-toolkit": "^1.43.0", "vitest": "^4.0.16" } }, "sha512-1Eh6jbyg0UejCp1w+LgD9dBoPx/O3Ns4k16GjrgAUWxFiGWFahK1/33ukHUwX6wWkF2Wu6jWmFQsW+C0UGDOwQ=="],
 
     "@inquirer/core/signal-exit": ["signal-exit@4.1.0", "", {}, "sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw=="],
 
