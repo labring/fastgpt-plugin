@@ -4,7 +4,6 @@ import { isProd } from '@/constants';
 import { initOpenAPI } from '@/contract/openapi';
 import { connectionMongo, connectMongo, MONGO_URL } from '@/mongo';
 import { initRouter } from '@/router';
-import { initializeS3 } from '@/s3';
 import { ensureDir, refreshDir } from '@/utils/fs';
 import { addLog } from '@/utils/log';
 import { setupProxy } from '@/utils/setupProxy';
@@ -43,8 +42,6 @@ async function main(reboot: boolean = false) {
     addLog.error('Failed to initialize services:', error);
     process.exit(1);
   }
-
-  await initializeS3();
 
   // Modules
   await refreshDir(tempDir); // upload pkg files, unpkg, temp dir

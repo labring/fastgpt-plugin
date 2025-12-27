@@ -17,7 +17,8 @@ export const SystemVarSchema = z.object({
   }),
   tool: z.object({
     id: z.string(),
-    version: z.string()
+    version: z.string(),
+    prefix: z.string().optional()
   }),
   time: z.string()
 });

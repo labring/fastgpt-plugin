@@ -177,5 +177,5 @@ export const initModelAvatars = async () => {
  */
 export const getModelAvatarUrl = async (providerName: string): Promise<string> => {
   const s3Path = `${UploadModelsS3Path}/${providerName}/logo`;
-  return await publicS3Server.generateExternalUrl(s3Path);
+  return publicS3Server.generateExternalUrl(s3Path);
 };
