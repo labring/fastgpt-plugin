@@ -5,6 +5,7 @@ import { StreamDataSchema, ToolCallbackReturnSchema } from '@tool/type/req';
 
 declare global {
   var uploadFileResponseFnMap: Map<string, (data: { data?: FileMetadata; error?: string }) => void>;
+  var invokeResponseFnMap: Map<string, (data: { data?: any; error?: string }) => void>;
 }
 
 /**
@@ -14,6 +15,14 @@ export const Worker2MainMessageSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('uploadFile'),
     data: z.object({ id: z.string(), file: FileInputSchema })
+  }),
+  z.object({
+    type: z.literal('invoke'),
+    data: z.object({
+      id: z.string(),
+      method: z.string(),
+      params: z.any()
+    })
   }),
   z.object({
     type: z.literal('log'),
@@ -48,6 +57,14 @@ export const Main2WorkerMessageSchema = z.discriminatedUnion('type', [
     data: z.object({
       id: z.string(),
       data: FileMetadataSchema.optional(),
+      error: z.string().optional()
+    })
+  }),
+  z.object({
+    type: z.literal('invokeResponse'),
+    data: z.object({
+      id: z.string(),
+      data: z.any().optional(),
       error: z.string().optional()
     })
   })

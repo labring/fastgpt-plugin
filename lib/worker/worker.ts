@@ -84,5 +84,12 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
       }
       break;
     }
+    case 'invokeResponse': {
+      const fn = global.invokeResponseFnMap?.get(data.id);
+      if (fn) {
+        fn(data);
+      }
+      break;
+    }
   }
 });
