@@ -173,7 +173,19 @@ async function executeRequest<T>(
 
     // Handle other errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    throw new RequestError(errorMessage, finalConfig);
+    const requestError = new RequestError(errorMessage, finalConfig);
+
+    // Retry logic for network errors (not RequestError)
+    if (attempt <= retries!) {
+      addLog.debug(`[Request] Network error retry ${attempt}/${retries} after ${retryDelay}ms`, {
+        url: finalURL,
+        error: errorMessage
+      });
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      return executeRequest<T>(url, config, attempt + 1);
+    }
+
+    throw requestError;
   }
 }
 
