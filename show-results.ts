@@ -6,7 +6,7 @@ async function test() {
   console.log('=========================================');
   console.log('🚀 正在启动本地自动化集成测试...');
   console.log('=========================================');
-  
+
   try {
     // 1. 读取测试数据
     const csvPath = join(process.cwd(), 'test_data.csv');
@@ -33,7 +33,7 @@ async function test() {
     console.log('-----------------------------------------');
     console.log(result.analysisResult);
     console.log('-----------------------------------------');
-    
+
     if (result.chartUrl) {
       console.log('🖼️  图表链接:', result.chartUrl);
     } else {
@@ -46,7 +46,6 @@ async function test() {
       console.log('- 标准输出长度:', result.debugInfo.stdout.length);
       console.log('- 错误输出 (Stderr):', result.debugInfo.stderr || '无错误');
     }
-
   } catch (error) {
     console.error('\n❌ 测试执行失败:');
     console.error(error);

@@ -25,7 +25,7 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
     params: { access_token: accessToken }
   });
 
-  const response = await client.post('/wedoc/smartsheet/create_doc', {
+  const response = await client.post('/wedoc/create_doc', {
     doc_name,
     doc_type: 10, // 10: 智能表格
     spaceid: spaceid || undefined,
