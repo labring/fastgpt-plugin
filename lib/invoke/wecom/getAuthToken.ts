@@ -5,9 +5,7 @@ import { FastGPTBaseURL } from '../const';
 import { getAccessToken } from '../accessToken';
 
 // 参数校验
-const getCorpTokenParamsSchema = z.object({
-  corpId: z.string().min(1, 'corpId is required')
-});
+const getCorpTokenParamsSchema = z.object({});
 
 type getCorpTokenParams = z.infer<typeof getCorpTokenParamsSchema>;
 
@@ -38,10 +36,7 @@ async function getCorpToken(
     headers: {
       'content-type': 'application/json',
       authorization: `Bearer ${access_token}`
-    },
-    body: JSON.stringify({
-      corpId: validated.corpId
-    })
+    }
   });
 
   if (!response.ok) {

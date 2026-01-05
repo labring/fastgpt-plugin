@@ -1,9 +1,5 @@
 import { defineTool } from '@tool/type';
-import {
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  WorkflowIOValueTypeEnum
-} from '@tool/type/fastgpt';
+import { WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
@@ -18,7 +14,6 @@ export default defineTool({
   },
   toolDescription:
     'Get WeChat Work (WeCom) authorization token by corpId. Returns access_token and expires_in.',
-  secretInputConfig: [],
   versionList: [
     {
       value: '0.1.0',
