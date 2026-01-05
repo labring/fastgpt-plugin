@@ -229,6 +229,7 @@ export async function dispatchWithNewWorker(data: {
 
           const handler = getInvokeHandler(data.method);
           if (!handler) {
+            addLog.error(`Unknown invoke method: ${data.method}`);
             throw new Error(`Unknown invoke method: ${data.method}`);
           }
 

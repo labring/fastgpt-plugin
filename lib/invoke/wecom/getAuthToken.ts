@@ -26,8 +26,8 @@ async function getCorpToken(
   systemVar: SystemVarType
 ): Promise<getCorpTokenResult> {
   // 验证参数
-  const validated = getCorpTokenParamsSchema.parse(params);
-  const access_token = await getAccessToken(systemVar);
+  // const validated = getCorpTokenParamsSchema.parse(params);
+  const access_token = await getAccessToken({}, systemVar);
 
   // 调用 FastGPT API
   const url = new URL('/api/proApi/support/wecom/getCorpToken', FastGPTBaseURL);
