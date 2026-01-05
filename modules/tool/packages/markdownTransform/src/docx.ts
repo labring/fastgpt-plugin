@@ -171,8 +171,39 @@ async function parseMarkdownToParagraphs(markdown: string): Promise<(Paragraph |
   const tokens = md.parse(markdown, {});
   const elements: (Paragraph | Table)[] = [];
 
+  interface ListState {
+    type: 'ordered' | 'bullet';
+    order: number;
+  }
+  const listStack: ListState[] = [];
+  let isListItemStart = false;
+
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
+
+    if (token.type === 'ordered_list_open') {
+      listStack.push({ type: 'ordered', order: 0 });
+      continue;
+    }
+    if (token.type === 'bullet_list_open') {
+      listStack.push({ type: 'bullet', order: 0 });
+      continue;
+    }
+    if (token.type === 'ordered_list_close' || token.type === 'bullet_list_close') {
+      listStack.pop();
+      continue;
+    }
+    if (token.type === 'list_item_open') {
+      if (listStack.length > 0) {
+        listStack[listStack.length - 1].order++;
+      }
+      isListItemStart = true;
+      continue;
+    }
+    if (token.type === 'list_item_close') {
+      isListItemStart = false;
+      continue;
+    }
 
     if (token.type === 'heading_open') {
       const level = Number(token.tag.slice(1)); // h1 -> 1
@@ -255,6 +286,12 @@ async function parseMarkdownToParagraphs(markdown: string): Promise<(Paragraph |
               color: '333333'
             })
           ],
+          indent:
+            listStack.length > 0
+              ? {
+                  left: listStack.length * 720
+                }
+              : undefined,
           shading: {
             type: 'clear',
             color: 'auto',
@@ -289,6 +326,19 @@ async function parseMarkdownToParagraphs(markdown: string): Promise<(Paragraph |
     if (token.type === 'paragraph_open') {
       const children: TextRun[] = [];
       const imageMarkdowns: string[] = [];
+
+      if (listStack.length > 0 && isListItemStart) {
+        const currentList = listStack[listStack.length - 1];
+        const prefixText = currentList.type === 'ordered' ? `${currentList.order}. ` : `• `;
+
+        children.push(
+          new TextRun({
+            text: prefixText
+          })
+        );
+
+        isListItemStart = false;
+      }
 
       const inlineToken = tokens[i + 1];
       if (inlineToken?.type === 'inline' && inlineToken.children) {
@@ -326,7 +376,19 @@ async function parseMarkdownToParagraphs(markdown: string): Promise<(Paragraph |
       }
 
       if (children.length > 0) {
-        elements.push(new Paragraph({ children, spacing: { after: 100 } }));
+        elements.push(
+          new Paragraph({
+            children,
+            spacing: { after: 100 },
+            indent:
+              listStack.length > 0
+                ? {
+                    left: listStack.length * 720,
+                    hanging: 360
+                  }
+                : undefined
+          })
+        );
       }
 
       for (const imgMd of imageMarkdowns) {
