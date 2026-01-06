@@ -15,7 +15,7 @@ export default defineTool({
   courseUrl: 'https://github.com/opendatalab/MinerU/blob/master/mineru/cli/fast_api.py#L63',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

@@ -15,7 +15,7 @@ export default defineTool({
     'Edit existing images using gpt-image-1 AI model. Supports image modification with optional mask for precise editing.',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

@@ -15,7 +15,7 @@ export default defineTool({
     'Convert text to speech using MinMax TTS API. Supports multiple voice settings and audio formats.',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {
