@@ -13,7 +13,7 @@ export default defineTool({
   toolDescription: 'Convert text descriptions to images using Nano Banana models.',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

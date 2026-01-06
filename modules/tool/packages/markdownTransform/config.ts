@@ -93,7 +93,7 @@ export default defineTool({
   },
   versionList: [
     {
-      value: '0.2.1',
+      value: '0.2.2',
       description: '样式修改：支持有序列表的序号显示以及缩进。',
       ...v2
     },

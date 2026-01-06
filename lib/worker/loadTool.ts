@@ -1,14 +1,14 @@
 import { isProd } from '@/constants';
 import { addLog } from '@/utils/log';
 import { basePath, devToolIds } from '@tool/constants';
-import { LoadToolsByFilename } from '@tool/loadToolProd';
-import { getIconPath } from '@tool/parseMod';
-import type { ToolSetType, ToolType } from '@tool/type';
 import { ToolTagEnum } from '@tool/type/tags';
 import { existsSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
 import { generateToolVersion, generateToolSetVersion } from '@tool/utils/tool';
+import { toolsDir } from '@tool/constants';
+import type { ToolSetType, ToolType } from '@tool/type';
+import { stat } from 'fs/promises';
 
 const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   if (isProd) {
@@ -26,7 +26,7 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   const isToolSet = existsSync(childrenPath);
 
   const toolsetId = rootMod.toolId || filename;
-  const parentIcon = rootMod.icon ?? getIconPath(`${toolsetId}/logo`);
+  const parentIcon = rootMod.icon;
 
   if (isToolSet) {
     const children: ToolType[] = [];
@@ -39,7 +39,7 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         const childMod = (await import(childPath)).default as ToolType;
         const toolId = childMod.toolId || `${toolsetId}/${file}`;
 
-        const childIcon = childMod.icon ?? rootMod.icon ?? getIconPath(`${toolsetId}/${file}/logo`);
+        const childIcon = childMod.icon ?? rootMod.icon;
 
         // Generate version for child tool
         const childVersion = childMod.versionList
@@ -73,7 +73,7 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     tools.push(...children);
   } else {
     // is not toolset
-    const icon = rootMod.icon ?? getIconPath(`${toolsetId}/logo`);
+    const icon = rootMod.icon;
 
     // Generate version for single tool
     const toolVersion = (rootMod as any).versionList
@@ -90,6 +90,98 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   }
 
   tools.forEach((tool) => devToolIds.add(tool.toolId));
+  return tools;
+};
+
+// Load tool or toolset and its children
+export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]> => {
+  const start = Date.now();
+
+  const filePath = join(toolsDir, filename);
+
+  // Calculate file content hash for cache key
+  const fileSize = await stat(filePath).then((res) => res.size);
+  // This ensures same content reuses the same cached module
+  const modulePath = `${filePath}?v=${fileSize}`;
+
+  const rootMod = (await import(modulePath)).default as ToolType | ToolSetType;
+
+  if (!rootMod.toolId) {
+    addLog.error(`Can not parse toolId, filename: ${filename}`);
+    return [];
+  }
+
+  addLog.debug(`Load tool ${filename} finish, time: ${Date.now() - start}ms`);
+
+  return parseMod({ rootMod, filename });
+};
+
+export const parseMod = async ({
+  rootMod,
+  filename,
+  temp = false
+}: {
+  rootMod: ToolSetType | ToolType;
+  filename: string;
+  temp?: boolean;
+}) => {
+  const tools: ToolType[] = [];
+  const checkRootModToolSet = (rootMod: ToolType | ToolSetType): rootMod is ToolSetType => {
+    return 'children' in rootMod;
+  };
+  if (checkRootModToolSet(rootMod)) {
+    const toolsetId = rootMod.toolId;
+
+    const parentIcon = rootMod.icon;
+
+    const children = rootMod.children;
+
+    for (const child of children) {
+      const childToolId = child.toolId;
+
+      const childIcon = child.icon || rootMod.icon;
+
+      // Generate version for child tool
+      const childVersion = generateToolVersion(child.versionList);
+      tools.push({
+        ...child,
+        toolId: childToolId,
+        parentId: toolsetId,
+        tags: rootMod.tags,
+        courseUrl: rootMod.courseUrl,
+        author: rootMod.author,
+        icon: childIcon,
+        toolFilename: filename,
+        version: childVersion
+      });
+    }
+
+    // push parent
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      toolId: toolsetId,
+      icon: parentIcon,
+      toolFilename: `${filename}`,
+      cb: () => Promise.resolve({}),
+      versionList: [],
+      version: generateToolSetVersion(children) || ''
+    });
+  } else {
+    // is not toolset
+    const toolId = rootMod.toolId;
+
+    const icon = rootMod.icon;
+
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.tools],
+      icon,
+      toolId,
+      toolFilename: filename,
+      version: generateToolVersion(rootMod.versionList)
+    });
+  }
   return tools;
 };
 

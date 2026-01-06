@@ -7,6 +7,12 @@ import { loadTool } from './loadTool';
 
 setupProxy();
 
+declare global {
+  var currentToolPrefix: string | undefined;
+}
+
+global.currentToolPrefix = undefined;
+
 // rewrite console.log to send to parent
 console.log = (...args: any[]) => {
   parentPort?.postMessage({
@@ -32,6 +38,8 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
         });
         return;
       }
+
+      global.currentToolPrefix = data.systemVar?.tool?.prefix;
 
       try {
         // callback function
@@ -63,7 +71,10 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
             error: error instanceof Error ? getErrText(error) : error
           }
         });
+      } finally {
+        global.currentToolPrefix = undefined;
       }
+
       break;
     }
     case 'uploadFileResponse': {
