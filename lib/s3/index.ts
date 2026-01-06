@@ -92,7 +92,6 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
     if (isPublic) await ensurePublicPolicy(client);
   } catch (error) {
     addLog.error(`Failed to ensure bucket "${bucket}" exists:`, error);
-    addLog.debug(`Storage client:`, client);
   }
 
   try {
@@ -100,7 +99,6 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
     if (isPublic && externalClient) await ensurePublicPolicy(externalClient);
   } catch (error) {
     addLog.error(`Failed to ensure bucket "${bucket}" exists:`, error);
-    addLog.debug(`Storage client:`, externalClient);
   }
 
   return new S3Service(client, externalClient);
