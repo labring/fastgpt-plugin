@@ -81,15 +81,15 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
     externalClient = createStorage({ bucket, ...externalConfig } as IStorageOptions);
   }
 
-  const ensurePublicPolicy = (storage: IStorage) => {
+  const ensurePublicPolicy = async (storage: IStorage) => {
     if (storage instanceof MinioStorageAdapter) {
-      storage.ensurePublicBucketPolicy();
+      await storage.ensurePublicBucketPolicy();
     }
   };
 
   try {
     await client.ensureBucket();
-    if (isPublic) ensurePublicPolicy(client);
+    if (isPublic) await ensurePublicPolicy(client);
   } catch (error) {
     addLog.error(`Failed to ensure bucket "${bucket}" exists:`, error);
     addLog.debug(`Storage client:`, client);
@@ -97,7 +97,7 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
 
   try {
     await externalClient?.ensureBucket();
-    if (isPublic && externalClient) ensurePublicPolicy(externalClient);
+    if (isPublic && externalClient) await ensurePublicPolicy(externalClient);
   } catch (error) {
     addLog.error(`Failed to ensure bucket "${bucket}" exists:`, error);
     addLog.debug(`Storage client:`, externalClient);
