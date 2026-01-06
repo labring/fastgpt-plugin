@@ -3,7 +3,23 @@ import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
 import { getNanoid } from './string';
 
+// Extend global type to access currentToolPrefix set by worker
+declare global {
+  var currentToolPrefix: string | undefined;
+}
+
 export const uploadFile = async (data: FileInput) => {
+  // Get prefix from multiple sources (in priority order):
+  // 1. Explicitly passed in data.prefix
+  // 2. From global state set by worker (survives across dynamic imports)
+  const prefix = data.prefix ?? global.currentToolPrefix;
+
+  // Update data with resolved prefix
+  data = {
+    ...data,
+    prefix
+  };
+
   // 判断是否在 worker 线程中
   const isWorkerThread = typeof parentPort !== 'undefined' && parentPort !== null;
 

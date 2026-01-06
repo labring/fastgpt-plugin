@@ -21,7 +21,7 @@ export default defineTool({
   courseUrl: 'https://openai.com',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

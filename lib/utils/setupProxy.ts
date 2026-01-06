@@ -1,23 +1,11 @@
-import { ProxyAgent, setGlobalDispatcher, fetch as undiciFetch } from 'undici';
-import { addLog } from './log';
-import { isProd } from '@/constants';
-const httpProxy = process.env.HTTP_PROXY;
-const httpsProxy = process.env.HTTPS_PROXY;
+import { setGlobalDispatcher, EnvHttpProxyAgent } from 'undici';
 
 export function setupProxy() {
-  const proxy = httpProxy || httpsProxy;
-  if (proxy) {
-    const proxyAgent = new ProxyAgent(proxy);
-    setGlobalDispatcher(proxyAgent);
+  const agent = new EnvHttpProxyAgent();
+  setGlobalDispatcher(agent);
 
-    // Replace global fetch with undici's fetch to ensure proxy is used
-    if (isProd) {
-      // Node
-      global.fetch = ((input: any, init: any) => {
-        return undiciFetch(input, init);
-      }) as any;
-    }
-
-    addLog.info(`Using proxy: ${proxy}`);
-  }
+  console.info('HTTP_PROXY: %s', process.env.HTTP_PROXY);
+  console.info('HTTPS_PROXY: %s', process.env.HTTPS_PROXY);
+  console.info('NO_PROXY: %s', process.env.NO_PROXY);
+  console.info('ALL_PROXY: %s', process.env.ALL_PROXY);
 }

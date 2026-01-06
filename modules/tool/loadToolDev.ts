@@ -85,8 +85,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
 
   const toolsetId = rootMod.toolId || filename;
   const parentIcon =
-    rootMod.icon ??
-    (await publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/logo`));
+    rootMod.icon ?? publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/logo`);
 
   if (isToolSet) {
     const children: ToolType[] = [];
@@ -155,9 +154,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         const childIcon =
           childMod.icon ??
           rootMod.icon ??
-          (await publicS3Server.generateExternalUrl(
-            `${UploadToolsS3Path}/${toolsetId}/${file}/logo`
-          ));
+          publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/${file}/logo`);
 
         // Generate version for child tool
         const childVersion = childMod.versionList

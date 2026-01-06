@@ -15,7 +15,7 @@ export default defineTool({
     'Generate images from text prompts using gpt-image-1 AI model. Supports various sizes and quality settings.',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

@@ -1,10 +1,11 @@
-import { ToolTagEnum } from 'sdk/client';
+import { ToolTagEnum } from '@tool/type/tags';
 import { UploadToolsS3Path } from './constants';
 import type { ToolSetType, ToolType } from './type';
-import { PublicBucketBaseURL } from '@/s3/const';
 import { generateToolVersion, generateToolSetVersion } from './utils/tool';
+import { publicS3Server } from '@/s3';
 
-export const getIconPath = (name: string) => `${PublicBucketBaseURL}${UploadToolsS3Path}/${name}`;
+export const getIconPath = (name: string) =>
+  publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${name}`);
 
 export const parseMod = async ({
   rootMod,

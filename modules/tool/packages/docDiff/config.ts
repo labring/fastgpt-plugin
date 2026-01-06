@@ -17,7 +17,7 @@ export default defineTool({
 
   versionList: [
     {
-      value: '1.1.0',
+      value: '1.1.1',
       description: 'Fix version - Remove diff tags and add document titles support',
       inputs: [
         {
