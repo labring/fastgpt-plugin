@@ -13,7 +13,6 @@ export default s.route(contract.tool.upload.confirmUpload, async ({ body }) => {
   const toolIds = [...new Set(_toolIds)];
   addLog.debug(`Confirming uploaded tools: ${toolIds}`);
   const pendingTools = await privateS3Server.getFiles(`${UploadToolsS3Path}/temp`);
-  addLog.debug(`Downloaded tools: ${pendingTools}`);
   const pendingToolIds = pendingTools
     .map((item) => item.split('/').at(-1)?.split('.').at(0))
     .filter((item): item is string => !!item);
