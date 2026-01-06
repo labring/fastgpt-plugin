@@ -7,14 +7,6 @@ import { publicS3Server } from '@/s3';
 import { basePath, devToolIds } from '@tool/constants';
 import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/req';
 
-const getInheritEnv = (): Record<string, string> => {
-  const env: Record<string, string> = {};
-  for (const [key, val] of Object.entries(process.env)) {
-    if (typeof val === 'string') env[key] = val;
-  }
-  return env;
-};
-
 type WorkerQueueItem = {
   id: string;
   worker: Worker;
@@ -103,7 +95,6 @@ export class WorkerPool<Props = Record<string, unknown>, Response = unknown> {
     const workerId = `${Date.now()}${Math.random()}`;
     const worker = new Worker('./worker.js', {
       env: {
-        ...getInheritEnv(),
         ...(process.env.HTTP_PROXY ? { HTTP_PROXY: process.env.HTTP_PROXY } : {}),
         ...(process.env.HTTPS_PROXY ? { HTTPS_PROXY: process.env.HTTPS_PROXY } : {})
       },
@@ -185,7 +176,8 @@ export async function dispatchWithNewWorker(data: {
   const workerPath = `${basePath}/dist/worker.js`;
   const worker = new Worker(workerPath, {
     env: {
-      ...getInheritEnv()
+      NODE_ENV: process.env.NODE_ENV,
+      LOG_LEVEL: process.env.LOG_LEVEL
     },
     ...(isBun
       ? {}

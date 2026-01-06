@@ -4,9 +4,9 @@ import { ToolTagEnum } from '@tool/type/tags';
 import { existsSync, writeFileSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
-import { ToolDetailSchema } from 'sdk/client';
 import { generateToolVersion, generateToolSetVersion } from '../utils/tool';
 import { publicS3Server } from '@/s3';
+import { ToolDetailSchema } from '@tool/type/api';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 

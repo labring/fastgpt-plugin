@@ -57,8 +57,8 @@ export class S3Service {
    *  Get public readable URL
    */
   generateExternalUrl(_objectName: string) {
-    const { publicGetUrl } = this.externalClient.generatePublicGetUrl({ key: _objectName });
-    return publicGetUrl;
+    const { url } = this.externalClient.generatePublicGetUrl({ key: _objectName });
+    return url;
   }
 
   async uploadFileAdvanced(input: FileInput): Promise<FileMetadata> {
@@ -226,7 +226,7 @@ export class S3Service {
       const {
         key,
         metadata: headers,
-        putUrl
+        url
       } = await this.externalClient.generatePresignedPutUrl({
         key: objectName,
         expiredSeconds: differenceInSeconds(addMinutes(now, 10), now),
@@ -240,7 +240,7 @@ export class S3Service {
       });
 
       return {
-        postURL: putUrl,
+        postURL: url,
         formData: headers,
         objectName: key
       };

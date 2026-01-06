@@ -1,4 +1,4 @@
-import { ToolTagEnum } from 'sdk/client';
+import { ToolTagEnum } from '@tool/type/tags';
 import { UploadToolsS3Path } from './constants';
 import type { ToolSetType, ToolType } from './type';
 import { generateToolVersion, generateToolSetVersion } from './utils/tool';
