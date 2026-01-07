@@ -55,7 +55,7 @@
     ]
   },
   "dependencies": {
-    "@fastgpt-sdk/storage": "^0.6.4",
+    "@fastgpt-sdk/storage": "^0.6.5",
     "@ts-rest/core": "3.52.1",
     "@ts-rest/express": "3.52.1",
     "@ts-rest/open-api": "3.52.1",
