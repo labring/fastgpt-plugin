@@ -171,7 +171,6 @@ export async function dispatchWithNewWorker(data: {
   if (!tool || !tool.cb) {
     return Promise.reject(`Tool with ID ${toolId} not found or does not have a callback.`);
   }
-  console.log('tool====================', tool);
 
   const isBun = typeof Bun !== 'undefined';
   const workerPath = `${basePath}/dist/worker.js`;

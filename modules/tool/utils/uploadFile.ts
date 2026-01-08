@@ -10,14 +10,6 @@ declare global {
 }
 
 export const uploadFile = async (data: FileInput) => {
-  // 优先级：1 > 2，2.1 == 2.2（由运行环境决定）
-  // 1. 从工具手动传递进来的 data.prefix 中获取前缀
-  // 2.1 从 AsyncLocalStorage 的上下文中获取前缀（用于非 worker 环境）
-  // 2.2 从 global.currentToolPrefix 变量中获取前缀（用于 worker 环境）
-  const prefix = data.prefix ?? getCurrentToolPrefix();
-
-  data = { ...data, prefix };
-
   // 判断是否在 worker 线程中
   const isWorkerThread = typeof parentPort !== 'undefined' && parentPort !== null;
 
@@ -45,6 +37,9 @@ export const uploadFile = async (data: FileInput) => {
       const id = getNanoid();
       global.uploadFileResponseFnMap.set(id, fn);
 
+      // 从 global.currentToolPrefix 变量中获取前缀（用于 worker 环境）
+      const prefix = global.currentToolPrefix;
+
       // Serialize buffer data to avoid transferList issues
       // Convert Buffer/Uint8Array to a plain object that can be safely cloned
       let serializedData: FileInput = data;
@@ -57,7 +52,8 @@ export const uploadFile = async (data: FileInput) => {
 
         serializedData = {
           ...data,
-          buffer: new Uint8Array(bufferArray) as Buffer
+          buffer: new Uint8Array(bufferArray) as Buffer,
+          prefix
         };
       }
 
@@ -76,9 +72,13 @@ export const uploadFile = async (data: FileInput) => {
       );
     }
 
+    //  从 AsyncLocalStorage 的上下文中获取前缀（用于非 worker 环境）
+    const prefix = getCurrentToolPrefix();
+
     return await global._publicS3Server.uploadFileAdvanced({
       ...data,
-      ...(data.buffer ? { buffer: data.buffer } : {})
+      ...(data.buffer ? { buffer: data.buffer } : {}),
+      prefix
     });
   }
 };

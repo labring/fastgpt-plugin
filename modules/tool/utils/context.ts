@@ -12,11 +12,8 @@ declare global {
 
 export const getCurrentToolPrefix = (): string | undefined => {
   const context = globalThis._toolContextStorage.getStore();
-  if (context?.prefix) {
-    return context.prefix;
-  }
 
-  return global.currentToolPrefix;
+  return context?.prefix;
 };
 
 export const runWithToolContext = <T>(context: ToolContext, fn: () => T): T => {
