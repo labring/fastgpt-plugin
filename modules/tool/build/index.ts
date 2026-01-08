@@ -1,6 +1,7 @@
 import { readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { buildTool, toolsSourceDir } from './build';
+import { buildWorkers } from './build-workers';
 import { join } from 'path';
 
 const tool = process.argv[2] || '*';
@@ -22,6 +23,10 @@ export const buildAllTools = async () => {
     }
   }
   await Promise.all(promises);
+
+  // Build all workers
+  console.log('\n--- Building workers ---');
+  await buildWorkers();
 };
 
 if (import.meta.main) {

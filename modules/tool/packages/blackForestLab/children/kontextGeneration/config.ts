@@ -7,7 +7,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'FLUX.1 图像生成',
     en: 'FLUX.1 Image Generation'
@@ -18,7 +17,7 @@ export default defineTool({
   },
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

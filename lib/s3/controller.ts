@@ -282,7 +282,8 @@ export class S3Service {
         }
       );
       return filepath;
-    } catch {
+    } catch (err: any) {
+      console.log(err, objectName, 111);
       await removeFile(filepath);
       return undefined;
     }

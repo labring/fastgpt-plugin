@@ -48,7 +48,7 @@ export default defineTool({
   ],
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Provide the ability to connect to Oracle database',
       inputs: [
         {

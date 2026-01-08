@@ -14,7 +14,7 @@ export default defineTool({
     '获取微信公众号的 access_token。需要提供微信公众号的 AppID 和 AppSecret。返回的 access_token 有效期为 7200 秒，请在过期前重新获取。',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [],
       outputs: [

@@ -13,7 +13,11 @@ export const VersionListItemSchema = z.object({
 
 export const ToolConfigSchema = z
   .object({
-    isWorkerRun: z.boolean().optional().describe('Whether to run the tool in a worker'),
+    isWorkerRun: z
+      .boolean()
+      .default(false)
+      .optional()
+      .describe('Whether to run the tool in a worker'),
     toolId: z.string().optional().describe('The unique id of the tool'),
     name: I18nStringSchema.describe('The name of the tool'),
     description: I18nStringSchema.describe('The description of the tool'),

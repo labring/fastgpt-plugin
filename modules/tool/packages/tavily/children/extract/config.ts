@@ -16,7 +16,7 @@ export default defineTool({
 
   versionList: [
     {
-      value: '0.1.1',
+      value: '0.1.2',
       description: '支持高级配置',
       inputs: [
         {
@@ -104,7 +104,7 @@ export default defineTool({
       ]
     },
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Initial version with content extraction',
       inputs: [
         {

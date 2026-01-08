@@ -14,7 +14,7 @@ export default defineTool({
     '将指定的草稿media_id发布到微信公众号，支持使用access_token或appId/appSecret进行认证。发布成功后返回publish_id和msg_data_id，可用于后续的状态查询。',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

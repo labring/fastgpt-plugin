@@ -37,29 +37,29 @@ export const runToolStreamHandler = async (
           data: e
         });
 
-      if (tool.isWorkerRun === false) {
-        addLog.debug(`Run tool start`, { toolId, inputs, systemVar });
-        return tool
-          .cb(inputs, {
-            systemVar,
-            streamResponse
-          })
-          .then((res: ToolCallbackReturnSchemaType) => {
-            if (res.error) {
-              return Promise.reject(res.error);
-            }
-            return res;
-          });
+      if (tool.isWorkerRun === true) {
+        addLog.debug(`Run tool start in worker`, { toolId, inputs, systemVar });
+
+        return dispatchWithNewWorker({
+          toolId,
+          inputs,
+          systemVar,
+          onMessage: streamResponse
+        });
       }
 
-      addLog.debug(`Run tool start in worker`, { toolId, inputs, systemVar });
-
-      return dispatchWithNewWorker({
-        toolId,
-        inputs,
-        systemVar,
-        onMessage: streamResponse
-      });
+      addLog.debug(`Run tool start`, { toolId, inputs, systemVar });
+      return tool
+        .cb(inputs, {
+          systemVar,
+          streamResponse
+        })
+        .then((res: ToolCallbackReturnSchemaType) => {
+          if (res.error) {
+            return Promise.reject(res.error);
+          }
+          return res;
+        });
     })();
 
     streamManager.sendMessage({

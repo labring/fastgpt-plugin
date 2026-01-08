@@ -16,7 +16,7 @@ export default defineTool({
     'Get hot trending content from multiple platforms including 36kr, zhihu, weibo, juejin, and toutiao with accurate publish times',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

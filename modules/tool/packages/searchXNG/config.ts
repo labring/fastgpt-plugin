@@ -8,7 +8,6 @@ import {
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   tags: [ToolTagEnum.enum.search],
   name: {
     'zh-CN': 'SearXNG 搜索',
@@ -22,7 +21,7 @@ export default defineTool({
   courseUrl: '/docs/introduction/guide/plugins/searxng_plugin_guide/',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {
