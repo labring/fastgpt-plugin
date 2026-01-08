@@ -4,17 +4,13 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { addLog } from '@/utils/log';
 
-const isDev = process.env.NODE_ENV !== 'production';
-
 /**
  * Get the worker file path based on worker name
  * Worker files are located in dist/workers/tool/{workerName}.worker.js
  * Source files are in modules/tool/worker/{workerName}/index.ts
  */
 function getWorkerPath(workerName: string): string {
-  const workersDir = isDev
-    ? join(__dirname, '..', '..', '..', 'dist', 'workers', 'tool')
-    : join('dist', 'workers', 'tool');
+  const workersDir = join(process.cwd(), 'dist', 'workers', 'tool');
   const workerFile = `${workerName}.worker.js`;
   const workerPath = join(workersDir, workerFile);
 
