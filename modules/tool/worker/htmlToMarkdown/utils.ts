@@ -1,3 +1,4 @@
+// @ts-ignore
 import TurndownService from 'turndown';
 // @ts-ignore
 import turndownPluginGfm from 'joplin-turndown-plugin-gfm';
