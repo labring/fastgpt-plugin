@@ -18,14 +18,6 @@ function getWorkerPath(workerName: string): string {
   const workerFile = `${workerName}.worker.js`;
   const workerPath = join(workersDir, workerFile);
 
-  if (!existsSync(workerPath)) {
-    throw new Error(
-      `Worker file not found: ${workerPath}\n` +
-        `Please ensure worker source exists at modules/tool/worker/${workerName}/index.ts\n` +
-        `and run 'bun run build:pkg' to build workers.`
-    );
-  }
-
   return workerPath;
 }
 
@@ -33,6 +25,11 @@ export interface WorkerResult {
   type: 'success' | 'error';
   data: any;
 }
+
+export const workerExists = (workerName: string): boolean => {
+  const workerPath = getWorkerPath(workerName);
+  return existsSync(workerPath);
+};
 
 /**
  * Run a worker with specified worker name and data
@@ -50,7 +47,12 @@ export async function runWorker<T = any>(
   timeout: number = 30000
 ): Promise<T> {
   const workerPath = getWorkerPath(workerName);
-  console.log(workerPath, 2222);
+
+  // Exists check
+  if (!workerExists(workerName)) {
+    throw new Error(`Worker ${workerName} not found`);
+  }
+
   addLog.debug(`Running worker ${workerName}`);
 
   return new Promise((resolve, reject) => {
