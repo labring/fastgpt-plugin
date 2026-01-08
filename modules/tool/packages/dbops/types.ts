@@ -38,8 +38,8 @@ export type MySQLInputType = z.infer<typeof MySQLInputSchema>;
 
 export const SQLServerInputSchema = z.object({
   ...BaseSQLDbInputSchema.shape,
-  instanceName: z.string().optional(),
-  domain: z.string().optional()
+  instanceName: z.preprocess((val) => (val === '' ? undefined : val), z.string().optional()),
+  domain: z.preprocess((val) => (val === '' ? undefined : val), z.string().optional())
 });
 export type SQLServerInputType = z.infer<typeof SQLServerInputSchema>;
 
