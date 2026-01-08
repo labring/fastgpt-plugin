@@ -2,6 +2,7 @@ import type { FileMetadata } from '@/s3/config';
 import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
 import { getNanoid } from './string';
+import { getCurrentToolPrefix } from './context';
 
 // Extend global type to access currentToolPrefix set by worker
 declare global {
@@ -9,16 +10,13 @@ declare global {
 }
 
 export const uploadFile = async (data: FileInput) => {
-  // Get prefix from multiple sources (in priority order):
-  // 1. Explicitly passed in data.prefix
-  // 2. From global state set by worker (survives across dynamic imports)
-  const prefix = data.prefix ?? global.currentToolPrefix;
+  // 优先级：1 > 2，2.1 == 2.2（由运行环境决定）
+  // 1. 从工具手动传递进来的 data.prefix 中获取前缀
+  // 2.1 从 AsyncLocalStorage 的上下文中获取前缀（用于非 worker 环境）
+  // 2.2 从 global.currentToolPrefix 变量中获取前缀（用于 worker 环境）
+  const prefix = data.prefix ?? getCurrentToolPrefix();
 
-  // Update data with resolved prefix
-  data = {
-    ...data,
-    prefix
-  };
+  data = { ...data, prefix };
 
   // 判断是否在 worker 线程中
   const isWorkerThread = typeof parentPort !== 'undefined' && parentPort !== null;
