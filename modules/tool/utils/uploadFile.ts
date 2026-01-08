@@ -70,8 +70,13 @@ export const uploadFile = async (data: FileInput) => {
       });
     });
   } else {
-    const { publicS3Server } = await import('@/s3');
-    return await publicS3Server.uploadFileAdvanced({
+    if (!global._publicS3Server) {
+      throw new Error(
+        'S3 Server not initialized in global context. If you are in dev mode, please ensure the system is initialized.'
+      );
+    }
+
+    return await global._publicS3Server.uploadFileAdvanced({
       ...data,
       ...(data.buffer ? { buffer: data.buffer } : {})
     });

@@ -4,10 +4,14 @@ export type ToolContext = {
   prefix?: string;
 };
 
-export const toolContextStorage = new AsyncLocalStorage<ToolContext>();
+globalThis._toolContextStorage = new AsyncLocalStorage<ToolContext>();
+
+declare global {
+  var _toolContextStorage: AsyncLocalStorage<ToolContext>;
+}
 
 export const getCurrentToolPrefix = (): string | undefined => {
-  const context = toolContextStorage.getStore();
+  const context = globalThis._toolContextStorage.getStore();
   if (context?.prefix) {
     return context.prefix;
   }
@@ -16,5 +20,5 @@ export const getCurrentToolPrefix = (): string | undefined => {
 };
 
 export const runWithToolContext = <T>(context: ToolContext, fn: () => T): T => {
-  return toolContextStorage.run(context, fn);
+  return globalThis._toolContextStorage.run(context, fn);
 };
