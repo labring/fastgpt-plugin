@@ -39,8 +39,8 @@ const addCommonMiddleware = (schema: Schema) => {
   return schema;
 };
 
-export const getMongoModel = <T extends Schema>(name: string, schema: T) => {
-  if (connectionMongo.models[name]) return connectionMongo.model(name, schema);
+export const getMongoModel = <T extends Schema>(name: string, schema: T): Model<any> => {
+  if (connectionMongo.models[name]) return connectionMongo.model(name) as Model<any>;
   if (!isProd) addLog.info(`Load model: ${name}`);
   addCommonMiddleware(schema);
 
