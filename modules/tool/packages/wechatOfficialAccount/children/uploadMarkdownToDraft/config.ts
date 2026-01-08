@@ -260,7 +260,7 @@ export default defineTool({
       ...v2
     },
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: '单篇文章上传版本',
       ...v1
     }

@@ -13,7 +13,7 @@ export default defineTool({
   toolDescription: '使用 Perplexity 进行网络搜索',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

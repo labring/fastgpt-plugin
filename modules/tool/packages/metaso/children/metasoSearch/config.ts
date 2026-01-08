@@ -17,7 +17,7 @@ export default defineTool({
   author: 'FastGPT',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Initial version with full search functionality',
       inputs: [
         {

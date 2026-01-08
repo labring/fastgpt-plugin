@@ -19,7 +19,7 @@ export default defineTool({
   courseUrl: 'https://jina.ai/reader/',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Enhanced version with comprehensive format support',
       inputs: [
         {

@@ -14,7 +14,7 @@ export default defineTool({
     '上传永久素材到微信公众号素材库。支持图片、语音、视频和缩略图等类型。素材上传后会永久保存在公众号素材库中，可用于后续的图文消息和群发消息。支持文件路径、Base64编码和URL三种输入方式。',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

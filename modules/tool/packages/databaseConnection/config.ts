@@ -15,7 +15,7 @@ export default defineTool({
   icon: 'core/workflow/template/datasource',
   versionList: [
     {
-      value: '0.1.1',
+      value: '0.1.2',
       description: 'Default version',
       inputs: [
         {
@@ -46,7 +46,7 @@ export default defineTool({
       ]
     },
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

@@ -97,7 +97,7 @@ export default defineTool({
       ]
     },
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

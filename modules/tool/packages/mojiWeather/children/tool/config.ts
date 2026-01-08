@@ -13,7 +13,7 @@ export default defineTool({
   toolDescription: '获取指定城市的每日天气信息，包括温度、湿度、风力等详细数据',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

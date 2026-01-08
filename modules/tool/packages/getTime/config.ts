@@ -15,7 +15,7 @@ export default defineTool({
   icon: 'core/workflow/template/getTime',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [],
       outputs: [

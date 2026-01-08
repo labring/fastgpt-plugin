@@ -135,7 +135,7 @@ export default defineTool({
       outputs: v1.outputs
     },
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: v1.inputs,
       outputs: v1.outputs

@@ -21,7 +21,7 @@ export default defineTool({
   courseUrl: '/docs/introduction/guide/plugins/searxng_plugin_guide/',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

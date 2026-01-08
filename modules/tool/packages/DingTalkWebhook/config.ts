@@ -16,7 +16,7 @@ export default defineTool({
   courseUrl: 'https://open.dingtalk.com/document/robots/custom-robot-access',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

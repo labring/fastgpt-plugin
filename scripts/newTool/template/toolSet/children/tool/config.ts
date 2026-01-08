@@ -14,7 +14,7 @@ export default defineTool({
     'tool description for ai to use, fallback to English description if not provided',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {
