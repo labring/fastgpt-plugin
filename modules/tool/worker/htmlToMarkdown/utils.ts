@@ -28,7 +28,7 @@ export const html2md = (html: string) => {
 
   const formatMd = md.replace(
     /(!\[([^\]]*)\]|\[([^\]]*)\])(\([^)]*\))/g,
-    (match, prefix, imageAlt, linkAlt, url) => {
+    (match: string, prefix: string, imageAlt: string, linkAlt: string, url: string) => {
       const altText = imageAlt !== undefined ? imageAlt : linkAlt;
       const cleanAltText = altText.replace(/\n+/g, ' ').trim();
 
