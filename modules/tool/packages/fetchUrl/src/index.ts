@@ -1,49 +1,8 @@
 import { isIPv6 } from 'net';
 import { z } from 'zod';
-import * as cheerio from 'cheerio';
 import axios from 'axios';
-import TurndownService from 'turndown';
 import { serviceRequestMaxContentLength } from '@tool/constants';
-
-// @ts-ignore
-const turndownPluginGfm = require('joplin-turndown-plugin-gfm');
-
-// Update content size limits
-const MAX_TEXT_LENGTH = 100 * 1000; // 100k characters limit
-
-export const html2md = (html: string) => {
-  if (html.length > MAX_TEXT_LENGTH) {
-    html = html.slice(0, MAX_TEXT_LENGTH);
-  }
-  const turndownService = new TurndownService({
-    headingStyle: 'atx',
-    bulletListMarker: '-',
-    codeBlockStyle: 'fenced',
-    fence: '```',
-    emDelimiter: '_',
-    strongDelimiter: '**',
-    linkStyle: 'inlined',
-    linkReferenceStyle: 'full'
-  });
-
-  turndownService.remove(['i', 'script', 'iframe', 'style']);
-
-  turndownService.use(turndownPluginGfm.gfm);
-
-  const md = turndownService.turndown(html);
-
-  const formatMd = md.replace(
-    /(!\[([^\]]*)\]|\[([^\]]*)\])(\([^)]*\))/g,
-    (match, prefix, imageAlt, linkAlt, url) => {
-      const altText = imageAlt !== undefined ? imageAlt : linkAlt;
-      const cleanAltText = altText.replace(/\n+/g, ' ').trim();
-
-      return imageAlt !== undefined ? `![${cleanAltText}]${url}` : `[${cleanAltText}]${url}`;
-    }
-  );
-
-  return formatMd;
-};
+import { streamToMarkdown } from '@tool/worker/function';
 
 export const isInternalAddress = (url: string): boolean => {
   const SERVICE_LOCAL_PORT = `${process.env.PORT || 3000}`;
@@ -115,71 +74,6 @@ export const isInternalAddress = (url: string): boolean => {
   }
 };
 
-export const cheerioToHtml = ({
-  fetchUrl,
-  $,
-  selector
-}: {
-  fetchUrl: string;
-  $: cheerio.CheerioAPI;
-  selector?: string;
-}) => {
-  // get origin url
-  const originUrl = new URL(fetchUrl).origin;
-  const protocol = new URL(fetchUrl).protocol; // http: or https:
-
-  const usedSelector = selector || 'body';
-  const selectDom = $(usedSelector);
-
-  // remove i element
-  selectDom.find('i,script,style').remove();
-
-  // remove empty a element
-  selectDom
-    .find('a')
-    .filter((i, el) => {
-      return $(el).text().trim() === '' && $(el).children().length === 0;
-    })
-    .remove();
-
-  // if link,img startWith /, add origin url
-  selectDom.find('a').each((i, el) => {
-    const href = $(el).attr('href');
-    if (href) {
-      if (href.startsWith('//')) {
-        $(el).attr('href', protocol + href);
-      } else if (href.startsWith('/')) {
-        $(el).attr('href', originUrl + href);
-      }
-    }
-  });
-  selectDom.find('img, video, source, audio, iframe').each((i, el) => {
-    const src = $(el).attr('src');
-    if (src) {
-      if (src.startsWith('//')) {
-        $(el).attr('src', protocol + src);
-      } else if (src.startsWith('/')) {
-        $(el).attr('src', originUrl + src);
-      }
-    }
-  });
-
-  const html = selectDom
-    .map((item, dom) => {
-      return $(dom).html();
-    })
-    .get()
-    .join('\n');
-
-  const title = $('head title').text() || $('h1:first').text() || fetchUrl;
-
-  return {
-    html,
-    title,
-    usedSelector
-  };
-};
-
 export const urlsFetch = async ({
   url,
   selector
@@ -209,17 +103,11 @@ export const urlsFetch = async ({
     return Promise.reject(`Content size exceeds ${serviceRequestMaxContentLength} limit`);
   }
 
-  const $ = cheerio.load(fetchRes.data);
-  const { title, html, usedSelector } = cheerioToHtml({
-    fetchUrl: url,
-    $,
+  return await streamToMarkdown({
+    response: fetchRes.data,
+    url,
     selector
   });
-
-  return {
-    title,
-    content: html2md(html)
-  };
 };
 
 export const InputType = z.object({

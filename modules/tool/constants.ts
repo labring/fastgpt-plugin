@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 export const basePath = isProd ? process.cwd() : join(process.cwd(), '..');
 
-export const UploadToolsS3Path = '/system/plugin/tools';
+export const UploadToolsS3Path = 'system/plugin/tools';
 export const PluginBaseS3Prefix = 'system/plugin/files';
 
 export const serviceRequestMaxContentLength =
