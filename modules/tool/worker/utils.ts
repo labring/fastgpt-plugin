@@ -24,7 +24,6 @@ export interface WorkerResult {
 
 export const workerExists = (workerName: string): boolean => {
   const workerPath = getWorkerPath(workerName);
-  console.log(workerPath, 111);
   return existsSync(workerPath);
 };
 
