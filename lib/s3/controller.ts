@@ -15,7 +15,6 @@ import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import { ensureDir, removeFile } from '@/utils/fs';
 import { MongoS3TTL } from './ttl/schema';
-import { PluginBaseS3Prefix } from '@tool/constants';
 import { addMinutes, differenceInSeconds } from 'date-fns';
 import type { IStorage } from '@fastgpt-sdk/storage';
 
@@ -126,11 +125,11 @@ export class S3Service {
         );
       }
 
-      const prefix = input.prefix
-        ? !input.prefix?.endsWith('/')
-          ? input.prefix + '/'
-          : input.prefix
-        : PluginBaseS3Prefix + '/';
+      if (!input.prefix || typeof input.prefix !== 'string') {
+        return Promise.reject('Invalid prefix');
+      }
+
+      const prefix = !input.prefix.endsWith('/') ? input.prefix + '/' : input.prefix;
 
       const objectName = `${prefix}${input.keepRawFilename ? '' : this.generateFileId() + '-'}${originalFilename}`;
 
@@ -163,7 +162,7 @@ export class S3Service {
         contentType,
         size: fileBuffer.length,
         uploadTime,
-        accessUrl: await this.generateExternalUrl(objectName)
+        accessUrl: this.generateExternalUrl(objectName)
       };
 
       return metadata;

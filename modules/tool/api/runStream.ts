@@ -11,6 +11,7 @@ import {
   type ToolCallbackReturnSchemaType,
   type StreamDataType
 } from '@tool/type/req';
+import { runWithToolContext } from '@tool/utils/context';
 
 export const runToolStreamHandler = async (
   req: Request,
@@ -49,17 +50,24 @@ export const runToolStreamHandler = async (
       }
 
       addLog.debug(`Run tool start`, { toolId, inputs, systemVar });
-      return tool
-        .cb(inputs, {
-          systemVar,
-          streamResponse
-        })
-        .then((res: ToolCallbackReturnSchemaType) => {
-          if (res.error) {
-            return Promise.reject(res.error);
-          }
-          return res;
-        });
+
+      return runWithToolContext(
+        {
+          prefix: systemVar?.tool?.prefix
+        },
+        () =>
+          tool
+            .cb(inputs, {
+              systemVar,
+              streamResponse
+            })
+            .then((res: ToolCallbackReturnSchemaType) => {
+              if (res.error) {
+                return Promise.reject(res.error);
+              }
+              return res;
+            })
+      );
     })();
 
     streamManager.sendMessage({
