@@ -28,6 +28,7 @@ export interface WorkerResult {
 
 export const workerExists = (workerName: string): boolean => {
   const workerPath = getWorkerPath(workerName);
+  console.log(workerPath, 111);
   return existsSync(workerPath);
 };
 
@@ -47,6 +48,7 @@ export async function runWorker<T = any>(
   timeout: number = 30000
 ): Promise<T> {
   const workerPath = getWorkerPath(workerName);
+
   // Exists check
   if (!workerExists(workerName)) {
     throw new Error(`Worker ${workerName} not found, path: ${workerPath}`);
