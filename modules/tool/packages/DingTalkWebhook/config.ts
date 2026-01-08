@@ -3,7 +3,6 @@ import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastg
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   tags: [ToolTagEnum.enum.communication],
   name: {
     'zh-CN': '钉钉 webhook',

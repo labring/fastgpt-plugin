@@ -3,7 +3,6 @@ import { WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   tags: [ToolTagEnum.enum.tools],
   name: {
     'zh-CN': '获取当前时间',

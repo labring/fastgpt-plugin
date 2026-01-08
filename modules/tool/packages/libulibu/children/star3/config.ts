@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'star3',
     en: 'star3'

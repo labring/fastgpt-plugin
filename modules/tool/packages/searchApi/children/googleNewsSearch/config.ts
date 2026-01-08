@@ -7,7 +7,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'Google 新闻搜索',
     en: 'Google News Search'

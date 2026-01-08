@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'FLUX文生图',
     en: 'FLUX Text-to-Image'

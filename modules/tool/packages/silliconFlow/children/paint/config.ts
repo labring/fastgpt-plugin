@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'Kolors画图',
     en: 'Kolors painting'

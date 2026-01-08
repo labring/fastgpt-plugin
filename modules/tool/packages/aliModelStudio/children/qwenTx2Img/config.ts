@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': '通义千问图像编辑',
     en: 'Qwen Image Editing'
