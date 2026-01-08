@@ -47,10 +47,9 @@ export async function runWorker<T = any>(
   timeout: number = 30000
 ): Promise<T> {
   const workerPath = getWorkerPath(workerName);
-
   // Exists check
   if (!workerExists(workerName)) {
-    throw new Error(`Worker ${workerName} not found`);
+    throw new Error(`Worker ${workerName} not found, path: ${workerPath}`);
   }
 
   addLog.debug(`Running worker ${workerName}`);
