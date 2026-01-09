@@ -61,9 +61,14 @@ async function main() {
   console.log('🚀 Starting marketplace deployment...');
 
   const storage = createStorage({ bucket: publicBucket, ...config });
-  await storage.ensureBucket();
-  if (vendor === 'minio') {
-    await (storage as MinioStorageAdapter).ensurePublicBucketPolicy();
+
+  try {
+    await storage.ensureBucket();
+    if (storage instanceof MinioStorageAdapter) {
+      await storage.ensurePublicBucketPolicy();
+    }
+  } catch (error) {
+    console.error('Failed to ensure bucket exists:', { error });
   }
 
   console.log('📦 Building marketplace packages...');

@@ -12,9 +12,15 @@ declare global {
 export const connectionMongo = (() => {
   if (!global.mongodb) {
     global.mongodb = new Mongoose();
+
+    // 适配一下`scripts/deploy-marketplace.ts`的场景，因为这个时候MONGO_URL是undefined
+    if (!MONGO_URL) {
+      global.mongodb.set('bufferCommands', false);
+      global.mongodb.set('autoIndex', false);
+    }
   }
   return global.mongodb;
-})();
+})() as typeof import('mongoose');
 
 const addCommonMiddleware = (schema: Schema) => {
   const operations = [/^find/, 'save', 'create', /^update/, /^delete/];
@@ -52,7 +58,7 @@ export const getMongoModel = <T extends Schema>(name: string, schema: T): Model<
 };
 
 const syncMongoIndex = async (model: Model<any>) => {
-  if (process.env.SYNC_INDEX !== '0' && process.env.NODE_ENV !== 'test') {
+  if (MONGO_URL && process.env.SYNC_INDEX !== '0' && process.env.NODE_ENV !== 'test') {
     try {
       model.syncIndexes({ background: true });
     } catch (error: any) {
