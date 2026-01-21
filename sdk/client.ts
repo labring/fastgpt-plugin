@@ -124,3 +124,12 @@ export { ToolDetailSchema } from '@tool/type/api';
 export { ToolSimpleSchema } from '@tool/type/api';
 export type { ToolDetailType, ToolSimpleType } from '@tool/type/api';
 export type { AiproxyMapProviderType };
+// Dataset Source Types
+export type {
+  FormFieldType,
+  FormFieldConfig,
+  DatasetSourceInfo,
+  DatasetSourceConfig,
+  FileItem,
+  FileContentResponse
+} from '@dataset/type/source';
