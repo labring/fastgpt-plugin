@@ -51,7 +51,7 @@
 }
 ```
 
-![](./assets/permissions.png)
+![](./assets/permission.png)
 
 等企业管理员完成审核后，发布应用，即可使用对应接口。
 
@@ -59,4 +59,4 @@
 
 按如图所示的方式获取系统密钥。
 
-![](./assets/get-secrets.jpg)
+![](./assets/get-secret.png)
