@@ -1,73 +1,62 @@
-# 获取密钥
+# 1. 创建或选择应用并获取密钥
+在 [飞书开放平台](https://open.feishu.cn/) 登录，进入“开发者后台”。
+选择您的应用或者创建一个用于多维表格管理的应用。
 
-在飞书开放平台登陆，进入“开发者后台”
+# 2. 确保应用权限
 
-按照如图所示的方式获取密钥
-![](./assets/get-secrets.jpg)![1769414671675](image/README/1769414671675.png)
+参考：https://open.feishu.cn/document/server-docs/docs/bitable-v1/bitable-overview
 
-调用接口前，还需要申请对应的API权限，如图所示：
+申请必要的权限，如果需要用到本工具集的所有工具，可以直接全选多维表格相关的权限。
 
-![1769414870622](image/README/1769414870622.png)
+或导入如下的权限
 
-等企业管理员完成审核后，发布应用，即可使用对应接口
-
-
-
-在 FastGPT 云服务版本使用时，如需增加IP限制
-海外版用户（cloud.fastgpt.io）可以填写下面的 IP 白名单：
-
+```json
+{
+  "scopes": {
+    "tenant": [
+      "base:collaborator:create",
+      "base:collaborator:delete",
+      "base:collaborator:read",
+      "base:dashboard:copy",
+      "base:dashboard:read",
+      "base:field:create",
+      "base:field:delete",
+      "base:field:read",
+      "base:field:update",
+      "base:form:read",
+      "base:form:update",
+      "base:record:create",
+      "base:record:delete",
+      "base:record:read",
+      "base:record:retrieve",
+      "base:record:update",
+      "base:role:create",
+      "base:role:delete",
+      "base:role:read",
+      "base:role:update",
+      "base:table:create",
+      "base:table:delete",
+      "base:table:read",
+      "base:table:update",
+      "base:view:read",
+      "base:view:write_only",
+      "base:app:copy",
+      "base:app:create",
+      "base:app:read",
+      "base:app:update",
+      "bitable:app",
+      "bitable:app:readonly"
+    ]
+  }
+}
 ```
-35.240.227.100
-34.124.237.188
-34.143.240.160
-34.87.51.146
-34.87.79.202
-35.247.163.68
-34.87.102.86
-35.198.192.104
-34.126.163.205
-34.124.189.116
-34.143.149.171
-34.87.173.252
-34.142.157.52
-34.87.180.104
-34.87.20.189
-34.87.110.152
-34.87.44.74
-34.87.152.33
-35.197.149.75
-35.247.161.35
-```
 
-国内版用户（fastgpt.cn)可以填写下面的 IP 白名单：
+![](./assets/permissions.png)
 
-```
-47.97.1.240
-121.43.105.217
-121.41.178.7
-121.40.65.187
-47.97.59.172
-101.37.205.32
-120.55.195.90
-120.26.229.115
-120.55.193.112
-47.98.190.173
-112.124.41.79
-121.196.235.183
-121.41.75.88
-121.43.108.48
-112.124.12.6
-121.43.52.222
-121.199.162.43
-121.199.162.102
-120.55.94.163
-47.99.59.223
-112.124.46.5
-121.40.46.247
-120.26.145.73
-120.26.147.199
-121.43.125.163
-121.196.228.45
-121.43.126.202
-120.26.144.37
-```
+等企业管理员完成审核后，发布应用，即可使用对应接口。
+
+# 3. 获取应用密钥
+
+按如图所示的方式获取系统密钥。
+
+![](./assets/get-secrets.jpg)
