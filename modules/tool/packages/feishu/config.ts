@@ -7,7 +7,6 @@ import {
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   tags: [ToolTagEnum.enum.communication],
   name: {
     'zh-CN': '飞书 webhook',
@@ -20,7 +19,7 @@ export default defineTool({
   icon: 'core/app/templates/plugin-feishu',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

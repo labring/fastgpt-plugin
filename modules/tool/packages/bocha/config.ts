@@ -7,7 +7,6 @@ import {
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': '博查搜索',
     en: 'Bocha Search'
@@ -22,7 +21,7 @@ export default defineTool({
   courseUrl: 'https://open.bochaai.com/',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

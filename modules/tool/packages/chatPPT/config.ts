@@ -3,7 +3,6 @@ import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastg
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   courseUrl: 'https://wiki.yoo-ai.com/api/guide.html',
   name: {
     'zh-CN': '必优ChatPPT',
@@ -26,7 +25,7 @@ export default defineTool({
   ],
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

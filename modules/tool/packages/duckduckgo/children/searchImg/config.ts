@@ -6,7 +6,6 @@ import {
 } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'DuckDuckGo 图片搜索',
     en: 'DockDuckGo Image Search'
@@ -17,7 +16,7 @@ export default defineTool({
   },
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

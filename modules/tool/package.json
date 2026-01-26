@@ -7,12 +7,15 @@
   "devDependencies": {
     "@babel/preset-typescript": "^7.27.1",
     "@types/babel__generator": "^7.27.0",
-    "@types/babel__traverse": "^7.28.0"
+    "@types/babel__traverse": "^7.28.0",
+    "@types/turndown": "^5.0.5"
   },
   "dependencies": {
     "@babel/generator": "^7.28.3",
     "@babel/parser": "^7.28.4",
     "@babel/traverse": "^7.28.4",
-    "axios": "^1.12.2"
+    "axios": "^1.12.2",
+    "turndown": "^7.2.0",
+    "joplin-turndown-plugin-gfm": "^1.0.12"
   }
 }

@@ -72,20 +72,20 @@ export const ModelProviderMap: ModelProviderMap = {
     'zh-CN': 'ChatGLM',
     'zh-Hant': 'ChatGLM'
   },
-  Ernie: {
-    en: 'Ernie',
-    'zh-CN': '文心一言',
-    'zh-Hant': '文心一言'
+  MiniMax: {
+    en: 'MiniMax',
+    'zh-CN': 'MiniMax',
+    'zh-Hant': 'MiniMax'
   },
   Moonshot: {
     en: 'Moonshot',
     'zh-CN': '月之暗面',
     'zh-Hant': '月之暗面'
   },
-  MiniMax: {
-    en: 'MiniMax',
-    'zh-CN': 'MiniMax',
-    'zh-Hant': 'MiniMax'
+  Ernie: {
+    en: 'Ernie',
+    'zh-CN': '文心一言',
+    'zh-Hant': '文心一言'
   },
   SparkDesk: {
     en: 'SparkDesk',

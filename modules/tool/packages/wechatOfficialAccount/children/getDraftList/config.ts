@@ -14,7 +14,7 @@ export default defineTool({
     '获取微信公众号草稿箱中的文章列表。支持分页查询，可设置偏移量和每页数量。返回的草稿信息包括标题、作者、摘要、封面图等基本信息，可选择是否返回完整的文章内容。',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

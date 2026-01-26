@@ -2,7 +2,6 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': '抓取网页内容',
     en: 'Scrape web content'
@@ -14,7 +13,7 @@ export default defineTool({
   courseUrl: 'https://www.firecrawl.dev/',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

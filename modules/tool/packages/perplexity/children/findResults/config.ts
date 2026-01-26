@@ -2,7 +2,6 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': '网络搜索',
     en: 'Network search'
@@ -14,7 +13,7 @@ export default defineTool({
   toolDescription: '使用 Perplexity 进行网络搜索',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

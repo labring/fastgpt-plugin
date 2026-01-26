@@ -129,13 +129,13 @@ export default defineTool({
   courseUrl: 'https://mineru.net/apiManage/docs',
   versionList: [
     {
-      value: '0.1.1',
+      value: '0.1.2',
       description: 'Fix model_version vlm can not be selected',
       inputs: v1.inputs,
       outputs: v1.outputs
     },
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: v1.inputs,
       outputs: v1.outputs

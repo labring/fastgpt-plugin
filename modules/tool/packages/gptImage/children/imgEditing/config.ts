@@ -2,7 +2,6 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'gpt-image 图像编辑',
     en: 'gpt-image Image Editing'
@@ -15,7 +14,7 @@ export default defineTool({
     'Edit existing images using gpt-image-1 AI model. Supports image modification with optional mask for precise editing.',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

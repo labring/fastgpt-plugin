@@ -5,13 +5,46 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'doubao-seed-1-8-251228',
+      maxContext: 220000,
+      maxTokens: 16000,
+      quoteMaxToken: 220000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-1-6-251015',
+      maxContext: 220000,
+      maxTokens: 16000,
+      quoteMaxToken: 220000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'doubao-seed-1-6-250615',
       maxContext: 220000,
       maxTokens: 16000,
       quoteMaxToken: 220000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-1-6-flash-250828',
+      maxContext: 220000,
+      maxTokens: 16000,
+      quoteMaxToken: 220000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
       toolChoice: true
     },
     {
@@ -22,7 +55,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 220000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
+      reasoning: true,
       toolChoice: true
     },
     {
@@ -37,147 +70,15 @@ const models: ProviderConfigType = {
       toolChoice: true
     },
     {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-1.5-lite-32k',
-      maxContext: 32000,
-      maxTokens: 4000,
-      quoteMaxToken: 32000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-1.5-pro-32k',
-      maxContext: 32000,
-      maxTokens: 4000,
-      quoteMaxToken: 32000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-1.5-pro-256k',
-      maxContext: 256000,
-      maxTokens: 12000,
-      quoteMaxToken: 256000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-1.5-vision-pro-32k',
-      maxContext: 32000,
-      maxTokens: 4000,
-      quoteMaxToken: 32000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-lite-4k',
-      maxContext: 4000,
-      maxTokens: 4000,
-      quoteMaxToken: 4000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-lite-32k',
-      maxContext: 32000,
-      maxTokens: 4000,
-      quoteMaxToken: 32000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-lite-128k',
-      maxContext: 128000,
-      maxTokens: 4000,
-      quoteMaxToken: 120000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-vision-lite-32k',
-      maxContext: 32000,
-      maxTokens: 4000,
-      quoteMaxToken: 32000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: false,
-      toolChoice: false
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-pro-4k',
-      maxContext: 4000,
-      maxTokens: 4000,
-      quoteMaxToken: 4000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-pro-32k',
-      maxContext: 32000,
-      maxTokens: 4000,
-      quoteMaxToken: 32000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-pro-128k',
-      maxContext: 128000,
-      maxTokens: 4000,
-      quoteMaxToken: 120000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'Doubao-vision-pro-32k',
-      maxContext: 32000,
-      maxTokens: 4000,
-      quoteMaxToken: 32000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: false,
-      toolChoice: false
-    },
-    {
       type: ModelTypeEnum.embedding,
-      model: 'Doubao-embedding-large',
+      model: 'doubao-embedding-large-text-250515',
       defaultToken: 512,
       maxToken: 4096,
       normalization: true
     },
     {
       type: ModelTypeEnum.embedding,
-      model: 'Doubao-embedding',
+      model: 'doubao-embedding-text-240715',
       defaultToken: 512,
       maxToken: 4096,
       normalization: true

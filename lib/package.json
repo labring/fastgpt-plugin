@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "FastGPT Plugins",
   "dependencies": {
+    "@fastgpt-sdk/storage": "^0.6.6",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.203.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.203.0",

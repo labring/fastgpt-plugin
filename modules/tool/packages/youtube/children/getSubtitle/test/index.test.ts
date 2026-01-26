@@ -17,7 +17,7 @@ describe('YouTube getSubtitle tool configuration', () => {
     expect(tool.versionList.length).toBeGreaterThan(0);
 
     const version = tool.versionList[0];
-    expect(version.value).toBe('0.1.0');
+    expect(version.value).toBe('0.1.1');
     expect(version.inputs).toBeDefined();
     expect(version.outputs).toBeDefined();
   });

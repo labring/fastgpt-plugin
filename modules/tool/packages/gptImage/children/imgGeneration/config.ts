@@ -2,7 +2,6 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'gpt-image 图像生成',
     en: 'gpt-image Image Generation'
@@ -15,7 +14,7 @@ export default defineTool({
     'Generate images from text prompts using gpt-image-1 AI model. Supports various sizes and quality settings.',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

@@ -1,11 +1,9 @@
-import * as Minio from 'minio';
 import { randomBytes } from 'crypto';
-import { type S3ConfigType, type FileMetadata, commonS3Config } from './config';
+import { type FileMetadata } from './config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { addLog } from '@/utils/log';
 import { getErrText } from '@tool/utils/err';
-import { catchError } from '@/utils/catch';
 import { mimeMap } from './const';
 import {
   FileInputSchema,
@@ -17,118 +15,29 @@ import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import { ensureDir, removeFile } from '@/utils/fs';
 import { MongoS3TTL } from './ttl/schema';
-import { PluginBaseS3Prefix } from '@tool/constants';
-import { addMinutes } from 'date-fns';
+import { addMinutes, differenceInSeconds } from 'date-fns';
+import type { IStorage } from '@fastgpt-sdk/storage';
 
 export class S3Service {
-  private client: Minio.Client;
-  private externalClient?: Minio.Client;
-  private config: S3ConfigType;
+  static readonly MAX_FILE_SIZE: number = process.env.MAX_FILE_SIZE
+    ? parseInt(process.env.MAX_FILE_SIZE)
+    : 20 * 1024 * 1024; // 默认 20MB
 
-  constructor(config: Partial<S3ConfigType>) {
-    this.config = {
-      ...commonS3Config,
-      ...config
-    } as S3ConfigType;
+  constructor(
+    private readonly _client: IStorage,
+    private readonly _externalClient: IStorage | undefined
+  ) {}
 
-    this.client = new Minio.Client({
-      endPoint: this.config.endPoint,
-      port: this.config.port,
-      useSSL: this.config.useSSL,
-      accessKey: this.config.accessKey,
-      secretKey: this.config.secretKey,
-      transportAgent: this.config.transportAgent,
-      pathStyle: this.config.pathStyle,
-      region: this.config.region
-    });
-
-    if (this.config.externalBaseURL) {
-      const externalBaseURL = new URL(this.config.externalBaseURL);
-      const endpoint = externalBaseURL.hostname;
-      const useSSL = externalBaseURL.protocol === 'https:';
-
-      const externalPort = externalBaseURL.port
-        ? parseInt(externalBaseURL.port)
-        : useSSL
-          ? 443
-          : undefined; // https 默认 443，其他情况让 MinIO 客户端使用默认端口
-
-      this.externalClient = new Minio.Client({
-        useSSL: useSSL,
-        endPoint: endpoint,
-        port: externalPort,
-        accessKey: this.config.accessKey,
-        secretKey: this.config.secretKey,
-        transportAgent: this.config.transportAgent,
-        pathStyle: this.config.pathStyle,
-        region: this.config.region
-      });
-    }
+  get client(): IStorage {
+    return this._client;
   }
 
-  async initialize(policy: 'public' | 'private') {
-    // Create bucket
-    const [, err] = await catchError(async () => {
-      addLog.info(`Checking bucket: ${this.config.bucket}`);
-      const bucketExists = await this.client.bucketExists(this.config.bucket);
+  get externalClient(): IStorage {
+    return this._externalClient ?? this._client;
+  }
 
-      if (!bucketExists) {
-        addLog.info(`Creating bucket: ${this.config.bucket}`);
-        const [, err] = await catchError(() => this.client.makeBucket(this.config.bucket));
-        if (err) {
-          addLog.error(`Failed to create bucket: ${this.config.bucket}`);
-          return;
-        }
-      }
-
-      // Set bucket policy
-      const [_, err] = await catchError(async () => {
-        if (policy === 'public') {
-          return this.client.setBucketPolicy(
-            this.config.bucket,
-            JSON.stringify({
-              Version: '2012-10-17',
-              Statement: [
-                {
-                  Effect: 'Allow',
-                  Principal: '*',
-                  Action: ['s3:GetObject'],
-                  Resource: [`arn:aws:s3:::${this.config.bucket}/*`]
-                }
-              ]
-            })
-          );
-        }
-        if (policy === 'private') {
-          return this.client.setBucketPolicy(
-            this.config.bucket,
-            JSON.stringify({
-              Version: '2012-10-17',
-              Statement: []
-            })
-          );
-        }
-      });
-      if (err) {
-        addLog.warn(`Failed to set bucket policy: ${this.config.bucket}`);
-      }
-
-      addLog.info(`Bucket initialized, ${this.config.bucket} configured successfully.`);
-    });
-    if (err) {
-      const errMsg = getErrText(err);
-      if (errMsg.includes('Method Not Allowed')) {
-        addLog.warn(
-          'Method Not Allowed - bucket may exist with different permissions,check document for more details'
-        );
-      } else if (errMsg.includes('Access Denied.')) {
-        addLog.warn('Access Denied - check your access key and secret key');
-      } else {
-        return Promise.reject(err);
-      }
-    }
-
-    addLog.info(`Bucket ${this.config.bucket} initialized successfully.`);
+  get bucketName(): string {
+    return this.client.bucketName;
   }
 
   private generateFileId(): string {
@@ -138,36 +47,17 @@ export class S3Service {
   /**
    * Get the file directly.
    */
-  getFile(objectName: string) {
-    return this.client.getObject(this.config.bucket, objectName);
+  async getFile(objectName: string) {
+    const { body } = await this.client.downloadObject({ key: objectName });
+    return body;
   }
 
   /**
    *  Get public readable URL
    */
-  async generateExternalUrl(_objectName: string, expiry: number = 3600): Promise<string> {
-    const objectName = _objectName.startsWith('/') ? _objectName.slice(1) : _objectName;
-
-    const externalBaseURL = this.config.externalBaseURL;
-
-    // Private
-    if (!this.config.isPublicRead && this.externalClient) {
-      return await this.externalClient.presignedGetObject(this.config.bucket, objectName, expiry);
-    }
-
-    // Public
-    if (externalBaseURL) {
-      return `${externalBaseURL}/${this.config.bucket}/${objectName}`;
-    }
-
-    // Default url
-    const protocol = this.config.useSSL ? 'https' : 'http';
-    const port =
-      this.config.port && this.config.port !== (this.config.useSSL ? 443 : 80)
-        ? `:${this.config.port}`
-        : '';
-
-    return `${protocol}://${this.config.endPoint}${port}/${this.config.bucket}/${objectName}`;
+  generateExternalUrl(_objectName: string) {
+    const { url } = this.externalClient.generatePublicGetUrl({ key: _objectName });
+    return url;
   }
 
   async uploadFileAdvanced(input: FileInput): Promise<FileMetadata> {
@@ -229,34 +119,41 @@ export class S3Service {
         return mimeMap[ext] || 'application/octet-stream';
       };
 
-      if (this.config.maxFileSize && fileBuffer.length > this.config.maxFileSize) {
+      if (S3Service.MAX_FILE_SIZE && fileBuffer.length > S3Service.MAX_FILE_SIZE) {
         return Promise.reject(
-          `File size ${fileBuffer.length} exceeds limit ${this.config.maxFileSize}`
+          `File size ${fileBuffer.length} exceeds limit ${S3Service.MAX_FILE_SIZE}`
         );
       }
 
-      // const fileId = this.generateFileId();
-      const prefix = input.prefix
-        ? !input.prefix?.endsWith('/')
-          ? input.prefix + '/'
-          : input.prefix
-        : PluginBaseS3Prefix + '/';
+      if (!input.prefix || typeof input.prefix !== 'string') {
+        return Promise.reject('Invalid prefix');
+      }
+
+      const prefix = !input.prefix.endsWith('/') ? input.prefix + '/' : input.prefix;
+
       const objectName = `${prefix}${input.keepRawFilename ? '' : this.generateFileId() + '-'}${originalFilename}`;
+
       if (input.expireMins) {
         await MongoS3TTL.create({
-          bucketName: this.config.bucket,
+          bucketName: this.bucketName,
           expiredTime: addMinutes(new Date(), input.expireMins),
           minioKey: objectName
         });
       }
+
       const uploadTime = new Date();
 
       const contentType = inferContentType(originalFilename);
-      await this.client.putObject(this.config.bucket, objectName, fileBuffer, fileBuffer.length, {
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${encodeURIComponent(originalFilename)}"`,
-        'x-amz-meta-original-filename': encodeURIComponent(originalFilename),
-        'x-amz-meta-upload-time': uploadTime.toISOString()
+
+      await this.client.uploadObject({
+        key: objectName,
+        body: fileBuffer,
+        contentType: contentType,
+        contentDisposition: `attachment; filename="${encodeURIComponent(originalFilename)}"`,
+        metadata: {
+          originalFilename: encodeURIComponent(originalFilename),
+          uploadTime: uploadTime.toISOString()
+        }
       });
 
       const metadata: FileMetadata = {
@@ -265,7 +162,7 @@ export class S3Service {
         contentType,
         size: fileBuffer.length,
         uploadTime,
-        accessUrl: await this.generateExternalUrl(objectName)
+        accessUrl: this.generateExternalUrl(objectName)
       };
 
       return metadata;
@@ -287,9 +184,9 @@ export class S3Service {
   async removeFile(_objectName: string) {
     const objectName = _objectName.startsWith('/') ? _objectName.slice(1) : _objectName;
 
-    addLog.debug(`MinIO file start delete: ${this.config.bucket}/${objectName}`);
-    await this.client.removeObject(this.config.bucket, objectName);
-    addLog.debug(`MinIO file deleted successfully: ${this.config.bucket}/${objectName}`);
+    addLog.debug(`MinIO file start delete: ${this.bucketName}/${objectName}`);
+    await this.client.deleteObject({ key: objectName });
+    addLog.debug(`MinIO file deleted successfully: ${this.bucketName}/${objectName}`);
   }
 
   /**
@@ -297,9 +194,9 @@ export class S3Service {
    */
   async getDigest(objectName: string): Promise<string> {
     // Get the ETag of the object as its digest
-    const stat = await this.client.statObject(this.config.bucket, objectName);
+    const metadataResponse = await this.client.getObjectMetadata({ key: objectName });
     // Remove quotes around ETag if present
-    const etag = stat.etag.replace(/^"|"$/g, '');
+    const etag = metadataResponse.etag?.replace(/^"|"$/g, '') || '';
     return etag;
   }
 
@@ -311,53 +208,40 @@ export class S3Service {
     contentType,
     metadata,
     filename,
-    maxSize,
+    // maxSize,
     fileExpireMins
   }: PresignedUrlInputType) => {
     const name = this.generateFileId();
     const objectName = `${filepath}/${name}`;
 
-    await MongoS3TTL.create({
-      bucketName: this.config.bucket,
-      minioKey: objectName,
-      expiredTime: addMinutes(new Date(), fileExpireMins ?? 60)
-    });
-
-    const client = this.externalClient ?? this.client;
-
     try {
-      const policy = client.newPostPolicy();
-      policy.setBucket(this.config.bucket);
-      policy.setKey(objectName);
-      if (contentType) {
-        policy.setContentType(contentType);
-      }
-      const _maxSize = maxSize || this.config.maxFileSize;
-      if (_maxSize) {
-        policy.setContentLengthRange(1, _maxSize);
-      }
-      policy.setExpires(new Date(Date.now() + 10 * 60 * 1000)); // 10 mins
-
-      policy.setUserMetaData({
-        'original-filename': encodeURIComponent(filename),
-        'upload-time': new Date().toISOString(),
-        'content-disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-        ...metadata
+      await MongoS3TTL.create({
+        bucketName: this.bucketName,
+        minioKey: objectName,
+        expiredTime: addMinutes(new Date(), fileExpireMins ?? 60)
       });
 
-      const res = await client.presignedPostPolicy(policy);
-      const postURL = (() => {
-        if (this.config.externalBaseURL) {
-          return `${this.config.externalBaseURL}/${this.config.bucket}`;
-        } else {
-          return res.postURL;
+      const now = new Date();
+      const {
+        key,
+        metadata: headers,
+        url
+      } = await this.externalClient.generatePresignedPutUrl({
+        key: objectName,
+        expiredSeconds: differenceInSeconds(addMinutes(now, 10), now),
+        contentType: contentType,
+        metadata: {
+          originalFilename: encodeURIComponent(filename),
+          uploadTime: now.toISOString(),
+          contentDisposition: `attachment; filename="${encodeURIComponent(filename)}"`,
+          ...metadata
         }
-      })();
+      });
 
       return {
-        postURL,
-        formData: res.formData,
-        objectName
+        postURL: url,
+        formData: headers,
+        objectName: key
       };
     } catch (error) {
       addLog.error('Failed to generate Upload Presigned URL', error);
@@ -369,24 +253,14 @@ export class S3Service {
     if (prefix.startsWith('/')) {
       prefix = prefix.slice(1);
     }
-    const objectNames: string[] = [];
-    const stream = this.client.listObjectsV2(this.config.bucket, prefix, true);
 
-    for await (const obj of stream) {
-      if (obj.name) {
-        objectNames.push(obj.name);
-      }
-    }
+    const listResponse = await this.client.listObjects({ prefix });
 
-    return objectNames;
+    return listResponse.keys;
   }
 
   public removeFiles(objectNames: string[]) {
-    return this.client.removeObjects(this.config.bucket, objectNames);
-  }
-
-  public getBucketName() {
-    return this.config.bucket;
+    return this.client.deleteObjectsByMultiKeys({ keys: objectNames });
   }
 
   public async downloadFile({
@@ -407,7 +281,8 @@ export class S3Service {
         }
       );
       return filepath;
-    } catch {
+    } catch (err: any) {
+      console.log(err, objectName, 111);
       await removeFile(filepath);
       return undefined;
     }
@@ -439,12 +314,10 @@ export class S3Service {
         const relativePath = sourceObjectName.replace(normalizedSrcPath, '');
         const destinationObjectName = `${normalizedDistPath}${relativePath}`;
 
-        // Copy object to destination
-        await this.client.copyObject(
-          this.config.bucket,
-          destinationObjectName,
-          `${this.config.bucket}/${sourceObjectName}`
-        );
+        await this.client.copyObjectInSelfBucket({
+          sourceKey: sourceObjectName,
+          targetKey: destinationObjectName
+        });
 
         addLog.debug(`Copied: ${sourceObjectName} -> ${destinationObjectName}`);
         return { sourceObjectName, destinationObjectName };
@@ -484,22 +357,21 @@ export class S3Service {
 
       // Check if source object exists
       try {
-        await this.client.statObject(this.config.bucket, normalizedSrcName);
-      } catch (error) {
+        await this.client.checkObjectExists({ key: normalizedSrcName });
+      } catch {
         return Promise.reject(new Error(`Source object not found: ${normalizedSrcName}`));
       }
 
       // Copy object to destination
-      await this.client.copyObject(
-        this.config.bucket,
-        normalizedDistName,
-        `${this.config.bucket}/${normalizedSrcName}`
-      );
+      await this.client.copyObjectInSelfBucket({
+        targetKey: normalizedDistName,
+        sourceKey: normalizedSrcName
+      });
 
       addLog.debug(`Copied: ${normalizedSrcName} -> ${normalizedDistName}`);
 
       // Delete source object after successful copy
-      await this.client.removeObject(this.config.bucket, normalizedSrcName);
+      await this.client.deleteObject({ key: normalizedSrcName });
 
       addLog.info(`Successfully moved file from ${normalizedSrcName} to ${normalizedDistName}`);
     } catch (error) {

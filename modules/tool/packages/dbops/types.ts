@@ -10,14 +10,14 @@ export const BaseSQLDbInputSchema = z.object({
   database: z.string().min(1, 'Database is required').optional(),
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
-  connectionTimeout: z.coerce
-    .number()
-    .nonnegative()
-    .transform((val) => (val ? val : 3e4)),
-  maxConnections: z.coerce
-    .number()
-    .nonnegative()
-    .transform((val) => (val ? val : 10))
+  connectionTimeout: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().default(3e4)
+  ),
+  maxConnections: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().default(10)
+  )
 });
 export type BaseSQLDbInputType = z.infer<typeof BaseSQLDbInputSchema>;
 
@@ -38,8 +38,8 @@ export type MySQLInputType = z.infer<typeof MySQLInputSchema>;
 
 export const SQLServerInputSchema = z.object({
   ...BaseSQLDbInputSchema.shape,
-  instanceName: z.string().optional(),
-  domain: z.string().optional()
+  instanceName: z.preprocess((val) => (val === '' ? undefined : val), z.string().optional()),
+  domain: z.preprocess((val) => (val === '' ? undefined : val), z.string().optional())
 });
 export type SQLServerInputType = z.infer<typeof SQLServerInputSchema>;
 

@@ -16,7 +16,7 @@ export default defineTool({
 
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Initial version with intelligent site mapping capabilities',
       inputs: [
         {

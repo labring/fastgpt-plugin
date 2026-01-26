@@ -2,7 +2,38 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 import { ToolTagEnum } from '@tool/type/tags';
 
+const v1 = {
+  inputs: [
+    {
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+      selectedTypeIndex: 0,
+      valueType: WorkflowIOValueTypeEnum.string,
+      key: 'sql',
+      label: 'SQL',
+      description: 'SQL 语句，可以传入 SQL 语句直接执行',
+      defaultValue: '',
+      list: [
+        {
+          label: '',
+          value: ''
+        }
+      ],
+      required: true,
+      toolDescription: 'SQL 语句，可以传入 SQL 语句直接执行'
+    }
+  ],
+  outputs: [
+    {
+      key: 'result',
+      label: '结果',
+      description: '执行结果',
+      valueType: WorkflowIOValueTypeEnum.string
+    }
+  ]
+};
+
 export default defineTool({
+  isWorkerRun: false,
   tags: [ToolTagEnum.enum.tools],
   name: {
     'zh-CN': 'MySQL',
@@ -71,35 +102,14 @@ export default defineTool({
   ],
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.2',
+      description: 'Fix params default value',
+      ...v1
+    },
+    {
+      value: '0.1.1',
       description: 'Provide the ability to connect to MySQL database',
-      inputs: [
-        {
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          selectedTypeIndex: 0,
-          valueType: WorkflowIOValueTypeEnum.string,
-          key: 'sql',
-          label: 'SQL',
-          description: 'SQL 语句，可以传入 SQL 语句直接执行',
-          defaultValue: '',
-          list: [
-            {
-              label: '',
-              value: ''
-            }
-          ],
-          required: true,
-          toolDescription: 'SQL 语句，可以传入 SQL 语句直接执行'
-        }
-      ],
-      outputs: [
-        {
-          key: 'result',
-          label: '结果',
-          description: '执行结果',
-          valueType: WorkflowIOValueTypeEnum.string
-        }
-      ]
+      ...v1
     }
   ]
 });

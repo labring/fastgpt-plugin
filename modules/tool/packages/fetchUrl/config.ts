@@ -1,9 +1,5 @@
 import { defineTool } from '@tool/type';
-import {
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  WorkflowIOValueTypeEnum
-} from '@tool/type/fastgpt';
+import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
@@ -19,7 +15,7 @@ export default defineTool({
   icon: 'core/workflow/template/fetchUrl',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

@@ -5,6 +5,28 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'gemini-3-flash-preview',
+      maxContext: 1024000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gemini-3-pro-preview',
+      maxContext: 1024000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gemini-2.5-pro',
       maxContext: 1000000,
       maxTokens: 63000,

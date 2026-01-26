@@ -8,7 +8,6 @@ import {
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   tags: [ToolTagEnum.enum.communication],
   name: {
     'zh-CN': 'Email 邮件发送',
@@ -21,7 +20,7 @@ export default defineTool({
   icon: 'plugins/email',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

@@ -2,6 +2,12 @@ import type { FileMetadata } from '@/s3/config';
 import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
 import { getNanoid } from './string';
+import { getCurrentToolPrefix } from './context';
+
+// Extend global type to access currentToolPrefix set by worker
+declare global {
+  var currentToolPrefix: string | undefined;
+}
 
 export const uploadFile = async (data: FileInput) => {
   // 判断是否在 worker 线程中
@@ -31,6 +37,9 @@ export const uploadFile = async (data: FileInput) => {
       const id = getNanoid();
       global.uploadFileResponseFnMap.set(id, fn);
 
+      // 从 global.currentToolPrefix 变量中获取前缀（用于 worker 环境）
+      const prefix = global.currentToolPrefix;
+
       // Serialize buffer data to avoid transferList issues
       // Convert Buffer/Uint8Array to a plain object that can be safely cloned
       let serializedData: FileInput = data;
@@ -43,7 +52,8 @@ export const uploadFile = async (data: FileInput) => {
 
         serializedData = {
           ...data,
-          buffer: new Uint8Array(bufferArray) as Buffer
+          buffer: new Uint8Array(bufferArray) as Buffer,
+          prefix
         };
       }
 
@@ -56,10 +66,19 @@ export const uploadFile = async (data: FileInput) => {
       });
     });
   } else {
-    const { publicS3Server } = await import('@/s3');
-    return await publicS3Server.uploadFileAdvanced({
+    if (!global._publicS3Server) {
+      throw new Error(
+        'S3 Server not initialized in global context. If you are in dev mode, please ensure the system is initialized.'
+      );
+    }
+
+    //  从 AsyncLocalStorage 的上下文中获取前缀（用于非 worker 环境）
+    const prefix = getCurrentToolPrefix();
+
+    return await global._publicS3Server.uploadFileAdvanced({
       ...data,
-      ...(data.buffer ? { buffer: data.buffer } : {})
+      ...(data.buffer ? { buffer: data.buffer } : {}),
+      prefix
     });
   }
 };

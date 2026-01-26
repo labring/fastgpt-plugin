@@ -7,7 +7,6 @@ import {
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   author: '火山引擎',
   name: {
     'zh-CN': '融合信息搜索',
@@ -98,7 +97,7 @@ export default defineTool({
       ]
     },
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

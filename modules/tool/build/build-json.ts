@@ -4,12 +4,11 @@ import { ToolTagEnum } from '@tool/type/tags';
 import { existsSync, writeFileSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
-import { ToolDetailSchema } from 'sdk/client';
 import { generateToolVersion, generateToolSetVersion } from '../utils/tool';
+import { publicS3Server } from '@/s3';
+import { ToolDetailSchema } from '@tool/type/api';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
-
-const S3BasePath = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET}`;
 
 const basePath = process.cwd();
 const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
@@ -24,7 +23,8 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   const isToolSet = existsSync(childrenPath);
 
   const toolsetId = rootMod.toolId || filename;
-  const parentIcon = rootMod.icon ?? `${S3BasePath}${UploadToolsS3Path}/${toolsetId}/logo`;
+  const parentIcon =
+    rootMod.icon ?? publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/logo`);
 
   if (isToolSet) {
     const children: ToolType[] = [];
@@ -40,7 +40,7 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
         const childIcon =
           childMod.icon ??
           rootMod.icon ??
-          `${S3BasePath}${UploadToolsS3Path}/${toolsetId}/${file}/logo`;
+          publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/${file}/logo`);
 
         // Generate version for child tool
         const childVersion = childMod.versionList
@@ -75,7 +75,8 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     tools.push(...children);
   } else {
     // is not toolset
-    const icon = rootMod.icon ?? `${S3BasePath}${UploadToolsS3Path}/${toolsetId}/logo`;
+    const icon =
+      rootMod.icon ?? publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${toolsetId}/logo`);
 
     // Generate version for single tool
     const toolVersion = (rootMod as any).versionList

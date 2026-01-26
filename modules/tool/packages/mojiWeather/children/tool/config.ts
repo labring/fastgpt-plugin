@@ -2,7 +2,6 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': '每日天气',
     en: 'Daily Weather'
@@ -14,7 +13,7 @@ export default defineTool({
   toolDescription: '获取指定城市的每日天气信息，包括温度、湿度、风力等详细数据',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

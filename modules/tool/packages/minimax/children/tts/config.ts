@@ -2,7 +2,6 @@ import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
 export default defineTool({
-  isWorkerRun: false,
   name: {
     'zh-CN': 'minmax 文本转语音',
     en: 'minmax Text-to-Speech'
@@ -15,7 +14,7 @@ export default defineTool({
     'Convert text to speech using MinMax TTS API. Supports multiple voice settings and audio formats.',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {

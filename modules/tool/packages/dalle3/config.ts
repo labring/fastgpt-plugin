@@ -7,7 +7,6 @@ import {
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  isWorkerRun: false,
   tags: [ToolTagEnum.enum.multimodal],
   name: {
     'zh-CN': 'Dalle3 绘图',
@@ -21,7 +20,7 @@ export default defineTool({
   courseUrl: 'https://openai.com',
   versionList: [
     {
-      value: '0.1.0',
+      value: '0.1.1',
       description: 'Default version',
       inputs: [
         {
