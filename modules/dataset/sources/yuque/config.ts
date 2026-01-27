@@ -26,7 +26,6 @@ export const yuqueConfig: DatasetSourceConfig = {
     'zh-CN': '可通过配置语雀文档权限，使用语雀文档构建知识库，文档不会进行二次存储',
     'zh-Hant': '可透過設定語雀文件權限，使用語雀文件建構知識庫，文件不會進行二次儲存'
   },
-  version: '1.0.0',
   courseUrl: '/docs/introduction/guide/knowledge_base/yuque_dataset/',
 
   formFields: [

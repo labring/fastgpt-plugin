@@ -1,41 +1,44 @@
+import { z } from 'zod';
 import { defineSource, type DatasetSourceCallbacks } from '../../source/registry';
 import { customApiConfig, CustomApiConfigSchema, type CustomApiConfig } from './config';
 import type { FileItem, FileContentResponse } from '../../type/source';
 
-type ResponseDataType = {
-  success: boolean;
-  message: string;
-  data: any;
-};
+const ResponseDataSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  data: z.any()
+});
 
-type APIFileListResponse = {
-  id: string;
-  parentId: string | null;
-  name: string;
-  type: 'file' | 'folder';
-  updateTime: string;
-  createTime: string;
-  hasChild?: boolean;
-};
+const APIFileListResponseSchema = z.object({
+  id: z.string(),
+  parentId: z.string().nullable(),
+  name: z.string(),
+  type: z.enum(['file', 'folder']),
+  updateTime: z.string(),
+  createTime: z.string(),
+  hasChild: z.boolean().optional()
+});
 
-type APIFileContentResponse = {
-  title?: string;
-  content?: string;
-  previewUrl?: string;
-};
+const APIFileContentResponseSchema = z.object({
+  title: z.string().optional(),
+  content: z.string().optional(),
+  previewUrl: z.string().optional()
+});
 
-type APIFileReadResponse = {
-  url: string;
-};
+const APIFileReadResponseSchema = z.object({
+  url: z.string()
+});
 
-type APIFileDetailResponse = {
-  id: string;
-  name: string;
-  parentId: string | null;
-  type: 'file' | 'folder';
-  updateTime: string;
-  createTime: string;
-};
+const APIFileDetailResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  parentId: z.string().nullable(),
+  type: z.enum(['file', 'folder']),
+  updateTime: z.string(),
+  createTime: z.string()
+});
+
+type ResponseDataType = z.infer<typeof ResponseDataSchema>;
 
 function parseConfig(config: Record<string, any>): CustomApiConfig {
   return CustomApiConfigSchema.parse(config);
@@ -57,13 +60,13 @@ function checkResponse(data: ResponseDataType): any {
 /**
  * 发送请求到用户的自定义 API
  */
-async function apiRequest<T>(
+async function apiRequest(
   baseUrl: string,
   authorization: string | undefined,
   path: string,
   method: 'GET' | 'POST',
   data?: Record<string, any>
-): Promise<T> {
+): Promise<unknown> {
   // 清理 undefined 值
   if (data) {
     for (const key in data) {
@@ -111,19 +114,11 @@ const callbacks: DatasetSourceCallbacks = {
   async listFiles({ config, parentId }): Promise<FileItem[]> {
     const { baseUrl, authorization, basePath } = parseConfig(config);
 
-    const files = await apiRequest<APIFileListResponse[]>(
-      baseUrl,
-      authorization,
-      '/v1/file/list',
-      'POST',
-      {
-        parentId: parentId || basePath
-      }
-    );
+    const rawData = await apiRequest(baseUrl, authorization, '/v1/file/list', 'POST', {
+      parentId: parentId || basePath
+    });
 
-    if (!Array.isArray(files)) {
-      throw new Error('Invalid file list format');
-    }
+    const files = z.array(APIFileListResponseSchema).parse(rawData);
 
     return files.map((file) => ({
       id: file.id,
@@ -140,14 +135,11 @@ const callbacks: DatasetSourceCallbacks = {
   async getFileContent({ config, fileId }): Promise<FileContentResponse> {
     const { baseUrl, authorization } = parseConfig(config);
 
-    const data = await apiRequest<APIFileContentResponse>(
-      baseUrl,
-      authorization,
-      '/v1/file/content',
-      'GET',
-      { id: fileId }
-    );
+    const rawData = await apiRequest(baseUrl, authorization, '/v1/file/content', 'GET', {
+      id: fileId
+    });
 
+    const data = APIFileContentResponseSchema.parse(rawData);
     const { title, content, previewUrl } = data;
 
     // 如果有直接内容，返回
@@ -172,17 +164,11 @@ const callbacks: DatasetSourceCallbacks = {
   async getFilePreviewUrl({ config, fileId }): Promise<string> {
     const { baseUrl, authorization } = parseConfig(config);
 
-    const data = await apiRequest<APIFileReadResponse>(
-      baseUrl,
-      authorization,
-      '/v1/file/read',
-      'GET',
-      { id: fileId }
-    );
+    const rawData = await apiRequest(baseUrl, authorization, '/v1/file/read', 'GET', {
+      id: fileId
+    });
 
-    if (!data.url || typeof data.url !== 'string') {
-      throw new Error('Invalid response url');
-    }
+    const data = APIFileReadResponseSchema.parse(rawData);
 
     return data.url;
   },
@@ -190,17 +176,11 @@ const callbacks: DatasetSourceCallbacks = {
   async getFileDetail({ config, fileId }): Promise<FileItem> {
     const { baseUrl, authorization } = parseConfig(config);
 
-    const data = await apiRequest<APIFileDetailResponse>(
-      baseUrl,
-      authorization,
-      '/v1/file/detail',
-      'GET',
-      { id: fileId }
-    );
+    const rawData = await apiRequest(baseUrl, authorization, '/v1/file/detail', 'GET', {
+      id: fileId
+    });
 
-    if (!data) {
-      throw new Error('File not found');
-    }
+    const data = APIFileDetailResponseSchema.parse(rawData);
 
     return {
       id: data.id,

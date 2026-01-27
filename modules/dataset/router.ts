@@ -1,7 +1,6 @@
 import { s } from '@/router/init';
 import { contract } from '@/contract';
 import { sourceRegistry } from './source/registry';
-import { getDatasetSourceAvatarUrl, getDatasetSourceOutlineAvatarUrl } from './avatars';
 
 // 注册数据源
 import customApiSource from './sources/custom-api';
@@ -17,14 +16,10 @@ const datasetSourceRouter = s.router(contract.dataset.source, {
   // 获取所有数据源列表
   list: async () => {
     const sources = sourceRegistry.list();
-    const sourcesWithIcons = sources.map(({ formFields, ...info }) => ({
-      ...info,
-      icon: getDatasetSourceAvatarUrl(info.sourceId),
-      iconOutline: getDatasetSourceOutlineAvatarUrl(info.sourceId)
-    }));
+    const sourcesInfo = sources.map(({ formFields, ...info }) => info);
     return {
       status: 200 as const,
-      body: sourcesWithIcons
+      body: sourcesInfo
     };
   },
 
