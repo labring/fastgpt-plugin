@@ -15,7 +15,7 @@ export const InputType = z
       return data.绘图提示词 || data.prompt;
     },
     {
-      error: '必须传入 "绘图提示词" 或 "prompt" 中的一个'
+      message: '必须传入 "绘图提示词" 或 "prompt" 中的一个'
     }
   )
   .transform((data) => ({

@@ -6,7 +6,7 @@ export const InputType = z.object({
   docid: z.string(),
   sheet_id: z.string(),
   action: z.enum(['add', 'del', 'update', 'list']),
-  data: z.record(z.any()).optional().nullable(),
+  data: z.record(z.string(), z.any()).optional().nullable(),
   record_id: z.string().optional().nullable(),
   limit: z.number().optional().nullable()
 });

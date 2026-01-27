@@ -16,7 +16,7 @@ export const InputType = z
           .split(',')
           .map((email) => email.trim())
           .every((email) => z.string().email().safeParse(email).success),
-      { error: 'to should be a comma-separated list of valid emails' }
+      { message: 'to should be a comma-separated list of valid emails' }
     ),
     subject: z.string(),
     content: z.string(),
@@ -30,7 +30,7 @@ export const InputType = z
             .split(',')
             .map((email) => email.trim())
             .every((email) => z.string().email().safeParse(email).success),
-        { error: 'cc should be a comma-separated list of valid emails if provided' }
+        { message: 'cc should be a comma-separated list of valid emails if provided' }
       )
       .optional(),
     bcc: z
@@ -43,7 +43,7 @@ export const InputType = z
             .split(',')
             .map((email) => email.trim())
             .every((email) => z.string().email().safeParse(email).success),
-        { error: 'bcc should be a comma-separated list of valid emails if provided' }
+        { message: 'bcc should be a comma-separated list of valid emails if provided' }
       )
       .optional(),
     attachments: z.string().optional()

@@ -22,7 +22,7 @@ export const InputType = z
       return data.accessToken || (data.appId && data.secret);
     },
     {
-      error: '必须提供 accessToken，或者同时提供 appId 和 appSecret',
+      message: '必须提供 accessToken，或者同时提供 appId 和 appSecret',
       path: ['认证参数']
     }
   )
@@ -35,7 +35,7 @@ export const InputType = z
       return true;
     },
     {
-      error: '视频素材必须提供标题和简介',
+      message: '视频素材必须提供标题和简介',
       path: ['视频参数']
     }
   );

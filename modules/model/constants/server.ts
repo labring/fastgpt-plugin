@@ -1,5 +1,5 @@
 // Server-side constants - depend on env, should not be imported in SDK bundles
-import type { I18nStringStrictType } from '@/type/i18n';
+import type { I18nStringStrictType } from '@/validates/i18n';
 import type { ListModelsType } from '../api/type';
 import { env } from '@/env';
 import { ModelProviderMap } from './shared';

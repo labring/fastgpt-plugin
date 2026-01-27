@@ -39,10 +39,15 @@ export const env = createEnv({
     ALL_PROXY: z.string().optional(),
 
     // 数据库
-    MONGODB_URI: z.string().nonempty(),
+    MONGODB_URI: z
+      .string()
+      .nonempty()
+      .default(
+        'mongodb://username:password@localhost:27017/fastgpt?authSource=admin&directConnection=true'
+      ),
     MONGO_MAX_LINK: PositiveIntSchema.default(20),
     SYNC_INDEX: BoolSchema.default(true),
-    REDIS_URL: z.string().nonempty(),
+    REDIS_URL: z.string().nonempty().default('redis://default:password@localhost:6379/0'),
 
     // 日志
     LOG_ENABLE_CONSOLE: BoolSchema.default(true),

@@ -11,7 +11,7 @@ export const InputType = z
       return data.数学表达式 || data.expr;
     },
     {
-      error: '必须传入 "数学表达式" 或 "expr" 中的一个'
+      message: '必须传入 "数学表达式" 或 "expr" 中的一个'
     }
   )
   .transform((data) => ({

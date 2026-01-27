@@ -20,7 +20,7 @@ export const InputType = z
           (data.towns && data.towns.trim())
       );
     },
-    { error: '省份、城市、区县至少填写一个' }
+    { message: '省份、城市、区县至少填写一个' }
   );
 
 export const OutputType = z.object({

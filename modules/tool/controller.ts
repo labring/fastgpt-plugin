@@ -22,8 +22,8 @@ export async function getTool(toolId: string): Promise<ToolType | undefined> {
 
 export function getToolTags(): z.infer<typeof ToolTagListSchema> {
   return Object.entries(ToolTagsNameMap).map(([id, name]) => ({
-    id: id as z.infer<typeof ToolTagEnum>,
-    name
+    value: id as z.infer<typeof ToolTagEnum>,
+    label: name.en
   }));
 }
 

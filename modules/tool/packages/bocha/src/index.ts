@@ -13,7 +13,7 @@ export const InputType = z.object({
     .optional()
     .default(10)
     .refine((val) => val >= 1 && val <= 50, {
-      error: 'count must be between 1 and 50'
+      message: 'count must be between 1 and 50'
     })
 });
 

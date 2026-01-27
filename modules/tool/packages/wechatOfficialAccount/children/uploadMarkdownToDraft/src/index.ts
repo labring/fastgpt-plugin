@@ -62,7 +62,7 @@ export const InputType = z
         }
         return val.trim().length > 0;
       },
-      { error: 'Markdown 内容不能为空' }
+      { message: 'Markdown 内容不能为空' }
     ),
     coverImage: StringOrArray.refine(
       (val) => {
@@ -71,7 +71,7 @@ export const InputType = z
         }
         return val.trim().length > 0;
       },
-      { error: '封面图不能为空' }
+      { message: '封面图不能为空' }
     ),
 
     // 可选参数 - 支持单个或多个
@@ -88,7 +88,7 @@ export const InputType = z
       return data.accessToken || (data.appId && data.secret);
     },
     {
-      error: '必须提供 accessToken，或者同时提供 appId 和 appSecret',
+      message: '必须提供 accessToken，或者同时提供 appId 和 appSecret',
       path: ['认证参数']
     }
   );

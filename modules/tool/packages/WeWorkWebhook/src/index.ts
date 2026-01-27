@@ -12,7 +12,7 @@ export const InputType = z
       return (data.企微机器人地址 || data.webhookUrl) && (data.发送的消息 || data.message);
     },
     {
-      error: '必须传入机器人地址和消息内容'
+      message: '必须传入机器人地址和消息内容'
     }
   )
   .transform((data) => ({
@@ -37,9 +37,7 @@ export async function tool({
     })
   });
   if (res.status !== 200) {
-    return {
-      error: await res.text()
-    };
+    throw new Error(await res.text());
   }
   return {};
 }
