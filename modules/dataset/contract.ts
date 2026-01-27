@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { c } from '@/contract/init';
 import {
+  DatasetSourceIdEnum,
   DatasetSourceInfoSchema,
   DatasetSourceConfigSchema,
   FileItemSchema,
@@ -26,7 +27,7 @@ export const datasetSourceContract = c.router(
       method: 'GET',
       description: 'Get dataset source config with form fields',
       query: z.object({
-        sourceId: z.string()
+        sourceId: DatasetSourceIdEnum
       }),
       responses: {
         200: DatasetSourceConfigSchema,
@@ -40,7 +41,7 @@ export const datasetSourceContract = c.router(
       method: 'POST',
       description: 'List files and folders from dataset source',
       body: z.object({
-        sourceId: z.string(),
+        sourceId: DatasetSourceIdEnum,
         config: z.record(z.string(), z.any()),
         parentId: z.string().optional()
       }),
@@ -57,7 +58,7 @@ export const datasetSourceContract = c.router(
       method: 'POST',
       description: 'Get file content from dataset source',
       body: z.object({
-        sourceId: z.string(),
+        sourceId: DatasetSourceIdEnum,
         config: z.record(z.string(), z.any()),
         fileId: z.string()
       }),
@@ -74,7 +75,7 @@ export const datasetSourceContract = c.router(
       method: 'POST',
       description: 'Get file preview URL from dataset source',
       body: z.object({
-        sourceId: z.string(),
+        sourceId: DatasetSourceIdEnum,
         config: z.record(z.string(), z.any()),
         fileId: z.string()
       }),
@@ -91,7 +92,7 @@ export const datasetSourceContract = c.router(
       method: 'POST',
       description: 'Get file detail by ID',
       body: z.object({
-        sourceId: z.string(),
+        sourceId: DatasetSourceIdEnum,
         config: z.record(z.string(), z.any()),
         fileId: z.string()
       }),

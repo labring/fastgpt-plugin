@@ -1,4 +1,9 @@
-import type { DatasetSourceConfig, FileItem, FileContentResponse } from '../type/source';
+import type {
+  DatasetSourceConfig,
+  DatasetSourceId,
+  FileItem,
+  FileContentResponse
+} from '../type/source';
 
 // 数据源回调接口
 export type DatasetSourceCallbacks = {
@@ -21,13 +26,13 @@ export type DatasetSourceDefinition = DatasetSourceConfig & {
 
 // 注册表类
 class SourceRegistry {
-  private sources = new Map<string, DatasetSourceDefinition>();
+  private sources = new Map<DatasetSourceId, DatasetSourceDefinition>();
 
   register(source: DatasetSourceDefinition) {
     this.sources.set(source.sourceId, source);
   }
 
-  get(sourceId: string): DatasetSourceDefinition | undefined {
+  get(sourceId: DatasetSourceId): DatasetSourceDefinition | undefined {
     return this.sources.get(sourceId);
   }
 
@@ -35,11 +40,11 @@ class SourceRegistry {
     return Array.from(this.sources.values()).map(({ callbacks, ...config }) => config);
   }
 
-  getCallbacks(sourceId: string): DatasetSourceCallbacks | undefined {
+  getCallbacks(sourceId: DatasetSourceId): DatasetSourceCallbacks | undefined {
     return this.sources.get(sourceId)?.callbacks;
   }
 
-  has(sourceId: string): boolean {
+  has(sourceId: DatasetSourceId): boolean {
     return this.sources.has(sourceId);
   }
 

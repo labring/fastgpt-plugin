@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { DatasetSourceConfig } from '../../type/source';
+import { DatasetSourceIdEnum, type DatasetSourceConfig } from '../../type/source';
 import { getDatasetSourceAvatarUrl, getDatasetSourceOutlineAvatarUrl } from '../../avatars';
 
-const SOURCE_ID = 'feishu';
+const SOURCE_ID = DatasetSourceIdEnum.enum.feishu;
 
 // Config Schema
 export const FeishuConfigSchema = z.object({

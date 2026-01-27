@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { I18nStringSchema } from '@/type/i18n';
 
+export const DatasetSourceIdEnum = z.enum(['yuque', 'feishu', 'custom-api']);
+export type DatasetSourceId = z.infer<typeof DatasetSourceIdEnum>;
+
 // 表单字段类型
 export const FormFieldTypeEnum = z.enum(['input', 'password', 'select', 'tree-select']);
 
@@ -24,7 +27,7 @@ export const FormFieldConfigSchema = z.object({
 
 // 数据源基本信息
 export const DatasetSourceInfoSchema = z.object({
-  sourceId: z.string(),
+  sourceId: DatasetSourceIdEnum,
   name: I18nStringSchema,
   icon: z.string(),
   iconOutline: z.string().optional(),
