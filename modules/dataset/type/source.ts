@@ -29,7 +29,6 @@ export const DatasetSourceInfoSchema = z.object({
   icon: z.string(),
   iconOutline: z.string().optional(),
   description: I18nStringSchema.optional(),
-  version: z.string().optional(),
   courseUrl: z.string().optional()
 });
 

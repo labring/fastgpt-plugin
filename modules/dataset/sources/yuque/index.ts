@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { defineSource, type DatasetSourceCallbacks } from '../../source/registry';
 import { yuqueConfig, YuqueConfigSchema, type YuqueConfig } from './config';
 import type { FileItem, FileContentResponse } from '../../type/source';
@@ -8,34 +9,34 @@ function parseConfig(config: Record<string, any>): YuqueConfig {
   return YuqueConfigSchema.parse(config);
 }
 
-type YuqueRepo = {
-  id: number;
-  slug: string;
-  name: string;
-  updated_at: string;
-  created_at: string;
-};
+const YuqueRepoSchema = z.object({
+  id: z.number(),
+  slug: z.string(),
+  name: z.string(),
+  updated_at: z.string(),
+  created_at: z.string()
+});
 
-type YuqueTocItem = {
-  id: number;
-  uuid: string;
-  title: string;
-  type: string; // 'TITLE' | 'DOC' | 'LINK'
-  parent_uuid: string;
-  child_uuid: string;
-  slug: string;
-};
+const YuqueTocItemSchema = z.object({
+  id: z.number(),
+  uuid: z.string(),
+  title: z.string(),
+  type: z.string(), // 'TITLE' | 'DOC' | 'LINK'
+  parent_uuid: z.string(),
+  child_uuid: z.string(),
+  slug: z.string()
+});
 
-type YuqueDoc = {
-  id: number;
-  slug: string;
-  title: string;
-  body: string;
-  body_html: string;
-};
+const YuqueDocSchema = z.object({
+  id: z.number(),
+  slug: z.string(),
+  title: z.string(),
+  body: z.string(),
+  body_html: z.string()
+});
 
 // 带 Token 的请求
-async function yuqueRequest<T>(token: string, path: string): Promise<T> {
+async function yuqueRequest(token: string, path: string): Promise<unknown> {
   const res = await fetch(`${YUQUE_BASE_URL}${path}`, {
     headers: {
       'X-Auth-Token': token,
@@ -58,15 +59,16 @@ const callbacks: DatasetSourceCallbacks = {
 
     // 无 parentId：列出所有知识库
     if (!targetParent) {
-      const repos: YuqueRepo[] = [];
+      const repos: z.infer<typeof YuqueRepoSchema>[] = [];
       let offset = 0;
       const limit = 100;
 
       while (true) {
-        const data = await yuqueRequest<YuqueRepo[]>(
+        const rawData = await yuqueRequest(
           token,
           `/api/v2/groups/${userId}/repos?offset=${offset}&limit=${limit}`
         );
+        const data = z.array(YuqueRepoSchema).parse(rawData);
         if (!data?.length) break;
         repos.push(...data);
         if (data.length < limit) break;
@@ -86,7 +88,8 @@ const callbacks: DatasetSourceCallbacks = {
 
     // 纯数字：知识库 ID，列出文档目录
     if (!isNaN(Number(targetParent))) {
-      const toc = await yuqueRequest<YuqueTocItem[]>(token, `/api/v2/repos/${targetParent}/toc`);
+      const rawData = await yuqueRequest(token, `/api/v2/repos/${targetParent}/toc`);
+      const toc = z.array(YuqueTocItemSchema).parse(rawData);
 
       return toc
         .filter((item) => !item.parent_uuid && item.type !== 'LINK')
@@ -101,7 +104,8 @@ const callbacks: DatasetSourceCallbacks = {
 
     // 复合 ID：repoId-docId-uuid，列出子文档
     const [repoId, , parentUuid] = targetParent.split(/-(.*?)-(.*)/);
-    const toc = await yuqueRequest<YuqueTocItem[]>(token, `/api/v2/repos/${repoId}/toc`);
+    const rawData = await yuqueRequest(token, `/api/v2/repos/${repoId}/toc`);
+    const toc = z.array(YuqueTocItemSchema).parse(rawData);
 
     return toc
       .filter((item) => item.parent_uuid === parentUuid && item.type !== 'LINK')
@@ -123,7 +127,8 @@ const callbacks: DatasetSourceCallbacks = {
       throw new Error(`Invalid fileId format: ${fileId}`);
     }
 
-    const doc = await yuqueRequest<YuqueDoc>(token, `/api/v2/repos/${repoId}/docs/${docId}`);
+    const rawData = await yuqueRequest(token, `/api/v2/repos/${repoId}/docs/${docId}`);
+    const doc = YuqueDocSchema.parse(rawData);
 
     return {
       title: doc.title,
@@ -140,10 +145,13 @@ const callbacks: DatasetSourceCallbacks = {
       throw new Error(`Invalid fileId format: ${fileId}`);
     }
 
-    const [repo, doc] = await Promise.all([
-      yuqueRequest<YuqueRepo>(token, `/api/v2/repos/${repoId}`),
-      yuqueRequest<YuqueDoc>(token, `/api/v2/repos/${repoId}/docs/${docId}`)
+    const [rawRepoData, rawDocData] = await Promise.all([
+      yuqueRequest(token, `/api/v2/repos/${repoId}`),
+      yuqueRequest(token, `/api/v2/repos/${repoId}/docs/${docId}`)
     ]);
+
+    const repo = YuqueRepoSchema.parse(rawRepoData);
+    const doc = YuqueDocSchema.parse(rawDocData);
 
     return `${YUQUE_BASE_URL}/${userId}/${repo.slug}/${doc.slug}`;
   },
@@ -153,7 +161,8 @@ const callbacks: DatasetSourceCallbacks = {
 
     // 纯数字：知识库 ID
     if (!isNaN(Number(fileId))) {
-      const repo = await yuqueRequest<YuqueRepo>(token, `/api/v2/repos/${fileId}`);
+      const rawData = await yuqueRequest(token, `/api/v2/repos/${fileId}`);
+      const repo = YuqueRepoSchema.parse(rawData);
       return {
         id: String(repo.id),
         rawId: String(repo.id),
@@ -167,7 +176,8 @@ const callbacks: DatasetSourceCallbacks = {
 
     // 复合 ID：repoId-docId-uuid
     const [repoId, docId, uuid] = fileId.split(/-(.*?)-(.*)/);
-    const toc = await yuqueRequest<YuqueTocItem[]>(token, `/api/v2/repos/${repoId}/toc`);
+    const rawData = await yuqueRequest(token, `/api/v2/repos/${repoId}/toc`);
+    const toc = z.array(YuqueTocItemSchema).parse(rawData);
     const item = toc.find((t) => t.uuid === uuid || String(t.id) === docId);
 
     if (!item) {

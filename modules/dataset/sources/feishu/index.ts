@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { defineSource, type DatasetSourceCallbacks } from '../../source/registry';
 import { feishuConfig, FeishuConfigSchema, type FeishuConfig } from './config';
 import type { FileItem, FileContentResponse } from '../../type/source';
@@ -8,20 +9,47 @@ function parseConfig(config: Record<string, any>): FeishuConfig {
   return FeishuConfigSchema.parse(config);
 }
 
-type FeishuFileItem = {
-  token: string;
-  parent_token: string;
-  name: string;
-  type: string;
-  modified_time: number;
-  created_time: number;
-};
+// API 响应 Schema
+const FeishuTokenResponseSchema = z.object({
+  code: z.number(),
+  msg: z.string().optional(),
+  tenant_access_token: z.string().optional(),
+  expire: z.number().optional()
+});
 
-type FeishuFileListResponse = {
-  files: FeishuFileItem[];
-  has_more: boolean;
-  next_page_token: string;
-};
+const FeishuFileItemSchema = z.object({
+  token: z.string(),
+  parent_token: z.string(),
+  name: z.string(),
+  type: z.string(),
+  modified_time: z.string(),
+  created_time: z.string()
+});
+
+const FeishuFileListResponseSchema = z.object({
+  files: z.array(FeishuFileItemSchema).optional(),
+  has_more: z.boolean(),
+  next_page_token: z.string().optional()
+});
+
+const FeishuDocContentResponseSchema = z.object({
+  content: z.string()
+});
+
+const FeishuDocMetaResponseSchema = z.object({
+  document: z.object({
+    title: z.string(),
+    document_id: z.string().optional()
+  })
+});
+
+const FeishuBatchMetaResponseSchema = z.object({
+  metas: z.array(
+    z.object({
+      url: z.string().optional()
+    })
+  )
+});
 
 // Token 缓存（基于 appId:appSecret 作为 key）
 const tokenCache = new Map<string, { token: string; expireAt: number }>();
@@ -42,8 +70,10 @@ async function getAccessToken(appId: string, appSecret: string): Promise<string>
     body: JSON.stringify({ app_id: appId, app_secret: appSecret })
   });
 
-  const data = await res.json();
-  if (data.code !== 0) {
+  const rawData = await res.json();
+  const data = FeishuTokenResponseSchema.parse(rawData);
+
+  if (data.code !== 0 || !data.tenant_access_token) {
     throw new Error(`获取飞书 Token 失败: ${data.msg}`);
   }
 
@@ -57,7 +87,7 @@ async function getAccessToken(appId: string, appSecret: string): Promise<string>
 }
 
 // 带 Token 的请求
-async function feishuRequest<T>(token: string, path: string, options?: RequestInit): Promise<T> {
+async function feishuRequest(token: string, path: string, options?: RequestInit): Promise<unknown> {
   const res = await fetch(`${FEISHU_BASE_URL}${path}`, {
     ...options,
     headers: {
@@ -81,7 +111,7 @@ const callbacks: DatasetSourceCallbacks = {
     const token = await getAccessToken(appId, appSecret);
 
     const targetFolder = parentId || folderToken;
-    const allFiles: FeishuFileItem[] = [];
+    const allFiles: z.infer<typeof FeishuFileItemSchema>[] = [];
     let pageToken = '';
 
     do {
@@ -91,10 +121,8 @@ const callbacks: DatasetSourceCallbacks = {
         ...(pageToken && { page_token: pageToken })
       });
 
-      const data = await feishuRequest<FeishuFileListResponse>(
-        token,
-        `/open-apis/drive/v1/files?${params}`
-      );
+      const rawData = await feishuRequest(token, `/open-apis/drive/v1/files?${params}`);
+      const data = FeishuFileListResponseSchema.parse(rawData);
 
       allFiles.push(...(data.files || []));
       pageToken = data.next_page_token || '';
@@ -110,8 +138,8 @@ const callbacks: DatasetSourceCallbacks = {
         name: f.name,
         type: f.type === 'folder' ? ('folder' as const) : ('file' as const),
         hasChild: f.type === 'folder',
-        updateTime: new Date(f.modified_time * 1000).toISOString(),
-        createTime: new Date(f.created_time * 1000).toISOString()
+        updateTime: new Date(Number(f.modified_time) * 1000).toISOString(),
+        createTime: new Date(Number(f.created_time) * 1000).toISOString()
       }));
   },
 
@@ -119,20 +147,17 @@ const callbacks: DatasetSourceCallbacks = {
     const { appId, appSecret } = parseConfig(config);
     const token = await getAccessToken(appId, appSecret);
 
-    const [contentData, metaData] = await Promise.all([
-      feishuRequest<{ content: string }>(
-        token,
-        `/open-apis/docx/v1/documents/${fileId}/raw_content`
-      ),
-      feishuRequest<{ document: { title: string } }>(
-        token,
-        `/open-apis/docx/v1/documents/${fileId}`
-      )
+    const [rawContentData, rawMetaData] = await Promise.all([
+      feishuRequest(token, `/open-apis/docx/v1/documents/${fileId}/raw_content`),
+      feishuRequest(token, `/open-apis/docx/v1/documents/${fileId}`)
     ]);
 
+    const contentData = FeishuDocContentResponseSchema.parse(rawContentData);
+    const metaData = FeishuDocMetaResponseSchema.parse(rawMetaData);
+
     return {
-      title: metaData?.document?.title,
-      rawText: contentData?.content
+      title: metaData.document.title,
+      rawText: contentData.content
     };
   },
 
@@ -140,35 +165,31 @@ const callbacks: DatasetSourceCallbacks = {
     const { appId, appSecret } = parseConfig(config);
     const token = await getAccessToken(appId, appSecret);
 
-    const data = await feishuRequest<{ metas: { url: string }[] }>(
-      token,
-      `/open-apis/drive/v1/metas/batch_query`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          request_docs: [{ doc_token: fileId, doc_type: 'docx' }],
-          with_url: true
-        })
-      }
-    );
+    const rawData = await feishuRequest(token, `/open-apis/drive/v1/metas/batch_query`, {
+      method: 'POST',
+      body: JSON.stringify({
+        request_docs: [{ doc_token: fileId, doc_type: 'docx' }],
+        with_url: true
+      })
+    });
 
-    return data?.metas?.[0]?.url || '';
+    const data = FeishuBatchMetaResponseSchema.parse(rawData);
+
+    return data.metas[0]?.url || '';
   },
 
   async getFileDetail({ config, fileId }): Promise<FileItem> {
     const { appId, appSecret } = parseConfig(config);
     const token = await getAccessToken(appId, appSecret);
 
-    const data = await feishuRequest<{ document: { title: string; document_id: string } }>(
-      token,
-      `/open-apis/docx/v1/documents/${fileId}`
-    );
+    const rawData = await feishuRequest(token, `/open-apis/docx/v1/documents/${fileId}`);
+    const data = FeishuDocMetaResponseSchema.parse(rawData);
 
     return {
       id: fileId,
       rawId: fileId,
       parentId: null,
-      name: data?.document?.title || '',
+      name: data.document.title,
       type: 'file',
       hasChild: false
     };

@@ -27,7 +27,6 @@ export const customApiConfig: DatasetSourceConfig = {
   },
   icon: getDatasetSourceAvatarUrl(SOURCE_ID),
   iconOutline: getDatasetSourceOutlineAvatarUrl(SOURCE_ID),
-  version: '1.0.0',
   courseUrl: '/docs/introduction/guide/knowledge_base/api_dataset/',
 
   formFields: [
