@@ -4,9 +4,11 @@ import { sourceRegistry } from './source/registry';
 import { getDatasetSourceAvatarUrl, getDatasetSourceOutlineAvatarUrl } from './avatars';
 
 // 注册数据源
+import customApiSource from './sources/custom-api';
 import feishuSource from './sources/feishu';
 import yuqueSource from './sources/yuque';
 
+sourceRegistry.register(customApiSource);
 sourceRegistry.register(feishuSource);
 sourceRegistry.register(yuqueSource);
 

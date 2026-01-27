@@ -133,3 +133,6 @@ export type {
   FileItem,
   FileContentResponse
 } from '@dataset/type/source';
+
+// Dataset Source Constants
+export { PluginDatasetSourceIds, type PluginDatasetSourceId } from '@dataset/source/constants';
