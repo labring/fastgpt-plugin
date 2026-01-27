@@ -33,6 +33,7 @@ export async function tool({
   size
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
   const { data } = await POST<{
+    errMsg?: string;
     webpages?: {
       title: string;
       link: string;
@@ -89,6 +90,10 @@ export async function tool({
       }
     }
   );
+
+  if (data.errMsg) {
+    return Promise.reject(data.errMsg);
+  }
 
   const result = (() => {
     // Add webpages results
