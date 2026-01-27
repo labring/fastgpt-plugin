@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { DatasetSourceConfig } from '../../type/source';
+import { DatasetSourceIdEnum, type DatasetSourceConfig } from '../../type/source';
 import { getDatasetSourceAvatarUrl, getDatasetSourceOutlineAvatarUrl } from '../../avatars';
 
-const SOURCE_ID = 'yuque';
+const SOURCE_ID = DatasetSourceIdEnum.enum.yuque;
 
 // Config Schema
 export const YuqueConfigSchema = z.object({

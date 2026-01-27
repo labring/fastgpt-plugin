@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { DatasetSourceConfig } from '../../type/source';
+import { DatasetSourceIdEnum, type DatasetSourceConfig } from '../../type/source';
 import { getDatasetSourceAvatarUrl, getDatasetSourceOutlineAvatarUrl } from '../../avatars';
 
-const SOURCE_ID = 'custom-api';
+const SOURCE_ID = DatasetSourceIdEnum.enum['custom-api'];
 
 // Config Schema
 export const CustomApiConfigSchema = z.object({

@@ -4,6 +4,7 @@ import { publicS3Server } from '@/s3';
 import { mimeMap } from '@/s3/const';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
+import type { DatasetSourceId } from './type/source';
 
 const UploadDatasetSourcesS3Path = '/system/plugin/dataset-sources';
 
@@ -195,7 +196,7 @@ export const initDatasetSourceAvatars = async () => {
  * @param sourceId - The dataset source ID
  * @returns Full S3 URL for the avatar
  */
-export const getDatasetSourceAvatarUrl = (sourceId: string): string => {
+export const getDatasetSourceAvatarUrl = (sourceId: DatasetSourceId): string => {
   return publicS3Server.generateExternalUrl(
     `${UploadDatasetSourcesS3Path.slice(1)}/${sourceId}/logo`
   );
@@ -207,7 +208,7 @@ export const getDatasetSourceAvatarUrl = (sourceId: string): string => {
  * @param sourceId - The dataset source ID
  * @returns Full S3 URL for the outline avatar
  */
-export const getDatasetSourceOutlineAvatarUrl = (sourceId: string): string => {
+export const getDatasetSourceOutlineAvatarUrl = (sourceId: DatasetSourceId): string => {
   return publicS3Server.generateExternalUrl(
     `${UploadDatasetSourcesS3Path.slice(1)}/${sourceId}/logo-outline`
   );
