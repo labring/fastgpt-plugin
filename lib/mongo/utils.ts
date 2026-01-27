@@ -1,6 +1,8 @@
 import type { ClientSession } from 'mongoose';
 import { connectionMongo } from './index';
-import { addLog } from '@/utils/log';
+import { getLogger, infra } from '@/logger';
+
+const logger = getLogger(infra.mongo);
 
 const timeout = 60000;
 
@@ -20,7 +22,7 @@ export const mongoSessionRun = async <T = unknown>(fn: (session: ClientSession) 
     if (!session.inTransaction()) {
       await session.abortTransaction();
     } else {
-      addLog.warn('Uncaught mongo session error', { error });
+      logger.warn('Uncaught mongo session error', { error });
     }
     return Promise.reject(error);
   } finally {

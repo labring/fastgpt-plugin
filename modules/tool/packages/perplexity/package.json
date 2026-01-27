@@ -13,6 +13,6 @@
   },
   "dependencies": {
     "@perplexity-ai/perplexity_ai": "^0.10.0",
-    "zod": "^3.25.76"
+    "zod": "^4"
   }
 }

@@ -3,7 +3,6 @@ import axios, { type Method } from 'axios';
 import { getErrText } from '@tool/utils/err';
 import { delay } from '@tool/utils/delay';
 import { htmlTable2Md } from '@tool/utils/markdown';
-import { addLog } from '@/utils/log';
 
 export const InputType = z.object({
   apikey: z.string(),
@@ -37,7 +36,6 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
   // Response check
   const checkRes = (data: ApiResponseDataType) => {
     if (data === undefined) {
-      addLog.info('[Doc2x] Server data is empty');
       return Promise.reject('服务器异常');
     }
     return data;
@@ -59,7 +57,6 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
       return Promise.reject({ message: `[Doc2x] ${err.message}` });
     }
 
-    addLog.error('[Doc2x] Unknown error', err);
     return Promise.reject({ message: `[Doc2x] ${getErrText(err)}` });
   };
   const request = <T>(url: string, data: any, method: Method): Promise<ApiResponseDataType<T>> => {
@@ -82,7 +79,6 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
   };
 
   const parsePDF = async (fileBuffer: Buffer) => {
-    addLog.debug('[Doc2x] PDF parse start');
     const startTime = Date.now();
 
     // 1. Get pre-upload URL first
@@ -113,7 +109,6 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
         `[Doc2x] Upload failed with status ${response.status}: ${response.statusText}`
       );
     }
-    addLog.debug(`[Doc2x] Uploaded file success, uid: ${uid}`);
 
     await delay(5000);
 
@@ -145,13 +140,11 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
 
           // Process
           if (['ready', 'processing'].includes(result_data.status)) {
-            addLog.debug(`[Doc2x] Waiting for the result, uid: ${uid}`);
             await delay(5000);
           }
 
           // Finifsh
           if (result_data.status === 'success') {
-            addLog.debug('resule', result_data.result);
             return {
               text: result_data.result.pages
                 .map((page) => page.md)
@@ -171,7 +164,6 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
           }
         } catch (error) {
           // Just network error
-          addLog.warn(`[Doc2x] Get result error`, { error });
           await delay(500);
         }
 
@@ -183,11 +175,6 @@ export const useDoc2xServer = ({ apiKey }: { apiKey: string }) => {
     const { text, pages } = await checkResult();
 
     const formatText = htmlTable2Md(text);
-
-    addLog.debug(`[Doc2x] PDF parse finished`, {
-      time: `${Math.round((Date.now() - startTime) / 1000)}s`,
-      pages
-    });
 
     return {
       pages,

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { handleGetAuthToken, handleAddMaterial } from '../../../lib/handler';
-import { addLog } from '@/utils/log';
 
 export const InputType = z
   .object({
@@ -23,7 +22,7 @@ export const InputType = z
       return data.accessToken || (data.appId && data.secret);
     },
     {
-      message: '必须提供 accessToken，或者同时提供 appId 和 appSecret',
+      error: '必须提供 accessToken，或者同时提供 appId 和 appSecret',
       path: ['认证参数']
     }
   )
@@ -36,7 +35,7 @@ export const InputType = z
       return true;
     },
     {
-      message: '视频素材必须提供标题和简介',
+      error: '视频素材必须提供标题和简介',
       path: ['视频参数']
     }
   );
@@ -155,8 +154,6 @@ export async function tool({
       },
       media: await downloadFileFromUrl(mediaUrl, type)
     });
-
-    addLog.debug(`Upload permanent material result: ${JSON.stringify(result, null, 2)}`);
 
     return {
       success: true,

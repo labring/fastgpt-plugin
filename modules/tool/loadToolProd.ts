@@ -1,6 +1,8 @@
 import { toolsDir } from './constants';
 import type { ToolSetType, ToolType } from './type';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.tool);
 import { join } from 'path';
 import { parseMod } from './parseMod';
 import { stat } from 'fs/promises';
@@ -19,11 +21,11 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
   const rootMod = (await import(modulePath)).default as ToolType | ToolSetType;
 
   if (!rootMod.toolId) {
-    addLog.error(`Can not parse toolId, filename: ${filename}`);
+    logger.error(`Can not parse toolId, filename: ${filename}`);
     return [];
   }
 
-  addLog.debug(`Load tool ${filename} finish, time: ${Date.now() - start}ms`);
+  logger.debug(`Load tool ${filename} finish, time: ${Date.now() - start}ms`);
 
   return parseMod({ rootMod, filename });
 };

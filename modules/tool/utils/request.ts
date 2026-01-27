@@ -1,4 +1,6 @@
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.tool);
 
 // Request configuration interface
 export interface RequestConfig {
@@ -161,9 +163,9 @@ async function executeRequest<T>(
     if (error instanceof RequestError) {
       // Retry logic
       if (attempt <= retries!) {
-        addLog.debug(`[Request] Retry ${attempt}/${retries} after ${retryDelay}ms`, {
-          url: finalURL,
-          error: error.message
+        logger.debug(`[Request] Retry ${attempt}/${retries} after ${retryDelay}ms`, {
+          body: { url: finalURL },
+          error: { message: error.message }
         });
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
         return executeRequest<T>(url, config, attempt + 1);

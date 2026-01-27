@@ -9,7 +9,9 @@ import {
   type IStorage,
   type IStorageOptions
 } from '@fastgpt-sdk/storage';
-import { addLog } from '@/utils/log';
+import { getLogger, infra } from '@/logger';
+
+const logger = getLogger(infra.storage);
 
 type StorageConfigWithoutBucket = Omit<IStorageOptions, 'bucket'>;
 
@@ -91,14 +93,14 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
     await client.ensureBucket();
     if (isPublic) await ensurePublicPolicy(client);
   } catch (error) {
-    addLog.info(`Failed to ensure bucket "${bucket}" exists:`, { error });
+    logger.info(`Failed to ensure bucket "${bucket}" exists:`, { error });
   }
 
   try {
     await externalClient?.ensureBucket();
     if (isPublic && externalClient) await ensurePublicPolicy(externalClient);
   } catch (error) {
-    addLog.info(`Failed to ensure bucket "${bucket}" exists:`, { error });
+    logger.info(`Failed to ensure bucket "${bucket}" exists:`, { error });
   }
 
   return new S3Service(client, externalClient);

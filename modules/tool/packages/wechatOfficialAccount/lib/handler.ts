@@ -1,4 +1,3 @@
-import { addLog } from '@/utils/log.js';
 import { OffiAccountURL } from './api.js';
 import type { OffiAccountAPIType, WeChatError } from './api.js';
 
@@ -24,14 +23,9 @@ export async function downloadImageFromUrl(
 
     const arrayBuffer = await response.arrayBuffer();
 
-    addLog.debug(
-      `Successfully downloaded image from ${imageUrl}, size: ${arrayBuffer.byteLength} bytes`
-    );
-
     return new File([arrayBuffer], filename, { type: mimeType });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    addLog.error(`Failed to download image from ${imageUrl}: ${errorMessage}`);
     throw new Error(`图片下载失败: ${imageUrl} - ${errorMessage}`);
   }
 }

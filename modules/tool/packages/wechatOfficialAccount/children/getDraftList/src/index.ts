@@ -19,7 +19,7 @@ export const InputType = z
       return data.accessToken || (data.appId && data.secret);
     },
     {
-      message: '必须提供 accessToken，或者同时提供 appId 和 secret',
+      error: '必须提供 accessToken，或者同时提供 appId 和 secret',
       path: ['认证参数']
     }
   );

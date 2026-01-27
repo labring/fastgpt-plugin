@@ -2,7 +2,9 @@ import type { MessagePort } from 'worker_threads';
 import { Worker } from 'worker_threads';
 import { join } from 'path';
 import { existsSync } from 'fs';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.tool);
 
 /**
  * Get the worker file path based on worker name
@@ -49,7 +51,7 @@ export async function runWorker<T = any>(
     throw new Error(`Worker ${workerName} not found, path: ${workerPath}`);
   }
 
-  addLog.debug(`Running worker ${workerName}`);
+  logger.debug(`Running worker ${workerName}`);
 
   return new Promise((resolve, reject) => {
     const worker = new Worker(workerPath);
@@ -71,7 +73,7 @@ export async function runWorker<T = any>(
 
       isResolved = true;
       clearTimeout(timer);
-      addLog.debug(`Worker ${workerName} result: ${message.type}`);
+      logger.debug(`Worker ${workerName} result: ${message.type}`);
 
       if (message.type === 'success') {
         worker.terminate();
@@ -88,7 +90,7 @@ export async function runWorker<T = any>(
     worker.on('error', (error) => {
       if (isResolved) return;
 
-      addLog.error(`Worker ${workerName} error`, error);
+      logger.error(`Worker ${workerName} error`, { error });
 
       isResolved = true;
       clearTimeout(timer);

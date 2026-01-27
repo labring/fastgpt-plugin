@@ -2,6 +2,7 @@ import type { SystemCacheKeyEnum } from './type';
 import { randomUUID } from 'node:crypto';
 import { initCache } from './init';
 import { getGlobalRedisConnection } from '@/redis';
+import { env } from '@/env';
 
 const cachePrefix = `VERSION_KEY:`;
 
@@ -27,7 +28,7 @@ export const getCachedData = async (key: `${SystemCacheKeyEnum}`) => {
   if (!global.systemCache) initCache();
 
   const versionKey = await getVersionKey(key);
-  const isDisableCache = process.env.DISABLE_CACHE === 'true';
+  const isDisableCache = env.DISABLE_CACHE;
 
   if (global.systemCache[key].versionKey === versionKey && !isDisableCache) {
     return global.systemCache[key].data;

@@ -1,5 +1,7 @@
 import { privateS3Server, publicS3Server } from '@/s3';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.tool);
 import { unpkg } from '@/utils/zip';
 import { readdir, stat } from 'fs/promises';
 import { join, parse } from 'path';
@@ -25,7 +27,7 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
   const tempDir = join(tempToolsDir, filename);
   const [, err] = await catchError(() => unpkg(filepath, tempDir));
   if (err) {
-    addLog.error(`Can not parse toolId, filename: ${filename}`);
+    logger.error(`Can not parse toolId, filename: ${filename}`);
     return [];
   }
   const mod = (await import(join(tempDir, 'index.js'))).default as ToolSetType | ToolType;

@@ -30,7 +30,8 @@
       "@/*": ["../lib/*"],
       "@tool/*": ["../modules/tool/*"],
       "@model/*": ["../modules/model/*"],
-      "@workflow/*": ["../modules/workflow/*"]
+      "@workflow/*": ["../modules/workflow/*"],
+      "@runtime/*": ["./src/*"]
     },
 
     // Performance optimizations

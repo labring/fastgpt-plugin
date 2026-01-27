@@ -13,7 +13,7 @@ export const InputType = z
       .optional()
       .default(10)
       .refine((val) => val >= 1 && val <= 50, {
-        message: 'count must be between 1 and 50'
+        error: 'count must be between 1 and 50'
       }),
     searchType: z.enum(['web', 'web_summary']).optional().default('web'),
     sites: z.string().optional().default(''),
@@ -24,7 +24,7 @@ export const InputType = z
       return apiKey || (volcengineAccessKey && volcengineSecretKey);
     },
     {
-      message: 'Either apiKey or both volcengineAccessKey and volcengineSecretKey must be provided.'
+      error: 'Either apiKey or both volcengineAccessKey and volcengineSecretKey must be provided.'
     }
   );
 

@@ -37,7 +37,7 @@ export const InputType = z
       );
     },
     {
-      message: '必须传入机器人地址、加签值和消息内容'
+      error: '必须传入机器人地址、加签值和消息内容'
     }
   )
   .transform((data) => ({

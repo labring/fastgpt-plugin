@@ -6,7 +6,9 @@ import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import * as fs from 'fs';
 import path from 'path';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.tool);
 import { getErrText } from './utils/err';
 import { privateS3Server } from '@/s3';
 import { removeFile } from '@/utils/fs';
@@ -37,7 +39,7 @@ export async function downloadTool(objectName: string, uploadPath: string) {
   try {
     await pipeline(await privateS3Server.getFile(objectName), createWriteStream(filepath)).catch(
       (err: any) => {
-        addLog.warn(`Download plugin file: ${objectName} from S3 error: ${getErrText(err)}`);
+        logger.warn(`Download plugin file: ${objectName} from S3 error: ${getErrText(err)}`);
         return Promise.reject(err);
       }
     );
