@@ -2,7 +2,9 @@ import { randomBytes } from 'crypto';
 import { type FileMetadata } from './config';
 import * as fs from 'fs';
 import * as path from 'path';
-import { addLog } from '@/utils/log';
+import { getLogger, infra } from '@/logger';
+
+const logger = getLogger(infra.storage);
 import { getErrText } from '@tool/utils/err';
 import { mimeMap } from './const';
 import {
@@ -17,11 +19,10 @@ import { ensureDir, removeFile } from '@/utils/fs';
 import { MongoS3TTL } from './ttl/schema';
 import { addMinutes, differenceInSeconds } from 'date-fns';
 import type { IStorage } from '@fastgpt-sdk/storage';
+import { env } from '@/env';
 
 export class S3Service {
-  static readonly MAX_FILE_SIZE: number = process.env.MAX_FILE_SIZE
-    ? parseInt(process.env.MAX_FILE_SIZE)
-    : 20 * 1024 * 1024; // 默认 20MB
+  static readonly MAX_FILE_SIZE: number = env.MAX_FILE_SIZE;
 
   constructor(
     private readonly _client: IStorage,
@@ -184,9 +185,9 @@ export class S3Service {
   async removeFile(_objectName: string) {
     const objectName = _objectName.startsWith('/') ? _objectName.slice(1) : _objectName;
 
-    addLog.debug(`MinIO file start delete: ${this.bucketName}/${objectName}`);
+    logger.debug(`MinIO file start delete: ${this.bucketName}/${objectName}`);
     await this.client.deleteObject({ key: objectName });
-    addLog.debug(`MinIO file deleted successfully: ${this.bucketName}/${objectName}`);
+    logger.debug(`MinIO file deleted successfully: ${this.bucketName}/${objectName}`);
   }
 
   /**
@@ -244,7 +245,7 @@ export class S3Service {
         objectName: key
       };
     } catch (error) {
-      addLog.error('Failed to generate Upload Presigned URL', error);
+      logger.error('Failed to generate Upload Presigned URL', { error });
       return Promise.reject(`Failed to generate Upload Presigned URL: ${getErrText(error)}`);
     }
   };
@@ -276,7 +277,7 @@ export class S3Service {
     try {
       await pipeline(await this.getFile(objectName), createWriteStream(filepath)).catch(
         (err: any) => {
-          addLog.warn(`Download plugin file: ${objectName} from S3 error: ${getErrText(err)}`);
+          logger.warn(`Download plugin file: ${objectName} from S3 error: ${getErrText(err)}`);
           return Promise.reject(err);
         }
       );
@@ -296,17 +297,17 @@ export class S3Service {
       const normalizedSrcPath = srcPath.endsWith('/') ? srcPath : `${srcPath}/`;
       const normalizedDistPath = distPath.endsWith('/') ? distPath : `${distPath}/`;
 
-      addLog.info(`Starting move operation from ${normalizedSrcPath} to ${normalizedDistPath}`);
+      logger.info(`Starting move operation from ${normalizedSrcPath} to ${normalizedDistPath}`);
 
       // Get all objects in source directory
       const sourceObjects = await this.getFiles(normalizedSrcPath);
 
       if (sourceObjects.length === 0) {
-        addLog.warn(`No objects found in source directory: ${normalizedSrcPath}`);
+        logger.warn(`No objects found in source directory: ${normalizedSrcPath}`);
         return;
       }
 
-      addLog.info(`Found ${sourceObjects.length} objects to move`);
+      logger.info(`Found ${sourceObjects.length} objects to move`);
 
       // Prepare copy operations
       const copyPromises = sourceObjects.map(async (sourceObjectName) => {
@@ -319,24 +320,24 @@ export class S3Service {
           targetKey: destinationObjectName
         });
 
-        addLog.debug(`Copied: ${sourceObjectName} -> ${destinationObjectName}`);
+        logger.debug(`Copied: ${sourceObjectName} -> ${destinationObjectName}`);
         return { sourceObjectName, destinationObjectName };
       });
 
       // Execute all copy operations
       const copyResults = await Promise.all(copyPromises);
-      addLog.info(`Successfully copied ${copyResults.length} objects`);
+      logger.info(`Successfully copied ${copyResults.length} objects`);
 
       // Delete source objects after successful copy
       const sourceObjectNames = copyResults.map((result) => result.sourceObjectName);
       await this.removeFiles(sourceObjectNames);
 
-      addLog.info(
+      logger.info(
         `Successfully moved ${sourceObjectNames.length} objects from ${normalizedSrcPath} to ${normalizedDistPath}`
       );
     } catch (error) {
       const errorMsg = getErrText(error);
-      addLog.error(`Failed to move files from ${srcPath} to ${distPath}: ${errorMsg}`);
+      logger.error(`Failed to move files from ${srcPath} to ${distPath}: ${errorMsg}`);
       return Promise.reject(error);
     }
   }
@@ -351,7 +352,7 @@ export class S3Service {
         ? distObjectName.slice(1)
         : distObjectName;
 
-      addLog.info(
+      logger.info(
         `Starting single file move operation from ${normalizedSrcName} to ${normalizedDistName}`
       );
 
@@ -368,15 +369,15 @@ export class S3Service {
         sourceKey: normalizedSrcName
       });
 
-      addLog.debug(`Copied: ${normalizedSrcName} -> ${normalizedDistName}`);
+      logger.debug(`Copied: ${normalizedSrcName} -> ${normalizedDistName}`);
 
       // Delete source object after successful copy
       await this.client.deleteObject({ key: normalizedSrcName });
 
-      addLog.info(`Successfully moved file from ${normalizedSrcName} to ${normalizedDistName}`);
+      logger.info(`Successfully moved file from ${normalizedSrcName} to ${normalizedDistName}`);
     } catch (error) {
       const errorMsg = getErrText(error);
-      addLog.error(`Failed to move file from ${srcObjectName} to ${distObjectName}: ${errorMsg}`);
+      logger.error(`Failed to move file from ${srcObjectName} to ${distObjectName}: ${errorMsg}`);
       return Promise.reject(error);
     }
   }

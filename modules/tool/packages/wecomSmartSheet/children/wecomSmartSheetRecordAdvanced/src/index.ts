@@ -8,7 +8,7 @@ export const InputType = z.object({
   action: z.enum(['add', 'del', 'update', 'list']),
   records: z.array(z.any()).optional().nullable(),
   record_ids: z.array(z.string()).optional().nullable(),
-  query_params: z.record(z.any()).optional().nullable(),
+  query_params: z.record(z.string(), z.any()).optional().nullable(),
   key_type: z.string().optional().nullable()
 });
 

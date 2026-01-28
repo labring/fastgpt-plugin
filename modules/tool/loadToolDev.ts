@@ -1,5 +1,5 @@
 import { isProd } from '@/constants';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
 import { existsSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { join, parse } from 'path';
@@ -11,13 +11,15 @@ import { publicS3Server } from '@/s3';
 import { mimeMap } from '@/s3/const';
 import { generateToolVersion, generateToolSetVersion } from './utils/tool';
 
+const logger = getLogger(mod.tool);
+
 /**
  * Load Tools in dev mode. Only avaliable in dev mode
  * @param filename
  */
 export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   if (isProd) {
-    addLog.error('Can not load dev tool in prod mode');
+    logger.error(`Can not load dev tool in prod mode`);
     return [];
   }
 
@@ -50,11 +52,11 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
             keepRawFilename: true,
             contentType: mimeMap[parse(logoPath).ext]
           });
-          addLog.debug(
+          logger.debug(
             `📦 Uploaded tool logo file: ${filename} -> ${UploadToolsS3Path}/${filename}/${logoNameWithoutExt}`
           );
         } catch (error) {
-          addLog.warn(`Failed to upload logo file ${logoPath}: ${error}`);
+          logger.warn(`Failed to upload logo file ${logoPath}: ${error}`);
         }
       }
     }
@@ -68,15 +70,15 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
           keepRawFilename: true,
           contentType: 'text/markdown'
         });
-        addLog.debug(
+        logger.debug(
           `Uploaded README.md: ${readmeFile} to ${UploadToolsS3Path}/${filename}/README.md`
         );
       } catch (error) {
-        addLog.warn(`Failed to upload README.md ${readmeFile}: ${error}`);
+        logger.warn(`Failed to upload README.md ${readmeFile}: ${error}`);
       }
     }
   } catch (error) {
-    addLog.warn(`Failed to upload static files for ${filename}: ${error}`);
+    logger.warn(`Failed to upload static files for ${filename}: ${error}`);
   }
   const rootMod = (await import(toolPath)).default as ToolSetType | ToolType;
 
@@ -113,11 +115,11 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
                   keepRawFilename: true,
                   contentType: mimeMap['.' + logoFilename.split('.').pop()!]
                 });
-                addLog.debug(
+                logger.debug(
                   `📦 Uploaded child logo file: ${toolsetId} -> ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
                 );
               } catch (error) {
-                addLog.warn(`Failed to upload child logo file ${logoPath}: ${error}`);
+                logger.warn(`Failed to upload child logo file ${logoPath}: ${error}`);
               }
             }
           } else {
@@ -135,17 +137,17 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
                     keepRawFilename: true,
                     contentType: mimeMap['.' + logoFilename.split('.').pop()!]
                   });
-                  addLog.debug(
+                  logger.debug(
                     `📦 Uploaded parent logo to child: ${toolsetId} -> ${UploadToolsS3Path}/${toolsetId}/${file}/${logoNameWithoutExt}`
                   );
                 } catch (error) {
-                  addLog.warn(`Failed to upload parent logo for child tool ${file}: ${error}`);
+                  logger.warn(`Failed to upload parent logo for child tool ${file}: ${error}`);
                 }
               }
             }
           }
         } catch (error) {
-          addLog.warn(`Failed to upload static files for child tool ${file}: ${error}`);
+          logger.warn(`Failed to upload static files for child tool ${file}: ${error}`);
         }
 
         const childMod = (await import(childPath)).default as ToolType;

@@ -1,4 +1,7 @@
 {
+    "search.exclude": {
+      "bun.lock": true,
+    },
     "editor.formatOnSave": true,
     "editor.mouseWheelZoom": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",

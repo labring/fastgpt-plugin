@@ -13,9 +13,6 @@ export default defineToolSet({
   },
   toolDescription: `A comprehensive Feishu (Lark) Bitable toolset for managing multidimensional table apps, tables, records, and fields.
 Supports complete CRUD operations across all levels: apps, tables, and records.`,
-  author: 'FastGPT Team',
-  courseUrl: 'https://open.feishu.cn/document/server-docs/docs/bitable-v1/bitable-overview',
-
   // 使用 appId 和 appSecret 来换取 token
   secretInputConfig: [
     {

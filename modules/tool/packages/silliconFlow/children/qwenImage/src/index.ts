@@ -1,4 +1,3 @@
-import { addLog } from '@/utils/log';
 import { POST } from '@tool/utils/request';
 import { z } from 'zod';
 
@@ -74,7 +73,6 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
       timeout: '180000'
     }
   });
-  addLog.info(`[Silicon Flow] Request: ${url} - Body: ${JSON.stringify(body)}`);
 
   // Extract the first image URL from the response
   const imageUrl = Array.isArray(data.images) && data.images.length > 0 ? data.images[0].url : '';

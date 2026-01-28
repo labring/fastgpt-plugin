@@ -18,8 +18,8 @@ export const FileInputSchema = z
     base64: z.string().min(1, 'Base64 data cannot be empty').optional(),
     buffer: z
       .union([
-        z.instanceof(Buffer, { message: 'Buffer is required' }),
-        z.instanceof(Uint8Array, { message: 'Uint8Array is required' })
+        z.instanceof(Buffer, { error: 'Buffer is required' }),
+        z.instanceof(Uint8Array, { error: 'Uint8Array is required' })
       ])
       .transform((data) => {
         if (data instanceof Uint8Array && !(data instanceof Buffer)) {
@@ -40,7 +40,7 @@ export const FileInputSchema = z
       return inputMethods.length === 1 && (!(data.base64 || data.buffer) || data.defaultFilename);
     },
     {
-      message: 'Provide exactly one input method. Filename required for base64/buffer inputs.'
+      error: 'Provide exactly one input method. Filename required for base64/buffer inputs.'
     }
   );
 export type FileInput = z.infer<typeof FileInputSchema>;

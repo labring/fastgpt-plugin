@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { handleGetAuthToken, handleAddMaterial } from '../../../lib/handler';
-import { addLog } from '@/utils/log';
 
 export const InputType = z
   .object({
@@ -155,8 +154,6 @@ export async function tool({
       },
       media: await downloadFileFromUrl(mediaUrl, type)
     });
-
-    addLog.debug(`Upload permanent material result: ${JSON.stringify(result, null, 2)}`);
 
     return {
       success: true,

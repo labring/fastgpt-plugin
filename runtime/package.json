@@ -16,6 +16,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "@hono/node-server": "^1.19.9",
+    "express": "^5.1.0",
+    "hono": "^4.11.5",
+    "zod": "^4"
   }
 }

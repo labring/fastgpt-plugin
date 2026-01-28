@@ -1,6 +1,39 @@
 import { defineTool } from '@tool/type';
 import { FlowNodeInputTypeEnum, WorkflowIOValueTypeEnum } from '@tool/type/fastgpt';
 
+const v1 = {
+  inputs: [
+    {
+      key: 'biTableId',
+      label: '多维表格 ID',
+      description: '多维表格应用的唯一标识',
+      required: true,
+      valueType: WorkflowIOValueTypeEnum.string,
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+      toolDescription: 'The BiTable ID (app token) of the Bitable application',
+      placeholder: 'bascxxxxxx'
+    },
+    {
+      key: 'tableName',
+      label: '数据表名称',
+      description: '新建数据表的名称',
+      required: true,
+      valueType: WorkflowIOValueTypeEnum.string,
+      renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
+      toolDescription: 'The name of the new table to create',
+      maxLength: 100
+    }
+  ],
+  outputs: [
+    {
+      key: 'dataTableId',
+      label: '数据表 ID',
+      description: '创建的数据表唯一标识',
+      valueType: WorkflowIOValueTypeEnum.string
+    }
+  ]
+};
+
 export default defineTool({
   name: {
     'zh-CN': '新增数据表',
@@ -13,39 +46,11 @@ export default defineTool({
   toolDescription: 'Create a new data table in a Feishu Bitable application with specified name.',
 
   versionList: [
+    { value: '0.1.1', description: 'update docs', ...v1 },
     {
-      value: '0.1.1',
+      value: '0.1.0',
       description: 'Initial version',
-      inputs: [
-        {
-          key: 'biTableId',
-          label: '多维表格 ID',
-          description: '多维表格应用的唯一标识',
-          required: true,
-          valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          toolDescription: 'The BiTable ID (app token) of the Bitable application',
-          placeholder: 'bascxxxxxx'
-        },
-        {
-          key: 'tableName',
-          label: '数据表名称',
-          description: '新建数据表的名称',
-          required: true,
-          valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          toolDescription: 'The name of the new table to create',
-          maxLength: 100
-        }
-      ],
-      outputs: [
-        {
-          key: 'dataTableId',
-          label: '数据表 ID',
-          description: '创建的数据表唯一标识',
-          valueType: WorkflowIOValueTypeEnum.string
-        }
-      ]
+      ...v1
     }
   ]
 });

@@ -69,15 +69,15 @@ describe('YouTube getSubtitle tool functionality', () => {
     );
 
     // Skip if network error (test environment may not have access to YouTube)
-    if (result.error && result.error.includes('fetch failed')) {
+    if (result.error && typeof result.error === 'string' && result.error.includes('fetch failed')) {
       console.log('Skipping test due to network error');
       return;
     }
 
     expect(result.output).toBeDefined();
-    expect(result.output.videoId).toBe('s3iM7VslPsQ');
-    expect(result.output.subtitle).toBeDefined();
-    expect(result.output.subtitle.length).toBeGreaterThan(0);
+    expect(result.output!.videoId).toBe('s3iM7VslPsQ');
+    expect(result.output!.subtitle).toBeDefined();
+    expect(result.output!.subtitle.length).toBeGreaterThan(0);
   }, 30000);
 
   test('extract video ID from short URL', async () => {
@@ -89,14 +89,14 @@ describe('YouTube getSubtitle tool functionality', () => {
       {} as any
     );
 
-    if (result.error && result.error.includes('fetch failed')) {
+    if (result.error && typeof result.error === 'string' && result.error.includes('fetch failed')) {
       console.log('Skipping test due to network error');
       return;
     }
 
     expect(result.output).toBeDefined();
-    expect(result.output.videoId).toBe('s3iM7VslPsQ');
-    expect(result.output.subtitle).toBeDefined();
+    expect(result.output!.videoId).toBe('s3iM7VslPsQ');
+    expect(result.output!.subtitle).toBeDefined();
   }, 30000);
 
   test('extract video ID from embed URL', async () => {
@@ -108,14 +108,14 @@ describe('YouTube getSubtitle tool functionality', () => {
       {} as any
     );
 
-    if (result.error && result.error.includes('fetch failed')) {
+    if (result.error && typeof result.error === 'string' && result.error.includes('fetch failed')) {
       console.log('Skipping test due to network error');
       return;
     }
 
     expect(result.output).toBeDefined();
-    expect(result.output.videoId).toBe('s3iM7VslPsQ');
-    expect(result.output.subtitle).toBeDefined();
+    expect(result.output!.videoId).toBe('s3iM7VslPsQ');
+    expect(result.output!.subtitle).toBeDefined();
   }, 30000);
 
   test('handle direct video ID', async () => {
@@ -127,14 +127,14 @@ describe('YouTube getSubtitle tool functionality', () => {
       {} as any
     );
 
-    if (result.error && result.error.includes('fetch failed')) {
+    if (result.error && typeof result.error === 'string' && result.error.includes('fetch failed')) {
       console.log('Skipping test due to network error');
       return;
     }
 
     expect(result.output).toBeDefined();
-    expect(result.output.videoId).toBe('s3iM7VslPsQ');
-    expect(result.output.subtitle).toBeDefined();
+    expect(result.output!.videoId).toBe('s3iM7VslPsQ');
+    expect(result.output!.subtitle).toBeDefined();
   }, 30000);
 
   test('handle invalid video URL', async () => {
@@ -189,20 +189,20 @@ describe('YouTube getSubtitle tool functionality', () => {
       {} as any
     );
 
-    if (result.error && result.error.includes('fetch failed')) {
+    if (result.error && typeof result.error === 'string' && result.error.includes('fetch failed')) {
       console.log('Skipping test due to network error');
       return;
     }
 
     expect(result.output).toBeDefined();
-    expect(result.output.subtitle).toBeDefined();
-    expect(result.output.subtitle.length).toBeGreaterThan(0);
+    expect(result.output!.subtitle).toBeDefined();
+    expect(result.output!.subtitle.length).toBeGreaterThan(0);
 
     // Check that HTML tags are removed
-    expect(result.output.subtitle).not.toMatch(/<[^>]+>/);
+    expect(result.output!.subtitle).not.toMatch(/<[^>]+>/);
 
     // Check that subtitle contains actual text
-    expect(result.output.subtitle.trim().length).toBeGreaterThan(0);
+    expect(result.output!.subtitle.trim().length).toBeGreaterThan(0);
   }, 30000);
 
   test('subtitle is retrieved successfully', async () => {
@@ -215,14 +215,14 @@ describe('YouTube getSubtitle tool functionality', () => {
       {} as any
     );
 
-    if (result.error && result.error.includes('fetch failed')) {
+    if (result.error && typeof result.error === 'string' && result.error.includes('fetch failed')) {
       console.log('Skipping test due to network error');
       return;
     }
 
     expect(result.output).toBeDefined();
-    expect(result.output.subtitle).toBeDefined();
-    expect(result.output.videoId).toBe('s3iM7VslPsQ');
+    expect(result.output!.subtitle).toBeDefined();
+    expect(result.output!.videoId).toBe('s3iM7VslPsQ');
   }, 30000);
 
   test('default language is handled correctly', async () => {
@@ -235,13 +235,13 @@ describe('YouTube getSubtitle tool functionality', () => {
       {} as any
     );
 
-    if (result.error && result.error.includes('fetch failed')) {
+    if (result.error && typeof result.error === 'string' && result.error.includes('fetch failed')) {
       console.log('Skipping test due to network error');
       return;
     }
 
     expect(result.output).toBeDefined();
-    expect(result.output.subtitle).toBeDefined();
-    expect(result.output.videoId).toBe('s3iM7VslPsQ');
+    expect(result.output!.subtitle).toBeDefined();
+    expect(result.output!.videoId).toBe('s3iM7VslPsQ');
   }, 30000);
 });

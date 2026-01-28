@@ -37,9 +37,7 @@ export async function tool({
     })
   });
   if (res.status !== 200) {
-    return {
-      error: await res.text()
-    };
+    throw new Error(await res.text());
   }
   return {};
 }
