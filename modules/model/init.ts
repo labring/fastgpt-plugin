@@ -34,7 +34,9 @@ import openrouter from './provider/OpenRouter';
 
 import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
 import { modelsBuffer } from './constants';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.model);
 import { initModelAvatars } from './avatars';
 
 // All providers array in alphabetical order
@@ -98,5 +100,5 @@ export const initModels = async (reboot: boolean = false) => {
     })
     .flat();
 
-  addLog.info(`Load system model success, total ${modelsBuffer.data.length} models`);
+  logger.info(`Load system model success, total ${modelsBuffer.data.length} models`);
 };

@@ -7,13 +7,14 @@ import * as cheerio from 'cheerio';
 import { cheerioToHtml } from '@tool/worker/streamToMarkdown';
 import { html2md } from '@tool/worker/htmlToMarkdown/utils';
 import { workerExists } from '@tool/worker/utils';
+import { env } from '@/env';
 
 export const isInternalAddress = (url: string): boolean => {
-  const SERVICE_LOCAL_PORT = `${process.env.PORT || 3000}`;
+  const SERVICE_LOCAL_PORT = `${env.PORT}`;
   const SERVICE_LOCAL_HOST =
-    process.env.HOSTNAME && isIPv6(process.env.HOSTNAME)
-      ? `[${process.env.HOSTNAME}]:${SERVICE_LOCAL_PORT}`
-      : `${process.env.HOSTNAME || 'localhost'}:${SERVICE_LOCAL_PORT}`;
+    env.HOSTNAME && isIPv6(env.HOSTNAME)
+      ? `[${env.HOSTNAME}]:${SERVICE_LOCAL_PORT}`
+      : `${env.HOSTNAME || 'localhost'}:${SERVICE_LOCAL_PORT}`;
 
   try {
     const parsedUrl = new URL(url);
@@ -44,7 +45,7 @@ export const isInternalAddress = (url: string): boolean => {
       return true;
     }
 
-    if (process.env.CHECK_INTERNAL_IP !== 'true') return false;
+    if (!env.CHECK_INTERNAL_IP) return false;
 
     // For IP addresses, check if they are internal
     const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;

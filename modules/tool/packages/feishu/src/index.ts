@@ -1,4 +1,3 @@
-import { addLog } from '@/utils/log';
 import { z } from 'zod';
 
 export const InputType = z.object({

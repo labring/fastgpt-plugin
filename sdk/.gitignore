@@ -1,1 +1,5 @@
 pnpm-lock.yaml # use pnpm link could generate is file, which is useless
+
+.env
+.env.local
+.env.test

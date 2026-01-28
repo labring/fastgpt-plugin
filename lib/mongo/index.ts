@@ -1,9 +1,12 @@
 import { isProd } from '../constants';
-import { addLog } from '../utils/log';
+import { getLogger, infra } from '../logger';
+import { env } from '../env';
+
+const logger = getLogger(infra.mongo);
 import type { Model, Schema } from 'mongoose';
 import { Mongoose } from 'mongoose';
 
-export const MONGO_URL = process.env.MONGODB_URI ?? '';
+export const MONGO_URL = env.MONGODB_URI;
 
 declare global {
   var mongodb: Mongoose | undefined;
@@ -35,7 +38,7 @@ const addCommonMiddleware = (schema: Schema) => {
       if (this._startTime) {
         const duration = Date.now() - this._startTime;
         if (duration > 1000) {
-          addLog.warn(`Slow operation ${duration}ms on ${this.collection?.name}`);
+          logger.warn('Slow operation ${duration}ms on ${this.collection?.name}');
         }
       }
       next();
@@ -47,7 +50,7 @@ const addCommonMiddleware = (schema: Schema) => {
 
 export const getMongoModel = <T extends Schema>(name: string, schema: T): Model<any> => {
   if (connectionMongo.models[name]) return connectionMongo.model(name) as Model<any>;
-  if (!isProd) addLog.info(`Load model: ${name}`);
+  if (!isProd) logger.info('Load model: ${name}');
   addCommonMiddleware(schema);
 
   const model = connectionMongo.model(name, schema);
@@ -58,11 +61,11 @@ export const getMongoModel = <T extends Schema>(name: string, schema: T): Model<
 };
 
 const syncMongoIndex = async (model: Model<any>) => {
-  if (MONGO_URL && process.env.SYNC_INDEX !== '0' && process.env.NODE_ENV !== 'test') {
+  if (MONGO_URL && env.SYNC_INDEX && env.NODE_ENV !== 'test') {
     try {
       model.syncIndexes({ background: true });
     } catch (error: any) {
-      addLog.error('Create index error', error);
+      logger.error('Create index error', { error });
     }
   }
 };
@@ -100,7 +103,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
 
     await db.connect(url, {
       bufferCommands: true,
-      maxPoolSize: Math.max(30, Number(process.env.MONGO_MAX_LINK || 20)),
+      maxPoolSize: Math.max(30, env.MONGO_MAX_LINK),
       minPoolSize: 20,
       connectTimeoutMS: 60000,
       waitQueueTimeoutMS: 60000,
@@ -114,7 +117,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
     });
     return db;
   } catch (error) {
-    addLog.error('Mongo connect error', error);
+    logger.error('Mongo connect error', { error });
     await db.disconnect();
     await delay(1000);
     return connectMongo(db, url);

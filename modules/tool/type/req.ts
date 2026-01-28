@@ -44,7 +44,7 @@ export enum StreamDataAnswerTypeEnum {
 }
 
 export const StreamDataSchema = z.object({
-  type: z.nativeEnum(StreamDataAnswerTypeEnum),
+  type: z.enum(StreamDataAnswerTypeEnum),
   content: z.string()
 });
 export type StreamDataType = z.infer<typeof StreamDataSchema>;
@@ -67,12 +67,12 @@ export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
 
 export const runToolSecondParams = z.object({
   systemVar: SystemVarSchema,
-  streamResponse: z.function().args(StreamDataSchema).returns(z.void()) // sendMessage
+  streamResponse: z.function({ input: [StreamDataSchema], output: z.void() })
 });
 
 export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
 
-export const ToolCallbackType = z
-  .function()
-  .args(z.any(), runToolSecondParams)
-  .returns(z.promise(ToolCallbackReturnSchema));
+export const ToolCallbackType = z.function({
+  input: [z.any(), runToolSecondParams],
+  output: z.promise(ToolCallbackReturnSchema)
+});

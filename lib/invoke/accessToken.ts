@@ -1,7 +1,10 @@
 import { FastGPTBaseURL } from './const';
 import type { SystemVarType } from '@tool/type/req';
 import { registerInvokeHandler } from './registry';
-import { addLog } from '@/utils/log';
+import { getLogger, root } from '@/logger';
+import { env } from '@/env';
+
+const logger = getLogger(root);
 
 // type GetAccessTokenParams = {
 //   // Currently no additional params needed
@@ -16,17 +19,17 @@ type RequestAccessTokenBody = {
 
 async function requestAccessToken(body: RequestAccessTokenBody): Promise<string> {
   const url = new URL('/api/plugin/getAccessToken', FastGPTBaseURL);
-  addLog.debug('getAccessToken', { url });
+  logger.debug('getAccessToken', { body: { url } });
   const res = (await fetch(url, {
     headers: {
-      authtoken: process.env.AUTH_TOKEN || '',
+      authtoken: env.AUTH_TOKEN,
       'content-type': 'application/json'
     },
     method: 'POST',
     body: JSON.stringify(body)
   }).then((res) => res.json())) as { data: { accessToken: string } };
 
-  addLog.debug('getAccessToken', res.data);
+  logger.debug('getAccessToken', { body: { data: res.data } });
   if (res.data.accessToken) {
     return res.data.accessToken;
   }

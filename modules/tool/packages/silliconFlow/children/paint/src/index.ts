@@ -1,4 +1,3 @@
-import { addLog } from '@/utils/log';
 import { z } from 'zod';
 
 // Define input schema for the Silicon Flow painting API
@@ -127,7 +126,6 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
     },
     body: JSON.stringify(body)
   });
-  addLog.info(`[Silicon Flow] Request: ${url} - Body: ${JSON.stringify(body)}`);
   const data = await response.json();
 
   if (!response.ok) {

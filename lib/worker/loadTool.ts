@@ -1,5 +1,7 @@
 import { isProd } from '@/constants';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.tool);
 import { basePath, devToolIds } from '@tool/constants';
 import { ToolTagEnum } from '@tool/type/tags';
 import { existsSync } from 'fs';
@@ -12,7 +14,7 @@ import { stat } from 'fs/promises';
 
 const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   if (isProd) {
-    addLog.error('Can not load dev tool in prod mode');
+    logger.error(`Can not load dev tool in prod mode`);
     return [];
   }
 
@@ -107,11 +109,11 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
   const rootMod = (await import(modulePath)).default as ToolType | ToolSetType;
 
   if (!rootMod.toolId) {
-    addLog.error(`Can not parse toolId, filename: ${filename}`);
+    logger.error(`Can not parse toolId, filename: ${filename}`);
     return [];
   }
 
-  addLog.debug(`Load tool ${filename} finish, time: ${Date.now() - start}ms`);
+  logger.debug(`Load tool ${filename} finish, time: ${Date.now() - start}ms`);
 
   return parseMod({ rootMod, filename });
 };

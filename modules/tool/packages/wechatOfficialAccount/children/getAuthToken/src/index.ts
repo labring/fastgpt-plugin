@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { handleGetAuthToken } from '../../../lib/handler';
-import { addLog } from '@/utils/log';
 
 export const InputType = z.object({
   appId: z.string().min(1, 'AppID 不能为空'),
@@ -21,8 +20,6 @@ export async function tool({
     secret,
     grant_type: 'client_credential'
   });
-
-  addLog.debug(`access_token: ${JSON.stringify(data, null, 2)}`);
 
   return {
     access_token: data.access_token,
