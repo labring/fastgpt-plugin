@@ -29,7 +29,7 @@ export function createDefaultStorageOptions() {
     case 'minio': {
       return {
         vendor: 'minio',
-        forcePathStyle: true,
+        forcePathStyle: env.STORAGE_S3_FORCE_PATH_STYLE,
         externalBaseUrl: env.STORAGE_EXTERNAL_ENDPOINT,
         endpoint: env.STORAGE_S3_ENDPOINT,
         region: env.STORAGE_REGION,
