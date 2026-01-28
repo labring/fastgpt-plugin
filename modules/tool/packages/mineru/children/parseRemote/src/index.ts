@@ -2,7 +2,6 @@ import { z } from 'zod';
 import JSZip from 'jszip';
 import { delay } from '@tool/utils/delay';
 import { uploadFile } from '@tool/utils/uploadFile';
-import { addLog } from '@/utils/log';
 import { retryFn } from '@tool/utils/function';
 import { getErrText } from '@tool/utils/err';
 
@@ -203,8 +202,6 @@ async function extractResult(batchId: string, props: InnerPropsType): Promise<Pa
     const arrayBuffer = await zipResponse.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
 
-    addLog.debug(`[MinerU]Get zip file success: ${zipUrl}`);
-
     const result: { images: Record<string, string>; content: string; html: string } = {
       images: {},
       content: '',
@@ -226,7 +223,6 @@ async function extractResult(batchId: string, props: InnerPropsType): Promise<Pa
       );
     });
     await Promise.all(imageUploadTasks);
-    addLog.debug(`[MinerU]Upload images success`);
 
     // Process files (collect tasks)
     const fileProcessTasks: Promise<void>[] = [];
@@ -248,7 +244,6 @@ async function extractResult(batchId: string, props: InnerPropsType): Promise<Pa
       }
     });
     await Promise.all(fileProcessTasks);
-    addLog.debug(`[MinerU]Process files success`);
 
     // Replace image URLs in markdown content after images are uploaded
     if (result.content) {
@@ -296,11 +291,8 @@ async function extractResult(batchId: string, props: InnerPropsType): Promise<Pa
         break;
       }
 
-      addLog.debug(`Wait ${DELAY_MS}ms to fetch result.`);
-
       await delay(DELAY_MS);
     } catch (error) {
-      addLog.error(`[Attempt ${attempt}] Check result failed:`, error);
       await delay(DELAY_MS);
     }
   }
@@ -316,7 +308,6 @@ async function extractResult(batchId: string, props: InnerPropsType): Promise<Pa
             html: result.html
           };
         } catch (error) {
-          addLog.error(`Parse zip error`, error);
           return {
             filename: item.file_name,
             errMsg: getErrText(error)

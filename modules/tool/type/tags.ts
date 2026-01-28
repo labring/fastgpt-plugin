@@ -1,19 +1,8 @@
 import { z } from 'zod';
+import { ToolTagEnum } from '@/validates/tool';
 
-export const ToolTagEnum = z.enum([
-  'tools',
-  'search',
-  'multimodal',
-  'communication',
-  'finance',
-  'design',
-  'productivity',
-  'news',
-  'entertainment',
-  'social',
-  'scientific',
-  'other'
-]);
+// Re-export from validates
+export { ToolTagEnum };
 
 export const ToolTagsNameMap = {
   [ToolTagEnum.enum.tools]: {

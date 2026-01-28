@@ -1,5 +1,7 @@
 import { isProd } from '@/constants';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.workflow);
 import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 import type { TemplateItemType, TemplateListType } from './type';
@@ -33,5 +35,5 @@ export const initWorkflowTemplates = async () => {
     workflows.push(template);
   }
 
-  addLog.info(`[init] workflow templates count: ${workflows.length}`);
+  logger.info(`[init] workflow templates count: ${workflows.length}`);
 };

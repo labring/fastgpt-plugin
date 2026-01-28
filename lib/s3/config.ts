@@ -2,10 +2,12 @@ import { z } from 'zod';
 import {
   type IAwsS3CompatibleStorageOptions,
   type ICosStorageOptions,
-  type IOssStorageOptions,
-  type IStorageOptions
+  type IOssStorageOptions
 } from '@fastgpt-sdk/storage';
-import { addLog } from '@/utils/log';
+import { getLogger, infra } from '@/logger';
+import { env } from '@/env';
+
+const logger = getLogger(infra.storage);
 
 export const FileMetadataSchema = z.object({
   originalFilename: z.string(),
@@ -19,28 +21,27 @@ export const FileMetadataSchema = z.object({
 export type FileMetadata = z.infer<typeof FileMetadataSchema>;
 
 export function createDefaultStorageOptions() {
-  const vendor = (process.env.STORAGE_VENDOR || 'minio') as IStorageOptions['vendor'];
+  const vendor = env.STORAGE_VENDOR;
 
-  addLog.debug(`Load configuration of '${vendor}' Vendor`);
+  logger.debug(`Load configuration of '${vendor}' Vendor`);
 
   switch (vendor) {
     case 'minio': {
       return {
         vendor: 'minio',
-        externalBaseUrl: process.env.STORAGE_EXTERNAL_ENDPOINT || undefined,
-        endpoint: process.env.STORAGE_S3_ENDPOINT || 'http://localhost:9000',
-        region: process.env.STORAGE_REGION || 'us-east-1',
-        publicBucket: process.env.STORAGE_PUBLIC_BUCKET || 'fastgpt-public',
-        privateBucket: process.env.STORAGE_PRIVATE_BUCKET || 'fastgpt-private',
+        forcePathStyle: true,
+        externalBaseUrl: env.STORAGE_EXTERNAL_ENDPOINT,
+        endpoint: env.STORAGE_S3_ENDPOINT,
+        region: env.STORAGE_REGION,
+        publicBucket: env.STORAGE_PUBLIC_BUCKET,
+        privateBucket: env.STORAGE_PRIVATE_BUCKET,
         credentials: {
-          accessKeyId: process.env.STORAGE_ACCESS_KEY_ID || 'minioadmin',
-          secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY || 'minioadmin'
+          accessKeyId: env.STORAGE_ACCESS_KEY_ID,
+          secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY
         },
-        maxRetries: process.env.STORAGE_S3_MAX_RETRIES
-          ? parseInt(process.env.STORAGE_S3_MAX_RETRIES)
-          : 3,
         forcePathStyle: process.env.STORAGE_S3_FORCE_PATH_STYLE === 'true' ? true : false,
-        publicAccessExtraSubPath: process.env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined
+        publicAccessExtraSubPath: process.env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined,
+        maxRetries: env.STORAGE_S3_MAX_RETRIES
       } satisfies Omit<IAwsS3CompatibleStorageOptions, 'bucket'> & {
         publicBucket: string;
         privateBucket: string;
@@ -51,20 +52,18 @@ export function createDefaultStorageOptions() {
     case 'aws-s3': {
       return {
         vendor: 'aws-s3',
-        externalBaseUrl: process.env.STORAGE_EXTERNAL_ENDPOINT || undefined,
-        endpoint: process.env.STORAGE_S3_ENDPOINT || '',
-        region: process.env.STORAGE_REGION || 'us-east-1',
-        publicBucket: process.env.STORAGE_PUBLIC_BUCKET || 'fastgpt-public',
-        privateBucket: process.env.STORAGE_PRIVATE_BUCKET || 'fastgpt-private',
+        forcePathStyle: env.STORAGE_S3_FORCE_PATH_STYLE,
+        externalBaseUrl: env.STORAGE_EXTERNAL_ENDPOINT,
+        endpoint: env.STORAGE_S3_ENDPOINT,
+        region: env.STORAGE_REGION,
+        publicBucket: env.STORAGE_PUBLIC_BUCKET,
+        privateBucket: env.STORAGE_PRIVATE_BUCKET,
         credentials: {
-          accessKeyId: process.env.STORAGE_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY || ''
+          accessKeyId: env.STORAGE_ACCESS_KEY_ID,
+          secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY
         },
-        maxRetries: process.env.STORAGE_S3_MAX_RETRIES
-          ? parseInt(process.env.STORAGE_S3_MAX_RETRIES)
-          : 3,
-        forcePathStyle: process.env.STORAGE_S3_FORCE_PATH_STYLE === 'true' ? true : false,
-        publicAccessExtraSubPath: process.env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined
+        publicAccessExtraSubPath: process.env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined,
+        maxRetries: env.STORAGE_S3_MAX_RETRIES
       } satisfies Omit<IAwsS3CompatibleStorageOptions, 'bucket'> & {
         publicBucket: string;
         privateBucket: string;
@@ -75,18 +74,18 @@ export function createDefaultStorageOptions() {
     case 'cos': {
       return {
         vendor: 'cos',
-        externalBaseUrl: process.env.STORAGE_EXTERNAL_ENDPOINT || undefined,
-        region: process.env.STORAGE_REGION || 'ap-shanghai',
-        publicBucket: process.env.STORAGE_PUBLIC_BUCKET || 'fastgpt-public',
-        privateBucket: process.env.STORAGE_PRIVATE_BUCKET || 'fastgpt-private',
+        externalBaseUrl: env.STORAGE_EXTERNAL_ENDPOINT,
+        region: env.STORAGE_REGION,
+        publicBucket: env.STORAGE_PUBLIC_BUCKET,
+        privateBucket: env.STORAGE_PRIVATE_BUCKET,
         credentials: {
-          accessKeyId: process.env.STORAGE_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY || ''
+          accessKeyId: env.STORAGE_ACCESS_KEY_ID,
+          secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY
         },
-        protocol: (process.env.STORAGE_COS_PROTOCOL as 'https:' | 'http:' | undefined) || 'https:',
-        useAccelerate: process.env.STORAGE_COS_USE_ACCELERATE === 'true' ? true : false,
-        domain: process.env.STORAGE_COS_CNAME_DOMAIN || undefined,
-        proxy: process.env.STORAGE_COS_PROXY || undefined
+        protocol: env.STORAGE_COS_PROTOCOL,
+        useAccelerate: env.STORAGE_COS_USE_ACCELERATE,
+        domain: env.STORAGE_COS_CNAME_DOMAIN,
+        proxy: env.STORAGE_COS_PROXY
       } satisfies Omit<ICosStorageOptions, 'bucket'> & {
         publicBucket: string;
         privateBucket: string;
@@ -97,19 +96,19 @@ export function createDefaultStorageOptions() {
     case 'oss': {
       return {
         vendor: 'oss',
-        externalBaseUrl: process.env.STORAGE_EXTERNAL_ENDPOINT || undefined,
-        endpoint: process.env.STORAGE_OSS_ENDPOINT || '',
-        region: process.env.STORAGE_REGION || 'oss-cn-hangzhou',
-        publicBucket: process.env.STORAGE_PUBLIC_BUCKET || 'fastgpt-public',
-        privateBucket: process.env.STORAGE_PRIVATE_BUCKET || 'fastgpt-private',
+        externalBaseUrl: env.STORAGE_EXTERNAL_ENDPOINT,
+        endpoint: env.STORAGE_OSS_ENDPOINT || '',
+        region: env.STORAGE_REGION,
+        publicBucket: env.STORAGE_PUBLIC_BUCKET,
+        privateBucket: env.STORAGE_PRIVATE_BUCKET,
         credentials: {
-          accessKeyId: process.env.STORAGE_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY || ''
+          accessKeyId: env.STORAGE_ACCESS_KEY_ID,
+          secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY
         },
-        cname: process.env.STORAGE_OSS_CNAME === 'true' ? true : false,
-        internal: process.env.STORAGE_OSS_INTERNAL === 'true' ? true : false,
-        secure: process.env.STORAGE_OSS_SECURE === 'true' ? true : false,
-        enableProxy: process.env.STORAGE_OSS_ENABLE_PROXY === 'false' ? false : true
+        cname: env.STORAGE_OSS_CNAME,
+        internal: env.STORAGE_OSS_INTERNAL,
+        secure: env.STORAGE_OSS_SECURE,
+        enableProxy: env.STORAGE_OSS_ENABLE_PROXY
       } satisfies Omit<IOssStorageOptions, 'bucket'> & {
         publicBucket: string;
         privateBucket: string;

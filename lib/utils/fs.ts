@@ -1,6 +1,8 @@
 import { mkdir, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
-import { addLog } from './log';
+import { getLogger, root } from '../logger';
+
+const logger = getLogger(root);
 import { getErrText } from '@tool/utils/err';
 import { rm } from 'fs/promises';
 import { move } from 'fs-extra';
@@ -18,7 +20,7 @@ export const removeFile = async (file: string) => {
       await unlink(file);
     }
   } catch (err) {
-    addLog.warn(`delele File Error, ${getErrText(err)}`);
+    logger.warn(`delele File Error, ${getErrText(err)}`);
   }
 };
 

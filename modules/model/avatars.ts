@@ -2,7 +2,9 @@ import { existsSync } from 'node:fs';
 import { join, resolve, parse } from 'node:path';
 import { publicS3Server } from '@/s3';
 import { mimeMap } from '@/s3/const';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+
+const logger = getLogger(mod.model);
 import { isProd } from '@/constants';
 
 const UploadModelsS3Path = 'system/plugin/models';
@@ -53,7 +55,7 @@ const getDevelopmentModelLogos = async (): Promise<
       }
     }
   } catch (error) {
-    addLog.error('Failed to read development model provider directory:', error);
+    logger.error('Failed to read development model provider directory:', { error });
   }
 
   return result;
@@ -67,7 +69,7 @@ const getProductionModelLogos = async (): Promise<
 > => {
   const avatarsDir = resolve('dist/model/avatars');
   if (!existsSync(avatarsDir)) {
-    addLog.warn('Production avatars directory not found');
+    logger.warn('Production avatars directory not found');
     return [];
   }
 
@@ -93,7 +95,7 @@ const getProductionModelLogos = async (): Promise<
 
     return result;
   } catch (error) {
-    addLog.error('Failed to read production model avatars:', error);
+    logger.error('Failed to read production model avatars:', { error });
     return [];
   }
 };
@@ -107,13 +109,13 @@ const uploadLogoFile = async (logoPath: string, providerName: string): Promise<v
   const fileExt = parsedPath.ext.toLowerCase();
 
   if (!fileExt) {
-    addLog.warn(`No file extension found for: ${logoPath}`);
+    logger.warn('No file extension found for: ${logoPath}');
     return;
   }
 
   const mimeType = mimeMap[fileExt];
   if (!mimeType) {
-    addLog.warn(`Unsupported MIME type for extension: ${fileExt}`);
+    logger.warn('Unsupported MIME type for extension: ${fileExt}');
     return;
   }
 
@@ -124,7 +126,7 @@ const uploadLogoFile = async (logoPath: string, providerName: string): Promise<v
     contentType: mimeType,
     defaultFilename: 'logo'
   });
-  addLog.debug(
+  logger.debug(
     `📦 Uploaded model avatar: ${providerName} -> ${`${UploadModelsS3Path}/${providerName}/logo`}`
   );
 };
@@ -135,37 +137,37 @@ const uploadLogoFile = async (logoPath: string, providerName: string): Promise<v
  */
 export const initModelAvatars = async () => {
   try {
-    addLog.info('Starting model avatars initialization...');
+    logger.info('Starting model avatars initialization...');
 
     let logoItems: Array<{ path: string; providerName: string }>;
 
     if (!isProd) {
       // Development: get actual files from source directory
       logoItems = await getDevelopmentModelLogos();
-      addLog.info('Running in development mode, reading from source files...');
+      logger.info('Running in development mode, reading from source files...');
     } else {
       // Production: read from simplified avatars directory
       logoItems = await getProductionModelLogos();
-      addLog.info('Running in production mode, reading from dist/model/avatars...');
+      logger.info('Running in production mode, reading from dist/model/avatars...');
     }
 
     await Promise.allSettled(
       logoItems.map(async ({ path: logoPath, providerName }) => {
         if (!providerName) {
-          addLog.warn(`Invalid logo path format: ${logoPath}`);
+          logger.warn('Invalid logo path format: ${logoPath}');
           return;
         }
         if (!existsSync(logoPath)) {
-          addLog.warn(`Logo file not found: ${logoPath}, skipping ${providerName}`);
+          logger.warn('Logo file not found: ${logoPath}, skipping ${providerName}');
           return;
         }
         await uploadLogoFile(logoPath, providerName);
       })
     );
 
-    addLog.info(`✅ Model avatars initialization completed.`);
+    logger.info('✅ Model avatars initialization completed.');
   } catch (error) {
-    addLog.error('❌ Model avatars initialization failed:', error);
+    logger.error('❌ Model avatars initialization failed:', { error });
     throw error;
   }
 };

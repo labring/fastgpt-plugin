@@ -1,11 +1,11 @@
 import { parentPort } from 'worker_threads';
 import type { Main2WorkerMessageType } from './type';
-import { setupProxy } from '../utils/setupProxy';
+import { configureProxy } from '../utils/setup-proxy';
 import { getErrText } from '@tool/utils/err';
 import type { ToolCallbackReturnSchemaType } from '@tool/type/req';
 import { loadTool } from './loadTool';
 
-setupProxy();
+configureProxy();
 
 declare global {
   var currentToolPrefix: string | undefined;
