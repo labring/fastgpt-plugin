@@ -33,7 +33,7 @@ const getConfig = () => {
       region,
       vendor,
       credentials,
-      forcePathStyle: vendor === 'minio' ? true : options.forcePathStyle,
+      forcePathStyle: options.forcePathStyle,
       endpoint: options.endpoint!,
       maxRetries: options.maxRetries!
     };
