@@ -31,9 +31,10 @@ const getConfig = () => {
       region,
       vendor,
       credentials,
-      forcePathStyle: vendor === 'minio' ? true : options.forcePathStyle,
       endpoint: options.endpoint!,
-      maxRetries: options.maxRetries!
+      maxRetries: options.maxRetries!,
+      forcePathStyle: options.forcePathStyle,
+      publicAccessExtraSubPath: options.publicAccessExtraSubPath
     };
 
     return buildResult(config, { ...config, endpoint: externalBaseUrl });

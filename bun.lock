@@ -5,7 +5,7 @@
     "": {
       "name": "fastgpt-plugins",
       "dependencies": {
-        "@fastgpt-sdk/storage": "^0.6.6",
+        "@fastgpt-sdk/storage": "^0.6.15",
         "@ts-rest/core": "3.52.1",
         "@ts-rest/express": "3.52.1",
         "@ts-rest/open-api": "3.52.1",
@@ -42,7 +42,7 @@
       "name": "@fastgpt-plugin/packages",
       "version": "1.0.0",
       "dependencies": {
-        "@fastgpt-sdk/storage": "^0.6.6",
+        "@fastgpt-sdk/storage": "^0.6.15",
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/api-logs": "^0.203.0",
         "@opentelemetry/exporter-logs-otlp-http": "^0.203.0",
@@ -342,7 +342,7 @@
 
     "@fastgpt-sdk/plugin": ["@fastgpt-sdk/plugin@workspace:sdk"],
 
-    "@fastgpt-sdk/storage": ["@fastgpt-sdk/storage@0.6.6", "", { "dependencies": { "@aws-sdk/client-s3": "^3.948.0", "@aws-sdk/lib-storage": "^3.948.0", "@aws-sdk/s3-request-presigner": "^3.952.0", "ali-oss": "^6.23.0", "cos-nodejs-sdk-v5": "^2.15.4", "es-toolkit": "^1.43.0", "minio": "^8.0.5", "vitest": "^4.0.16" } }, "sha512-nG+DWwyJS6upfEbJ+FgTc8CGhzpW1JiPEWGO1luhm6lgYRitm0HBBeX3m0j17lYTa2S0ZTDRGJgnXYzOWpYOLg=="],
+    "@fastgpt-sdk/storage": ["@fastgpt-sdk/storage@0.6.15", "", { "dependencies": { "@aws-sdk/client-s3": "^3.948.0", "@aws-sdk/lib-storage": "^3.948.0", "@aws-sdk/s3-request-presigner": "^3.952.0", "ali-oss": "^6.23.0", "cos-nodejs-sdk-v5": "^2.15.4", "es-toolkit": "^1.43.0", "minio": "^8.0.5", "vitest": "^4.0.16" } }, "sha512-oPbm6EtXQ3ysad/OebF2ovwbIax6PeCvYqA3cGAVEHEJMBU3633ktl1ZaIIkmyjWJLsABZpMf6m7lPBMyISGrA=="],
 
     "@fastgpt/plugin-runtime": ["@fastgpt/plugin-runtime@workspace:runtime"],
 
