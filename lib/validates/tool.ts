@@ -168,7 +168,7 @@ export const ToolConfigSchema = z.object({
   name: I18nStringSchema,
   description: I18nStringSchema,
   toolDescription: z.string().optional(),
-  versionList: z.array(VersionListItemSchema).optional(),
+  versionList: z.array(VersionListItemSchema).min(1),
   tags: z.array(ToolTagEnum).optional(),
   icon: z.string().optional(),
   author: z.string().optional(),
