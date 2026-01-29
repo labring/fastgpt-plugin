@@ -177,6 +177,11 @@ export const ModelProviderMap: ModelProviderMap = {
     'zh-CN': '深信服',
     'zh-Hant': '深信服'
   },
+  DeerAPI: {
+    en: 'DeerAPI',
+    'zh-CN': 'DeerAPI',
+    'zh-Hant': 'DeerAPI'
+  },
   Other: {
     en: 'Other',
     'zh-CN': '其他',
@@ -418,5 +423,9 @@ export const aiproxyIdMap: AiproxyMapProviderType = {
   48: {
     name: 'Sangfor',
     provider: 'Sangfor'
-  }
+  },
+  49: {
+    name: 'DeerAPI',
+    provider: 'DeerAPI'
+  },
 };
