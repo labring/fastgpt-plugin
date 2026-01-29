@@ -48,11 +48,6 @@ export async function configureLogger() {
         icons: false,
         level: 'ABBR',
         wordWrap: false,
-        levelStyle: 'reset',
-        messageStyle: 'reset',
-        categoryStyle: 'reset',
-        messageColor: 'white',
-        categoryColor: 'white',
         categorySeparator: ':',
         timestamp: () => dayjs().format('YYYY-MM-DD HH:mm:ss')
       })
