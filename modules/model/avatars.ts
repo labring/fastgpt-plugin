@@ -119,7 +119,7 @@ const uploadLogoFile = async (logoPath: string, providerName: string): Promise<v
 
   await publicS3Server.uploadFileAdvanced({
     path: logoPath,
-    prefix: UploadModelsS3Path.replace('/', '') + `/${providerName}`,
+    prefix: UploadModelsS3Path + `/${providerName}`,
     keepRawFilename: true,
     contentType: mimeType,
     defaultFilename: 'logo'
