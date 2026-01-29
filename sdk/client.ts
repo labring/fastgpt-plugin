@@ -1,4 +1,4 @@
-import type { ToolDetailType, ToolSimpleType } from '@tool/type/api';
+import type { ToolDetailType } from '@tool/type/api';
 import type { Result } from '@/utils/http';
 import type { ListModelsType } from '@model/api/type';
 import type { TemplateListType } from '@workflow/type';
@@ -56,7 +56,7 @@ export class FastGPTPluginClient {
 
   // Tools
   async listTools() {
-    return this.request<ToolSimpleType[]>('/api/tools');
+    return this.request<ToolDetailType[]>('/api/tools');
   }
 
   async getToolTags() {
