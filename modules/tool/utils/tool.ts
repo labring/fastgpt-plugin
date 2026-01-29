@@ -74,7 +74,7 @@ export function generateToolSetVersion(children: ToolType[]) {
   }
 
   const childVersions = children
-    .map((child) => generateToolVersion(child.versionList) || '')
+    .map((child) => generateToolVersion(child.versionList || []) || '')
     .sort();
   const versionString = childVersions.join('');
 
