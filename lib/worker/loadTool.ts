@@ -120,12 +120,10 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
 
 export const parseMod = async ({
   rootMod,
-  filename,
-  temp = false
+  filename
 }: {
   rootMod: ToolSetType | ToolType;
   filename: string;
-  temp?: boolean;
 }) => {
   const tools: ToolType[] = [];
   const checkRootModToolSet = (rootMod: ToolType | ToolSetType): rootMod is ToolSetType => {
@@ -144,7 +142,7 @@ export const parseMod = async ({
       const childIcon = child.icon || rootMod.icon;
 
       // Generate version for child tool
-      const childVersion = generateToolVersion(child.versionList);
+      const childVersion = generateToolVersion(child.versionList ?? []);
       tools.push({
         ...child,
         toolId: childToolId,
@@ -181,7 +179,7 @@ export const parseMod = async ({
       icon,
       toolId,
       toolFilename: filename,
-      version: generateToolVersion(rootMod.versionList)
+      version: generateToolVersion(rootMod.versionList ?? [])
     });
   }
   return tools;
