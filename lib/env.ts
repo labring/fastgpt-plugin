@@ -27,7 +27,7 @@ export const env = createEnv({
     MAX_WORKER: PositiveIntSchema.default(8),
     MAX_MEMORYMB: PositiveIntSchema.default(1024),
     DISABLE_DEV_TOOLS: BoolSchema.default(false),
-    DISABLE_CACHE: BoolSchema.default(true),
+    DISABLE_CACHE: BoolSchema.default(false),
     CHECK_INTERNAL_IP: BoolSchema.default(true),
     MODEL_PROVIDER_PRIORITY: z.string().default(''),
     MAX_FILE_SIZE: PositiveIntSchema.default(20 * 1024 * 1024),
