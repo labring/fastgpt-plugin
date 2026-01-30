@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { I18nStringSchema } from '@/type/i18n';
+import { I18nStringSchema } from '@/validates/i18n';
 
 export const DatasetSourceIdEnum = z.enum(['yuque', 'feishu', 'custom-api']);
 export type DatasetSourceId = z.infer<typeof DatasetSourceIdEnum>;

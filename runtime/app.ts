@@ -2,6 +2,7 @@ import { cors } from 'hono/cors';
 import models from '@model/route';
 import workflow from '@workflow/route';
 import tool from '@tool/route';
+import dataset from '@dataset/route';
 import { isProd } from '@/constants';
 import { createResponseSchema, R, createOpenAPIHono } from '@/utils/http';
 import { serveStatic } from '@hono/node-server/serve-static';
@@ -96,6 +97,7 @@ app.openapi(
 app.route('/api', models);
 app.route('/api', workflow);
 app.route('/api', tool);
+app.route('/api', dataset);
 // #endregion
 
 app.onError((err, c) => {
