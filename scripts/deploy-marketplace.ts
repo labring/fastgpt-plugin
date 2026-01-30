@@ -23,9 +23,10 @@ async function main() {
       region,
       vendor,
       credentials,
-      forcePathStyle: true,
       endpoint: options.endpoint!,
-      maxRetries: options.maxRetries!
+      maxRetries: options.maxRetries!,
+      forcePathStyle: options.forcePathStyle,
+      publicAccessExtraSubPath: options.publicAccessExtraSubPath
     } as Omit<IAwsS3CompatibleStorageOptions, 'bucket'>;
   } else if (vendor === 'aws-s3') {
     config = {
@@ -33,7 +34,9 @@ async function main() {
       vendor,
       credentials,
       endpoint: options.endpoint!,
-      maxRetries: options.maxRetries!
+      maxRetries: options.maxRetries!,
+      forcePathStyle: options.forcePathStyle,
+      publicAccessExtraSubPath: options.publicAccessExtraSubPath
     } as Omit<IAwsS3CompatibleStorageOptions, 'bucket'>;
   } else if (vendor === 'cos') {
     config = {

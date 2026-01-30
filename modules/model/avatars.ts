@@ -5,7 +5,7 @@ import { mimeMap } from '@/s3/const';
 import { addLog } from '@/utils/log';
 import { isProd } from '@/constants';
 
-const UploadModelsS3Path = '/system/plugin/models';
+const UploadModelsS3Path = 'system/plugin/models';
 
 // Supported image formats for logo files
 const logoFormats = ['svg', 'png', 'jpeg', 'webp', 'jpg'];
@@ -119,7 +119,7 @@ const uploadLogoFile = async (logoPath: string, providerName: string): Promise<v
 
   await publicS3Server.uploadFileAdvanced({
     path: logoPath,
-    prefix: UploadModelsS3Path.replace('/', '') + `/${providerName}`,
+    prefix: UploadModelsS3Path + `/${providerName}`,
     keepRawFilename: true,
     contentType: mimeType,
     defaultFilename: 'logo'

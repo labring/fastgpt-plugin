@@ -27,7 +27,6 @@ export function createDefaultStorageOptions() {
     case 'minio': {
       return {
         vendor: 'minio',
-        forcePathStyle: true,
         externalBaseUrl: process.env.STORAGE_EXTERNAL_ENDPOINT || undefined,
         endpoint: process.env.STORAGE_S3_ENDPOINT || 'http://localhost:9000',
         region: process.env.STORAGE_REGION || 'us-east-1',
@@ -39,7 +38,9 @@ export function createDefaultStorageOptions() {
         },
         maxRetries: process.env.STORAGE_S3_MAX_RETRIES
           ? parseInt(process.env.STORAGE_S3_MAX_RETRIES)
-          : 3
+          : 3,
+        forcePathStyle: process.env.STORAGE_S3_FORCE_PATH_STYLE === 'true' ? true : false,
+        publicAccessExtraSubPath: process.env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined
       } satisfies Omit<IAwsS3CompatibleStorageOptions, 'bucket'> & {
         publicBucket: string;
         privateBucket: string;
@@ -50,7 +51,6 @@ export function createDefaultStorageOptions() {
     case 'aws-s3': {
       return {
         vendor: 'aws-s3',
-        forcePathStyle: process.env.STORAGE_S3_FORCE_PATH_STYLE === 'true' ? true : false,
         externalBaseUrl: process.env.STORAGE_EXTERNAL_ENDPOINT || undefined,
         endpoint: process.env.STORAGE_S3_ENDPOINT || '',
         region: process.env.STORAGE_REGION || 'us-east-1',
@@ -62,7 +62,9 @@ export function createDefaultStorageOptions() {
         },
         maxRetries: process.env.STORAGE_S3_MAX_RETRIES
           ? parseInt(process.env.STORAGE_S3_MAX_RETRIES)
-          : 3
+          : 3,
+        forcePathStyle: process.env.STORAGE_S3_FORCE_PATH_STYLE === 'true' ? true : false,
+        publicAccessExtraSubPath: process.env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined
       } satisfies Omit<IAwsS3CompatibleStorageOptions, 'bucket'> & {
         publicBucket: string;
         privateBucket: string;
