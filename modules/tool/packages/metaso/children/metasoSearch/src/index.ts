@@ -161,6 +161,7 @@ export async function tool({
       }));
     }
 
+    console.log('No search results found', { data });
     throw new Error('No search results found');
   })();
 
