@@ -123,3 +123,4 @@ export type { ToolType, ToolSetType } from '@tool/type';
 export { ToolDetailSchema } from '@tool/type/api';
 export { ToolSimpleSchema } from '@tool/type/api';
 export type { ToolDetailType, ToolSimpleType } from '@tool/type/api';
+export type { AiproxyMapProviderType };
