@@ -4,6 +4,12 @@ import type { ListModelsType } from '@model/api/type';
 import type { TemplateListType } from '@workflow/type';
 import type { AiproxyMapProviderType } from '@model/constants/shared';
 import type { I18nStringStrictType } from '@/validates/i18n';
+import type {
+  DatasetSourceInfo,
+  DatasetSourceConfig,
+  FileItem,
+  FileContentResponse
+} from '@dataset/type/source';
 
 export class FastGPTPluginClient {
   private baseUrl: string;
@@ -104,6 +110,40 @@ export class FastGPTPluginClient {
   // Workflow
   async listWorkflows() {
     return this.request<TemplateListType>('/api/list');
+  }
+
+  // Dataset
+  get dataset() {
+    return {
+      listSources: () => this.request<DatasetSourceInfo[]>('/api/dataset/source/list'),
+
+      getSourceConfig: (sourceId: string) =>
+        this.request<DatasetSourceConfig>(`/api/dataset/source/config?sourceId=${sourceId}`),
+
+      listFiles: (params: { sourceId: string; config: Record<string, any>; parentId?: string }) =>
+        this.request<FileItem[]>('/api/dataset/source/listFiles', {
+          method: 'POST',
+          body: JSON.stringify(params)
+        }),
+
+      getContent: (params: { sourceId: string; config: Record<string, any>; fileId: string }) =>
+        this.request<FileContentResponse>('/api/dataset/source/getContent', {
+          method: 'POST',
+          body: JSON.stringify(params)
+        }),
+
+      getPreviewUrl: (params: { sourceId: string; config: Record<string, any>; fileId: string }) =>
+        this.request<{ url: string }>('/api/dataset/source/getPreviewUrl', {
+          method: 'POST',
+          body: JSON.stringify(params)
+        }),
+
+      getDetail: (params: { sourceId: string; config: Record<string, any>; fileId: string }) =>
+        this.request<FileItem>('/api/dataset/source/getDetail', {
+          method: 'POST',
+          body: JSON.stringify(params)
+        })
+    };
   }
 }
 
