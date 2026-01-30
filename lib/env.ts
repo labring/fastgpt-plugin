@@ -66,6 +66,7 @@ export const env = createEnv({
     STORAGE_S3_ENDPOINT: z.url().default('http://localhost:9000'),
     STORAGE_S3_FORCE_PATH_STYLE: BoolSchema.default(true),
     STORAGE_S3_MAX_RETRIES: PositiveIntSchema.default(3),
+    STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH: z.string().optional(),
 
     // 可选的对象存储配置
     // COS | OSS

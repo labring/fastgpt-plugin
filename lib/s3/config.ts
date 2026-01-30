@@ -39,8 +39,7 @@ export function createDefaultStorageOptions() {
           accessKeyId: env.STORAGE_ACCESS_KEY_ID,
           secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY
         },
-        forcePathStyle: process.env.STORAGE_S3_FORCE_PATH_STYLE === 'true' ? true : false,
-        publicAccessExtraSubPath: process.env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined,
+        publicAccessExtraSubPath: env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH,
         maxRetries: env.STORAGE_S3_MAX_RETRIES
       } satisfies Omit<IAwsS3CompatibleStorageOptions, 'bucket'> & {
         publicBucket: string;
@@ -62,7 +61,7 @@ export function createDefaultStorageOptions() {
           accessKeyId: env.STORAGE_ACCESS_KEY_ID,
           secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY
         },
-        publicAccessExtraSubPath: process.env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined,
+        publicAccessExtraSubPath: env.STORAGE_PUBLIC_ACCESS_EXTRA_SUB_PATH || undefined,
         maxRetries: env.STORAGE_S3_MAX_RETRIES
       } satisfies Omit<IAwsS3CompatibleStorageOptions, 'bucket'> & {
         publicBucket: string;
