@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { addLog } from '@/utils/log';
 import { GET } from '@tool/utils/request';
 
 // 输入参数类型定义
@@ -78,8 +77,6 @@ export async function tool(props: z.infer<typeof InputType>): Promise<z.infer<ty
         return data.content || '';
     }
   })();
-
-  addLog.info('Jina AI Reader response:', data);
 
   return {
     title: data.title,

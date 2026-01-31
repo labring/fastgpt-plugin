@@ -8,7 +8,7 @@
     "build": "bun build index.ts --minify --outdir dist --outFile index.js --target=node"
   },
   "dependencies": {
-    "zod": "^3.25.76",
+    "zod": "^4",
     "docx": "^8.5.0",
     "exceljs": "^4.4.0",
     "axios": "^1.9.0",

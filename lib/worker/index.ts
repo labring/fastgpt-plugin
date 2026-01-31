@@ -1,6 +1,9 @@
 import { Worker } from 'worker_threads';
 import { getTool } from 'modules/tool/controller';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+import { env } from '@/env';
+
+const logger = getLogger(mod.tool);
 import type { Main2WorkerMessageType, Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
 import { publicS3Server } from '@/s3';
@@ -71,9 +74,6 @@ export class WorkerPool<Props = Record<string, unknown>, Response = unknown> {
   }
 
   async run(data: Props) {
-    // watch memory
-    // addLog.debug(`${this.name} worker queueLength: ${this.workerQueue.length}`);
-
     return new Promise<Response>((resolve, reject) => {
       /*
           Whether the task is executed immediately or delayed, the promise callback will dispatch after task complete.
@@ -97,11 +97,13 @@ export class WorkerPool<Props = Record<string, unknown>, Response = unknown> {
     const workerId = `${Date.now()}${Math.random()}`;
     const worker = new Worker('./worker.js', {
       env: {
-        ...(process.env.HTTP_PROXY ? { HTTP_PROXY: process.env.HTTP_PROXY } : {}),
-        ...(process.env.HTTPS_PROXY ? { HTTPS_PROXY: process.env.HTTPS_PROXY } : {})
+        ...(env.HTTP_PROXY ? { HTTP_PROXY: env.HTTP_PROXY } : {}),
+        ...(env.HTTPS_PROXY ? { HTTPS_PROXY: env.HTTPS_PROXY } : {}),
+        ...(env.ALL_PROXY ? { ALL_PROXY: env.ALL_PROXY } : {}),
+        ...(env.NO_PROXY ? { NO_PROXY: env.NO_PROXY } : {})
       },
       resourceLimits: {
-        maxOldGenerationSizeMb: parseInt(process.env.MAX_MEMORYMB || '1024')
+        maxOldGenerationSizeMb: env.MAX_MEMORYMB
       }
     });
 
@@ -153,7 +155,7 @@ export class WorkerPool<Props = Record<string, unknown>, Response = unknown> {
   }
 }
 
-const maxReservedThreads = parseInt(process.env.MAX_WORKER || '8');
+const maxReservedThreads = env.MAX_WORKER;
 
 const workerPool = new WorkerPool({ maxReservedThreads });
 
@@ -165,7 +167,7 @@ export async function dispatchWithNewWorker(data: {
   toolId: string;
   inputs: Record<string, any>;
   systemVar: Record<string, any>;
-  onMessage?: (message: StreamDataType) => void; // streaming callback 可选
+  onMessage?: (message: StreamDataType) => Promise<void>; // streaming callback 可选
 }) {
   const { toolId, onMessage, ...workerData } = data; // 解构出 onMessage，剩余数据传给 worker
   const tool = await getTool(toolId);
@@ -178,14 +180,14 @@ export async function dispatchWithNewWorker(data: {
   const workerPath = `${basePath}/dist/worker.js`;
   const worker = new Worker(workerPath, {
     env: {
-      NODE_ENV: process.env.NODE_ENV,
+      NODE_ENV: env.NODE_ENV,
       LOG_LEVEL: process.env.LOG_LEVEL
     },
     ...(isBun
       ? {}
       : {
           resourceLimits: {
-            maxOldGenerationSizeMb: parseInt(process.env.MAX_MEMORYMB || '1024')
+            maxOldGenerationSizeMb: env.MAX_MEMORYMB
           }
         })
   });
@@ -196,7 +198,7 @@ export async function dispatchWithNewWorker(data: {
         resolve(data);
         worker.terminate();
       } else if (type === 'stream') {
-        onMessage?.(data);
+        await onMessage?.(data);
       } else if (type === 'log') {
         const logData = Array.isArray(data) ? data : [data];
         console.log(...logData);
@@ -214,7 +216,7 @@ export async function dispatchWithNewWorker(data: {
             }
           });
         } catch (error) {
-          addLog.error(`Tool upload file error`, error);
+          logger.error(`Tool upload file error`, { error });
           worker.postMessage({
             type: 'uploadFileResponse',
             data: {
@@ -229,7 +231,7 @@ export async function dispatchWithNewWorker(data: {
 
           const handler = getInvokeHandler(data.method);
           if (!handler) {
-            addLog.error(`Unknown invoke method: ${data.method}`);
+            logger.error(`Unknown invoke method: ${data.method}`);
             throw new Error(`Unknown invoke method: ${data.method}`);
           }
 
@@ -244,7 +246,7 @@ export async function dispatchWithNewWorker(data: {
             }
           });
         } catch (error) {
-          addLog.error(`Invoke ${data.method} error`, error);
+          logger.error(`Invoke ${data.method} error`, { error });
           worker.postMessage({
             type: 'invokeResponse',
             data: {
@@ -257,12 +259,12 @@ export async function dispatchWithNewWorker(data: {
     });
 
     worker.on('error', (err) => {
-      addLog.error(`Run tool error`, err);
+      logger.error(`Run tool error`, { error: err });
       reject(err);
       worker.terminate();
     });
     worker.on('messageerror', (err) => {
-      addLog.error(`Run tool error`, err);
+      logger.error(`Run tool error`, { error: err });
       reject(err);
       worker.terminate();
     });

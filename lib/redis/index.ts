@@ -1,7 +1,9 @@
-import { addLog } from '@/utils/log';
+import { getLogger, infra } from '@/logger';
+import { env } from '@/env';
+
+const logger = getLogger(infra.redis);
 import Redis from 'ioredis';
 
-const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
 // Base Redis options for connection reliability
 const REDIS_BASE_OPTION = {
   // Retry strategy: exponential backoff with unlimited retries for stability
@@ -9,9 +11,9 @@ const REDIS_BASE_OPTION = {
     // Never give up retrying to ensure worker keeps running
     const delay = Math.min(times * 50, 2000); // Max 2s between retries
     if (times > 10) {
-      addLog.error(`[Redis connection failed] attempt ${times}, will keep retrying...`);
+      logger.error('[Redis connection failed] attempt ${times}, will keep retrying...');
     } else {
-      addLog.warn(`Redis reconnecting... attempt ${times}, delay ${delay}ms`);
+      logger.warn('Redis reconnecting... attempt ${times}, delay ${delay}ms');
     }
     return delay; // Always return a delay to keep retrying
   },
@@ -22,7 +24,7 @@ const REDIS_BASE_OPTION = {
 
     const shouldReconnect = reconnectErrors.some((errType) => message.includes(errType));
     if (shouldReconnect) {
-      addLog.warn(`Redis reconnecting due to error: ${message}`);
+      logger.warn('Redis reconnecting due to error: ${message}');
     }
     return shouldReconnect;
   },
@@ -36,16 +38,16 @@ export const FASTGPT_REDIS_PREFIX = 'fastgpt:';
 export const getGlobalRedisConnection = () => {
   if (global.redisClient) return global.redisClient;
 
-  global.redisClient = new Redis(REDIS_URL, {
+  global.redisClient = new Redis(env.REDIS_URL, {
     ...REDIS_BASE_OPTION,
     keyPrefix: FASTGPT_REDIS_PREFIX
   });
 
   global.redisClient.on('connect', () => {
-    addLog.info('Redis connected');
+    logger.info('Redis connected');
   });
   global.redisClient.on('error', (error) => {
-    addLog.error('Redis connection error', error);
+    logger.error('Redis connection error', { error });
   });
 
   return global.redisClient;

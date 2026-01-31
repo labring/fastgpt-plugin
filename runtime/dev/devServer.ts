@@ -1,7 +1,9 @@
 import path from 'path';
 import { watch } from 'fs/promises';
 import { $ } from 'bun';
-import { addLog } from '@/utils/log';
+import { getLogger, root } from '@/logger';
+
+const logger = getLogger(root);
 import { spawn, type Subprocess } from 'bun';
 import { basePath } from '@tool/constants';
 
@@ -22,11 +24,11 @@ export class DevServer {
   // 构建 worker
   private async buildWorker() {
     try {
-      addLog.info('Building worker...');
+      logger.info('Building worker...');
       await $`bun run build:worker`;
-      addLog.info('Worker built successfully');
+      logger.info('Worker built successfully');
     } catch (error) {
-      addLog.error('Failed to build worker:', error);
+      logger.error('Failed to build worker:', { error: { error } });
     }
   }
 
@@ -72,7 +74,7 @@ export class DevServer {
       this.watchDirectory(watchPath, name);
     }
 
-    addLog.info('文件监听已启动');
+    logger.info('文件监听已启动');
   }
 
   /**
@@ -85,18 +87,18 @@ export class DevServer {
 
         for await (const event of watcher) {
           if (event.filename) {
-            addLog.debug(`检测到 ${dirName} 目录文件变化: ${event.filename}`);
+            logger.debug(`检测到 ${dirName} 目录文件变化: ${event.filename}`);
             this.restart();
           }
         }
       } catch (error) {
-        addLog.error(`监听 ${dirName} 目录时出错:`, error);
+        logger.error(`监听 ${dirName} 目录时出错:`, { error });
         // 可以在这里添加重试逻辑
       }
     })();
   }
   private async restart() {
-    addLog.debug(`Worker file changed, rebuilding...`);
+    logger.debug('Worker file changed, rebuilding...');
     // 如果正在重启，则忽略此次重启
     if (this.isRestarting) return;
     // 如果正在重启，则忽略此次重启

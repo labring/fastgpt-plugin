@@ -5,7 +5,10 @@ import type { ToolMapType } from './type';
 import { isProd } from '@/constants';
 import { MongoSystemPlugin } from '@/mongo/models/plugins';
 import { refreshDir } from '@/utils/fs';
-import { addLog } from '@/utils/log';
+import { getLogger, mod } from '@/logger';
+import { env } from '@/env';
+
+const logger = getLogger(mod.tool);
 import { basePath, toolsDir, UploadToolsS3Path } from './constants';
 import { privateS3Server } from '@/s3';
 import { stat } from 'fs/promises';
@@ -31,7 +34,7 @@ export async function initTools() {
   global.isIniting = true;
   try {
     const start = Date.now();
-    addLog.info(`Load tools start`);
+    logger.info('Load tools start');
 
     await refreshDir(toolsDir);
     // 1. download pkgs into pkg dir
@@ -40,7 +43,7 @@ export async function initTools() {
       type: 'tool'
     }).lean();
 
-    addLog.debug(`Tools in mongo: ${toolsInMongo.length}`);
+    logger.debug(`Tools in mongo: ${toolsInMongo.length}`);
     const toolMap: ToolMapType = new Map();
 
     // 2 download it to temp dir, and parse it
@@ -59,7 +62,7 @@ export async function initTools() {
     );
 
     // 3. read dev tools, if in dev mode
-    if (!isProd && process.env.DISABLE_DEV_TOOLS !== 'true') {
+    if (!isProd && !env.DISABLE_DEV_TOOLS) {
       const dir = join(basePath, 'modules', 'tool', 'packages');
       // skip if dir not exist
       try {
@@ -78,11 +81,11 @@ export async function initTools() {
       }
     }
 
-    addLog.info(`Load tools finish: ${toolMap.size}, time: ${Date.now() - start}ms`);
+    logger.info(`Load tools finish: ${toolMap.size}, time: ${Date.now() - start}ms`);
     global.isIniting = false;
     return toolMap;
   } catch (e) {
-    addLog.error(`Load tools Error:`, e);
+    logger.error(`Load tools Error: ${e}`);
     global.isIniting = false;
     return getCachedData(SystemCacheKeyEnum.systemTool);
   }

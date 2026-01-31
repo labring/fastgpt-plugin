@@ -1,34 +1,45 @@
-import type { z } from 'zod';
-import type { ToolSetConfigType, ToolType, ToolSetType } from '@tool/type';
-import { ToolConfigSchema } from '@tool/type/tool';
+import { ZodError } from 'zod';
+import type { ToolSetConfigType, ToolType, ToolConfigType } from '@tool/type';
 import type { RunToolSecondParamsType } from '@tool/type/req';
 import { createHash } from 'node:crypto';
 
-export const exportTool = <T extends z.Schema, D extends z.Schema>({
+// Use a minimal interface that works with both Zod v3 and v4
+interface ZodSchemaLike<T = unknown> {
+  parse: (data: unknown) => T;
+}
+
+export const exportTool = <TInput, TOutput>({
   toolCb,
   InputType,
   OutputType,
   config
 }: {
-  toolCb: (props: z.infer<T>, e: RunToolSecondParamsType) => Promise<Record<string, any>>;
-  InputType: T;
-  OutputType: D;
-  config: z.infer<typeof ToolConfigSchema>;
+  toolCb: (props: TInput, e: RunToolSecondParamsType) => Promise<Record<string, any>>;
+  InputType: ZodSchemaLike<TInput>;
+  OutputType: ZodSchemaLike<TOutput>;
+  config: ToolConfigType;
 }) => {
-  const cb = async (props: z.infer<T>, e: RunToolSecondParamsType) => {
+  const cb = async (props: TInput, e: RunToolSecondParamsType) => {
     try {
       const output = await toolCb(InputType.parse(props), e);
       return {
         output: OutputType.parse(output)
       };
-    } catch (error: any) {
-      // Handle zod validation errors
-      if (error && error.name === 'ZodError') {
-        const zodError = error as z.ZodError;
-        const errorMessage = zodError.errors
-          .map((err) => `${err.path.join('.')}: ${err.message}`)
-          .join(', ');
-        return { error: errorMessage };
+    } catch (error: unknown) {
+      if (error instanceof ZodError) {
+        const issues = error.issues;
+        if (issues.length === 0) {
+          throw new Error('Unknown Zod error');
+        }
+
+        const paths = [];
+        for (const issue of issues) {
+          if (issue.path) {
+            paths.push(...issue.path.flat());
+          }
+        }
+        const fields = Array.from(new Set(paths)).filter(Boolean).join(', ');
+        return { error: `Invalid parameters. Please check: ${fields}` };
       }
 
       return { error };
@@ -63,7 +74,7 @@ export function generateToolSetVersion(children: ToolType[]) {
   }
 
   const childVersions = children
-    .map((child) => generateToolVersion(child.versionList) || '')
+    .map((child) => generateToolVersion(child.versionList || []) || '')
     .sort();
   const versionString = childVersions.join('');
 
