@@ -90,40 +90,40 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
     }
   };
 
-  try {
-    await client.ensureBucket();
-    if (isPublic) await ensurePublicPolicy(client);
-  } catch (error) {
-    logger.info(`Failed to ensure bucket "${bucket}" exists:`, { error });
-  }
+  await client.ensureBucket();
+  if (isPublic) await ensurePublicPolicy(client);
 
-  try {
-    await externalClient?.ensureBucket();
-    if (isPublic && externalClient) await ensurePublicPolicy(externalClient);
-  } catch (error) {
-    logger.info(`Failed to ensure bucket "${bucket}" exists:`, { error });
-  }
+  await externalClient?.ensureBucket();
+  if (isPublic && externalClient) await ensurePublicPolicy(externalClient);
 
   return new S3Service(client, externalClient);
 };
-
-export const publicS3Server = await (async () => {
-  if (!global._publicS3Server) {
-    const { publicBucket } = getConfig();
-    global._publicS3Server = await createS3Service(publicBucket, true);
-  }
-  return global._publicS3Server;
-})();
-
-export const privateS3Server = await (async () => {
-  if (!global._privateS3Server) {
-    const { privateBucket } = getConfig();
-    global._privateS3Server = await createS3Service(privateBucket, false);
-  }
-  return global._privateS3Server;
-})();
 
 declare global {
   var _publicS3Server: S3Service;
   var _privateS3Server: S3Service;
 }
+
+export const initS3Service = async () => {
+  const logger = getLogger(infra.storage);
+  logger.info('Initializing S3 service...');
+  const { publicBucket, privateBucket } = getConfig();
+
+  try {
+    if (!globalThis._publicS3Server) {
+      logger.debug('Initializing public S3 service...');
+      globalThis._publicS3Server = await createS3Service(publicBucket, true);
+    }
+
+    if (!globalThis._privateS3Server) {
+      logger.debug('Initializing private S3 service...');
+      globalThis._privateS3Server = await createS3Service(privateBucket, false);
+    }
+  } catch (e) {
+    logger.error('Failed to initialize S3 service:', { error: e });
+    throw new Error('Failed to initialize S3 service');
+  }
+};
+
+export const publicS3Server = globalThis._publicS3Server;
+export const privateS3Server = globalThis._privateS3Server;

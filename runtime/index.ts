@@ -1,6 +1,6 @@
 import { getCachedData, refreshVersionKey } from '@/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
-import { connectionMongo, connectMongo, MONGO_URL } from '@/mongo';
+import { connectionMongo, connectMongo, delay, MONGO_URL } from '@/mongo';
 import { ensureDir, refreshDir } from '@/utils/fs';
 import { configureLogger, getLogger, root, destroyLogger } from '@/logger';
 import { env } from '@/env';
@@ -10,6 +10,7 @@ import { tempDir, tempToolsDir } from '@tool/constants';
 import { initWorkflowTemplates } from '@workflow/init';
 import { serve, type ServerType } from '@hono/node-server';
 import { app } from './app';
+import { initS3Service } from '@/s3';
 
 const logger = getLogger(root);
 
@@ -24,6 +25,7 @@ async function prepare() {
   await configureLogger(); // setup logger
 
   await connectMongo(connectionMongo, MONGO_URL); // connect to MongoDB
+  await initS3Service();
 
   await refreshDir(tempDir); // cleanup 'tmp' directory
   await ensureDir(tempToolsDir); // ensure temp tools directory
