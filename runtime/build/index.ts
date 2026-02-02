@@ -51,4 +51,52 @@ if (existsSync(modelProviderDir)) {
   console.log('⚠️ Model provider directory not found, skipping avatar copy');
 }
 
+// 4. copy dataset source avatars for production use (both color and outline versions)
+const datasetSourcesDir = join(__dirname, '..', '..', 'modules', 'dataset', 'sources');
+if (existsSync(datasetSourcesDir)) {
+  const datasetAvatarsDir = join(__dirname, '..', '..', 'dist', 'dataset', 'avatars');
+
+  // Create avatars directory if it doesn't exist
+  mkdirSync(datasetAvatarsDir, { recursive: true });
+
+  // Copy logo files (both logo.* and logo-outline.*) and rename them
+  const { readdir } = await import('node:fs/promises');
+  const sources = await readdir(datasetSourcesDir, { withFileTypes: true });
+
+  for (const source of sources) {
+    if (source.isDirectory()) {
+      const sourceDir = join(datasetSourcesDir, source.name);
+      const files = await readdir(sourceDir);
+
+      // Find and copy color logo (logo.*)
+      const logoFile = files.find((file) => /^logo\.[^-]/.test(file));
+      if (logoFile) {
+        const srcPath = join(sourceDir, logoFile);
+        const ext = logoFile.split('.').pop();
+        const destPath = join(datasetAvatarsDir, `${source.name}.${ext}`);
+
+        await cp(srcPath, destPath);
+        console.log(`📦 Copied dataset source avatar: ${source.name} -> ${source.name}.${ext}`);
+      }
+
+      // Find and copy outline logo (logo-outline.*)
+      const outlineFile = files.find((file) => file.startsWith('logo-outline.'));
+      if (outlineFile) {
+        const srcPath = join(sourceDir, outlineFile);
+        const ext = outlineFile.split('.').pop();
+        const destPath = join(datasetAvatarsDir, `${source.name}-outline.${ext}`);
+
+        await cp(srcPath, destPath);
+        console.log(
+          `📦 Copied dataset source outline avatar: ${source.name} -> ${source.name}-outline.${ext}`
+        );
+      }
+    }
+  }
+
+  console.log(`✅ Copied dataset source avatars to dist/dataset/avatars`);
+} else {
+  console.log('⚠️ Dataset sources directory not found, skipping avatar copy');
+}
+
 await $`bun run build:main`;
