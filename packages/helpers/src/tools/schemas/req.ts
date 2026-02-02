@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ToolCallbackReturnSchema } from './tool';
 
 export const SystemVarSchema = z.object({
   user: z.object({
@@ -24,13 +25,6 @@ export const SystemVarSchema = z.object({
 });
 
 export type SystemVarType = z.infer<typeof SystemVarSchema>;
-
-export const ToolCallbackReturnSchema = z.object({
-  error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
-  output: z.record(z.string(), z.any()).optional()
-});
-
-export type ToolCallbackReturnSchemaType = z.infer<typeof ToolCallbackReturnSchema>;
 
 export enum StreamMessageTypeEnum {
   response = 'response',
@@ -72,7 +66,7 @@ export const runToolSecondParams = z.object({
 
 export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
 
-export const ToolCallbackType = z.function({
+export const ToolCallbackFunctionSchema = z.function({
   input: [z.any(), runToolSecondParams],
   output: z.promise(ToolCallbackReturnSchema)
 });

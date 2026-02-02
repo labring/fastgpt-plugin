@@ -1,10 +1,10 @@
 import type { SystemCacheKeyEnum } from './type';
 import { randomUUID } from 'node:crypto';
 import { initCache } from './init';
-import { getGlobalRedisConnection } from '@/redis';
 import { env } from '@/env';
 import { getLogger } from '@logtape/logtape';
-import { infra } from '@/logger';
+import { getGlobalRedisConnection } from '../redis';
+import { infra } from '../logger';
 
 const cachePrefix = `VERSION_KEY:`;
 

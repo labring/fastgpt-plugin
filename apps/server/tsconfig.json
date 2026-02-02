@@ -27,12 +27,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "baseUrl": "./",
     "paths": {
-      "@/*": ["../lib/*"],
-      "@tool/*": ["../modules/tool/*"],
-      "@model/*": ["../modules/model/*"],
-      "@workflow/*": ["../modules/workflow/*"],
-      "@dataset/*": ["../modules/dataset/*"],
-      "@runtime/*": ["./src/*"]
+      "@/*": ["./src/*"]
     },
 
     // Performance optimizations

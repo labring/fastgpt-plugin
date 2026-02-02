@@ -1,3 +1,9 @@
+/**
+ * Run batch tasks concurrently with a maximum number of concurrent tasks.
+ * @param batchSize Maximum number of concurrent tasks.
+ * @param funclist List of functions to run in batches.
+ * @returns Array of results from the functions.
+ */
 export async function batch<T>(batchSize: number, funclist: (() => Promise<T>)[]): Promise<T[]> {
   const results: T[] = [];
   const executing: Promise<void>[] = [];

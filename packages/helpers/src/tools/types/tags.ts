@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { ToolTagEnum } from '@/validates/tool';
-
-// Re-export from validates
-export { ToolTagEnum };
+import { ToolTagEnum } from '../schemas/tool';
 
 export const ToolTagsNameMap = {
   [ToolTagEnum.enum.tools]: {

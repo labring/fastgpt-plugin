@@ -1,4 +1,4 @@
-import type { ToolMapType } from '@tool/type';
+import type { ToolMapType } from '@/modules/tool/type';
 
 export enum SystemCacheKeyEnum {
   systemTool = 'systemTool'

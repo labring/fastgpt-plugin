@@ -1,7 +1,7 @@
-import { initTools } from '@tool/init';
 import { SystemCacheKeyEnum } from './type';
 import { getLogger } from '@logtape/logtape';
-import { infra } from '@/logger';
+import { infra } from '../logger';
+import { initTools } from '@/modules/tool/init';
 
 export const initCache = () => {
   const logger = getLogger(infra.redis);

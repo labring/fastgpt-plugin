@@ -1,4 +1,4 @@
-import { getCachedData, refreshVersionKey } from '@/cache';
+import { getCachedData, refreshVersionKey } from '@/lib/cache';
 import { SystemCacheKeyEnum } from '@/cache/type';
 import { connectionMongo, connectMongo, delay, MONGO_URL } from '@/mongo';
 import { ensureDir, refreshDir } from '@/utils/fs';
