@@ -1,0 +1,72 @@
+import { z } from 'zod';
+import { ToolCallbackReturnSchema } from './tool';
+
+export const SystemVarSchema = z.object({
+  user: z.object({
+    id: z.string(),
+    username: z.string(),
+    contact: z.string(),
+    membername: z.string(),
+    teamName: z.string(),
+    teamId: z.string(),
+    name: z.string()
+  }),
+  app: z.object({
+    id: z.string(),
+    name: z.string()
+    // version: z.string()
+  }),
+  tool: z.object({
+    id: z.string(),
+    version: z.string(),
+    prefix: z.string().optional()
+  }),
+  time: z.string()
+});
+
+export type SystemVarType = z.infer<typeof SystemVarSchema>;
+
+export enum StreamMessageTypeEnum {
+  response = 'response',
+  error = 'error',
+  stream = 'stream'
+}
+
+export enum StreamDataAnswerTypeEnum {
+  answer = 'answer',
+  fastAnswer = 'fastAnswer'
+}
+
+export const StreamDataSchema = z.object({
+  type: z.enum(StreamDataAnswerTypeEnum),
+  content: z.string()
+});
+export type StreamDataType = z.infer<typeof StreamDataSchema>;
+
+export const StreamMessageSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal(StreamMessageTypeEnum.response),
+    data: ToolCallbackReturnSchema
+  }),
+  z.object({
+    type: z.literal(StreamMessageTypeEnum.stream),
+    data: StreamDataSchema
+  }),
+  z.object({
+    type: z.literal(StreamMessageTypeEnum.error),
+    data: z.string()
+  })
+]);
+export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
+
+export const runToolSecondParams = z.object({
+  systemVar: SystemVarSchema,
+  streamResponse: z.function({ input: [StreamDataSchema], output: z.void() })
+});
+
+export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
+
+export const ToolCallbackFunctionSchema = z.function({
+  input: [z.any(), runToolSecondParams],
+  output: z.promise(ToolCallbackReturnSchema)
+});
