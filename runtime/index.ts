@@ -6,7 +6,8 @@ import { configureLogger, getLogger, root, destroyLogger } from '@/logger';
 import { env } from '@/env';
 import { configureProxy } from '@/utils/setup-proxy';
 import { initModels } from '@model/init';
-import { tempDir, tempToolsDir } from '@tool/constants';
+import { initDatasetSourceAvatars } from '@dataset/avatars';
+import { basePath, tempDir, tempToolsDir } from '@tool/constants';
 import { initWorkflowTemplates } from '@workflow/init';
 import { serve, type ServerType } from '@hono/node-server';
 import { app } from './app';
@@ -35,7 +36,8 @@ async function prepare() {
   await Promise.all([
     getCachedData(SystemCacheKeyEnum.systemTool), // prepare cache
     initModels(globalThis.isReboot), // initialize model list
-    initWorkflowTemplates() // initialize workflow templates
+    initWorkflowTemplates(), // initialize workflow templates
+    !globalThis.isReboot && initDatasetSourceAvatars()
   ]);
 }
 

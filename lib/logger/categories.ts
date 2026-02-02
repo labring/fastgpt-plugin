@@ -14,7 +14,8 @@ export const middleware = {
 export const mod = {
   tool: ['mod', 'tool'],
   model: ['mod', 'model'],
-  workflow: ['mod', 'workflow']
+  workflow: ['mod', 'workflow'],
+  dataset: ['mod', 'dataset']
 } as const;
 
 export const infra = {
