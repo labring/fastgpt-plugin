@@ -49,7 +49,14 @@ export async function configureLogger() {
         level: 'ABBR',
         wordWrap: false,
         categorySeparator: ':',
-        timestamp: () => dayjs().format('YYYY-MM-DD HH:mm:ss')
+        messageColor: null,
+        categoryColor: null,
+        timestampColor: null,
+        levelStyle: 'reset',
+        messageStyle: 'reset',
+        categoryStyle: 'reset',
+        timestampStyle: 'reset',
+        timestamp: (ts) => dayjs(ts).format('YYYY-MM-DD HH:mm:ss')
       })
     });
     composedSinks.push('console');
