@@ -99,10 +99,13 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
   return new S3Service(client, externalClient);
 };
 
-declare global {
-  var _publicS3Server: S3Service;
-  var _privateS3Server: S3Service;
-}
+const s3ServiceInstances: {
+  publicS3Server: S3Service | null;
+  privateS3Server: S3Service | null;
+} = {
+  publicS3Server: null,
+  privateS3Server: null
+};
 
 export const initS3Service = async () => {
   const logger = getLogger(infra.storage);
@@ -110,14 +113,14 @@ export const initS3Service = async () => {
   const { publicBucket, privateBucket } = getConfig();
 
   try {
-    if (!globalThis._publicS3Server) {
+    if (!s3ServiceInstances.publicS3Server) {
       logger.debug('Initializing public S3 service...');
-      globalThis._publicS3Server = await createS3Service(publicBucket, true);
+      s3ServiceInstances.publicS3Server = await createS3Service(publicBucket, true);
     }
 
-    if (!globalThis._privateS3Server) {
+    if (!s3ServiceInstances.privateS3Server) {
       logger.debug('Initializing private S3 service...');
-      globalThis._privateS3Server = await createS3Service(privateBucket, false);
+      s3ServiceInstances.privateS3Server = await createS3Service(privateBucket, false);
     }
   } catch (e) {
     logger.error('Failed to initialize S3 service:', { error: e });
@@ -125,5 +128,29 @@ export const initS3Service = async () => {
   }
 };
 
-export const publicS3Server = globalThis._publicS3Server;
-export const privateS3Server = globalThis._privateS3Server;
+export const getPublicS3Server = (): S3Service => {
+  if (!s3ServiceInstances.publicS3Server) {
+    throw new Error('Public S3 service not initialized. Call initS3Service() first.');
+  }
+  return s3ServiceInstances.publicS3Server;
+};
+
+export const getPrivateS3Server = (): S3Service => {
+  if (!s3ServiceInstances.privateS3Server) {
+    throw new Error('Private S3 service not initialized. Call initS3Service() first.');
+  }
+  return s3ServiceInstances.privateS3Server;
+};
+
+// 为了向后兼容，保留旧的导出方式（但使用 getter）
+export const publicS3Server = new Proxy({} as S3Service, {
+  get(_, prop) {
+    return getPublicS3Server()[prop as keyof S3Service];
+  }
+});
+
+export const privateS3Server = new Proxy({} as S3Service, {
+  get(_, prop) {
+    return getPrivateS3Server()[prop as keyof S3Service];
+  }
+});
