@@ -24,7 +24,7 @@ const BaseModelItemSchema = z.object({
 });
 
 // LLM 模型类型 schema
-export const LLMModelItemSchema = PriceSchema.merge(BaseModelItemSchema).extend({
+export const LLMModelItemSchema = PriceSchema.extend(BaseModelItemSchema.shape).extend({
   type: z.literal(ModelTypeEnum.llm),
   // Model params
   maxContext: z.number(),
@@ -54,7 +54,7 @@ export const LLMModelItemSchema = PriceSchema.merge(BaseModelItemSchema).extend(
 });
 
 // Embedding 模型类型 schema
-export const EmbeddingModelItemSchema = PriceSchema.merge(BaseModelItemSchema).extend({
+export const EmbeddingModelItemSchema = PriceSchema.extend(BaseModelItemSchema.shape).extend({
   type: z.literal(ModelTypeEnum.embedding),
   defaultToken: z.number(), // split text default token
   maxToken: z.number(), // model max token
@@ -67,12 +67,12 @@ export const EmbeddingModelItemSchema = PriceSchema.merge(BaseModelItemSchema).e
 });
 
 // Rerank 模型类型 schema
-export const RerankModelItemSchema = PriceSchema.merge(BaseModelItemSchema).extend({
+export const RerankModelItemSchema = PriceSchema.extend(BaseModelItemSchema.shape).extend({
   type: z.literal(ModelTypeEnum.rerank)
 });
 
 // TTS 模型类型 schema
-export const TTSModelSchema = PriceSchema.merge(BaseModelItemSchema).extend({
+export const TTSModelSchema = PriceSchema.extend(BaseModelItemSchema.shape).extend({
   type: z.literal(ModelTypeEnum.tts),
   voices: z.array(
     z.object({
@@ -83,7 +83,7 @@ export const TTSModelSchema = PriceSchema.merge(BaseModelItemSchema).extend({
 });
 
 // STT 模型类型 schema
-export const STTModelSchema = PriceSchema.merge(BaseModelItemSchema).extend({
+export const STTModelSchema = PriceSchema.extend(BaseModelItemSchema.shape).extend({
   type: z.literal(ModelTypeEnum.stt)
 });
 
