@@ -1,0 +1,18 @@
+{
+  "name": "@fastgpt-plugins/tool-wecom-schedule",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun ../../../../scripts/build.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "zod": "^3.25.76"
+  }
+}
