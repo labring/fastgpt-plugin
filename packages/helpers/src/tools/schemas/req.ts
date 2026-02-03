@@ -24,49 +24,35 @@ export const SystemVarSchema = z.object({
   time: z.string()
 });
 
-export type SystemVarType = z.infer<typeof SystemVarSchema>;
-
-export enum StreamMessageTypeEnum {
-  response = 'response',
-  error = 'error',
-  stream = 'stream'
-}
-
-export enum StreamDataAnswerTypeEnum {
-  answer = 'answer',
-  fastAnswer = 'fastAnswer'
-}
+export const StreamMessageTypeEnum = z.enum(['response', 'error', 'stream']);
+export const StreamDataAnswerTypeEnum = z.enum(['answer', 'fastAnswer']);
 
 export const StreamDataSchema = z.object({
-  type: z.enum(StreamDataAnswerTypeEnum),
+  type: StreamDataAnswerTypeEnum,
   content: z.string()
 });
-export type StreamDataType = z.infer<typeof StreamDataSchema>;
 
 export const StreamMessageSchema = z.discriminatedUnion('type', [
   z.object({
-    type: z.literal(StreamMessageTypeEnum.response),
+    type: StreamMessageTypeEnum.enum.response,
     data: ToolCallbackReturnSchema
   }),
   z.object({
-    type: z.literal(StreamMessageTypeEnum.stream),
+    type: StreamMessageTypeEnum.enum.stream,
     data: StreamDataSchema
   }),
   z.object({
-    type: z.literal(StreamMessageTypeEnum.error),
+    type: StreamMessageTypeEnum.enum.error,
     data: z.string()
   })
 ]);
-export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
 
 export const runToolSecondParams = z.object({
   systemVar: SystemVarSchema,
   streamResponse: z.function({ input: [StreamDataSchema], output: z.void() })
 });
 
-export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
-
-export const ToolCallbackFunctionSchema = z.function({
-  input: [z.any(), runToolSecondParams],
+export const ToolHandlerFunctionSchema = z.function({
+  input: [z.record(z.string(), z.unknown()), runToolSecondParams],
   output: z.promise(ToolCallbackReturnSchema)
 });

@@ -1,12 +1,8 @@
 import { z } from 'zod';
-import {
-  FlowNodeInputTypeEnum,
-  FlowNodeOutputTypeEnum,
-  LLMModelTypeEnum,
-  WorkflowIOValueTypeEnum
-} from '../types/fastgpt';
 import { I18nStringSchema } from '../../common/schemas/i18n';
-import { ToolCallbackFunctionSchema } from './req';
+import { ToolHandlerFunctionSchema as ToolHandlerFunctionSchema } from './req';
+import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
+import { tr } from 'zod/v4/locales';
 
 // ============================================
 // 基础枚举和类型
@@ -29,95 +25,6 @@ export const ToolTagEnum = z.enum([
 ]);
 
 // ============================================
-// 输入配置相关
-// ============================================
-
-// InputConfig - 输入配置项
-export const InputConfigSchema = z.object({
-  key: z.string(),
-  label: z.string(),
-  description: z.string().optional(),
-  required: z.boolean().optional(),
-  inputType: z.enum(['input', 'numberInput', 'secret', 'switch', 'select']),
-  defaultValue: z.any().optional(),
-  list: z
-    .array(
-      z.object({
-        label: z.string(),
-        value: z.string()
-      })
-    )
-    .optional()
-});
-
-export type InputConfigType = z.infer<typeof InputConfigSchema>;
-
-// Input - 完整输入定义
-export const InputSchema = z.object({
-  key: z.string(),
-  label: z.string(),
-  referencePlaceholder: z.string().optional(),
-  placeholder: z.string().optional(),
-  defaultValue: z.any().optional(),
-  selectedTypeIndex: z.number().optional(),
-  renderTypeList: z.array(FlowNodeInputTypeEnum),
-  valueType: WorkflowIOValueTypeEnum,
-  valueDesc: z.string().optional(),
-  value: z.unknown().optional(),
-  description: z.string().optional(),
-  required: z.boolean().optional(),
-  toolDescription: z.string().optional(),
-  canEdit: z.boolean().optional(),
-  isPro: z.boolean().optional(),
-  maxLength: z.number().optional(),
-  canSelectFile: z.boolean().optional(),
-  canSelectImg: z.boolean().optional(),
-  maxFiles: z.number().optional(),
-  inputList: z.array(InputConfigSchema).optional(),
-  llmModelType: LLMModelTypeEnum.optional(),
-  list: z
-    .array(
-      z.object({
-        label: z.string(),
-        value: z.string()
-      })
-    )
-    .optional(),
-  markList: z
-    .array(
-      z.object({
-        label: z.string(),
-        value: z.number()
-      })
-    )
-    .optional(),
-  step: z.number().optional(),
-  max: z.number().optional(),
-  min: z.number().optional(),
-  precision: z.number().optional()
-});
-export type InputType = z.infer<typeof InputSchema>;
-
-// ============================================
-// 输出配置相关
-// ============================================
-
-// Output - 输出定义
-export const OutputSchema = z.object({
-  id: z.string().optional(),
-  type: FlowNodeOutputTypeEnum.optional(),
-  key: z.string(),
-  valueType: WorkflowIOValueTypeEnum,
-  valueDesc: z.string().optional(),
-  value: z.unknown().optional(),
-  label: z.string().optional(),
-  description: z.string().optional(),
-  defaultValue: z.any().optional(),
-  required: z.boolean().optional()
-});
-export type OutputType = z.infer<typeof OutputSchema>;
-
-// ============================================
 // 版本配置相关
 // ============================================
 
@@ -128,6 +35,7 @@ export const VersionListItemSchema = z.object({
   inputs: z.array(InputSchema),
   outputs: z.array(OutputSchema)
 });
+
 export type VersionListItemType = z.infer<typeof VersionListItemSchema>;
 
 // ============================================
@@ -141,61 +49,102 @@ export const ToolCallbackReturnSchema = z.object({
 });
 export type ToolCallbackReturnType = z.infer<typeof ToolCallbackReturnSchema>;
 
-// ============================================
-// 工具配置相关(从基础到复杂)
-// ============================================
-
-// Tool Config - 工具基础配置
-export const ToolConfigSchema = z.object({
-  isWorkerRun: z.boolean().default(false).optional(),
-  toolId: z.string().optional(),
+/**
+ * 工具的所有属性
+ */
+export const ToolSchema = z.object({
+  toolId: z.string(),
+  parentId: z.string().optional(),
   name: I18nStringSchema,
   description: I18nStringSchema,
+  toolDescription: z.string(),
+  versionList: z.array(VersionListItemSchema).optional(),
+  tags: z.array(ToolTagEnum).optional(),
+  icon: z.string(),
+  author: z.string().optional(),
+  tutorialUrl: z.url().optional(),
+  readmeUrl: z.url().optional(),
+  secretInputConfig: z.array(SecretInputItemSchema).optional(),
+  handler: ToolHandlerFunctionSchema,
+  filename: z.string(),
+  etag: z.string()
+});
+
+/**
+ * 工具集的所有属性
+ */
+export const ToolSetSchema = ToolSchema.omit({
+  parentId: true,
+  versionList: true,
+  handler: true
+}).extend(
+  z.object({
+    toolId: z.string().refine((data) => !data.includes('/'))
+  })
+);
+
+export const UnifiedToolSchema = z.object({
+  ...ToolSchema.shape,
+  ...ToolSetSchema.shape
+});
+
+/**
+ * 工具配置
+ * defineTool 函数的参数, 继承自 ToolSchema, 部分参数会自动处理，因此是 optional
+ */
+export const ToolConfigSchema = ToolSchema.omit({
+  handler: true,
+  filename: true,
+  readmeUrl: true
+})
+  .extend(
+    z.object({
+      toolId: z.string().optional(),
+      toolDescription: z.string().optional(),
+      versionList: z.array(VersionListItemSchema).min(1),
+      tags: z.array(ToolTagEnum).optional(),
+      icon: z.string().optional(),
+      author: z.string().optional(),
+      tutorialLink: z.url().optional(),
+      secretInputConfig: z.array(SecretInputItemSchema).optional()
+    })
+  )
+  .transform((data) => {
+    return {
+      ...data,
+      toolDescription: data.toolDescription ?? data.description
+    };
+  });
+
+/**
+ * 工具集配置
+ */
+export const ToolSetConfigSchema = ToolSetSchema.extend({
+  toolId: z.string().optional(),
   toolDescription: z.string().optional(),
-  versionList: z.array(VersionListItemSchema).min(1),
   tags: z.array(ToolTagEnum).optional(),
   icon: z.string().optional(),
   author: z.string().optional(),
-  courseUrl: z.string().optional(),
-  secretInputConfig: z.array(InputConfigSchema).optional()
+  tutorialLink: z.url().optional(),
+  secretInputConfig: z.array(SecretInputItemSchema).optional()
 });
-export type ToolConfigType = z.infer<typeof ToolConfigSchema>;
-
-// Tool Config With Callback - 带回调的工具配置
-export const ToolConfigWithCbSchema = ToolConfigSchema.extend({
-  cb: ToolCallbackFunctionSchema.describe('The callback function of the tool')
-});
-export type ToolConfigWithCbType = z.infer<typeof ToolConfigWithCbSchema>;
-
-// Tool - 完整工具定义
-export const ToolSchema = ToolConfigWithCbSchema.extend({
-  // Required
-  toolId: z.string().describe('The unique id of the tool'),
-  tags: z.array(ToolTagEnum).optional().describe('The tags of the tool'),
-  icon: z.string().describe('The icon of the tool'),
-
-  // Computed
-  parentId: z.string().optional().describe('The parent id of the tool'),
-  toolFilename: z.string().describe('The filename of the tool'),
-  version: z.string().describe('The version hash of the tool'),
-
-  // ToolSet Parent
-  secretInputConfig: z
-    .array(InputConfigSchema)
-    .optional()
-    .describe('The secret input list of the tool')
-});
-export type ToolType = z.infer<typeof ToolSchema>;
 
 // Tool Detail - 工具详情(用于 API 响应)
-export const ToolDetailSchema = ToolSchema.omit({
-  cb: true,
-  isWorkerRun: true,
-  toolFilename: true,
+export const ToolDetailSchema = UnifiedToolSchema.pick({
+  toolId: true,
+  name: true,
+  description: true,
+  toolDescription: true,
+  author: true,
+  tags: true,
+  icon: true,
+  tutorialUrl: true,
+  readmeUrl: true,
+  secretInputConfig: true,
+  etag: true,
   versionList: true
-}).extend({
-  versionList: z.array(VersionListItemSchema).optional()
 });
+
 export type ToolDetailType = z.infer<typeof ToolDetailSchema>;
 
 // Tool Simple - 简化工具信息(用于列表)
@@ -204,31 +153,7 @@ export const ToolSimpleSchema = ToolDetailSchema.omit({
   toolDescription: true,
   versionList: true
 });
+
 export type ToolSimpleType = z.infer<typeof ToolSimpleSchema>;
 
-// ============================================
-// 工具集相关
-// ============================================
-
-// ToolSet Config - 工具集配置
-export const ToolSetConfigSchema = ToolConfigSchema.omit({
-  versionList: true
-})
-  .extend({
-    tags: z.array(ToolTagEnum).describe('The tags of the tool'),
-    children: z.array(ToolConfigWithCbSchema).optional().describe('The children of the tool set')
-  })
-  .describe('The ToolSet Config Schema');
-export type ToolSetConfigType = z.infer<typeof ToolSetConfigSchema>;
-
-// ToolSet - 完整工具集定义
-export const ToolSetSchema = ToolSchema.omit({
-  cb: true,
-  parentId: true,
-  versionList: true
-})
-  .extend({
-    children: z.array(ToolSchema).describe('The children of the tool set')
-  })
-  .describe('The ToolSet Schema');
-export type ToolSetType = z.infer<typeof ToolSetSchema>;
+export type ToolCallbackReturnSchemaType = z.infer<typeof ToolCallbackReturnSchema>;

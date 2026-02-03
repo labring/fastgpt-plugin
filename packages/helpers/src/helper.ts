@@ -1,5 +1,5 @@
-import { ToolConfigType, ToolSetConfigType } from './tools/types';
-import { FlowNodeOutputTypeEnum } from './tools/types/fastgpt';
+import { FlowNodeOutputTypeEnum } from './tools/schemas/fastgpt';
+import { ToolConfigType, ToolSetConfigType } from './tools/schemas/tool';
 
 export function defineTool(tool: ToolConfigType) {
   const versionList = tool.versionList.map((version) => {
@@ -14,6 +14,7 @@ export function defineTool(tool: ToolConfigType) {
       })
     };
   });
+
   return {
     ...tool,
     versionList
