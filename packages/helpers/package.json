@@ -7,11 +7,18 @@
       "default": "./dist/*"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
   "module": "./src/index.ts",
   "scripts": {},
   "devDependencies": {
     "@types/bun": "latest",
-    "tsdown": "^0.20.1"
+    "tsdown": "^0.20.1",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
