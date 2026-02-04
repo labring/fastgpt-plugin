@@ -30,7 +30,7 @@ import {
   StreamMessageTypeEnum,
   type StreamDataType
 } from '@fastgpt-plugin/helpers/tools/schemas/req';
-import type { ToolCallbackReturnSchemaType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import type { ToolCallbackReturnType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
 import { batch } from '@fastgpt-plugin/helpers/common/fn';
 
@@ -268,7 +268,7 @@ tools.openapi(runStreamRoute, async (c) => {
       const handleStreamAbort = () => logger.info(`Stream aborted for tool: ${toolId}`);
       stream.onAbort(handleStreamAbort);
 
-      let result: ToolCallbackReturnSchemaType;
+      let result: ToolCallbackReturnType;
       if (tool.isWorkerRun === true) {
         logger.debug('Run tool start in worker', { body: { toolId, inputs, systemVar } });
         result = await dispatchWithNewWorker({

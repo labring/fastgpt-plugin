@@ -1,13 +1,9 @@
 import { cors } from 'hono/cors';
-import models from '@model/route';
-import workflow from '@workflow/route';
-import tool from '@tool/route';
-import dataset from '@dataset/route';
-import { isProd } from '@/constants';
+import tool from '@/modules/tool/tool.route';
+// import models from '@model/route';
+// import workflow from '@workflow/route';
+// import dataset from '@dataset/route';
 import { createResponseSchema, R, createOpenAPIHono } from '@/utils/http';
-import { serveStatic } from '@hono/node-server/serve-static';
-import { basePath } from '@tool/constants';
-import path from 'node:path';
 import { bearerAuth } from 'hono/bearer-auth';
 import { env } from '@/env';
 import { HTTPException } from 'hono/http-exception';
@@ -26,13 +22,6 @@ app.use(
     allowHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
-  })
-);
-app.use(
-  '/public/*',
-  serveStatic({
-    root: isProd ? 'public' : path.join(basePath, 'dist', 'public'),
-    rewriteRequestPath: (path) => path.replace(/^\/public/, '')
   })
 );
 app.use('/api/*', bearerAuth({ token: env.AUTH_TOKEN }));
@@ -94,10 +83,10 @@ app.openapi(
   }
 );
 
-app.route('/api', models);
-app.route('/api', workflow);
+// app.route('/api', models);
+// app.route('/api', workflow);
 app.route('/api', tool);
-app.route('/api', dataset);
+// app.route('/api', dataset);
 // #endregion
 
 app.onError((err, c) => {
