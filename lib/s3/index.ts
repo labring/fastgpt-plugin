@@ -11,8 +11,6 @@ import {
 } from '@fastgpt-sdk/storage';
 import { getLogger, infra } from '@/logger';
 
-const logger = getLogger(infra.storage);
-
 type StorageConfigWithoutBucket = Omit<IStorageOptions, 'bucket'>;
 
 const getConfig = () => {
@@ -90,11 +88,16 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
     }
   };
 
-  await client.ensureBucket();
-  if (isPublic) await ensurePublicPolicy(client);
+  try {
+    await client.ensureBucket();
+    if (isPublic) await ensurePublicPolicy(client);
 
-  await externalClient?.ensureBucket();
-  if (isPublic && externalClient) await ensurePublicPolicy(externalClient);
+    await externalClient?.ensureBucket();
+    if (isPublic && externalClient) await ensurePublicPolicy(externalClient);
+  } catch (error) {
+    const logger = getLogger(infra.storage);
+    logger.warn(`Ensure bucket warn: ${JSON.stringify(error, null, 2)}`, { error });
+  }
 
   return new S3Service(client, externalClient);
 };
@@ -122,9 +125,9 @@ export const initS3Service = async () => {
       logger.debug('Initializing private S3 service...');
       s3ServiceInstances.privateS3Server = await createS3Service(privateBucket, false);
     }
-  } catch (e) {
-    logger.error('Failed to initialize S3 service:', { error: e });
-    throw new Error('Failed to initialize S3 service');
+  } catch (error) {
+    logger.error(`Failed to initialize S3 service: ${JSON.stringify(error, null, 2)}`, { error });
+    throw error;
   }
 };
 
