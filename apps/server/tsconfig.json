@@ -27,7 +27,8 @@
     "noPropertyAccessFromIndexSignature": false,
     "baseUrl": "./",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@fastgpt-plugin/helpers/*": ["../../packages/helpers/src/*"]
     },
 
     // Performance optimizations

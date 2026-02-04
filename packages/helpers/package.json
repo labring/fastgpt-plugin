@@ -1,3 +1,22 @@
 {
-  "name": "@fastgpt-plugin/helper"
+  "name": "@fastgpt-plugin/helpers",
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./src/*",
+      "default": "./dist/*"
+    }
+  },
+  "module": "./src/index.ts",
+  "scripts": {},
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsdown": "^0.20.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "zod": "^4"
+  }
 }

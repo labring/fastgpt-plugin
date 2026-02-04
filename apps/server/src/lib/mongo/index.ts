@@ -1,9 +1,9 @@
-import { isProd } from '../constants';
+import { env } from '@/env';
 import { getLogger, infra } from '../logger';
-import { env } from '../env';
 
 import type { Model, Schema } from 'mongoose';
 import { Mongoose } from 'mongoose';
+import { isProd } from '@/constants';
 
 export const MONGO_URL = env.MONGODB_URI;
 

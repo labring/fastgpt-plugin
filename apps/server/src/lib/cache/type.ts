@@ -1,11 +1,11 @@
-import type { ToolMapType } from '@/modules/tool/type';
+import type { CacheToolMapType } from '@/modules/tool/types/tool';
 
 export enum SystemCacheKeyEnum {
   systemTool = 'systemTool'
 }
 
 export type SystemCacheDataType = {
-  [SystemCacheKeyEnum.systemTool]: ToolMapType;
+  [SystemCacheKeyEnum.systemTool]: CacheToolMapType;
 };
 
 type SystemCacheType = {

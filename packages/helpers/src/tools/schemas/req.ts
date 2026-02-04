@@ -32,6 +32,8 @@ export const StreamDataSchema = z.object({
   content: z.string()
 });
 
+export type StreamDataType = z.infer<typeof StreamDataSchema>;
+
 export const StreamMessageSchema = z.discriminatedUnion('type', [
   z.object({
     type: StreamMessageTypeEnum.enum.response,
@@ -47,12 +49,18 @@ export const StreamMessageSchema = z.discriminatedUnion('type', [
   })
 ]);
 
+export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
+
 export const runToolSecondParams = z.object({
   systemVar: SystemVarSchema,
   streamResponse: z.function({ input: [StreamDataSchema], output: z.void() })
 });
 
+export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
+
 export const ToolHandlerFunctionSchema = z.function({
   input: [z.record(z.string(), z.unknown()), runToolSecondParams],
   output: z.promise(ToolCallbackReturnSchema)
 });
+
+export type ToolHandlerFunctionType = z.infer<typeof ToolHandlerFunctionSchema>;

@@ -1,82 +1,78 @@
-import { ZodError } from 'zod';
-import type { ToolSetConfigType, ToolType, ToolConfigType } from '@tool/type';
-import type { RunToolSecondParamsType } from '@tool/type/req';
-import { createHash } from 'node:crypto';
+import { publicS3Server } from '@/lib/s3';
+import { UploadToolsS3Path } from '../constants';
+import type {
+  UnifiedToolType
+} from '@fastgpt-plugin/helpers/tools/schemas/tool';
 
-// Use a minimal interface that works with both Zod v3 and v4
-interface ZodSchemaLike<T = unknown> {
-  parse: (data: unknown) => T;
-}
+export const getIconPath = (name: string) =>
+  publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${name}`);
 
-export const exportTool = <TInput, TOutput>({
-  toolCb,
-  InputType,
-  OutputType,
-  config
+export const parseMod = async ({
+  rootMod,
+  filename,
+  temp = false
 }: {
-  toolCb: (props: TInput, e: RunToolSecondParamsType) => Promise<Record<string, any>>;
-  InputType: ZodSchemaLike<TInput>;
-  OutputType: ZodSchemaLike<TOutput>;
-  config: ToolConfigType;
+  rootMod: UnifiedToolType;
+  filename: string;
+  temp?: boolean;
 }) => {
-  const cb = async (props: TInput, e: RunToolSecondParamsType) => {
-    try {
-      const output = await toolCb(InputType.parse(props), e);
-      return {
-        output: OutputType.parse(output)
-      };
-    } catch (error: unknown) {
-      if (error instanceof ZodError) {
-        const issues = error.issues;
-        if (issues.length === 0) {
-          throw new Error('Unknown Zod error');
-        }
+  const tools: UnifiedToolType[] = [];
+  const checkRootModToolSet = (rootMod: UnifiedToolType): rootMod is  => {
+    return 'children' in rootMod;
+  };
+  if (checkRootModToolSet(rootMod)) {
+    const toolsetId = rootMod.toolId;
 
-        const paths = [];
-        for (const issue of issues) {
-          if (issue.path) {
-            paths.push(...issue.path.flat());
-          }
-        }
-        const fields = Array.from(new Set(paths)).filter(Boolean).join(', ');
-        return { error: `Invalid parameters. Please check: ${fields}` };
-      }
+    const parentIcon = rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${toolsetId}/logo`);
 
-      return { error };
+    const children = rootMod.children;
+
+    for (const child of children) {
+      const childToolId = child.toolId;
+
+      const childIcon =
+        child.icon || rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${childToolId}/logo`);
+
+      // Generate version for child tool
+      const childVersion = generateToolVersion(child.versionList);
+      tools.push({
+        ...child,
+        toolId: childToolId,
+        parentId: toolsetId,
+        tags: rootMod.tags,
+        courseUrl: rootMod.courseUrl,
+        author: rootMod.author,
+        icon: childIcon,
+        toolFilename: filename,
+        version: childVersion
+      });
     }
-  };
 
-  return {
-    ...config,
-    cb
-  };
-};
+    // push parent
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      toolId: toolsetId,
+      icon: parentIcon,
+      toolFilename: `${filename}`,
+      cb: () => Promise.resolve({}),
+      versionList: [],
+      version: generateToolSetVersion(children) || ''
+    });
+  } else {
+    // is not toolset
+    const toolId = rootMod.toolId;
 
-export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
-  return {
-    ...config
-  };
-};
+    const icon = rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${toolId}/logo`);
 
-export function generateToolVersion(versionList: Array<{ value: string }>): string {
-  const versionString = versionList.map((v) => v.value).join('');
-  return createHash('sha256').update(versionString).digest('hex').substring(0, 8);
-}
-
-/**
- * Generate version hash for a tool set based on all child tools' versions
- * @param children - Array of child tools
- * @returns First 8 characters of SHA256 hash of all child version hashes concatenated
- */
-export function generateToolSetVersion(children: ToolType[]) {
-  if (!children || children.length === 0) {
-    return undefined;
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.tools],
+      icon,
+      toolId,
+      toolFilename: filename,
+      version: generateToolVersion(rootMod.versionList)
+    });
   }
-
-  const childVersions = children
-    .map((child) => generateToolVersion(child.versionList || []) || '')
-    .sort();
-  const versionString = childVersions.join('');
-
-  return createHash('sha256').update(versionString).digest('hex').substring(0, 8);
-}
+  return tools;
+};

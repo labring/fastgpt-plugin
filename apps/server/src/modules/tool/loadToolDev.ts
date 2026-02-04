@@ -24,7 +24,7 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   }
 
   const uploadStatic =
-    !global.isReboot || // do not upload while hot restart
+    !global.HMR || // do not upload while hot restart
     global.staticUploaded; // neither upload again (not hot restart, just refresh the cache)
 
   global.staticUploaded = true;
@@ -215,6 +215,6 @@ export const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
 };
 
 declare global {
-  var isReboot: boolean;
+  var HMR: boolean;
   var staticUploaded: boolean;
 }

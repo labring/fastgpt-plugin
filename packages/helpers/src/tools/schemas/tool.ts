@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { I18nStringSchema } from '../../common/schemas/i18n';
 import { ToolHandlerFunctionSchema as ToolHandlerFunctionSchema } from './req';
 import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
-import { tr } from 'zod/v4/locales';
 
 // ============================================
 // 基础枚举和类型
@@ -83,38 +82,43 @@ export const ToolSetSchema = ToolSchema.omit({
   })
 );
 
+export type ToolSetType = z.infer<typeof ToolSetSchema>;
+
 export const UnifiedToolSchema = z.object({
   ...ToolSchema.shape,
   ...ToolSetSchema.shape
 });
 
+export type UnifiedToolType = z.infer<typeof UnifiedToolSchema>;
+
 /**
  * 工具配置
  * defineTool 函数的参数, 继承自 ToolSchema, 部分参数会自动处理，因此是 optional
  */
-export const ToolConfigSchema = ToolSchema.omit({
-  handler: true,
-  filename: true,
-  readmeUrl: true
-})
-  .extend(
-    z.object({
-      toolId: z.string().optional(),
-      toolDescription: z.string().optional(),
-      versionList: z.array(VersionListItemSchema).min(1),
-      tags: z.array(ToolTagEnum).optional(),
-      icon: z.string().optional(),
-      author: z.string().optional(),
-      tutorialLink: z.url().optional(),
-      secretInputConfig: z.array(SecretInputItemSchema).optional()
-    })
-  )
+export const ToolConfigSchema = z
+  .object({
+    ...ToolSchema.omit({
+      handler: true,
+      filename: true,
+      readmeUrl: true
+    }).shape,
+    toolId: z.string().optional(),
+    toolDescription: z.string().optional(),
+    versionList: z.array(VersionListItemSchema).min(1),
+    tags: z.array(ToolTagEnum).optional(),
+    icon: z.string().optional(),
+    author: z.string().optional(),
+    tutorialLink: z.url().optional(),
+    secretInputConfig: z.array(SecretInputItemSchema).optional()
+  })
   .transform((data) => {
     return {
       ...data,
       toolDescription: data.toolDescription ?? data.description
     };
   });
+
+export type ToolConfigType = z.infer<typeof ToolConfigSchema>;
 
 /**
  * 工具集配置
@@ -128,6 +132,8 @@ export const ToolSetConfigSchema = ToolSetSchema.extend({
   tutorialLink: z.url().optional(),
   secretInputConfig: z.array(SecretInputItemSchema).optional()
 });
+
+export type ToolSetConfigType = z.infer<typeof ToolSetConfigSchema>;
 
 // Tool Detail - 工具详情(用于 API 响应)
 export const ToolDetailSchema = UnifiedToolSchema.pick({
@@ -155,5 +161,3 @@ export const ToolSimpleSchema = ToolDetailSchema.omit({
 });
 
 export type ToolSimpleType = z.infer<typeof ToolSimpleSchema>;
-
-export type ToolCallbackReturnSchemaType = z.infer<typeof ToolCallbackReturnSchema>;

@@ -1,21 +1,19 @@
 import { LoadToolsDev } from './loadToolDev';
 import { join } from 'path';
-import { readdir } from 'fs/promises';
-import type { ToolMapType } from './type';
+import { readdir, stat } from 'fs/promises';
+import { getLogger, mod } from '@/lib/logger';
+import { batch, refreshDir } from '@fastgpt-plugin/helpers/index';
+import { basePath, toolsDir, UploadToolsS3Path } from './constants';
 import { isProd } from '@/constants';
-import { MongoSystemPlugin } from '@/mongo/models/plugins';
-import { refreshDir } from '@/utils/fs';
-import { getLogger, mod } from '@/logger';
+import { getCachedData } from '@/lib/cache';
+import { SystemCacheKeyEnum } from '@/lib/cache/type';
+import { MongoSystemPlugin } from '@/lib/mongo/models/plugins';
+import { privateS3Server } from '@/lib/s3';
+import { LoadToolsByFilename } from './loadToolProd';
+import type { CacheToolMapType } from './types/tool';
 import { env } from '@/env';
 
 const logger = getLogger(mod.tool);
-import { basePath, toolsDir, UploadToolsS3Path } from './constants';
-import { privateS3Server } from '@/s3';
-import { stat } from 'fs/promises';
-import { getCachedData } from '@/cache';
-import { SystemCacheKeyEnum } from '@/cache/type';
-import { batch } from '@/utils/parallel';
-import { LoadToolsByFilename } from './loadToolProd';
 
 const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
 
@@ -44,7 +42,7 @@ export async function initTools() {
     }).lean();
 
     logger.debug(`Tools in mongo: ${toolsInMongo.length}`);
-    const toolMap: ToolMapType = new Map();
+    const toolMap: CacheToolMapType = new Map();
 
     // 2 download it to temp dir, and parse it
     await batch(
@@ -62,24 +60,24 @@ export async function initTools() {
     );
 
     // 3. read dev tools, if in dev mode
-    if (!isProd && !env.DISABLE_DEV_TOOLS) {
-      const dir = join(basePath, 'modules', 'tool', 'packages');
-      // skip if dir not exist
-      try {
-        await stat(dir);
-      } catch (e) {
-        return toolMap;
-      }
-      const dirs = (await readdir(dir)).filter((filename) => !filterToolList.includes(filename));
-      const devTools = (
-        await Promise.all(dirs.map(async (filename) => LoadToolsDev(filename)))
-      ).flat();
+    // if (!isProd && !env.DISABLE_DEV_TOOLS) {
+    //   const dir = join(basePath, 'modules', 'tool', 'packages');
+    //   // skip if dir not exist
+    //   try {
+    //     await stat(dir);
+    //   } catch (e) {
+    //     return toolMap;
+    //   }
+    //   const dirs = (await readdir(dir)).filter((filename) => !filterToolList.includes(filename));
+    //   const devTools = (
+    //     await Promise.all(dirs.map(async (filename) => LoadToolsDev(filename)))
+    //   ).flat();
 
-      // overwrite installed tools
-      for (const tool of devTools) {
-        toolMap.set(tool.toolId, tool);
-      }
-    }
+    //   // overwrite installed tools
+    //   for (const tool of devTools) {
+    //     toolMap.set(tool.toolId, tool);
+    //   }
+    // }
 
     logger.info(`Load tools finish: ${toolMap.size}, time: ${Date.now() - start}ms`);
     global.isIniting = false;

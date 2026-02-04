@@ -4,8 +4,8 @@ import {
   type ICosStorageOptions,
   type IOssStorageOptions
 } from '@fastgpt-sdk/storage';
-import { getLogger, infra } from '@/logger';
 import { env } from '@/env';
+import { getLogger, infra } from '../logger';
 
 const logger = getLogger(infra.storage);
 

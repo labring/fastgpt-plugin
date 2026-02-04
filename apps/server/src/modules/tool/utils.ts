@@ -1,17 +1,7 @@
-import { privateS3Server, publicS3Server } from '@/s3';
-import { getLogger, mod } from '@/logger';
-
-const logger = getLogger(mod.tool);
-import { unpkg } from '@/utils/zip';
-import { readdir, stat } from 'fs/promises';
-import { join, parse } from 'path';
-import { tempPkgDir, tempToolsDir, UploadToolsS3Path } from './constants';
-import type { ToolSetType, ToolType } from './type';
-import { ToolDetailSchema } from './type/api';
-import { catchError } from '@/utils/catch';
-import { mimeMap } from '@/s3/const';
-import { rm } from 'fs/promises';
-import { parseMod } from './parseMod';
+import { catchError } from '@fastgpt-plugin/helpers/common/fn';
+import { tempToolsDir, UploadToolsS3Path } from './constants';
+import { unpkg } from '@fastgpt-plugin/helpers/common/zip';
+import path from 'node:path';
 
 /**
  * Move files from unzipped structure to dist directory
@@ -21,10 +11,9 @@ import { parseMod } from './parseMod';
  * - all logo.* including subdirs
  * - assets dir
  */
-
 export const parsePkg = async (filepath: string, temp: boolean = true) => {
   const filename = filepath.split('/').pop() as string;
-  const tempDir = join(tempToolsDir, filename);
+  const tempDir = path.join(tempToolsDir, filename);
   const [, err] = await catchError(() => unpkg(filepath, tempDir));
   if (err) {
     logger.error(`Can not parse toolId, filename: ${filename}`);
@@ -98,5 +87,79 @@ export const parseUploadedTool = async (objectName: string) => {
 
   // 4. remove the uploaded pkg file
   await privateS3Server.removeFile(objectName);
+  return tools;
+};
+
+export const getIconPath = (name: string) => {
+  publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${name}`);
+};
+
+export const parseMod = async ({
+  rootMod,
+  filename,
+  temp = false
+}: {
+  rootMod: ToolSetType | ToolType;
+  filename: string;
+  temp?: boolean;
+}) => {
+  const tools: ToolType[] = [];
+  const checkRootModToolSet = (rootMod: ToolType | ToolSetType): rootMod is ToolSetType => {
+    return 'children' in rootMod;
+  };
+  if (checkRootModToolSet(rootMod)) {
+    const toolsetId = rootMod.toolId;
+
+    const parentIcon = rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${toolsetId}/logo`);
+
+    const children = rootMod.children;
+
+    for (const child of children) {
+      const childToolId = child.toolId;
+
+      const childIcon =
+        child.icon || rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${childToolId}/logo`);
+
+      // Generate version for child tool
+      const childVersion = generateToolVersion(child.versionList);
+      tools.push({
+        ...child,
+        toolId: childToolId,
+        parentId: toolsetId,
+        tags: rootMod.tags,
+        courseUrl: rootMod.courseUrl,
+        author: rootMod.author,
+        icon: childIcon,
+        toolFilename: filename,
+        version: childVersion
+      });
+    }
+
+    // push parent
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      toolId: toolsetId,
+      icon: parentIcon,
+      toolFilename: `${filename}`,
+      cb: () => Promise.resolve({}),
+      versionList: [],
+      version: generateToolSetVersion(children) || ''
+    });
+  } else {
+    // is not toolset
+    const toolId = rootMod.toolId;
+
+    const icon = rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${toolId}/logo`);
+
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.tools],
+      icon,
+      toolId,
+      toolFilename: filename,
+      version: generateToolVersion(rootMod.versionList)
+    });
+  }
   return tools;
 };

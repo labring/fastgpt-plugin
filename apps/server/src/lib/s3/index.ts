@@ -1,4 +1,5 @@
-import { createDefaultStorageOptions } from '@/s3/config';
+import { getLogger, infra } from '../logger';
+import { createDefaultStorageOptions } from './config';
 import { S3Service } from './controller';
 import {
   createStorage,
@@ -9,7 +10,6 @@ import {
   type IStorage,
   type IStorageOptions
 } from '@fastgpt-sdk/storage';
-import { getLogger, infra } from '@/logger';
 
 type StorageConfigWithoutBucket = Omit<IStorageOptions, 'bucket'>;
 
@@ -83,8 +83,12 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
   }
 
   const ensurePublicPolicy = async (storage: IStorage) => {
-    if (storage instanceof MinioStorageAdapter) {
-      await storage.ensurePublicBucketPolicy();
+    try {
+      if (storage instanceof MinioStorageAdapter) {
+        await storage.ensurePublicBucketPolicy();
+      }
+    } catch (error) {
+      logger.warn(`Failed to ensure public policy for ${storage.constructor.name}: ${error}`);
     }
   };
 
