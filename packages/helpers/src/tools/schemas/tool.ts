@@ -69,18 +69,20 @@ export const ToolSchema = z.object({
   etag: z.string()
 });
 
+export type ToolType = z.infer<typeof ToolSchema>;
+
 /**
  * 工具集的所有属性
  */
-export const ToolSetSchema = ToolSchema.omit({
-  parentId: true,
-  versionList: true,
-  handler: true
-}).extend(
-  z.object({
-    toolId: z.string().refine((data) => !data.includes('/'))
-  })
-);
+export const ToolSetSchema = z.object({
+  ...ToolSchema.omit({
+    parentId: true,
+    versionList: true,
+    handler: true
+  }).shape,
+  toolId: z.string().refine((data) => !data.includes('/')),
+  children: z.array(ToolSchema).min(1)
+});
 
 export type ToolSetType = z.infer<typeof ToolSetSchema>;
 

@@ -1,9 +1,6 @@
 // 1. build all tools && data.json
 // 2. upload to s3
 
-import { mimeMap } from '@/s3/const';
-import { pkg } from '@/utils/zip';
-import { UploadToolsS3Path } from '@tool/constants';
 import { $ } from 'bun';
 import { glob } from 'fs/promises';
 import {
