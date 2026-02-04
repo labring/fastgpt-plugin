@@ -2,9 +2,13 @@
   "name": "@fastgpt-plugin/helpers",
   "type": "module",
   "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./*": {
-      "types": "./src/*",
-      "default": "./dist/*"
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
     }
   },
   "files": [
@@ -13,18 +17,16 @@
     "LICENSE",
     "package.json"
   ],
-  "module": "./src/index.ts",
-  "scripts": {},
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "zod": "^4"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "tsdown": "^0.20.1",
     "typescript": "^5.9.3"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "jszip": "^3.10.1",
-    "zod": "^4"
   }
 }

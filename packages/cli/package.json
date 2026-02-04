@@ -1,35 +1,41 @@
 {
   "name": "@fastgpt-plugin/cli",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.10",
   "type": "module",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
-    "fastgpt-plugin": "dist/index.js"
+    "@fastgpt-plugin/cli": "index.js"
   },
   "files": [
     "dist",
-    "templates",
-    "README.md",
-    "LICENSE",
-    "package.json"
+    "index.js",
+    "templates"
   ],
   "scripts": {
     "build": "tsdown",
+    "build:verbose": "tsdown",
     "test": "vitest run",
-    "start": "bun run src/index.ts",
-    "dev": "bun run src/index.ts"
+    "dev": "bun run src/index.ts",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "@oxc-parser/binding-wasm32-wasi": "^0.112.0",
+    "oxc-parser": "^0.112.0",
     "@inquirer/prompts": "^8.2.0",
     "commander": "^14.0.3",
-    "consola": "^3.4.2"
+    "consola": "^3.4.2",
+    "es-toolkit": "^1.44.0",
+    "tsdown": "^0.20.1"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.0.5",
     "vitest": "^4.0.18"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   }
 }
