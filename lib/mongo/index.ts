@@ -2,7 +2,6 @@ import { isProd } from '../constants';
 import { getLogger, infra } from '../logger';
 import { env } from '../env';
 
-const logger = getLogger(infra.mongo);
 import type { Model, Schema } from 'mongoose';
 import { Mongoose } from 'mongoose';
 
@@ -35,10 +34,11 @@ const addCommonMiddleware = (schema: Schema) => {
     });
 
     schema.post(op, function (this: any, result: any, next: () => void) {
+      const logger = getLogger(infra.mongo);
       if (this._startTime) {
         const duration = Date.now() - this._startTime;
         if (duration > 1000) {
-          logger.warn('Slow operation ${duration}ms on ${this.collection?.name}');
+          logger.warn(`Slow operation ${duration}ms on ${this.collection?.name}`);
         }
       }
       next();
@@ -50,7 +50,10 @@ const addCommonMiddleware = (schema: Schema) => {
 
 export const getMongoModel = <T extends Schema>(name: string, schema: T): Model<any> => {
   if (connectionMongo.models[name]) return connectionMongo.model(name) as Model<any>;
-  if (!isProd) logger.info('Load model: ${name}');
+  if (!isProd) {
+    const logger = getLogger(infra.mongo);
+    logger.info(`Load model: ${name}`);
+  }
   addCommonMiddleware(schema);
 
   const model = connectionMongo.model(name, schema);
@@ -65,7 +68,8 @@ const syncMongoIndex = async (model: Model<any>) => {
     try {
       model.syncIndexes({ background: true });
     } catch (error: any) {
-      logger.error('Create index error', { error });
+      const logger = getLogger(infra.mongo);
+      logger.error(`Create index error: ${JSON.stringify(error, null, 2)}`, { error });
     }
   }
 };
@@ -73,15 +77,17 @@ const syncMongoIndex = async (model: Model<any>) => {
 export const ReadPreference = connectionMongo.mongo.ReadPreference;
 
 export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose> {
+  const logger = getLogger(infra.mongo);
   if (db.connection.readyState !== 0) {
     return db;
   }
 
   if (!url || typeof url !== 'string') {
+    logger.error(`Invalid MongoDB connection URL: ${url}`);
     throw new Error(`Invalid MongoDB connection URL: ${url}`);
   }
 
-  console.log(`connecting to ${isProd ? 'MongoDB' : url}`);
+  logger.info(`try to connect to ${isProd ? 'MongoDB' : url}`);
 
   try {
     db.connection.removeAllListeners('error');
@@ -90,15 +96,15 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
 
     // Log errors but don't reconnect here to avoid duplicate reconnection
     db.connection.on('error', (error: any) => {
-      console.error('mongo error', error);
+      logger.error(`Mongo error: ${JSON.stringify(error, null, 2)}`, { error });
     });
 
     db.connection.on('connected', () => {
-      console.log('mongo connected');
+      logger.info('Mongo connected');
     });
     // Handle reconnection on disconnect
     db.connection.on('disconnected', async () => {
-      console.error('mongo disconnected');
+      logger.warn('Mongo disconnected');
     });
 
     await db.connect(url, {
@@ -117,7 +123,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
     });
     return db;
   } catch (error) {
-    logger.error('Mongo connect error', { error });
+    logger.error(`Mongo connect error: ${JSON.stringify(error, null, 2)}`, { error });
     await db.disconnect();
     await delay(1000);
     return connectMongo(db, url);

@@ -2,11 +2,7 @@ import { cors } from 'hono/cors';
 import models from '@model/route';
 import workflow from '@workflow/route';
 import tool from '@tool/route';
-import { isProd } from '@/constants';
 import { createResponseSchema, R, createOpenAPIHono } from '@/utils/http';
-import { serveStatic } from '@hono/node-server/serve-static';
-import { basePath } from '@tool/constants';
-import path from 'node:path';
 import { bearerAuth } from 'hono/bearer-auth';
 import { env } from '@/env';
 import { HTTPException } from 'hono/http-exception';
@@ -25,13 +21,6 @@ app.use(
     allowHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
-  })
-);
-app.use(
-  '/public/*',
-  serveStatic({
-    root: isProd ? 'public' : path.join(basePath, 'dist', 'public'),
-    rewriteRequestPath: (path) => path.replace(/^\/public/, '')
   })
 );
 app.use('/api/*', bearerAuth({ token: env.AUTH_TOKEN }));
@@ -98,28 +87,20 @@ app.route('/api', workflow);
 app.route('/api', tool);
 // #endregion
 
-app.onError((err, c) => {
-  if (err instanceof HTTPException) {
-    const message = err.status === 401 ? 'Unauthorized' : err.message;
-    c.status(err.status);
-    return R.fail(c, {
-      code: err.status,
-      msg: message
-    });
+app.onError((error, c) => {
+  if (error instanceof HTTPException) {
+    const message = error.status === 401 ? 'Unauthorized' : error.message;
+
+    console.warn('HTTP Exception: ', error);
+    c.get('logger').warn(`HTTP Exception: ${JSON.stringify(error, null, 2)}`, { error });
+
+    c.status(error.status);
+    return R.fail(c, { code: error.status, msg: message });
   }
 
-  c.get('logger').error('Internal Server Error', {
-    error: {
-      message: err.message,
-      stack: err.stack,
-      name: err.name
-    }
-  });
-
-  return R.fail(c, {
-    code: 500,
-    msg: err.message || 'Internal Server Error'
-  });
+  console.error('Internal Server Error: ', error);
+  c.get('logger').error(`Internal Server Error: ${JSON.stringify(error, null, 2)}`, { error });
+  return R.fail(c, { code: 500, msg: error.message || 'Internal Server Error' });
 });
 
 app.notFound((c) => {
