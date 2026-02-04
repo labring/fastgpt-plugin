@@ -1,17 +1,17 @@
-import { getCachedData, refreshVersionKey } from '@/lib/cache';
-import { SystemCacheKeyEnum } from '@/cache/type';
-import { connectionMongo, connectMongo, delay, MONGO_URL } from '@/mongo';
-import { ensureDir, refreshDir } from '@/utils/fs';
-import { configureLogger, getLogger, root, destroyLogger } from '@/logger';
-import { env } from '@/env';
+import { app } from '@/app';
+import { refreshVersionKey, getCachedData } from '@/lib/cache';
+import { SystemCacheKeyEnum } from '@/lib/cache/type';
+import { getLogger, root, configureLogger, destroyLogger } from '@/lib/logger';
+import { connectMongo, connectionMongo, MONGO_URL } from '@/lib/mongo';
+import { initS3Service } from '@/lib/s3';
+import { initDatasetSourceAvatars } from '@/modules/dataset/avatars';
+import { initModels } from '@/modules/model/init';
+import { tempDir, tempToolsDir } from '@/modules/tool/constants';
+import { initWorkflowTemplates } from '@/modules/workflow/init';
 import { configureProxy } from '@/utils/setup-proxy';
-import { initModels } from '@model/init';
-import { initDatasetSourceAvatars } from '@dataset/avatars';
-import { basePath, tempDir, tempToolsDir } from '@tool/constants';
-import { initWorkflowTemplates } from '@workflow/init';
+import { refreshDir, ensureDir } from '@fastgpt-plugin/helpers/index';
 import { serve, type ServerType } from '@hono/node-server';
-import { app } from './app';
-import { initS3Service } from '@/s3';
+import { env } from '@/env';
 
 const logger = getLogger(root);
 
@@ -25,8 +25,8 @@ async function prepare() {
   configureProxy(); // setup global proxy
   await configureLogger(); // setup logger
 
-  await connectMongo(connectionMongo, MONGO_URL); // connect to MongoDB
   await initS3Service();
+  await connectMongo(connectionMongo, MONGO_URL); // connect to MongoDB
 
   await refreshDir(tempDir); // cleanup 'tmp' directory
   await ensureDir(tempToolsDir); // ensure temp tools directory
@@ -34,10 +34,10 @@ async function prepare() {
   await refreshVersionKey(SystemCacheKeyEnum.systemTool); // check server version
 
   await Promise.all([
-    getCachedData(SystemCacheKeyEnum.systemTool), // prepare cache
-    initModels(globalThis.isReboot), // initialize model list
+    getCachedData(SystemCacheKeyEnum.systemTool), // prepare tool cache
+    initModels(globalThis.HMR), // initialize model list
     initWorkflowTemplates(), // initialize workflow templates
-    !globalThis.isReboot && initDatasetSourceAvatars()
+    !globalThis.HMR && initDatasetSourceAvatars()
   ]);
 }
 
@@ -73,20 +73,20 @@ async function main() {
       port: env.PORT
     },
     (info) => {
-      logger.info(`Server is listening at http://localhost:${info.port}`);
+      logger.info(`Server is listening at 0.0.0.0:${info.port}`);
     }
   );
 }
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  const reboot = args.includes('--reboot');
+  const HMR = args.includes('--reboot');
 
-  globalThis.isReboot = reboot;
+  globalThis.HMR = HMR;
 
   await main();
 }
 
 declare global {
-  var isReboot: boolean;
+  var HMR: boolean;
 }

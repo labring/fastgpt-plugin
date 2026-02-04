@@ -1,4 +1,4 @@
-import type { StreamMessageType } from '@tool/type/req';
+import type { StreamMessageType } from '@fastgpt-plugin/helpers/tools/schemas/req';
 import type { Response } from 'express';
 
 export class StreamManager {

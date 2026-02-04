@@ -1,14 +1,12 @@
 import { toolsDir } from './constants';
-import type { ToolSetType, ToolType } from './type';
-import { getLogger, mod } from '@/logger';
+import { getLogger, mod } from '@/lib/logger';
+import { join } from 'path';
+import { stat } from 'fs/promises';
+import type { UnifiedToolType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 
 const logger = getLogger(mod.tool);
-import { join } from 'path';
-import { parseMod } from './parseMod';
-import { stat } from 'fs/promises';
-
 // Load tool or toolset and its children
-export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]> => {
+export const LoadToolsByFilename = async (filename: string): Promise<UnifiedToolType[]> => {
   const start = Date.now();
 
   const filePath = join(toolsDir, filename);
@@ -18,7 +16,7 @@ export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]>
   // This ensures same content reuses the same cached module
   const modulePath = `${filePath}?v=${fileSize}`;
 
-  const rootMod = (await import(modulePath)).default as ToolType | ToolSetType;
+  const rootMod = (await import(modulePath)).default as UnifiedToolType;
 
   if (!rootMod.toolId) {
     logger.error(`Can not parse toolId, filename: ${filename}`);

@@ -1,4 +1,5 @@
-import { createDefaultStorageOptions } from '@/s3/config';
+import { getLogger, infra } from '../logger';
+import { createDefaultStorageOptions } from './config';
 import { S3Service } from './controller';
 import {
   createStorage,
@@ -9,7 +10,6 @@ import {
   type IStorage,
   type IStorageOptions
 } from '@fastgpt-sdk/storage';
-import { getLogger, infra } from '@/logger';
 
 const logger = getLogger(infra.storage);
 
@@ -85,8 +85,12 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
   }
 
   const ensurePublicPolicy = async (storage: IStorage) => {
-    if (storage instanceof MinioStorageAdapter) {
-      await storage.ensurePublicBucketPolicy();
+    try {
+      if (storage instanceof MinioStorageAdapter) {
+        await storage.ensurePublicBucketPolicy();
+      }
+    } catch (error) {
+      logger.warn(`Failed to ensure public policy for ${storage.constructor.name}: ${error}`);
     }
   };
 
@@ -99,10 +103,13 @@ const createS3Service = async (bucket: string, isPublic: boolean) => {
   return new S3Service(client, externalClient);
 };
 
-declare global {
-  var _publicS3Server: S3Service;
-  var _privateS3Server: S3Service;
-}
+const s3ServiceInstances: {
+  public: S3Service | null;
+  private: S3Service | null;
+} = {
+  public: null,
+  private: null
+};
 
 export const initS3Service = async () => {
   const logger = getLogger(infra.storage);
@@ -110,20 +117,45 @@ export const initS3Service = async () => {
   const { publicBucket, privateBucket } = getConfig();
 
   try {
-    if (!globalThis._publicS3Server) {
+    if (!s3ServiceInstances.public) {
       logger.debug('Initializing public S3 service...');
-      globalThis._publicS3Server = await createS3Service(publicBucket, true);
+      s3ServiceInstances.public = await createS3Service(publicBucket, true);
     }
 
-    if (!globalThis._privateS3Server) {
+    if (!s3ServiceInstances.private) {
       logger.debug('Initializing private S3 service...');
-      globalThis._privateS3Server = await createS3Service(privateBucket, false);
+      s3ServiceInstances.private = await createS3Service(privateBucket, false);
     }
   } catch (e) {
     logger.error('Failed to initialize S3 service:', { error: e });
     throw new Error('Failed to initialize S3 service');
   }
+
+  logger.info('S3 service initialized successfully');
 };
 
-export const publicS3Server = globalThis._publicS3Server;
-export const privateS3Server = globalThis._privateS3Server;
+export const getPublicS3Server = (): S3Service => {
+  if (!s3ServiceInstances.public) {
+    throw new Error('Public S3 service not initialized. Call initS3Service() first.');
+  }
+  return s3ServiceInstances.public;
+};
+
+export const getPrivateS3Server = (): S3Service => {
+  if (!s3ServiceInstances.private) {
+    throw new Error('Private S3 service not initialized. Call initS3Service() first.');
+  }
+  return s3ServiceInstances.private;
+};
+
+export const publicS3Server = new Proxy({} as S3Service, {
+  get(_, prop) {
+    return getPublicS3Server()[prop as keyof S3Service];
+  }
+});
+
+export const privateS3Server = new Proxy({} as S3Service, {
+  get(_, prop) {
+    return getPrivateS3Server()[prop as keyof S3Service];
+  }
+});

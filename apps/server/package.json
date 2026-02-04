@@ -10,7 +10,8 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/express": "^5.0.1"
+    "@types/express": "^5.0.1",
+    "tsdown": "^0.20.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -20,6 +21,6 @@
     "express": "^5.1.0",
     "hono": "^4.11.5",
     "zod": "^4",
-    "@fastgpt-plugin/shared": "workspace:*"
+    "@fastgpt-plugin/helpers": "workspace:*"
   }
 }

@@ -1,10 +1,10 @@
-import { isProd } from '../constants';
+import { env } from '@/env';
 import { getLogger, infra } from '../logger';
-import { env } from '../env';
 
 const logger = getLogger(infra.mongo);
 import type { Model, Schema } from 'mongoose';
 import { Mongoose } from 'mongoose';
+import { isProd } from '@/constants';
 
 export const MONGO_URL = env.MONGODB_URI;
 
@@ -81,7 +81,7 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
     throw new Error(`Invalid MongoDB connection URL: ${url}`);
   }
 
-  console.log(`connecting to ${isProd ? 'MongoDB' : url}`);
+  logger.info(`connecting to ${isProd ? 'MongoDB' : url}`);
 
   try {
     db.connection.removeAllListeners('error');
@@ -90,15 +90,15 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
 
     // Log errors but don't reconnect here to avoid duplicate reconnection
     db.connection.on('error', (error: any) => {
-      console.error('mongo error', error);
+      logger.error('mongo error', error);
     });
 
     db.connection.on('connected', () => {
-      console.log('mongo connected');
+      logger.info('mongo connected');
     });
     // Handle reconnection on disconnect
     db.connection.on('disconnected', async () => {
-      console.error('mongo disconnected');
+      logger.error('mongo disconnected');
     });
 
     await db.connect(url, {
