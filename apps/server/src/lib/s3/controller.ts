@@ -1,25 +1,27 @@
+import { env } from '@/env';
+import type { IStorage } from '@fastgpt-sdk/storage';
+import { getLogger } from '@logtape/logtape';
 import { randomBytes } from 'crypto';
-import { type FileMetadata } from './config';
+import { addMinutes, differenceInSeconds } from 'date-fns';
 import * as fs from 'fs';
+import { createWriteStream } from 'fs';
 import * as path from 'path';
-import { getLogger, infra } from '@/logger';
-
-const logger = getLogger(infra.storage);
-import { getErrText } from '@tool/utils/err';
+import { pipeline } from 'stream/promises';
+import { type FileMetadata } from './config';
 import { mimeMap } from './const';
+import { MongoS3TTL } from './ttl/schema';
 import {
   FileInputSchema,
   type FileInput,
   type GetUploadBufferResponse,
   type PresignedUrlInputType
 } from './type';
-import { pipeline } from 'stream/promises';
-import { createWriteStream } from 'fs';
-import { ensureDir, removeFile } from '@/utils/fs';
-import { MongoS3TTL } from './ttl/schema';
-import { addMinutes, differenceInSeconds } from 'date-fns';
-import type { IStorage } from '@fastgpt-sdk/storage';
-import { env } from '@/env';
+import { infra } from '../logger';
+import { getErrText } from '@/modules/tool/utils/err';
+import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
+import { rm } from 'fs/promises';
+
+const logger = getLogger(infra.storage);
 
 export class S3Service {
   static readonly MAX_FILE_SIZE: number = env.MAX_FILE_SIZE;
@@ -284,7 +286,7 @@ export class S3Service {
       return filepath;
     } catch (err: any) {
       console.log(err, objectName, 111);
-      await removeFile(filepath);
+      await rm(filepath);
       return undefined;
     }
   }

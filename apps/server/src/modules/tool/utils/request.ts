@@ -1,4 +1,5 @@
-import { getLogger, mod } from '@/logger';
+import { mod } from '@/lib/logger';
+import { getLogger } from '@logtape/logtape';
 
 const logger = getLogger(mod.tool);
 

@@ -4,10 +4,10 @@ import {
   EmbeddingModelItemSchema as BaseEmbeddingModelItemSchema,
   RerankModelItemSchema as BaseRerankModelItemSchema,
   TTSModelSchema as BaseTTSModelSchema,
-  STTModelSchema as BaseSTTModelSchema,
-  type ModelItemType,
-  type ListModelsType
-} from '@/validates/model';
+  STTModelSchema as BaseSTTModelSchema
+} from '@fastgpt-plugin/helpers/models/schemas';
+
+import type { ListModelsType, ModelItemType } from '@fastgpt-plugin/helpers/models/schemas';
 
 // Re-export types
 export { type ModelItemType, type ListModelsType };

@@ -28,11 +28,7 @@
     // Performance optimizations
     "baseUrl": "./",
     "paths": {
-      "@/*": ["lib/*"],
-      "@tool/*": ["modules/tool/*"],
-      "@model/*": ["modules/model/*"],
-      "@workflow/*": ["modules/workflow/*"],
-      "@dataset/*": ["modules/dataset/*"]
+      "@fastgpt-plugin/helpers/*": ["./packages/helpers/src/*"]
     },
 
     // Performance optimizations

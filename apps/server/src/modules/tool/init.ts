@@ -1,17 +1,12 @@
-import { LoadToolsDev } from './loadToolDev';
-import { join } from 'path';
-import { readdir, stat } from 'fs/promises';
 import { getLogger, mod } from '@/lib/logger';
 import { batch, refreshDir } from '@fastgpt-plugin/helpers/index';
-import { basePath, toolsDir, UploadToolsS3Path } from './constants';
-import { isProd } from '@/constants';
+import { toolsDir, UploadToolsS3Path } from './constants';
 import { getCachedData } from '@/lib/cache';
 import { SystemCacheKeyEnum } from '@/lib/cache/type';
 import { MongoSystemPlugin } from '@/lib/mongo/models/plugins';
 import { privateS3Server } from '@/lib/s3';
 import { LoadToolsByFilename } from './loadToolProd';
 import type { CacheToolMapType } from './types/tool';
-import { env } from '@/env';
 
 const logger = getLogger(mod.tool);
 
@@ -54,8 +49,10 @@ export async function initTools() {
         });
         if (!filepath) return;
         const filename = filepath.replace(`${toolsDir}/`, '');
-        const loadedTools = await LoadToolsByFilename(filename);
-        loadedTools.forEach((tool) => toolMap.set(tool.toolId, tool));
+        const loadedTool = await LoadToolsByFilename(filename);
+        if (loadedTool) {
+          toolMap.set(loadedTool.toolId, loadedTool);
+        }
       })
     );
 

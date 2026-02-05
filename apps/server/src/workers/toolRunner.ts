@@ -1,9 +1,8 @@
+import { getErrText } from '@/modules/tool/utils/err';
+import { configureProxy } from '@/utils/setup-proxy';
+import { loadTool } from '@/utils/worker/loadTool';
+import type { Main2WorkerMessageType } from '@/utils/worker/type';
 import { parentPort } from 'worker_threads';
-import type { Main2WorkerMessageType } from './type';
-import { configureProxy } from '../utils/setup-proxy';
-import { getErrText } from '@tool/utils/err';
-import type { ToolCallbackReturnSchemaType } from '@tool/type/req';
-import { loadTool } from './loadTool';
 
 configureProxy();
 
@@ -29,7 +28,7 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
         (tool) => tool.toolId === data.toolId
       );
 
-      if (!tool || !tool.cb) {
+      if (!tool || !tool.handler) {
         parentPort?.postMessage({
           type: 'done',
           data: {
@@ -51,7 +50,7 @@ parentPort?.on('message', async (params: Main2WorkerMessageType) => {
         };
 
         // sendMessage is optinal
-        const result: ToolCallbackReturnSchemaType = await tool.cb(data.inputs, {
+        const result = await tool.handler(data.inputs, {
           systemVar: data.systemVar,
           streamResponse: sendMessage
         });

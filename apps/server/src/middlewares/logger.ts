@@ -1,4 +1,5 @@
-import { getLogger, http, withContext } from '@/logger';
+import { http } from '@/lib/logger';
+import { withContext, getLogger } from '@logtape/logtape';
 import { createMiddleware } from 'hono/factory';
 
 export const logger = createMiddleware<Env>(async (c, next) => {

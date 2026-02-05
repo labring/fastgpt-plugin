@@ -1,16 +1,16 @@
-import { Worker } from 'worker_threads';
-import { getTool } from 'modules/tool/controller';
-import { getLogger, mod } from '@/logger';
+import { mod } from '@/lib/logger';
+import { publicS3Server } from '@/lib/s3';
+import { basePath, devToolIds } from '@/modules/tool/constants';
+import { getTool } from '@/modules/tool/controller';
+import type { StreamDataType } from '@fastgpt-plugin/helpers/tools/schemas/req';
+import { getLogger } from '@logtape/logtape';
+import type { Worker2MainMessageType, Main2WorkerMessageType } from './type';
 import { env } from '@/env';
+import { Worker } from 'node:worker_threads';
+import type { ToolCallbackReturnType } from '@fastgpt-plugin/helpers/index';
+import { getErrText } from '@/modules/tool/utils/err';
 
 const logger = getLogger(mod.tool);
-import type { Main2WorkerMessageType, Worker2MainMessageType } from './type';
-import { getErrText } from '@tool/utils/err';
-import { publicS3Server } from '@/s3';
-import { basePath, devToolIds } from '@tool/constants';
-import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/req';
-// Import invoke registry to ensure all methods are registered
-import '@/invoke';
 
 type WorkerQueueItem = {
   id: string;
@@ -172,7 +172,7 @@ export async function dispatchWithNewWorker(data: {
   const { toolId, onMessage, ...workerData } = data; // 解构出 onMessage，剩余数据传给 worker
   const tool = await getTool(toolId);
 
-  if (!tool || !tool.cb) {
+  if (!tool || !tool.handler) {
     return Promise.reject(`Tool with ID ${toolId} not found or does not have a callback.`);
   }
 
@@ -192,7 +192,7 @@ export async function dispatchWithNewWorker(data: {
         })
   });
 
-  return new Promise<ToolCallbackReturnSchemaType>((resolve, reject) => {
+  return new Promise<ToolCallbackReturnType>((resolve, reject) => {
     worker.on('message', async ({ type, data }: Worker2MainMessageType) => {
       if (type === 'done') {
         resolve(data);
@@ -225,36 +225,6 @@ export async function dispatchWithNewWorker(data: {
             }
           });
         }
-      } else if (type === 'invoke') {
-        try {
-          const { getInvokeHandler } = await import('@/invoke/registry');
-
-          const handler = getInvokeHandler(data.method);
-          if (!handler) {
-            logger.error(`Unknown invoke method: ${data.method}`);
-            throw new Error(`Unknown invoke method: ${data.method}`);
-          }
-
-          // Call handler with params and systemVar from closure
-          const result = await handler(data.params, workerData.systemVar as any);
-
-          worker.postMessage({
-            type: 'invokeResponse',
-            data: {
-              id: data.id,
-              data: result
-            }
-          });
-        } catch (error) {
-          logger.error(`Invoke ${data.method} error`, { error });
-          worker.postMessage({
-            type: 'invokeResponse',
-            data: {
-              id: data.id,
-              error: getErrText(error)
-            }
-          });
-        }
       }
     });
 
@@ -275,7 +245,7 @@ export async function dispatchWithNewWorker(data: {
         toolId,
         inputs: workerData.inputs,
         systemVar: workerData.systemVar,
-        filename: tool.toolFilename,
+        filename: tool.filename,
         dev: devToolIds.has(toolId)
       }
     } as Main2WorkerMessageType);

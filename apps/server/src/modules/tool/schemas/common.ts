@@ -5,7 +5,7 @@ import {
   ToolSimpleSchema as BaseToolSimpleSchema,
   type ToolDetailType,
   type ToolSimpleType
-} from '@/validates/tool';
+} from '@fastgpt-plugin/helpers/tools/schemas/tool';
 
 // Re-export from validates
 export { ToolTagEnum, type ToolDetailType, type ToolSimpleType };

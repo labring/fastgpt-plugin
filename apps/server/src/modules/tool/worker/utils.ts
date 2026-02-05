@@ -2,7 +2,8 @@ import type { MessagePort } from 'worker_threads';
 import { Worker } from 'worker_threads';
 import { join } from 'path';
 import { existsSync } from 'fs';
-import { getLogger, mod } from '@/logger';
+import { getLogger } from '@logtape/logtape';
+import { mod } from '@/lib/logger';
 
 const logger = getLogger(mod.tool);
 

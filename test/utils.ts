@@ -1,5 +1,5 @@
-import { SystemVarSchema } from '@tool/type/req';
 import { z } from 'zod';
+import { SystemVarSchema } from '@fastgpt-plugin/helpers/tools/schemas/req';
 
 export const getMockSystemVar = (
   systemVar: z.infer<typeof SystemVarSchema>

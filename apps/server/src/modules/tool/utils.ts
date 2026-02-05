@@ -1,7 +1,21 @@
 import { catchError } from '@fastgpt-plugin/helpers/common/fn';
-import { tempToolsDir, UploadToolsS3Path } from './constants';
+import { tempPkgDir, tempToolsDir, UploadToolsS3Path } from './constants';
 import { unpkg } from '@fastgpt-plugin/helpers/common/zip';
-import path from 'node:path';
+import path, { parse } from 'node:path';
+import { getLogger } from '@logtape/logtape';
+import { readdir } from 'node:fs/promises';
+import { stat } from 'node:fs/promises';
+import {
+  ToolDetailSchema,
+  type ToolSetType,
+  type ToolType
+} from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import { getPrivateS3Server, getPublicS3Server } from '@/lib/s3';
+import { mimeMap } from '@/lib/s3/const';
+import { rm } from 'node:fs/promises';
+import { parseMod } from './utils/tool';
+
+const logger = getLogger();
 
 /**
  * Move files from unzipped structure to dist directory
@@ -17,30 +31,32 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
   const [, err] = await catchError(() => unpkg(filepath, tempDir));
   if (err) {
     logger.error(`Can not parse toolId, filename: ${filename}`);
-    return [];
+    return;
   }
-  const mod = (await import(join(tempDir, 'index.js'))).default as ToolSetType | ToolType;
+  const mod = (await import(path.join(tempDir, 'index.js'))).default as ToolSetType | ToolType;
 
   // upload unpkged files (except index.js) to s3
   // 1. get all files recursively
   const files = await readdir(tempDir, { recursive: true });
+  const publicS3Server = getPublicS3Server();
+  const privateS3Server = getPrivateS3Server();
 
   // 2. upload
   await Promise.all(
     files.map(async (file) => {
-      const filepath = join(tempDir, file);
+      const filepath = path.join(tempDir, file);
       if ((await stat(filepath)).isDirectory() || file === 'index.js') return;
 
-      const path = join(tempDir, file);
+      const staticFilePath = path.join(tempDir, file);
       const prefix = temp
         ? `${UploadToolsS3Path}/temp/${mod.toolId}`
         : `${UploadToolsS3Path}/${mod.toolId}`;
       await publicS3Server.uploadFileAdvanced({
-        path,
+        path: staticFilePath,
         defaultFilename: file.split('.').slice(0, -1).join('.'), // remove the extention name
         prefix,
         keepRawFilename: true,
-        contentType: mimeMap[parse(path).ext],
+        contentType: mimeMap[parse(staticFilePath).ext],
         ...(temp
           ? {
               expireMins: 60
@@ -52,7 +68,7 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
 
   // 3. upload index.js to private bucket
   await privateS3Server.uploadFileAdvanced({
-    path: join(tempDir, 'index.js'),
+    path: path.join(tempDir, 'index.js'),
     prefix: temp ? `${UploadToolsS3Path}/temp` : UploadToolsS3Path,
     defaultFilename: mod.toolId + '.js',
     keepRawFilename: true,
@@ -63,17 +79,18 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
       : {})
   });
 
-  const tools = await parseMod({
+  const tool = await parseMod({
     rootMod: mod,
-    filename: join(tempDir, 'index.js'),
+    filename: path.join(tempDir, 'index.js'),
     temp
   });
 
   await Promise.all([rm(tempDir, { recursive: true }), rm(filepath)]);
-  return tools.map((item) => ToolDetailSchema.parse(item));
+  return ToolDetailSchema.parse(tool);
 };
 
 export const parseUploadedTool = async (objectName: string) => {
+  const privateS3Server = getPrivateS3Server();
   const toolFilename = objectName.split('/').pop();
   if (!toolFilename) return Promise.reject('Upload Tool Error: Bad objectname');
 
@@ -87,79 +104,5 @@ export const parseUploadedTool = async (objectName: string) => {
 
   // 4. remove the uploaded pkg file
   await privateS3Server.removeFile(objectName);
-  return tools;
-};
-
-export const getIconPath = (name: string) => {
-  publicS3Server.generateExternalUrl(`${UploadToolsS3Path}/${name}`);
-};
-
-export const parseMod = async ({
-  rootMod,
-  filename,
-  temp = false
-}: {
-  rootMod: ToolSetType | ToolType;
-  filename: string;
-  temp?: boolean;
-}) => {
-  const tools: ToolType[] = [];
-  const checkRootModToolSet = (rootMod: ToolType | ToolSetType): rootMod is ToolSetType => {
-    return 'children' in rootMod;
-  };
-  if (checkRootModToolSet(rootMod)) {
-    const toolsetId = rootMod.toolId;
-
-    const parentIcon = rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${toolsetId}/logo`);
-
-    const children = rootMod.children;
-
-    for (const child of children) {
-      const childToolId = child.toolId;
-
-      const childIcon =
-        child.icon || rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${childToolId}/logo`);
-
-      // Generate version for child tool
-      const childVersion = generateToolVersion(child.versionList);
-      tools.push({
-        ...child,
-        toolId: childToolId,
-        parentId: toolsetId,
-        tags: rootMod.tags,
-        courseUrl: rootMod.courseUrl,
-        author: rootMod.author,
-        icon: childIcon,
-        toolFilename: filename,
-        version: childVersion
-      });
-    }
-
-    // push parent
-    tools.push({
-      ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.other],
-      toolId: toolsetId,
-      icon: parentIcon,
-      toolFilename: `${filename}`,
-      cb: () => Promise.resolve({}),
-      versionList: [],
-      version: generateToolSetVersion(children) || ''
-    });
-  } else {
-    // is not toolset
-    const toolId = rootMod.toolId;
-
-    const icon = rootMod.icon || getIconPath(`${temp ? 'temp/' : ''}${toolId}/logo`);
-
-    tools.push({
-      ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.tools],
-      icon,
-      toolId,
-      toolFilename: filename,
-      version: generateToolVersion(rootMod.versionList)
-    });
-  }
   return tools;
 };

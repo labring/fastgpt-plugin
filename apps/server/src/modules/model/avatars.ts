@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join, resolve, parse } from 'node:path';
-import { publicS3Server } from '@/s3';
-import { mimeMap } from '@/s3/const';
-import { getLogger, mod } from '@/logger';
+import { isProd } from '@/constants';
+import { getLogger, mod } from '@/lib/logger';
+import { mimeMap } from '@/lib/s3/const';
+import { publicS3Server } from '@/lib/s3';
 
 const logger = getLogger(mod.model);
-import { isProd } from '@/constants';
 
 const UploadModelsS3Path = 'system/plugin/models';
 

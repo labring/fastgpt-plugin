@@ -8,7 +8,7 @@ export { catchError, batch, delay } from './common/fn';
 export { pkg, unpkg } from './common/zip';
 
 // 工具定义辅助函数
-export { defineTool, defineToolSet } from './helper';
+export { defineTool, defineToolSet } from './tools/helper';
 
 // 模型相关 schemas 和类型
 export {
@@ -62,7 +62,7 @@ export {
 export {
   ToolTagEnum,
   VersionListItemSchema,
-  ToolCallbackReturnSchema,
+  ToolHandlerReturnSchema as ToolCallbackReturnSchema,
   ToolSchema,
   ToolSetSchema,
   UnifiedToolSchema,
@@ -73,8 +73,7 @@ export {
 } from './tools/schemas/tool';
 export type {
   VersionListItemType,
-  ToolCallbackReturnType,
+  ToolHandlerReturnSchema as ToolCallbackReturnType,
   ToolDetailType,
-  ToolSimpleType,
-  ToolCallbackReturnSchemaType
+  ToolSimpleType
 } from './tools/schemas/tool';

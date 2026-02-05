@@ -1,11 +1,12 @@
 import path from 'path';
 import { watch } from 'fs/promises';
 import { $ } from 'bun';
-import { getLogger, root } from '@/logger';
+
+import { spawn, type Subprocess } from 'bun';
+import { getLogger, root } from '@/lib/logger';
+import { basePath } from '@/modules/tool/constants';
 
 const logger = getLogger(root);
-import { spawn, type Subprocess } from 'bun';
-import { basePath } from '@tool/constants';
 
 // DevServer 类管理整个开发环境
 export class DevServer {

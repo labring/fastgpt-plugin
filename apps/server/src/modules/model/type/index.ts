@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { ModelTypeEnum } from '@fastgpt-plugin/helpers/models/schemas';
 import {
-  ModelTypeEnum,
   LLMModelItemSchema,
   EmbeddingModelItemSchema,
   RerankModelItemSchema,
@@ -10,7 +10,7 @@ import {
   ListModelsSchema,
   type ModelItemType,
   type ListModelsType
-} from '@/validates/model';
+} from '../schemas';
 
 export {
   ModelTypeEnum,

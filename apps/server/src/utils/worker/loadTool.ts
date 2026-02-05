@@ -1,16 +1,16 @@
+// TODO: refactor this file
 import { isProd } from '@/constants';
-import { getLogger, mod } from '@/logger';
+import { mod } from '@/lib/logger';
+import { basePath, devToolIds, toolsDir } from '@/modules/tool/constants';
+import { ToolTagEnum } from '@fastgpt-plugin/helpers/index';
+import type { ToolType, ToolSetType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import { getLogger } from '@logtape/logtape';
+import { existsSync } from 'node:fs';
+import { stat } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
 
 const logger = getLogger(mod.tool);
-import { basePath, devToolIds } from '@tool/constants';
-import { ToolTagEnum } from '@tool/type/tags';
-import { existsSync } from 'fs';
-import { readdir } from 'fs/promises';
-import { join } from 'path';
-import { generateToolVersion, generateToolSetVersion } from '@tool/utils/tool';
-import { toolsDir } from '@tool/constants';
-import type { ToolSetType, ToolType } from '@tool/type';
-import { stat } from 'fs/promises';
 
 const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
   if (isProd) {
@@ -20,11 +20,11 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
 
   const tools: ToolType[] = [];
 
-  const toolPath = join(basePath, 'modules', 'tool', 'packages', filename);
+  const toolPath = path.join(basePath, 'modules', 'tool', 'packages', filename);
 
   const rootMod = (await import(toolPath)).default as ToolSetType | ToolType;
 
-  const childrenPath = join(toolPath, 'children');
+  const childrenPath = path.join(toolPath, 'children');
   const isToolSet = existsSync(childrenPath);
 
   const toolsetId = rootMod.toolId || filename;
@@ -36,58 +36,44 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
     {
       const files = await readdir(childrenPath);
       for (const file of files) {
-        const childPath = join(childrenPath, file);
+        const childPath = path.join(childrenPath, file);
 
         const childMod = (await import(childPath)).default as ToolType;
         const toolId = childMod.toolId || `${toolsetId}/${file}`;
 
         const childIcon = childMod.icon ?? rootMod.icon;
 
-        // Generate version for child tool
-        const childVersion = childMod.versionList
-          ? generateToolVersion(childMod.versionList)
-          : generateToolVersion([]);
-
         children.push({
           ...childMod,
           toolId,
-          toolFilename: filename,
+          filename,
           icon: childIcon,
-          parentId: toolsetId,
-          version: childVersion
+          parentId: toolsetId
         });
       }
     }
 
     // Generate version for tool set based on children
-    const toolSetVersion = generateToolSetVersion(children) ?? '';
-
     tools.push({
       ...rootMod,
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon: parentIcon,
-      toolFilename: filename,
-      cb: () => Promise.resolve({}),
-      versionList: [],
-      version: toolSetVersion
+      filename,
+      handler: () => Promise.resolve({}),
+      versionList: []
     });
     tools.push(...children);
   } else {
     // is not toolset
     const icon = rootMod.icon;
 
-    // Generate version for single tool
-    const toolVersion = (rootMod as any).versionList
-      ? generateToolVersion((rootMod as any).versionList)
-      : generateToolVersion([]);
     tools.push({
       ...(rootMod as ToolType),
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon,
-      toolFilename: filename,
-      version: toolVersion
+      filename
     });
   }
 
@@ -99,7 +85,7 @@ const LoadToolsDev = async (filename: string): Promise<ToolType[]> => {
 export const LoadToolsByFilename = async (filename: string): Promise<ToolType[]> => {
   const start = Date.now();
 
-  const filePath = join(toolsDir, filename);
+  const filePath = path.join(toolsDir, filename);
 
   // Calculate file content hash for cache key
   const fileSize = await stat(filePath).then((res) => res.size);
@@ -141,18 +127,14 @@ export const parseMod = async ({
 
       const childIcon = child.icon || rootMod.icon;
 
-      // Generate version for child tool
-      const childVersion = generateToolVersion(child.versionList ?? []);
       tools.push({
         ...child,
         toolId: childToolId,
         parentId: toolsetId,
         tags: rootMod.tags,
-        courseUrl: rootMod.courseUrl,
         author: rootMod.author,
         icon: childIcon,
-        toolFilename: filename,
-        version: childVersion
+        filename
       });
     }
 
@@ -162,10 +144,9 @@ export const parseMod = async ({
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon: parentIcon,
-      toolFilename: `${filename}`,
-      cb: () => Promise.resolve({}),
-      versionList: [],
-      version: generateToolSetVersion(children) || ''
+      filename,
+      handler: () => Promise.resolve({}),
+      versionList: []
     });
   } else {
     // is not toolset
@@ -178,8 +159,7 @@ export const parseMod = async ({
       tags: rootMod.tags || [ToolTagEnum.enum.tools],
       icon,
       toolId,
-      toolFilename: filename,
-      version: generateToolVersion(rootMod.versionList ?? [])
+      filename
     });
   }
   return tools;

@@ -1,4 +1,4 @@
-import { workflows } from '@workflow/init';
+import { workflows } from './init';
 import { R, createOpenAPIHono } from '@/utils/http';
 import { listWorkflowsRoute } from './schemas/routes';
 

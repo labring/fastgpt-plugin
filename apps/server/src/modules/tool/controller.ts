@@ -1,23 +1,23 @@
-import { ToolTagEnum, ToolTagsNameMap } from './type/tags';
-import { z } from 'zod';
-import { ToolTagListSchema } from './type/api';
-import type { ToolType } from './type';
-import { pipeline } from 'stream/promises';
-import { createWriteStream } from 'fs';
-import * as fs from 'fs';
-import path from 'path';
-import { getLogger, mod } from '@/logger';
+import { getCachedData } from '@/lib/cache';
+import { SystemCacheKeyEnum } from '@/lib/cache/type';
+import { mod } from '@/lib/logger';
+import { privateS3Server } from '@/lib/s3';
+import { ToolTagsNameMap } from '@fastgpt-plugin/helpers/index';
+import type { ToolType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import { getLogger } from '@logtape/logtape';
+import type z from 'zod';
+import type { ToolTagListSchema, ToolTagEnum } from './schemas';
+import { getErrText } from './utils/err';
+import fs, { createWriteStream } from 'node:fs';
+import path from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { rm } from 'node:fs/promises';
 
 const logger = getLogger(mod.tool);
-import { getErrText } from './utils/err';
-import { privateS3Server } from '@/s3';
-import { removeFile } from '@/utils/fs';
-import { getCachedData } from '@/cache';
-import { SystemCacheKeyEnum } from '@/cache/type';
 
 export async function getTool(toolId: string): Promise<ToolType | undefined> {
   const tools = await getCachedData(SystemCacheKeyEnum.systemTool);
-  return tools.get(toolId);
+  return tools.get(toolId) as ToolType;
 }
 
 export function getToolTags(): z.infer<typeof ToolTagListSchema> {
@@ -44,6 +44,6 @@ export async function downloadTool(objectName: string, uploadPath: string) {
       }
     );
   } catch {
-    await removeFile(filepath);
+    await rm(filepath);
   }
 }

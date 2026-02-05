@@ -1,8 +1,8 @@
-import { modelsBuffer, aiproxyIdMap, ModelProvidersSorted } from '@model/constants';
-import { getModelAvatarUrl } from '@model/avatars';
 import { R, createOpenAPIHono } from '@/utils/http';
 import { listModelsRoute, getProvidersRoute } from './schemas/routes';
-import type { I18nStringStrictType } from '@/validates/i18n';
+import type { I18nStringStrictType } from '@fastgpt-plugin/helpers/index';
+import { getModelAvatarUrl } from './avatars';
+import { modelsBuffer, ModelProvidersSorted, aiproxyIdMap } from './constants';
 
 const models = createOpenAPIHono<Env>().basePath('/models');
 

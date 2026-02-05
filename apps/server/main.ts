@@ -5,13 +5,13 @@ import { getLogger, root, configureLogger, destroyLogger } from '@/lib/logger';
 import { connectMongo, connectionMongo, MONGO_URL } from '@/lib/mongo';
 import { initS3Service } from '@/lib/s3';
 import { initDatasetSourceAvatars } from '@/modules/dataset/avatars';
-import { initModels } from '@/modules/model/init';
 import { tempDir, tempToolsDir } from '@/modules/tool/constants';
 import { initWorkflowTemplates } from '@/modules/workflow/init';
 import { configureProxy } from '@/utils/setup-proxy';
 import { refreshDir, ensureDir } from '@fastgpt-plugin/helpers/index';
 import { serve, type ServerType } from '@hono/node-server';
 import { env } from '@/env';
+import { initModels } from '@/modules/model/model.init';
 
 const logger = getLogger(root);
 

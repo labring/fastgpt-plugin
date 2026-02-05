@@ -1,8 +1,9 @@
-import type { FileMetadata } from '@/s3/config';
-import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
 import { getNanoid } from './string';
 import { getCurrentToolPrefix } from './context';
+import type { FileMetadata } from '@/lib/s3/config';
+import type { FileInput } from '@/lib/s3/type';
+import { getPublicS3Server } from '@/lib/s3';
 
 // Extend global type to access currentToolPrefix set by worker
 declare global {
@@ -66,7 +67,8 @@ export const uploadFile = async (data: FileInput) => {
       });
     });
   } else {
-    if (!global._publicS3Server) {
+    const publicS3Server = getPublicS3Server();
+    if (!publicS3Server) {
       throw new Error(
         'S3 Server not initialized in global context. If you are in dev mode, please ensure the system is initialized.'
       );
@@ -75,7 +77,7 @@ export const uploadFile = async (data: FileInput) => {
     //  从 AsyncLocalStorage 的上下文中获取前缀（用于非 worker 环境）
     const prefix = getCurrentToolPrefix();
 
-    return await global._publicS3Server.uploadFileAdvanced({
+    return await publicS3Server.uploadFileAdvanced({
       ...data,
       ...(data.buffer ? { buffer: data.buffer } : {}),
       prefix

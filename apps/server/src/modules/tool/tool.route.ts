@@ -22,7 +22,6 @@ import { parsePkg, parseUploadedTool } from '@/modules/tool/utils';
 import { runWithToolContext } from '@/modules/tool/utils/context';
 import { getErrText } from '@/modules/tool/utils/err';
 import { createOpenAPIHono, R } from '@/utils/http';
-import { dispatchWithNewWorker } from '@/utils/worker';
 import { SSEStreamingApi, streamSSE } from 'hono/streaming';
 import path from 'node:path';
 import { writeFile } from 'node:fs/promises';
@@ -30,7 +29,6 @@ import {
   StreamMessageTypeEnum,
   type StreamDataType
 } from '@fastgpt-plugin/helpers/tools/schemas/req';
-import type { ToolCallbackReturnType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
 import { batch } from '@fastgpt-plugin/helpers/common/fn';
 
@@ -192,8 +190,7 @@ tools.openapi(installToolRoute, async (c) => {
     // Write the buffer directly to file
     await writeFile(pkgSavePath, Buffer.from(buffer));
 
-    const tools = await parsePkg(pkgSavePath, false);
-    const tool = tools.find((item) => !item.parentId);
+    const tool = await parsePkg(pkgSavePath, false);
     return tool?.toolId;
   });
 
@@ -231,9 +228,10 @@ tools.openapi(parseUploadedToolRoute, async (c) => {
   const { objectName } = c.req.valid('query');
   logger.debug(`Parsing uploaded tool: ${objectName}`);
   const res = await parseUploadedTool(objectName);
+  if (!res) return c.json(R.error(400, 'Parse tool error'), 400);
 
-  logger.debug(`Parsed tool: ${res.map((item) => item.toolId)}`);
-  return c.json(R.success(res), 200);
+  logger.debug(`Parsed tool: ${res?.toolId}`);
+  return c.json(R.success([res]), 200);
 });
 
 /**
@@ -268,21 +266,25 @@ tools.openapi(runStreamRoute, async (c) => {
       const handleStreamAbort = () => logger.info(`Stream aborted for tool: ${toolId}`);
       stream.onAbort(handleStreamAbort);
 
-      let result: ToolCallbackReturnType;
-      if (tool.isWorkerRun === true) {
-        logger.debug('Run tool start in worker', { body: { toolId, inputs, systemVar } });
-        result = await dispatchWithNewWorker({
-          toolId,
-          inputs,
-          systemVar,
-          onMessage: handleSend
-        });
-      } else {
-        logger.debug('Run tool start in main thread', { body: { toolId, inputs, systemVar } });
-        const context = { prefix: systemVar?.tool?.prefix };
-        const executor = () => tool.cb(inputs, { systemVar, streamResponse: handleSend });
-        result = await runWithToolContext(context, executor);
-      }
+      // let result: ToolHandlerReturnSchema;
+      // if (tool.isWorkerRun === true) {
+      //   logger.debug('Run tool start in worker', { body: { toolId, inputs, systemVar } });
+      //   result = await dispatchWithNewWorker({
+      //     toolId,
+      //     inputs,
+      //     systemVar,
+      //     onMessage: handleSend
+      //   });
+      // } else {
+      //   logger.debug('Run tool start in main thread', { body: { toolId, inputs, systemVar } });
+      //   const context = { prefix: systemVar?.tool?.prefix };
+      //   const executor = () => tool.cb(inputs, { systemVar, streamResponse: handleSend });
+      //   result = await runWithToolContext(context, executor);
+      // }
+      logger.debug('Run tool start in main thread', { body: { toolId, inputs, systemVar } });
+      const context = { prefix: systemVar?.tool?.prefix };
+      const executor = () => tool.handler(inputs, { systemVar, streamResponse: handleSend });
+      const result = await runWithToolContext(context, executor);
 
       if (result.error) {
         logger.debug(`Run tool '${toolId}' failed`, { error: result.error });

@@ -31,13 +31,12 @@ import ai360 from './provider/ai360';
 import huggingface from './provider/HuggingFace';
 import novita from './provider/novita';
 import openrouter from './provider/OpenRouter';
-
 import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
 import { modelsBuffer } from './constants';
-import { getLogger, mod } from '@/logger';
+import { initModelAvatars } from './avatars';
+import { getLogger, mod } from '@/lib/logger';
 
 const logger = getLogger(mod.model);
-import { initModelAvatars } from './avatars';
 
 // All providers array in alphabetical order
 const allProviders: ProviderConfigType[] = [
