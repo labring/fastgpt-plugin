@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { I18nStringSchema } from '../../common/schemas/i18n';
-import { ToolHandlerFunctionSchema as ToolHandlerFunctionSchema } from './req';
+import {
+  ToolHandlerFunctionSchema as ToolHandlerFunctionSchema,
+  ToolHandlerReturnSchema
+} from './req';
 import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
 
 // ============================================
@@ -42,10 +45,8 @@ export type VersionListItemType = z.infer<typeof VersionListItemSchema>;
 // ============================================
 
 // Tool Callback Return - 工具回调返回值
-export const ToolHandlerReturnSchema = z.object({
-  error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
-  output: z.record(z.string(), z.any()).optional()
-});
+// 已移到 req.ts，这里重新导出以保持向后兼容
+export { ToolHandlerReturnSchema };
 export type ToolHandlerReturnSchema = z.infer<typeof ToolHandlerReturnSchema>;
 
 /**

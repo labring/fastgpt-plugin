@@ -8,7 +8,7 @@ import { initDatasetSourceAvatars } from '@/modules/dataset/avatars';
 import { tempDir, tempToolsDir } from '@/modules/tool/constants';
 import { initWorkflowTemplates } from '@/modules/workflow/init';
 import { configureProxy } from '@/utils/setup-proxy';
-import { refreshDir, ensureDir } from '@fastgpt-plugin/helpers/index';
+import { refreshDir, ensureDir, SubPub } from '@fastgpt-plugin/helpers/index';
 import { serve, type ServerType } from '@hono/node-server';
 import { env } from '@/env';
 import { initModels } from '@/modules/model/model.init';
@@ -44,6 +44,8 @@ async function prepare() {
 function shutdown() {
   server?.close(async () => {
     logger.info('HTTP server closed');
+
+    SubPub.removeAllListeners();
 
     // TODO:
     // All resources should be cleanup

@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { ToolHandlerReturnSchema } from './tool';
+
+// ToolHandlerReturnSchema 定义移到这里，避免循环依赖
+export const ToolHandlerReturnSchema = z.object({
+  error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
+  output: z.record(z.string(), z.any()).optional()
+});
+export type ToolHandlerReturnType = z.infer<typeof ToolHandlerReturnSchema>;
 
 export const SystemVarSchema = z.object({
   user: z.object({
@@ -54,8 +60,7 @@ export const StreamMessageSchema = z.discriminatedUnion('type', [
 export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
 
 export const runToolSecondParams = z.object({
-  systemVar: SystemVarSchema,
-  streamResponse: z.function({ input: [StreamDataSchema], output: z.void() })
+  systemVar: SystemVarSchema
 });
 
 export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
