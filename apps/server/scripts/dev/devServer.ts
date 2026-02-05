@@ -1,6 +1,5 @@
 import path from 'path';
 import { watch } from 'fs/promises';
-import { $ } from 'bun';
 
 import { spawn, type Subprocess } from 'bun';
 import { getLogger, root } from '@/lib/logger';
@@ -17,20 +16,8 @@ export class DevServer {
 
   // 启动开发环境
   async start() {
-    await this.buildWorker();
     await this.startServer();
     await this.startWatching();
-  }
-
-  // 构建 worker
-  private async buildWorker() {
-    try {
-      logger.info('Building worker...');
-      await $`bun run build:worker`;
-      logger.info('Worker built successfully');
-    } catch (error) {
-      logger.error('Failed to build worker:', { error: { error } });
-    }
   }
 
   // 启动服务器进程
@@ -40,8 +27,8 @@ export class DevServer {
     }
 
     const cmd = this.isFirstStart
-      ? ['bun', 'run', path.join(__dirname, '..', 'index.ts')]
-      : ['bun', 'run', path.join(__dirname, '..', 'index.ts'), '--reboot'];
+      ? ['bun', 'run', path.join(__dirname, '..', '..', 'main.ts')]
+      : ['bun', 'run', path.join(__dirname, '..', '..', 'main.ts'), '--reboot'];
 
     this.serverProcess = spawn({
       cmd,

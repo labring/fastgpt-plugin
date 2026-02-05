@@ -7,6 +7,10 @@ export { catchError, batch, delay } from './common/fn';
 // 压缩/解压工具
 export { pkg, unpkg } from './common/zip';
 
+// 事件发布订阅系统
+export { SubPub, FileUploadPub, StreamResponsePub, Html2MdPub } from './events';
+export type { EventEnumType, FileInput } from './events/schemas';
+
 // 工具定义辅助函数
 export { defineTool, defineToolSet } from './tools/helper';
 

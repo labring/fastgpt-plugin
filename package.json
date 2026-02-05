@@ -7,7 +7,7 @@
     "dev": "bun --cwd apps/server dev",
     "test": "vitest run",
     "build:runtime": "bun --cwd runtime build",
-    "start": "NODE_ENV=production node --env-file-if-exists=runtime/.env.local dist/index.js",
+    "start": "NODE_ENV=production node --env-file-if-exists=runtime/.env.local apps/server/dist/main.js",
     "build:pkg": "bun tsc && bun --cwd modules/tool build",
     "build:sdk": "bun run --cwd sdk build",
     "build:marketplace": "bun run build:pkg && bun ./modules/tool/build/build-json.ts",

@@ -14,7 +14,9 @@
     "package.json"
   ],
   "module": "./src/index.ts",
-  "scripts": {},
+  "scripts": {
+    "build": "tsdown"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "tsdown": "^0.20.1",

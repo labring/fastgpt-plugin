@@ -1,9 +1,9 @@
-import { parentPort } from 'worker_threads';
-import { html2md } from '../htmlToMarkdown/utils';
 import * as cheerio from 'cheerio';
-import { workerResponse } from '../utils';
+import type { Cherrio2mdProps, Cherrio2mdResponse } from '@/lib/worker/type';
+import { getErrText } from '@/utils/err';
+import { html2md } from '@/lib/worker/html2md';
 
-export const cheerioToHtml = ({
+const cheerioToHtml = ({
   fetchUrl,
   $,
   selector
@@ -68,16 +68,7 @@ export const cheerioToHtml = ({
   };
 };
 
-export type Props = {
-  response: any;
-  url: string;
-  selector?: string;
-};
-export type Response = {
-  title: string;
-  content: string;
-};
-parentPort?.on('message', async (data: Props) => {
+export default (data: Cherrio2mdProps): Cherrio2mdResponse => {
   try {
     const $ = cheerio.load(data.response);
     const { title, html } = cheerioToHtml({
@@ -86,19 +77,11 @@ parentPort?.on('message', async (data: Props) => {
       selector: data.selector
     });
 
-    workerResponse({
-      parentPort,
-      status: 'success',
-      data: {
-        title,
-        content: html2md(html)
-      }
-    });
-  } catch (error) {
-    workerResponse({
-      parentPort,
-      status: 'error',
-      data: error
-    });
+    return {
+      title,
+      content: html2md(html)
+    };
+  } catch (e) {
+    throw new Error('Cheerio2md error:' + getErrText(e));
   }
-});
+};

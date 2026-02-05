@@ -6,6 +6,7 @@ import {
   type ToolDetailType,
   type ToolSimpleType
 } from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import { SystemVarSchema } from '@fastgpt-plugin/helpers/index';
 
 // Re-export from validates
 export { ToolTagEnum, type ToolDetailType, type ToolSimpleType };
@@ -86,5 +87,5 @@ export const InstallToolBodySchema = z.object({
 export const RunStreamBodySchema = z.object({
   toolId: z.string().openapi({ example: 'doc2x' }),
   inputs: z.record(z.string(), z.any()).openapi({ example: { text: 'hello' } }),
-  systemVar: z.any().optional()
+  systemVar: SystemVarSchema
 });

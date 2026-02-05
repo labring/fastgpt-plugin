@@ -1,7 +1,9 @@
+import type { SystemVarType } from '@fastgpt-plugin/helpers/tools/schemas/req';
 import { AsyncLocalStorage } from 'async_hooks';
 
 export type ToolContext = {
-  prefix?: string;
+  systemVar: SystemVarType;
+  runId: string;
 };
 
 globalThis._toolContextStorage = new AsyncLocalStorage<ToolContext>();
@@ -13,7 +15,13 @@ declare global {
 export const getCurrentToolPrefix = (): string | undefined => {
   const context = globalThis._toolContextStorage.getStore();
 
-  return context?.prefix;
+  return context?.systemVar.tool.prefix;
+};
+
+export const getToolRunId = (): string | undefined => {
+  const context = globalThis._toolContextStorage.getStore();
+
+  return context?.runId;
 };
 
 export const runWithToolContext = <T>(context: ToolContext, fn: () => T): T => {

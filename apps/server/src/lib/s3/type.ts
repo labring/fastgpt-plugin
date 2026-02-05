@@ -13,7 +13,7 @@ export type PresignedUrlInputType = z.infer<typeof PresignedUrlInputSchema>;
 
 export const FileInputSchema = z
   .object({
-    url: z.string().url('Invalid URL format').optional(),
+    url: z.url('Invalid URL format').optional(),
     path: z.string().min(1, 'File path cannot be empty').optional(),
     base64: z.string().min(1, 'Base64 data cannot be empty').optional(),
     buffer: z

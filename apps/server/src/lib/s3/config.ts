@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import {
   type IAwsS3CompatibleStorageOptions,
   type ICosStorageOptions,
@@ -8,17 +7,6 @@ import { env } from '@/env';
 import { getLogger, infra } from '../logger';
 
 const logger = getLogger(infra.storage);
-
-export const FileMetadataSchema = z.object({
-  originalFilename: z.string(),
-  contentType: z.string(),
-  size: z.number(),
-  uploadTime: z.date(),
-  accessUrl: z.string(),
-  objectName: z.string()
-});
-
-export type FileMetadata = z.infer<typeof FileMetadataSchema>;
 
 export function createDefaultStorageOptions() {
   const vendor = env.STORAGE_VENDOR;
