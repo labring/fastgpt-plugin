@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolCallbackReturnSchema } from './tool';
+import { ToolHandlerReturnSchema } from './tool';
 
 export const SystemVarSchema = z.object({
   user: z.object({
@@ -24,6 +24,8 @@ export const SystemVarSchema = z.object({
   time: z.string()
 });
 
+export type SystemVarType = z.infer<typeof SystemVarSchema>;
+
 export const StreamMessageTypeEnum = z.enum(['response', 'error', 'stream']);
 export const StreamDataAnswerTypeEnum = z.enum(['answer', 'fastAnswer']);
 
@@ -37,7 +39,7 @@ export type StreamDataType = z.infer<typeof StreamDataSchema>;
 export const StreamMessageSchema = z.discriminatedUnion('type', [
   z.object({
     type: StreamMessageTypeEnum.enum.response,
-    data: ToolCallbackReturnSchema
+    data: ToolHandlerReturnSchema
   }),
   z.object({
     type: StreamMessageTypeEnum.enum.stream,
@@ -60,7 +62,7 @@ export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
 
 export const ToolHandlerFunctionSchema = z.function({
   input: [z.record(z.string(), z.unknown()), runToolSecondParams],
-  output: z.promise(ToolCallbackReturnSchema)
+  output: z.promise(ToolHandlerReturnSchema)
 });
 
 export type ToolHandlerFunctionType = z.infer<typeof ToolHandlerFunctionSchema>;

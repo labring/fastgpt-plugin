@@ -1,6 +1,7 @@
 import type { ClientSession } from 'mongoose';
 import { connectionMongo } from './index';
-import { getLogger, infra } from '@/logger';
+import { getLogger } from '@logtape/logtape';
+import { infra } from '../logger';
 
 const logger = getLogger(infra.mongo);
 

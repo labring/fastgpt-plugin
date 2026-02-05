@@ -42,11 +42,11 @@ export type VersionListItemType = z.infer<typeof VersionListItemSchema>;
 // ============================================
 
 // Tool Callback Return - 工具回调返回值
-export const ToolCallbackReturnSchema = z.object({
+export const ToolHandlerReturnSchema = z.object({
   error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
   output: z.record(z.string(), z.any()).optional()
 });
-export type ToolCallbackReturnType = z.infer<typeof ToolCallbackReturnSchema>;
+export type ToolHandlerReturnSchema = z.infer<typeof ToolHandlerReturnSchema>;
 
 /**
  * 工具的所有属性
@@ -92,6 +92,32 @@ export const UnifiedToolSchema = z.object({
 });
 
 export type UnifiedToolType = z.infer<typeof UnifiedToolSchema>;
+
+/**
+ * 构建产物中的 Tool 的类型
+ */
+export const ToolDistSchema = z.object({
+  ...ToolSetSchema.omit({
+    readmeUrl: true
+  }).shape,
+  icon: z.string().optional(),
+
+  versionList: z.array(VersionListItemSchema).optional(),
+  handler: ToolHandlerFunctionSchema.optional(),
+  children: z
+    .array(
+      z.object({
+        ...ToolSchema.omit({
+          parentId: true,
+          readmeUrl: true
+        }).shape,
+        icon: z.string().optional()
+      })
+    )
+    .optional()
+});
+
+export type ToolDistType = z.infer<typeof ToolDistSchema>;
 
 /**
  * 工具配置

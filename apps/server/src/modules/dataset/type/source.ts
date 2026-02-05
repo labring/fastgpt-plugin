@@ -1,5 +1,5 @@
+import { I18nStringSchema } from '@fastgpt-plugin/helpers/common/schemas/i18n';
 import { z } from 'zod';
-import { I18nStringSchema } from '@/validates/i18n';
 
 export const DatasetSourceIdEnum = z.enum(['yuque', 'feishu', 'custom-api']);
 export type DatasetSourceId = z.infer<typeof DatasetSourceIdEnum>;

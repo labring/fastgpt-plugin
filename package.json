@@ -4,9 +4,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "new:tool": "bun ./scripts/newTool/index.ts",
-    "install:plugins": "bun ./scripts/install-all.ts",
-    "dev": "bun --cwd runtime dev",
+    "dev": "bun --cwd apps/server dev",
     "test": "vitest run",
     "build:runtime": "bun --cwd runtime build",
     "start": "NODE_ENV=production node --env-file-if-exists=runtime/.env.local dist/index.js",
@@ -34,7 +32,8 @@
     "lint-staged": "^13.3.0",
     "prettier": "3.2.4",
     "typescript-eslint": "^8.29.1",
-    "vitest": "3.1.2"
+    "vitest": "3.1.2",
+    "@fastgpt-plugin/helpers": "workspace:*"
   },
   "peerDependencies": {
     "typescript": "^5.9.3",

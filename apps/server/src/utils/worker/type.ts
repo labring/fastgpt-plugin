@@ -1,7 +1,7 @@
+import { type FileMetadata, FileMetadataSchema } from '@/lib/s3/config';
+import { FileInputSchema } from '@/lib/s3/type';
+import { ToolCallbackReturnSchema, StreamDataSchema } from '@fastgpt-plugin/helpers/index';
 import { z } from 'zod';
-import { FileMetadataSchema, type FileMetadata } from '@/s3/config';
-import { FileInputSchema } from '@/s3/type';
-import { StreamDataSchema, ToolCallbackReturnSchema } from '@tool/type/req';
 
 declare global {
   var uploadFileResponseFnMap: Map<string, (data: { data?: FileMetadata; error?: string }) => void>;

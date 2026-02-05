@@ -2,9 +2,9 @@ import { getPublicS3Server } from '@/lib/s3';
 import { UploadToolsS3Path } from '../constants';
 import {
   ToolTagEnum,
+  type ToolDistType,
   type ToolSetType,
-  type ToolType,
-  type UnifiedToolType
+  type ToolType
 } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 
 export const getS3ToolStaticFileURL = ({
@@ -27,17 +27,14 @@ export const parseMod = async ({
   filename,
   temp = false
 }: {
-  rootMod: UnifiedToolType;
+  rootMod: ToolDistType;
   filename: string;
   temp?: boolean; // 临时解析
 }) => {
-  const tools: UnifiedToolType[] = [];
+  const checkRootModToolSet = (rootMod: ToolSetType | ToolType): rootMod is ToolSetType =>
+    'children' in rootMod;
 
-  const checkRootModToolSet = (rootMod: ToolSetType | ToolType): rootMod is ToolSetType => {
-    return 'children' in rootMod;
-  };
-
-  if (checkRootModToolSet(rootMod)) {
+  if (checkRootModToolSet(rootMod as ToolSetType | ToolType)) {
     const toolsetId = rootMod.toolId;
 
     const parentIcon =
@@ -54,52 +51,53 @@ export const parseMod = async ({
       filepath: 'README.md'
     });
 
-    const children = rootMod.children;
-
-    for (const child of children) {
+    const children = rootMod.children!.map<ToolType>((child) => {
       const childToolId = child.toolId;
 
-      const childIcon = child.icon || rootMod.icon || getS3ToolStaticFileURL({});
-
-      // Generate version for child tool
-      tools.push({
+      const childIcon =
+        child.icon ||
+        rootMod.icon ||
+        getS3ToolStaticFileURL({
+          toolId: childToolId,
+          temp,
+          filepath: 'logo'
+        });
+      return {
         ...child,
         toolId: childToolId,
         parentId: toolsetId,
         tags: rootMod.tags,
         tutorialUrl: rootMod.tutorialUrl,
-        readmeUrl: rootMod.readmeUrl,
+        readmeUrl,
         author: rootMod.author,
-        icon: childIcon,
-        filename,
-        children: []
-      });
-    }
+        icon: childIcon
+      };
+    });
 
-    // push parent
-    tools.push({
+    // 返回 ToolSetType，必须包含 children 字段
+    return {
       ...rootMod,
       tags: rootMod.tags || [ToolTagEnum.enum.other],
       toolId: toolsetId,
       icon: parentIcon,
-      toolFilename: `${filename}`,
-      cb: () => Promise.resolve({}),
-      versionList: []
-    });
+      filename,
+      readmeUrl,
+      children
+    } as ToolSetType;
   } else {
     // is not toolset
     const toolId = rootMod.toolId;
 
-    const icon =
-      rootMod.icon || getS3ToolStaticFileURL({ toolId: `${temp ? 'temp/' : ''}${toolId}/logo` });
+    const icon = rootMod.icon || getS3ToolStaticFileURL({ toolId, filepath: 'logo', temp });
+    const readmeUrl = getS3ToolStaticFileURL({ toolId, filepath: 'README.md', temp });
 
-    tools.push({
+    return {
       ...rootMod,
       tags: rootMod.tags || [ToolTagEnum.enum.tools],
       icon,
       toolId,
-      toolFilename: filename
-    });
+      filename,
+      readmeUrl
+    } as ToolType;
   }
-  return tools;
 };

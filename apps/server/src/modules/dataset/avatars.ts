@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join, resolve, parse } from 'node:path';
-import { publicS3Server } from '@/s3';
-import { mimeMap } from '@/s3/const';
-import { getLogger, mod } from '@/logger';
 import { isProd } from '@/constants';
 import type { DatasetSourceId } from './type/source';
+import { mod } from '@/lib/logger';
+import { mimeMap } from '@/lib/s3/const';
+import { getLogger } from '@logtape/logtape';
+import { getPublicS3Server } from '@/lib/s3';
 
 const logger = getLogger(mod.dataset);
 
@@ -127,6 +128,7 @@ const uploadLogoFile = async (
   // Parse file information
   const parsedPath = parse(logoPath);
   const fileExt = parsedPath.ext.toLowerCase();
+  const publicS3Server = getPublicS3Server();
 
   if (!fileExt) {
     logger.warn(`No file extension found for: ${logoPath}`);
@@ -176,7 +178,7 @@ export const initDatasetSourceAvatars = async () => {
       logger.info('Running in production mode, reading from dist/dataset/avatars...');
     }
 
-    const results = await Promise.allSettled(
+    await Promise.allSettled(
       logoItems.map(async ({ path: logoPath, sourceId, logoType }) => {
         if (!sourceId) {
           logger.warn(`Invalid logo path format: ${logoPath}`);
@@ -205,6 +207,7 @@ export const initDatasetSourceAvatars = async () => {
  * @returns Full S3 URL for the avatar
  */
 export const getDatasetSourceAvatarUrl = (sourceId: DatasetSourceId): string => {
+  const publicS3Server = getPublicS3Server();
   return publicS3Server.generateExternalUrl(
     `${UploadDatasetSourcesS3Path.slice(1)}/${sourceId}/logo`
   );
@@ -217,6 +220,7 @@ export const getDatasetSourceAvatarUrl = (sourceId: DatasetSourceId): string => 
  * @returns Full S3 URL for the outline avatar
  */
 export const getDatasetSourceOutlineAvatarUrl = (sourceId: DatasetSourceId): string => {
+  const publicS3Server = getPublicS3Server();
   return publicS3Server.generateExternalUrl(
     `${UploadDatasetSourcesS3Path.slice(1)}/${sourceId}/logo-outline`
   );

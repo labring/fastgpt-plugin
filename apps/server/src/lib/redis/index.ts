@@ -1,7 +1,7 @@
-import { getLogger, infra } from '@/logger';
 import { env } from '@/env';
-
+import { getLogger } from '@logtape/logtape';
 import Redis from 'ioredis';
+import { infra } from '../logger';
 
 // Base Redis options for connection reliability
 const REDIS_BASE_OPTION = {

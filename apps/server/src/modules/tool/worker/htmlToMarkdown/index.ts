@@ -1,6 +1,6 @@
 import { parentPort } from 'worker_threads';
-import { workerResponse } from '@tool/worker/utils';
 import { html2md } from './utils';
+import { workerResponse } from '../utils';
 
 parentPort?.on('message', (params: { html: string }) => {
   try {

@@ -1,7 +1,7 @@
 import { parentPort } from 'worker_threads';
-import { workerResponse } from '@tool/worker/utils';
 import { html2md } from '../htmlToMarkdown/utils';
 import * as cheerio from 'cheerio';
+import { workerResponse } from '../utils';
 
 export const cheerioToHtml = ({
   fetchUrl,

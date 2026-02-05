@@ -3,24 +3,38 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "bun run dev/index.ts",
+    "dev": "bun run scripts/dev/index.ts",
     "build": "bun run build/index.ts",
-    "build:worker": "bun build --env=disable --outfile=../dist/worker.js --target=node --minify ../lib/worker/worker.ts",
+    "build:worker": "bun build --env=disable --outfile=../dist/worker.js --target=node --minify ./src/workers/toolRunner.ts",
     "build:main": "bun build --env=disable --outfile=../dist/index.js --target=node --minify index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/express": "^5.0.1",
+    "@types/turndown": "^5.0.6",
     "tsdown": "^0.20.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@fastgpt-plugin/helpers": "workspace:*",
     "@hono/node-server": "^1.19.9",
+    "@logtape/logtape": "^2.0.2",
+    "@logtape/otel": "^2.0.2",
+    "@logtape/pretty": "^2.0.2",
+    "@scalar/hono-api-reference": "^0.9.40",
+    "@t3-oss/env-core": "^0.13.10",
+    "dayjs": "^1.11.19",
+    "es-toolkit": "^1.44.0",
     "express": "^5.1.0",
+    "glob": "^13.0.1",
     "hono": "^4.11.5",
-    "zod": "^4",
-    "@fastgpt-plugin/helpers": "workspace:*"
+    "ioredis": "^5.9.2",
+    "mongoose": "^9.1.5",
+    "nanoid": "^5.1.6",
+    "turndown": "^7.2.2",
+    "undici": "^7.20.0",
+    "zod": "^4"
   }
 }

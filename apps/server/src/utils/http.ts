@@ -1,7 +1,7 @@
 import { isNotNil } from 'es-toolkit';
 import type { Context, Env } from 'hono';
 import { z, OpenAPIHono, type OpenAPIHonoOptions } from '@hono/zod-openapi';
-import { getContext } from '@/logger';
+import { getContext } from '@/lib/logger';
 
 export interface Result<T = unknown> {
   code: number;
