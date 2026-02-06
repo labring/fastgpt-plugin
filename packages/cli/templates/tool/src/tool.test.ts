@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { InputType, OutputType } from './schemas';
+import { InputSchema, OutputType } from './schemas';
 import { tool } from './tool';
 
 describe('get-time', () => {
   it('should run with valid IO schemas', async () => {
-    const input = InputType.parse({});
+    const input = InputSchema.parse({});
     const result = await tool(input, {
       systemVar: {
         user: {

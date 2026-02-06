@@ -51,7 +51,6 @@ describe('build core with fixtures', () => {
           entry: dir,
           output: fixtureOutput,
           minify: false,
-          watch: false,
           format: 'esm'
         });
 
@@ -62,4 +61,3 @@ describe('build core with fixtures', () => {
     }
   });
 });
-

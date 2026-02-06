@@ -62,7 +62,7 @@ describe('ast-transform (fixtures)', () => {
 
       const expectedSuiteEtag = await computeToolSuiteEtag({
         rootDir: dir,
-        toolId: suiteName,
+        toolId: suiteName || '',
         children
       });
       expect(result.code).toMatch(new RegExp(`etag\\s*:\\s*["']${expectedSuiteEtag}["']`));

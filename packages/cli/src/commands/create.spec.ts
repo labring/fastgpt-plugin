@@ -87,9 +87,10 @@ describe('create command', () => {
     ]);
 
     const projectDir = path.join(testCwd, rawName);
-    const pkgJson = JSON.parse(
-      await readFile(path.join(projectDir, 'package.json'), 'utf-8')
-    ) as { name: string; description: string };
+    const pkgJson = JSON.parse(await readFile(path.join(projectDir, 'package.json'), 'utf-8')) as {
+      name: string;
+      description: string;
+    };
     const readme = await readFile(path.join(projectDir, 'README.md'), 'utf-8');
 
     expect(pkgJson.name).toBe(normalizedName);
