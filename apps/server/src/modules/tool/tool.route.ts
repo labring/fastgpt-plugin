@@ -5,7 +5,6 @@ import { MongoSystemPlugin, pluginTypeEnum } from '@/lib/mongo/models/plugins';
 import { mongoSessionRun } from '@/lib/mongo/utils';
 import { privateS3Server, publicS3Server } from '@/lib/s3';
 import { UploadToolsS3Path, tempPkgDir } from '@/modules/tool/constants';
-import { getToolTags, getTool } from '@/modules/tool/controller';
 import {
   listToolsRoute,
   ToolDetailSchema,
@@ -18,9 +17,6 @@ import {
   parseUploadedToolRoute,
   runStreamRoute
 } from '@/modules/tool/schemas';
-import { parsePkg, parseUploadedTool } from '@/modules/tool/utils';
-import { runWithToolContext } from '@/modules/tool/utils/context';
-import { getErrText } from '@/modules/tool/utils/err';
 import { createOpenAPIHono, R } from '@/utils/http';
 import { SSEStreamingApi, streamSSE } from 'hono/streaming';
 import path from 'node:path';
@@ -31,6 +27,11 @@ import {
 } from '@fastgpt-plugin/helpers/tools/schemas/req';
 import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
 import { batch } from '@fastgpt-plugin/helpers/common/fn';
+import { getTool, getToolTags, parsePkg, parseUploadedTool } from './utils/tool';
+import { getToolRunId, runWithToolContext } from '@/utils/context';
+import { getErrText } from '@/utils/err';
+import { getNanoid } from '@/utils/string';
+import { StreamResponsePub } from '@fastgpt-plugin/helpers/events';
 
 const tools = createOpenAPIHono().basePath('/tools');
 
@@ -258,39 +259,31 @@ tools.openapi(runStreamRoute, async (c) => {
   return streamSSE(
     c,
     async (stream) => {
+      const runId = getNanoid();
+
       const handleSend = async (e: StreamDataType) => {
+        const _runId = getToolRunId();
+        if (_runId !== runId) return;
         const data = JSON.stringify({ type: StreamMessageTypeEnum.enum.stream, data: e });
         await stream.writeSSE({ data });
       };
 
+      StreamResponsePub.register(handleSend);
+
       const handleStreamAbort = () => logger.info(`Stream aborted for tool: ${toolId}`);
       stream.onAbort(handleStreamAbort);
 
-      // let result: ToolHandlerReturnSchema;
-      // if (tool.isWorkerRun === true) {
-      //   logger.debug('Run tool start in worker', { body: { toolId, inputs, systemVar } });
-      //   result = await dispatchWithNewWorker({
-      //     toolId,
-      //     inputs,
-      //     systemVar,
-      //     onMessage: handleSend
-      //   });
-      // } else {
-      //   logger.debug('Run tool start in main thread', { body: { toolId, inputs, systemVar } });
-      //   const context = { prefix: systemVar?.tool?.prefix };
-      //   const executor = () => tool.cb(inputs, { systemVar, streamResponse: handleSend });
-      //   result = await runWithToolContext(context, executor);
-      // }
-      logger.debug('Run tool start in main thread', { body: { toolId, inputs, systemVar } });
-      const context = { prefix: systemVar?.tool?.prefix };
-      const executor = () => tool.handler(inputs, { systemVar, streamResponse: handleSend });
-      const result = await runWithToolContext(context, executor);
+      logger.debug('Run tool start', { body: { toolId, inputs, systemVar } });
+      const result = await runWithToolContext({ systemVar, runId }, () =>
+        tool.handler(inputs, { systemVar })
+      );
 
       if (result.error) {
         logger.debug(`Run tool '${toolId}' failed`, { error: result.error });
         return await handleSendError(result.error, stream);
       }
 
+      StreamResponsePub.unregister(handleSend);
       logger.debug(`Run tool '${toolId}' success`);
       const data = JSON.stringify({ type: StreamMessageTypeEnum.enum.response, data: result });
       await stream.writeSSE({ data });

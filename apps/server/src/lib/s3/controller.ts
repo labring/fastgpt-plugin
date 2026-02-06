@@ -7,7 +7,6 @@ import * as fs from 'fs';
 import { createWriteStream } from 'fs';
 import * as path from 'path';
 import { pipeline } from 'stream/promises';
-import { type FileMetadata } from './config';
 import { mimeMap } from './const';
 import { MongoS3TTL } from './ttl/schema';
 import {
@@ -17,9 +16,10 @@ import {
   type PresignedUrlInputType
 } from './type';
 import { infra } from '../logger';
-import { getErrText } from '@/modules/tool/utils/err';
 import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
 import { rm } from 'fs/promises';
+import type { FileMetadata } from '@fastgpt-plugin/helpers/common/schemas/s3';
+import { getErrText } from '@/utils/err';
 
 const logger = getLogger(infra.storage);
 

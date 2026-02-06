@@ -4,7 +4,6 @@ import turndownPluginGfm from 'joplin-turndown-plugin-gfm';
 
 // Update content size limits
 const MAX_TEXT_LENGTH = 100 * 1000; // 100k characters limit
-
 export const html2md = (html: string) => {
   if (html.length > MAX_TEXT_LENGTH) {
     html = html.slice(0, MAX_TEXT_LENGTH);
