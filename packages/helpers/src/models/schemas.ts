@@ -1,13 +1,8 @@
 import { z } from 'zod';
 
 // 模型类型枚举
-export enum ModelTypeEnum {
-  llm = 'llm',
-  embedding = 'embedding',
-  rerank = 'rerank',
-  tts = 'tts',
-  stt = 'stt'
-}
+export const ModelTypeSchema = z.enum(['llm', 'embedding', 'rerank', 'tts', 'stt']);
+export const ModelTypeEnum = ModelTypeSchema.enum;
 
 // 价格类型 schema
 const PriceSchema = z.object({

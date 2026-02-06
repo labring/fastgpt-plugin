@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-plugin/cli",
-  "version": "0.1.0-alpha.10",
+  "version": "0.1.0-beta.1",
   "type": "module",
   "private": false,
   "publishConfig": {
@@ -22,15 +22,18 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "@fastgpt-plugin/helpers": "workspace:*",
     "@oxc-parser/binding-wasm32-wasi": "^0.112.0",
-    "oxc-parser": "^0.112.0",
     "@inquirer/prompts": "^8.2.0",
     "commander": "^14.0.3",
     "consola": "^3.4.2",
     "es-toolkit": "^1.44.0",
-    "tsdown": "^0.20.1"
+    "oxc-parser": "^0.112.0",
+    "tsdown": "^0.20.1",
+    "yazl": "^3.3.1"
   },
   "devDependencies": {
+    "@types/yazl": "^3.3.0",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.0.5",
     "vitest": "^4.0.18"

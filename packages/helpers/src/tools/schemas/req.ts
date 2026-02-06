@@ -21,7 +21,6 @@ export const SystemVarSchema = z.object({
   app: z.object({
     id: z.string(),
     name: z.string()
-    // version: z.string()
   }),
   tool: z.object({
     id: z.string(),
@@ -33,11 +32,14 @@ export const SystemVarSchema = z.object({
 
 export type SystemVarType = z.infer<typeof SystemVarSchema>;
 
-export const StreamMessageTypeEnum = z.enum(['response', 'error', 'stream']);
-export const StreamDataAnswerTypeEnum = z.enum(['answer', 'fastAnswer']);
+export const StreamMessageTypeSchema = z.enum(['response', 'error', 'stream']);
+export const StreamMessageTypeEnum = StreamMessageTypeSchema.enum;
+
+export const StreamDataAnswerTypeSchema = z.enum(['answer', 'fastAnswer']);
+export const StreamDataAnswerTypeEnum = StreamDataAnswerTypeSchema.enum;
 
 export const StreamDataSchema = z.object({
-  type: StreamDataAnswerTypeEnum,
+  type: StreamDataAnswerTypeSchema,
   content: z.string()
 });
 
@@ -45,15 +47,15 @@ export type StreamDataType = z.infer<typeof StreamDataSchema>;
 
 export const StreamMessageSchema = z.discriminatedUnion('type', [
   z.object({
-    type: StreamMessageTypeEnum.enum.response,
+    type: StreamMessageTypeEnum.response,
     data: ToolHandlerReturnSchema
   }),
   z.object({
-    type: StreamMessageTypeEnum.enum.stream,
+    type: StreamMessageTypeEnum.stream,
     data: StreamDataSchema
   }),
   z.object({
-    type: StreamMessageTypeEnum.enum.error,
+    type: StreamMessageTypeEnum.error,
     data: z.string()
   })
 ]);

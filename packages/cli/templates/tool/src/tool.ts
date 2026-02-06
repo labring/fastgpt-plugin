@@ -1,10 +1,6 @@
-import type { RunToolSecondParamsType } from '@fastgpt-plugin/helpers/tools/schemas/req';
-import type { z } from 'zod';
-import type { InputType, OutputType } from './schemas';
+import type { ToolContextType } from '@fastgpt-plugin/helpers/tools/schemas/req';
+import type { Input, Output } from './schemas';
 
-export async function tool(
-  _input: z.infer<typeof InputType>,
-  _ctx: RunToolSecondParamsType
-): Promise<z.infer<typeof OutputType>> {
+export async function tool(_input: Input, _ctx: ToolContextType): Promise<Output> {
   return { message: 'Hello from {{name}}' };
 }

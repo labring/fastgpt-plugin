@@ -88,4 +88,3 @@ describe('BuildCommand with fixtures', () => {
     }
   });
 });
-

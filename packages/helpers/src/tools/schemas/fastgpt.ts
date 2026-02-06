@@ -1,6 +1,6 @@
 import z from 'zod';
 
-export const FlowNodeInputTypeEnum = z.enum([
+export const FlowNodeInputTypeSchema = z.enum([
   'reference',
   'input',
   'textarea',
@@ -21,8 +21,9 @@ export const FlowNodeInputTypeEnum = z.enum([
   'custom',
   'fileSelect'
 ]);
+export const FlowNodeInputTypeEnum = FlowNodeInputTypeSchema.enum;
 // Workflow IO Value Type - 工作流输入输出值类型
-export const WorkflowIOValueTypeEnum = z.enum([
+export const WorkflowIOValueTypeSchema = z.enum([
   'string',
   'number',
   'boolean',
@@ -39,10 +40,13 @@ export const WorkflowIOValueTypeEnum = z.enum([
   'selectDataset',
   'selectApp'
 ]);
+export const WorkflowIOValueTypeEnum = WorkflowIOValueTypeSchema.enum;
 // LLM Model Type - LLM 模型类型
-export const LLMModelTypeEnum = z.enum(['all', 'classify', 'extractFields', 'toolCall']);
+export const LLMModelTypeSchema = z.enum(['all', 'classify', 'extractFields', 'toolCall']);
+export const LLMModelTypeEnum = LLMModelTypeSchema.enum;
 // Flow Node Output Type - 流程节点输出类型
-export const FlowNodeOutputTypeEnum = z.enum(['hidden', 'source', 'static', 'dynamic', 'error']);
+export const FlowNodeOutputTypeSchema = z.enum(['hidden', 'source', 'static', 'dynamic', 'error']);
+export const FlowNodeOutputTypeEnum = FlowNodeOutputTypeSchema.enum;
 
 // InputConfig - 输入配置项
 export const SecretInputItemSchema = z.object({
@@ -72,7 +76,7 @@ export const InputSchema = z.object({
   placeholder: z.string().optional(),
   defaultValue: z.any().optional(),
   selectedTypeIndex: z.number().optional(),
-  renderTypeList: z.array(FlowNodeInputTypeEnum),
+  renderTypeList: z.array(FlowNodeInputTypeSchema),
   valueType: WorkflowIOValueTypeEnum,
   valueDesc: z.string().optional(),
   value: z.unknown().optional(),
@@ -86,7 +90,7 @@ export const InputSchema = z.object({
   canSelectImg: z.boolean().optional(),
   maxFiles: z.number().optional(),
   inputList: z.array(SecretInputItemSchema).optional(),
-  llmModelType: LLMModelTypeEnum.optional(),
+  llmModelType: LLMModelTypeSchema.optional(),
   list: z
     .array(
       z.object({
@@ -116,9 +120,9 @@ export const InputSchema = z.object({
 // Output - 输出定义
 export const OutputSchema = z.object({
   id: z.string().optional(),
-  type: FlowNodeOutputTypeEnum.optional(),
+  type: FlowNodeOutputTypeSchema.optional(),
   key: z.string(),
-  valueType: WorkflowIOValueTypeEnum,
+  valueType: WorkflowIOValueTypeSchema,
   valueDesc: z.string().optional(),
   value: z.unknown().optional(),
   label: z.string().optional(),

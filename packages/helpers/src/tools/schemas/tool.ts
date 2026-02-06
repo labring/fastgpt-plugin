@@ -8,7 +8,7 @@ import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
 // ============================================
 
 // Tool Tags
-export const ToolTagEnum = z.enum([
+export const ToolTagSchema = z.enum([
   'tools',
   'search',
   'multimodal',
@@ -22,6 +22,7 @@ export const ToolTagEnum = z.enum([
   'scientific',
   'other'
 ]);
+export const ToolTagEnum = ToolTagSchema.enum;
 
 // ============================================
 // 版本配置相关
@@ -34,7 +35,6 @@ export const VersionListItemSchema = z.object({
   inputs: z.array(InputSchema),
   outputs: z.array(OutputSchema)
 });
-
 export type VersionListItemType = z.infer<typeof VersionListItemSchema>;
 
 // ============================================
@@ -51,7 +51,7 @@ export const ToolSchema = z.object({
   description: I18nStringSchema,
   toolDescription: z.string(),
   versionList: z.array(VersionListItemSchema).optional(),
-  tags: z.array(ToolTagEnum).optional(),
+  tags: z.array(ToolTagSchema).optional(),
   icon: z.string(),
   author: z.string().optional(),
   tutorialUrl: z.url().optional(),
@@ -125,7 +125,7 @@ export const ToolConfigSchema = z
     toolId: z.string().optional(),
     toolDescription: z.string().optional(),
     versionList: z.array(VersionListItemSchema).min(1),
-    tags: z.array(ToolTagEnum).optional(),
+    tags: z.array(ToolTagSchema).optional(),
     icon: z.string().optional(),
     author: z.string().optional(),
     tutorialLink: z.url().optional(),
@@ -146,7 +146,7 @@ export type ToolConfigType = z.infer<typeof ToolConfigSchema>;
 export const ToolSetConfigSchema = ToolSetSchema.extend({
   toolId: z.string().optional(),
   toolDescription: z.string().optional(),
-  tags: z.array(ToolTagEnum).optional(),
+  tags: z.array(ToolTagSchema).optional(),
   icon: z.string().optional(),
   author: z.string().optional(),
   tutorialLink: z.url().optional(),
