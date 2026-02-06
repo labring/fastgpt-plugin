@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
-import { randomUUID } from 'node:crypto';
 import type { EventEnumType } from '@fastgpt-plugin/helpers/events';
 import type { EventDataType, EventResponseType } from '@fastgpt-plugin/helpers/events/schemas';
+import type { SystemVarType } from '@fastgpt-plugin/helpers/index';
 
 /**
  * 发布订阅模式基类, 基于 EventEmitter
@@ -15,7 +15,10 @@ export class SubPub {
    */
   on<E extends EventEnumType>(
     event: E,
-    handler: (data: EventDataType<E>) => EventResponseType<E> | Promise<EventResponseType<E>>
+    handler: (data: {
+      data: EventDataType<E>;
+      props: { systemVar: SystemVarType };
+    }) => EventResponseType<E> | Promise<EventResponseType<E>>
   ) {
     this.eventBus.on(event, async (data: any) => {
       try {
@@ -24,7 +27,7 @@ export class SubPub {
         this.eventBus.emit(`${event}:result`, { data: result });
       } catch (error) {
         // 发送错误响应
-        this.eventBus.emit(event, {
+        this.eventBus.emit(`${event}:result`, {
           error: error instanceof Error ? error.message : String(error)
         });
       }
@@ -47,7 +50,11 @@ export class SubPub {
    * @param timeout 超时时间（毫秒），默认 30000ms
    * @returns Promise<响应数据>
    */
-  sendWithResponse<T = any>(event: EventEnumType, data: any, timeout: number = 30000): Promise<T> {
+  sendWithResponse<T extends EventEnumType>(
+    event: T,
+    data: { data: EventDataType<T>; props: { systemVar: SystemVarType } },
+    timeout: number = 30000
+  ): Promise<EventResponseType<T>> {
     return new Promise((resolve, reject) => {
       // 设置超时
       const timer = setTimeout(() => {
@@ -56,16 +63,18 @@ export class SubPub {
       }, timeout);
 
       // 监听响应
-      this.eventBus.once(`${event}:result`, (result: { data?: T; error?: string }) => {
-        console.log('ascascsaccscsac');
-        clearTimeout(timer);
+      this.eventBus.once(
+        `${event}:result`,
+        (result: { data?: EventResponseType<T>; error?: string }) => {
+          clearTimeout(timer);
 
-        if (result.error) {
-          reject(new Error(result.error));
-        } else {
-          resolve(result.data as T);
+          if (result.data) {
+            resolve(result.data);
+          } else {
+            reject(new Error(result.error ?? 'Unknown error'));
+          }
         }
-      });
+      );
 
       this.eventBus.emit(event, data);
     });

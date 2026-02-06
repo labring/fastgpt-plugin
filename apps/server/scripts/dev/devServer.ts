@@ -3,7 +3,6 @@ import { watch } from 'fs/promises';
 
 import { spawn, type Subprocess } from 'bun';
 import { getLogger, root } from '@/lib/logger';
-import { basePath } from '@/modules/tool/constants';
 
 const logger = getLogger(root);
 

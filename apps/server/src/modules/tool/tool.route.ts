@@ -274,7 +274,7 @@ tools.openapi(runStreamRoute, async (c) => {
       try {
         const handleStreamAbort = () => logger.info(`Stream aborted for tool: ${toolId}`);
         stream.onAbort(handleStreamAbort);
-        const emitter = createEventEmitter(sp);
+        const emitter = createEventEmitter(sp, { systemVar });
 
         logger.debug('Run tool start', { body: { toolId, inputs, systemVar } });
 
