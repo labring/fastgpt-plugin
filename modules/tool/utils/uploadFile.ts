@@ -3,7 +3,7 @@ import type { FileInput } from '@/s3/type';
 import { parentPort } from 'worker_threads';
 import { getNanoid } from './string';
 import { getCurrentToolPrefix } from './context';
-import { getPublicS3Server } from '@/s3';
+import { getPublicS3ServerAsync } from '@/s3';
 
 // Extend global type to access currentToolPrefix set by worker
 declare global {
@@ -67,7 +67,7 @@ export const uploadFile = async (data: FileInput) => {
       });
     });
   } else {
-    const publicS3Server = getPublicS3Server();
+    const publicS3Server = await getPublicS3ServerAsync();
     //  从 AsyncLocalStorage 的上下文中获取前缀（用于非 worker 环境）
     const prefix = getCurrentToolPrefix();
 
