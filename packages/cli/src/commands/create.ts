@@ -1,9 +1,12 @@
 import type { Command } from 'commander';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { CreatePluginCommandOptions } from '@fastgpt-plugin/cli/interfaces/command';
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import { DEFAULT_PLUGIN_DESCRIPTION, TOOL_TEMPLATES_DIR } from '@fastgpt-plugin/cli/constants';
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
 import { CreatePrompt } from '@fastgpt-plugin/cli/prompts/create';
+import { kebabCase } from 'es-toolkit';
 
 export class CreateCommand extends BaseCommand {
   public register(parent: Command): void {
@@ -32,27 +35,33 @@ export class CreateCommand extends BaseCommand {
   }
 
   public async run(options: CreatePluginCommandOptions): Promise<void> {
-    const targetDir = this.ctx.path.resolve(options.cwd, options.name);
-    const templateDir = this.ctx.path.join(TOOL_TEMPLATES_DIR, options.type);
+    const targetDir = path.resolve(options.cwd, options.name);
+    const templateDir = path.join(
+      TOOL_TEMPLATES_DIR,
+      options.type === 'tool-suite' ? 'tool-suite' : 'tool'
+    );
     const files = await this.collectTemplateFiles(templateDir);
     const description = options.description ?? DEFAULT_PLUGIN_DESCRIPTION;
 
     await this.ensureDir(targetDir);
 
     for (const rel of files) {
-      const templatePath = this.ctx.path.join(templateDir, rel);
-      const filePath = this.ctx.path.join(targetDir, rel);
-      await this.ensureDir(this.ctx.path.dirname(filePath));
-      const raw = await this.ctx.fs.readFile(templatePath, 'utf-8');
+      const templatePath = path.join(templateDir, rel);
+      const filePath = path.join(targetDir, rel);
+      await this.ensureDir(path.dirname(filePath));
+      const raw = await fs.readFile(templatePath, 'utf-8');
       const content = this.applyPlaceholders(raw, options.name, description);
-      await this.ctx.fs.writeFile(filePath, content, 'utf-8');
+      await fs.writeFile(filePath, content, 'utf-8');
     }
 
-    logger.success(`创建插件项目: ${options.name}`);
+    logger.success(`创建插件项目: ${options.name} (${options.type})`, {
+      cwd: options.cwd
+    });
   }
 
   private applyPlaceholders(text: string, name: string, description: string): string {
-    name = this.ctx.path.basename(name);
+    name = path.basename(name);
+    name = kebabCase(name);
     return text.replace(/\{\{name\}\}/g, name).replace(/\{\{description\}\}/g, description);
   }
 
@@ -60,13 +69,13 @@ export class CreateCommand extends BaseCommand {
     const result: string[] = [];
 
     const walk = async (dir: string) => {
-      const entries = await this.ctx.fs.readdir(dir, { withFileTypes: true });
+      const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
-        const full = this.ctx.path.join(dir, entry.name);
+        const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           await walk(full);
         } else {
-          const rel = this.ctx.path.relative(root, full).replace(/\\/g, '/');
+          const rel = path.relative(root, full).replace(/\\/g, '/');
           result.push(rel);
         }
       }
@@ -77,6 +86,6 @@ export class CreateCommand extends BaseCommand {
   }
 
   private async ensureDir(dir: string): Promise<void> {
-    await this.ctx.fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(dir, { recursive: true });
   }
 }

@@ -1,2 +1,2 @@
-export { default as config } from './config.js';
-export { tool as toolFromChild } from './children/tool/src/index.js';
+export { default as config } from './config';
+export { default as toolFromChild } from './children/tool/index';

@@ -18,7 +18,10 @@
 
     "baseUrl": "./",
     "paths": {
-      "@fastgpt-plugin/cli/*": ["src/*"]
+      "@fastgpt-plugin/cli/*": ["src/*"],
+      "#test/*": ["test/*"]
     }
-  }
+  },
+  "include": ["src", "test"],
+  "exclude": ["test/fixtures", "templates"]
 }

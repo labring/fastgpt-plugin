@@ -1,4 +1,3 @@
-import { CLI_NAME } from '@fastgpt-plugin/cli/constants';
-import { consola } from 'consola';
+import { consola } from 'consola/basic';
 
-export const logger = consola.withTag(CLI_NAME);
+export const logger = consola;

@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm } from 'fs/promises';
+import { mkdir, readdir, readFile, rm } from 'fs/promises';
 import path from 'path';
 import { tmpdir } from 'os';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -7,7 +7,7 @@ import { logger } from '@fastgpt-plugin/cli/helpers';
 
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn().mockResolvedValue('test-plugin'),
-  select: vi.fn().mockResolvedValue('single-tool')
+  select: vi.fn().mockResolvedValue('tool')
 }));
 
 describe('create command', () => {
@@ -53,13 +53,49 @@ describe('create command', () => {
   it('应能执行 create 并输出默认 name 与 type', async () => {
     await run([process.execPath, 'cli', 'create', '--cwd', testCwd]);
     // 由于没有提供 name，会使用 mock 的 'test-plugin'
-    expect(loggerSpy.success).toHaveBeenCalledWith('创建插件项目: test-plugin (single-tool)', {
+    expect(loggerSpy.success).toHaveBeenCalledWith('创建插件项目: test-plugin (tool)', {
       cwd: testCwd
     });
     const files = await listCreatedFiles('test-plugin');
+    // 基础文件
     expect(files).toContain('config.ts');
-    expect(files).toContain('src/index.ts');
     expect(files).toContain('package.json');
+    expect(files).toContain('README.md');
+    expect(files).toContain('vitest.config.ts');
+    // 源码与测试结构
+    expect(files).toContain('src/schemas.ts');
+    expect(files).toContain('src/tool.ts');
+    expect(files).toContain('src/tool.test.ts');
+  });
+
+  it('应将占位符替换为规范化后的 name 与 description', async () => {
+    const rawName = 'My Awesome Tool';
+    const normalizedName = 'my-awesome-tool';
+    const description = 'My awesome description';
+
+    await run([
+      process.execPath,
+      'cli',
+      'create',
+      rawName,
+      '--type',
+      'tool',
+      '--description',
+      description,
+      '--cwd',
+      testCwd
+    ]);
+
+    const projectDir = path.join(testCwd, rawName);
+    const pkgJson = JSON.parse(
+      await readFile(path.join(projectDir, 'package.json'), 'utf-8')
+    ) as { name: string; description: string };
+    const readme = await readFile(path.join(projectDir, 'README.md'), 'utf-8');
+
+    expect(pkgJson.name).toBe(normalizedName);
+    expect(pkgJson.description).toBe(description);
+    expect(readme).toContain(normalizedName);
+    expect(readme).toContain(description);
   });
 
   it('应能解析 create <name> 与 --type', async () => {
@@ -69,18 +105,26 @@ describe('create command', () => {
       'create',
       'my-tool',
       '--type',
-      'tool-set',
+      'tool-suite',
       '--description',
       'Test tool',
       '--cwd',
       testCwd
     ]);
-    expect(loggerSpy.success).toHaveBeenCalledWith('创建插件项目: my-tool (tool-set)', {
+    expect(loggerSpy.success).toHaveBeenLastCalledWith('创建插件项目: my-tool (tool-suite)', {
       cwd: testCwd
     });
     const files = await listCreatedFiles('my-tool');
+    // 父级配置
+    expect(files).toContain('config.ts');
+    expect(files).toContain('package.json');
+    expect(files).toContain('README.md');
+    expect(files).toContain('vitest.config.ts');
+    // 子工具结构
     expect(files).toContain('children/tool/config.ts');
-    expect(files).toContain('children/tool/src/index.ts');
+    expect(files).toContain('children/tool/src/schemas.ts');
+    expect(files).toContain('children/tool/src/tool.ts');
+    expect(files).toContain('children/tool/src/tool.test.ts');
   });
 
   it('应能解析 --cwd', async () => {
@@ -96,7 +140,7 @@ describe('create command', () => {
       '--cwd',
       testCwd
     ]);
-    expect(loggerSpy.success).toHaveBeenCalledWith('创建插件项目: foo (single-tool)', {
+    expect(loggerSpy.success).toHaveBeenLastCalledWith('创建插件项目: foo (tool)', {
       cwd: testCwd
     });
     const files = await listCreatedFiles('foo');

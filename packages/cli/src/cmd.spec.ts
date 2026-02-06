@@ -56,6 +56,6 @@ describe('constants', () => {
   });
 
   it('CLI_VERSION 应为语义化版本', () => {
-    expect(CLI_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(CLI_VERSION).toMatch(/^\d+\.\d+\.\d+(-(alpha|beta)\.\d+)?$/);
   });
 });
