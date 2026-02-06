@@ -5,7 +5,7 @@ import { InputSchema, OutputSchema } from './src/schemas';
 
 export default exportTool({
   toolCb,
-  InputType: InputSchema,
-  OutputType: OutputSchema,
+  InputSchema,
+  OutputSchema,
   config
 });

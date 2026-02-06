@@ -17,7 +17,7 @@ export function defineTool(
       outputs: version.outputs.map((output) => {
         return {
           ...output,
-          type: output.type ?? FlowNodeOutputTypeEnum.enum.static,
+          type: output.type ?? FlowNodeOutputTypeEnum.static,
           id: output.id ?? output.key
         };
       })
