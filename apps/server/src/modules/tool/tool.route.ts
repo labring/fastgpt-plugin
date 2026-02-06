@@ -21,17 +21,11 @@ import { createOpenAPIHono, R } from '@/utils/http';
 import { SSEStreamingApi, streamSSE } from 'hono/streaming';
 import path from 'node:path';
 import { writeFile } from 'node:fs/promises';
-import {
-  StreamMessageTypeEnum,
-  type StreamDataType
-} from '@fastgpt-plugin/helpers/tools/schemas/req';
+import { StreamMessageTypeEnum } from '@fastgpt-plugin/helpers/tools/schemas/req';
 import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
 import { batch } from '@fastgpt-plugin/helpers/common/fn';
 import { getTool, getToolTags, parsePkg, parseUploadedTool } from './utils/tool';
-import { getToolRunId, runWithToolContext } from '@/utils/context';
 import { getErrText } from '@/utils/err';
-import { getNanoid } from '@/utils/string';
-import { StreamResponsePub } from '@fastgpt-plugin/helpers/events';
 import { createEventEmitter } from '@/lib/events';
 import { createSubPub } from '@/lib/events/init';
 

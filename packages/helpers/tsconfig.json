@@ -18,5 +18,6 @@
     "paths": {
       "@fastgpt-plugin/helpers/*": ["src/*"]
     }
-  }
+  },
+  "exclude": ["dist/**/*"]
 }

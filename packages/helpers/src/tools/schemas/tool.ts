@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { I18nStringSchema } from '../../common/schemas/i18n';
-import { ToolHandlerReturnSchema } from './req';
 import type { ToolHandlerFunctionType } from './req';
 import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
 
@@ -58,7 +57,7 @@ export const ToolSchema = z.object({
   tutorialUrl: z.url().optional(),
   readmeUrl: z.url().optional(),
   secretInputConfig: z.array(SecretInputItemSchema).optional(),
-  // handler: ToolHandlerFunctionSchema,
+  handler: z.any(),
   filename: z.string(),
   etag: z.string().nonempty().optional()
 });
