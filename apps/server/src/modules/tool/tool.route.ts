@@ -3,7 +3,7 @@ import { SystemCacheKeyEnum } from '@/lib/cache/type';
 import { getLogger, mod } from '@/lib/logger';
 import { MongoSystemPlugin, pluginTypeEnum } from '@/lib/mongo/models/plugins';
 import { mongoSessionRun } from '@/lib/mongo/utils';
-import { privateS3Server, publicS3Server } from '@/lib/s3';
+import { getPrivateS3Server, getPublicS3Server } from '@/lib/s3';
 import { UploadToolsS3Path, tempPkgDir } from '@/modules/tool/constants';
 import {
   listToolsRoute,
@@ -76,6 +76,7 @@ tools.openapi(getToolRoute, async (c) => {
 tools.openapi(getPresignedUploadUrlRoute, async (c) => {
   const { filename } = c.req.valid('query');
 
+  const privateS3Server = getPrivateS3Server();
   const body = await privateS3Server.generateUploadPresignedURL({
     filepath: UploadToolsS3Path,
     contentType: 'application/zip',
@@ -97,12 +98,14 @@ tools.openapi(confirmUploadRoute, async (c) => {
 
   logger.debug(`Confirming uploaded tools: ${toolIds}`);
 
+  const privateS3Server = getPrivateS3Server();
+  const publicS3Server = getPublicS3Server();
   const pendingTools = await privateS3Server.getFiles(`${UploadToolsS3Path}/temp`);
   const pendingToolIds = pendingTools
-    .map((item) => item.split('/').at(-1)?.split('.').at(0))
-    .filter((item): item is string => !!item);
+    .map((item: string) => item.split('/').at(-1)?.split('.').at(0))
+    .filter((item: string | undefined): item is string => !!item);
 
-  if (!pendingToolIds.some((item) => toolIds.includes(item))) {
+  if (!pendingToolIds.some((item: string) => toolIds.includes(item))) {
     return c.json(R.error(400, 'Some toolIds are invalid'), 400);
   }
 
@@ -150,6 +153,8 @@ tools.openapi(confirmUploadRoute, async (c) => {
 tools.openapi(deleteToolRoute, async (c) => {
   const logger = getLogger(mod.tool);
   const { toolId } = c.req.valid('query');
+  const privateS3Server = getPrivateS3Server();
+  const publicS3Server = getPublicS3Server();
   const res = await mongoSessionRun(async (session) => {
     const result = await MongoSystemPlugin.findOneAndDelete({ toolId }).session(session);
     if (!result || !result.toolId) {

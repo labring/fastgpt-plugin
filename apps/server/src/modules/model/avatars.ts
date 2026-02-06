@@ -3,7 +3,7 @@ import { join, resolve, parse } from 'node:path';
 import { isProd } from '@/constants';
 import { getLogger, mod } from '@/lib/logger';
 import { mimeMap } from '@/lib/s3/const';
-import { publicS3Server } from '@/lib/s3';
+import { getPublicS3Server } from '@/lib/s3';
 
 const logger = getLogger(mod.model);
 
@@ -119,6 +119,7 @@ const uploadLogoFile = async (logoPath: string, providerName: string): Promise<v
     return;
   }
 
+  const publicS3Server = getPublicS3Server();
   await publicS3Server.uploadFileAdvanced({
     path: logoPath,
     prefix: UploadModelsS3Path + `/${providerName}`,
@@ -179,5 +180,6 @@ export const initModelAvatars = async () => {
  */
 export const getModelAvatarUrl = async (providerName: string): Promise<string> => {
   const s3Path = `${UploadModelsS3Path}/${providerName}/logo`;
+  const publicS3Server = getPublicS3Server();
   return publicS3Server.generateExternalUrl(s3Path);
 };

@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import { I18nStringSchema } from '../../common/schemas/i18n';
-import {
-  ToolHandlerFunctionSchema as ToolHandlerFunctionSchema,
-  ToolHandlerReturnSchema
-} from './req';
+import { ToolHandlerReturnSchema } from './req';
+import type { ToolHandlerFunctionType } from './req';
 import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
 
 // ============================================
@@ -44,11 +42,6 @@ export type VersionListItemType = z.infer<typeof VersionListItemSchema>;
 // 回调相关
 // ============================================
 
-// Tool Callback Return - 工具回调返回值
-// 已移到 req.ts，这里重新导出以保持向后兼容
-export { ToolHandlerReturnSchema };
-export type ToolHandlerReturnSchema = z.infer<typeof ToolHandlerReturnSchema>;
-
 /**
  * 工具的所有属性
  */
@@ -65,12 +58,14 @@ export const ToolSchema = z.object({
   tutorialUrl: z.url().optional(),
   readmeUrl: z.url().optional(),
   secretInputConfig: z.array(SecretInputItemSchema).optional(),
-  handler: ToolHandlerFunctionSchema,
+  // handler: ToolHandlerFunctionSchema,
   filename: z.string(),
   etag: z.string().nonempty().optional()
 });
 
-export type ToolType = z.infer<typeof ToolSchema>;
+export type ToolType = z.infer<typeof ToolSchema> & {
+  handler: ToolHandlerFunctionType;
+};
 
 /**
  * 工具集的所有属性
@@ -78,8 +73,7 @@ export type ToolType = z.infer<typeof ToolSchema>;
 export const ToolSetSchema = z.object({
   ...ToolSchema.omit({
     parentId: true,
-    versionList: true,
-    handler: true
+    versionList: true
   }).shape,
   toolId: z.string().refine((data) => !data.includes('/')),
   children: z.array(ToolSchema).min(1)
@@ -104,7 +98,6 @@ export const ToolDistSchema = z.object({
   icon: z.string().optional(),
 
   versionList: z.array(VersionListItemSchema).optional(),
-  handler: ToolHandlerFunctionSchema.optional(),
   children: z
     .array(
       z.object({
@@ -127,7 +120,6 @@ export type ToolDistType = z.infer<typeof ToolDistSchema>;
 export const ToolConfigSchema = z
   .object({
     ...ToolSchema.omit({
-      handler: true,
       filename: true,
       readmeUrl: true
     }).shape,

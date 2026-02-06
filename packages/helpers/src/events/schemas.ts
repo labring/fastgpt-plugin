@@ -1,6 +1,6 @@
-import type { FileMetadata } from 'dist/common/schemas/s3';
-import type { StreamDataType } from 'dist/tools/schemas/req';
 import z from 'zod';
+import type { StreamDataType } from '../tools/schemas/req';
+import type { FileMetadata } from '../common/schemas/s3';
 
 export const EventEnumSchema = z.enum(['file-upload', 'stream-response', 'html2md', 'cherrio2md']);
 export const EventEnum = EventEnumSchema.enum;
