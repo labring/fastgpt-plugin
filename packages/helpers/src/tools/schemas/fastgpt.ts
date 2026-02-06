@@ -77,7 +77,7 @@ export const InputSchema = z.object({
   defaultValue: z.any().optional(),
   selectedTypeIndex: z.number().optional(),
   renderTypeList: z.array(FlowNodeInputTypeSchema),
-  valueType: WorkflowIOValueTypeEnum,
+  valueType: WorkflowIOValueTypeSchema,
   valueDesc: z.string().optional(),
   value: z.unknown().optional(),
   description: z.string().optional(),

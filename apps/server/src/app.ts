@@ -67,7 +67,15 @@ app.get(
     expandAllModelSections: true,
     expandAllResponses: true,
     favicon: '/public/favicon.ico',
-    pageTitle: 'FastGPT Plugin API'
+    pageTitle: 'FastGPT Plugin API',
+    authentication: {
+      preferredSecurityScheme: 'bearerAuth',
+      securitySchemes: {
+        bearerAuth: {
+          token: 'test'
+        }
+      }
+    }
   })
 );
 
@@ -101,8 +109,9 @@ app.openapi(
 
 app.route('/api', models);
 app.route('/api', workflow);
-app.route('/api', tool);
 app.route('/api', dataset);
+app.route('/api', tool);
+
 // #endregion
 
 app.onError((err, c) => {

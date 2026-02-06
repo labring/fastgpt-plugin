@@ -21,7 +21,7 @@ export class SubPub {
       try {
         const result = await handler(data);
         // 发送响应事件
-        this.eventBus.emit(event, { data: result });
+        this.eventBus.emit(`${event}:result`, { data: result });
       } catch (error) {
         // 发送错误响应
         this.eventBus.emit(event, {
@@ -49,17 +49,15 @@ export class SubPub {
    */
   sendWithResponse<T = any>(event: EventEnumType, data: any, timeout: number = 30000): Promise<T> {
     return new Promise((resolve, reject) => {
-      const id = randomUUID();
-      const responseEvent = `${event}:result:${id}`;
-
       // 设置超时
       const timer = setTimeout(() => {
-        this.eventBus.removeAllListeners(responseEvent);
+        this.eventBus.removeAllListeners(event);
         reject(new Error(`Event '${event}' response timeout after ${timeout}ms`));
       }, timeout);
 
       // 监听响应
-      this.eventBus.once(responseEvent, (result: { data?: T; error?: string }) => {
+      this.eventBus.once(`${event}:result`, (result: { data?: T; error?: string }) => {
+        console.log('ascascsaccscsac');
         clearTimeout(timer);
 
         if (result.error) {
@@ -69,8 +67,7 @@ export class SubPub {
         }
       });
 
-      // 发送事件（带 id）
-      this.eventBus.emit(event, data, id);
+      this.eventBus.emit(event, data);
     });
   }
 
