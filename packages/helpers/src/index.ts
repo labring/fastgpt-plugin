@@ -8,8 +8,8 @@ export { catchError, batch, delay } from './common/fn';
 export { pkg, unpkg } from './common/zip';
 
 // 事件发布订阅系统
-export { SubPub, FileUploadPub, StreamResponsePub, Html2MdPub } from './events';
-export type { EventEnumType, FileInput } from './events/schemas';
+export type { EventEnumType, FileInput, Cherrio2MdInput, Cherrio2MdResult } from './events/schemas';
+export type { EventEmitter } from './events/type';
 
 // 工具定义辅助函数
 export { defineTool, defineToolSet } from './tools/helper';
@@ -58,15 +58,21 @@ export {
   StreamDataAnswerTypeEnum,
   StreamDataSchema,
   StreamMessageSchema,
-  runToolSecondParams,
-  ToolHandlerFunctionSchema
+  ToolHandlerReturnSchema
+} from './tools/schemas/req';
+export type {
+  SystemVarType,
+  StreamDataType,
+  StreamMessageType,
+  ToolContextType,
+  ToolHandlerFunctionType,
+  ToolHandlerReturnType
 } from './tools/schemas/req';
 
 // 工具配置相关 schemas 和类型
 export {
   ToolTagEnum,
   VersionListItemSchema,
-  ToolHandlerReturnSchema as ToolCallbackReturnSchema,
   ToolSchema,
   ToolSetSchema,
   UnifiedToolSchema,
@@ -75,9 +81,5 @@ export {
   ToolDetailSchema,
   ToolSimpleSchema
 } from './tools/schemas/tool';
-export type {
-  VersionListItemType,
-  ToolHandlerReturnSchema as ToolCallbackReturnType,
-  ToolDetailType,
-  ToolSimpleType
-} from './tools/schemas/tool';
+
+export type { VersionListItemType, ToolDetailType, ToolSimpleType } from './tools/schemas/tool';

@@ -6,7 +6,7 @@ import { SystemCacheKeyEnum } from '@/lib/cache/type';
 import { MongoSystemPlugin } from '@/lib/mongo/models/plugins';
 import type { CacheToolMapType } from './types/tool';
 import { LoadToolsByFilename } from './utils/tool';
-import { privateS3Server } from '@/lib/s3';
+import { getPrivateS3Server } from '@/lib/s3';
 
 declare global {
   var isIniting: boolean;
@@ -34,6 +34,7 @@ export async function initTools() {
     logger.debug(`Tools in mongo: ${toolsInMongo.length}`);
     const toolMap: CacheToolMapType = new Map();
     // 2 download it to temp dir, and parse it
+    const privateS3Server = getPrivateS3Server();
     await batch(
       50,
       toolsInMongo.map((tool) => async () => {

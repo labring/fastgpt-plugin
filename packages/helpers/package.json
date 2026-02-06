@@ -1,5 +1,9 @@
 {
   "name": "@fastgpt-plugin/helpers",
+  "version": "0.0.1-alpha.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "exports": {
     ".": {

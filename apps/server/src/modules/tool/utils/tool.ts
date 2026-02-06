@@ -1,4 +1,4 @@
-import { getPrivateS3Server, getPublicS3Server, privateS3Server } from '@/lib/s3';
+import { getPrivateS3Server, getPublicS3Server } from '@/lib/s3';
 import { tempPkgDir, tempToolsDir, toolsDir, UploadToolsS3Path } from '../constants';
 import {
   ToolDetailSchema,
@@ -247,6 +247,7 @@ export async function downloadTool(objectName: string, uploadPath: string) {
   const filepath = path.join(uploadPath, filename);
 
   try {
+    const privateS3Server = getPrivateS3Server();
     await pipeline(await privateS3Server.getFile(objectName), createWriteStream(filepath)).catch(
       (err: any) => {
         logger.warn(`Download plugin file: ${objectName} from S3 error: ${getErrText(err)}`);
