@@ -8,12 +8,15 @@ import { StreamMessageTypeEnum } from '@fastgpt-plugin/helpers/index';
 export const createSubPub = ({ stream }: { stream?: SSEStreamingApi }) => {
   const sp = new SubPub();
   sp.on('file-upload', async (data) => {
+    console.log('12312321321321321321');
     const publicS3Server = getPublicS3Server();
-    return await publicS3Server.uploadFileAdvanced({
+    const result = await publicS3Server.uploadFileAdvanced({
       ...data,
       ...(data.buffer ? { buffer: data.buffer } : {}),
       prefix: getCurrentToolPrefix()
     });
+    console.log('upload file result', result);
+    return result;
   });
 
   sp.on('cherrio2md', async ({ fetchUrl, html, selector }) => {
@@ -35,7 +38,7 @@ export const createSubPub = ({ stream }: { stream?: SSEStreamingApi }) => {
   if (stream) {
     sp.on('stream-response', async (data) => {
       await stream.writeSSE({
-        data: JSON.stringify({ type: StreamMessageTypeEnum.enum.stream, data: data })
+        data: JSON.stringify({ type: StreamMessageTypeEnum.stream, data: data })
       });
     });
   }

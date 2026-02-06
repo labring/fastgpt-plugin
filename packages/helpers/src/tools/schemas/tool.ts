@@ -136,7 +136,7 @@ export const ToolConfigSchema = z
   .transform((data) => {
     return {
       ...data,
-      toolDescription: data.toolDescription ?? data.description
+      toolDescription: data.toolDescription ?? data.description.en
     };
   });
 

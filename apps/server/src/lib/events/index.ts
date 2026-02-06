@@ -13,7 +13,7 @@ export const createEventEmitter = (sp: SubPub) => {
       return sp.sendWithResponse('html2md', data);
     },
     async streamResponse(data) {
-      sp.send('stream-response', data);
+      return sp.send('stream-response', data);
     }
   };
 

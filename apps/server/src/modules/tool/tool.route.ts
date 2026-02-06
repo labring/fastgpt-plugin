@@ -35,8 +35,18 @@ const tools = createOpenAPIHono().basePath('/tools');
  * List tools
  */
 tools.openapi(listToolsRoute, async (c) => {
-  const cache = await getCachedData(SystemCacheKeyEnum.systemTool);
-  const parsed = Array.from(cache.values()).map((item) => ToolDetailSchema.safeParse(item));
+  const cache = (await getCachedData(SystemCacheKeyEnum.systemTool)).values();
+  const list = cache
+    .flatMap((item) => {
+      if ('children' in item) {
+        return [item, ...item.children];
+      } else {
+        return [item];
+      }
+    })
+    .toArray();
+
+  const parsed = Array.from(list).map((item) => ToolDetailSchema.safeParse(item));
   const data = parsed.filter((item) => item.success).map((item) => item.data!);
 
   return c.json(R.success(data));
@@ -56,17 +66,17 @@ tools.openapi(getTagsRoute, async (c) => {
 tools.openapi(getToolRoute, async (c) => {
   const { toolId } = c.req.valid('param');
 
-  const parsed = ToolDetailSchema.safeParse(await getTool(toolId));
-  if (!parsed.success) {
-    return c.json(R.error(404, 'Tool not found'), 404);
-  }
+  const parsed = ToolDetailSchema.parse(await getTool(toolId));
+  // if (!parsed.success) {
+  //   return c.json(R.error(404, 'Tool not found'), 404);
+  // }
 
-  return c.json(R.success(parsed.data), 200);
+  return c.json(R.success(parsed), 200);
 });
 
-/**
- * Get upload URL
- */
+// /**
+//  * Get upload URL
+//  */
 tools.openapi(getPresignedUploadUrlRoute, async (c) => {
   const { filename } = c.req.valid('query');
 
@@ -82,9 +92,9 @@ tools.openapi(getPresignedUploadUrlRoute, async (c) => {
   return c.json(R.success(body), 200);
 });
 
-/**
- * Confirm upload
- */
+// /**
+//  * Confirm upload
+//  */
 tools.openapi(confirmUploadRoute, async (c) => {
   const logger = getLogger(mod.tool);
   const { toolIds: _toolIds } = c.req.valid('json');
@@ -105,14 +115,14 @@ tools.openapi(confirmUploadRoute, async (c) => {
 
   await mongoSessionRun(async (session) => {
     const allToolsInstalled = (
-      await MongoSystemPlugin.find({ type: pluginTypeEnum.enum.tool }).lean()
+      await MongoSystemPlugin.find({ type: pluginTypeEnum.tool }).lean()
     ).map((tool) => tool.toolId);
     await MongoSystemPlugin.create(
       toolIds
         .filter((toolId) => !allToolsInstalled.includes(toolId))
         .map((toolId) => ({
           toolId,
-          type: pluginTypeEnum.enum.tool
+          type: pluginTypeEnum.tool
         })),
       {
         session,
@@ -201,7 +211,7 @@ tools.openapi(installToolRoute, async (c) => {
   );
 
   const allToolsInstalled = (
-    await MongoSystemPlugin.find({ type: pluginTypeEnum.enum.tool }).lean()
+    await MongoSystemPlugin.find({ type: pluginTypeEnum.tool }).lean()
   ).map((tool) => tool.toolId);
   // create all that not exists
   await MongoSystemPlugin.create(
@@ -209,7 +219,7 @@ tools.openapi(installToolRoute, async (c) => {
       .filter((toolId) => !allToolsInstalled.includes(toolId))
       .map((toolId) => ({
         toolId,
-        type: pluginTypeEnum.enum.tool
+        type: pluginTypeEnum.tool
       })),
     {
       ordered: true
@@ -269,6 +279,7 @@ tools.openapi(runStreamRoute, async (c) => {
         logger.debug('Run tool start', { body: { toolId, inputs, systemVar } });
 
         const result = await tool.handler(inputs, { systemVar, emitter });
+        console.log(result);
 
         if (result.error) {
           logger.debug(`Run tool '${toolId}' failed`, { error: result.error });

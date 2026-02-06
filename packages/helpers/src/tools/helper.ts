@@ -37,19 +37,19 @@ export function defineToolSet(
 }
 
 export const exportTool = <I, O>({
-  toolCb,
+  handler: toolCb,
   InputSchema,
   OutputSchema,
   config
 }: {
-  toolCb: (input: I, ctx: ToolContextType) => Promise<Record<string, unknown>>;
+  handler: (input: I, ctx: ToolContextType) => Promise<Record<string, unknown>>;
   InputSchema: ZodType<I>;
   OutputSchema: ZodType<O>;
   config: ToolConfigType;
 }) => {
-  const cb = async (props: I, e: ToolContextType) => {
+  const handler = async (props: I, ctx: ToolContextType) => {
     try {
-      const output = await toolCb(InputSchema.parse(props), e);
+      const output = await toolCb(InputSchema.parse(props), ctx);
       return {
         output: OutputSchema.parse(output)
       };
@@ -76,7 +76,7 @@ export const exportTool = <I, O>({
 
   return {
     ...config,
-    cb
+    handler
   };
 };
 

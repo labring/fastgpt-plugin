@@ -1,15 +1,10 @@
 import { z } from '@hono/zod-openapi';
 import {
-  ToolTagEnum,
   ToolDetailSchema as BaseToolDetailSchema,
   ToolSimpleSchema as BaseToolSimpleSchema,
-  type ToolDetailType,
-  type ToolSimpleType
+  ToolTagSchema
 } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 import { SystemVarSchema } from '@fastgpt-plugin/helpers/index';
-
-// Re-export from validates
-export { ToolTagEnum, type ToolDetailType, type ToolSimpleType };
 
 // ==================== Tool Detail Schema (for API response) ====================
 // Use z.object().extend() to convert standard zod schema to zod-openapi schema
@@ -22,7 +17,7 @@ export const ToolSimpleSchema = z.object(BaseToolSimpleSchema.shape).openapi('To
 export const ToolTagListSchema = z.array(
   z.object({
     label: z.string(),
-    value: ToolTagEnum
+    value: ToolTagSchema
   })
 );
 

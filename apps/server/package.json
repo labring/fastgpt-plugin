@@ -18,6 +18,7 @@
   "dependencies": {
     "@fastgpt-plugin/helpers": "workspace:*",
     "@hono/node-server": "^1.19.9",
+    "@hono/zod-openapi": "^1.2.1",
     "@logtape/logtape": "^2.0.2",
     "@logtape/otel": "^2.0.2",
     "@logtape/pretty": "^2.0.2",
