@@ -16,16 +16,14 @@
     }
   },
   "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "package.json"
+    "dist"
   ],
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown"
   },
   "dependencies": {
+    "jszip": "^3.10.1",
     "vitest": "^4.0.18",
     "zod": "^4"
   },

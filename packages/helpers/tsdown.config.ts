@@ -4,14 +4,10 @@ export default defineConfig({
   entry: ['./src/**/*.ts'],
   format: 'esm',
   clean: true,
+  minify: true,
   dts: {
     enabled: true,
     sourcemap: false
   },
-  outExtensions() {
-    return {
-      dts: '.d.ts',
-      js: '.js'
-    };
-  }
+  outExtensions: () => ({ dts: '.d.ts', js: '.js' })
 });
