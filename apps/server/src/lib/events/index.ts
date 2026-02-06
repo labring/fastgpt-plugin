@@ -4,7 +4,7 @@ import type { SubPub } from './class';
 export const createEventEmitter = (sp: SubPub) => {
   const eventEmiter: EventEmitter = {
     async uploadFile(data) {
-      sp.sendWithResponse('file-upload', data);
+      return sp.sendWithResponse('file-upload', data);
     },
     async cherrio2md(data) {
       return sp.sendWithResponse('cherrio2md', data);

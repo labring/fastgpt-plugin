@@ -26,6 +26,7 @@
     "build": "tsdown"
   },
   "dependencies": {
+    "vitest": "^4.0.18",
     "zod": "^4"
   },
   "devDependencies": {
