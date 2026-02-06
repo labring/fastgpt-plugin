@@ -72,7 +72,8 @@ export type ToolType = z.infer<typeof ToolSchema> & {
 export const ToolSetSchema = z.object({
   ...ToolSchema.omit({
     parentId: true,
-    versionList: true
+    versionList: true,
+    handler: true
   }).shape,
   toolId: z.string().refine((data) => !data.includes('/')),
   children: z.array(ToolSchema).min(1)
@@ -120,7 +121,8 @@ export const ToolConfigSchema = z
   .object({
     ...ToolSchema.omit({
       filename: true,
-      readmeUrl: true
+      readmeUrl: true,
+      handler: true
     }).shape,
     toolId: z.string().optional(),
     toolDescription: z.string().optional(),
