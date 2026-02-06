@@ -1,37 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { InputType, OutputType } from './schemas';
+import { InputSchema, OutputSchema } from './schemas';
 import { tool } from './tool';
+import { mockedEventEmitter, mockedSystemVar } from '@fastgpt-plugin/helpers/tools/mocks';
 
 describe('get-time', () => {
   it('should run with valid IO schemas', async () => {
-    const input = InputType.parse({});
+    const input = InputSchema.parse({});
     const result = await tool(input, {
-      systemVar: {
-        user: {
-          id: 'test',
-          username: 'test',
-          contact: 'test',
-          membername: 'test',
-          teamName: 'test',
-          teamId: 'test',
-          name: 'test'
-        },
-        app: {
-          id: 'test',
-          name: 'test'
-        },
-        tool: {
-          id: 'test',
-          version: '0.0.1'
-        },
-        time: new Date().toISOString()
-      },
-      streamResponse: () => {
-        // noop
-      }
+      systemVar: mockedSystemVar,
+      emitter: mockedEventEmitter
     });
 
-    const output = OutputType.parse(result);
+    const output = OutputSchema.parse(result);
     expect(output).toBeDefined();
   });
 });

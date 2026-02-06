@@ -22,7 +22,7 @@ export const mockedSystemVar: SystemVarType = {
     version: '1.0.0',
     prefix: 'mock-prefix'
   },
-  time: new Date().toISOString()
+  time: '2026-02-06T00:00:00.000Z'
 };
 
 export const mockedEventEmitter: EventEmitter = {
@@ -32,7 +32,7 @@ export const mockedEventEmitter: EventEmitter = {
     objectName: 'mock-object-name',
     originalFilename: 'mock-original-filename',
     size: 1024,
-    uploadTime: new Date()
+    uploadTime: new Date('2026-02-06T00:00:00.000Z')
   } as FileMetadata),
 
   streamResponse: vi.fn(),

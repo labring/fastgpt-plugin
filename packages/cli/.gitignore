@@ -35,3 +35,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Test snapshots
 __build_snapshot__
+__pack_output__
+
+!test/fixtures/**/dist/

@@ -17,7 +17,7 @@ export function defineTool(
       outputs: version.outputs.map((output) => {
         return {
           ...output,
-          type: output.type ?? FlowNodeOutputTypeEnum.enum.static,
+          type: output.type ?? FlowNodeOutputTypeEnum.static,
           id: output.id ?? output.key
         };
       })
@@ -36,22 +36,22 @@ export function defineToolSet(
   return ToolSetConfigSchema.parse(toolset);
 }
 
-export const exportTool = <TInput, TOutput>({
+export const exportTool = <I, O>({
   toolCb,
-  InputType,
-  OutputType,
+  InputSchema,
+  OutputSchema,
   config
 }: {
-  toolCb: (props: TInput, e: ToolContextType) => Promise<Record<string, any>>;
-  InputType: ZodType<TInput>;
-  OutputType: ZodType<TOutput>;
+  toolCb: (input: I, ctx: ToolContextType) => Promise<Record<string, unknown>>;
+  InputSchema: ZodType<I>;
+  OutputSchema: ZodType<O>;
   config: ToolConfigType;
 }) => {
-  const cb = async (props: TInput, e: ToolContextType) => {
+  const cb = async (props: I, e: ToolContextType) => {
     try {
-      const output = await toolCb(InputType.parse(props), e);
+      const output = await toolCb(InputSchema.parse(props), e);
       return {
-        output: OutputType.parse(output)
+        output: OutputSchema.parse(output)
       };
     } catch (error: unknown) {
       if (error instanceof ZodError) {
