@@ -253,7 +253,7 @@ tools.openapi(runStreamRoute, async (c) => {
   const handleSendError = async (error: unknown, stream: SSEStreamingApi) => {
     logger.error(`Run tool '${toolId}' error: ${error}`, { error });
     await stream.writeSSE({
-      data: JSON.stringify({ type: StreamMessageTypeEnum.enum.error, data: getErrText(error) })
+      data: JSON.stringify({ type: StreamMessageTypeEnum.error, data: getErrText(error) })
     });
   };
 
@@ -276,7 +276,7 @@ tools.openapi(runStreamRoute, async (c) => {
         }
 
         logger.debug(`Run tool '${toolId}' success`);
-        const data = JSON.stringify({ type: StreamMessageTypeEnum.enum.response, data: result });
+        const data = JSON.stringify({ type: StreamMessageTypeEnum.response, data: result });
         await stream.writeSSE({ data });
       } finally {
         sp.removeAllListeners();

@@ -93,7 +93,7 @@ export const parseMod = async ({
     // 返回 ToolSetType，必须包含 children 字段
     return {
       ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      tags: rootMod.tags || [ToolTagEnum.other],
       toolId: toolsetId,
       icon: parentIcon,
       filename,
@@ -109,7 +109,7 @@ export const parseMod = async ({
 
     return {
       ...rootMod,
-      tags: rootMod.tags || [ToolTagEnum.enum.tools],
+      tags: rootMod.tags || [ToolTagEnum.tools],
       icon,
       toolId,
       filename,
