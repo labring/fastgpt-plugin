@@ -1,0 +1,32 @@
+{
+  "name": "fastgpt-tools-sql",
+  "module": "index.ts",
+  "type": "module",
+  "keywords": [
+    "SQL",
+    "Oracle",
+    "MySQL",
+    "ClickHouse",
+    "Microsoft SQL Server"
+  ],
+  "author": "FastGPT",
+  "description": "SQL connection tool, made by FastGPT",
+  "scripts": {
+    "build": "npx @fastgpt-plugin/cli build"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/oracledb": "^6.9.1",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@clickhouse/client": "^1.12.1",
+    "@fastgpt-plugin/helpers": "^0.1.0",
+    "@types/mssql": "^9.1.8",
+    "mssql": "^12.0.0",
+    "mysql2": "^3.15.0",
+    "oracledb": "^6.9.0",
+    "postgres": "^3.4.7",
+    "zod": "^4"
+  }
+}

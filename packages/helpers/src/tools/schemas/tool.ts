@@ -67,7 +67,7 @@ export const ToolSchema = z.object({
   secretInputConfig: z.array(SecretInputItemSchema).optional(),
   handler: ToolHandlerFunctionSchema,
   filename: z.string(),
-  etag: z.string()
+  etag: z.string().nonempty().optional()
 });
 
 export type ToolType = z.infer<typeof ToolSchema>;

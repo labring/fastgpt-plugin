@@ -5,7 +5,16 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npx @fastgpt-plugin/cli build",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastgpt-plugin/helpers": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@fastgpt-plugin/cli": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
