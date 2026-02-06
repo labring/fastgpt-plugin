@@ -1,4 +1,3 @@
-export { SubPub } from './class';
 export { FileUploadPub } from './fileUpload';
 export { StreamResponsePub } from './stream';
 export { Html2MdPub } from './html2md';

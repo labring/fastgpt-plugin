@@ -1,8 +1,4 @@
 import { cors } from 'hono/cors';
-import tool from '@/modules/tool/tool.route';
-// import models from '@model/route';
-// import workflow from '@workflow/route';
-// import dataset from '@dataset/route';
 import { createResponseSchema, R, createOpenAPIHono } from '@/utils/http';
 import { bearerAuth } from '@/middlewares/auth';
 import { HTTPException } from 'hono/http-exception';
@@ -11,7 +7,22 @@ import { Scalar } from '@scalar/hono-api-reference';
 import { requestId } from 'hono/request-id';
 import { logger } from '@/middlewares/logger';
 
+import tool from '@/modules/tool/tool.route';
+import models from '@/modules/model/model.route';
+import workflow from '@/modules/workflow/workflow.route';
+import dataset from '@/modules/dataset/dataset.route';
+
 export const app = createOpenAPIHono<Env>();
+
+// #region ============= security =================
+// Register Bearer Auth security scheme
+app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
+  type: 'http',
+  scheme: 'bearer',
+  bearerFormat: 'JWT',
+  description: 'Bearer token authentication'
+});
+// #endregion
 
 // #region ============= middlewares =================
 app.use(
@@ -38,7 +49,12 @@ app.doc31('/openapi.json', {
       name: 'Apache 2.0',
       url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
     }
-  }
+  },
+  security: [
+    {
+      bearerAuth: []
+    }
+  ]
 });
 
 app.get(
@@ -82,10 +98,10 @@ app.openapi(
   }
 );
 
-// app.route('/api', models);
-// app.route('/api', workflow);
+app.route('/api', models);
+app.route('/api', workflow);
 app.route('/api', tool);
-// app.route('/api', dataset);
+app.route('/api', dataset);
 // #endregion
 
 app.onError((error, c) => {

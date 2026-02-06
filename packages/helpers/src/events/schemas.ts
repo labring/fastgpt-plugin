@@ -1,7 +1,10 @@
+import type { FileMetadata } from 'dist/common/schemas/s3';
+import type { StreamDataType } from 'dist/tools/schemas/req';
 import z from 'zod';
 
-export const EventEnum = z.enum(['file-upload', 'stream-response', 'html2md', 'cherrio2md']);
-export type EventEnumType = z.infer<typeof EventEnum>;
+export const EventEnumSchema = z.enum(['file-upload', 'stream-response', 'html2md', 'cherrio2md']);
+export const EventEnum = EventEnumSchema.enum;
+export type EventEnumType = z.infer<typeof EventEnumSchema>;
 
 export const FileInputSchema = z
   .object({
@@ -35,20 +38,14 @@ export const FileInputSchema = z
       error: 'Provide exactly one input method. Filename required for base64/buffer inputs.'
     }
   );
+
 export type FileInput = z.infer<typeof FileInputSchema>;
-
-export const FileUploadSchema = z.object({
-  event: z.literal(EventEnum.enum['file-upload']),
-  data: FileInputSchema
-});
-
-export type FileUploadType = z.infer<typeof FileUploadSchema>;
 
 /**
  * Cheerio 转 Markdown 参数
  */
 export const Cherrio2MdInputSchema = z.object({
-  fetchUrl: z.string().url('Invalid URL format'),
+  fetchUrl: z.url('Invalid URL format'),
   html: z.string().min(1, 'HTML content cannot be empty'),
   selector: z.string().optional().default('body')
 });
@@ -62,14 +59,29 @@ export const Cherrio2MdResultSchema = z.object({
   title: z.string(),
   usedSelector: z.string()
 });
+
 export type Cherrio2MdResult = z.infer<typeof Cherrio2MdResultSchema>;
 
-export const Cherrio2MdSchema = z.object({
-  event: z.literal(EventEnum.enum['cherrio2md']),
-  data: Cherrio2MdInputSchema
-});
-export type Cherrio2MdType = z.infer<typeof Cherrio2MdSchema>;
+export type EventDataType<T extends EventEnumType> = T extends 'file-upload'
+  ? FileInput
+  : T extends 'stream-response'
+    ? StreamDataType
+    : T extends 'html2md'
+      ? { html: string }
+      : T extends 'cherrio2md'
+        ? {
+            fetchUrl: string;
+            html: string;
+            selector?: string;
+          }
+        : never;
 
-export const EventSchema = z.discriminatedUnion('event', [FileUploadSchema, Cherrio2MdSchema]);
-
-export type EventType = z.infer<typeof EventSchema>;
+export type EventResponseType<T extends EventEnumType> = T extends 'file-upload'
+  ? FileMetadata
+  : T extends 'stream-response'
+    ? void
+    : T extends 'html2md'
+      ? string
+      : T extends 'cherrio2md'
+        ? Cherrio2MdResult
+        : never;

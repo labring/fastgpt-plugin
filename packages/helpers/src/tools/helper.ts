@@ -6,7 +6,7 @@ import {
   type ToolSetConfigType
 } from './schemas/tool';
 import { FlowNodeOutputTypeEnum } from './schemas/fastgpt';
-import type { RunToolSecondParamsType } from './schemas/req';
+import type { ToolContextType } from './schemas/req';
 
 export function defineTool(
   tool: z.input<typeof ToolConfigSchema>
@@ -42,12 +42,12 @@ export const exportTool = <TInput, TOutput>({
   OutputType,
   config
 }: {
-  toolCb: (props: TInput, e: RunToolSecondParamsType) => Promise<Record<string, any>>;
+  toolCb: (props: TInput, e: ToolContextType) => Promise<Record<string, any>>;
   InputType: ZodType<TInput>;
   OutputType: ZodType<TOutput>;
   config: ToolConfigType;
 }) => {
-  const cb = async (props: TInput, e: RunToolSecondParamsType) => {
+  const cb = async (props: TInput, e: ToolContextType) => {
     try {
       const output = await toolCb(InputType.parse(props), e);
       return {
