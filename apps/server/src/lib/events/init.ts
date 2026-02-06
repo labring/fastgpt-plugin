@@ -1,17 +1,14 @@
-import { Cherrio2MdPub, FileUploadPub, Html2MdPub } from '@fastgpt-plugin/helpers/events';
-import { getPublicS3Server } from '../s3';
 import { getCurrentToolPrefix } from '@/utils/context';
+import { getPublicS3Server } from '../s3';
+import { SubPub } from './class';
 import { WorkerManager } from '../worker';
+import type { SSEStreamingApi } from 'hono/streaming';
+import { StreamMessageTypeEnum } from '@fastgpt-plugin/helpers/index';
 
-export const initEventsHandler = () => {
-  FileUploadPub.register(async (data) => {
+export const createSubPub = ({ stream }: { stream?: SSEStreamingApi }) => {
+  const sp = new SubPub();
+  sp.on('file-upload', async (data) => {
     const publicS3Server = getPublicS3Server();
-    if (!publicS3Server) {
-      throw new Error(
-        'S3 Server not initialized in global context. If you are in dev mode, please ensure the system is initialized.'
-      );
-    }
-
     return await publicS3Server.uploadFileAdvanced({
       ...data,
       ...(data.buffer ? { buffer: data.buffer } : {}),
@@ -19,14 +16,7 @@ export const initEventsHandler = () => {
     });
   });
 
-  Html2MdPub.register(async ({ html }) => {
-    const res = await WorkerManager.run('html2md', {
-      html
-    });
-    return res;
-  });
-
-  Cherrio2MdPub.register(async ({ fetchUrl, html, selector }) => {
+  sp.on('cherrio2md', async ({ fetchUrl, html, selector }) => {
     const res = await WorkerManager.run('cherrio2md', {
       fetchUrl,
       html,
@@ -34,4 +24,21 @@ export const initEventsHandler = () => {
     });
     return res;
   });
+
+  sp.on('html2md', async ({ html }) => {
+    const res = await WorkerManager.run('html2md', {
+      html
+    });
+    return res;
+  });
+
+  if (stream) {
+    sp.on('stream-response', async (data) => {
+      await stream.writeSSE({
+        data: JSON.stringify({ type: StreamMessageTypeEnum.enum.stream, data: data })
+      });
+    });
+  }
+
+  return sp;
 };

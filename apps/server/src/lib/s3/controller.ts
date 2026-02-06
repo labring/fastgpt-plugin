@@ -1,5 +1,13 @@
 import { env } from '@/env';
-import type { IStorage } from '@fastgpt-sdk/storage';
+import {
+  createStorage,
+  MinioStorageAdapter,
+  type IAwsS3CompatibleStorageOptions,
+  type ICosStorageOptions,
+  type IOssStorageOptions,
+  type IStorage,
+  type IStorageOptions
+} from '@fastgpt-sdk/storage';
 import { getLogger } from '@logtape/logtape';
 import { randomBytes } from 'crypto';
 import { addMinutes, differenceInSeconds } from 'date-fns';
@@ -20,6 +28,9 @@ import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
 import { rm } from 'fs/promises';
 import type { FileMetadata } from '@fastgpt-plugin/helpers/common/schemas/s3';
 import { getErrText } from '@/utils/err';
+import { createDefaultStorageOptions } from './config';
+
+type StorageConfigWithoutBucket = Omit<IStorageOptions, 'bucket'>;
 
 const logger = getLogger(infra.storage);
 
@@ -30,6 +41,11 @@ export class S3Service {
     private readonly _client: IStorage,
     private readonly _externalClient: IStorage | undefined
   ) {}
+
+  async checkHealth() {
+    await this._client.ensureBucket();
+    return;
+  }
 
   get client(): IStorage {
     return this._client;
@@ -382,5 +398,124 @@ export class S3Service {
       logger.error(`Failed to move file from ${srcObjectName} to ${distObjectName}: ${errorMsg}`);
       return Promise.reject(error);
     }
+  }
+}
+
+const getConfig = () => {
+  const { vendor, externalBaseUrl, publicBucket, privateBucket, credentials, region, ...options } =
+    createDefaultStorageOptions();
+
+  const buildResult = <T extends StorageConfigWithoutBucket>(config: T, externalConfig?: T) => ({
+    vendor,
+    config,
+    externalConfig,
+    externalBaseUrl,
+    privateBucket,
+    publicBucket
+  });
+
+  if (vendor === 'minio' || vendor === 'aws-s3') {
+    const config: Omit<IAwsS3CompatibleStorageOptions, 'bucket'> = {
+      region,
+      vendor,
+      credentials,
+      endpoint: options.endpoint!,
+      maxRetries: options.maxRetries!,
+      forcePathStyle: options.forcePathStyle,
+      publicAccessExtraSubPath: options.publicAccessExtraSubPath
+    };
+
+    return buildResult(config, { ...config, endpoint: externalBaseUrl });
+  }
+
+  if (vendor === 'cos') {
+    const config: Omit<ICosStorageOptions, 'bucket'> = {
+      region,
+      vendor,
+      credentials,
+      proxy: options.proxy,
+      domain: options.domain,
+      protocol: options.protocol,
+      useAccelerate: options.useAccelerate
+    };
+
+    return buildResult(config);
+  }
+
+  if (vendor === 'oss') {
+    const config: Omit<IOssStorageOptions, 'bucket'> = {
+      region,
+      vendor,
+      credentials,
+      endpoint: options.endpoint!,
+      cname: options.cname,
+      internal: options.internal,
+      secure: options.secure,
+      enableProxy: options.enableProxy
+    };
+
+    return buildResult(config);
+  }
+
+  throw new Error(`Not supported vendor: ${vendor}`);
+};
+
+const createS3Service = (bucket: string) => {
+  const { config, externalConfig, externalBaseUrl } = getConfig();
+
+  const client = createStorage({ bucket, ...config } as IStorageOptions);
+
+  let externalClient: IStorage | undefined;
+  if (externalBaseUrl && externalConfig) {
+    externalClient = createStorage({ bucket, ...externalConfig } as IStorageOptions);
+  }
+
+  return { client, externalClient };
+};
+
+export class S3PublicService extends S3Service {
+  private static instance: S3PublicService;
+
+  private constructor() {
+    const { publicBucket } = getConfig();
+    const { client, externalClient } = createS3Service(publicBucket);
+    super(client, externalClient);
+  }
+
+  public static getInstance(): S3PublicService {
+    if (!S3PublicService.instance) {
+      S3PublicService.instance = new S3PublicService();
+    }
+    return S3PublicService.instance;
+  }
+
+  async checkHealth(): Promise<void> {
+    await super.checkHealth();
+    try {
+      if (this.externalClient instanceof MinioStorageAdapter) {
+        await this.externalClient.ensurePublicBucketPolicy();
+      }
+    } catch (error) {
+      logger.warn(
+        `Failed to ensure public policy for ${this.externalClient.constructor.name}: ${error}`
+      );
+    }
+  }
+}
+
+export class S3PrivateService extends S3Service {
+  private static instance: S3PrivateService;
+
+  public static getInstance(): S3PrivateService {
+    if (!S3PrivateService.instance) {
+      S3PrivateService.instance = new S3PrivateService();
+    }
+    return S3PrivateService.instance;
+  }
+
+  private constructor() {
+    const { privateBucket } = getConfig();
+    const { client, externalClient } = createS3Service(privateBucket);
+    super(client, externalClient);
   }
 }

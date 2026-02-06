@@ -1,3 +1,4 @@
+import type { EventEmitter } from '@fastgpt-plugin/helpers/events/type';
 import { z } from 'zod';
 
 // ToolHandlerReturnSchema 定义移到这里，避免循环依赖
@@ -59,15 +60,13 @@ export const StreamMessageSchema = z.discriminatedUnion('type', [
 
 export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
 
-export const runToolSecondParams = z.object({
-  systemVar: SystemVarSchema
-});
+export type ToolContextType = {
+  emitter: EventEmitter;
+  systemVar: SystemVarType;
+  [key: string]: unknown;
+};
 
-export type RunToolSecondParamsType = z.infer<typeof runToolSecondParams>;
-
-export const ToolHandlerFunctionSchema = z.function({
-  input: [z.record(z.string(), z.unknown()), runToolSecondParams],
-  output: z.promise(ToolHandlerReturnSchema)
-});
-
-export type ToolHandlerFunctionType = z.infer<typeof ToolHandlerFunctionSchema>;
+export type ToolHandlerFunctionType = (
+  input: Record<string, unknown>,
+  ctx: ToolContextType
+) => Promise<ToolHandlerReturnType>;

@@ -32,6 +32,8 @@ import { getToolRunId, runWithToolContext } from '@/utils/context';
 import { getErrText } from '@/utils/err';
 import { getNanoid } from '@/utils/string';
 import { StreamResponsePub } from '@fastgpt-plugin/helpers/events';
+import { createEventEmitter } from '@/lib/events';
+import { createSubPub } from '@/lib/events/init';
 
 const tools = createOpenAPIHono().basePath('/tools');
 
@@ -259,34 +261,27 @@ tools.openapi(runStreamRoute, async (c) => {
   return streamSSE(
     c,
     async (stream) => {
-      const runId = getNanoid();
+      const sp = createSubPub({ stream });
+      try {
+        const handleStreamAbort = () => logger.info(`Stream aborted for tool: ${toolId}`);
+        stream.onAbort(handleStreamAbort);
+        const emitter = createEventEmitter(sp);
 
-      const handleSend = async (e: StreamDataType) => {
-        const _runId = getToolRunId();
-        if (_runId !== runId) return;
-        const data = JSON.stringify({ type: StreamMessageTypeEnum.enum.stream, data: e });
+        logger.debug('Run tool start', { body: { toolId, inputs, systemVar } });
+
+        const result = await tool.handler(inputs, { systemVar, emitter });
+
+        if (result.error) {
+          logger.debug(`Run tool '${toolId}' failed`, { error: result.error });
+          return await handleSendError(result.error, stream);
+        }
+
+        logger.debug(`Run tool '${toolId}' success`);
+        const data = JSON.stringify({ type: StreamMessageTypeEnum.enum.response, data: result });
         await stream.writeSSE({ data });
-      };
-
-      StreamResponsePub.register(handleSend);
-
-      const handleStreamAbort = () => logger.info(`Stream aborted for tool: ${toolId}`);
-      stream.onAbort(handleStreamAbort);
-
-      logger.debug('Run tool start', { body: { toolId, inputs, systemVar } });
-      const result = await runWithToolContext({ systemVar, runId }, () =>
-        tool.handler(inputs, { systemVar })
-      );
-
-      if (result.error) {
-        logger.debug(`Run tool '${toolId}' failed`, { error: result.error });
-        return await handleSendError(result.error, stream);
+      } finally {
+        sp.removeAllListeners();
       }
-
-      StreamResponsePub.unregister(handleSend);
-      logger.debug(`Run tool '${toolId}' success`);
-      const data = JSON.stringify({ type: StreamMessageTypeEnum.enum.response, data: result });
-      await stream.writeSSE({ data });
     },
     async (error, stream) => {
       await handleSendError(error, stream);

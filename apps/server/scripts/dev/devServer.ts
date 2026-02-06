@@ -52,10 +52,7 @@ export class DevServer {
    * 开始监听文件变化
    */
   private async startWatching() {
-    const workpaths = [
-      { path: path.join(__dirname, '..'), name: 'runtime' },
-      { path: path.join(basePath, 'modules'), name: 'modules' }
-    ];
+    const workpaths = [{ path: path.join(__dirname, '..', '..'), name: 'runtime' }];
 
     // 为每个目录启动监听
     for (const { path: watchPath, name } of workpaths) {

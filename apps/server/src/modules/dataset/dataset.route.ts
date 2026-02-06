@@ -9,14 +9,24 @@ import {
   getDetailRoute
 } from './schemas/routes';
 
-// Register dataset sources
-import customApiSource from './sources/custom-api';
-import feishuSource from './sources/feishu';
-import yuqueSource from './sources/yuque';
+// 延迟注册数据源，避免在模块加载时触发 S3 访问
+let sourcesRegistered = false;
+async function ensureSourcesRegistered() {
+  if (sourcesRegistered) return;
 
-sourceRegistry.register(customApiSource);
-sourceRegistry.register(feishuSource);
-sourceRegistry.register(yuqueSource);
+  // 动态导入数据源，此时 S3 已经初始化
+  const [customApiSource, feishuSource, yuqueSource] = await Promise.all([
+    import('./sources/custom-api'),
+    import('./sources/feishu'),
+    import('./sources/yuque')
+  ]);
+
+  sourceRegistry.register(customApiSource.default);
+  sourceRegistry.register(feishuSource.default);
+  sourceRegistry.register(yuqueSource.default);
+
+  sourcesRegistered = true;
+}
 
 // Create dataset router
 const dataset = createOpenAPIHono().basePath('/dataset');
@@ -25,6 +35,7 @@ const dataset = createOpenAPIHono().basePath('/dataset');
  * List all dataset sources
  */
 dataset.openapi(listSourcesRoute, async (c) => {
+  await ensureSourcesRegistered();
   const sources = sourceRegistry.list();
   const sourcesInfo = sources.map(({ formFields, ...info }) => info);
   return c.json(R.success(sourcesInfo), 200);
@@ -34,6 +45,7 @@ dataset.openapi(listSourcesRoute, async (c) => {
  * Get dataset source config
  */
 dataset.openapi(getSourceConfigRoute, async (c) => {
+  await ensureSourcesRegistered();
   const { sourceId } = c.req.valid('query');
   const config = sourceRegistry.list().find((s) => s.sourceId === sourceId);
 
@@ -48,6 +60,7 @@ dataset.openapi(getSourceConfigRoute, async (c) => {
  * List files from dataset source
  */
 dataset.openapi(listFilesRoute, async (c) => {
+  await ensureSourcesRegistered();
   const body = c.req.valid('json');
   const callbacks = sourceRegistry.getCallbacks(body.sourceId);
 
@@ -70,6 +83,7 @@ dataset.openapi(listFilesRoute, async (c) => {
  * Get file content
  */
 dataset.openapi(getContentRoute, async (c) => {
+  await ensureSourcesRegistered();
   const body = c.req.valid('json');
   const callbacks = sourceRegistry.getCallbacks(body.sourceId);
 
@@ -92,6 +106,7 @@ dataset.openapi(getContentRoute, async (c) => {
  * Get file preview URL
  */
 dataset.openapi(getPreviewUrlRoute, async (c) => {
+  await ensureSourcesRegistered();
   const body = c.req.valid('json');
   const callbacks = sourceRegistry.getCallbacks(body.sourceId);
 
@@ -114,6 +129,7 @@ dataset.openapi(getPreviewUrlRoute, async (c) => {
  * Get file detail
  */
 dataset.openapi(getDetailRoute, async (c) => {
+  await ensureSourcesRegistered();
   const body = c.req.valid('json');
   const callbacks = sourceRegistry.getCallbacks(body.sourceId);
 

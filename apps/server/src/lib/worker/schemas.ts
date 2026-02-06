@@ -26,7 +26,7 @@ export const Cherrio2MdParamsSchema = z.object({
   html: z.string(),
   selector: z.string().optional().default('body')
 });
-export type Cherrio2MdParams = z.infer<typeof Cherrio2MdParamsSchema>;
+export type Cherrio2MdParams = z.input<typeof Cherrio2MdParamsSchema>;
 
 /**
  * Cheerio 转 Markdown Worker 返回值
