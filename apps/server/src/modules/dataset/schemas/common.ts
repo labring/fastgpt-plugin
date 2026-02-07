@@ -1,11 +1,30 @@
 import { z } from '@hono/zod-openapi';
 import {
-  DatasetSourceIdEnum,
-  DatasetSourceInfoSchema,
-  DatasetSourceConfigSchema,
-  FileItemSchema,
-  FileContentResponseSchema
-} from '../type/source';
+  DatasetSourceIdEnum as BaseDatasetSourceIdEnum,
+  DatasetSourceInfoSchema as BaseDatasetSourceInfoSchema,
+  DatasetSourceConfigSchema as BaseDatasetSourceConfigSchema,
+  FileItemSchema as BaseFileItemSchema,
+  FileContentResponseSchema as BaseFileContentResponseSchema
+} from '@fastgpt-plugin/helpers/datasets/schemas';
+
+// Convert base schemas to OpenAPI schemas
+export const DatasetSourceIdEnum = z
+  .enum(BaseDatasetSourceIdEnum.options)
+  .openapi('DatasetSourceId');
+
+export const DatasetSourceInfoSchema = z
+  .object(BaseDatasetSourceInfoSchema.shape)
+  .openapi('DatasetSourceInfo');
+
+export const DatasetSourceConfigSchema = z
+  .object(BaseDatasetSourceConfigSchema.shape)
+  .openapi('DatasetSourceConfig');
+
+export const FileItemSchema = z.object(BaseFileItemSchema.shape).openapi('FileItem');
+
+export const FileContentResponseSchema = z
+  .object(BaseFileContentResponseSchema.shape)
+  .openapi('FileContentResponse');
 
 // Query schemas
 export const SourceIdQuerySchema = z.object({
@@ -28,11 +47,13 @@ export const FileOperationBodySchema = z.object({
   fileId: z.string()
 });
 
-// Re-export type schemas for routes
-export {
-  DatasetSourceIdEnum,
-  DatasetSourceInfoSchema,
-  DatasetSourceConfigSchema,
-  FileItemSchema,
-  FileContentResponseSchema
-};
+// Re-export types from helpers
+export type {
+  DatasetSourceId,
+  FormFieldType,
+  FormFieldConfig,
+  DatasetSourceInfo,
+  DatasetSourceConfig,
+  FileItem,
+  FileContentResponse
+} from '@fastgpt-plugin/helpers/datasets/schemas';

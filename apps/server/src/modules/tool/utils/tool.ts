@@ -3,6 +3,7 @@ import { tempPkgDir, tempToolsDir, toolsDir, UploadToolsS3Path } from '../consta
 import {
   ToolDetailSchema,
   ToolTagEnum,
+  ToolTagSchema,
   type ToolDistType,
   type ToolSetType,
   type ToolType,
@@ -242,7 +243,7 @@ export async function getTool(toolId: string): Promise<ToolType | undefined> {
 
 export function getToolTags(): z.infer<typeof ToolTagListSchema> {
   return Object.entries(ToolTagsNameMap).map(([id, name]) => ({
-    value: id as z.infer<typeof ToolTagEnum>,
+    value: id as z.infer<typeof ToolTagSchema>,
     label: name.en
   }));
 }

@@ -27,6 +27,13 @@ export {
 } from './models/schemas';
 export type { ModelItemType, ListModelsType } from './models/schemas';
 
+// 模型相关常量
+export { ModelProviderMap, ModelProviders, aiproxyIdMap } from './models/constants';
+export type {
+  ModelProviderMap as ModelProviderMapType,
+  AiproxyMapProviderType
+} from './models/constants';
+
 // 工作流相关 schemas 和类型
 export { TemplateItemSchema, TemplateListSchema } from './workflows/schemas';
 export type { TemplateItemType, TemplateListType } from './workflows/schemas';
@@ -36,7 +43,7 @@ export { I18nStringSchema, I18nStringStrictSchema } from './common/schemas/i18n'
 export type { I18nStringType, I18nStringStrictType } from './common/schemas/i18n';
 
 // 工具相关常量
-export { ToolTagsNameMap } from './tools/constants';
+export { ToolTagsNameMap, UploadToolsS3Path, PluginBaseS3Prefix } from './tools/constants';
 export type { ToolTagsType } from './tools/constants';
 
 // FastGPT 相关 schemas 和类型
@@ -83,3 +90,25 @@ export {
 } from './tools/schemas/tool';
 
 export type { VersionListItemType, ToolDetailType, ToolSimpleType } from './tools/schemas/tool';
+
+// Dataset 相关 schemas 和类型
+export {
+  PluginDatasetSourceIds,
+  DatasetSourceIdEnum,
+  FormFieldTypeEnum,
+  FormFieldConfigSchema,
+  DatasetSourceInfoSchema,
+  DatasetSourceConfigSchema,
+  FileItemSchema,
+  FileContentResponseSchema
+} from './datasets/schemas';
+export type {
+  PluginDatasetSourceId,
+  DatasetSourceId,
+  FormFieldType,
+  FormFieldConfig,
+  DatasetSourceInfo,
+  DatasetSourceConfig,
+  FileItem,
+  FileContentResponse
+} from './datasets/schemas';

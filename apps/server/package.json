@@ -1,5 +1,5 @@
 {
-  "name": "@fastgpt/plugin-runtime",
+  "name": "@fastgpt-plugin/server",
   "module": "index.ts",
   "type": "module",
   "scripts": {

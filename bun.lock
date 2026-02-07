@@ -37,7 +37,7 @@
       },
     },
     "apps/server": {
-      "name": "@fastgpt/plugin-runtime",
+      "name": "@fastgpt-plugin/server",
       "dependencies": {
         "@fastgpt-plugin/helpers": "workspace:*",
         "@hono/node-server": "^1.19.9",
@@ -97,7 +97,7 @@
     },
     "packages/helpers": {
       "name": "@fastgpt-plugin/helpers",
-      "version": "0.0.1-alpha.3",
+      "version": "0.0.1-alpha.6",
       "dependencies": {
         "jszip": "^3.10.1",
         "vitest": "^4.0.18",
@@ -113,6 +113,7 @@
       "name": "@fastgpt-sdk/plugin",
       "version": "0.3.8",
       "dependencies": {
+        "@fastgpt-plugin/helpers": "workspace:*",
         "@fortaine/fetch-event-source": "^3.0.6",
         "zod": "^4",
       },
@@ -308,11 +309,11 @@
 
     "@fastgpt-plugin/helpers": ["@fastgpt-plugin/helpers@workspace:packages/helpers"],
 
+    "@fastgpt-plugin/server": ["@fastgpt-plugin/server@workspace:apps/server"],
+
     "@fastgpt-sdk/plugin": ["@fastgpt-sdk/plugin@workspace:packages/sdk"],
 
     "@fastgpt-sdk/storage": ["@fastgpt-sdk/storage@0.6.15", "", { "dependencies": { "@aws-sdk/client-s3": "^3.948.0", "@aws-sdk/lib-storage": "^3.948.0", "@aws-sdk/s3-request-presigner": "^3.952.0", "ali-oss": "^6.23.0", "cos-nodejs-sdk-v5": "^2.15.4", "es-toolkit": "^1.43.0", "minio": "^8.0.5", "vitest": "^4.0.16" } }, "sha512-oPbm6EtXQ3ysad/OebF2ovwbIax6PeCvYqA3cGAVEHEJMBU3633ktl1ZaIIkmyjWJLsABZpMf6m7lPBMyISGrA=="],
-
-    "@fastgpt/plugin-runtime": ["@fastgpt/plugin-runtime@workspace:apps/server"],
 
     "@fortaine/fetch-event-source": ["@fortaine/fetch-event-source@3.0.6", "", {}, "sha512-621GAuLMvKtyZQ3IA6nlDWhV1V/7PGOTNIGLUifxt0KzM+dZIweJ6F3XvQF3QnqeNfS1N7WQ0Kil1Di/lhChEw=="],
 

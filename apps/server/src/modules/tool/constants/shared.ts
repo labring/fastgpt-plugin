@@ -1,3 +1,2 @@
-// SDK-safe constants - no env dependency, can be used in client bundles
-export const UploadToolsS3Path = 'system/plugin/tools';
-export const PluginBaseS3Prefix = 'system/plugin/files';
+// Re-export SDK-safe constants from helpers - no env dependency
+export { UploadToolsS3Path, PluginBaseS3Prefix } from '@fastgpt-plugin/helpers/tools/constants';

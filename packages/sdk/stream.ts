@@ -1,10 +1,9 @@
 import {
-  StreamMessageTypeEnum,
   type StreamMessageType,
   type StreamDataType,
-  type SystemVarType,
-  type ToolCallbackReturnSchemaType
-} from '@tool/type/req';
+  type SystemVarType
+} from '@fastgpt-plugin/helpers/tools/schemas/req';
+import { type ToolHandlerReturnType } from '@fastgpt-plugin/helpers/tools/schemas/req';
 import { EventStreamContentType, fetchEventSource } from '@fortaine/fetch-event-source';
 
 type RunStreamParams = {
@@ -20,10 +19,10 @@ export class RunToolWithStream {
     private readonly token: string
   ) {}
 
-  async run(params: RunStreamParams): Promise<ToolCallbackReturnSchemaType> {
+  async run(params: RunStreamParams): Promise<ToolHandlerReturnType> {
     const controller = new AbortController();
 
-    return new Promise<ToolCallbackReturnSchemaType>((resolve, reject) => {
+    return new Promise<ToolHandlerReturnType>((resolve, reject) => {
       let settled = false;
 
       const settle = (fn: () => void) => {
@@ -55,18 +54,12 @@ export class RunToolWithStream {
           const parsed = this.safeParseMessage(msg.data);
           if (!parsed) return;
 
-          switch (parsed.type) {
-            case StreamMessageTypeEnum.stream:
-              params.onMessage(parsed.data);
-              break;
-
-            case StreamMessageTypeEnum.response:
-              settle(() => resolve(parsed.data));
-              break;
-
-            case StreamMessageTypeEnum.error:
-              settle(() => reject(parsed.data));
-              break;
+          if (this.isStreamMessage(parsed)) {
+            params.onMessage(parsed.data);
+          } else if (this.isResponseMessage(parsed)) {
+            settle(() => resolve(parsed.data));
+          } else if (this.isErrorMessage(parsed)) {
+            settle(() => reject(parsed.data));
           }
         },
 
@@ -110,9 +103,25 @@ export class RunToolWithStream {
       if (!parsed || typeof parsed !== 'object' || !parsed.type) {
         return null;
       }
-      return parsed as StreamMessageType;
+      // 使用类型断言来明确返回类型
+      const message = parsed as StreamMessageType;
+      return message;
     } catch {
       return null;
     }
+  }
+
+  private isStreamMessage(msg: StreamMessageType): msg is { type: 'stream'; data: StreamDataType } {
+    return msg.type === 'stream';
+  }
+
+  private isResponseMessage(
+    msg: StreamMessageType
+  ): msg is { type: 'response'; data: ToolHandlerReturnType } {
+    return msg.type === 'response';
+  }
+
+  private isErrorMessage(msg: StreamMessageType): msg is { type: 'error'; data: string } {
+    return msg.type === 'error';
   }
 }
