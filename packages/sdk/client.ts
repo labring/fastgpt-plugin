@@ -1,15 +1,19 @@
-import type { ToolDetailType } from '@tool/type/api';
-import type { Result } from '@/utils/http';
-import type { ListModelsType } from '@model/api/type';
-import type { TemplateListType } from '@workflow/type';
-import type { AiproxyMapProviderType } from '@model/constants/shared';
-import type { I18nStringStrictType } from '@/validates/i18n';
+import type { ToolDetailType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import type { ListModelsType } from '@fastgpt-plugin/helpers/models/schemas';
+import type { TemplateListType } from '@fastgpt-plugin/helpers/workflows/schemas';
+import type { I18nStringStrictType } from '@fastgpt-plugin/helpers/common/schemas/i18n';
 import type {
   DatasetSourceInfo,
   DatasetSourceConfig,
   FileItem,
   FileContentResponse
-} from '@dataset/type/source';
+} from '@fastgpt-plugin/helpers/datasets/schemas';
+
+interface Result<T> {
+  code: number;
+  msg: string;
+  data?: T | null;
+}
 
 export class FastGPTPluginClient {
   private baseUrl: string;
@@ -54,6 +58,8 @@ export class FastGPTPluginClient {
   }
 
   async getModelProviders() {
+    type AiproxyMapProviderType =
+      import('@fastgpt-plugin/helpers/models/constants').AiproxyMapProviderType;
     return this.request<{
       modelProviders: { provider: string; value: I18nStringStrictType; avatar: string }[];
       aiproxyIdMap: AiproxyMapProviderType;
@@ -152,27 +158,44 @@ export {
   I18nStringStrictSchema,
   type I18nStringStrictType,
   type I18nStringType
-} from '@/validates/i18n';
-export type { SystemVarType, StreamMessageType } from '@tool/type/req';
+} from '@fastgpt-plugin/helpers/common/schemas/i18n';
 export { RunToolWithStream } from './stream';
-export { StreamDataAnswerTypeEnum } from '@tool/type/req';
-export { UploadToolsS3Path } from '@tool/constants/shared';
-export { ToolTagEnum, ToolTagsNameMap } from '@tool/type/tags';
-export { ModelProviders } from '@model/constants/shared';
-export type { ToolType, ToolSetType } from '@tool/type';
-export { ToolDetailSchema } from '@tool/type/api';
-export { ToolSimpleSchema } from '@tool/type/api';
-export type { ToolDetailType, ToolSimpleType } from '@tool/type/api';
-export type { AiproxyMapProviderType };
-// Dataset Source Types
+
+export {
+  StreamDataAnswerTypeEnum,
+  type SystemVarType,
+  type StreamMessageType
+} from '@fastgpt-plugin/helpers/tools/schemas/req';
+
+// Tool S3 path constants
+export { UploadToolsS3Path, PluginBaseS3Prefix } from '@fastgpt-plugin/helpers/tools/constants';
+
+export {
+  ToolTagEnum,
+  ToolDetailSchema,
+  ToolSimpleSchema,
+  type ToolType,
+  type ToolSetType,
+  type ToolDetailType,
+  type ToolSimpleType
+} from '@fastgpt-plugin/helpers/tools/schemas/tool';
+export { ToolTagsNameMap } from '@fastgpt-plugin/helpers/tools/constants';
+
+// Model related exports
+export {
+  ModelProviders,
+  type AiproxyMapProviderType
+} from '@fastgpt-plugin/helpers/models/constants';
+
+// Dataset Source Types and Constants
+export { PluginDatasetSourceIds } from '@fastgpt-plugin/helpers/datasets/schemas';
 export type {
+  PluginDatasetSourceId,
+  DatasetSourceId,
   FormFieldType,
   FormFieldConfig,
   DatasetSourceInfo,
   DatasetSourceConfig,
   FileItem,
   FileContentResponse
-} from '@dataset/type/source';
-
-// Dataset Source Constants
-export { PluginDatasetSourceIds, type PluginDatasetSourceId } from '@dataset/source/constants';
+} from '@fastgpt-plugin/helpers/datasets/schemas';

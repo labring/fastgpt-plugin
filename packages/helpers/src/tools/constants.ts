@@ -70,3 +70,15 @@ export type ToolTagsType = {
     'zh-Hant': string;
   };
 };
+
+// ==================== S3 Path Constants ====================
+
+/**
+ * S3 路径：上传的工具存储路径
+ */
+export const UploadToolsS3Path = 'system/plugin/tools';
+
+/**
+ * S3 路径：插件文件的基础前缀
+ */
+export const PluginBaseS3Prefix = 'system/plugin/files';

@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { I18nStringSchema } from '../../common/schemas/i18n';
 import type { ToolHandlerFunctionType } from './req';
 import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
+import { ToolPermissionEnumSchema } from './permission';
+import { tr } from 'zod/v4/locales';
 
 // ============================================
 // 基础枚举和类型
@@ -59,7 +61,8 @@ export const ToolSchema = z.object({
   secretInputConfig: z.array(SecretInputItemSchema).optional(),
   handler: z.any(),
   filename: z.string(),
-  etag: z.string().nonempty().optional()
+  etag: z.string().nonempty().optional(),
+  permission: z.array(ToolPermissionEnumSchema).optional()
 });
 
 export type ToolType = z.infer<typeof ToolSchema> & {
@@ -122,7 +125,8 @@ export const ToolConfigSchema = z
     ...ToolSchema.omit({
       filename: true,
       readmeUrl: true,
-      handler: true
+      handler: true,
+      etag: true
     }).shape,
     toolId: z.string().optional(),
     toolDescription: z.string().optional(),
@@ -130,7 +134,7 @@ export const ToolConfigSchema = z
     tags: z.array(ToolTagSchema).optional(),
     icon: z.string().optional(),
     author: z.string().optional(),
-    tutorialLink: z.url().optional(),
+    tutorialUrl: z.url().optional(),
     secretInputConfig: z.array(SecretInputItemSchema).optional()
   })
   .transform((data) => {
@@ -145,13 +149,18 @@ export type ToolConfigType = z.infer<typeof ToolConfigSchema>;
 /**
  * 工具集配置
  */
-export const ToolSetConfigSchema = ToolSetSchema.extend({
+export const ToolSetConfigSchema = z.object({
+  ...ToolSetSchema.omit({
+    filename: true,
+    etag: true,
+    children: true
+  }).shape,
   toolId: z.string().optional(),
   toolDescription: z.string().optional(),
   tags: z.array(ToolTagSchema).optional(),
   icon: z.string().optional(),
   author: z.string().optional(),
-  tutorialLink: z.url().optional(),
+  tutorialUrl: z.url().optional(),
   secretInputConfig: z.array(SecretInputItemSchema).optional()
 });
 
@@ -170,7 +179,8 @@ export const ToolDetailSchema = UnifiedToolSchema.pick({
   readmeUrl: true,
   secretInputConfig: true,
   etag: true,
-  versionList: true
+  versionList: true,
+  permission: true
 });
 
 export type ToolDetailType = z.infer<typeof ToolDetailSchema>;
