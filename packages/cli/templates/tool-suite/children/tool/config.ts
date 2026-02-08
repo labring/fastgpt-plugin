@@ -10,7 +10,6 @@ export default defineTool({
     'zh-CN': '{{description}}',
     en: '{{description}}'
   },
-  icon: 'core/workflow/template/{{name}}',
   versionList: [
     {
       value: '0.0.1',
