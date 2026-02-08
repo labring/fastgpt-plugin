@@ -6,8 +6,11 @@ export default defineConfig({
   clean: true,
   dts: {
     enabled: true,
-    sourcemap: false
+    sourcemap: false,
+    eager: true
   },
+  // 将 helpers 包打包进来，不作为外部依赖
+  noExternal: [/^@fastgpt-plugin\/helpers/],
   outExtensions() {
     return {
       dts: '.d.ts',

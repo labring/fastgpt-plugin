@@ -8,6 +8,7 @@ import type {
   FileItem,
   FileContentResponse
 } from '@fastgpt-plugin/helpers/datasets/schemas';
+import type { AiproxyMapProviderType } from '@fastgpt-plugin/helpers/models/constants';
 
 interface Result<T> {
   code: number;
@@ -58,8 +59,6 @@ export class FastGPTPluginClient {
   }
 
   async getModelProviders() {
-    type AiproxyMapProviderType =
-      import('@fastgpt-plugin/helpers/models/constants').AiproxyMapProviderType;
     return this.request<{
       modelProviders: { provider: string; value: I18nStringStrictType; avatar: string }[];
       aiproxyIdMap: AiproxyMapProviderType;
@@ -199,3 +198,9 @@ export type {
   FileItem,
   FileContentResponse
 } from '@fastgpt-plugin/helpers/datasets/schemas';
+
+export {
+  ToolPermissionEnum,
+  ToolPermissionEnumSchema,
+  type ToolPermissionEnumType
+} from '@fastgpt-plugin/helpers/tools/schemas/permission';

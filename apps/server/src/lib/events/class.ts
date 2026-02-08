@@ -79,6 +79,8 @@ export class SubPub {
       this.eventBus.emit(event, data);
     });
   }
+  // TODO: 发送事件，监听回调流，直到结束
+  // sendAndListenResponseStream
 
   /**
    * 移除事件监听器

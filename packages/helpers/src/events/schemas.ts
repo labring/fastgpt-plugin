@@ -1,8 +1,16 @@
 import z from 'zod';
 import type { StreamDataType } from '../tools/schemas/req';
 import type { FileMetadata } from '../common/schemas/s3';
+import type { InvokeInput } from './type';
 
-export const EventEnumSchema = z.enum(['file-upload', 'stream-response', 'html2md', 'cherrio2md']);
+export const EventEnumSchema = z.enum([
+  'file-upload',
+  'stream-response',
+  'html2md',
+  'cherrio2md',
+  'invoke'
+]);
+
 export const EventEnum = EventEnumSchema.enum;
 export type EventEnumType = z.infer<typeof EventEnumSchema>;
 
@@ -74,7 +82,9 @@ export type EventDataType<T extends EventEnumType> = T extends 'file-upload'
             html: string;
             selector?: string;
           }
-        : never;
+        : T extends 'invoke'
+          ? InvokeInput
+          : never;
 
 export type EventResponseType<T extends EventEnumType> = T extends 'file-upload'
   ? FileMetadata
@@ -84,4 +94,6 @@ export type EventResponseType<T extends EventEnumType> = T extends 'file-upload'
       ? string
       : T extends 'cherrio2md'
         ? Cherrio2MdResult
-        : never;
+        : T extends 'invoke'
+          ? unknown
+          : never;
