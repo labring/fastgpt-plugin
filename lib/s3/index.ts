@@ -110,25 +110,32 @@ const s3ServiceInstances: {
   privateS3Server: null
 };
 
+let initPromise: Promise<void> | null = null;
+
 export const initS3Service = async () => {
+  if (initPromise) return initPromise;
   const logger = getLogger(infra.storage);
   logger.info('Initializing S3 service...');
-  const { publicBucket, privateBucket } = getConfig();
-
-  try {
-    if (!s3ServiceInstances.publicS3Server) {
-      logger.debug('Initializing public S3 service...');
-      s3ServiceInstances.publicS3Server = await createS3Service(publicBucket, true);
+  const doInit = async () => {
+    const { publicBucket, privateBucket } = getConfig();
+    try {
+      if (!s3ServiceInstances.publicS3Server) {
+        logger.debug('Initializing public S3 service...');
+        s3ServiceInstances.publicS3Server = await createS3Service(publicBucket, true);
+      }
+      if (!s3ServiceInstances.privateS3Server) {
+        logger.debug('Initializing private S3 service...');
+        s3ServiceInstances.privateS3Server = await createS3Service(privateBucket, false);
+      }
+    } catch (error) {
+      logger.error(`Failed to initialize S3 service: ${JSON.stringify(error, null, 2)}`, {
+        error
+      });
+      throw error;
     }
-
-    if (!s3ServiceInstances.privateS3Server) {
-      logger.debug('Initializing private S3 service...');
-      s3ServiceInstances.privateS3Server = await createS3Service(privateBucket, false);
-    }
-  } catch (error) {
-    logger.error(`Failed to initialize S3 service: ${JSON.stringify(error, null, 2)}`, { error });
-    throw error;
-  }
+  };
+  initPromise = doInit();
+  return initPromise;
 };
 
 export const getPublicS3Server = (): S3Service => {
@@ -143,6 +150,20 @@ export const getPrivateS3Server = (): S3Service => {
     throw new Error('Private S3 service not initialized. Call initS3Service() first.');
   }
   return s3ServiceInstances.privateS3Server;
+};
+
+export const getPublicS3ServerAsync = async (): Promise<S3Service> => {
+  if (!s3ServiceInstances.publicS3Server) {
+    await initS3Service();
+  }
+  return getPublicS3Server();
+};
+
+export const getPrivateS3ServerAsync = async (): Promise<S3Service> => {
+  if (!s3ServiceInstances.privateS3Server) {
+    await initS3Service();
+  }
+  return getPrivateS3Server();
 };
 
 // 为了向后兼容，保留旧的导出方式（但使用 getter）

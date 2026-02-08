@@ -6,7 +6,7 @@ import { env } from '@/env';
 const logger = getLogger(mod.tool);
 import type { Main2WorkerMessageType, Worker2MainMessageType } from './type';
 import { getErrText } from '@tool/utils/err';
-import { publicS3Server } from '@/s3';
+import { getPublicS3ServerAsync } from '@/s3';
 import { basePath, devToolIds } from '@tool/constants';
 import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/req';
 // Import invoke registry to ensure all methods are registered
@@ -204,6 +204,7 @@ export async function dispatchWithNewWorker(data: {
         console.log(...logData);
       } else if (type === 'uploadFile') {
         try {
+          const publicS3Server = await getPublicS3ServerAsync();
           const result = await publicS3Server.uploadFileAdvanced({
             ...data.file,
             ...(data.file.buffer ? { buffer: Buffer.from(data.file.buffer) } : {})
