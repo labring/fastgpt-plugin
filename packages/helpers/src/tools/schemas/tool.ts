@@ -125,7 +125,8 @@ export const ToolConfigSchema = z
       filename: true,
       readmeUrl: true,
       handler: true,
-      etag: true
+      etag: true,
+      parentId: true
     }).shape,
     toolId: z.string().optional(),
     toolDescription: z.string().optional(),
@@ -152,7 +153,8 @@ export const ToolSetConfigSchema = z.object({
   ...ToolSetSchema.omit({
     filename: true,
     etag: true,
-    children: true
+    children: true,
+    readmeUrl: true
   }).shape,
   toolId: z.string().optional(),
   toolDescription: z.string().optional(),
