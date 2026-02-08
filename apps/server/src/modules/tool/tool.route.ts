@@ -279,8 +279,6 @@ tools.openapi(runStreamRoute, async (c) => {
         logger.debug('Run tool start', { body: { toolId, inputs, systemVar } });
 
         const result = await tool.handler(inputs, { systemVar, emitter });
-        console.log(result);
-
         if (result.error) {
           logger.debug(`Run tool '${toolId}' failed`, { error: result.error });
           return await handleSendError(result.error, stream);

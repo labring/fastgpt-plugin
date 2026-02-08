@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-plugin/helpers",
-  "version": "0.0.1-alpha.8",
+  "version": "0.0.1-alpha.9",
   "publishConfig": {
     "access": "public"
   },
@@ -21,7 +21,7 @@
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@fastgpt-sdk/invoke": "catalog:",

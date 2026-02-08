@@ -1,7 +1,11 @@
 import * as cheerio from 'cheerio';
-import type { Cherrio2mdProps, Cherrio2mdResponse } from '@/lib/worker/type';
+// import type { Cherrio2mdProps, Cherrio2mdResponse } from '@/lib/worker/type';
 import { getErrText } from '@/utils/err';
 import { html2md } from '@/lib/worker/html2md';
+import type { Cherrio2MdInput, Cherrio2MdResult } from '@fastgpt-plugin/helpers/index';
+import { isInternalAddress } from '@/utils/secure';
+import { serviceRequestMaxContentLength } from '@/modules/tool/constants/server';
+import { Cherrio2MdInputSchema } from '@fastgpt-plugin/helpers/events/schemas';
 
 const cheerioToHtml = ({
   fetchUrl,
@@ -68,18 +72,30 @@ const cheerioToHtml = ({
   };
 };
 
-export default (data: Cherrio2mdProps): Cherrio2mdResponse => {
-  try {
-    const $ = cheerio.load(data.response);
-    const { title, html } = cheerioToHtml({
-      fetchUrl: data.url,
-      $: $,
-      selector: data.selector
-    });
+export default async (input: Cherrio2MdInput): Promise<Cherrio2MdResult> => {
+  const { fetchUrl, selector } = Cherrio2MdInputSchema.parse(input);
 
+  if (isInternalAddress(fetchUrl)) {
+    throw new Error('Internal address not allowed');
+  }
+
+  const response = await fetch(fetchUrl);
+  const contentLength = response.headers.get('content-length');
+  if (contentLength && parseInt(contentLength) > serviceRequestMaxContentLength) {
+    throw new Error('Content length exceeds limit');
+  }
+
+  try {
+    const text = await response.text();
+    const $ = cheerio.load(text);
+    const { title, html } = cheerioToHtml({
+      fetchUrl,
+      $: $,
+      selector
+    });
     return {
       title,
-      content: html2md(html)
+      markdown: html2md(html)
     };
   } catch (e) {
     throw new Error('Cheerio2md error:' + getErrText(e));
