@@ -1,7 +1,7 @@
-import { defineTool, WorkflowIOValueTypeEnum, ToolTagEnum } from '@fastgpt-plugin/helpers';
+import { defineTool, ToolTagEnum, WorkflowIOValueTypeEnum } from '@fastgpt-plugin/helpers';
 
 export default defineTool({
-  tags: [ToolTagEnum.enum.tools],
+  tags: [ToolTagEnum.tools],
   name: {
     'zh-CN': '{{name}}',
     en: '{{name}}'
@@ -14,14 +14,14 @@ export default defineTool({
   versionList: [
     {
       value: '0.0.1',
-      description: 'Initial version',
+      description: 'Default version',
       inputs: [],
       outputs: [
         {
-          key: 'message',
-          valueType: WorkflowIOValueTypeEnum.enum.string,
-          label: 'Message',
-          description: 'Tool output message'
+          key: 'time',
+          valueType: WorkflowIOValueTypeEnum.string,
+          label: '时间',
+          description: '当前时间'
         }
       ]
     }
