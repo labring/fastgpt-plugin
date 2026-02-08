@@ -301,7 +301,6 @@ export class S3Service {
       );
       return filepath;
     } catch (err: any) {
-      console.log(err, objectName, 111);
       await rm(filepath);
       return undefined;
     }

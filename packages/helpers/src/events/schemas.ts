@@ -54,18 +54,17 @@ export type FileInput = z.infer<typeof FileInputSchema>;
  */
 export const Cherrio2MdInputSchema = z.object({
   fetchUrl: z.url('Invalid URL format'),
-  html: z.string().min(1, 'HTML content cannot be empty'),
   selector: z.string().optional().default('body')
 });
-export type Cherrio2MdInput = z.infer<typeof Cherrio2MdInputSchema>;
+
+export type Cherrio2MdInput = z.input<typeof Cherrio2MdInputSchema>;
 
 /**
  * Cheerio 转 Markdown 结果
  */
 export const Cherrio2MdResultSchema = z.object({
   markdown: z.string(),
-  title: z.string(),
-  usedSelector: z.string()
+  title: z.string()
 });
 
 export type Cherrio2MdResult = z.infer<typeof Cherrio2MdResultSchema>;
