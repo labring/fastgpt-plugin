@@ -3,8 +3,12 @@ import { SubPub } from './class';
 import { WorkerManager } from '../worker';
 import type { SSEStreamingApi } from 'hono/streaming';
 import { StreamMessageTypeEnum } from '@fastgpt-plugin/helpers/index';
+import { InvokeClient } from '@fastgpt-sdk/invoke';
+import { env } from '@/env';
 
 export const createSubPub = ({ stream }: { stream?: SSEStreamingApi }) => {
+  const invokeClient = new InvokeClient(env.FASTGPT_BASE_URL);
+
   const sp = new SubPub();
   sp.on('file-upload', async ({ data, props }) => {
     const publicS3Server = getPublicS3Server();
@@ -38,6 +42,23 @@ export const createSubPub = ({ stream }: { stream?: SSEStreamingApi }) => {
       });
     });
   }
+
+  sp.on('invoke', async ({ data: { type }, props }) => {
+    const accessToken = props.systemVar.tool.accessToken;
+    if (!accessToken) throw new Error('accessToken is required');
+    switch (type) {
+      case 'getTeamInfo':
+        return invokeClient.getTeamInfo({ accessToken });
+      case 'getUserInfo':
+        return invokeClient.getUserInfo({ accessToken });
+      case 'getWecomCorpToken':
+        return invokeClient.getWecomCorpToken({ accessToken });
+      case 'getWecomCorpInfo':
+        return invokeClient.getWecomCorpInfo({ accessToken });
+      default:
+        return Promise.reject(new Error('Unknown invoke type'));
+    }
+  });
 
   return sp;
 };

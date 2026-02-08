@@ -39,24 +39,21 @@
     "typescript": "^5.9.3",
     "zod": "^4"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "@fastgpt-sdk/invoke": "^0.0.1-alpha.2",
+      "@fastgpt-sdk/storage": "^0.6.14"
+    }
+  },
   "packageManager": "bun@1.3.7",
   "lint-staged": {
-    "./**/**/*.{ts}": [
-      "npm run lint",
-      "npm run prettier",
-      "git add ."
+    "**/*.ts": [
+      "bun run lint",
+      "bun run prettier"
     ]
-  },
-  "dependencies": {
-    "@fastgpt-sdk/storage": "^0.6.14",
-    "@hono/zod-openapi": "^1.2.0",
-    "cheerio": "^1.1.0",
-    "hono": "^4.11.5",
-    "marked": "^17.0.1",
-    "proxy-agent": "^6.5.0"
   }
 }

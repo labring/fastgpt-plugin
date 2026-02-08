@@ -3,7 +3,6 @@ import { I18nStringSchema } from '../../common/schemas/i18n';
 import type { ToolHandlerFunctionType } from './req';
 import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
 import { ToolPermissionEnumSchema } from './permission';
-import { tr } from 'zod/v4/locales';
 
 // ============================================
 // 基础枚举和类型
@@ -169,6 +168,7 @@ export type ToolSetConfigType = z.infer<typeof ToolSetConfigSchema>;
 // Tool Detail - 工具详情(用于 API 响应)
 export const ToolDetailSchema = UnifiedToolSchema.pick({
   toolId: true,
+  parentId: true,
   name: true,
   description: true,
   toolDescription: true,

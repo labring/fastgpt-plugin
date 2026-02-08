@@ -43,5 +43,7 @@ export const mockedEventEmitter: EventEmitter = {
     markdown: '# Mock Markdown\n\nFetched from URL',
     title: 'Mock Title',
     usedSelector: 'body'
-  })
+  }),
+
+  invoke: vi.fn()
 };

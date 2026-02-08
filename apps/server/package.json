@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@fastgpt-plugin/helpers": "workspace:*",
+    "@fastgpt-sdk/invoke": "catalog:",
     "@hono/node-server": "^1.19.9",
     "@hono/zod-openapi": "^1.2.1",
     "@logtape/logtape": "^2.0.2",

@@ -35,7 +35,7 @@ export const getS3ToolStaticFileURL = ({
 }) => {
   const publicS3Server = getPublicS3Server();
   return publicS3Server.generateExternalUrl(
-    `${UploadToolsS3Path}${temp ? '/temp/' : ''}/${toolId}/${filepath}`
+    `${UploadToolsS3Path}${temp ? '/temp' : ''}/${toolId}/${filepath}`
   );
 };
 

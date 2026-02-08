@@ -34,14 +34,5 @@
     // Performance optimizations
     "incremental": true,
     "assumeChangesOnlyAffectDirectDependencies": true
-  },
-  "include": [
-    "modules/**/*.ts",
-    "scripts/**/*.ts",
-    "sdk/**/*.ts",
-    "src/**/*.ts",
-    "test/**/*.ts",
-    "lib/**/*.ts"
-  ],
-  "exclude": ["sdk/dist/**/*.ts"]
+  }
 }
