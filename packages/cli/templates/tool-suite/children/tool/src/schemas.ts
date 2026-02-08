@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 export const InputSchema = z.object({});
-export type Input = z.input<typeof InputSchema>;
+export type Input = z.infer<typeof InputSchema>;
 
 export const OutputSchema = z.object({
-  message: z.string()
+  time: z.string().nonempty()
 });
-export type Output = z.output<typeof OutputSchema>;
+export type Output = z.infer<typeof OutputSchema>;
