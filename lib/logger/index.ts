@@ -56,7 +56,8 @@ export async function configureLogger() {
         messageStyle: 'reset',
         categoryStyle: 'reset',
         timestampStyle: 'reset',
-        timestamp: (ts) => dayjs(ts).format('YYYY-MM-DD HH:mm:ss')
+        timestamp: (ts) => dayjs(ts).format('YYYY-MM-DD HH:mm:ss'),
+        properties: true // 显示结构化数据
       })
     });
     console.log('✓ Logtape console sink enabled');
