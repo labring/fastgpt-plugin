@@ -19,24 +19,6 @@ export default defineTool({
       description: 'Unified sheet management',
       inputs: [
         {
-          key: 'accessToken',
-          label: '调用凭证 (access_token)',
-          description: '企业微信的调用凭证',
-          required: true,
-          valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          toolDescription: 'The access token for WeCom API'
-        },
-        {
-          key: 'docid',
-          label: '文档 ID (docid)',
-          description: '智能表文档的唯一标识',
-          required: true,
-          valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          toolDescription: 'The unique ID of the smart sheet document'
-        },
-        {
           key: 'action',
           label: '操作类型',
           description:
@@ -51,15 +33,6 @@ export default defineTool({
             { label: '查询子表', value: 'get' }
           ],
           toolDescription: 'The action to perform: add, delete, update, or get'
-        },
-        {
-          key: 'sheet_id',
-          label: '子表 ID',
-          description: '操作所属的子表 ID (删除、更新、查询时使用)',
-          required: false,
-          valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          toolDescription: 'The ID of the sub-sheet'
         },
         {
           key: 'title',

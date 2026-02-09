@@ -18,15 +18,6 @@ export default defineTool({
       description: 'Initial version',
       inputs: [
         {
-          key: 'accessToken',
-          label: '调用凭证 (access_token)',
-          description: '企业微信的调用凭证',
-          required: true,
-          valueType: WorkflowIOValueTypeEnum.string,
-          renderTypeList: [FlowNodeInputTypeEnum.input, FlowNodeInputTypeEnum.reference],
-          toolDescription: 'The access token for WeCom API'
-        },
-        {
           key: 'doc_name',
           label: '文档名称',
           description: '要新建的文档名称',

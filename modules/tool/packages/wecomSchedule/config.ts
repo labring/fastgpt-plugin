@@ -8,7 +8,6 @@ export default defineTool({
     en: 'WeCom Schedule Manager'
   },
   tags: [ToolTagEnum.enum.tools],
-  icon: 'plugins/wecom',
   description: {
     'zh-CN': '在一个工具中管理企业微信日程：支持创建、更新、删除和获取日程详情。',
     en: 'Manage WeCom schedules in one tool: supports creating, updating, deleting, and getting schedule details.'
@@ -177,6 +176,5 @@ export default defineTool({
         }
       ]
     }
-  ],
-  secretInputConfig: []
+  ]
 });

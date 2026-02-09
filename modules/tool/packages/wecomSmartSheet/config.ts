@@ -15,7 +15,5 @@ export default defineToolSet({
   toolDescription: `A comprehensive WeCom (Work WeChat) Smart Sheet toolset for managing documents, sheets, views, fields, and records.
 Supports complete CRUD operations for efficient data management within WeCom.`,
   author: 'LBP97541135',
-  courseUrl: 'https://developer.work.weixin.qq.com/document/path/96601',
-
-  secretInputConfig: []
+  courseUrl: 'https://developer.work.weixin.qq.com/document/path/96601'
 });
