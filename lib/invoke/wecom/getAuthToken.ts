@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { registerInvokeHandler } from '../registry';
 import type { SystemVarType } from '@tool/type/req';
 import { FastGPTBaseURL } from '../const';
 import { getAccessToken } from '../accessToken';
@@ -56,9 +55,6 @@ async function getCorpToken(
 
   return result.data;
 }
-
-// 注册方法
-registerInvokeHandler('wecom.getCorpToken', getCorpToken);
 
 export { getCorpToken };
 export type { getCorpTokenParams, getCorpTokenResult };

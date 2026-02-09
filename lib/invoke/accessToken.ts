@@ -1,15 +1,9 @@
 import { FastGPTBaseURL } from './const';
 import type { SystemVarType } from '@tool/type/req';
-import { registerInvokeHandler } from './registry';
 import { getLogger, root } from '@/logger';
 import { env } from '@/env';
 
 const logger = getLogger(root);
-
-// type GetAccessTokenParams = {
-//   // Currently no additional params needed
-//   // Future: could add scope, permissions, etc.
-// };
 
 type RequestAccessTokenBody = {
   toolId: string;
@@ -41,11 +35,8 @@ async function getAccessToken(params: any, systemVar: SystemVarType): Promise<st
   return await requestAccessToken({
     toolId: systemVar.tool.id,
     teamId: systemVar.user.teamId,
-    tmbId: systemVar.user.membername
+    tmbId: systemVar.user.id
   });
 }
-
-// Register the method
-registerInvokeHandler('getAccessToken', getAccessToken);
 
 export { getAccessToken, requestAccessToken };

@@ -9,8 +9,6 @@ import { getErrText } from '@tool/utils/err';
 import { getPublicS3ServerAsync } from '@/s3';
 import { basePath, devToolIds } from '@tool/constants';
 import type { StreamDataType, ToolCallbackReturnSchemaType } from '@tool/type/req';
-// Import invoke registry to ensure all methods are registered
-import '@/invoke';
 
 type WorkerQueueItem = {
   id: string;
@@ -223,36 +221,6 @@ export async function dispatchWithNewWorker(data: {
             data: {
               id: data.id,
               error: `Tool upload file error: ${getErrText(error)}`
-            }
-          });
-        }
-      } else if (type === 'invoke') {
-        try {
-          const { getInvokeHandler } = await import('@/invoke/registry');
-
-          const handler = getInvokeHandler(data.method);
-          if (!handler) {
-            logger.error(`Unknown invoke method: ${data.method}`);
-            throw new Error(`Unknown invoke method: ${data.method}`);
-          }
-
-          // Call handler with params and systemVar from closure
-          const result = await handler(data.params, workerData.systemVar as any);
-
-          worker.postMessage({
-            type: 'invokeResponse',
-            data: {
-              id: data.id,
-              data: result
-            }
-          });
-        } catch (error) {
-          logger.error(`Invoke ${data.method} error`, { error });
-          worker.postMessage({
-            type: 'invokeResponse',
-            data: {
-              id: data.id,
-              error: getErrText(error)
             }
           });
         }
