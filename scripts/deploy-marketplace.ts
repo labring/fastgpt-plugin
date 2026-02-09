@@ -11,9 +11,133 @@ import {
   MinioStorageAdapter,
   type IAwsS3CompatibleStorageOptions,
   type ICosStorageOptions,
-  type IOssStorageOptions
+  type IOssStorageOptions,
+  type IStorage
 } from '@fastgpt-sdk/storage';
 import { createDefaultStorageOptions } from '@/s3/config';
+import type { ToolSetType, ToolType } from '@tool/type';
+import { ToolTagEnum } from '@tool/type/tags';
+import { existsSync, writeFileSync } from 'fs';
+import { readdir } from 'fs/promises';
+import { join } from 'path';
+import { generateToolVersion, generateToolSetVersion } from '../modules/tool/utils/tool';
+import { ToolDetailSchema } from '@tool/type/api';
+
+const filterToolList = ['.DS_Store', '.git', '.github', 'node_modules', 'dist', 'scripts'];
+
+const LoadToolsDev = async (filename: string, storage: IStorage): Promise<ToolType[]> => {
+  const tools: ToolType[] = [];
+  const basePath = process.cwd();
+  const toolPath = join(basePath, 'modules', 'tool', 'packages', filename);
+
+  // get all avatars and push them into s3
+  const rootMod = (await import(toolPath)).default as ToolSetType | ToolType;
+
+  const childrenPath = join(toolPath, 'children');
+  const isToolSet = existsSync(childrenPath);
+
+  const toolsetId = rootMod.toolId || filename;
+
+  // 使用传入的 storage 来生成 URL
+  const generateUrl = (path: string) => {
+    const { url } = storage.generatePublicGetUrl({ key: path });
+    return url;
+  };
+
+  const parentIcon = rootMod.icon ?? generateUrl(`${UploadToolsS3Path}/${toolsetId}/logo`);
+
+  if (isToolSet) {
+    const children: ToolType[] = [];
+
+    {
+      const files = await readdir(childrenPath);
+      for (const file of files) {
+        const childPath = join(childrenPath, file);
+
+        const childMod = (await import(childPath)).default as ToolType;
+        const toolId = childMod.toolId || `${toolsetId}/${file}`;
+
+        const childIcon =
+          childMod.icon ??
+          rootMod.icon ??
+          generateUrl(`${UploadToolsS3Path}/${toolsetId}/${file}/logo`);
+
+        // Generate version for child tool
+        const childVersion = childMod.versionList
+          ? generateToolVersion(childMod.versionList)
+          : generateToolVersion([]);
+
+        children.push({
+          ...childMod,
+          toolId,
+          toolFilename: filename,
+          icon: childIcon,
+          parentId: toolsetId,
+          version: childVersion
+        });
+      }
+    }
+
+    // Generate version for tool set based on children
+    const toolSetVersion = generateToolSetVersion(children) ?? '';
+
+    tools.push({
+      ...rootMod,
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      toolId: toolsetId,
+      icon: parentIcon,
+      toolFilename: filename,
+      cb: () => Promise.resolve({}),
+      versionList: [],
+      version: toolSetVersion
+    });
+
+    tools.push(...children);
+  } else {
+    // is not toolset
+    const icon = rootMod.icon ?? generateUrl(`${UploadToolsS3Path}/${toolsetId}/logo`);
+
+    // Generate version for single tool
+    const toolVersion = (rootMod as any).versionList
+      ? generateToolVersion((rootMod as any).versionList)
+      : generateToolVersion([]);
+
+    tools.push({
+      ...(rootMod as ToolType),
+      tags: rootMod.tags || [ToolTagEnum.enum.other],
+      toolId: toolsetId,
+      icon,
+      toolFilename: filename,
+      version: toolVersion
+    });
+  }
+
+  return tools;
+};
+
+const buildToolsJson = async (storage: IStorage) => {
+  console.log('📝 Building tools.json...');
+
+  const basePath = process.cwd();
+  const dir = join(basePath, 'modules', 'tool', 'packages');
+  const dirs = (await readdir(dir)).filter((filename) => !filterToolList.includes(filename));
+  const devTools = (
+    await Promise.all(
+      dirs.map(async (filename) => {
+        return LoadToolsDev(filename, storage);
+      })
+    )
+  ).flat();
+  const toolMap = new Map();
+  for (const tool of devTools) {
+    toolMap.set(tool.toolId, tool);
+  }
+
+  const toolList = Array.from(toolMap.values()).map((item) => ToolDetailSchema.parse(item));
+  writeFileSync(join(basePath, 'dist', 'tools.json'), JSON.stringify(toolList));
+
+  console.log('✅ tools.json built successfully, tools:', toolList.length);
+};
 
 async function main() {
   let config: any;
@@ -75,7 +199,11 @@ async function main() {
   }
 
   console.log('📦 Building marketplace packages...');
-  await $`bun run build:marketplace`;
+  // 先构建 pkg
+  await $`bun run build:pkg`;
+
+  // 然后构建 tools.json，使用正确的 storage 实例
+  await buildToolsJson(storage);
 
   console.log('📤 Uploading packages to S3...');
   // read all files in dist/pkgs
@@ -184,12 +312,17 @@ async function main() {
 
   if (process.env.MARKETPLACE_BASE_URL && process.env.MARKETPLACE_AUTH_TOKEN) {
     console.log('🚀 Starting marketplace update...');
-    await fetch(`${process.env.MARKETPLACE_BASE_URL}/api/admin/refresh`, {
-      method: 'GET',
-      headers: {
-        Authorization: process.env.MARKETPLACE_AUTH_TOKEN
-      }
-    });
+    try {
+      await fetch(`${process.env.MARKETPLACE_BASE_URL}/api/admin/refresh`, {
+        method: 'GET',
+        headers: {
+          Authorization: process.env.MARKETPLACE_AUTH_TOKEN
+        }
+      });
+    } catch (error) {
+      console.error('❌ Marketplace update failed:');
+      console.error(error);
+    }
     console.log('✅ Marketplace updated successfully');
   }
 }
