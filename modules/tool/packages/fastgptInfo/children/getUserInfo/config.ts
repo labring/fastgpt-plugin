@@ -4,16 +4,14 @@ import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
   name: {
-    'zh-CN': '模版工具',
-    en: 'Template tool'
+    'zh-CN': '获取用户信息',
+    en: 'Get User Information'
   },
   tags: [ToolTagEnum.enum.tools],
   description: {
-    'zh-CN': '描述',
-    en: 'description'
+    'zh-CN': '获取用户信息',
+    en: 'Get user information'
   },
-  toolDescription:
-    'tool description for ai to use, fallback to English description if not provided',
   versionList: [
     {
       value: '0.1.0',
