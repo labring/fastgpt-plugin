@@ -29,10 +29,10 @@ export async function configureLogger() {
   }
 
   const enableConsole = env.LOG_ENABLE_CONSOLE;
+  const consoleLevel = env.LOG_CONSOLE_LEVEL;
   const enableOtel = env.LOG_ENABLE_OTEL;
   const otelServiceName = env.LOG_OTEL_SERVICE_NAME;
   const otelUrl = env.LOG_OTEL_URL;
-  const consoleLevel = env.LOG_LEVEL;
   const otelLevel = env.LOG_OTEL_LEVEL;
 
   const sinkConfig = {

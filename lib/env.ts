@@ -50,8 +50,10 @@ export const env = createEnv({
     REDIS_URL: z.string().nonempty().default('redis://default:password@localhost:6379/0'),
 
     // 日志
-    LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warning', 'error', 'fatal']).default('info'),
     LOG_ENABLE_CONSOLE: BoolSchema.default(true),
+    LOG_CONSOLE_LEVEL: z
+      .enum(['trace', 'debug', 'info', 'warning', 'error', 'fatal'])
+      .default('info'),
     LOG_ENABLE_OTEL: BoolSchema.default(false),
     LOG_OTEL_LEVEL: z.enum(['trace', 'debug', 'info', 'warning', 'error', 'fatal']).default('info'),
     LOG_OTEL_SERVICE_NAME: z.string().default('fastgpt-plugin'),
