@@ -3,8 +3,7 @@ import models from '@model/route';
 import workflow from '@workflow/route';
 import tool from '@tool/route';
 import { createResponseSchema, R, createOpenAPIHono } from '@/utils/http';
-import { bearerAuth } from 'hono/bearer-auth';
-import { env } from '@/env';
+import { bearerAuth } from '@/middlewares/auth';
 import { HTTPException } from 'hono/http-exception';
 import { createRoute, z } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
@@ -23,9 +22,9 @@ app.use(
     credentials: true
   })
 );
-app.use('/api/*', bearerAuth({ token: env.AUTH_TOKEN }));
 app.use('*', requestId());
 app.use('*', logger);
+app.use('/api/*', bearerAuth);
 // #endregion
 
 // #region ============= route =================
