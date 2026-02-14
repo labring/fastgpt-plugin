@@ -5,6 +5,39 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'doubao-seed-2-0-pro-260215',
+      maxContext: 256000,
+      maxTokens: 128000,
+      quoteMaxToken: 256000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-2-0-lite-260215',
+      maxContext: 256000,
+      maxTokens: 128000,
+      quoteMaxToken: 256000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-2-0-mini-260215',
+      maxContext: 256000,
+      maxTokens: 128000,
+      quoteMaxToken: 256000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'doubao-seed-1-8-251228',
       maxContext: 220000,
       maxTokens: 16000,
