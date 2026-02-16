@@ -9,11 +9,12 @@ const models: ProviderConfigType = {
       maxContext: 256000,
       maxTokens: 32000,
       quoteMaxToken: 250000,
-      maxTemperature: 1,
+      maxTemperature: null,
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
       toolChoice: true,
+      showTopP: false,
       defaultConfig: {
         thinking: {
           type: 'enabled'
