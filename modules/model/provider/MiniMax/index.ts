@@ -5,6 +5,28 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'MiniMax-M2.5',
+      maxContext: 204000,
+      maxTokens: 100000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'MiniMax-M2.5-highspeed',
+      maxContext: 204000,
+      maxTokens: 100000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'MiniMax-M2.1',
       maxContext: 204000,
       maxTokens: 100000,
