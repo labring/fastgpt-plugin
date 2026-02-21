@@ -11,7 +11,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 200000,
       maxTemperature: 1,
       vision: true,
-      reasoning: true,
+      reasoning: false,
       toolChoice: true
     },
     {
@@ -22,7 +22,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 200000,
       maxTemperature: 1,
       vision: true,
-      reasoning: true,
+      reasoning: false,
       toolChoice: true
     },
     {
