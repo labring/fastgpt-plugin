@@ -5,6 +5,30 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'gpt-5.4',
+      maxContext: 250000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5.4-pro',
+      maxContext: 250000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5.2',
       maxContext: 250000,
       maxTokens: 128000,
