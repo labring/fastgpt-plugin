@@ -7,7 +7,8 @@ export const pluginTypeEnum = pluginTypeSchema.enum;
 
 export const PluginZodSchema = z.object({
   type: z.literal('tool'),
-  toolId: z.string()
+  toolId: z.string(),
+  version: z.string().optional()
 });
 
 export type MongoPluginSchemaType = z.infer<typeof PluginZodSchema>;
@@ -15,6 +16,7 @@ export type MongoPluginSchemaType = z.infer<typeof PluginZodSchema>;
 const pluginMongooseSchema = new Schema({
   toolId: { type: String, required: true },
   type: { type: String, required: true, enum: Object.values(pluginTypeEnum) },
+  version: { type: String },
 
   // @deprecated
   objectName: { type: String }

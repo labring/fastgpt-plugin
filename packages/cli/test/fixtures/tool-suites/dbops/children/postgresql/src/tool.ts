@@ -1,10 +1,6 @@
-import type { RunToolSecondParamsType } from '@fastgpt-plugin/helpers/tools/schemas/req';
-import type { z } from 'zod';
-import { InputType, OutputType } from './schemas';
+import { createToolHandler } from '@fastgpt-plugin/helpers';
+import { InputSchema, OutputSchema } from './schemas';
 
-export async function tool(
-  _input: z.infer<typeof InputType>,
-  _ctx: RunToolSecondParamsType
-): Promise<z.infer<typeof OutputType>> {
+export const tool = createToolHandler(InputSchema, OutputSchema, async (_input, _ctx) => {
   return { message: 'Hello from postgresql' };
-}
+});

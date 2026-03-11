@@ -11,8 +11,46 @@ export { pkg, unpkg } from './common/zip';
 export type { EventEnumType, FileInput, Cherrio2MdInput, Cherrio2MdResult } from './events/schemas';
 export type { EventEmitter } from './events/type';
 
-// 工具定义辅助函数
-export { defineTool, defineToolSet } from './tools/helper';
+// Plugin IO 抽象（消息协议 + Transport + Router）
+export type {
+  PluginMessageType,
+  PluginError,
+  PluginIOMessage,
+  TransportType,
+  PluginTransport,
+  PluginIOContext,
+  PluginIOHandler,
+  PluginRouter
+} from './common/io';
+export { BasePluginRouter } from './common/router';
+export { ChildIpcTransport } from './common/ipc-transport';
+export { PluginFactory } from './common/plugin-factory';
+
+// Plugin 类型（插件开发者使用）
+export { ToolPlugin, createToolHandler } from './plugins/tool';
+export type { ToolHandlerDefinition } from './plugins/tool';
+
+export { DatasetPlugin } from './plugins/dataset';
+export type {
+  DatasetSearchParams,
+  DatasetSearchResult,
+  DatasetIndexParams,
+  DatasetDeleteParams,
+  SearchHandler,
+  IndexHandler,
+  DeleteHandler
+} from './plugins/dataset';
+
+export { ModelPlugin } from './plugins/model';
+export type {
+  ModelGenerateParams,
+  ModelGenerateResult,
+  ModelEmbedParams,
+  ModelEmbedResult,
+  GenerateHandler,
+  EmbedHandler,
+  ListModelsHandler
+} from './plugins/model';
 
 // 模型相关 schemas 和类型
 export {

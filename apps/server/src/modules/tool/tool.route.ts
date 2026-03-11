@@ -28,6 +28,7 @@ import { getTool, getToolTags, parsePkg, parseUploadedTool } from './utils/tool'
 import { getErrText } from '@/utils/err';
 import { createEventEmitter } from '@/lib/events';
 import { createSubPub } from '@/lib/events/init';
+import { parse as parseYaml } from 'yaml';
 
 const tools = createOpenAPIHono().basePath('/tools');
 
@@ -113,16 +114,40 @@ tools.openapi(confirmUploadRoute, async (c) => {
     return c.json(R.error(400, 'Some toolIds are invalid'), 400);
   }
 
+  // 读取每个工具的 manifest.yaml 获取 version
+  const toolsWithVersion = await Promise.all(
+    toolIds.map(async (toolId) => {
+      try {
+        const manifestUrl = publicS3Server.generateExternalUrl(
+          `${UploadToolsS3Path}/temp/${toolId}/manifest.yaml`
+        );
+        const manifestContent = await fetch(manifestUrl).then(r => r.text());
+        const manifest = parseYaml(manifestContent);
+        return {
+          toolId,
+          version: manifest.version
+        };
+      } catch (error) {
+        logger.warn(`Failed to read manifest for ${toolId}`, { error });
+        return {
+          toolId,
+          version: undefined
+        };
+      }
+    })
+  );
+
   await mongoSessionRun(async (session) => {
     const allToolsInstalled = (
       await MongoSystemPlugin.find({ type: pluginTypeEnum.tool }).lean()
     ).map((tool) => tool.toolId);
     await MongoSystemPlugin.create(
-      toolIds
-        .filter((toolId) => !allToolsInstalled.includes(toolId))
-        .map((toolId) => ({
+      toolsWithVersion
+        .filter(({ toolId }) => !allToolsInstalled.includes(toolId))
+        .map(({ toolId, version }) => ({
           toolId,
-          type: pluginTypeEnum.tool
+          type: pluginTypeEnum.tool,
+          version
         })),
       {
         session,

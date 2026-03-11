@@ -12,6 +12,7 @@ import {
 import path, { parse } from 'node:path';
 import { mimeMap } from '@/lib/s3/const';
 import { catchError, ToolTagsNameMap, unpkg } from '@fastgpt-plugin/helpers/index';
+import { loadManifest } from '@fastgpt-plugin/helpers/tools/helper';
 import { readdir, stat, rm } from 'node:fs/promises';
 import { getLogger, mod } from '@/lib/logger';
 import { getCachedData } from '@/lib/cache';
@@ -49,7 +50,7 @@ export const parseMod = async ({
   temp?: boolean; // 临时解析
 }) => {
   const checkRootModToolSet = (rootMod: ToolSetType | ToolType): rootMod is ToolSetType =>
-    'children' in rootMod;
+    'children' in rootMod && rootMod.children && typeof rootMod.children === 'object';
 
   if (checkRootModToolSet(rootMod as ToolSetType | ToolType)) {
     const toolsetId = rootMod.toolId;
@@ -68,28 +69,52 @@ export const parseMod = async ({
       filepath: 'README.md'
     });
 
-    const children = rootMod.children!.map<ToolType>((child) => {
-      const childToolId = child.toolId;
+    // 从 index.js 的 handlers 和 schemas 中提取子工具
+    const childNames = Object.keys((rootMod as any).children || {});
+    const children = childNames.map<ToolType>((childName) => {
+      const handler = (rootMod as any).handlers?.[childName];
+      const childSchemas = (rootMod as any).schemas?.[childName];
+
+      if (!handler || !childSchemas) {
+        logger.warn(`Child tool ${childName} not found in handlers or schemas`);
+        return null as any;
+      }
+
+      // 从 schemas 获取 InputSchema 和 OutputSchema
+      const inputSchema = childSchemas.InputSchema;
+      const outputSchema = childSchemas.OutputSchema;
+
+      const childToolId = `${toolsetId}/${childName}`;
+      const childConfig = (rootMod as any).children[childName];
 
       const childIcon =
-        child.icon ||
+        childConfig?.icon ||
         rootMod.icon ||
         getS3ToolStaticFileURL({
           toolId: childToolId,
           temp,
           filepath: 'logo'
         });
+
       return {
-        ...child,
         toolId: childToolId,
         parentId: toolsetId,
+        name: childConfig?.name || { en: childName, 'zh-CN': childName },
+        description: childConfig?.description || { en: '', 'zh-CN': '' },
+        handler,
         tags: rootMod.tags,
         tutorialUrl: rootMod.tutorialUrl,
         readmeUrl,
         author: rootMod.author,
-        icon: childIcon
+        icon: childIcon,
+        versionList: [{
+          value: (rootMod as any).version,
+          description: (rootMod as any).versionDescription,
+          inputSchema,
+          outputSchema
+        }]
       };
-    });
+    }).filter(Boolean);
 
     // 返回 ToolSetType，必须包含 children 字段
     return {
@@ -127,7 +152,42 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
     logger.error(`Can not parse toolId, filename: ${filename}`);
     return;
   }
-  const mod = (await import(path.join(tempDir, 'index.js'))).default as ToolSetType | ToolType;
+
+  // 1. 读取 manifest.yaml
+  const manifestPath = path.join(tempDir, 'manifest.yaml');
+  const manifest = await loadManifest(manifestPath);
+
+  // 2. 导入 index.js
+  const mod = (await import(path.join(tempDir, 'index.js'))).default;
+
+  // 3. 合并 manifest 和 mod
+  let rootMod: ToolDistType;
+
+  if (manifest.children && typeof manifest.children === 'object') {
+    // 工具集：从 mod.handlers 和 mod.schemas 提取子工具
+    rootMod = {
+      ...manifest,
+      toolId: manifest.toolId || filename.replace('.pkg', ''),
+      handlers: mod.handlers,
+      schemas: mod.schemas
+    } as any;
+  } else {
+    // 单个工具：从 mod 提取 handler 和 schemas
+    const inputSchema = mod.InputSchema;
+    const outputSchema = mod.OutputSchema;
+
+    rootMod = {
+      ...manifest,
+      toolId: manifest.toolId || filename.replace('.pkg', ''),
+      handler: mod.handler,
+      versionList: [{
+        value: manifest.version,
+        description: manifest.versionDescription,
+        inputSchema,
+        outputSchema
+      }]
+    } as any;
+  }
 
   // upload unpkged files (except index.js) to s3
   // 1. get all files recursively
@@ -143,8 +203,8 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
 
       const staticFilePath = path.join(tempDir, file);
       const prefix = temp
-        ? `${UploadToolsS3Path}/temp/${mod.toolId}`
-        : `${UploadToolsS3Path}/${mod.toolId}`;
+        ? `${UploadToolsS3Path}/temp/${rootMod.toolId}`
+        : `${UploadToolsS3Path}/${rootMod.toolId}`;
       await publicS3Server.uploadFileAdvanced({
         path: staticFilePath,
         defaultFilename: file.split('.').slice(0, -1).join('.'), // remove the extention name
@@ -164,7 +224,7 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
   await privateS3Server.uploadFileAdvanced({
     path: path.join(tempDir, 'index.js'),
     prefix: temp ? `${UploadToolsS3Path}/temp` : UploadToolsS3Path,
-    defaultFilename: mod.toolId + '.js',
+    defaultFilename: rootMod.toolId + '.js',
     keepRawFilename: true,
     ...(temp
       ? {
@@ -174,7 +234,7 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
   });
 
   const tool = await parseMod({
-    rootMod: mod,
+    rootMod,
     filename: path.join(tempDir, 'index.js'),
     temp
   });
@@ -214,7 +274,39 @@ export const LoadToolsByFilename = async (
   // This ensures same content reuses the same cached module
   const modulePath = `${filePath}?v=${fileSize}`;
 
-  const rootMod = (await import(modulePath)).default as UnifiedToolType;
+  // 1. 加载 manifest.yaml
+  const toolId = filename.replace('.js', '');
+  const manifestPath = path.join(toolsDir, toolId, 'manifest.yaml');
+  const manifest = await loadManifest(manifestPath);
+
+  // 2. 加载 index.js
+  const mod = (await import(modulePath)).default;
+
+  // 3. 合并 manifest 和 mod
+  let rootMod: ToolDistType;
+
+  if (manifest.children && typeof manifest.children === 'object') {
+    // 工具集：从 mod.handlers 和 mod.schemas 提取子工具
+    rootMod = {
+      ...manifest,
+      toolId: manifest.toolId || toolId,
+      handlers: mod.handlers,
+      schemas: mod.schemas
+    } as any;
+  } else {
+    // 单个工具：从 mod 提取 handler 和 schemas
+    rootMod = {
+      ...manifest,
+      toolId: manifest.toolId || toolId,
+      handler: mod.handler,
+      versionList: [{
+        value: manifest.version,
+        description: manifest.versionDescription,
+        inputSchema: mod.InputSchema,
+        outputSchema: mod.OutputSchema
+      }]
+    } as any;
+  }
 
   if (!rootMod.toolId) {
     logger.error(`Can not parse toolId, filename: ${filename}`);
@@ -231,7 +323,7 @@ export async function getTool(toolId: string): Promise<ToolType | undefined> {
   if (toolId.includes('/')) {
     const toolset = tools.get(toolId.split('/')[0]);
     if (toolset && 'children' in toolset) {
-      return toolset.children.find((child) => child.toolId === toolId);
+      return toolset.children.find((child: ToolType) => child.toolId === toolId);
     }
   }
   return tools.get(toolId) as ToolType;

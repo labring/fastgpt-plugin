@@ -1,4 +1,4 @@
-import type { EventEmitter } from '@fastgpt-plugin/helpers/events/type';
+// import type { EventEmitter } from '@fastgpt-plugin/helpers/events/type';
 import { z } from 'zod';
 
 // ToolHandlerReturnSchema 定义移到这里，避免循环依赖
@@ -64,7 +64,7 @@ export const StreamMessageSchema = z.discriminatedUnion('type', [
 export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
 
 export type ToolContextType = {
-  emitter: EventEmitter;
+  // emitter: EventEmitter;
   systemVar: SystemVarType;
   [key: string]: unknown;
 };

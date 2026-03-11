@@ -1,87 +1,14 @@
-import z, { ZodError, ZodType } from 'zod';
-import {
-  ToolConfigSchema,
-  ToolSetConfigSchema,
-  type ToolConfigType,
-  type ToolSetConfigType
-} from './schemas/tool';
-import { FlowNodeOutputTypeEnum } from './schemas/fastgpt';
-import type { ToolContextType } from './schemas/req';
+import { ManifestSchema } from './schemas/tool';
+import { readFile } from 'node:fs/promises';
+import { parse as parseYaml } from 'yaml';
 
-export function defineTool(
-  tool: z.input<typeof ToolConfigSchema>
-): z.output<typeof ToolConfigSchema> {
-  const versionList = tool.versionList.map((version) => {
-    return {
-      ...version,
-      outputs: version.outputs.map((output) => {
-        return {
-          ...output,
-          type: output.type ?? FlowNodeOutputTypeEnum.static,
-          id: output.id ?? output.key
-        };
-      })
-    };
-  });
+/**
+ * 从 manifest.yaml 加载工具配置
+ */
+export async function loadManifest(manifestPath: string): Promise<any> {
+  const content = await readFile(manifestPath, 'utf-8');
+  const manifest = parseYaml(content);
 
-  return ToolConfigSchema.parse({
-    ...tool,
-    versionList
-  });
+  // 验证 manifest 结构
+  return ManifestSchema.parse(manifest);
 }
-
-export function defineToolSet(
-  toolset: z.input<typeof ToolSetConfigSchema>
-): z.output<typeof ToolSetConfigSchema> {
-  return ToolSetConfigSchema.parse(toolset);
-}
-
-export const exportTool = <I, O>({
-  handler: toolCb,
-  InputSchema,
-  OutputSchema,
-  config
-}: {
-  handler: (input: I, ctx: ToolContextType) => Promise<Record<string, unknown>>;
-  InputSchema: ZodType<I>;
-  OutputSchema: ZodType<O>;
-  config: ToolConfigType;
-}) => {
-  const handler = async (props: I, ctx: ToolContextType) => {
-    try {
-      const output = await toolCb(InputSchema.parse(props), ctx);
-      return {
-        output: OutputSchema.parse(output)
-      };
-    } catch (error: unknown) {
-      if (error instanceof ZodError) {
-        const issues = error.issues;
-        if (issues.length === 0) {
-          throw new Error('Unknown Zod error');
-        }
-
-        const paths = [];
-        for (const issue of issues) {
-          if (issue.path) {
-            paths.push(...issue.path.flat());
-          }
-        }
-        const fields = Array.from(new Set(paths)).filter(Boolean).join(', ');
-        return { error: `Invalid parameters. Please check: ${fields}` };
-      }
-
-      return { error };
-    }
-  };
-
-  return {
-    ...config,
-    handler
-  };
-};
-
-export const exportToolSet = ({ config }: { config: ToolSetConfigType }) => {
-  return {
-    ...config
-  };
-};

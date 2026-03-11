@@ -1,11 +1,8 @@
-import { exportTool } from '@fastgpt-plugin/helpers/tools/helper';
-import config from './config';
+import { ToolPlugin, createToolHandler } from '@fastgpt-plugin/helpers';
 import { InputSchema, OutputSchema } from './src/schemas';
 import { handler } from './src/tool';
 
-export default exportTool({
-  handler,
-  InputSchema,
-  OutputSchema,
-  config
-});
+const plugin = new ToolPlugin();
+plugin.registerTool(createToolHandler(InputSchema, OutputSchema, handler));
+
+export { plugin };

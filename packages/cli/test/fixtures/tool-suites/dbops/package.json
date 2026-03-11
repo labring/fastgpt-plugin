@@ -12,7 +12,7 @@
   "author": "FastGPT",
   "description": "SQL connection tool, made by FastGPT",
   "scripts": {
-    "build": "npx @fastgpt-plugin/cli build"
+    "build": "fastgpt-plugin build"
   },
   "devDependencies": {
     "@types/bun": "latest",

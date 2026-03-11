@@ -19,7 +19,7 @@ export const env = createEnv({
     // 系统
     NODE_ENV: z.string().default('development'),
     PORT: PositiveIntSchema.min(1024).max(65535).default(3000),
-    AUTH_TOKEN: z.string().default(''),
+    AUTH_TOKEN: z.string().default('token'),
     HOSTNAME: z.string().optional(),
     MAX_API_SIZE: PositiveIntSchema.default(10),
     FASTGPT_BASE_URL: z.url().default('http://localhost:3000'),

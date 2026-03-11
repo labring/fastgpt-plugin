@@ -33,8 +33,8 @@ import novita from './provider/novita';
 import openrouter from './provider/OpenRouter';
 import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
 import { modelsBuffer } from './constants';
-import { initModelAvatars } from './avatars';
 import { getLogger, mod } from '@/lib/logger';
+import { initModelAvatars } from './avatars';
 
 const logger = getLogger(mod.model);
 
@@ -75,9 +75,8 @@ const allProviders: ProviderConfigType[] = [
   yi
 ];
 
-export const initModels = async (reboot: boolean = false) => {
-  if (!reboot) await initModelAvatars();
-
+export const initModels = async () => {
+  await initModelAvatars();
   modelsBuffer.data = allProviders
     .map((item) => {
       return item.list.map((model) => {

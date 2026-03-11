@@ -8,16 +8,28 @@ import { logger } from '@fastgpt-plugin/cli/helpers';
 
 interface PackCommandOptions {
   entry: string;
+  dist: string;
   output?: string;
   name?: string;
 }
 
+/**
+ * .pkg 文件结构：
+ *   index.js          ← dist/index.js（必须）
+ *   config.json       ← dist/config.json（可选）
+ *   manifest.yaml     ← entry/manifest.yaml（必须）
+ *   logo.*            ← entry/logo.*（可选，取第一个匹配）
+ *   README.md         ← entry/README.md（可选）
+ *   assets/           ← entry/assets/（可选）
+ *   children/<name>/logo.*  ← 工具集子工具 logo（可选）
+ */
 export class PackCommand extends BaseCommand {
   public register(parent: Command): void {
     parent
       .command('pack')
       .description('将 FastGPT 工具或工具集打包为 .pkg 文件')
-      .option('-e, --entry <path>', '工具入口目录', process.cwd())
+      .option('-e, --entry <path>', '工具源码根目录', process.cwd())
+      .option('-d, --dist <path>', '构建产物目录', './dist')
       .option('-o, --output <path>', '输出目录（默认使用入口目录）')
       .option('-n, --name <name>', '包名称（默认使用入口目录名）')
       .action(async (opts: PackCommandOptions) => {
@@ -29,66 +41,75 @@ export class PackCommand extends BaseCommand {
     const start = Date.now();
 
     const entryDir = path.resolve(options.entry);
+    const distDir = path.resolve(entryDir, options.dist);
     const outputDir = path.resolve(options.output || entryDir);
     const toolName = options.name || path.basename(entryDir);
     const pkgPath = path.join(outputDir, `${toolName}.pkg`);
 
     try {
       await assertPathExists(entryDir, `入口目录不存在: ${entryDir}`);
+      await assertPathExists(distDir, `构建产物目录不存在: ${distDir}（请先运行 build）`);
 
-      const distIndexPath = path.join(entryDir, 'dist', 'index.js');
-      const logoPath = path.join(entryDir, 'logo.svg');
-      const readmePath = path.join(entryDir, 'README.md');
-      const assetsDir = path.join(entryDir, 'assets');
-      const childrenDir = path.join(entryDir, 'children');
+      // 必须文件
+      const distIndexPath = path.join(distDir, 'index.js');
+      await assertPathExists(distIndexPath, `找不到 dist/index.js：${distIndexPath}`);
 
-      await assertPathExists(distIndexPath, `找不到 dist/index.js 文件: ${distIndexPath}`);
+      const manifestPath = path.join(entryDir, 'manifest.yaml');
+      await assertPathExists(manifestPath, `找不到 manifest.yaml：${manifestPath}`);
 
       await ensureDir(outputDir);
 
       const zipFile = new ZipFile();
       const outStream = createWriteStream(pkgPath);
-
       const zipPromise = new Promise<void>((resolve, reject) => {
         zipFile.outputStream.pipe(outStream).on('close', () => resolve());
         zipFile.outputStream.on('error', (err) => reject(err));
         outStream.on('error', (err) => reject(err));
       });
 
-      // 根文件（index.js 必须存在，logo.svg / README.md 为可选）
+      // ── dist 产物 ──────────────────────────────────────────────────────────
       zipFile.addFile(distIndexPath, 'index.js');
 
-      if (await pathExists(logoPath)) {
-        zipFile.addFile(logoPath, 'logo.svg');
+      const distConfigPath = path.join(distDir, 'config.json');
+      if (await pathExists(distConfigPath)) {
+        zipFile.addFile(distConfigPath, 'config.json');
       }
 
+      // ── 源码根目录的静态文件 ────────────────────────────────────────────────
+      zipFile.addFile(manifestPath, 'manifest.yaml');
+
+      const logoFile = await findLogoFile(entryDir);
+      if (logoFile) {
+        zipFile.addFile(logoFile, path.basename(logoFile));
+      }
+
+      const readmePath = path.join(entryDir, 'README.md');
       if (await pathExists(readmePath)) {
         zipFile.addFile(readmePath, 'README.md');
       }
 
-      // assets 目录（如果存在）
+      // ── assets 目录 ────────────────────────────────────────────────────────
+      const assetsDir = path.join(entryDir, 'assets');
       if (await pathExists(assetsDir)) {
         await addDirectoryToZip(zipFile, assetsDir, 'assets');
       }
 
-      // 工具集子工具 logo（如果存在 children 目录）
+      // ── 工具集：子工具 logo ─────────────────────────────────────────────────
+      const childrenDir = path.join(entryDir, 'children');
       if (await pathExists(childrenDir)) {
         const children = await fs.readdir(childrenDir, { withFileTypes: true });
         for (const child of children) {
           if (!child.isDirectory()) continue;
-          const childName = child.name;
-          const childDir = path.join(childrenDir, childName);
-          const childLogoPath = path.join(childDir, 'logo.svg');
-
-          zipFile.addEmptyDirectory(`${childName}/`);
-          if (await pathExists(childLogoPath)) {
-            zipFile.addFile(childLogoPath, `${childName}/logo.svg`);
+          const childDir = path.join(childrenDir, child.name);
+          const childLogo = await findLogoFile(childDir);
+          if (childLogo) {
+            const zipEntry = `children/${child.name}/${path.basename(childLogo)}`;
+            zipFile.addFile(childLogo, zipEntry);
           }
         }
       }
 
       zipFile.end();
-
       await zipPromise;
 
       const duration = ((Date.now() - start) / 1000).toFixed(2);
@@ -98,6 +119,34 @@ export class PackCommand extends BaseCommand {
       logger.error('打包失败，详情如下:');
       logger.error(error instanceof Error ? error : new Error(String(error)));
       process.exit(1);
+    }
+  }
+}
+
+/** 在目录中找第一个 logo.* 文件，返回完整路径或 null */
+async function findLogoFile(dir: string): Promise<string | null> {
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const logo = entries.find(
+      (e) => e.isFile() && /^logo\./i.test(e.name)
+    );
+    return logo ? path.join(dir, logo.name) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function addDirectoryToZip(zipFile: ZipFile, dir: string, rootInZip: string): Promise<void> {
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    const relPath = `${rootInZip}/${entry.name}`;
+
+    if (entry.isDirectory()) {
+      await addDirectoryToZip(zipFile, fullPath, relPath);
+    } else if (entry.isFile()) {
+      zipFile.addFile(fullPath, relPath);
     }
   }
 }
@@ -120,21 +169,5 @@ async function assertPathExists(p: string, message: string): Promise<void> {
     await fs.access(p);
   } catch {
     throw new Error(message);
-  }
-}
-
-async function addDirectoryToZip(zipFile: ZipFile, dir: string, rootInZip: string): Promise<void> {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    const relPath = path.join(rootInZip, entry.name).split(path.sep).join('/');
-
-    if (entry.isDirectory()) {
-      zipFile.addEmptyDirectory(`${relPath}/`);
-      await addDirectoryToZip(zipFile, fullPath, relPath);
-    } else if (entry.isFile()) {
-      zipFile.addFile(fullPath, relPath);
-    }
   }
 }

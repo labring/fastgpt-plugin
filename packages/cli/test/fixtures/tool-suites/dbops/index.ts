@@ -1,6 +1,15 @@
-export { default as config } from './config.js';
-export { tool as mysql } from './children/mysql/src/tool.js';
-export { tool as postgresql } from './children/postgresql/src/tool.js';
-export { tool as sqlserver } from './children/sqlserver/src/tool.js';
-export { tool as oracle } from './children/oracle/src/tool.js';
-export { tool as clickhouse } from './children/clickhouse/src/tool.js';
+import { ToolPlugin } from '@fastgpt-plugin/helpers/index';
+import { tool as mysqlTool } from './children/mysql/src/tool';
+import { tool as postgresqlTool } from './children/postgresql/src/tool';
+import { tool as sqlserverTool } from './children/sqlserver/src/tool';
+import { tool as oracleTool } from './children/oracle/src/tool';
+import { tool as clickhouseTool } from './children/clickhouse/src/tool';
+
+const plugin = new ToolPlugin();
+plugin.registerTool('mysql', mysqlTool);
+plugin.registerTool('postgresql', postgresqlTool);
+plugin.registerTool('sqlserver', sqlserverTool);
+plugin.registerTool('oracle', oracleTool);
+plugin.registerTool('clickhouse', clickhouseTool);
+
+export { plugin };

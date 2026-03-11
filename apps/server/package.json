@@ -3,14 +3,14 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "bun run scripts/dev/index.ts",
+    "dev": "tsdown && tsx watch --env-file=.env.local  main.ts",
     "build": "tsdown"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@types/express": "^5.0.1",
     "@types/turndown": "^5.0.6",
-    "tsdown": "^0.20.1"
+    "tsdown": "^0.20.1",
+    "tsx": "^4.19.2"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

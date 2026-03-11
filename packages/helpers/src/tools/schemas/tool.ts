@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { I18nStringSchema } from '../../common/schemas/i18n';
 import type { ToolHandlerFunctionType } from './req';
-import { InputSchema, OutputSchema, SecretInputItemSchema } from './fastgpt';
+import { SecretInputItemSchema } from './fastgpt';
 import { ToolPermissionEnumSchema } from './permission';
 
 // ============================================
@@ -33,8 +33,8 @@ export const ToolTagEnum = ToolTagSchema.enum;
 export const VersionListItemSchema = z.object({
   value: z.string(),
   description: z.string().optional(),
-  inputs: z.array(InputSchema),
-  outputs: z.array(OutputSchema)
+  inputSchema: z.any(),
+  outputSchema: z.any()
 });
 export type VersionListItemType = z.infer<typeof VersionListItemSchema>;
 
@@ -130,7 +130,7 @@ export const ToolConfigSchema = z
     }).shape,
     toolId: z.string().optional(),
     toolDescription: z.string().optional(),
-    versionList: z.array(VersionListItemSchema).min(1),
+    versionList: z.array(VersionListItemSchema).min(1).optional(), // 改为可选
     tags: z.array(ToolTagSchema).optional(),
     icon: z.string().optional(),
     author: z.string().optional(),
@@ -195,3 +195,39 @@ export const ToolSimpleSchema = ToolDetailSchema.omit({
 });
 
 export type ToolSimpleType = z.infer<typeof ToolSimpleSchema>;
+
+// ============================================
+// Manifest 配置相关（用于 manifest.yaml）
+// ============================================
+
+/**
+ * 子工具配置 Schema
+ */
+export const ChildToolConfigSchema = z.object({
+  name: I18nStringSchema,
+  description: I18nStringSchema,
+  icon: z.string().optional()
+});
+
+/**
+ * Manifest 配置 Schema - 用于验证 manifest.yaml
+ * 统一 tool 和 toolset，通过 children 字段区分
+ */
+export const ManifestSchema = z.object({
+  type: z.literal('tool'),
+  toolId: z.string().optional(),
+  name: I18nStringSchema,
+  description: I18nStringSchema,
+  toolDescription: I18nStringSchema.optional(),
+  version: z.string(),
+  versionDescription: I18nStringSchema.optional(),
+  tags: z.array(ToolTagSchema).optional(),
+  icon: z.string().optional(),
+  author: z.string().optional(),
+  tutorialUrl: z.url().optional(),
+  secretInputConfig: z.array(SecretInputItemSchema).optional(),
+  // 子工具配置：key 为子工具名称，value 为子工具配置
+  children: z.record(z.string(), ChildToolConfigSchema).optional()
+});
+
+export type ManifestType = z.infer<typeof ManifestSchema>;

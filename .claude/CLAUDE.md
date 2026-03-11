@@ -159,41 +159,41 @@ git sparse-checkout set --no-cone \
 ### 1. 环境设置
 ```bash
 # 安装依赖
-bun install
+pnpm install
 
 # 开发模式
-bun run dev
+pnpm run dev
 
 # 构建项目
-bun run build:runtime
+pnpm run build:runtime
 ```
 
 ### 2. 工具开发
 ```bash
 # 创建新工具
-bun run new:tool
+pnpm run new:tool
 
 # 安装插件
-bun run install:plugins
+pnpm run install:plugins
 
 # 构建工具包
-bun run build:pkg
+pnpm run build:pkg
 ```
 
 ### 3. 测试和部署
 ```bash
 # 运行测试
-bun run test
+pnpm run test
 
 # 构建生产版本
-bun run build:runtime
+pnpm run build:runtime
 
 # 启动生产服务
-bun run start
+pnpm run start
 ```
 
-**⚠️ 重要**: 
-- 测试命令使用 `bun run test` 而不是 `bun test`
+**⚠️ 重要**:
+- 测试命令使用 `pnpm run test`
 - 测试环境使用 Vitest 运行器，支持 mock 和覆盖率
 
 ## 快速适配指南
@@ -208,7 +208,7 @@ bun run start
 7. **测试验证**：创建测试用例验证工具功能
 
 ### 2. 环境兼容性检查
-- 确保代码在 Bun 和 Node.js v22 中都能运行
+- 确保代码在 Node.js v22 中能正常运行
 - 验证构建后的代码在 `dist` 目录中正确生成
 - 测试生产环境的启动和运行
 
@@ -254,14 +254,11 @@ export async function tool(input: ToolInput): Promise<ToolOutput> {
 ```
 
 ### 2. 测试规范
-**⚠️ 重要**: 测试应该使用 `bun run test` 而不是 `bun test`
+**⚠️ 重要**: 测试应该使用 `pnpm run test`
 
 ```bash
 # ✅ 正确的测试命令
-bun run test
-
-# ❌ 错误的测试命令
-bun test
+pnpm run test
 ```
 
 ### 3. 工具结构规范
@@ -281,7 +278,7 @@ bun test
 - 定期在 Node.js 环境下测试构建结果
 
 ### 2. 性能优化
-- 利用 Bun 的快速构建和热重载
+- 利用 pnpm 的快速安装和依赖管理
 - 生产环境使用优化的构建配置
 - 合理使用 monorepo 的依赖共享
 
@@ -297,8 +294,8 @@ bun test
 
 ## 常见问题
 
-### Q: 如何确保代码在两个环境都兼容？
-A: 使用标准的 Node.js API，避免 Bun 特有功能，定期在 Node.js 环境下测试。
+### Q: 如何确保代码在环境中兼容？
+A: 使用标准的 Node.js API，定期在 Node.js 环境下测试。
 
 ### Q: 如何高效地克隆只需要的代码？
 A: 使用 git sparse checkout，配置只需要的目录和文件。

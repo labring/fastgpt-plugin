@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { CLI_NAME, CLI_VERSION } from '@fastgpt-plugin/cli/constants';
 import { BuildCommand } from '@fastgpt-plugin/cli/commands/build';
+import { CheckCommand } from '@fastgpt-plugin/cli/commands/check';
 import { CreateCommand } from '@fastgpt-plugin/cli/commands/create';
 import { PackCommand } from '@fastgpt-plugin/cli/commands/pack';
 
@@ -10,6 +11,7 @@ function createProgram(): Command {
   program.name(CLI_NAME).version(CLI_VERSION).description('FastGPT 插件开发 CLI');
 
   new BuildCommand().register(program);
+  new CheckCommand().register(program);
   new CreateCommand().register(program);
   new PackCommand().register(program);
 

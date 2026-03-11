@@ -1,0 +1,258 @@
+import { EventEmitter } from 'node:events';
+import { PluginService } from './plugin_service';
+import type {
+  GlobalConfig,
+  ServiceConfig,
+  ServiceMetrics,
+  GlobalMetrics,
+  InvokeOptions,
+  DestroyOptions,
+  PluginServiceManagerEvents,
+} from './types';
+
+export class PluginServiceManager extends EventEmitter {
+  private services = new Map<string, PluginService>();
+  private destroyed = false;
+  private healthCheckTimer: NodeJS.Timeout | null = null;
+
+  // 全局统计
+  private globalTotalRequests = 0;
+  private globalResponseTimes: number[] = [];
+
+  constructor(private globalConfig: GlobalConfig) {
+    super();
+    this.startHealthCheck();
+  }
+
+  /**
+   * 注册服务
+   */
+  async registerService(name: string, pluginPath: string, config: ServiceConfig): Promise<void> {
+    if (this.destroyed) {
+      throw new Error('Manager already closed');
+    }
+
+    if (this.services.has(name)) {
+      throw new Error('Service already exists');
+    }
+
+    // 检查全局配额
+    const currentTotalPods = this.getTotalPods();
+    if (currentTotalPods + config.minPods > this.globalConfig.maxTotalPods) {
+      throw new Error(`Insufficient global quota: current ${currentTotalPods}, required ${config.minPods}, max ${this.globalConfig.maxTotalPods}`);
+    }
+
+    // 创建服务
+    const service = new PluginService(name, pluginPath, config);
+
+    // 监听服务事件
+    service.on('podCreated', (info) => {
+      // 检查全局配额
+      if (this.getTotalPods() > this.globalConfig.maxTotalPods) {
+        this.emit('quotaExceeded', {
+          requested: this.getTotalPods(),
+          available: this.globalConfig.maxTotalPods,
+        });
+      }
+    });
+
+    service.on('requestCompleted', ({ requestId, duration }) => {
+      this.globalTotalRequests++;
+      this.globalResponseTimes.push(duration);
+      if (this.globalResponseTimes.length > 1000) {
+        this.globalResponseTimes.shift();
+      }
+    });
+
+    // 初始化服务
+    await service.initialize();
+
+    this.services.set(name, service);
+    this.emit('serviceRegistered', { serviceName: name });
+  }
+
+  /**
+   * 注销服务
+   */
+  async unregisterService(name: string): Promise<void> {
+    const service = this.services.get(name);
+    if (!service) {
+      throw new Error('Service does not exist');
+    }
+
+    // 优雅关闭服务
+    await service.destroy();
+
+    this.services.delete(name);
+    this.emit('serviceUnregistered', { serviceName: name });
+  }
+
+  /**
+   * 调用插件方法
+   */
+  async invoke(serviceName: string, method: string, params: any, options?: InvokeOptions): Promise<any> {
+    if (this.destroyed) {
+      throw new Error('Manager already closed');
+    }
+
+    const service = this.services.get(serviceName);
+    if (!service) {
+      throw new Error('Service does not exist');
+    }
+
+    return service.invoke(method, params, options);
+  }
+
+  /**
+   * 获取服务指标
+   */
+  getServiceMetrics(serviceName: string): ServiceMetrics {
+    const service = this.services.get(serviceName);
+    if (!service) {
+      throw new Error('Service does not exist');
+    }
+
+    return service.getMetrics();
+  }
+
+  /**
+   * 获取全局指标
+   */
+  getGlobalMetrics(): GlobalMetrics {
+    const totalServices = this.services.size;
+    const totalPods = this.getTotalPods();
+
+    let totalRequests = 0;
+    let totalErrors = 0;
+
+    for (const service of this.services.values()) {
+      const metrics = service.getMetrics();
+      totalRequests += metrics.totalRequests;
+      totalErrors += metrics.totalRequests * metrics.errorRate;
+    }
+
+    const avgResponseTime = this.globalResponseTimes.length > 0
+      ? this.globalResponseTimes.reduce((sum, t) => sum + t, 0) / this.globalResponseTimes.length
+      : 0;
+
+    const errorRate = totalRequests > 0 ? totalErrors / totalRequests : 0;
+
+    return {
+      totalServices,
+      totalPods,
+      totalRequests,
+      avgResponseTime,
+      errorRate,
+    };
+  }
+
+  /**
+   * 更新服务配置
+   */
+  async updateServiceConfig(serviceName: string, config: ServiceConfig): Promise<void> {
+    const service = this.services.get(serviceName);
+    if (!service) {
+      throw new Error('Service does not exist');
+    }
+
+    // 注销旧服务
+    await this.unregisterService(serviceName);
+
+    // 注册新服务
+    await this.registerService(serviceName, (service as any).pluginPath, config);
+  }
+
+  /**
+   * 获取总 Pod 数
+   */
+  private getTotalPods(): number {
+    let total = 0;
+    for (const service of this.services.values()) {
+      const metrics = service.getMetrics();
+      total += metrics.pods.total;
+    }
+    return total;
+  }
+
+  /**
+   * 启动健康检查
+   */
+  private startHealthCheck(): void {
+    const interval = this.globalConfig.healthCheckInterval || 30000;
+
+    this.healthCheckTimer = setInterval(() => {
+      this.performHealthCheck();
+    }, interval);
+  }
+
+  /**
+   * 执行健康检查
+   */
+  private performHealthCheck(): void {
+    const services: string[] = [];
+    const timestamp = Date.now();
+
+    for (const [name, service] of this.services) {
+      services.push(name);
+
+      const metrics = service.getMetrics();
+
+      // 检查服务是否健康
+      if (metrics.pods.total === 0) {
+        this.emit('serviceUnhealthy', {
+          serviceName: name,
+          reason: 'No available Pods',
+        });
+      }
+
+      if (metrics.errorRate > 0.5) {
+        this.emit('serviceUnhealthy', {
+          serviceName: name,
+          reason: `Error rate too high: ${(metrics.errorRate * 100).toFixed(2)}%`,
+        });
+      }
+    }
+
+    this.emit('healthCheck', { timestamp, services });
+  }
+
+  /**
+   * 销毁管理器
+   */
+  async destroy(options?: DestroyOptions): Promise<void> {
+    if (this.destroyed) {
+      return;
+    }
+
+    this.destroyed = true;
+
+    // 停止健康检查
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer);
+      this.healthCheckTimer = null;
+    }
+
+    // 销毁所有服务
+    const destroyPromises: Promise<void>[] = [];
+    for (const service of this.services.values()) {
+      destroyPromises.push(service.destroy(options));
+    }
+
+    await Promise.all(destroyPromises);
+    this.services.clear();
+  }
+
+  /**
+   * 获取所有服务名称
+   */
+  getServiceNames(): string[] {
+    return Array.from(this.services.keys());
+  }
+
+  /**
+   * 检查服务是否存在
+   */
+  hasService(serviceName: string): boolean {
+    return this.services.has(serviceName);
+  }
+}

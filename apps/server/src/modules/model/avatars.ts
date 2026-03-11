@@ -1,9 +1,10 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { join, resolve, parse } from 'node:path';
 import { isProd } from '@/constants';
 import { getLogger, mod } from '@/lib/logger';
 import { mimeMap } from '@/lib/s3/const';
 import { getPublicS3Server } from '@/lib/s3';
+import { readdir } from 'node:fs/promises';
 
 const logger = getLogger(mod.model);
 
@@ -33,8 +34,7 @@ function findLogoFile(directory: string): string | null {
 const getDevelopmentModelLogos = async (): Promise<
   Array<{ path: string; providerName: string }>
 > => {
-  const providerDir = resolve('../modules/model/provider');
-  const { readdir } = await import('node:fs/promises');
+  const providerDir = join(process.cwd(), 'src/modules/model/provider');
   const result: Array<{ path: string; providerName: string }> = [];
 
   try {
@@ -44,7 +44,7 @@ const getDevelopmentModelLogos = async (): Promise<
       const providerPath = join(providerDir, providerName);
 
       // Skip if it's not a directory
-      if (!existsSync(providerPath) || !require('fs').statSync(providerPath).isDirectory()) {
+      if (!existsSync(providerPath) || !statSync(providerPath).isDirectory()) {
         continue;
       }
 

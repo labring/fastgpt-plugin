@@ -2,6 +2,13 @@
   "name": "@fastgpt-sdk/plugin",
   "version": "0.4.0-alpha.1",
   "description": "fastgpt-plugin sdk",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
   "main": "dist/client.js",
   "types": "dist/client.d.ts",
   "scripts": {
@@ -13,6 +20,7 @@
     "sdk"
   ],
   "dependencies": {
+    "@fastgpt-plugin/helpers": "workspace:*",
     "@fortaine/fetch-event-source": "^3.0.6",
     "zod": "^4"
   },
