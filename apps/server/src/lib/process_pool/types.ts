@@ -14,6 +14,8 @@ export interface ServiceConfig {
   podTimeout: number;
   /** 单个 Pod 最大请求数（防止内存泄漏） */
   maxRequestsPerPod: number;
+  /** 单个 Pod 最大并发请求数（I/O 密集型工具可调高，默认 1） */
+  maxConcurrentRequestsPerPod: number;
   /** 最大队列长度 */
   maxQueueSize: number;
   /** 队列等待超时时间（毫秒，可选） */
@@ -32,7 +34,7 @@ export interface GlobalConfig {
 
 // ============ Pod 相关类型 ============
 
-export type PodStatus = 'pending' | 'running' | 'busy' | 'idle' | 'terminating' | 'failed';
+export type PodStatus = 'pending' | 'running' | 'idle' | 'terminating' | 'failed';
 
 /**
  * PluginPod 信息
@@ -41,6 +43,8 @@ export interface PodInfo {
   podId: string;
   status: PodStatus;
   requestsExecuted: number;
+  /** 当前正在处理的并发请求数 */
+  activeRequests: number;
   createdAt: number;
   lastActiveAt: number;
   pid?: number;
@@ -61,6 +65,8 @@ export interface PodStats {
   running: number;
   busy: number;
   idle: number;
+  /** 正在启动中（已 fork、尚未发送 ready）的 Pod 数量 */
+  pending: number;
 }
 
 export interface ResponseTimeStats {
@@ -105,6 +111,7 @@ export interface PluginServiceEvents {
   requestQueued: (requestId: string) => void;
   requestCompleted: (requestId: string, duration: number) => void;
   requestFailed: (requestId: string, error: Error) => void;
+  podLog: (event: { podId: string; level: 'debug' | 'error'; message: string }) => void;
 }
 
 export interface PluginServiceManagerEvents {

@@ -27,6 +27,8 @@ export class PluginService extends EventEmitter {
   private initialized = false;
   private destroyed = false;
   private idleCheckTimer: NodeJS.Timeout | null = null;
+  /** 正在启动中（尚未加入 this.pods）的 Pod 数量，用于防止并发超量创建 */
+  private pendingPods = 0;
 
   // 统计信息
   private totalRequests = 0;
@@ -114,11 +116,15 @@ export class PluginService extends EventEmitter {
     let pod = this.findIdlePod();
 
     // 如果没有空闲 Pod，尝试创建新 Pod
-    if (!pod && this.pods.size < this.config.maxPods) {
+    if (!pod && this.pods.size + this.pendingPods < this.config.maxPods) {
+      this.pendingPods++;
       try {
         pod = await this.createPod();
       } catch (error) {
         // 创建失败，继续排队
+        console.error(`[${this.serviceName}] Failed to create pod, queuing request:`, error);
+      } finally {
+        this.pendingPods--;
       }
     }
 
@@ -264,6 +270,7 @@ export class PluginService extends EventEmitter {
       pluginPath: this.pluginPath,
       podTimeout: this.config.podTimeout,
       maxRequests: this.config.maxRequestsPerPod,
+      maxConcurrentRequests: this.config.maxConcurrentRequestsPerPod,
     });
 
     // 监听 Pod 事件
@@ -281,6 +288,14 @@ export class PluginService extends EventEmitter {
 
     pod.on('timeout', ({ requestId, method }) => {
       this.handlePodTimeout(pod, requestId, method);
+    });
+
+    pod.on('stdout', (line: string) => {
+      this.emit('podLog', { podId, level: 'debug', message: line });
+    });
+
+    pod.on('stderr', (line: string) => {
+      this.emit('podLog', { podId, level: 'error', message: line });
     });
 
     // 启动 Pod
@@ -319,6 +334,19 @@ export class PluginService extends EventEmitter {
     while (this.queue.length > 0) {
       const idlePod = this.findIdlePod();
       if (!idlePod) {
+        // 队列有请求但没有空闲 Pod，若未达上限则触发扩容
+        if (this.pods.size + this.pendingPods < this.config.maxPods) {
+          this.pendingPods++;
+          this.createPod()
+            .then((pod) => {
+              this.pendingPods--;
+              // 新 pod 就绪后再次处理队列
+              this.processQueue();
+            })
+            .catch(() => {
+              this.pendingPods--;
+            });
+        }
         break;
       }
 
@@ -435,13 +463,13 @@ export class PluginService extends EventEmitter {
     for (const pod of this.pods.values()) {
       totalPods++;
       const info = pod.getInfo();
-      if (info.status === 'running' || info.status === 'idle' || info.status === 'busy') {
+      if (info.status === 'running' || info.status === 'idle') {
         runningPods++;
       }
-      if (info.status === 'busy') {
+      if (info.activeRequests > 0) {
         busyPods++;
       }
-      if (info.status === 'idle') {
+      if (info.status === 'idle' && info.activeRequests === 0) {
         idlePods++;
       }
     }
@@ -460,6 +488,7 @@ export class PluginService extends EventEmitter {
         running: runningPods,
         busy: busyPods,
         idle: idlePods,
+        pending: this.pendingPods,
       },
       queueLength: this.queue.length,
       responseTime: {
@@ -472,6 +501,36 @@ export class PluginService extends EventEmitter {
       totalRequests: this.totalRequests,
       maxPods: this.config.maxPods,
     };
+  }
+
+  /**
+   * 即时更新服务配置
+   * - maxConcurrentRequestsPerPod：对所有现有 Pod 立即生效
+   * - minPods 增加：立即补充 Pod 到新下限
+   * - minPods 减少 / maxPods 变更：更新上下限，下次空闲检查/创建时生效
+   */
+  async updateConfig(partial: Partial<Pick<ServiceConfig, 'minPods' | 'maxPods' | 'maxConcurrentRequestsPerPod'>>): Promise<void> {
+    if (partial.minPods !== undefined) this.config.minPods = partial.minPods;
+    if (partial.maxPods !== undefined) this.config.maxPods = partial.maxPods;
+
+    if (partial.maxConcurrentRequestsPerPod !== undefined) {
+      this.config.maxConcurrentRequestsPerPod = partial.maxConcurrentRequestsPerPod;
+      // 对所有现有 Pod 即时生效
+      for (const pod of this.pods.values()) {
+        pod.updateMaxConcurrentRequests(partial.maxConcurrentRequestsPerPod);
+      }
+    }
+
+    // 若新 minPods 大于当前 Pod 数，立即补充
+    if (this.config.minPods > this.pods.size + this.pendingPods) {
+      const needed = this.config.minPods - this.pods.size - this.pendingPods;
+      const creates: Promise<PluginPod>[] = [];
+      for (let i = 0; i < needed; i++) {
+        this.pendingPods++;
+        creates.push(this.createPod().finally(() => { this.pendingPods--; }));
+      }
+      await Promise.allSettled(creates);
+    }
   }
 
   /**

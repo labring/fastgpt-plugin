@@ -3409,7 +3409,7 @@ const meta = meta$1;
 //#endregion
 //#region .build-temp/src/schemas.ts
 const InputSchema = object({});
-const OutputSchema = object({ time: string() });
+const OutputSchema = object({ time: string().describe("The current time") });
 
 //#endregion
 //#region .build-temp/src/tool.ts

@@ -124,7 +124,8 @@ export {
   ToolConfigSchema,
   ToolSetConfigSchema,
   ToolDetailSchema,
-  ToolSimpleSchema
+  ToolSimpleSchema,
+  buildGlobalToolId
 } from './tools/schemas/tool';
 
 export type { VersionListItemType, ToolDetailType, ToolSimpleType } from './tools/schemas/tool';

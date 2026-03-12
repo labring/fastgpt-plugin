@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { PluginService } from '../process_pool/plugin_service';
+import { getLogger, mod } from '@/lib/logger';
 import type {
   ServiceConfig,
   ServiceMetrics,
@@ -40,6 +41,7 @@ const DEFAULT_SERVICE_CONFIG: ServiceConfig = {
   idleTimeout: 60_000,
   podTimeout: 30_000,
   maxRequestsPerPod: 100,
+  maxConcurrentRequestsPerPod: 1,
   maxQueueSize: 500,
 };
 
@@ -135,6 +137,17 @@ export class PluginManager extends EventEmitter {
       if (this.globalResponseTimes.length > 2000) this.globalResponseTimes.shift();
     });
 
+    // 转发子进程日志到 server logger
+    service.on('podLog', ({ podId, level, message }: { podId: string; level: 'debug' | 'error'; message: string }) => {
+      const logger = getLogger(mod.tool);
+      const prefix = `[plugin:${id}][pod:${podId.slice(0, 8)}]`;
+      if (level === 'error') {
+        logger.error(`${prefix} ${message}`);
+      } else {
+        logger.debug(`${prefix} ${message}`);
+      }
+    });
+
     await service.initialize();
 
     this.plugins.set(id, { type: registration.type, pluginPath: registration.pluginPath, service });
@@ -222,6 +235,19 @@ export class PluginManager extends EventEmitter {
 
   hasPlugin(id: string): boolean {
     return this.plugins.has(id);
+  }
+
+  /**
+   * 即时更新插件的进程池配置（IPC 模式）。
+   * 同步到运行中的 PluginService，无需重启。
+   */
+  async updateServiceConfig(
+    id: string,
+    config: Partial<Pick<ServiceConfig, 'minPods' | 'maxPods' | 'maxConcurrentRequestsPerPod'>>
+  ): Promise<void> {
+    const record = this.plugins.get(id);
+    if (!record) throw new Error(`Plugin not found: ${id}`);
+    await record.service.updateConfig(config);
   }
 
   getPluginIds(): string[] {

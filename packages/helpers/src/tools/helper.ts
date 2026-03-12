@@ -5,7 +5,7 @@ import { parse as parseYaml } from 'yaml';
 /**
  * 从 manifest.yaml 加载工具配置
  */
-export async function loadManifest(manifestPath: string): Promise<any> {
+export async function loadManifest(manifestPath: string) {
   const content = await readFile(manifestPath, 'utf-8');
   const manifest = parseYaml(content);
 

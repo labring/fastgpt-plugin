@@ -8,15 +8,7 @@
   "outputSchema": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
-    "properties": {
-      "time": {
-        "type": "string",
-        "description": "The current time"
-      }
-    },
-    "required": [
-      "time"
-    ],
+    "properties": {},
     "additionalProperties": false
   }
 }

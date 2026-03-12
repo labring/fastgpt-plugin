@@ -1,4 +1,5 @@
 import { fork, spawn, type ChildProcess } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { BasePluginRouter } from '@fastgpt-plugin/helpers/common/router';
@@ -9,6 +10,8 @@ export interface PluginPodOptions {
   pluginPath: string;
   podTimeout: number;
   maxRequests: number;
+  /** 最大并发请求数（默认 1，I/O 密集型工具可调高） */
+  maxConcurrentRequests: number;
 }
 
 /**
@@ -53,6 +56,7 @@ export class PluginPod extends EventEmitter {
   private router: BasePluginRouter | null = null;
   private status: PodStatus = 'pending';
   private requestsExecuted = 0;
+  private activeRequests = 0;
   private createdAt = Date.now();
   private lastActiveAt = Date.now();
 
@@ -77,23 +81,52 @@ export class PluginPod extends EventEmitter {
         this.router = new BasePluginRouter(this.transport);
 
         // 等待 ready 信号（pod 生命周期，不走 router）
+        let settled = false;
+        const settle = (fn: () => void) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(readyTimeout);
+          unsubReady();
+          fn();
+        };
+
         const readyTimeout = setTimeout(() => {
-          reject(new Error('Pod startup timeout'));
-          this.kill();
+          settle(() => {
+            reject(new Error('Pod startup timeout'));
+            this.kill();
+          });
         }, 10_000);
 
         const unsubReady = this.transport.onMessage((msg) => {
           if (msg.messageType === 'ready') {
-            clearTimeout(readyTimeout);
-            unsubReady();
-            this.status = 'idle';
-            this.emit('ready', this.getInfo());
-            resolve();
+            settle(() => {
+              this.status = 'idle';
+              this.emit('ready', this.getInfo());
+              resolve();
+            });
           }
         });
 
         this.process.on('error', (err) => this.handleError(err));
-        this.process.on('exit', (code, signal) => this.handleExit(code, signal));
+        this.process.on('exit', (code, signal) => {
+          // 若 ready 尚未收到，立即 reject（不等 10 秒超时）
+          settle(() => {
+            reject(new Error(`Pod process exited before ready: code=${code}, signal=${signal}`));
+          });
+          this.handleExit(code, signal);
+        });
+
+        // 转发 stdout / stderr 输出（逐行）
+        if (this.process.stdout) {
+          createInterface({ input: this.process.stdout, crlfDelay: Infinity }).on('line', (line) => {
+            this.emit('stdout', line);
+          });
+        }
+        if (this.process.stderr) {
+          createInterface({ input: this.process.stderr, crlfDelay: Infinity }).on('line', (line) => {
+            this.emit('stderr', line);
+          });
+        }
       } catch (error) {
         reject(error);
       }
@@ -105,7 +138,7 @@ export class PluginPod extends EventEmitter {
       throw new Error(`Pod not available: ${this.status}`);
     }
 
-    this.status = 'busy';
+    this.activeRequests++;
     this.lastActiveAt = Date.now();
 
     try {
@@ -114,11 +147,12 @@ export class PluginPod extends EventEmitter {
         traceId: options?.traceId
       });
       this.requestsExecuted++;
-      this.status = 'idle';
+      this.activeRequests--;
       this.lastActiveAt = Date.now();
       this.emit('requestCompleted', { requestId: randomUUID(), duration: Date.now() - this.lastActiveAt });
       return result;
     } catch (error) {
+      this.activeRequests--;
       this.status = 'failed';
       this.kill();
       throw error;
@@ -149,14 +183,20 @@ export class PluginPod extends EventEmitter {
       podId: this.podId,
       status: this.status,
       requestsExecuted: this.requestsExecuted,
+      activeRequests: this.activeRequests,
       createdAt: this.createdAt,
       lastActiveAt: this.lastActiveAt,
       pid: this.process?.pid
     };
   }
 
-  isIdle(): boolean { return this.status === 'idle'; }
-  isBusy(): boolean { return this.status === 'busy'; }
-  isAvailable(): boolean { return this.status === 'idle' && this.requestsExecuted < this.options.maxRequests; }
-  getIdleTime(): number { return this.status === 'idle' ? Date.now() - this.lastActiveAt : 0; }
+  isIdle(): boolean { return this.status === 'idle' && this.activeRequests === 0; }
+  isBusy(): boolean { return this.activeRequests > 0; }
+  isAvailable(): boolean { return this.status === 'idle' && this.activeRequests < this.options.maxConcurrentRequests && this.requestsExecuted < this.options.maxRequests; }
+  getIdleTime(): number { return this.activeRequests === 0 && this.status === 'idle' ? Date.now() - this.lastActiveAt : 0; }
+
+  /** 即时更新最大并发槽数 */
+  updateMaxConcurrentRequests(n: number): void {
+    this.options.maxConcurrentRequests = n;
+  }
 }

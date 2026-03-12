@@ -24,13 +24,46 @@ import { writeFile } from 'node:fs/promises';
 import { StreamMessageTypeEnum } from '@fastgpt-plugin/helpers/tools/schemas/req';
 import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
 import { batch } from '@fastgpt-plugin/helpers/common/fn';
-import { getTool, getToolTags, parsePkg, parseUploadedTool } from './utils/tool';
+import { getTool, getToolTags, parsePkg, parseUploadedTool, getBaseToolId } from './utils/tool';
 import { getErrText } from '@/utils/err';
 import { createEventEmitter } from '@/lib/events';
 import { createSubPub } from '@/lib/events/init';
 import { parse as parseYaml } from 'yaml';
+import type { ClientSession } from 'mongoose';
 
 const tools = createOpenAPIHono().basePath('/tools');
+
+/**
+ * 向 MongoDB 写入版本条目：若同版本号已存在则替换，否则追加。
+ * 使用聚合管道 update 保证原子性。
+ */
+function upsertVersionEntry(
+  baseToolId: string,
+  versionEntry: Record<string, unknown>,
+  session?: ClientSession
+) {
+  return MongoSystemPlugin.updateOne(
+    { toolId: baseToolId, type: pluginTypeEnum.tool },
+    [
+      {
+        $set: {
+          versionList: {
+            $concatArrays: [
+              {
+                $filter: {
+                  input: { $ifNull: ['$versionList', []] },
+                  cond: { $ne: ['$$this.value', versionEntry['value']] }
+                }
+              },
+              [versionEntry]
+            ]
+          }
+        }
+      }
+    ] as Parameters<typeof MongoSystemPlugin.updateOne>[1],
+    { upsert: true, ...(session ? { session } : {}) }
+  );
+}
 
 /**
  * List tools
@@ -65,14 +98,15 @@ tools.openapi(getTagsRoute, async (c) => {
  * Get a tool
  */
 tools.openapi(getToolRoute, async (c) => {
-  const { toolId } = c.req.valid('param');
+  const { toolId: rawToolId } = c.req.valid('param');
+  const toolId = decodeURIComponent(rawToolId);
 
-  const parsed = ToolDetailSchema.parse(await getTool(toolId));
-  // if (!parsed.success) {
-  //   return c.json(R.error(404, 'Tool not found'), 404);
-  // }
+  const parsed = ToolDetailSchema.safeParse(await getTool(toolId));
+  if (!parsed.success) {
+    return c.json(R.error(404, 'Tool not found'), 404);
+  }
 
-  return c.json(R.success(parsed), 200);
+  return c.json(R.success(parsed.data), 200);
 });
 
 // /**
@@ -114,64 +148,73 @@ tools.openapi(confirmUploadRoute, async (c) => {
     return c.json(R.error(400, 'Some toolIds are invalid'), 400);
   }
 
-  // 读取每个工具的 manifest.yaml 获取 version
-  const toolsWithVersion = await Promise.all(
-    toolIds.map(async (toolId) => {
+  // 读取每个工具的 manifest.yaml + config.json，构建版本条目
+  const toolsInfo = await Promise.all(
+    toolIds.map(async (globalToolId) => {
       try {
         const manifestUrl = publicS3Server.generateExternalUrl(
-          `${UploadToolsS3Path}/temp/${toolId}/manifest.yaml`
+          `${UploadToolsS3Path}/temp/${globalToolId}/manifest.yaml`
         );
-        const manifestContent = await fetch(manifestUrl).then(r => r.text());
+        const configUrl = publicS3Server.generateExternalUrl(
+          `${UploadToolsS3Path}/temp/${globalToolId}/config.json`
+        );
+        const [manifestContent, configJson] = await Promise.all([
+          fetch(manifestUrl).then((r) => r.text()),
+          fetch(configUrl)
+            .then((r) => r.json())
+            .catch(() => ({}))
+        ]);
         const manifest = parseYaml(manifestContent);
-        return {
-          toolId,
-          version: manifest.version
-        };
+        const baseToolId = getBaseToolId(globalToolId);
+
+        // 工具集：versionEntry.children 存各子工具 schema；单工具：直接存 inputSchema/outputSchema
+        const isToolset =
+          manifest.children && Object.keys(manifest.children as object).length > 0;
+        const versionEntry = isToolset
+          ? {
+              value: manifest.version as string,
+              children: Object.keys(manifest.children as object).map((childName) => ({
+                toolId: childName,
+                inputSchema: (configJson as any)[childName]?.inputSchema,
+                outputSchema: (configJson as any)[childName]?.outputSchema
+              }))
+            }
+          : {
+              value: manifest.version as string,
+              inputSchema: (configJson as any).inputSchema,
+              outputSchema: (configJson as any).outputSchema
+            };
+
+        return { globalToolId, baseToolId, versionEntry };
       } catch (error) {
-        logger.warn(`Failed to read manifest for ${toolId}`, { error });
-        return {
-          toolId,
-          version: undefined
-        };
+        logger.warn(`Failed to read manifest for ${globalToolId}`, { error });
+        return null;
       }
     })
   );
+  const validToolsInfo = toolsInfo.filter(<T>(x: T): x is NonNullable<T> => !!x);
 
   await mongoSessionRun(async (session) => {
-    const allToolsInstalled = (
-      await MongoSystemPlugin.find({ type: pluginTypeEnum.tool }).lean()
-    ).map((tool) => tool.toolId);
-    await MongoSystemPlugin.create(
-      toolsWithVersion
-        .filter(({ toolId }) => !allToolsInstalled.includes(toolId))
-        .map(({ toolId, version }) => ({
-          toolId,
-          type: pluginTypeEnum.tool,
-          version
-        })),
-      {
-        session,
-        ordered: true
-      }
-    );
+    // 对每个工具 upsert：baseToolId 已存在则追加版本，不存在则新建
+    for (const { baseToolId, versionEntry } of validToolsInfo) {
+      await upsertVersionEntry(baseToolId, versionEntry, session);
+    }
 
-    for await (const toolId of toolIds) {
-      if (toolId) {
-        await publicS3Server.moveFiles(
-          `${UploadToolsS3Path}/temp/${toolId}`,
-          `${UploadToolsS3Path}/${toolId}`
-        );
-        await privateS3Server.moveFile(
-          `${UploadToolsS3Path}/temp/${toolId}.js`,
-          `${UploadToolsS3Path}/${toolId}.js`
-        );
-      }
+    for (const { globalToolId } of validToolsInfo) {
+      await publicS3Server.moveFiles(
+        `${UploadToolsS3Path}/temp/${globalToolId}`,
+        `${UploadToolsS3Path}/${globalToolId}`
+      );
+      await privateS3Server.moveFile(
+        `${UploadToolsS3Path}/temp/${globalToolId}.js`,
+        `${UploadToolsS3Path}/${globalToolId}.js`
+      );
     }
   });
 
   await refreshVersionKey(SystemCacheKeyEnum.systemTool);
 
-  logger.debug(`Confirmed uploaded tools: ${toolIds}`);
+  logger.debug(`Confirmed uploaded tools: ${validToolsInfo.map((t) => t.globalToolId)}`);
 
   return c.json(R.success({ message: 'ok' }), 200 as const);
 });
@@ -192,13 +235,17 @@ tools.openapi(deleteToolRoute, async (c) => {
         error: `Tool with toolId ${toolId} not found in MongoDB`
       };
     }
-    // Remove public files(Avatar,readme)
-    const files = await publicS3Server.getFiles(`${UploadToolsS3Path}/${result.toolId}`);
 
-    await publicS3Server.removeFiles(files);
-
-    // Remove private file(index.js)
-    await privateS3Server.removeFile(`${UploadToolsS3Path}/${result.toolId}.js`);
+    // 删除所有版本的 S3 文件（每个版本 index.js 在私有 S3，静态文件在公开 S3）
+    const versions = (result.versionList ?? []).map((v: { value: string }) => v.value);
+    await Promise.all(
+      versions.map(async (version: string) => {
+        const globalToolId = `${result.toolId}@${version}`;
+        const files = await publicS3Server.getFiles(`${UploadToolsS3Path}/${globalToolId}`);
+        await publicS3Server.removeFiles(files);
+        await privateS3Server.removeFile(`${UploadToolsS3Path}/${globalToolId}.js`);
+      })
+    );
     return null;
   });
 
@@ -228,31 +275,21 @@ tools.openapi(installToolRoute, async (c) => {
     await writeFile(pkgSavePath, Buffer.from(buffer));
 
     const tool = await parsePkg(pkgSavePath, false);
-    return tool?.toolId;
+    if (!tool?.toolId) return null;
+    const versionEntry = tool.versionList?.[0];
+    return { baseToolId: getBaseToolId(tool.toolId), versionEntry };
   });
 
-  const toolIds = (await batch(5, downloadFunctions)).filter(
+  const toolsInfo = (await batch(5, downloadFunctions)).filter(
     <T>(item: T): item is NonNullable<T> => !!item
   );
 
-  const allToolsInstalled = (
-    await MongoSystemPlugin.find({ type: pluginTypeEnum.tool }).lean()
-  ).map((tool) => tool.toolId);
-  // create all that not exists
-  await MongoSystemPlugin.create(
-    toolIds
-      .filter((toolId) => !allToolsInstalled.includes(toolId))
-      .map((toolId) => ({
-        toolId,
-        type: pluginTypeEnum.tool
-      })),
-    {
-      ordered: true
-    }
+  await Promise.all(
+    toolsInfo.map(({ baseToolId, versionEntry }) => upsertVersionEntry(baseToolId, versionEntry))
   );
 
   await refreshVersionKey(SystemCacheKeyEnum.systemTool);
-  logger.info(`Success installed tools: ${toolIds}`);
+  logger.info(`Success installed tools: ${toolsInfo.map((t) => t.baseToolId)}`);
 
   return c.json(R.success({ message: 'ok' }), 200);
 });

@@ -30,13 +30,23 @@ export const ToolTagEnum = ToolTagSchema.enum;
 // ============================================
 
 // Version Item - 工具版本项
+export const VersionListChildItemSchema = z.object({
+  toolId: z.string(), // 子工具名称（不含路径前缀）
+  inputSchema: z.any().optional(),
+  outputSchema: z.any().optional()
+});
+
 export const VersionListItemSchema = z.object({
   value: z.string(),
   description: z.string().optional(),
-  inputSchema: z.any(),
-  outputSchema: z.any()
+  // 单工具的 schema
+  inputSchema: z.any().optional(),
+  outputSchema: z.any().optional(),
+  // 工具集的子工具 schema 列表（与 inputSchema/outputSchema 互斥）
+  children: z.array(VersionListChildItemSchema).optional()
 });
 export type VersionListItemType = z.infer<typeof VersionListItemSchema>;
+export type VersionListChildItemType = z.infer<typeof VersionListChildItemSchema>;
 
 // ============================================
 // 回调相关
@@ -213,21 +223,35 @@ export const ChildToolConfigSchema = z.object({
  * Manifest 配置 Schema - 用于验证 manifest.yaml
  * 统一 tool 和 toolset，通过 children 字段区分
  */
-export const ManifestSchema = z.object({
-  type: z.literal('tool'),
-  toolId: z.string().optional(),
-  name: I18nStringSchema,
-  description: I18nStringSchema,
-  toolDescription: I18nStringSchema.optional(),
-  version: z.string(),
-  versionDescription: I18nStringSchema.optional(),
-  tags: z.array(ToolTagSchema).optional(),
-  icon: z.string().optional(),
-  author: z.string().optional(),
-  tutorialUrl: z.url().optional(),
-  secretInputConfig: z.array(SecretInputItemSchema).optional(),
-  // 子工具配置：key 为子工具名称，value 为子工具配置
-  children: z.record(z.string(), ChildToolConfigSchema).optional()
-});
+export const ManifestSchema = z
+  .object({
+    type: z.literal('tool'),
+    toolId: z.string(),
+    name: I18nStringSchema,
+    description: I18nStringSchema,
+    toolDescription: z.string().optional(),
+    version: z.string(),
+    versionDescription: I18nStringSchema.optional(),
+    tags: z.array(ToolTagSchema).optional(),
+    icon: z.string().optional(),
+    author: z.string().optional().default('FastGPT'),
+    tutorialUrl: z.url().optional(),
+    secretInputConfig: z.array(SecretInputItemSchema).optional(),
+    // 子工具配置：key 为子工具名称，value 为子工具配置
+    children: z.record(z.string(), ChildToolConfigSchema).optional()
+  })
+  .transform((data) => ({
+    ...data,
+    toolDescription: data.toolDescription ?? data.description.en ?? ''
+  }));
+
+/**
+ * 构建全局唯一工具 ID。
+ * 格式：`author@toolId@version`
+ * 子工具格式：`author@toolId@version/childToolId`
+ */
+export function buildGlobalToolId(author: string, toolId: string, version: string): string {
+  return `${author}@${toolId}@${version}`;
+}
 
 export type ManifestType = z.infer<typeof ManifestSchema>;

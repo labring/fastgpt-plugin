@@ -20,9 +20,7 @@ description:
   zh-CN: '获取当前时间'
 
 # 工具详细描述（用于 AI 理解工具用途）
-toolDescription:
-  en: 'Get the current time'
-  zh-CN: '获取当前时间'
+toolDescription: 'Get the current time'
 
 # 版本号
 version: '0.0.1'

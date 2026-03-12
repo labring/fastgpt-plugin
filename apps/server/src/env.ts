@@ -32,6 +32,11 @@ export const env = createEnv({
     MODEL_PROVIDER_PRIORITY: z.string().default(''),
     MAX_FILE_SIZE: PositiveIntSchema.default(20 * 1024 * 1024),
 
+    // 进程池默认配置（可被 MongoDB 中的 pluginConfig 覆盖）
+    PLUGIN_MIN_PODS: z.coerce.number().int().min(0).default(0),
+    PLUGIN_MAX_PODS: PositiveIntSchema.default(5),
+    PLUGIN_MAX_CONCURRENT: PositiveIntSchema.default(1),
+
     // 代理
     HTTP_PROXY: z.string().optional(),
     HTTPS_PROXY: z.string().optional(),
