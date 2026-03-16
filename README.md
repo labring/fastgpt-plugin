@@ -34,6 +34,24 @@ Deeply **modularize** FastGPT to achieve maximum **extensibility**.
 - [ ] SSE streaming response support
 - [ ] Enhanced security policies
 
+## New Plugins
+
+### Alibaba Cloud Document Parse (aliDocParse)
+
+Parse online documents using Alibaba Cloud Document Mind. Extracts text, layout, and style information and returns the raw parsed JSON.
+
+**Supported formats:** PDF, Word (.docx/.doc), Excel (.xlsx/.xls), HTML, EPUB, MOBI, Markdown, TXT, and more.
+
+### Alibaba Cloud OCR (aliOcr)
+
+Perform OCR on images or PDFs using Alibaba Cloud OCR, covering 70 recognition types in a single plugin. Supports general text, ID cards, invoices, business licenses, vehicles, education, and multilingual scenarios. Each option in the dropdown indicates whether PDF input is supported.
+
+### Azure Flux Image Generation (azureFlux)
+
+Generate high-quality images via an Azure-deployed Flux model.
+
+---
+
 ## Documentation & Development Guides
 
 - [Plugin design document](https://doc.tryfastgpt.ai/docs/introduction/development/design/design_plugin)
