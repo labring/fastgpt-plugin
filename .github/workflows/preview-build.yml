@@ -1,0 +1,112 @@
+name: Preview Image — Build
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ['*']
+
+# Only one build per PR branch at a time
+concurrency:
+  group: 'preview-build-${{ github.head_ref }}'
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Get PR changed files via API
+        id: pr-files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER=${{ github.event.number }}
+          REPO=${{ github.repository }}
+
+          RESPONSE=$(gh api repos/$REPO/pulls/$PR_NUMBER/files)
+
+          FILES=$(echo "$RESPONSE" | jq -r '.[].filename')
+
+          echo "All changed files:"
+          echo "$FILES"
+
+          PACKAGE_CHANGES=""
+
+          # Extract package names from changed files
+          for file in $FILES; do
+            if [[ "$file" == modules/tool/packages/* ]]; then
+              echo "Found package file: $file"
+
+              # Extract package directory name
+              PACKAGE_NAME=$(echo "$file" | cut -d'/' -f4)
+              echo "Found package directory: $PACKAGE_NAME"
+
+              # Add to package changes if not already present
+              if [[ ! " $PACKAGE_CHANGES " =~ " $PACKAGE_NAME " ]]; then
+                if [ -z "$PACKAGE_CHANGES" ]; then
+                  PACKAGE_CHANGES="$PACKAGE_NAME"
+                else
+                  PACKAGE_CHANGES="$PACKAGE_CHANGES $PACKAGE_NAME"
+                fi
+              fi
+            fi
+          done
+
+          echo "Package changes detected: $PACKAGE_CHANGES"
+          echo "$PACKAGE_CHANGES" > /tmp/package-changes.txt
+
+      - name: Set sparse checkout environment variable
+        run: |
+          echo "SPARSE_CHECKOUT_CONFIG<<EOF" >> $GITHUB_ENV
+          echo "/*" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: ${{ env.SPARSE_CHECKOUT_CONFIG }}
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile && bun run install:plugins
+
+      - name: Build pkg
+        run: bun run build:pkg
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          tags: fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
+          outputs: type=docker,dest=/tmp/image.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Save PR metadata
+        run: |
+          echo "${{ github.event.pull_request.number }}" > /tmp/pr-number.txt
+          echo "${{ github.event.pull_request.head.sha }}" > /tmp/pr-sha.txt
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-image
+          path: |
+            /tmp/image.tar
+            /tmp/pr-number.txt
+            /tmp/pr-sha.txt
+            /tmp/package-changes.txt
+          retention-days: 1
