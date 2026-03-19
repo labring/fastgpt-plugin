@@ -1,9 +1,24 @@
 name: Preview Image — Push
 
 on:
-  workflow_run:
-    workflows: ["Preview Image — Build"]
-    types: [completed]
+  workflow_call:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+      sha:
+        required: true
+        type: string
+      run_id:
+        required: true
+        type: string
+    secrets:
+      ALI_IMAGE_USER:
+        required: true
+      ALI_IMAGE_PSW:
+        required: true
+      ALI_IMAGE_PREFIX:
+        required: true
 
 # Only one push at a time
 concurrency:
@@ -21,8 +36,6 @@ permissions:
 jobs:
   push:
     runs-on: ubuntu-24.04
-    # Only push when the build succeeded
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Download build artifact
@@ -30,14 +43,14 @@ jobs:
         with:
           name: preview-image
           path: /tmp
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read PR metadata
         id: pr
         run: |
-          echo "number=$(cat /tmp/pr-number.txt)" >> "$GITHUB_OUTPUT"
-          echo "sha=$(cat /tmp/pr-sha.txt)" >> "$GITHUB_OUTPUT"
+          echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          echo "sha=${{ inputs.sha }}" >> "$GITHUB_OUTPUT"
           echo "package_changes=$(cat /tmp/package-changes.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Load Docker image
@@ -50,14 +63,14 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: registry.cn-hangzhou.aliyuncs.com
-          username: ${{ secrets.ALI_HUB_USERNAME }}
-          password: ${{ secrets.ALI_HUB_PASSWORD }}
+          username: ${{ secrets.ALI_IMAGE_USER }}
+          password: ${{ secrets.ALI_IMAGE_PSW }}
 
       - name: Tag and push Docker image
         run: |
           docker tag fastgpt-plugin-pr:${{ steps.pr.outputs.sha }} \
-            ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin-pr:${{ steps.pr.outputs.sha }}
-          docker push ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin-pr:${{ steps.pr.outputs.sha }}
+            ${{ secrets.ALI_IMAGE_PREFIX }}/fastgpt-plugin-pr:${{ steps.pr.outputs.sha }}
+          docker push ${{ secrets.ALI_IMAGE_PREFIX }}/fastgpt-plugin-pr:${{ steps.pr.outputs.sha }}
 
       - name: Add PR comment on success
         if: success() && steps.pr.outputs.number != ''
@@ -81,7 +94,7 @@ jobs:
             ✅ **Build Successful** - Preview Images for this PR:
 
             \`\`\`
-            ${{ secrets.ALI_IMAGE_NAME }}/fastgpt-plugin-pr:${{ steps.pr.outputs.sha }}
+            ${{ secrets.ALI_IMAGE_PREFIX }}/fastgpt-plugin-pr:${{ steps.pr.outputs.sha }}
             \`\`\`
 
             **Changed packages:**
