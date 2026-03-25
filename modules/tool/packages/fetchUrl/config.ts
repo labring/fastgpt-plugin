@@ -12,7 +12,6 @@ export default defineTool({
     'zh-CN': '可获取一个网页链接内容，并以 Markdown 格式输出，仅支持获取静态网站。',
     en: 'Get the content of a website link and output it in Markdown format, only supports static websites.'
   },
-  icon: 'core/workflow/template/fetchUrl',
   versionList: [
     {
       value: '0.1.1',

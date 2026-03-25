@@ -12,7 +12,6 @@ export default defineTool({
     'zh-CN': '可连接常用数据库，并执行sql',
     en: 'Can connect to common databases and execute sql'
   },
-  icon: 'core/workflow/template/datasource',
   versionList: [
     {
       value: '0.1.2',

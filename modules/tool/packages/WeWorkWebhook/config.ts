@@ -17,7 +17,6 @@ export default defineTool({
     en: 'Send webhook requests to WeWork robots. Only internal groups can use this tool.'
   },
   courseUrl: 'https://developer.work.weixin.qq.com/document/path/91770',
-  icon: 'plugins/qiwei',
   versionList: [
     {
       value: '0.1.1',

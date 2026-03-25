@@ -17,7 +17,6 @@ export default defineTool({
     'zh-CN': '通过SMTP协议发送电子邮件(nodemailer)',
     en: 'Send email by SMTP protocol (nodemailer)'
   },
-  icon: 'plugins/email',
   versionList: [
     {
       value: '0.1.1',

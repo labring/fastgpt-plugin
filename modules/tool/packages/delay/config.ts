@@ -12,7 +12,6 @@ export default defineTool({
     'zh-CN': '让工作流等待指定时间后运行',
     en: 'Delay the workflow after a specified time'
   },
-  icon: 'core/workflow/template/sleep',
   versionList: [
     {
       value: '1.0',

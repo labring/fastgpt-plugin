@@ -11,7 +11,6 @@ export default defineTool({
     'zh-CN': '博查搜索',
     en: 'Bocha Search'
   },
-  icon: 'core/workflow/template/bocha',
   tags: [ToolTagEnum.enum.search],
   description: {
     'zh-CN': '使用博查AI搜索引擎进行网络搜索。',

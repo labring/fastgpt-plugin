@@ -12,7 +12,6 @@ export default defineTool({
     'zh-CN': '获取当前时间',
     en: 'Get current time'
   },
-  icon: 'core/workflow/template/getTime',
   versionList: [
     {
       value: '0.1.1',

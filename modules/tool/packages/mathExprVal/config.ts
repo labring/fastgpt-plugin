@@ -16,7 +16,6 @@ export default defineTool({
     'zh-CN': '用于执行数学表达式的工具，通过 js 的 expr-eval 库运行表达式并返回结果。',
     en: 'A tool for executing mathematical expressions using the expr-eval library in js to return the result.'
   },
-  icon: 'core/workflow/template/mathCall',
   versionList: [
     {
       value: '0.1.1',

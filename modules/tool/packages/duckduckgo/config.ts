@@ -10,6 +10,5 @@ export default defineToolSet({
   description: {
     'zh-CN': 'DuckDuckGo 服务，包含网络搜索、图片搜索、新闻搜索等。',
     en: 'DuckDuckGo Service, including network search, image search, news search, etc.'
-  },
-  icon: 'core/workflow/template/duckduckgo'
+  }
 });

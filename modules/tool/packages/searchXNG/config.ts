@@ -17,7 +17,6 @@ export default defineTool({
     'zh-CN': '使用 SearXNG 服务进行搜索。',
     en: 'Use SearXNG service for search.'
   },
-  icon: 'core/workflow/template/searxng',
   courseUrl: '/docs/introduction/guide/plugins/searxng_plugin_guide/',
   versionList: [
     {
