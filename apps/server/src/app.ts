@@ -12,7 +12,6 @@ import models from '@/modules/model/model.route';
 import workflow from '@/modules/workflow/workflow.route';
 import dataset from '@/modules/dataset/dataset.route';
 import pool from '@/modules/pool/pool.route';
-import { pluginManager } from '@/modules/tool/tool.init';
 
 export const app = createOpenAPIHono<Env>();
 
@@ -113,56 +112,6 @@ app.route('/api', workflow);
 app.route('/api', dataset);
 app.route('/api', tool);
 app.route('/api', pool);
-
-app.openapi(
-  createRoute({
-    method: 'get',
-    path: '/api/metrics',
-    tags: ['System'],
-    summary: 'Process pool metrics',
-    description: 'Get runtime metrics for all plugin process pools',
-    responses: {
-      200: {
-        description: 'Metrics data',
-        content: {
-          'application/json': {
-            schema: createResponseSchema(
-              z.object({
-                global: z.object({
-                  totalServices: z.number(),
-                  totalPods: z.number(),
-                  totalRequests: z.number(),
-                  avgResponseTime: z.number(),
-                  errorRate: z.number()
-                }),
-                plugins: z.record(z.string(), z.any())
-              })
-            )
-          }
-        }
-      }
-    }
-  }),
-  (c) => {
-    if (!pluginManager) {
-      return c.json(
-        R.success({ global: { totalServices: 0, totalPods: 0, totalRequests: 0, avgResponseTime: 0, errorRate: 0 }, plugins: {} }),
-        200
-      );
-    }
-
-    const global = pluginManager.getGlobalMetrics();
-    const plugins: Record<string, unknown> = {};
-    for (const id of pluginManager.getPluginIds()) {
-      try {
-        plugins[id] = pluginManager.getPluginMetrics(id);
-      } catch {
-        // skip
-      }
-    }
-    return c.json(R.success({ global, plugins }), 200);
-  }
-);
 
 // #endregion
 

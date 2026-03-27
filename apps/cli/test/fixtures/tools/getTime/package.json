@@ -1,0 +1,15 @@
+{
+  "name": "fastgpt-tools-get-current-time",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "npx @fastgpt-plugin/cli build"
+  },
+  "dependencies": {
+    "@fastgpt-plugin/helpers": "^0.1.0",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

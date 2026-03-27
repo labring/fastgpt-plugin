@@ -1,4 +1,4 @@
-import { replaceSensitiveText } from './string';
+import { replaceSensitiveText } from '../../../../packages/helpers/src/utils/string';
 
 export const getErrText = (err: any, def = ''): string => {
   const msg: string =

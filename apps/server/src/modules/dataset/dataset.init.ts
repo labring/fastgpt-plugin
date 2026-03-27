@@ -2,10 +2,10 @@ import { existsSync } from 'node:fs';
 import { join, resolve, parse } from 'node:path';
 import { isProd } from '@/constants';
 import type { DatasetSourceId } from './type/source';
-import { mod } from '@/lib/logger';
-import { mimeMap } from '@/lib/s3/const';
 import { getLogger } from '@logtape/logtape';
-import { getPublicS3Server } from '@/lib/s3';
+import { mod } from '@/infra/logger';
+import { getPublicS3Server } from '@/infra/s3';
+import { mimeMap } from '@/infra/s3/const';
 
 const logger = getLogger(mod.dataset);
 

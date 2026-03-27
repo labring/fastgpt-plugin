@@ -1,40 +1,3 @@
-import { z } from '@hono/zod-openapi';
-import {
-  ToolDetailSchema as BaseToolDetailSchema,
-  ToolSimpleSchema as BaseToolSimpleSchema,
-  ToolTagSchema
-} from '@fastgpt-plugin/helpers/tools/schemas/tool';
-import { SystemVarSchema } from '@fastgpt-plugin/helpers/index';
-
-// ==================== Tool Detail Schema (for API response) ====================
-// Use z.object().extend() to convert standard zod schema to zod-openapi schema
-
-export const ToolDetailSchema = z.object(BaseToolDetailSchema.shape).openapi('ToolDetail');
-export const ToolSimpleSchema = z.object(BaseToolSimpleSchema.shape).openapi('ToolSimple');
-
-// ==================== Tag List Schema ====================
-
-export const ToolTagListSchema = z.array(
-  z.object({
-    label: z.string(),
-    value: ToolTagSchema
-  })
-);
-
-// ==================== Path Parameters ====================
-
-export const ToolIdParamSchema = z.object({
-  toolId: z
-    .string()
-    .min(5)
-    .openapi({
-      param: { name: 'toolId', in: 'path' },
-      example: 'doc2x'
-    })
-});
-
-// ==================== Query Parameters ====================
-
 export const FilenameQuerySchema = z.object({
   filename: z
     .string()
@@ -55,13 +18,33 @@ export const ObjectNameQuerySchema = z.object({
     })
 });
 
-export const ToolIdQuerySchema = z.object({
+export const EtagQuerySchema = z.object({
+  etag: z
+    .string()
+    .min(1)
+    .openapi({
+      param: { name: 'etag', in: 'query' },
+      example: 'abc123def456'
+    })
+});
+
+export const DeleteToolQuerySchema = z.object({
   toolId: z
     .string()
     .min(1)
     .openapi({
       param: { name: 'toolId', in: 'query' },
-      example: 'doc2x'
+      example: 'FastGPT@getTime',
+      description: 'Tool ID in format author@toolId'
+    }),
+  version: z
+    .string()
+    .optional()
+    .openapi({
+      param: { name: 'version', in: 'query' },
+      example: '1.0.0',
+      description:
+        'Optional version. If provided, deletes only this version. If omitted, deletes the entire tool.'
     })
 });
 
@@ -79,8 +62,16 @@ export const InstallToolBodySchema = z.object({
   })
 });
 
-export const RunStreamBodySchema = z.object({
-  toolId: z.string().openapi({ example: 'doc2x' }),
-  inputs: z.record(z.string(), z.any()).openapi({ example: { text: 'hello' } }),
-  systemVar: SystemVarSchema
-});
+// export const RunStreamBodySchema = z.object({
+//   toolId: z.string().openapi({ example: 'FastGPT@getTime' }),
+//   version: z
+//     .string()
+//     .optional()
+//     .openapi({ example: '1.0.0', description: 'Optional version. If omitted, uses latest.' }),
+//   inputs: z.record(z.string(), z.any()).openapi({ example: { text: 'hello' } }),
+//   systemVar: SystemVarSchema,
+//   secrets: z
+//     .record(z.string(), z.string())
+//     .optional()
+//     .openapi({ description: 'Secret values (not stored)' })
+// });

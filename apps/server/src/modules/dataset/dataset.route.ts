@@ -1,4 +1,3 @@
-import { R, createOpenAPIHono } from '@/utils/http';
 import { sourceRegistry } from './source/registry';
 import {
   listSourcesRoute,
@@ -8,6 +7,7 @@ import {
   getPreviewUrlRoute,
   getDetailRoute
 } from './schemas/routes';
+import { createOpenAPIHono, R } from '@/routes/utils';
 
 // 延迟注册数据源，避免在模块加载时触发 S3 访问
 let sourcesRegistered = false;
@@ -37,7 +37,7 @@ const dataset = createOpenAPIHono().basePath('/dataset');
 dataset.openapi(listSourcesRoute, async (c) => {
   await ensureSourcesRegistered();
   const sources = sourceRegistry.list();
-  const sourcesInfo = sources.map(({ formFields, ...info }) => info);
+  const sourcesInfo = sources.map(({ ...info }) => info);
   return c.json(R.success(sourcesInfo), 200);
 });
 

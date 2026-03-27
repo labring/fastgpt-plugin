@@ -1,4 +1,3 @@
-import type { ToolDetailType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 import type { ListModelsType } from '@fastgpt-plugin/helpers/models/schemas';
 import type { TemplateListType } from '@fastgpt-plugin/helpers/workflows/schemas';
 import type { I18nStringStrictType } from '@fastgpt-plugin/helpers/common/schemas/i18n';
@@ -9,6 +8,11 @@ import type {
   FileContentResponse
 } from '@fastgpt-plugin/helpers/datasets/schemas';
 import type { AiproxyMapProviderType } from '@fastgpt-plugin/helpers/models/constants';
+import type {
+  ToolListItemType,
+  ToolDetailResponseType,
+  ToolTagListType
+} from '@fastgpt-plugin/helpers/tools/schemas/api';
 
 interface Result<T> {
   code: number;
@@ -67,23 +71,15 @@ export class FastGPTPluginClient {
 
   // Tools
   async listTools() {
-    return this.request<ToolDetailType[]>('/api/tools');
+    return this.request<ToolListItemType[]>('/api/tools');
   }
 
   async getToolTags() {
-    return this.request<{ id: string; name: I18nStringStrictType }[]>('/api/tools/tags');
+    return this.request<ToolTagListType>('/api/tools/tags');
   }
 
   async getTool(toolId: string) {
-    return this.request<ToolDetailType>(`/api/tools/${toolId}`);
-  }
-
-  async getToolUploadUrl(filename: string) {
-    return this.request<{
-      postURL: string;
-      formData: Record<string, any>;
-      objectName: string;
-    }>(`/api/tools/upload/presign-tool-put-url?filename=${filename}`);
+    return this.request<ToolDetailResponseType>(`/api/tools/${toolId}`);
   }
 
   async confirmToolUpload(toolIds: string[]) {
@@ -93,8 +89,11 @@ export class FastGPTPluginClient {
     });
   }
 
-  async deleteTool(toolId: string) {
-    return this.request<{ message: string }>(`/api/tools/upload/delete?toolId=${toolId}`, {
+  async deleteTool(toolId: string, version?: string) {
+    const query = version
+      ? `?toolId=${encodeURIComponent(toolId)}&version=${encodeURIComponent(version)}`
+      : `?toolId=${encodeURIComponent(toolId)}`;
+    return this.request<{ message: string }>(`/api/tools/upload/delete${query}`, {
       method: 'DELETE'
     });
   }
@@ -106,10 +105,13 @@ export class FastGPTPluginClient {
     });
   }
 
-  async parseUploadedTool(objectName: string) {
-    return this.request<ToolDetailType[]>(
-      `/api/tools/upload/parse-uploaded-tool?objectName=${objectName}`
-    );
+  async uploadAndParseTool(file: File | Blob, filename?: string) {
+    const formData = new FormData();
+    formData.append('file', file, filename ?? (file instanceof File ? file.name : 'plugin.pkg'));
+    return this.request<ToolDetailType[]>('/api/tools/upload/parse-tool', {
+      method: 'POST',
+      body: formData
+    });
   }
 
   // Workflow
@@ -169,16 +171,16 @@ export {
 // Tool S3 path constants
 export { UploadToolsS3Path, PluginBaseS3Prefix } from '@fastgpt-plugin/helpers/tools/constants';
 
-export {
-  ToolTagEnum,
-  ToolDetailSchema,
-  ToolSimpleSchema,
-  type ToolType,
-  type ToolSetType,
-  type ToolDetailType,
-  type ToolSimpleType
-} from '@fastgpt-plugin/helpers/tools/schemas/tool';
+export { ToolTagEnum } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 export { ToolTagsNameMap } from '@fastgpt-plugin/helpers/tools/constants';
+export {
+  ToolListItemSchema,
+  type ToolListItemType,
+  ToolDetailResponseSchema,
+  type ToolDetailResponseType,
+  ToolTagListSchema,
+  type ToolTagListType
+} from '@fastgpt-plugin/helpers/tools/schemas/api';
 
 // Model related exports
 export {

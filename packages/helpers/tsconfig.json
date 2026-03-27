@@ -16,7 +16,8 @@
 
     "baseUrl": "./",
     "paths": {
-      "@fastgpt-plugin/helpers/*": ["src/*"]
+      "@fastgpt-plugin/helpers/*": ["src/*"],
+      "@fastgpt-plugin/domain/*": ["../domain/src/*"]
     }
   },
   "exclude": ["dist/**/*"]

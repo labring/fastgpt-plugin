@@ -3,83 +3,72 @@ import { batch, ensureDir } from '@fastgpt-plugin/helpers/index';
 import { existsSync } from 'node:fs';
 import { toolsDir, UploadToolsS3Path } from './constants';
 import { MongoSystemPlugin } from '@/lib/mongo/models/plugins';
-import type { CacheToolMapType } from './types/tool';
 import { LoadToolsByFilename } from './utils/tool';
-import { getPrivateS3Server, getPublicS3Server } from '@/lib/s3';
+import { getPrivateS3Server } from '@/lib/s3';
 import { PluginManager } from '@/lib/plugin_manager';
-import type { ToolType, ToolSetType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 import path from 'node:path';
 import { env } from '@/env';
+import { buildGlobalPluginId } from '@fastgpt-plugin/helpers/plugins/type';
+import { SystemCacheKeyEnum } from '@/lib/cache/type';
 
 declare global {
   var isIniting: boolean;
 }
 
-/** 全局 PluginManager 单例，由 initTools 初始化 */
-export let pluginManager: PluginManager | null = null;
-
 /**
  * Init tools when system starting.
- * 从 MongoDB 取 baseToolId + versionList，下载最新版本的文件，
- * 加载后覆盖 toolId 为 baseToolId，并从 MongoDB 合并完整 versionList。
+ * 从 MongoDB 读取所有 system 系统预装的工具。
+ * 下载 index.js 文件到本地，载入 PluginManager 中
  */
 export async function initTools() {
   const logger = getLogger(mod.tool);
+
   if (global.isIniting) {
     return systemCache.systemTool.data;
   }
   global.isIniting = true;
+
   try {
     const start = Date.now();
     logger.info('Load tools start');
     await ensureDir(toolsDir);
 
-    // 初始化 PluginManager 单例（复用已有实例，避免重建时销毁正在运行的 pods）
-    if (!pluginManager) {
-      pluginManager = new PluginManager({ mode: 'ipc', maxTotalPods: 100 });
-    }
+    const pluginManager = PluginManager.getInstance();
 
-    // 1. 从 MongoDB 获取所有工具记录（toolId = author@name）
-    const toolsInMongo = await MongoSystemPlugin.find({ type: 'tool' }).lean();
-    logger.debug(`Tools in mongo: ${toolsInMongo.length}`);
+    // 1. 从 MongoDB 获取所有工具文档
+    const toolsInMongo = await MongoSystemPlugin.find({ type: 'tool', source: 'system' }).lean();
+    logger.debug(`[init Tools]: Tool docs in mongo: ${toolsInMongo.length}`);
 
-    const toolMap: CacheToolMapType = new Map();
     const privateS3Server = getPrivateS3Server();
-    const publicS3Server = getPublicS3Server();
 
-    // 取已有 toolMap（用于复用未变化的工具条目）
-    const existingToolMap: CacheToolMapType = global.systemCache?.systemTool?.data ?? new Map();
-
-    // 2. 下载最新版本文件并加载（单个工具失败不影响其他工具）
+    // 2. 遍历每个工具 doc，加载最新版本
     await batch(
       50,
       toolsInMongo.map((tool) => async () => {
-        const baseToolId = tool.toolId; // author@name
-        const versions = tool.versionList ?? [];
-        if (versions.length === 0) return;
+        const baseToolId = `${tool.author}@${tool.pluginId}`;
 
-        // 取最后一项作为最新版本（按安装顺序）
-        const latestVersion = versions[versions.length - 1].value;
-        const globalToolId = `${baseToolId}@${latestVersion}`;
-        const toolDir = path.join(toolsDir, globalToolId);
+        const latestVersion = (tool.versionList ?? []).at(-1);
+        if (!latestVersion) {
+          logger.warn(`Skip tool ${baseToolId}: versionList is empty`);
+          return;
+        }
 
-        const mongoVersionList = versions.map((v) => ({
-          value: v.value,
-          inputSchema: v.inputSchema,
-          outputSchema: v.outputSchema,
-          children: v.children
-        }));
+        const globalToolId = buildGlobalPluginId(
+          tool.author,
+          tool.pluginId,
+          latestVersion.version,
+          latestVersion.etag
+        );
 
-        // 若该版本已在 PluginManager 中注册且 toolMap 已有数据，直接复用，仅刷新 versionList
         const existingEntry = existingToolMap.get(baseToolId);
         if (existingEntry && pluginManager!.hasPlugin(globalToolId)) {
-          toolMap.set(baseToolId, { ...existingEntry, versionList: mongoVersionList });
+          // 只更新 versionList（从数据库同步）
+          toolMap.set(baseToolId, existingEntry);
           return;
         }
 
         try {
           const jsLocalPath = path.join(toolsDir, `${globalToolId}.js`);
-          const manifestLocalPath = path.join(toolDir, 'manifest.yaml');
 
           // 下载 index.js（私有 S3），本地已存在时跳过
           if (!existsSync(jsLocalPath)) {
@@ -93,34 +82,40 @@ export async function initTools() {
             }
           }
 
-          // 下载 manifest.yaml（公开 S3），本地已存在时跳过
-          if (!existsSync(manifestLocalPath)) {
-            await ensureDir(toolDir);
-            const manifestPath = await publicS3Server.downloadFile({
-              downloadPath: toolDir,
-              objectName: `${UploadToolsS3Path}/${globalToolId}/manifest.yaml`
-            });
-            if (!manifestPath) {
-              logger.warn(`Skip tool ${globalToolId}: manifest.yaml download failed`);
-              return;
-            }
-          }
-
-          // 下载 config.json（公开 S3，可选），本地已存在时跳过
-          const configLocalPath = path.join(toolDir, 'config.json');
-          if (!existsSync(configLocalPath)) {
-            await publicS3Server
-              .downloadFile({
-                downloadPath: toolDir,
-                objectName: `${UploadToolsS3Path}/${globalToolId}/config.json`
-              })
-              .catch(() => {
-                /* config.json 可选 */
-              });
-          }
-
           const filename = `${globalToolId}.js`;
-          const loadedTool = await LoadToolsByFilename(filename, pluginManager!, {
+
+          // 构建 toolEntry（从数据库元数据）
+          const toolEntry = {
+            type: tool.type,
+            source: tool.source,
+            author: tool.author,
+            toolId: tool.toolId,
+            name: tool.name,
+            description: tool.description,
+            toolDescription: tool.toolDescription,
+            icon: tool.icon ?? undefined,
+            tags: tool.tags ?? undefined,
+            tutorialUrl: tool.tutorialUrl ?? undefined,
+            readmeUrl: tool.readmeUrl ?? undefined,
+            versionList: tool.versionList.map((v) => ({
+              version: v.version,
+              etag: v.etag,
+              versionDescription: v.versionDescription,
+              inputSchema: v.inputSchema,
+              outputSchema: v.outputSchema,
+              secretSchema: v.secretSchema,
+              children: v.children?.map((c) => ({
+                toolId: c.toolId,
+                name: c.name,
+                description: c.description,
+                icon: c.icon ?? undefined,
+                inputSchema: c.inputSchema,
+                outputSchema: c.outputSchema
+              }))
+            }))
+          };
+
+          const loadedTool = await LoadToolsByFilename(filename, pluginManager, toolEntry, {
             minPods: tool.pluginConfig?.minPods ?? env.PLUGIN_MIN_PODS,
             maxPods: tool.pluginConfig?.maxPods ?? env.PLUGIN_MAX_PODS,
             maxConcurrentRequestsPerPod:
@@ -128,26 +123,11 @@ export async function initTools() {
           });
           if (!loadedTool) return;
 
-          // 3. 覆盖 toolId 为 baseToolId，合并来自 MongoDB 的完整 versionList
-          if ('children' in loadedTool && Array.isArray(loadedTool.children)) {
-            // 工具集：同步覆盖所有子工具的 toolId（global → base），不携带 versionList
-            const children = (loadedTool as ToolSetType).children.map((child: ToolType) => ({
-              ...child,
-              toolId: `${baseToolId}/${child.toolId.split('/').at(-1)}`
-            }));
-            toolMap.set(baseToolId, {
-              ...(loadedTool as ToolSetType),
-              toolId: baseToolId,
-              versionList: mongoVersionList,
-              children
-            });
-          } else {
-            toolMap.set(baseToolId, {
-              ...(loadedTool as ToolType),
-              toolId: baseToolId,
-              versionList: mongoVersionList
-            });
-          }
+          toolMap.set(baseToolId, {
+            ...tool,
+            id: baseToolId,
+            filename
+          });
         } catch (e) {
           logger.error(`Failed to load tool ${globalToolId}: ${e}`);
         }

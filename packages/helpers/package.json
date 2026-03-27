@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@fastgpt-sdk/invoke": "catalog:",
+    "@fastgpt-plugin/domain": "workspace:*",
     "jszip": "^3.10.1",
     "vitest": "^4.0.18",
     "yaml": "^2.6.1",
@@ -32,6 +33,6 @@
   },
   "devDependencies": {
     "tsdown": "^0.20.1",
-    "typescript": "^5.9.3"
+    "typescript": "catalog:"
   }
 }

@@ -1,0 +1,8 @@
+{
+  "name": "@fastgpt-plugin/sdk-factory",
+  "version": "0.0.1-alpha.1",
+  "dependencies": {
+    "@fastgpt-plugin/domain": "workspace:*",
+    "@fastgpt-plugin/helpers": "workspace:*"
+  }
+}

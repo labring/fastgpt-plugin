@@ -38,13 +38,6 @@ export const ModelItemSchema = z
 
 export const ListModelsSchema = z.array(ModelItemSchema).openapi('ListModels');
 
-// I18n string schema (OpenAPI compatible)
-const I18nStringStrictSchema = z.object({
-  en: z.string(),
-  'zh-CN': z.string(),
-  'zh-Hant': z.string()
-});
-
 // ==================== Provider Schemas ====================
 
 // Model provider schema for API response

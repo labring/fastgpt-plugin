@@ -1,17 +1,16 @@
 import { app } from '@/app';
-import { refreshVersionKey, getCachedData } from '@/lib/cache';
-import { SystemCacheKeyEnum } from '@/lib/cache/type';
-import { getLogger, root, configureLogger, destroyLogger } from '@/lib/logger';
-import { connectMongo, connectionMongo, MONGO_URL } from '@/lib/mongo';
-import { initS3Service } from '@/lib/s3';
 import { tempDir, tempToolsDir } from '@/modules/tool/constants';
 import { initWorkflowTemplates } from '@/modules/workflow/init';
 import { configureProxy } from '@/utils/setup-proxy';
-import { refreshDir, ensureDir } from '@fastgpt-plugin/helpers/index';
 import { serve, type ServerType } from '@hono/node-server';
 import { env } from '@/env';
 import { initModels } from '@/modules/model/model.init';
 import { initDatasets } from '@/modules/dataset/dataset.init';
+import { configureLogger, getLogger, root } from '@/infra/logger';
+import { initS3Service } from '@/infra/s3';
+import { connectionMongo, connectMongo, MONGO_URL } from '@/infra/mongo';
+import { getCachedData, refreshVersionKey } from '@/infra/redis/cache';
+import { SystemCacheKeyEnum } from '@/infra/redis/cache/type';
 
 const logger = getLogger(root);
 
@@ -70,7 +69,7 @@ async function main() {
       port: env.PORT
     },
     (info) => {
-      logger.info(`Server is listening at 0.0.0.0:${info.port}`);
+      logger.info(`Server is listening at http://0.0.0.0:${info.port}`);
     }
   );
 }

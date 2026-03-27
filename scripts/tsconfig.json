@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./apps/server/src/*"],
+      "@fastgpt-plugin/helpers": ["./packages/helpers/src/index.ts"],
+      "@fastgpt-plugin/helpers/*": ["./packages/helpers/src/*"]
+    }
+  },
+  "include": ["scripts/**/*", "apps/server/src/**/*", "packages/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

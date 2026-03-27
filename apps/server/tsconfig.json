@@ -29,7 +29,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@fastgpt-plugin/helpers": ["../../packages/helpers/src/index.ts"],
-      "@fastgpt-plugin/helpers/*": ["../../packages/helpers/src/*"]
+      "@fastgpt-plugin/helpers/*": ["../../packages/helpers/src/*"],
+      "@fastgpt-plugin/domain/*": ["../../packages/domain/src/*"]
     },
 
     // Performance optimizations

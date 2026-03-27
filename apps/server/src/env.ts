@@ -1,5 +1,10 @@
 import { createEnv } from '@t3-oss/env-core';
+import {
+  SystemModeEnum,
+  SystemModeSchema
+} from '@fastgpt-plugin/domain/value-objects/system-mode.enum';
 import { z } from 'zod';
+import os from 'node:os';
 
 const BoolSchema = z
   .string()
@@ -16,11 +21,21 @@ export const env = createEnv({
     throw new Error(`Invalid environment variables. Please check: ${paths}\n`);
   },
   server: {
+    // Infras 基础设施配置
+    // 本地文件
+    LOCAL_FILE_BASE_PATH: z.string().default(os.tmpdir()),
+    S3_FILE_BASE_PATH: z.string().default('system/plugin'),
     // 系统
     NODE_ENV: z.string().default('development'),
+    SYSTEM_MODE: SystemModeSchema.default(SystemModeEnum.local),
+    MAX_TOTAL_PODS: PositiveIntSchema.default(100),
+    HEALTH_CHECK_INTERVAL: PositiveIntSchema.default(30_000),
     PORT: PositiveIntSchema.min(1024).max(65535).default(3000),
     AUTH_TOKEN: z.string().default('token'),
+    JWT_SECRET: z.string().default('fastgpt-plugin-secret'),
     HOSTNAME: z.string().optional(),
+    ALLOWED_INSTALL_HOSTS: z.string().optional(),
+    DISABLE_SSRF_CHECK: BoolSchema.default(true),
     MAX_API_SIZE: PositiveIntSchema.default(10),
     FASTGPT_BASE_URL: z.url().default('http://localhost:3000'),
     SERVICE_REQUEST_MAX_CONTENT_LENGTH: PositiveIntSchema.default(10),

@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
+    "@types/semver": "^7.7.1",
     "@types/turndown": "^5.0.6",
     "tsdown": "^0.20.1",
     "tsx": "^4.19.2"
@@ -17,7 +18,9 @@
   },
   "dependencies": {
     "@fastgpt-plugin/helpers": "workspace:*",
+    "@fastgpt-plugin/domain": "workspace:*",
     "@fastgpt-sdk/invoke": "catalog:",
+    "@fastgpt-sdk/storage": "catalog:",
     "@hono/node-server": "^1.19.9",
     "@hono/zod-openapi": "^1.2.1",
     "@logtape/logtape": "^2.0.2",
@@ -32,8 +35,10 @@
     "hono": "^4.11.5",
     "ioredis": "^5.9.2",
     "joplin-turndown-plugin-gfm": "^1.0.12",
+    "jose": "^5.10.0",
     "mongoose": "8",
     "nanoid": "^5.1.6",
+    "semver": "^7.6.0",
     "tinypool": "^2.1.0",
     "turndown": "^7.2.2",
     "undici": "^7.20.0",

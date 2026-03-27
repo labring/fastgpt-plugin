@@ -1,6 +1,3 @@
-// SDK-safe constants - no env dependency, can be used in client bundles
-import type { I18nStringStrictType } from '../common/schemas/i18n';
-
 export type ModelProviderMap = {
   [key: string]: I18nStringStrictType;
 };

@@ -1,13 +1,9 @@
 import { getPrivateS3Server, getPublicS3Server } from '@/lib/s3';
 import { tempPkgDir, tempToolsDir, toolsDir, UploadToolsS3Path } from '../constants';
 import {
-  ToolDetailSchema,
   ToolTagEnum,
   ToolTagSchema,
-  buildGlobalToolId,
-  type ToolDistType,
-  type ToolSetType,
-  type ToolType
+  buildGlobalToolId
 } from '@fastgpt-plugin/helpers/tools/schemas/tool';
 import path, { parse } from 'node:path';
 import { mimeMap } from '@/lib/s3/const';
@@ -18,23 +14,25 @@ import { getLogger, mod } from '@/lib/logger';
 import { getCachedData } from '@/lib/cache';
 import { SystemCacheKeyEnum } from '@/lib/cache/type';
 import { createWriteStream, existsSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import type z from 'zod';
 import type { ToolTagListSchema } from '../schemas';
 import { pipeline } from 'node:stream/promises';
 import { getErrText } from '@/utils/err';
 import type { PluginManager } from '@/lib/plugin_manager';
 import type { ToolHandlerReturnType } from '@fastgpt-plugin/helpers/tools/schemas/req';
-import type { ServiceConfig } from '@/lib/process_pool/types';
+import type { InvokeOptions, ServiceConfig } from '@/lib/process_pool/types';
 
 const logger = getLogger(mod.tool);
 
 /**
- * 从全局 toolId（author@name@version）中提取基础 toolId（author@name）。
- * 通过 lastIndexOf('@') 去掉最后的 @version 部分。
+ * 从全局 toolId（author@name@version@etag）中提取基础 toolId（author@name）。
+ * 兼容旧三段格式（author@name@version）。
  */
 export function getBaseToolId(globalToolId: string): string {
-  const lastAt = globalToolId.lastIndexOf('@');
-  return lastAt > 0 ? globalToolId.substring(0, lastAt) : globalToolId;
+  const parts = globalToolId.split('@');
+  if (parts.length >= 2) return `${parts[0]}@${parts[1]}`;
+  return globalToolId;
 }
 
 export const getS3ToolStaticFileURL = ({
@@ -75,15 +73,18 @@ function buildRootMod(
   configJson: Record<string, unknown>,
   toolId: string,
   filename: string
-): ToolDistType {
+) {
   if (manifest.children && Object.keys(manifest.children).length > 0) {
-    // 工具集：各子工具的 schema 放入父级 versionList.children，子工具本身不携带 versionList
-    const versionChildren = Object.entries(manifest.children).map(([childName, _childConfig]) => {
+    // 工具集：各子工具的 schema 和元数据都放入父级 versionList.children
+    const versionChildren = Object.entries(manifest.children).map(([childName, childConfig]) => {
       const childEntry = configJson[childName] as
         | { inputSchema: unknown; outputSchema: unknown }
         | undefined;
       return {
         toolId: childName,
+        name: childConfig.name,
+        description: childConfig.description,
+        icon: childConfig.icon,
         inputSchema: childEntry?.inputSchema,
         outputSchema: childEntry?.outputSchema
       };
@@ -108,14 +109,20 @@ function buildRootMod(
         {
           value: manifest.version,
           description: manifest.versionDescription?.en,
+          // 工具集的 secretSchema 在顶层，所有子工具共享
+          secretSchema: (configJson as { secretSchema?: unknown }).secretSchema,
           children: versionChildren
         }
       ],
       children
-    } as unknown as ToolDistType;
+    };
   }
 
-  const schemas = configJson as { inputSchema?: unknown; outputSchema?: unknown };
+  const schemas = configJson as {
+    inputSchema?: unknown;
+    outputSchema?: unknown;
+    secretSchema?: unknown;
+  };
   return {
     ...manifest,
     toolId,
@@ -125,7 +132,8 @@ function buildRootMod(
         value: manifest.version,
         description: manifest.versionDescription?.en,
         inputSchema: schemas.inputSchema,
-        outputSchema: schemas.outputSchema
+        outputSchema: schemas.outputSchema,
+        secretSchema: schemas.secretSchema
       }
     ]
   } as unknown as ToolDistType;
@@ -171,13 +179,25 @@ export const parseMod = async ({
           ? {
               handler: async (
                 inputs: Record<string, unknown>,
-                ctx: { systemVar: Record<string, unknown> }
+                ctx: {
+                  systemVar: Record<string, unknown>;
+                  secret?: Record<string, string>;
+                  [key: string]: unknown;
+                }
               ) =>
-                pluginManager.invoke(toolsetId, 'execute', {
-                  toolName: childName,
-                  inputs,
-                  systemVar: ctx.systemVar
-                }) as Promise<ToolHandlerReturnType>
+                pluginManager.invoke(
+                  toolsetId,
+                  'execute',
+                  {
+                    toolName: childName,
+                    inputs,
+                    systemVar: ctx.systemVar,
+                    secrets: ctx.secret
+                  },
+                  {
+                    callbackHandler: ctx.callbackHandler as InvokeOptions['callbackHandler']
+                  }
+                ) as Promise<ToolHandlerReturnType>
             }
           : {})
       };
@@ -208,12 +228,24 @@ export const parseMod = async ({
         ? {
             handler: async (
               inputs: Record<string, unknown>,
-              ctx: { systemVar: Record<string, unknown> }
+              ctx: {
+                systemVar: Record<string, unknown>;
+                secret?: Record<string, string>;
+                [key: string]: unknown;
+              }
             ) =>
-              pluginManager.invoke(toolId, 'execute', {
-                inputs,
-                systemVar: ctx.systemVar
-              }) as Promise<ToolHandlerReturnType>
+              pluginManager.invoke(
+                toolId,
+                'execute',
+                {
+                  inputs,
+                  systemVar: ctx.systemVar,
+                  secrets: ctx.secret
+                },
+                {
+                  callbackHandler: ctx.callbackHandler as InvokeOptions['callbackHandler']
+                }
+              ) as Promise<ToolHandlerReturnType>
           }
         : {})
     } as ToolType;
@@ -223,6 +255,11 @@ export const parseMod = async ({
 export const parsePkg = async (filepath: string, temp: boolean = true) => {
   const filename = filepath.split('/').pop() as string;
   const tempDir = path.join(tempToolsDir, filename);
+
+  // 计算 etag：对 .pkg 文件做 SHA256，取前 12 位 hex
+  const pkgBuffer = await readFile(filepath);
+  const etag = createHash('sha256').update(pkgBuffer).digest('hex').slice(0, 12);
+
   const [, err] = await catchError(() => unpkg(filepath, tempDir));
   if (err) {
     logger.error(`Can not parse toolId, filename: ${filename}`);
@@ -232,7 +269,7 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
   // 1. 读取 manifest.yaml
   const manifestPath = path.join(tempDir, 'manifest.yaml');
   const manifest = await loadManifest(manifestPath);
-  const toolId = buildGlobalToolId(manifest.author, manifest.toolId, manifest.version);
+  const toolId = buildGlobalToolId(manifest.author, manifest.toolId, manifest.version, etag);
 
   // 2. 读取 config.json（schemas）
   const configJson = await readConfigJson(tempDir);
@@ -307,85 +344,214 @@ export const parseUploadedTool = async (objectName: string) => {
  * 从本地文件系统加载已下载的工具，注入 handler，向 PluginManager 注册。
  * 要求以下文件均已下载到本地：
  *   toolsDir/{toolId}.js
- *   toolsDir/{toolId}/manifest.yaml
- *   toolsDir/{toolId}/config.json
+ *
+ * @param filename - 工具文件名（author@toolId@version@etag.js）
+ * @param pluginManager - 插件管理器实例
+ * @param toolEntry - 从数据库读取的工具元数据（包含 versionList）
+ * @param serviceConfig - 进程池配置
  */
 export const LoadToolsByFilename = async (
   filename: string,
   pluginManager: PluginManager,
+  toolEntry: {
+    type: string;
+    source: string;
+    author: string;
+    toolId: string;
+    name: any;
+    description?: any;
+    toolDescription: string;
+    icon?: string;
+    tags?: string[];
+    tutorialUrl?: string;
+    readmeUrl?: string;
+    versionList: Array<{
+      version: string;
+      etag: string;
+      versionDescription?: any;
+      inputSchema?: any;
+      outputSchema?: any;
+      secretSchema?: any;
+      children?: Array<{
+        toolId: string;
+        name: any;
+        description?: any;
+        icon?: string;
+        inputSchema?: any;
+        outputSchema?: any;
+      }>;
+    }>;
+  },
   serviceConfig?: Pick<ServiceConfig, 'minPods' | 'maxPods' | 'maxConcurrentRequestsPerPod'>
 ): Promise<ToolType | ToolSetType | null> => {
   const start = Date.now();
   const filePath = path.join(toolsDir, filename);
-  const toolId = filename.replace('.js', '');
-  const toolDir = path.join(toolsDir, toolId);
+  const globalToolId = filename.replace('.js', '');
 
-  // 1. 读取 manifest.yaml
-  const manifest = await loadManifest(path.join(toolDir, 'manifest.yaml'));
+  // 1. 从 toolEntry 中提取最新版本的元数据
+  const latestVersion = toolEntry.versionList[toolEntry.versionList.length - 1];
 
-  // 2. 读取 config.json
-  const configJson = await readConfigJson(toolDir);
-
-  // 3. 构建 rootMod
-  const resolvedToolId = buildGlobalToolId(manifest.author, manifest.toolId, manifest.version);
-  const rootMod = buildRootMod(manifest, configJson, resolvedToolId, filename);
+  // 2. 构建 rootMod（从数据库元数据）
+  const rootMod: ToolDistType = latestVersion.children
+    ? // 工具集
+      ({
+        type: 'tool',
+        toolId: globalToolId,
+        author: toolEntry.author,
+        name: toolEntry.name,
+        description: toolEntry.description,
+        toolDescription: toolEntry.toolDescription,
+        icon: toolEntry.icon,
+        tags: toolEntry.tags,
+        tutorialUrl: toolEntry.tutorialUrl,
+        version: latestVersion.version,
+        versionList: [
+          {
+            value: latestVersion.version,
+            etag: latestVersion.etag,
+            description: latestVersion.versionDescription?.en,
+            secretSchema: latestVersion.secretSchema,
+            children: latestVersion.children?.map((c) => ({
+              toolId: c.toolId,
+              name: c.name,
+              description: c.description,
+              icon: c.icon,
+              inputSchema: c.inputSchema,
+              outputSchema: c.outputSchema
+            }))
+          }
+        ],
+        children: latestVersion.children?.map((c) => ({
+          toolId: `${globalToolId}/${c.toolId}`,
+          name: c.name,
+          description: c.description,
+          toolDescription: c.description?.en ?? '',
+          icon: c.icon,
+          tags: toolEntry.tags,
+          filename,
+          handler: null as never
+        })),
+        handler: null as never,
+        filename
+      } as unknown as ToolDistType)
+    : // 单工具
+      ({
+        type: 'tool',
+        toolId: globalToolId,
+        author: toolEntry.author,
+        name: toolEntry.name,
+        description: toolEntry.description,
+        toolDescription: toolEntry.toolDescription,
+        icon: toolEntry.icon,
+        tags: toolEntry.tags,
+        tutorialUrl: toolEntry.tutorialUrl,
+        version: latestVersion.version,
+        versionList: [
+          {
+            value: latestVersion.version,
+            etag: latestVersion.etag,
+            description: latestVersion.versionDescription?.en,
+            inputSchema: latestVersion.inputSchema,
+            outputSchema: latestVersion.outputSchema,
+            secretSchema: latestVersion.secretSchema
+          }
+        ],
+        handler: null as never,
+        filename
+      } as unknown as ToolDistType);
 
   if (!rootMod.toolId) {
     logger.error(`Can not parse toolId, filename: ${filename}`);
     return null;
   }
 
-  // 4. 向 PluginManager 注册进程池（若尚未注册）；若已注册则更新配置
-  if (!pluginManager.hasPlugin(resolvedToolId)) {
-    await pluginManager.register(resolvedToolId, {
+  // 3. 向 PluginManager 注册进程池（若尚未注册）；若已注册则更新配置
+  if (!pluginManager.hasPlugin(globalToolId)) {
+    await pluginManager.register(globalToolId, {
       type: 'tool',
       pluginPath: filePath,
       serviceConfig
     });
   } else if (serviceConfig) {
-    await pluginManager.updateServiceConfig(resolvedToolId, serviceConfig).catch(() => {});
+    await pluginManager.updateServiceConfig(globalToolId, serviceConfig).catch(() => {});
   }
 
-  // 5. 通过 parseMod 注入 handler（IPC 调用 PluginManager）
+  // 4. 通过 parseMod 注入 handler（IPC 调用 PluginManager）
   const result = await parseMod({ rootMod, filename, pluginManager });
 
   logger.debug(`Load tool ${filename} finish, time: ${Date.now() - start}ms`);
   return result;
 };
 
-// FastGPT@getTime@0.1.0\// FastGPT@dbops@0.1.0/mysql
-export async function getTool(_toolId: string): Promise<ToolType | undefined> {
-  const lastAtIndex = _toolId.lastIndexOf('@');
-  const toolId = lastAtIndex > 0 ? _toolId.substring(0, lastAtIndex) : _toolId;
-  const version = lastAtIndex > 0 ? _toolId.substring(lastAtIndex + 1) : undefined;
+export async function getTool(_toolId: string, _version?: string): Promise<any> {
+  // 分离子工具后缀：author@name@version/childName 或 author@name/childName
+  const slashIdx = _toolId.indexOf('/');
+  const parentPart = slashIdx > 0 ? _toolId.substring(0, slashIdx) : _toolId;
+  const childName = slashIdx > 0 ? _toolId.substring(slashIdx + 1) : undefined;
+
+  // baseToolId = 前两段（author@name）
+  const atParts = parentPart.split('@');
+  const baseToolId = `${atParts[0]}@${atParts[1]}`;
+  const versionId = atParts[2] ?? _version;
+
   const tools = await getCachedData(SystemCacheKeyEnum.systemTool);
-  if (toolId.includes('/')) {
-    const toolset = tools.get(toolId.split('/')[0]);
-    if (toolset && 'children' in toolset) {
-      const child = toolset.children.find((child: ToolType) => child.toolId === toolId);
-      if (child && version) {
-        return {
-          ...child,
-          versionList: child.versionList?.filter((v) => v.value === version)
-        };
-      }
-      return child;
+
+  if (childName) {
+    const toolset = tools.get(baseToolId);
+    if (toolset) {
+      const fullChildId = `${baseToolId}/${childName}`;
+      const version = versionId
+        ? toolset.versionList?.find((v) => v.version === versionId)
+        : toolset.versionList.at(-1);
+      const child = version?.children?.find((child) => child.id === fullChildId);
+
+      if (!child) return undefined;
+
+      // 构建完整的工具对象
+      return {
+        toolId: child.id,
+        name: child.name,
+        description: child.description ?? { en: '' },
+        toolDescription: child.description?.en ?? '',
+        icon: child.icon ?? '',
+        tags: toolset.tags,
+        versionList: [
+          {
+            version: version!.version,
+            etag: version!.etag,
+            versionDescription: version!.versionDescription,
+            inputSchema: child.inputSchema,
+            outputSchema: child.outputSchema,
+            secretSchema: version!.secretSchema
+          }
+        ],
+        handler: null as any,
+        filename: toolset.filename,
+        author: toolset.author,
+        tutorialUrl: toolset.tutorialUrl,
+        readmeUrl: toolset.readmeUrl
+      };
     }
+    return undefined;
   }
-  const tool = tools.get(toolId) as ToolType;
-  if (tool && version) {
-    return {
-      ...tool,
-      versionList: tool.versionList?.filter((v) => v.value === version)
-    };
+
+  const tool = tools.get(baseToolId);
+  if (!tool) return undefined;
+
+  // 如果指定了 version，过滤 versionList
+  if (_version) {
+    const filtered = tool.versionList?.filter((v) => v.version === _version);
+    if (!filtered?.length) return undefined;
+    return { ...tool, versionList: filtered };
   }
+
   return tool;
 }
 
 export function getToolTags(): z.infer<typeof ToolTagListSchema> {
   return Object.entries(ToolTagsNameMap).map(([id, name]) => ({
-    value: id as z.infer<typeof ToolTagSchema>,
-    label: name.en
+    label: name,
+    value: id as z.infer<typeof ToolTagSchema>
   }));
 }
 
