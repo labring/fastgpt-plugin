@@ -5,6 +5,34 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'Baichuan3-Turbo',
+      maxContext: 32000,
+      maxTokens: 4000,
+      quoteMaxToken: 30000,
+      maxTemperature: 1.2,
+      vision: false,
+      reasoning: false,
+      toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'Baichuan3-Turbo-128k',
+      maxContext: 128000,
+      maxTokens: 4000,
+      quoteMaxToken: 100000,
+      maxTemperature: 1.2,
+      vision: false,
+      reasoning: false,
+      toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.embedding,
+      model: 'Baichuan-Text-Embedding',
+      defaultToken: 512,
+      maxToken: 8192
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'Baichuan4',
       maxContext: 128000,
       maxTokens: 4000,
