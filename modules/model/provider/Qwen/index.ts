@@ -5,74 +5,14 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: 'qwen3.6-plus',
-      maxContext: 1000000,
-      maxTokens: 64000,
-      quoteMaxToken: 1000000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
-      vision: true,
-      reasoning: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'qwen3.5-flash',
-      maxContext: 1000000,
-      maxTokens: 64000,
-      quoteMaxToken: 1000000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
-      vision: true,
-      reasoning: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'qwen3.5-plus',
       maxContext: 1000000,
-      maxTokens: 64000,
+      maxTokens: 65536,
       quoteMaxToken: 1000000,
       maxTemperature: 1,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
+      responseFormatList: ['text', 'json_object'],
       vision: true,
       reasoning: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'qwen3-max',
-      maxContext: 256000,
-      maxTokens: 64000,
-      quoteMaxToken: 256000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'qwen3-vl-flash',
-      maxContext: 25000,
-      maxTokens: 8000,
-      quoteMaxToken: 20000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: true,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'qwen3-vl-plus',
-      maxContext: 25000,
-      maxTokens: 8000,
-      quoteMaxToken: 20000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: true,
-      reasoning: false,
       toolChoice: true
     },
     {
@@ -82,7 +22,7 @@ const models: ProviderConfigType = {
       maxTokens: 8000,
       quoteMaxToken: 120000,
       maxTemperature: 1,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
+      responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
       toolChoice: true
@@ -98,6 +38,18 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: false,
       toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3-max',
+      maxContext: 256000,
+      maxTokens: 64000,
+      quoteMaxToken: 256000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: false,
+      reasoning: false,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -130,7 +82,7 @@ const models: ProviderConfigType = {
       maxTokens: 16000,
       quoteMaxToken: 1000000,
       maxTemperature: 1,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
+      responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
       toolChoice: true
@@ -161,6 +113,30 @@ const models: ProviderConfigType = {
       defaultConfig: {
         stream: true
       }
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3-vl-flash',
+      maxContext: 25000,
+      maxTokens: 8000,
+      quoteMaxToken: 20000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3-vl-plus',
+      maxContext: 25000,
+      maxTokens: 8000,
+      quoteMaxToken: 20000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: false,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
