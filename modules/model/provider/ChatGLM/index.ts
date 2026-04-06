@@ -11,7 +11,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 100000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
-      vision: true,
+      vision: false,
       reasoning: true,
       toolChoice: true
     },
