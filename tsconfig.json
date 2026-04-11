@@ -9,7 +9,9 @@
 
     // Bundler mode
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "allowImportingTsExtensions": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
@@ -24,13 +26,24 @@
     "noPropertyAccessFromIndexSignature": false,
 
     // Performance optimizations
-    "baseUrl": "./",
-    "paths": {
-      "@fastgpt-plugin/helpers/*": ["./packages/helpers/src/*"]
-    },
+    "baseUrl": ".",
 
+    "paths": {
+      "@domain/*": ["packages/domain/src/*"],
+      "@usecase/*": ["packages/usecase/src/*"],
+      "@shared/*": ["packages/shared/src/*"],
+      "@interface-adapter/*": ["packages/interface-adapter/src/*"],
+      "@infrastructure/*": ["packages/infrastructure/src/*"]
+    },
     // Performance optimizations
     "incremental": true,
     "assumeChangesOnlyAffectDirectDependencies": true
-  }
+  },
+  "include": [
+    "packages/**/*.ts",
+    "apps/**/*.ts",
+    "sdks/**/*.ts",
+    "tests/**/*.ts",
+    "packages/**/*.d.ts"
+  ]
 }

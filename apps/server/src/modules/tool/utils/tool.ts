@@ -1,27 +1,30 @@
-import { getPrivateS3Server, getPublicS3Server } from '@/lib/s3';
-import { tempPkgDir, tempToolsDir, toolsDir, UploadToolsS3Path } from '../constants';
-import {
-  ToolTagEnum,
-  ToolTagSchema,
-  buildGlobalToolId
-} from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import { createHash } from 'node:crypto';
+import { createWriteStream, existsSync, mkdirSync } from 'node:fs';
+import { readdir, readFile, rm, stat } from 'node:fs/promises';
 import path, { parse } from 'node:path';
-import { mimeMap } from '@/lib/s3/const';
+import { pipeline } from 'node:stream/promises';
+
 import { catchError, ToolTagsNameMap, unpkg } from '@fastgpt-plugin/helpers/index';
 import { loadManifest } from '@fastgpt-plugin/helpers/tools/helper';
-import { readdir, readFile, stat, rm } from 'node:fs/promises';
-import { getLogger, mod } from '@/lib/logger';
+import type { ToolHandlerReturnType } from '@fastgpt-plugin/helpers/tools/schemas/req';
+import {
+  buildGlobalToolId,
+  ToolTagEnum,
+  ToolTagSchema
+} from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import type z from 'zod';
+
 import { getCachedData } from '@/lib/cache';
 import { SystemCacheKeyEnum } from '@/lib/cache/type';
-import { createWriteStream, existsSync, mkdirSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import type z from 'zod';
-import type { ToolTagListSchema } from '../schemas';
-import { pipeline } from 'node:stream/promises';
-import { getErrText } from '@/utils/err';
+import { getLogger, mod } from '@/lib/logger';
 import type { PluginManager } from '@/lib/plugin_manager';
-import type { ToolHandlerReturnType } from '@fastgpt-plugin/helpers/tools/schemas/req';
 import type { InvokeOptions, ServiceConfig } from '@/lib/process_pool/types';
+import { getPrivateS3Server, getPublicS3Server } from '@/lib/s3';
+import { mimeMap } from '@/lib/s3/const';
+import { getErrText } from '@/utils/err';
+
+import { tempPkgDir, tempToolsDir, toolsDir, UploadToolsS3Path } from '../constants';
+import type { ToolTagListSchema } from '../schemas';
 
 const logger = getLogger(mod.tool);
 

@@ -1,0 +1,25 @@
+{
+  "name": "@fastgpt-plugin/interface-adapter",
+  "type": "module",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hono/zod-openapi": "^1.2.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@fastgpt-plugin/domain": "workspace:*",
+    "@fastgpt-plugin/usecase": "workspace:*",
+    "typescript": "catalog:"
+  },
+  "exports": {
+    "./*": {
+      "import": "./src/*.ts"
+    }
+  }
+}

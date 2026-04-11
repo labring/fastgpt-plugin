@@ -1,52 +1,21 @@
 import z from 'zod';
-import { I18nStringSchema } from '../value-objects/i18n-string.vo';
-import { PluginSourceSchema } from '@fastgpt-plugin/helpers/plugins/type';
 
-export const PluginTagSchema = z.enum([
-  'tools',
-  'search',
-  'multimodal',
-  'communication',
-  'finance',
-  'design',
-  'productivity',
-  'news',
-  'entertainment',
-  'social',
-  'scientific',
-  'other'
-]);
+import { ToolSchema, type ToolType } from './tool.entity';
+export {
+  PluginBaseSchema,
+  type PluginBaseType,
+  PluginTagEnum,
+  PluginTagSchema,
+  type PluginTagType,
+  PluginTypeEnum,
+  PluginTypeSchema,
+  type PluginTypeType
+} from './plugin-base.entity';
+import { PluginBaseSchema, type PluginBaseType } from './plugin-base.entity';
 
-export const PluginTagEnum = PluginTagSchema.enum;
+// 插件配置类型, 抽象类型，由具体运行时实现
+export type PluginRuntimeConfigType = object;
 
-export const PluginTypeSchema = z.enum([
-  'tool',
-  'model',
-  'workflow',
-  /** unimplemented */
-  'dataset'
-]);
+export const PluginSchema = z.union([PluginBaseSchema, ToolSchema]);
 
-export type PluginTypeType = z.infer<typeof PluginTypeSchema>;
-
-export const PluginTypeEnum = PluginTypeSchema.enum;
-
-export const PluginSchema = z.object({
-  pluginId: z.string(),
-  version: z.string(),
-  etag: z.string(),
-
-  type: PluginTypeSchema,
-  source: PluginSourceSchema,
-
-  author: z.string().optional(),
-  name: I18nStringSchema,
-  icon: z.string(),
-  tutorialUrl: z.url().optional(),
-  readmeUrl: z.url().optional(),
-  description: I18nStringSchema.optional(),
-  tags: z.array(PluginTagSchema).optional(),
-  versionDescription: I18nStringSchema.optional()
-});
-
-export type PluginType = z.output<typeof PluginSchema>;
+export type PluginType = PluginBaseType | ToolType; // TODO: add more types of plugin

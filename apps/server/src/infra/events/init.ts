@@ -1,4 +1,4 @@
-import { getPublicS3Server } from '../s3';
+import { getPublicS3Server } from '../../../../../packages/infrastructure/src/storage/s3';
 import { SubPub } from './class';
 import { WorkerManager } from '../worker';
 import type { SSEStreamingApi } from 'hono/streaming';

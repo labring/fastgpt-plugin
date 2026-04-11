@@ -1,0 +1,19 @@
+{
+  "name": "@fastgpt-plugin/usecase",
+  "type": "module",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@fastgpt-plugin/domain": "workspace:*",
+    "@fastgpt-plugin/shared": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

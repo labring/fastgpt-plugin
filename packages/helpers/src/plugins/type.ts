@@ -1,9 +1,6 @@
 import z from 'zod';
 import { I18nStringSchema } from '../common/schemas/i18n';
 
-export const PluginSourceSchema = z.enum(['system', 'user']);
-export const PluginSourceEnum = PluginSourceSchema.enum;
-
 export const PluginChildSchema = z.object({
   id: z.string(),
   name: I18nStringSchema,

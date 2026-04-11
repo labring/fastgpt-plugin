@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["src/**/*"],
+  "compilerOptions": {
+    "paths": {
+      "@domain/*": ["packages/domain/src/*"],
+      "@usecase/*": ["packages/usecase/src/*"],
+      "@shared/*": ["packages/shared/src/*"]
+    }
+  }
+}

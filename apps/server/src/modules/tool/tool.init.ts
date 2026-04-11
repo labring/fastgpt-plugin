@@ -1,15 +1,17 @@
-import { getLogger, mod } from '@/lib/logger';
-import { batch, ensureDir } from '@fastgpt-plugin/helpers/index';
 import { existsSync } from 'node:fs';
-import { toolsDir, UploadToolsS3Path } from './constants';
-import { MongoSystemPlugin } from '@/lib/mongo/models/plugins';
-import { LoadToolsByFilename } from './utils/tool';
-import { getPrivateS3Server } from '@/lib/s3';
-import { PluginManager } from '@/lib/plugin_manager';
 import path from 'node:path';
-import { env } from '@/env';
+
+import { batch, ensureDir } from '@fastgpt-plugin/helpers/index';
 import { buildGlobalPluginId } from '@fastgpt-plugin/helpers/plugins/type';
-import { SystemCacheKeyEnum } from '@/lib/cache/type';
+
+import { env } from '@/env';
+import { getLogger, mod } from '@/lib/logger';
+import { MongoSystemPlugin } from '@/lib/mongo/models/plugins';
+import { PluginManager } from '@/lib/plugin_manager';
+import { getPrivateS3Server } from '@/lib/s3';
+
+import { LoadToolsByFilename } from './utils/tool';
+import { toolsDir, UploadToolsS3Path } from './constants';
 
 declare global {
   var isIniting: boolean;

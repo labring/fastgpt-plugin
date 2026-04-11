@@ -3,6 +3,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import json from '@eslint/json';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default defineConfig([
   {
@@ -38,6 +39,35 @@ export default defineConfig([
           argsIgnorePattern: '^_'
         }
       ]
+    }
+  },
+  {
+    plugins: {
+      'simple-import-sort': simpleImportSort
+    },
+    rules: {
+      'simple-import-sort/imports': [
+        'error',
+        {
+          groups: [
+            // side effect
+            ['^\\u0000'],
+            // node builtin
+            ['^node:'],
+            // external packages
+            ['^@?\\w'],
+            // aliases
+            ['^@domain', '^@usecase', '^@infra', '^@shared', '^@/', '^~'],
+            // parent imports
+            ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
+            // same-folder imports
+            ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+            // type imports
+            ['^.+\\.?(css)$']
+          ]
+        }
+      ],
+      'simple-import-sort/exports': 'error'
     }
   }
 ]);

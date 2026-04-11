@@ -1,16 +1,21 @@
-import { app } from '@/app';
-import { tempDir, tempToolsDir } from '@/modules/tool/constants';
-import { initWorkflowTemplates } from '@/modules/workflow/init';
-import { configureProxy } from '@/utils/setup-proxy';
 import { serve, type ServerType } from '@hono/node-server';
-import { env } from '@/env';
-import { initModels } from '@/modules/model/model.init';
-import { initDatasets } from '@/modules/dataset/dataset.init';
-import { configureLogger, getLogger, root } from '@/infra/logger';
-import { initS3Service } from '@/infra/s3';
-import { connectionMongo, connectMongo, MONGO_URL } from '@/infra/mongo';
-import { getCachedData, refreshVersionKey } from '@/infra/redis/cache';
-import { SystemCacheKeyEnum } from '@/infra/redis/cache/type';
+
+import { env } from '@infrastructure/env';
+import { app } from '@infrastructure/hono/app';
+import { configureLogger, destroyLogger, getLogger, root } from '@infrastructure/logger';
+import { configureProxy } from '@infrastructure/utils/proxy';
+
+import deps from './src/deps';
+// import { init } from './src/init';
+import { makePluginRoute } from './src/routes/plugin.route';
+import { makeToolRoute } from './src/routes/tool.route';
+
+// const pluginRoute = makePluginRoute(deps);
+const toolRoute = makeToolRoute(deps);
+console.log(toolRoute.openAPIRegistry);
+
+// app.route('/api', pluginRoute);
+app.route('/api', toolRoute);
 
 const logger = getLogger(root);
 
@@ -23,21 +28,7 @@ let server: ServerType | null = null;
 async function prepare() {
   configureProxy(); // setup global proxy
   await configureLogger(); // setup logger
-
-  await initS3Service();
-  await connectMongo(connectionMongo, MONGO_URL); // connect to MongoDB
-
-  await refreshDir(tempDir); // cleanup 'tmp' directory
-  await ensureDir(tempToolsDir); // ensure temp tools directory
-
-  await refreshVersionKey(SystemCacheKeyEnum.systemTool); // check server version
-
-  await Promise.all([
-    getCachedData(SystemCacheKeyEnum.systemTool), // prepare tool cache
-    initModels(), // initialize model list
-    initWorkflowTemplates(), // initialize workflow templates
-    initDatasets()
-  ]);
+  // init();
 }
 
 function shutdown() {

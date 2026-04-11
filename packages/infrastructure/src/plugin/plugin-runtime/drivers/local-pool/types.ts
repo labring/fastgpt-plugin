@@ -1,0 +1,126 @@
+import type { Mutex } from 'es-toolkit';
+import z from 'zod';
+
+import type { PluginType } from '@domain/entities/plugin.entity';
+import type { InvokePort } from '@domain/ports/invoke.port';
+
+import type { PluginService } from './service';
+
+export type LocalPoolPluginItemType = {
+  filePath: string; // for loading the .js file to execute
+  config: LocalPoolPluginConfigType;
+  service: PluginService;
+  meta: PluginType;
+  mutex: Mutex;
+};
+
+export const LocalPoolPluginConfigSchema = z
+  .object({
+    minPods: z.number().nonnegative(),
+    maxPods: z.number().positive(),
+    idleTimeout: z.number().positive(),
+    podTimeout: z.number().positive(),
+    maxRequestsPerPod: z.number().nonnegative(),
+    maxConcurrentRequestsPerPod: z.number().positive(),
+    maxQueueSize: z.number().positive(),
+    queueTimeout: z.number().nonnegative()
+  })
+  .refine((config) => config.minPods <= config.maxPods, {
+    message: 'minPods cannot be greater than maxPods',
+    path: ['minPods']
+  });
+
+export type LocalPoolPluginConfigType = z.infer<typeof LocalPoolPluginConfigSchema>;
+
+export const LocalPoolGlobalConfigSchema = z.object({
+  maxTotalPods: z.number().nonnegative(),
+  healthCheckInterval: z.number().nonnegative()
+});
+
+export type LocalPoolGlobalConfigType = z.infer<typeof LocalPoolGlobalConfigSchema>;
+
+// ============ Pod 相关类型 ============
+
+export type PodStatus = 'pending' | 'running' | 'idle' | 'terminating' | 'failed';
+
+/**
+ * PluginPod 信息
+ */
+export interface PodInfo {
+  podId: string;
+  status: PodStatus;
+  requestsExecuted: number;
+  /** 当前正在处理的并发请求数 */
+  activeRequests: number;
+  createdAt: number;
+  lastActiveAt: number;
+  pid?: number;
+}
+
+// ============ 调用选项 ============
+
+export interface InvokeOptions {
+  timeout?: number;
+  traceId?: string;
+  priority?: number;
+  invoke: InvokePort;
+}
+
+// ============ 监控指标类型 ============
+
+export interface PodStats {
+  total: number;
+  running: number;
+  busy: number;
+  idle: number;
+  /** 正在启动中（已 fork、尚未发送 ready）的 Pod 数量 */
+  pending: number;
+}
+
+export interface ResponseTimeStats {
+  avg: number;
+  p95: number;
+  p99?: number;
+}
+
+export interface ServiceMetrics {
+  pods: PodStats;
+  queueLength: number;
+  responseTime: ResponseTimeStats;
+  rps: number;
+  errorRate: number;
+  crashCount: number;
+  totalRequests: number;
+  maxPods?: number;
+}
+
+export interface GlobalMetrics {
+  totalServices: number;
+  totalPods: number;
+  totalRequests: number;
+  avgResponseTime: number;
+  errorRate: number;
+}
+
+// ============ 销毁选项 ============
+
+export interface DestroyOptions {
+  force?: boolean;
+  timeout?: number;
+}
+
+// ============ 事件类型 ============
+
+export interface LocalPoolRuntimeCallbacks {
+  onPluginUnregistered?: (pluginId: string) => void;
+  onPluginUnhealthy?: (pluginId: string, reason: string) => void;
+  onQuotaExceeded?: (current: number, max: number) => void;
+  onHealthCheck?: (plugins: string[]) => void;
+}
+
+export interface PluginServiceCallbacks {
+  onPodCreated?: () => void;
+  onRequestCompleted?: (payload: { requestId: string; duration: number }) => void;
+  onRequestFailed?: (payload: { requestId: string; error: unknown }) => void;
+  onPodLog?: (event: { podId: string; level: 'debug' | 'error'; message: string }) => void;
+}

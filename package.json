@@ -26,6 +26,7 @@
     "chalk": "^5.4.1",
     "date-fns": "^4.1.0",
     "eslint": "^9.24.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^16.0.0",
     "husky": "^8.0.3",
     "json5": "^2.2.3",

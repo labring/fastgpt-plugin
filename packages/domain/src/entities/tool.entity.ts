@@ -1,21 +1,11 @@
 import z from 'zod';
-import { PluginSchema, PluginTypeEnum } from './plugin.entity';
+
 import { I18nStringSchema } from '../value-objects/i18n-string.vo';
 
-export const ToolSchema = z.object({
-  ...PluginSchema.shape,
-  type: z.literal(PluginTypeEnum.tool),
-
-  meta: z.object({
-    toolDescription: z.string(),
-    inputSchema: z.any(),
-    outputSchema: z.any(),
-    secretSchema: z.any().optional()
-  })
-});
+import { PluginBaseSchema, PluginTypeEnum } from './plugin-base.entity';
 
 export const ToolSetChildItemSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   name: I18nStringSchema,
   description: I18nStringSchema.optional(),
   icon: z.string(),
@@ -24,14 +14,26 @@ export const ToolSetChildItemSchema = z.object({
   outputSchema: z.any()
 });
 
+export const ToolSchema = z.object({
+  ...PluginBaseSchema.shape,
+  type: z.literal(PluginTypeEnum.tool),
+
+  meta: z.object({
+    toolDescription: z.string(),
+    inputSchema: z.any().optional(),
+    outputSchema: z.any().optional(),
+    secretSchema: z.any().optional(),
+    children: z.array(ToolSetChildItemSchema).optional()
+  })
+});
+
 export const ToolSetSchema = z.object({
-  ...PluginSchema.shape,
+  ...PluginBaseSchema.shape,
   type: z.literal(PluginTypeEnum.tool),
 
   meta: z.object({
     secretSchema: z.any().optional(),
-    toolDescription: z.string(),
-    children: z.array(ToolSetChildItemSchema)
+    toolDescription: z.string()
   })
 });
 

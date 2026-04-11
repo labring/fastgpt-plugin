@@ -1,0 +1,17 @@
+{
+  "name": "@fastgpt-plugin/shared",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

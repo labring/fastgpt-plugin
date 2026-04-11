@@ -1,6 +1,6 @@
 import z from 'zod';
-import type { SystemVarType } from './system-var.vo';
-import type { InvokePort } from '../ports/invoke.port';
+
+import { SystemVarSchema } from './system-var.vo';
 
 export const ToolHandlerReturnSchema = z.object({
   error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
@@ -8,37 +8,27 @@ export const ToolHandlerReturnSchema = z.object({
 });
 export type ToolHandlerReturnType = z.infer<typeof ToolHandlerReturnSchema>;
 
-export const ToolPermissionEnumSchema = z.enum([
-  'userInfo:read',
-  'teamInfo:read',
-  'model:read',
-  'dataset:read'
-]);
-
-export const ToolPermissionEnum = ToolPermissionEnumSchema.enum;
-export type ToolPermissionEnumType = z.infer<typeof ToolPermissionEnumSchema>;
-
 export const StreamMessageTypeSchema = z.enum(['response', 'error', 'stream']);
 export const StreamMessageTypeEnum = StreamMessageTypeSchema.enum;
 
 export const StreamDataAnswerTypeSchema = z.enum(['answer', 'fastAnswer']);
 export const StreamDataAnswerTypeEnum = StreamDataAnswerTypeSchema.enum;
 
-export const StreamDataSchema = z.object({
+export const ToolAnswerSchema = z.object({
   type: StreamDataAnswerTypeSchema,
   content: z.string()
 });
 
-export type StreamDataType = z.infer<typeof StreamDataSchema>;
+export type ToolAnswerType = z.infer<typeof ToolAnswerSchema>;
 
-export const StreamMessageSchema = z.discriminatedUnion('type', [
+export const ToolStreamMessageSchema = z.discriminatedUnion('type', [
   z.object({
     type: StreamMessageTypeEnum.response,
     data: ToolHandlerReturnSchema
   }),
   z.object({
     type: StreamMessageTypeEnum.stream,
-    data: StreamDataSchema
+    data: ToolAnswerSchema
   }),
   z.object({
     type: StreamMessageTypeEnum.error,
@@ -46,17 +36,18 @@ export const StreamMessageSchema = z.discriminatedUnion('type', [
   })
 ]);
 
-export type StreamMessageType = z.infer<typeof StreamMessageSchema>;
+export type ToolStreamMessageType = z.infer<typeof ToolStreamMessageSchema>;
 
-export type ToolContextType = {
-  // emitter: EventEmitter;
-  systemVar: SystemVarType;
-  /** 插件反向调用 Host 服务的入口 */
-  invoke: InvokePort;
-  [key: string]: unknown;
-};
+export const ToolRunContextSchema = z.object({
+  systemVar: z.record(z.string(), z.unknown())
+});
 
-export type ToolHandlerFunctionType = (
-  input: Record<string, unknown>,
-  ctx: ToolContextType
-) => Promise<ToolHandlerReturnType>;
+export const ToolRunInputSchema = z.object({
+  pluginId: z.string(),
+  version: z.string(),
+  childId: z.string().optional(), // 工具集时存在
+  input: z.record(z.string(), z.unknown()),
+  systemVar: SystemVarSchema
+});
+
+export type ToolRunInputType = z.infer<typeof ToolRunInputSchema>;

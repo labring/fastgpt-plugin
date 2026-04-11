@@ -1,0 +1,28 @@
+{
+  "Use Case": {
+    "scope": "typescript",
+    "prefix": "uc",
+    "body": [
+      "/**",
+      " * Usecase Description",
+      " * Description：$2",
+      " * Version：v1.0.0",
+      " * Author：FinleyGe",
+      " */",
+      "",
+      "import type { Result } from '@domain/value-objects/result.vo';",
+      "/** Dependencies */",
+      "type Deps = {$3};",
+      "",
+      "/** Input Type*/",
+      "type Input = {$4};",
+      "",
+      "/** Output Type */",
+      "type Output = Promise<Result<{$5}>>;",
+      "",
+      "export const make$1UC = (deps: Deps) => async (input: Input): Output => {",
+      "",
+      "};"
+    ]
+  }
+}

@@ -1,0 +1,191 @@
+import { z } from '@hono/zod-openapi';
+
+import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin.entity';
+import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
+import { PluginSourceSchema, PluginTagListSchema } from '@domain/value-objects/plugin.vo';
+
+export const PluginDTOSchema = z
+  .object({
+    pluginId: z.string().openapi({
+      description: 'Plugin ID',
+      example: 'getTime'
+    }),
+    version: z.string().openapi({
+      description: 'Plugin version',
+      example: '1.0.0'
+    }),
+    etag: z.string().openapi({
+      description: 'Plugin etag',
+      example: 'a1d809f6'
+    }),
+
+    type: z.object(PluginTypeSchema).openapi({
+      description: 'Plugin type',
+      example: 'tool'
+    }),
+    source: z.object(PluginSourceSchema).openapi({
+      description: 'Plugin source',
+      example: 'system'
+    }),
+
+    author: z.string().optional().openapi({
+      description: 'Plugin author',
+      example: ''
+    }),
+    name: z.object(I18nStringSchema).openapi({
+      description: 'Plugin name',
+      example: {
+        en: 'Get Time',
+        'zh-CN': '获取时间'
+      }
+    }),
+    icon: z.string().openapi({
+      description: 'Plugin icon',
+      example: 'https://oss.example.com/getTime/icon.svg'
+    }),
+    tutorialUrl: z.url().optional().openapi({
+      description: 'Plugin tutorial URL',
+      example: 'https://oss.example.com/getTime/tutorial'
+    }),
+    readmeUrl: z.url().optional().openapi({
+      description: 'Plugin readme URL',
+      example: 'https://oss.example.com/getTime/README.md'
+    }),
+    description: I18nStringSchema.optional().openapi({
+      description: 'Plugin description',
+      example: {
+        en: 'Plugin description',
+        'zh-CN': '插件描述'
+      }
+    }),
+    tags: z
+      .array(PluginTagSchema)
+      .optional()
+      .openapi({
+        description: 'Plugin tags',
+        example: ['tool']
+      }),
+    versionDescription: I18nStringSchema.optional().openapi({
+      description: 'Plugin version description',
+      example: {
+        en: 'Plugin version description',
+        'zh-CN': '插件版本描述'
+      }
+    })
+  })
+  .openapi({
+    description: 'Plugin Infomation'
+  });
+
+export const PluginUploadParamsSchema = z
+  .object({
+    file: z.file().openapi({
+      description: 'Plugin zip file',
+      example: 'example.pkg'
+    })
+  })
+  .openapi({
+    description: 'Plugin upload parameters',
+    example: {
+      file: 'example.pkg'
+    }
+  });
+
+export const PluginUniqueIdDTOSchema = z.object({
+  pluginId: z.string().openapi({
+    description: 'Plugin unique id',
+    example: 'getTime'
+  }),
+  version: z.string().openapi({
+    description: 'Plugin version id',
+    example: '1.0.0'
+  }),
+  etag: z.string().openapi({
+    description: 'Plugin etag',
+    example: '12345678'
+  })
+});
+
+export const PluginInstallDTOSchema = {
+  request: z.object({
+    urls: z.array(z.string()).openapi({
+      description: 'Plugin install urls',
+      example: [
+        'https://oss.example.com/plugin/getTime.pkg',
+        'https://oss.example.com/plugin/delay.pkg'
+      ]
+    })
+  }),
+  response: z
+    .object({
+      failed: z
+        .array(
+          z.object({
+            url: z.string(),
+            reason: I18nStringSchema
+          })
+        )
+        .optional()
+    })
+    .openapi({
+      description: 'Plugin install response',
+      examples: [
+        {},
+        {
+          failed: [
+            {
+              url: 'https://oss.example.com/plugin/getTime.pkg',
+              reason: {
+                en: 'Failed to install plugin',
+                'zh-CN': '安装插件失败'
+              }
+            }
+          ]
+        }
+      ]
+    })
+};
+
+export const PluginListParamsSchema = z.object({
+  types: z
+    .array(PluginTypeSchema)
+    .optional()
+    .openapi({
+      description: 'Filter by plugin types',
+      example: ['tool']
+    }),
+  tags: z
+    .array(PluginTagSchema)
+    .optional()
+    .openapi({
+      description: 'Filter by plugin tags',
+      example: ['tools', 'productivity']
+    }),
+  op: z.enum(['or', 'and']).optional().openapi({
+    description: 'Filter operator for tags and types',
+    example: 'or'
+  })
+});
+
+export const PluginTagListDTOSchema = z.object(PluginTagListSchema).openapi({
+  description: 'Plugin tag list'
+});
+
+export const PluginRuntimeConfigSchema = z.object({}).catchall(z.unknown()).openapi({
+  description: 'Plugin runtime config'
+});
+
+export const PluginRuntimeConfigGetParamsSchema = z.object({
+  pluginId: z.string().openapi({
+    description: 'Plugin ID',
+    example: 'getTime'
+  })
+});
+
+export const PluginRuntimeConfigSetParamsSchema = z.object({
+  pluginId: z.string().openapi({
+    description: 'Plugin ID',
+    example: 'getTime'
+  }),
+  config: PluginRuntimeConfigSchema
+});
