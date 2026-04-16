@@ -31,6 +31,7 @@ import type {
   LocalPoolPluginItemType,
   ServiceMetrics
 } from './types';
+import { InvokeManager } from '@infrastructure/plugin/invoke/invoke.impl';
 
 export type LocalPoolPluginRuntimeManagerDeps = {
   versionKeyStore: VersionKeyStore;

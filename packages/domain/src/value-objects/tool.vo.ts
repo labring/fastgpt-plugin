@@ -47,7 +47,7 @@ export const ToolRunInputSchema = z.object({
   ...UserPluginIdSchema.shape,
   childId: z.string().optional(), // 工具集时存在
   input: z.record(z.string(), z.unknown()),
-  secret: z.record(z.string(), z.unknown()).optional(),
+  secrets: z.record(z.string(), z.unknown()).optional(),
   systemVar: SystemVarSchema
 });
 

@@ -10,7 +10,6 @@ import type { Result } from '../../value-objects/result.vo';
 
 /** 操作 Plugin S3, Mongo，本地缓存, 代码里面的静态配置 ...*/
 export interface PluginRepoPort {
-  init(): Promise<Result>;
   /** 获取 pending 的 plugin id */
   getPendingPluginIds(): Promise<Result<PluginUniqueIdType[]>>;
   /** 创建插件 */
@@ -37,6 +36,7 @@ export interface PluginRepoPort {
     tags?: PluginTagType[];
     op?: 'or' | 'and';
   }): Promise<Result<PluginType[]>>;
+  listActive(): Promise<Result<PluginType[]>>;
 
   listTags(): Promise<Result<PluginTagListType>>;
 

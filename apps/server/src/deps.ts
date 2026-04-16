@@ -61,9 +61,11 @@ const localPoolPluginRuntimeManager = LocalPoolPluginRuntimeManager.getInstance(
   versionKeyStore
 });
 
+export const pluginRuntimeManager = localPoolPluginRuntimeManager;
+
 export const toolManager = ToolManager.getInstance({
   pluginRepo,
-  pluginRuntimeManager: localPoolPluginRuntimeManager
+  pluginRuntimeManager
 });
 
 const deps = {
@@ -76,7 +78,7 @@ const deps = {
   mongoClient,
   fileTTLManager,
   toolManager,
-  pluginRuntimeManager: localPoolPluginRuntimeManager
+  pluginRuntimeManager
 };
 
 export default deps;

@@ -9,6 +9,7 @@ import {
 } from '@domain/ports/invoke.port';
 import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginPermissionEnumType } from '@domain/value-objects/permission.vo';
+import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 
 import type { PluginIOMessage } from '../../ports/plugin-io.port';
@@ -21,7 +22,6 @@ import {
   type PluginIpcIncomingStream
 } from './ipc-channel';
 import type { PodInfo, PodStatus } from './types';
-import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
 
 export interface PluginPodCallbacks {
   onReady?: (info: PodInfo) => void;

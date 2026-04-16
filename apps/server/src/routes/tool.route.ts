@@ -43,7 +43,7 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
       const uc = makeToolRunUC(deps);
       const [result, err] = await uc(ToolRunInputSchema.parse(body));
       if (err) {
-        return c.json({ error: err.reason }, 400);
+        return c.json({ error: err }, 400);
       }
       return c.json(result, 200);
     }

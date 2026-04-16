@@ -279,6 +279,23 @@ export class PluginRepo implements PluginRepoPort {
         )
         .lean();
 
+      await this.deps.mongoClient.getModel('pluginInstallation').updateOne(
+        {
+          source: 'system',
+          pluginId: plugin.pluginId,
+          version: plugin.version
+        },
+        {
+          $set: {
+            etag: plugin.etag,
+            pluginObjectId: plugin._id
+          }
+        },
+        {
+          upsert: true
+        }
+      );
+
       return successResult(confirmedPlugin);
     } catch (error) {
       return failureResult({ en: 'Failed to confirm plugin', 'zh-CN': '确认插件失败' }, error);
@@ -316,6 +333,27 @@ export class PluginRepo implements PluginRepoPort {
       return successResult(results.map((result) => this.toDomainPlugin(result)));
     } catch (error) {
       return failureResult({ en: 'Failed to list plugins', 'zh-CN': '获取插件列表失败' }, error);
+    }
+  }
+
+  async listActive(): Promise<Result<PluginType[]>> {
+    try {
+      const results = await this.deps.mongoClient
+        .getModel('plugin')
+        .find({
+          status: PluginStatusEnum.active
+        })
+        .lean();
+
+      return successResult(results.map((result) => this.toDomainPlugin(result)));
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Failed to list active plugins',
+          'zh-CN': '获取 active 插件列表失败'
+        },
+        error
+      );
     }
   }
 
@@ -552,8 +590,6 @@ export class PluginRepo implements PluginRepoPort {
 
         return await this.deps.localFileStorageRepo.getFileObject(indexFileKey);
       })();
-
-      console.debug(indexFileKey, err);
 
       if (err) {
         return failureResult(

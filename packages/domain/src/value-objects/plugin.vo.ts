@@ -24,7 +24,7 @@ export const PluginRuntimeModeEnum = PluginRuntimeModeSchema.enum;
 export const UserPluginIdSchema = z.object({
   pluginId: z.string(),
   version: z.string(),
-  source: PluginSourceSchema // 可选，如果没填，则认为是 system
+  source: PluginSourceSchema.optional() // 可选，如果没填，则认为是 system
 });
 
 export type UserPluginIdType = z.infer<typeof UserPluginIdSchema>;

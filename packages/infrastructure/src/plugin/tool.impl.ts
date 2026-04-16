@@ -1,14 +1,10 @@
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { ToolManagerPort } from '@domain/ports/plugin/tool.port';
-import { failureResult, successResult, type Result } from '@domain/value-objects/result.vo';
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type {
-  ToolAnswerType,
-  ToolRunInputType,
-  ToolStreamMessageType
-} from '@domain/value-objects/tool.vo';
+import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 export type ToolManagerDeps = {
   pluginRepo: PluginRepoPort;
@@ -40,13 +36,14 @@ export class ToolManager implements ToolManagerPort {
     version,
     childId,
     source,
-    secret
+    secrets
   }: ToolRunInputType): Promise<Result<StreamData<ToolStreamMessageType>>> {
     const [res, err] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
-      source,
+      source: source ?? 'system',
       version
     });
+
     if (err) {
       return failureResult(
         {
@@ -63,7 +60,7 @@ export class ToolManager implements ToolManagerPort {
       input,
       systemVar,
       childId,
-      secret
+      secrets
     } satisfies PluginToolRunPayloadType;
 
     const [invokeRes, invokeErr] = await this.deps.pluginRuntimeManager.invoke<

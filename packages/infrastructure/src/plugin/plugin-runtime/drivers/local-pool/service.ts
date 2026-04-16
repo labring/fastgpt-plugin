@@ -277,7 +277,6 @@ export class PluginService {
       maxRequests: this.config.maxRequestsPerPod,
       maxConcurrentRequests: this.config.maxConcurrentRequestsPerPod,
       pluginPermissions: this.pluginPermissions,
-      invokeManager,
       callbacks: {
         onError: (error: Error) => {
           this.handlePodError(pod, error);
