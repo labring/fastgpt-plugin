@@ -1,8 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { R } from '@interface-adapter/http/http.type';
 
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
-import { createOpenAPIHono } from '@infrastructure/hono/utils/response';
+import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import {
   aiproxyIdMap,
   getModelAvatarUrl,
@@ -43,7 +42,7 @@ export const makeModelRoute = (deps: ModelRouteDeps) => {
         }
       }
     }),
-    async (c) => c.json(R.success(modelList).body, 200)
+    async (c) => R.success(c, modelList)
   );
 
   route.openapi(
@@ -90,13 +89,10 @@ export const makeModelRoute = (deps: ModelRouteDeps) => {
         }))
       );
 
-      return c.json(
-        R.success({
-          modelProviders,
-          aiproxyIdMap
-        }).body,
-        200
-      );
+      return R.success(c, {
+        modelProviders,
+        aiproxyIdMap
+      });
     }
   );
 

@@ -1,8 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { R } from '@interface-adapter/http/http.type';
 
 import { makeRuntimeMetricsUC, type RuntimeMetricsUCDeps } from '@usecase/runtime/runtime-metrics.uc';
-import { createOpenAPIHono } from '@infrastructure/hono/utils/response';
+import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 
 export type RuntimeRouteDeps = RuntimeMetricsUCDeps;
 
@@ -46,10 +45,10 @@ export const makeRuntimeRoute = (deps: RuntimeRouteDeps) => {
       const [result, err] = await runtimeMetricsUC({});
 
       if (err) {
-        return c.json(R.fail(500, err.reason).body, 500);
+        return R.fail(c, 500, err.reason);
       }
 
-      return c.json(R.success(result).body, 200);
+      return R.success(c, result);
     }
   );
 

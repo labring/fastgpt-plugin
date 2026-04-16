@@ -3,7 +3,6 @@ import type { ReadableStream } from 'node:stream/web';
 
 import { createRoute, z } from '@hono/zod-openapi';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
-import { R } from '@interface-adapter/http/http.type';
 
 import { makePluginConfigGetUC } from '@usecase/plugin/plugin-config-get.uc';
 import { makeSetPluginConfigUC } from '@usecase/plugin/plugin-config-set.uc';
@@ -13,7 +12,7 @@ import { makePluginListUC } from '@usecase/plugin/plugin-list.uc';
 import { makePluginPruneDisabledUC } from '@usecase/plugin/plugin-prune-disabled.uc';
 import { makePluginTagListUC } from '@usecase/plugin/plugin-tag-list.uc';
 import { makePluginUploadUC, type PluginUploadUCDeps } from '@usecase/plugin/plugin-upload.uc';
-import { createOpenAPIHono } from '@infrastructure/hono/utils/response';
+import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 
 export type PluginRouteDeps = PluginInstallUCDeps & PluginUploadUCDeps & PluginConfirmUCDeps;
 
@@ -59,23 +58,17 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const file = formData.get('file');
 
       if (!file) {
-        return c.json(
-          R.fail(400, {
-            en: 'file is required',
-            'zh-CN': '没有上传文件'
-          }).body,
-          400
-        );
+        return R.fail(c, 400, {
+          en: 'file is required',
+          'zh-CN': '没有上传文件'
+        });
       }
 
       if (!(file instanceof File)) {
-        return c.json(
-          R.fail(400, {
-            en: 'file must be a File instance',
-            'zh-CN': '上传的文件必须是一个 File 实例'
-          }).body,
-          400
-        );
+        return R.fail(c, 400, {
+          en: 'file must be a File instance',
+          'zh-CN': '上传的文件必须是一个 File 实例'
+        });
       }
 
       const [result, err] = await pluginUploadUC({
@@ -86,7 +79,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
         return c.json(err, 400);
       }
 
-      return c.json(R.success(result).body, 200);
+      return R.success(c, result);
     }
   );
 
@@ -122,7 +115,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [, err] = await pluginConfirmUC({ uniqueId });
 
       if (err) {
-        return c.json(R.fail(500, err.reason).body, 500);
+        return R.fail(c, 500, err.reason);
       }
 
       return c.json({ ok: true }, 200);
@@ -156,10 +149,10 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [result, err] = await pluginPruneDisabledUC();
 
       if (err) {
-        return c.json(R.fail(500, err.reason).body, 500);
+        return R.fail(c, 500, err.reason);
       }
 
-      return c.json(R.success(result).body, 200);
+      return R.success(c, result);
     }
   );
 
@@ -203,10 +196,10 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
 
       if (err) {
-        return c.json(R.fail(500, err.reason).body, 500);
+        return R.fail(c, 500, err.reason);
       }
 
-      return c.json(R.success(result).body, 200);
+      return R.success(c, result);
     }
   );
 
@@ -241,10 +234,10 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [result, err] = await pluginListUC(query);
 
       if (err) {
-        return c.json(R.fail(500, err.reason).body, 500);
+        return R.fail(c, 500, err.reason);
       }
 
-      return c.json(R.success(result).body, 200);
+      return R.success(c, result);
     }
   );
 
@@ -275,10 +268,10 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [result, err] = await pluginTagListUC({});
 
       if (err) {
-        return c.json(R.fail(500, err.reason).body, 500);
+        return R.fail(c, 500, err.reason);
       }
 
-      return c.json(R.success(result).body, 200);
+      return R.success(c, result);
     }
   );
 
@@ -321,10 +314,10 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
 
       if (err) {
-        return c.json(R.fail(500, err.reason).body, 500);
+        return R.fail(c, 500, err.reason);
       }
 
-      return c.json(R.success(result).body, 200);
+      return R.success(c, result);
     }
   );
 
@@ -363,10 +356,10 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
 
       if (err) {
-        return c.json(R.fail(500, err.reason).body, 500);
+        return R.fail(c, 500, err.reason);
       }
 
-      return new Response(null, { status: 200 });
+      return R.empty(c);
     }
   );
 

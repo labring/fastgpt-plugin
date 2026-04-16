@@ -1,4 +1,4 @@
-import { createOpenAPIHono, R } from '@/routes/utils';
+import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 
 import {
   getContentRoute,
@@ -38,7 +38,7 @@ dataset.openapi(listSourcesRoute, async (c) => {
   await ensureSourcesRegistered();
   const sources = sourceRegistry.list();
   const sourcesInfo = sources.map(({ ...info }) => info);
-  return c.json(R.success(sourcesInfo), 200);
+  return R.success(c, sourcesInfo);
 });
 
 /**
@@ -50,10 +50,10 @@ dataset.openapi(getSourceConfigRoute, async (c) => {
   const config = sourceRegistry.list().find((s) => s.sourceId === sourceId);
 
   if (!config) {
-    return c.json(R.error(404, `Source not found: ${sourceId}`), 404);
+    return R.error(c, 404, `Source not found: ${sourceId}`);
   }
 
-  return c.json(R.success(config), 200);
+  return R.success(c, config);
 });
 
 /**
@@ -65,7 +65,7 @@ dataset.openapi(listFilesRoute, async (c) => {
   const callbacks = sourceRegistry.getCallbacks(body.sourceId);
 
   if (!callbacks) {
-    return c.json(R.error(404, `Source not found: ${body.sourceId}`), 404);
+    return R.error(c, 404, `Source not found: ${body.sourceId}`);
   }
 
   try {
@@ -73,9 +73,9 @@ dataset.openapi(listFilesRoute, async (c) => {
       config: body.config,
       parentId: body.parentId
     });
-    return c.json(R.success(files), 200);
+    return R.success(c, files);
   } catch (error) {
-    return c.json(R.error(400, error instanceof Error ? error.message : 'Unknown error'), 400);
+    return R.error(c, 400, error instanceof Error ? error.message : 'Unknown error');
   }
 });
 
@@ -88,7 +88,7 @@ dataset.openapi(getContentRoute, async (c) => {
   const callbacks = sourceRegistry.getCallbacks(body.sourceId);
 
   if (!callbacks) {
-    return c.json(R.error(404, `Source not found: ${body.sourceId}`), 404);
+    return R.error(c, 404, `Source not found: ${body.sourceId}`);
   }
 
   try {
@@ -96,9 +96,9 @@ dataset.openapi(getContentRoute, async (c) => {
       config: body.config,
       fileId: body.fileId
     });
-    return c.json(R.success(content), 200);
+    return R.success(c, content);
   } catch (error) {
-    return c.json(R.error(400, error instanceof Error ? error.message : 'Unknown error'), 400);
+    return R.error(c, 400, error instanceof Error ? error.message : 'Unknown error');
   }
 });
 
@@ -111,7 +111,7 @@ dataset.openapi(getPreviewUrlRoute, async (c) => {
   const callbacks = sourceRegistry.getCallbacks(body.sourceId);
 
   if (!callbacks) {
-    return c.json(R.error(404, `Source not found: ${body.sourceId}`), 404);
+    return R.error(c, 404, `Source not found: ${body.sourceId}`);
   }
 
   try {
@@ -119,9 +119,9 @@ dataset.openapi(getPreviewUrlRoute, async (c) => {
       config: body.config,
       fileId: body.fileId
     });
-    return c.json(R.success({ url }), 200);
+    return R.success(c, { url });
   } catch (error) {
-    return c.json(R.error(400, error instanceof Error ? error.message : 'Unknown error'), 400);
+    return R.error(c, 400, error instanceof Error ? error.message : 'Unknown error');
   }
 });
 
@@ -134,7 +134,7 @@ dataset.openapi(getDetailRoute, async (c) => {
   const callbacks = sourceRegistry.getCallbacks(body.sourceId);
 
   if (!callbacks) {
-    return c.json(R.error(404, `Source not found: ${body.sourceId}`), 404);
+    return R.error(c, 404, `Source not found: ${body.sourceId}`);
   }
 
   try {
@@ -142,9 +142,9 @@ dataset.openapi(getDetailRoute, async (c) => {
       config: body.config,
       fileId: body.fileId
     });
-    return c.json(R.success(detail), 200);
+    return R.success(c, detail);
   } catch (error) {
-    return c.json(R.error(400, error instanceof Error ? error.message : 'Unknown error'), 400);
+    return R.error(c, 400, error instanceof Error ? error.message : 'Unknown error');
   }
 });
 

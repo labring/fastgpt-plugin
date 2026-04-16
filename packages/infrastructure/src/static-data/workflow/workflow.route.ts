@@ -1,4 +1,4 @@
-import { createOpenAPIHono,R } from '@/utils/http';
+import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 
 import { listWorkflowsRoute } from './schemas/routes';
 import { workflows } from './init';
@@ -10,9 +10,9 @@ const workflow = createOpenAPIHono();
  */
 workflow.openapi(listWorkflowsRoute, async (c) => {
   if (workflows) {
-    return c.json(R.success(workflows), 200);
+    return R.success(c, workflows);
   } else {
-    return c.json(R.error(500, 'Templates init failed'), 500);
+    return R.error(c, 500, 'Templates init failed');
   }
 });
 

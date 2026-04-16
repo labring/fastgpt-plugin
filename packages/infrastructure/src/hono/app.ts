@@ -1,5 +1,4 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { R } from '@interface-adapter/http/http.type';
 import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { requestId } from 'hono/request-id';
@@ -8,7 +7,7 @@ import { onError } from './hooks/onError';
 import { onNotFound } from './hooks/onNotFound';
 import { bearerHonoAuthMiddleware } from './middleware/auth';
 import { loggerHonoMiddleware } from './middleware/logger';
-import { createOpenAPIHono } from './utils/response';
+import { createOpenAPIHono, R } from './utils/response';
 
 export const app = createOpenAPIHono<Env>();
 
@@ -98,7 +97,7 @@ app.openapi(
     }
   }),
   (c) => {
-    return c.json(R.success({ status: 'ok', timestamp: new Date().toISOString() }).body, 200);
+    return R.success(c, { status: 'ok', timestamp: new Date().toISOString() });
   }
 );
 
