@@ -46,8 +46,7 @@ const loadTool = async ({
   manifest,
   etag,
   availableFiles,
-  getAccessURL,
-  source
+  getAccessURL
 }: Omit<LoadPluginParams, 'manifest'> & {
   manifest: ToolManifestType;
 }): Promise<Result<ToolType>> => {
@@ -75,12 +74,14 @@ const loadTool = async ({
     }
 
     const readmeUrl = availableFileSet.has('README.md')
-      ? (await resolveAssetURL({
-          getAccessURL,
-          pluginId: manifest.pluginId,
-          version: manifest.version,
-          filePath: ['README.md']
-        }))[0]
+      ? (
+          await resolveAssetURL({
+            getAccessURL,
+            pluginId: manifest.pluginId,
+            version: manifest.version,
+            filePath: ['README.md']
+          })
+        )[0]
       : undefined;
 
     let children: ToolType['children'];
@@ -118,7 +119,6 @@ const loadTool = async ({
     const result = {
       ...manifest,
       etag,
-      source,
       icon,
       ...(readmeUrl ? { readmeUrl } : {}),
       children,

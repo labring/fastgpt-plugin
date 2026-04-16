@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "baseUrl": "./",
-    "paths": {
-      "@fastgpt-plugin/helpers/*": ["../helpers/src/*"]
-    }
-  }
-}

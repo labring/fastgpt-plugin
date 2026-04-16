@@ -3,9 +3,8 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { TemplateItemType, TemplateListType } from '@domain/entities/workflow.entity';
 import { getLogger, mod } from '@infrastructure/logger';
-
-import type { TemplateItemType, TemplateListType } from './type';
 
 const logger = getLogger(mod.workflow);
 

@@ -45,5 +45,6 @@
     "sdk/**/*.ts",
     "tests/**/*.ts",
     "packages/**/*.d.ts"
-  ]
+  ],
+  "exclude": ["packages/infrastructure/src/static-data/dataset-source/**/*.ts"]
 }

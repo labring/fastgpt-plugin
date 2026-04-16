@@ -1,6 +1,9 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { makeRuntimeMetricsUC, type RuntimeMetricsUCDeps } from '@usecase/runtime/runtime-metrics.uc';
+import {
+  makeRuntimeMetricsUC,
+  type RuntimeMetricsUCDeps
+} from '@usecase/runtime/runtime-metrics.uc';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 
 export type RuntimeRouteDeps = RuntimeMetricsUCDeps;

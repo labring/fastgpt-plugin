@@ -1,6 +1,9 @@
 # P0
 
-- [ ] model, workflow API 接入
+- [x] model, workflow API 接入
+- [ ] 反向调用，获取用户信息和团队信息
+- [ ] 反向调用上传文件实现
+- [ ] 手动流式返回结果测试
 
 # P1
 
