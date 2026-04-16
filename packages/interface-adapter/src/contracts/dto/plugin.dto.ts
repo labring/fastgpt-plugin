@@ -71,6 +71,10 @@ export const PluginDTOSchema = z.object({
   versionDescription: I18nStringSchema.optional().describe('Plugin version description')
 });
 
+export const PluginListDTOSchema = z.array(PluginDTOSchema).openapi({
+  description: 'Plugin list'
+});
+
 export const PluginUploadParamsSchema = z
   .object({
     file: z.file().openapi({
@@ -110,6 +114,11 @@ export const PluginPruneDisabledResponseDTOSchema = z.object({
   })
 });
 
+export const PluginInstallFailureDTOSchema = z.object({
+  url: z.string(),
+  reason: I18nStringSchema
+});
+
 export const PluginInstallDTOSchema = {
   request: z.object({
     urls: z.array(z.string()).openapi({
@@ -122,14 +131,7 @@ export const PluginInstallDTOSchema = {
   }),
   response: z
     .object({
-      failed: z
-        .array(
-          z.object({
-            url: z.string(),
-            reason: I18nStringSchema
-          })
-        )
-        .optional()
+      failed: z.array(PluginInstallFailureDTOSchema).optional()
     })
     .openapi({
       description: 'Plugin install response',
@@ -189,3 +191,20 @@ export const PluginRuntimeConfigSetParamsSchema = z.object({
   }),
   config: PluginRuntimeConfigSchema
 });
+
+export type PluginDTOType = z.infer<typeof PluginDTOSchema>;
+export type PluginListDTOType = z.infer<typeof PluginListDTOSchema>;
+export type PluginUniqueIdDTOType = z.infer<typeof PluginUniqueIdDTOSchema>;
+export type PluginPruneDisabledResponseDTOType = z.infer<typeof PluginPruneDisabledResponseDTOSchema>;
+export type PluginInstallFailureDTOType = z.infer<typeof PluginInstallFailureDTOSchema>;
+export type PluginInstallRequestDTOType = z.infer<typeof PluginInstallDTOSchema.request>;
+export type PluginInstallResponseDTOType = z.infer<typeof PluginInstallDTOSchema.response>;
+export type PluginListParamsDTOType = z.infer<typeof PluginListParamsSchema>;
+export type PluginTagListDTOType = z.infer<typeof PluginTagListDTOSchema>;
+export type PluginRuntimeConfigDTOType = z.infer<typeof PluginRuntimeConfigSchema>;
+export type PluginRuntimeConfigGetParamsDTOType = z.infer<
+  typeof PluginRuntimeConfigGetParamsSchema
+>;
+export type PluginRuntimeConfigSetParamsDTOType = z.infer<
+  typeof PluginRuntimeConfigSetParamsSchema
+>;

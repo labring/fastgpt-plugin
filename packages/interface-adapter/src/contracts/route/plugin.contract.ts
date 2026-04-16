@@ -4,6 +4,7 @@ import { defineContract, emptyResponse, jsonResponse } from '../contract.type';
 import {
   PluginDTOSchema,
   PluginInstallDTOSchema,
+  PluginListDTOSchema,
   PluginListParamsSchema,
   PluginPruneDisabledResponseDTOSchema,
   PluginRuntimeConfigGetParamsSchema,
@@ -92,7 +93,7 @@ export const PluginContract = {
     },
     request: PluginListParamsSchema,
     response: {
-      200: jsonResponse({ data: PluginDTOSchema }),
+      200: jsonResponse({ data: PluginListDTOSchema }),
       500: jsonResponse({ error: I18nStringSchema })
     }
   }),

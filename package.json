@@ -13,7 +13,7 @@
     "build:marketplace": "pnpm run build:pkg && pnpm exec tsx ./modules/tool/build/build-json.ts",
     "deploy:marketplace-data": "pnpm exec tsx --env-file=.env.marketplace.local ./scripts/deploy-marketplace.ts",
     "prepare": "husky install",
-    "lint": "node_modules/.bin/eslint --fix",
+    "lint": "eslint --fix",
     "prettier": "prettier --write \"./**/*.{ts,js,json}\""
   },
   "devDependencies": {

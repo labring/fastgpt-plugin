@@ -43,3 +43,8 @@ export const ModelProviderListDTOSchema = z.object({
     description: 'AIProxy provider mapping'
   })
 });
+
+export type ModelListDTOType = z.infer<typeof ModelListDTOSchema>;
+export type ModelProviderItemDTOType = z.infer<typeof ModelProviderItemDTOSchema>;
+export type AiproxyMapProviderItemDTOType = z.infer<typeof AiproxyMapProviderItemDTOSchema>;
+export type ModelProviderListDTOType = z.infer<typeof ModelProviderListDTOSchema>;
