@@ -7,10 +7,12 @@ import { configureProxy } from '@infrastructure/utils/proxy';
 
 import deps from './src/deps';
 import { init } from './src/init';
+import { makeModelRoute } from './src/routes/model.route';
 import { makePluginRoute } from './src/routes/plugin.route';
 import { makeRuntimeRoute } from './src/routes/runtime.route';
 import { makeToolRoute } from './src/routes/tool.route';
 
+const modelRoute = makeModelRoute(deps);
 const pluginRoute = makePluginRoute(deps);
 const runtimeRoute = makeRuntimeRoute(deps);
 const toolRoute = makeToolRoute(deps);
@@ -20,6 +22,7 @@ app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
   scheme: 'bearer'
 });
 
+app.route('/api', modelRoute);
 app.route('/api', pluginRoute);
 app.route('/api', runtimeRoute);
 app.route('/api', toolRoute);
@@ -34,7 +37,7 @@ let server: ServerType | null = null;
  */
 async function prepare() {
   configureProxy(); // setup global proxy
-  init();
+  await init();
 }
 
 function shutdown() {
