@@ -7,7 +7,7 @@ await $`bun run build:worker`;
 
 // 2. copy templates
 await cp(
-  join(__dirname, '..', '..', 'modules', 'workflow', 'templates'),
+  join(__dirname, '..', '..', '..', 'packages', 'infrastructure', 'src', 'static-data', 'workflow', 'templates'),
   join(__dirname, '..', '..', 'dist', 'workflows'),
   {
     recursive: true

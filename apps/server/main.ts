@@ -11,11 +11,13 @@ import { makeModelRoute } from './src/routes/model.route';
 import { makePluginRoute } from './src/routes/plugin.route';
 import { makeRuntimeRoute } from './src/routes/runtime.route';
 import { makeToolRoute } from './src/routes/tool.route';
+import { makeWorkflowRoute } from './src/routes/workflow.route';
 
 const modelRoute = makeModelRoute(deps);
 const pluginRoute = makePluginRoute(deps);
 const runtimeRoute = makeRuntimeRoute(deps);
 const toolRoute = makeToolRoute(deps);
+const workflowRoute = makeWorkflowRoute();
 
 app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
   type: 'http',
@@ -26,6 +28,7 @@ app.route('/api', modelRoute);
 app.route('/api', pluginRoute);
 app.route('/api', runtimeRoute);
 app.route('/api', toolRoute);
+app.route('/api', workflowRoute);
 
 const logger = getLogger(root);
 
