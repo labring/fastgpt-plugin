@@ -54,18 +54,18 @@ export const ModelProviderResponseSchema = z.object({
   avatar: z.string().openapi({ example: 'https://example.com/avatar.png' })
 });
 
-// Aiproxy ID map entry schema
-export const AiproxyIdMapEntrySchema = z.object({
+// AIProxy channel entry schema
+export const AIProxyChannelSchema = z.object({
+  channelId: z.number(),
   name: z.union([z.string(), I18nStringStrictSchema]),
-  provider: z.string().optional(),
-  avatar: z.string().optional()
+  avatar: z.string()
 });
 
-// Aiproxy ID map schema (key is number as string)
-export const AiproxyIdMapSchema = z.record(z.coerce.string(), AiproxyIdMapEntrySchema);
+// AIProxy channels list schema
+export const AIProxyChannelsSchema = z.array(AIProxyChannelSchema);
 
 // Get providers response schema
 export const GetProvidersResponseSchema = z.object({
   modelProviders: z.array(ModelProviderResponseSchema),
-  aiproxyIdMap: AiproxyIdMapSchema
+  aiproxyChannels: AIProxyChannelsSchema
 });

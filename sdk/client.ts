@@ -2,7 +2,7 @@ import type { ToolDetailType } from '@tool/type/api';
 import type { Result } from '@/utils/http';
 import type { ListModelsType } from '@model/api/type';
 import type { TemplateListType } from '@workflow/type';
-import type { AiproxyMapProviderType } from '@model/constants/shared';
+import type { AIProxyChannelsType } from '@model/constants/shared';
 import type { I18nStringStrictType } from '@/validates/i18n';
 
 export class FastGPTPluginClient {
@@ -50,7 +50,7 @@ export class FastGPTPluginClient {
   async getModelProviders() {
     return this.request<{
       modelProviders: { provider: string; value: I18nStringStrictType; avatar: string }[];
-      aiproxyIdMap: AiproxyMapProviderType;
+      aiproxyChannels: AIProxyChannelsType;
     }>('/api/models/get-providers');
   }
 
@@ -123,4 +123,4 @@ export type { ToolType, ToolSetType } from '@tool/type';
 export { ToolDetailSchema } from '@tool/type/api';
 export { ToolSimpleSchema } from '@tool/type/api';
 export type { ToolDetailType, ToolSimpleType } from '@tool/type/api';
-export type { AiproxyMapProviderType };
+export type { AIProxyChannelsType };

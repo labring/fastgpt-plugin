@@ -1,4 +1,5 @@
 import alicloud from './provider/AliCloud';
+import antling from './provider/AntLing';
 import baai from './provider/BAAI';
 import baichuan from './provider/Baichuan';
 import chatglm from './provider/ChatGLM';
@@ -37,12 +38,13 @@ import { modelsBuffer } from './constants';
 import { getLogger, mod } from '@/logger';
 
 const logger = getLogger(mod.model);
-import { initModelAvatars } from './avatars';
+import { initModelAvatars, initChannelAvatars } from './avatars';
 
 // All providers array in alphabetical order
 const allProviders: ProviderConfigType[] = [
   ai360,
   alicloud,
+  antling,
   baai,
   baichuan,
   chatglm,
@@ -77,7 +79,10 @@ const allProviders: ProviderConfigType[] = [
 ];
 
 export const initModels = async (reboot: boolean = false) => {
-  if (!reboot) await initModelAvatars();
+  if (!reboot) {
+    await initModelAvatars();
+    await initChannelAvatars();
+  }
 
   modelsBuffer.data = allProviders
     .map((item) => {

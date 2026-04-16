@@ -4,6 +4,7 @@ declare namespace NodeJS {
     AUTH_TOKEN: string;
     LOG_CONSOLE_LEVEL: string;
     MODEL_PROVIDER_PRIORITY: string;
+    MODEL_CHANNEL_PRIORITY: string;
     SIGNOZ_BASE_URL: string;
     SIGNOZ_SERVICE_NAME: string;
     MONGODB_URI: string;

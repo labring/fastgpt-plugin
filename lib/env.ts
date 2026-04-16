@@ -30,7 +30,6 @@ export const env = createEnv({
     DISABLE_DEV_TOOLS: BoolSchema.default(false),
     DISABLE_CACHE: BoolSchema.default(false),
     CHECK_INTERNAL_IP: BoolSchema.default(true),
-    MODEL_PROVIDER_PRIORITY: z.string().default(''),
     MAX_FILE_SIZE: PositiveIntSchema.default(20 * 1024 * 1024),
 
     // 代理
@@ -81,6 +80,10 @@ export const env = createEnv({
     STORAGE_OSS_INTERNAL: BoolSchema.default(false),
     STORAGE_OSS_SECURE: BoolSchema.default(true),
     STORAGE_OSS_ENABLE_PROXY: BoolSchema.default(false),
-    STORAGE_OSS_CNAME: BoolSchema.default(false)
+    STORAGE_OSS_CNAME: BoolSchema.default(false),
+
+    // 默认模型提供商排序配置
+    MODEL_PROVIDER_PRIORITY: z.string().default(''),
+    MODEL_CHANNEL_PRIORITY: z.string().default('')
   }
 });

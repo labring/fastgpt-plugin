@@ -8,6 +8,7 @@ const logger = getLogger(mod.model);
 import { isProd } from '@/constants';
 
 const UploadModelsS3Path = 'system/plugin/models';
+const UploadChannelAvatarS3Path = 'system/plugin/model-channel';
 
 // Supported image formats for logo files
 const logoFormats = ['svg', 'png', 'jpeg', 'webp', 'jpg'];
@@ -103,32 +104,34 @@ const getProductionModelLogos = async (): Promise<
 /**
  * Read and upload a single logo file to S3
  */
-const uploadLogoFile = async (logoPath: string, providerName: string): Promise<void> => {
+const uploadLogoFile = async (
+  logoPath: string,
+  name: string,
+  s3BasePath: string
+): Promise<void> => {
   // Parse file information
   const parsedPath = parse(logoPath);
   const fileExt = parsedPath.ext.toLowerCase();
 
   if (!fileExt) {
-    logger.warn('No file extension found for: ${logoPath}');
+    logger.warn(`No file extension found for: ${logoPath}`);
     return;
   }
 
   const mimeType = mimeMap[fileExt];
   if (!mimeType) {
-    logger.warn('Unsupported MIME type for extension: ${fileExt}');
+    logger.warn(`Unsupported MIME type for extension: ${fileExt}`);
     return;
   }
 
   await publicS3Server.uploadFileAdvanced({
     path: logoPath,
-    prefix: UploadModelsS3Path + `/${providerName}`,
+    prefix: `${s3BasePath}/${name}`,
     keepRawFilename: true,
     contentType: mimeType,
     defaultFilename: 'logo'
   });
-  logger.debug(
-    `📦 Uploaded model avatar: ${providerName} -> ${`${UploadModelsS3Path}/${providerName}/logo`}`
-  );
+  logger.debug(`📦 Uploaded avatar: ${name} -> ${s3BasePath}/${name}/logo`);
 };
 
 /**
@@ -154,14 +157,14 @@ export const initModelAvatars = async () => {
     await Promise.allSettled(
       logoItems.map(async ({ path: logoPath, providerName }) => {
         if (!providerName) {
-          logger.warn('Invalid logo path format: ${logoPath}');
+          logger.warn(`Invalid logo path format: ${logoPath}`);
           return;
         }
         if (!existsSync(logoPath)) {
-          logger.warn('Logo file not found: ${logoPath}, skipping ${providerName}');
+          logger.warn(`Logo file not found: ${logoPath}, skipping ${providerName}`);
           return;
         }
-        await uploadLogoFile(logoPath, providerName);
+        await uploadLogoFile(logoPath, providerName, UploadModelsS3Path);
       })
     );
 
@@ -180,4 +183,74 @@ export const initModelAvatars = async () => {
 export const getModelAvatarUrl = async (providerName: string): Promise<string> => {
   const s3Path = `${UploadModelsS3Path}/${providerName}/logo`;
   return publicS3Server.generateExternalUrl(s3Path);
+};
+
+/**
+ * Collect channel avatar files by slug from a flat directory
+ */
+const collectChannelAvatarsFrom = async (
+  dir: string
+): Promise<Array<{ path: string; slug: string }>> => {
+  if (!existsSync(dir)) {
+    logger.warn(`Channel avatar directory not found: ${dir}`);
+    return [];
+  }
+
+  const { readdir } = await import('node:fs/promises');
+  try {
+    const files = await readdir(dir);
+    const result: Array<{ path: string; slug: string }> = [];
+
+    for (const file of files) {
+      if (file.startsWith('.')) continue;
+      const ext = parse(file).ext.toLowerCase();
+      if (logoFormats.some((f) => `.${f}` === ext)) {
+        result.push({ path: join(dir, file), slug: parse(file).name });
+      }
+    }
+
+    return result;
+  } catch (error) {
+    logger.error(`Failed to read channel avatar directory ${dir}:`, { error });
+    return [];
+  }
+};
+
+/**
+ * Initialize and upload aiproxy channel avatars to S3
+ */
+export const initChannelAvatars = async () => {
+  try {
+    logger.info('Starting channel avatars initialization...');
+
+    const dir = isProd
+      ? resolve('dist/model/channel-avatars')
+      : resolve('../modules/model/channelAvatar');
+
+    const items = await collectChannelAvatarsFrom(dir);
+
+    await Promise.allSettled(
+      items.map(async ({ path: logoPath, slug }) => {
+        if (!slug) {
+          logger.warn(`Invalid channel avatar filename: ${logoPath}`);
+          return;
+        }
+        await uploadLogoFile(logoPath, slug, UploadChannelAvatarS3Path);
+      })
+    );
+
+    logger.info('✅ Channel avatars initialization completed.');
+  } catch (error) {
+    logger.error('❌ Channel avatars initialization failed:', { error });
+    throw error;
+  }
+};
+
+/**
+ * Get S3 URL for an aiproxy channel avatar
+ * @param slug - The channel avatar slug (e.g. 'openai', 'doc2x')
+ * @returns Complete S3 URL for the avatar
+ */
+export const getChannelAvatarUrl = (slug: string): string => {
+  return publicS3Server.generateExternalUrl(`${UploadChannelAvatarS3Path}/${slug}/logo`);
 };

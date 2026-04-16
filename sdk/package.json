@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-sdk/plugin",
-  "version": "0.3.8",
+  "version": "0.6.0",
   "description": "fastgpt-plugin sdk",
   "main": "dist/client.js",
   "types": "dist/client.d.ts",

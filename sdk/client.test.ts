@@ -44,7 +44,7 @@ describe('FastGPTPluginClient', () => {
       expect(result).toBeDefined();
       expect(result.modelProviders).toBeDefined();
       expect(Array.isArray(result.modelProviders)).toBe(true);
-      expect(result.aiproxyIdMap).toBeDefined();
+      expect(result.aiproxyChannels).toBeDefined();
     });
   });
 

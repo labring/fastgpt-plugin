@@ -51,4 +51,14 @@ if (existsSync(modelProviderDir)) {
   console.log('⚠️ Model provider directory not found, skipping avatar copy');
 }
 
+// 4. copy aiproxy channel avatars for production use
+const channelAvatarDir = join(__dirname, '..', '..', 'modules', 'model', 'channelAvatar');
+if (existsSync(channelAvatarDir)) {
+  const destDir = join(__dirname, '..', '..', 'dist', 'model', 'channel-avatars');
+  await cp(channelAvatarDir, destDir, { recursive: true });
+  console.log(`✅ Copied aiproxy channel avatars to dist/model/channel-avatars`);
+} else {
+  console.log('⚠️ Channel avatar directory not found, skipping channel avatar copy');
+}
+
 await $`bun run build:main`;
