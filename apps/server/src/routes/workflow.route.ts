@@ -1,4 +1,5 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+import { WorkflowContract } from '@interface-adapter/contracts/route/workflow.contract';
 
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import { workflows } from '@infrastructure/static-data/workflow/init';
@@ -8,19 +9,21 @@ export const makeWorkflowRoute = () => {
 
   route.openapi(
     createRoute({
-      method: 'get',
-      path: '/list',
-      tags: ['Workflows'],
-      summary: 'List workflow templates',
-      description: 'Get a list of all available workflow templates',
+      ...WorkflowContract.List.meta,
       responses: {
         200: {
-          description: 'List of workflow templates',
+          description: 'HTTP 200 response',
           content: {
             'application/json': {
-              schema: z.object({
-                data: z.array(z.unknown())
-              })
+              schema: WorkflowContract.List.response[200]
+            }
+          }
+        },
+        500: {
+          description: 'HTTP 500 response',
+          content: {
+            'application/json': {
+              schema: WorkflowContract.List.response[500]
             }
           }
         }

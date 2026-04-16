@@ -4,7 +4,9 @@ import type { StatusCodeType } from '../http/http.type';
 
 export const OpenAPITagsEnum = {
   plugin: 'plugin',
-  tool: 'tool'
+  tool: 'tool',
+  model: 'model',
+  workflow: 'workflow'
 } as const;
 
 export type OpenAPITagsType = (typeof OpenAPITagsEnum)[keyof typeof OpenAPITagsEnum];
