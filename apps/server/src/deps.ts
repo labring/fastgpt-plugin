@@ -1,16 +1,17 @@
+import { LocalPoolPluginRuntimeManager } from '@fastgpt-plugin/infrastructure/plugin/plugin-runtime/drivers/local-pool/local-pool-runtime.driver';
+import { PluginPKFFileResolver } from '@fastgpt-plugin/infrastructure/plugin/utils/plugin-pkg-file-resolver.impl';
+
 import { LocalFileStorageRepo } from '@infrastructure/file-storage/local-file-storage.repo';
 import { RemoteFileStorageRepo } from '@infrastructure/file-storage/remote-file-storage.repo';
 import { FileTTLManager } from '@infrastructure/file-ttl/file-ttl.impl';
-import { PluginManager } from '@infrastructure/plugin/plugin.impl';
+// import { PluginManager } from '@infrastructure/plugin/pl';
 import { PluginRepo } from '@infrastructure/plugin/plugin.repo';
-import { PluginPKFFileResolver } from '@fastgpt-plugin/infrastructure/plugin/plugin-pkg-file-resolver.impl';
-import { LocalPoolPluginRuntimeManager } from '@fastgpt-plugin/infrastructure/plugin/plugin-runtime/local-pool-runtime-manager.impl';
+import { ToolManager } from '@infrastructure/plugin/tool.impl';
 import { RedisClient } from '@infrastructure/redis/redis-client';
 import { VersionKeyStore } from '@infrastructure/redis/version-key';
 import { MongoClient } from '@infrastructure/storage/mongo/index';
 import { createS3Clients } from '@infrastructure/storage/s3';
 import { URLFileFetcher } from '@infrastructure/utils/url-file-fetcher';
-import { ToolManager } from '@infrastructure/plugin/tool.impl';
 
 export const mongoClient = MongoClient.getInstance();
 export const { privateClients: s3PrivateClients, publicClients: s3PublicClients } =
@@ -18,12 +19,12 @@ export const { privateClients: s3PrivateClients, publicClients: s3PublicClients 
 
 export const localFileStorageRepo = LocalFileStorageRepo.getInstance();
 
-export const privateRemoteFileStorageRepo = RemoteFileStorageRepo.getInstance({
+export const privateRemoteFileStorageRepo = new RemoteFileStorageRepo({
   mongoClient,
   s3Clients: s3PrivateClients
 });
 
-export const publicRemoteFileStorageRepo = RemoteFileStorageRepo.getInstance({
+export const publicRemoteFileStorageRepo = new RemoteFileStorageRepo({
   mongoClient,
   s3Clients: s3PublicClients
 });
@@ -60,26 +61,22 @@ const localPoolPluginRuntimeManager = LocalPoolPluginRuntimeManager.getInstance(
   versionKeyStore
 });
 
-export const pluginManager = PluginManager.getInstance({
+export const toolManager = ToolManager.getInstance({
   pluginRepo,
-  pluginPKGFileResolver,
-  privateRemoteFileStorageRepo,
-  publicRemoteFileStorageRepo,
   pluginRuntimeManager: localPoolPluginRuntimeManager
 });
-
-export const toolManager = ToolManager.({});
 
 const deps = {
   localFileStorageRepo,
   pluginPKGFileResolver,
-  pluginManager,
   urlFileFetcher,
   privateRemoteFileStorageRepo,
   publicRemoteFileStorageRepo,
   pluginRepo,
   mongoClient,
-  fileTTLManager
+  fileTTLManager,
+  toolManager,
+  pluginRuntimeManager: localPoolPluginRuntimeManager
 };
 
 export default deps;

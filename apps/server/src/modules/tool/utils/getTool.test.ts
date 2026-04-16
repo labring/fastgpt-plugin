@@ -74,9 +74,7 @@ describe('getTool', () => {
       icon: 'icon.png',
       handler: vi.fn(),
       filename: 'getTime.js',
-      versionList: [
-        { value: '1.0.0', etag: 'etag1' }
-      ]
+      versionList: [{ value: '1.0.0', etag: 'etag1' }]
     };
 
     mockToolMap.set('FastGPT@getTime', mockTool);

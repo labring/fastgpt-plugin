@@ -1,0 +1,44 @@
+{
+  "pluginId": "getTime",
+  "version": "1.0.0",
+  "type": "tool",
+  "name": {
+    "en": "Get Time",
+    "zh-CN": "获取时间"
+  },
+  "icon": "logo.svg",
+  "description": {
+    "en": "Get current time",
+    "zh-CN": "获取当前时间"
+  },
+  "versionDescription": {
+    "en": "Initial version",
+    "zh-CN": "初始版本"
+  },
+  "toolDescription": "获取当前时间",
+  "inputSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "time": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "time"
+    ],
+    "additionalProperties": false
+  },
+  "secretSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

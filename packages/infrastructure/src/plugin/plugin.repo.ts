@@ -8,6 +8,8 @@ import {
   type PluginType,
   type PluginTypeType
 } from '@domain/entities/plugin.entity';
+import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
+import type { ToolType } from '@domain/entities/tool.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import type { FileTTLPort } from '@domain/ports/file-ttl.port';
@@ -17,10 +19,12 @@ import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.
 import {
   type PluginTagListType,
   PluginUniqueIdSchema,
-  type PluginUniqueIdType
+  type PluginUniqueIdType,
+  type UserPluginIdType
 } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
+import type { MongoPluginSchemaType } from '@infrastructure/storage/mongo/models/plugin.model';
 
 import { MongoClient } from '../storage/mongo';
 import { isDuplicateKeyError } from '../storage/mongo/utils';
@@ -37,6 +41,111 @@ export class PluginRepo implements PluginRepoPort {
   private static _instance: PluginRepo;
   private static ExpiresMinutes: number = 120;
 
+  private toMongoPlugin(plugin: PluginType) {
+    switch (plugin.type) {
+      case 'tool': {
+        const { toolDescription, inputSchema, outputSchema, secretSchema, children, ...base } =
+          plugin as ToolType;
+
+        return {
+          ...base,
+          data: {
+            toolDescription,
+            inputSchema,
+            outputSchema,
+            secretSchema,
+            children
+          }
+        };
+      }
+    }
+  }
+
+  private toDomainPlugin(plugin: MongoPluginSchemaType): PluginType {
+    return PluginSchema.parse({
+      ...plugin,
+      ...(plugin.data ?? {})
+    });
+  }
+
+  private getManagedPublicFileNames(fileKeys: string[]): Set<string> {
+    return new Set(fileKeys.map((fileKey) => path.basename(fileKey)));
+  }
+
+  private extractManagedFileName(value: string | undefined, managedFileNames: Set<string>) {
+    if (!value) return undefined;
+
+    try {
+      const parsed = new URL(value);
+      const fileName = path.basename(parsed.pathname);
+      return managedFileNames.has(fileName) ? fileName : undefined;
+    } catch {
+      const fileName = path.basename(value);
+      return managedFileNames.has(fileName) ? fileName : undefined;
+    }
+  }
+
+  private async refreshConfirmedPlugin(
+    plugin: MongoPluginSchemaType,
+    managedPublicFileNames: Set<string>
+  ): Promise<Result<PluginType>> {
+    const domainPlugin = this.toDomainPlugin(plugin);
+    const uniqueId = PluginUniqueIdSchema.parse(domainPlugin);
+
+    const resolvePublicFileURL = async (value: string | undefined) => {
+      const fileName = this.extractManagedFileName(value, managedPublicFileNames);
+      if (!fileName) {
+        return successResult(value);
+      }
+
+      const [url, err] = await this.getPluginFileAccessURL(uniqueId, [fileName], false);
+      if (err) {
+        return failureResult(
+          {
+            en: `Failed to resolve confirmed file url: ${fileName}`,
+            'zh-CN': `解析确认后文件地址失败: ${fileName}`
+          },
+          err
+        );
+      }
+
+      return successResult(url);
+    };
+
+    switch (domainPlugin.type) {
+      case 'tool': {
+        const toolPlugin = domainPlugin as ToolType;
+        const [icon, iconErr] = await resolvePublicFileURL(domainPlugin.icon);
+        if (iconErr) return failureResult(iconErr);
+
+        const [readmeUrl, readmeErr] = await resolvePublicFileURL(domainPlugin.readmeUrl);
+        if (readmeErr) return failureResult(readmeErr);
+
+        let children: ToolType['children'];
+        if (toolPlugin.children) {
+          children = [];
+          for (const child of toolPlugin.children) {
+            const [childIcon, childIconErr] = await resolvePublicFileURL(child.icon);
+            if (childIconErr) return failureResult(childIconErr);
+            children.push({
+              ...child,
+              icon: childIcon ?? child.icon
+            });
+          }
+        }
+
+        return successResult({
+          ...domainPlugin,
+          icon: icon ?? domainPlugin.icon,
+          ...(readmeUrl !== undefined ? { readmeUrl } : {}),
+          children
+        });
+      }
+      default:
+        return successResult(domainPlugin);
+    }
+  }
+
   private getFileKey(id: PluginUniqueIdType, filePath: string[], pending: boolean): string {
     const array = pending
       ? ['temp', id.pluginId, id.version, id.etag, ...filePath]
@@ -46,9 +155,32 @@ export class PluginRepo implements PluginRepoPort {
 
   constructor(private readonly deps: PluginRepoDeps) {}
 
+  async getPluginByUserPluginId({
+    pluginId,
+    source,
+    version
+  }: UserPluginIdType): Promise<Result<PluginType>> {
+    const plugin = await this.deps.mongoClient
+      .getModel('pluginInstallation')
+      .findOne({ source: source, version, pluginId })
+      .populate<{
+        plugin: MongoPluginSchemaType;
+      }>('plugin')
+      .lean();
+
+    if (plugin) {
+      return successResult(this.toDomainPlugin(plugin.plugin));
+    }
+
+    return failureResult({
+      en: 'Plugin not found',
+      'zh-CN': '插件未找到'
+    });
+  }
+
   async getPluginsByPluginId(pluginId: string): Promise<Result<PluginType[]>> {
     const plugins = await this.deps.mongoClient.getModel('plugin').find({ pluginId }).lean();
-    return successResult(plugins.map((plugin) => PluginSchema.parse(plugin)));
+    return successResult(plugins.map((plugin) => this.toDomainPlugin(plugin)));
   }
 
   public static getInstance(deps: PluginRepoDeps): PluginRepo {
@@ -62,18 +194,17 @@ export class PluginRepo implements PluginRepoPort {
     try {
       const plugin = await this.deps.mongoClient
         .getModel('plugin')
-        .findOneAndUpdate(
-          {
-            ...pluginId
-          },
-          {
-            $unset: {
-              pending: 1,
-              expiredAt: 1
-            }
-          }
-        )
+        .findOne({
+          ...pluginId
+        })
         .lean();
+
+      if (!plugin) {
+        return failureResult({
+          en: 'Plugin not found',
+          'zh-CN': '插件未找到'
+        });
+      }
 
       // get s3 files
       const [publicFiles, err] = await this.deps.publicRemoteFileStorageRepo.getFileKeysByPath(
@@ -81,7 +212,7 @@ export class PluginRepo implements PluginRepoPort {
       );
       const [privateFiles, privateErr] =
         await this.deps.privateRemoteFileStorageRepo.getFileKeysByPath(
-          this.getFileKey(pluginId, [], false)
+          this.getFileKey(pluginId, [], true)
         );
 
       if (err || privateErr) {
@@ -114,7 +245,41 @@ export class PluginRepo implements PluginRepoPort {
         });
       }
 
-      return successResult(PluginSchema.parse(plugin));
+      const managedPublicFileNames = this.getManagedPublicFileNames(publicFiles);
+      const [confirmedPlugin, refreshErr] = await this.refreshConfirmedPlugin(
+        plugin,
+        managedPublicFileNames
+      );
+
+      if (refreshErr) {
+        return failureResult(
+          {
+            en: 'Failed to refresh confirmed plugin',
+            'zh-CN': '刷新确认后的插件数据失败'
+          },
+          refreshErr
+        );
+      }
+
+      await this.deps.mongoClient
+        .getModel('plugin')
+        .findOneAndUpdate(
+          {
+            ...pluginId
+          },
+          {
+            $set: {
+              ...this.toMongoPlugin(confirmedPlugin),
+              status: PluginStatusEnum.active
+            },
+            $unset: {
+              expiredAt: 1
+            }
+          }
+        )
+        .lean();
+
+      return successResult(confirmedPlugin);
     } catch (error) {
       return failureResult({ en: 'Failed to confirm plugin', 'zh-CN': '确认插件失败' }, error);
     }
@@ -130,23 +295,25 @@ export class PluginRepo implements PluginRepoPort {
     op?: 'or' | 'and';
   }): Promise<Result<PluginType[]>> {
     try {
-      if (op === 'or') {
-        const results = await this.deps.mongoClient
-          .getModel('plugin')
-          .find({
-            $or: [{ type: { $in: types } }, { tags: { $in: tags } }]
-          })
-          .lean();
-        return successResult(results.map((result) => PluginSchema.parse(result)));
+      const conditions = [] as Array<Record<string, unknown>>;
+
+      if (types && types.length > 0) {
+        conditions.push({ type: { $in: types } });
       }
-      const results = await this.deps.mongoClient
-        .getModel('plugin')
-        .find({
-          type: { $in: types },
-          tags: { $in: tags }
-        })
-        .lean();
-      return successResult(results.map((result) => PluginSchema.parse(result)));
+
+      if (tags && tags.length > 0) {
+        conditions.push({ tags: { $in: tags } });
+      }
+
+      const query =
+        conditions.length === 0
+          ? {}
+          : op === 'or'
+            ? { $or: conditions }
+            : Object.assign({}, ...conditions);
+
+      const results = await this.deps.mongoClient.getModel('plugin').find(query).lean();
+      return successResult(results.map((result) => this.toDomainPlugin(result)));
     } catch (error) {
       return failureResult({ en: 'Failed to list plugins', 'zh-CN': '获取插件列表失败' }, error);
     }
@@ -158,12 +325,12 @@ export class PluginRepo implements PluginRepoPort {
         .getModel('plugin')
         .find(
           {
-            pending: true
+            status: PluginStatusEnum.pending
           },
           {
             _id: true,
             pluginId: true,
-            versionId: true,
+            version: true,
             etag: true
           }
         )
@@ -189,109 +356,141 @@ export class PluginRepo implements PluginRepoPort {
     files: PkgContentFileObjects;
     pending: boolean;
   }): Promise<Result> {
+    const uniqueId = PluginUniqueIdSchema.parse(plugin);
+    // 1. 保存到 MongoDB
     try {
       await this.deps.mongoClient.getModel('plugin').create({
-        ...plugin,
+        ...this.toMongoPlugin(plugin),
         ...(pending
-          ? { pending, expiredAt: addMinutes(Date.now(), PluginRepo.ExpiresMinutes) }
+          ? {
+              status: PluginStatusEnum.pending,
+              expiredAt: addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
+            }
           : {})
       });
-
-      const uniqueId = PluginUniqueIdSchema.parse(plugin);
-
-      const [indexStream, err] = await files.index.fileStream;
-      const [READMEStream, READMEErr] = await files.readme.fileStream;
-      const [logoStream, logoErr] = await files.logo.fileStream;
-
-      if (err || READMEErr || logoErr) {
-        return failureResult(
-          { en: 'get index.js stream error', 'zh-CN': '获取文件流错误' },
-          err || READMEErr || logoErr
-        );
-      }
-
-      const saveFileResults = await Promise.all([
-        this.deps.privateRemoteFileStorageRepo.save({
-          ...files.index.metaData,
-          fileKey: this.getFileKey(uniqueId, ['index.js'], pending),
-          file: indexStream
-        }),
-        this.deps.publicRemoteFileStorageRepo.save({
-          ...files.readme.metaData,
-          fileKey: this.getFileKey(uniqueId, ['README.md'], pending),
-          file: READMEStream
-        }),
-        this.deps.publicRemoteFileStorageRepo.save({
-          ...files.logo.metaData,
-          fileKey: this.getFileKey(uniqueId, [files.logo.metaData.fileName], pending),
-          file: logoStream
-        }),
-        ...files.assets.map(async (asset) => {
-          const metadata = asset.metaData;
-          const [stream, err] = await asset.fileStream;
-          if (err)
-            return failureResult({ en: 'get asset stream error', 'zh-CN': '获取文件流错误' }, err);
-          return this.deps.publicRemoteFileStorageRepo.save({
-            ...metadata,
-            fileKey: this.getFileKey(uniqueId, ['assets', metadata.fileName], pending),
-            file: stream
-          });
-        })
-      ]);
-
-      // set TTL
-      await Promise.all([
-        this.deps.fileTTLManager.setExpiration(
-          saveFileResults
-            .map(([result, err]) => {
-              if (err) return undefined;
-              return result.metaData.fileKey;
-            })
-            .filter(Boolean) as string[],
-          this.deps.publicRemoteFileStorageRepo.getBucketName(),
-          addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
-        ),
-        this.deps.fileTTLManager.setExpiration(
-          [this.getFileKey(uniqueId, ['index.js'], pending)],
-          this.deps.privateRemoteFileStorageRepo.getBucketName(),
-          addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
-        )
-      ]);
-
-      if (
-        saveFileResults.every(([, err]) => {
-          return !err;
-        })
-      ) {
-        return successResult({});
-      }
-
-      return failureResult(
-        {
-          en: 'upload temp file error',
-          'zh-CN': '上传临时文件错误'
-        },
-        saveFileResults.find((result) => !!result[1])?.[1]
-      );
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        return failureResult(
-          {
-            en: 'Plugin already exists',
-            'zh-CN': '插件已存在'
-          },
-          error
-        );
+        return failureResult({
+          en: 'Plugin already exists',
+          'zh-CN': '插件已存在'
+        });
       }
-
       return failureResult(
         {
-          en: 'Failed to create plugin',
-          'zh-CN': '创建插件失败'
+          en: 'Failed to create plugin in MongoDB',
+          'zh-CN': '在 MongoDB 中创建插件失败'
         },
         error
       );
     }
+
+    const [indexStream, err] = await files.index.fileStream;
+    const [READMEStream, READMEErr] = (await files.readme?.fileStream) ?? [];
+
+    if (err || READMEErr) {
+      return failureResult(
+        { en: 'get index.js stream error', 'zh-CN': '获取文件流错误' },
+        err || READMEErr
+      );
+    }
+
+    const publicSaveTasks = [
+      ...(files.readme && READMEStream
+        ? [
+            this.deps.publicRemoteFileStorageRepo.save({
+              ...files.readme.metaData,
+              fileKey: this.getFileKey(uniqueId, ['README.md'], pending),
+              file: READMEStream
+            })
+          ]
+        : []),
+      ...(files.logos ?? []).map(async (logo) => {
+        const [stream, err] = await logo.fileStream;
+        if (err) {
+          return failureResult({ en: 'get logo stream error', 'zh-CN': '获取图标文件流错误' }, err);
+        }
+        return this.deps.publicRemoteFileStorageRepo.save({
+          ...logo.metaData,
+          fileKey: this.getFileKey(uniqueId, [logo.metaData.fileName], pending),
+          file: stream
+        });
+      }),
+      ...(files.assets?.map(async (asset) => {
+        const metadata = asset.metaData;
+        const [stream, err] = await asset.fileStream;
+        if (err)
+          return failureResult({ en: 'get asset stream error', 'zh-CN': '获取文件流错误' }, err);
+        return this.deps.publicRemoteFileStorageRepo.save({
+          ...metadata,
+          fileKey: this.getFileKey(uniqueId, ['assets', metadata.fileName], pending),
+          file: stream
+        });
+      }) ?? [])
+    ];
+
+    const saveTasks = [
+      this.deps.privateRemoteFileStorageRepo.save({
+        ...files.index.metaData,
+        fileKey: this.getFileKey(uniqueId, ['index.js'], pending),
+        file: indexStream
+      }),
+      ...publicSaveTasks
+    ];
+
+    const saveFileResults = await Promise.all(saveTasks);
+
+    if (
+      saveFileResults.every(([, err]) => {
+        return !err;
+      })
+    ) {
+      if (pending) {
+        const expiresAt = addMinutes(Date.now(), PluginRepo.ExpiresMinutes);
+        const publicFileKeys = saveFileResults
+          .slice(1)
+          .map(([result, err]) => {
+            if (err) return undefined;
+            return result.metaData.fileKey;
+          })
+          .filter(Boolean) as string[];
+
+        const ttlResults = await Promise.all([
+          publicFileKeys.length
+            ? this.deps.fileTTLManager.setExpiration(
+                publicFileKeys,
+                this.deps.publicRemoteFileStorageRepo.getBucketName(),
+                expiresAt
+              )
+            : successResult({}),
+          this.deps.fileTTLManager.setExpiration(
+            [this.getFileKey(uniqueId, ['index.js'], pending)],
+            this.deps.privateRemoteFileStorageRepo.getBucketName(),
+            expiresAt
+          )
+        ]);
+
+        const ttlErr = ttlResults.find(([, err]) => err)?.[1];
+        if (ttlErr) {
+          return failureResult(
+            {
+              en: 'set temp file expiration failed',
+              'zh-CN': '设置临时文件过期时间失败'
+            },
+            ttlErr
+          );
+        }
+      }
+
+      return successResult({});
+    }
+
+    return failureResult(
+      {
+        en: 'upload temp file error',
+        'zh-CN': '上传临时文件错误'
+      },
+      saveFileResults.find((result) => !!result[1])?.[1]
+    );
   }
 
   async getPluginById(
@@ -312,14 +511,49 @@ export class PluginRepo implements PluginRepoPort {
         });
       }
 
-      const info = PluginSchema.parse({
-        ...result,
-        ...result.meta
-      });
+      const info = this.toDomainPlugin(result);
 
-      const [indexFile, err] = await this.deps.localFileStorageRepo.getFileObject(
-        this.getFileKey(uniqueId, ['index.js'], false)
-      );
+      const indexFileKey = this.getFileKey(uniqueId, ['index.js'], false);
+
+      const [indexFile, err] = await (async () => {
+        const [exists, existsErr] = await this.deps.localFileStorageRepo.exists(indexFileKey);
+        if (!exists || existsErr) {
+          // get the file first
+          const [remoteIndexFile, err] =
+            await this.deps.privateRemoteFileStorageRepo.getFileObject(indexFileKey);
+          if (err) {
+            return failureResult(
+              {
+                en: 'Failed to get plugin index file from remote storage',
+                'zh-CN': '从远程存储获取插件索引文件失败'
+              },
+              err
+            );
+          }
+
+          const [fileStream, streamErr] = await remoteIndexFile.fileStream;
+          if (streamErr) {
+            return failureResult(
+              {
+                en: 'Failed to read plugin index file stream',
+                'zh-CN': '读取插件索引文件流失败'
+              },
+              streamErr
+            );
+          }
+
+          return await this.deps.localFileStorageRepo.save({
+            fileKey: indexFileKey,
+            file: fileStream,
+            contentType: remoteIndexFile.metaData.contentType,
+            fileName: remoteIndexFile.metaData.fileName
+          });
+        }
+
+        return await this.deps.localFileStorageRepo.getFileObject(indexFileKey);
+      })();
+
+      console.debug(indexFileKey, err);
 
       if (err) {
         return failureResult(

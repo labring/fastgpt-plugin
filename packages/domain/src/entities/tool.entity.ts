@@ -18,13 +18,12 @@ export const ToolSchema = z.object({
   ...PluginBaseSchema.shape,
   type: z.literal(PluginTypeEnum.tool),
 
-  meta: z.object({
-    toolDescription: z.string(),
-    inputSchema: z.any().optional(),
-    outputSchema: z.any().optional(),
-    secretSchema: z.any().optional(),
-    children: z.array(ToolSetChildItemSchema).optional()
-  })
+  // in data
+  toolDescription: z.string(),
+  inputSchema: z.any().optional(),
+  outputSchema: z.any().optional(),
+  secretSchema: z.any().optional(),
+  children: z.array(ToolSetChildItemSchema).optional()
 });
 
 export const ToolSetSchema = z.object({

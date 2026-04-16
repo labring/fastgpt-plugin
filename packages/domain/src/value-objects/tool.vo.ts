@@ -1,6 +1,7 @@
 import z from 'zod';
 
 import { SystemVarSchema } from './system-var.vo';
+import { UserPluginIdSchema } from './plugin.vo';
 
 export const ToolHandlerReturnSchema = z.object({
   error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
@@ -43,10 +44,10 @@ export const ToolRunContextSchema = z.object({
 });
 
 export const ToolRunInputSchema = z.object({
-  pluginId: z.string(),
-  version: z.string(),
+  ...UserPluginIdSchema.shape,
   childId: z.string().optional(), // 工具集时存在
   input: z.record(z.string(), z.unknown()),
+  secret: z.record(z.string(), z.unknown()).optional(),
   systemVar: SystemVarSchema
 });
 

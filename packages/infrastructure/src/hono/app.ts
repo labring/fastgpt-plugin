@@ -79,10 +79,18 @@ app.openapi(
         content: {
           'application/json': {
             schema: z.object({
-              data: z.object({
-                status: z.string(),
-                timestamp: z.string()
-              })
+              data: z
+                .object({
+                  status: z.string(),
+                  timestamp: z.string()
+                })
+                .openapi({
+                  description: 'Health status data',
+                  example: {
+                    status: 'ok',
+                    timestamp: '2024-01-01T00:00:00.000Z'
+                  }
+                })
             })
           }
         }

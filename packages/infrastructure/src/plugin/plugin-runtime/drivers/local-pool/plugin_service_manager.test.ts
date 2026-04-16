@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { ServiceConfig, GlobalConfig } from './types';
 import path from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// import type { GlobalConfig, ServiceConfig } from './types';
 
 describe('PluginServiceManager - 多插件管理', () => {
   let manager: PluginServiceManager;

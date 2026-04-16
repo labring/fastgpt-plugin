@@ -5,7 +5,8 @@ import { ToolSchema, type ToolType } from '@domain/entities/tool.entity';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import {
   PluginManifestBaseSchema,
-  ToolManifestSchema
+  ToolManifestSchema,
+  type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
@@ -14,6 +15,7 @@ const parse = json5.parse;
 type LoadPluginParams = {
   manifest: string;
   etag: string;
+  availableFiles: string[];
   getAccessURL: (arg: {
     pluginId: string;
     version: string;
@@ -22,40 +24,108 @@ type LoadPluginParams = {
   source: PluginSourceType;
 };
 
-const loadTool = ({
+const resolveAssetURL = async ({
+  getAccessURL,
+  pluginId,
+  version,
+  filePath
+}: {
+  getAccessURL: LoadPluginParams['getAccessURL'];
+  pluginId: string;
+  version: string;
+  filePath: string[];
+}): Promise<Result<string>> => {
+  return getAccessURL({
+    pluginId,
+    version,
+    filePath
+  });
+};
+
+const loadTool = async ({
   manifest,
   etag,
-  getAccessURL: getPath,
+  availableFiles,
+  getAccessURL,
   source
-}: LoadPluginParams): Result<ToolType> => {
+}: Omit<LoadPluginParams, 'manifest'> & {
+  manifest: ToolManifestType;
+}): Promise<Result<ToolType>> => {
   try {
-    const manifestObj = ToolManifestSchema.parse(manifest);
-    const isToolSet = manifestObj.children;
+    const availableFileSet = new Set(availableFiles);
+    let icon = manifest.icon;
+    if (availableFileSet.has(manifest.icon)) {
+      const [resolvedIcon, iconErr] = await resolveAssetURL({
+        getAccessURL,
+        pluginId: manifest.pluginId,
+        version: manifest.version,
+        filePath: [manifest.icon]
+      });
 
-    const children = manifestObj.children?.map((childManifest) => {
-      return {
-        ...childManifest,
-        icon:
-          childManifest.icon ??
-          getPath({
-            pluginId: manifestObj.pluginId,
-            version: manifestObj.version,
+      if (iconErr) {
+        return failureResult(
+          {
+            en: 'resolve plugin icon failed',
+            'zh-CN': '解析插件图标失败'
+          },
+          iconErr
+        );
+      }
+      icon = resolvedIcon;
+    }
+
+    const readmeUrl = availableFileSet.has('README.md')
+      ? (await resolveAssetURL({
+          getAccessURL,
+          pluginId: manifest.pluginId,
+          version: manifest.version,
+          filePath: ['README.md']
+        }))[0]
+      : undefined;
+
+    let children: ToolType['children'];
+    if (manifest.children) {
+      children = [];
+      for (const childManifest of manifest.children) {
+        let childIcon = childManifest.icon;
+        if (availableFileSet.has(childManifest.icon)) {
+          const [resolvedChildIcon, childIconErr] = await resolveAssetURL({
+            getAccessURL,
+            pluginId: manifest.pluginId,
+            version: manifest.version,
             filePath: [childManifest.icon]
-          })
-      };
-    }) satisfies ToolType['meta']['children'];
+          });
+
+          if (childIconErr) {
+            return failureResult(
+              {
+                en: `resolve child icon failed: ${childManifest.id}`,
+                'zh-CN': `解析子工具图标失败: ${childManifest.id}`
+              },
+              childIconErr
+            );
+          }
+          childIcon = resolvedChildIcon;
+        }
+
+        children.push({
+          ...childManifest,
+          icon: childIcon
+        });
+      }
+    }
 
     const result = {
-      ...manifestObj,
+      ...manifest,
       etag,
       source,
-      meta: {
-        toolDescription: manifestObj.toolDescription,
-        children: isToolSet ? children : undefined,
-        inputSchema: manifestObj.inputSchema,
-        outputSchema: manifestObj.outputSchema,
-        secretSchema: manifestObj.secretSchema
-      }
+      icon,
+      ...(readmeUrl ? { readmeUrl } : {}),
+      children,
+      toolDescription: manifest.toolDescription,
+      inputSchema: manifest.inputSchema,
+      outputSchema: manifest.outputSchema,
+      secretSchema: manifest.secretSchema
     } satisfies ToolType;
 
     return successResult(ToolSchema.parse(result));
@@ -86,9 +156,9 @@ export const loadPlugin = async (params: LoadPluginParams): Promise<Result<Plugi
 
     switch (data.type) {
       case 'tool':
-        return loadTool({
+        return await loadTool({
           ...params,
-          manifest
+          manifest: ToolManifestSchema.parse(manifest)
         });
       // case 'model':
       // case 'workflow':

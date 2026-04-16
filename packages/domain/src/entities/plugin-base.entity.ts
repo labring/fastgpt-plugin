@@ -1,8 +1,9 @@
 import z from 'zod';
 
+import { PluginPermissionEnumSchema } from '@domain/value-objects/permission.vo';
+
 import { I18nStringSchema } from '../value-objects/i18n-string.vo';
 import { PluginSourceSchema } from '../value-objects/plugin.vo';
-import { PluginPermissionEnumSchema } from '@domain/value-objects/permission.vo';
 
 export const PluginTagSchema = z.enum([
   'tools',
@@ -35,13 +36,16 @@ export type PluginTypeType = z.infer<typeof PluginTypeSchema>;
 
 export const PluginTypeEnum = PluginTypeSchema.enum;
 
+export const PluginStatusEnumSchema = z.enum(['active', 'pending', 'disabled']);
+export const PluginStatusEnum = PluginStatusEnumSchema.enum;
+export type PluginStatusEnumType = z.infer<typeof PluginStatusEnumSchema>;
+
 export const PluginBaseSchema = z.object({
   pluginId: z.string(),
   version: z.string(),
   etag: z.string(),
 
   type: PluginTypeSchema,
-  source: PluginSourceSchema,
 
   author: z.string().optional(),
   repoUrl: z.string().optional(), // github 仓库地址

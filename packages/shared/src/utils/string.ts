@@ -1,5 +1,3 @@
-import { customAlphabet } from 'nanoid';
-
 export const replaceSensitiveText = (text: string) => {
   // 1. http link
   text = text.replace(/(?<=https?:\/\/)[^\s]+/g, 'xxx');
@@ -10,5 +8,12 @@ export const replaceSensitiveText = (text: string) => {
 };
 
 export const getNanoid = (length: number = 12) => {
-  return customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', length)();
+  const chars = '1234567890abcdefghijklmnopqrstuvwxyz';
+  let result = '';
+
+  for (let i = 0; i < length; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  return result;
 };

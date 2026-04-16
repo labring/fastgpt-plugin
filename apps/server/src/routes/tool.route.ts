@@ -1,24 +1,19 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { ToolRunInputDTOSchema } from '@interface-adapter/contracts/dto/tool.dto';
-import {
-  makeToolRunCtrl,
-  type ToolRunCTRLDeps
-} from '@interface-adapter/controllers/tool/run.ctrl';
-import { honoRoute } from '@interface-adapter/http/hono.adapter';
 
-import { ToolStreamMessageSchema } from '@domain/value-objects/tool.vo';
+import { ToolRunInputSchema } from '@domain/value-objects/tool.vo';
+import { makeToolRunUC, type ToolRunUCDeps } from '@usecase/tool/tool-run.uc';
 
-export type ToolRouteDeps = ToolRunCTRLDeps;
+export type ToolRouteDeps = ToolRunUCDeps;
 
 // PlugininstallUC
 export const makeToolRoute = (deps: ToolRouteDeps) => {
-  const route = honoRoute();
-
-  const toolRunCtrl = makeToolRunCtrl(deps);
+  const route = new OpenAPIHono();
 
   route.openapi(
     createRoute({
       path: '/tool/runStream',
+      tags: ['tool'],
       method: 'post',
       request: {
         body: {
@@ -34,7 +29,10 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
           description: 'Tool run result stream',
           content: {
             'text/event-stream': {
-              schema: ToolStreamMessageSchema
+              schema: z.object({
+                type: z.string(),
+                data: z.string()
+              })
             }
           }
         }
@@ -42,7 +40,8 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
     }),
     async (c) => {
       const body = await c.req.json();
-      const [result, err] = await toolRunCtrl(body);
+      const uc = makeToolRunUC(deps);
+      const [result, err] = await uc(ToolRunInputSchema.parse(body));
       if (err) {
         return c.json({ error: err.reason }, 400);
       }

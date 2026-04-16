@@ -8,7 +8,7 @@ import {
   MinioStorageAdapter
 } from '@fastgpt-sdk/storage';
 
-import { failureResult, successResult } from '@domain/value-objects/result.vo';
+import { failureResult } from '@domain/value-objects/result.vo';
 
 import { createDefaultStorageOptions } from './config';
 

@@ -6,15 +6,19 @@ import { configureLogger, destroyLogger, getLogger, root } from '@infrastructure
 import { configureProxy } from '@infrastructure/utils/proxy';
 
 import deps from './src/deps';
-// import { init } from './src/init';
+import { init } from './src/init';
 import { makePluginRoute } from './src/routes/plugin.route';
 import { makeToolRoute } from './src/routes/tool.route';
 
-// const pluginRoute = makePluginRoute(deps);
+const pluginRoute = makePluginRoute(deps);
 const toolRoute = makeToolRoute(deps);
-console.log(toolRoute.openAPIRegistry);
 
-// app.route('/api', pluginRoute);
+app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
+  type: 'http',
+  scheme: 'bearer'
+});
+
+app.route('/api', pluginRoute);
 app.route('/api', toolRoute);
 
 const logger = getLogger(root);
@@ -28,7 +32,7 @@ let server: ServerType | null = null;
 async function prepare() {
   configureProxy(); // setup global proxy
   await configureLogger(); // setup logger
-  // init();
+  init();
 }
 
 function shutdown() {

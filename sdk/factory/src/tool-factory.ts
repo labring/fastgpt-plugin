@@ -1,182 +1,174 @@
-import { z } from 'zod';
+import z from 'zod';
+
+import type { InvokePort } from '@domain/ports/invoke.port';
+import { StreamData } from '@domain/value-objects/stream.vo';
+import type { SystemVarType } from '@domain/value-objects/system-var.vo';
+import type { ToolAnswerType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import type { PluginToolRunPayloadType } from '@infrastructure/plugin/tool.impl';
+import { getErrText } from '@shared/utils/err';
+
+import type { UserToolManifestType } from './manifest.type';
 import { PluginFactory } from './plugin-factory';
-import type {
-  ToolContextType,
-  ToolHandlerReturnType
-} from '@fastgpt-plugin/domain/value-objects/tool.vo';
-import type { SystemVarType } from '@fastgpt-plugin/domain/value-objects/system-var.vo';
-import type { InvokePort } from '@fastgpt-plugin/domain/ports/invoke.port';
-import type { FileMetadataType } from '@fastgpt-plugin/domain/value-objects/file.vo';
+export type ToolContextType<TSecret = Record<string, unknown>> = {
+  systemVar: SystemVarType;
+  secrets: TSecret;
+};
+
+export type ToolChildManifestDefinition = {
+  id: string;
+  description: UserToolManifestType['description'];
+  name: UserToolManifestType['name'];
+  icon?: string;
+  toolDescription?: string;
+};
+
+type ToolInputSchema = z.ZodObject<any>;
+type ToolOutputSchema = z.ZodObject<any>;
+type ToolSecretSchema = z.ZodTypeAny | undefined;
+
+type ToolSecretValue<TSecret extends ToolSecretSchema> = TSecret extends z.ZodTypeAny
+  ? z.output<NoInfer<TSecret>>
+  : undefined;
+
+type ToolHandlerContext<TSecret extends ToolSecretSchema> = {
+  systemVar: SystemVarType;
+  secrets?: ToolSecretValue<TSecret>;
+  invoke: InvokePort;
+  streamResponse: (msg: ToolAnswerType) => void;
+};
+
+type ToolHandlerFn<
+  TInput extends ToolInputSchema,
+  TOutput extends ToolOutputSchema,
+  TSecret extends ToolSecretSchema
+> = (
+  input: z.output<NoInfer<TInput>>,
+  ctx: ToolHandlerContext<TSecret>
+) => Promise<z.output<NoInfer<TOutput>>>;
 
 export type ToolHandlerDefinition<
-  TInput = unknown,
-  TOutput = Record<string, unknown>,
-  TSecret = Record<string, unknown>
+  TInput extends ToolInputSchema = ToolInputSchema,
+  TOutput extends ToolOutputSchema = ToolOutputSchema,
+  TSecret extends ToolSecretSchema = undefined
 > = {
-  inputSchema: z.ZodType<TInput>;
-  outputSchema: z.ZodType<TOutput>;
-  secretSchema?: z.ZodType<TSecret>;
-  handler: (input: TInput, ctx: ToolContextType & { secrets: TSecret }) => Promise<TOutput>;
+  inputSchema: TInput;
+  outputSchema: TOutput;
+  secretSchema?: TSecret;
+  handler: ToolHandlerFn<TInput, TOutput, TSecret>;
 };
 
 export function createToolHandler<
-  TInput,
-  TOutput extends Record<string, unknown>,
-  TSecret extends Record<string, unknown> = Record<string, unknown>
+  TInput extends ToolInputSchema,
+  TOutput extends ToolOutputSchema,
+  TSecret extends ToolSecretSchema = undefined
 >(
   def: ToolHandlerDefinition<TInput, TOutput, TSecret>
 ): ToolHandlerDefinition<TInput, TOutput, TSecret> {
   return def;
 }
 
-/**
- * Tool 类型插件。支持单个 tool 或工具集（多个具名子工具）。
- *
- * @example 单个 tool
- * const plugin = new ToolPlugin();
- * plugin.registerTool(createToolHandler({ inputSchema: InputSchema, outputSchema: OutputSchema, handler }));
- * export { plugin };
- *
- * @example 工具集（共享 secret）
- * const plugin = new ToolPlugin();
- * plugin.setSecret(SecretSchema);  // 所有子工具共用同一份 secret
- * plugin.registerTool('search', createToolHandler({ inputSchema: SearchInputSchema, outputSchema: SearchOutputSchema, handler: searchHandler }));
- * plugin.registerTool('index',  createToolHandler({ inputSchema: IndexInputSchema,  outputSchema: IndexOutputSchema,  handler: indexHandler }));
- * export { plugin };
- */
-export class ToolPlugin extends PluginFactory {
-  private readonly _tools = new Map<string, ToolHandlerDefinition<any, any, any>>();
-  private _secretSchema?: z.ZodType<any>;
+export class ToolFactory extends PluginFactory {
+  private toolHandlers: Map<string, ToolHandlerDefinition<any, any, any>> = new Map();
+  private childManifests: Map<string, ToolChildManifestDefinition> = new Map();
+  private secretSchema: z.ZodType<any> = z.record(z.string(), z.unknown());
 
-  constructor() {
+  private constructor(private userToolManifest: UserToolManifestType) {
     super();
 
-    this.router.handle('execute', async (params) => {
-      const { toolName, inputs, systemVar, callbackToken, secrets } = params as {
-        toolName?: string;
-        inputs: Record<string, unknown>;
-        systemVar: SystemVarType;
-        callbackToken?: string;
-        secrets?: Record<string, unknown>;
-      };
+    if (this.mode)
+      this.getChannel().setRequestHandler(async (msg) => {
+        if (msg.method === 'run') {
+          try {
+            const { input, systemVar, childId, secrets } = msg.params as PluginToolRunPayloadType;
+            // 处理工具执行请求
+            const def = this.toolHandlers.get(childId ?? 'toolI');
 
-      // 保存当前执行上下文的 token，供 callHost() 使用
-      this._callbackToken = callbackToken;
+            if (!def) {
+              throw new Error('No tool registered');
+            }
 
-      const invoke: InvokePort = {
-        uploadFile: (args) => this.callHost('uploadFile', args) as Promise<FileMetadataType>,
-        streamResponse: (args) => this.callHost('streamResponse', args) as Promise<void>
-      };
+            const streamResponse = StreamData.create<ToolAnswerType>();
+            const output = StreamData.create<ToolStreamMessageType>();
 
-      const def = this._resolveTool(toolName);
+            streamResponse.onData((msg) => {
+              output.send({
+                type: 'stream',
+                data: msg
+              });
+            });
 
-      const parsed = def.inputSchema.safeParse(inputs);
-      if (!parsed.success) {
-        return { error: parsed.error.message } satisfies ToolHandlerReturnType;
-      }
+            const result = await def.handler(input, {
+              systemVar,
+              secrets,
+              invoke: this.getInvoke(),
+              streamResponse: (msg: ToolAnswerType) => {
+                streamResponse.send(msg);
+              }
+            });
 
-      // 验证 secrets：工具集用父层 _secretSchema，单工具用 def.secretSchema
-      const secretSchema = this._secretSchema ?? def.secretSchema;
-      let validatedSecrets: Record<string, unknown> = {};
-      if (secretSchema) {
-        const parsedSecrets = secretSchema.safeParse(secrets ?? {});
-        if (!parsedSecrets.success) {
-          return {
-            error: `Secret validation failed: ${parsedSecrets.error.message}`
-          } satisfies ToolHandlerReturnType;
+            output.send({
+              type: 'reponse',
+              data: result
+            });
+
+            return this.getChannel().replyDuplex(msg, undefined, {
+              output
+            });
+          } catch (err) {
+            const output: StreamData<ToolStreamMessageType> = StreamData.create();
+            output.write({
+              data: getErrText(err),
+              type: 'error'
+            });
+            return this.getChannel().replyDuplex(msg, undefined, {
+              output
+            });
+          }
         }
-        validatedSecrets = parsedSecrets.data as Record<string, unknown>;
-      }
-
-      try {
-        const output = await def.handler(parsed.data, {
-          systemVar,
-          invoke,
-          secrets: validatedSecrets
-        });
-        return { output } satisfies ToolHandlerReturnType;
-      } catch (err) {
-        return {
-          error: err instanceof Error ? err.message : String(err)
-        } satisfies ToolHandlerReturnType;
-      } finally {
-        this._callbackToken = undefined;
-      }
-    });
+        return;
+      });
   }
 
-  /** 注册单个 tool（无名）*/
-  registerTool(
-    definition: ToolHandlerDefinition<any, any, any>
-  ): this; /** 注册具名 tool（工具集子工具）*/
-  registerTool(name: string, definition: ToolHandlerDefinition<any, any, any>): this;
-  registerTool(
-    nameOrDef: string | ToolHandlerDefinition<any, any, any>,
-    definition?: ToolHandlerDefinition<any, any, any>
-  ): this {
-    if (typeof nameOrDef === 'string') {
-      this._tools.set(nameOrDef, definition!);
-    } else {
-      // 单个 tool 用空串作 key
-      this._tools.set('', nameOrDef);
-    }
-    return this;
+  public setSecretSchema<TSecret extends Record<string, unknown>>(
+    schema: z.ZodType<TSecret>
+  ): void {
+    this.secretSchema = schema;
   }
 
-  /**
-   * 设置工具集级别的共享 secretSchema。
-   * 仅在工具集模式（多个具名子工具）下有效；单工具请在 createToolHandler 的 secretSchema 字段中定义。
-   */
-  setSecret<T extends Record<string, unknown>>(schema: z.ZodType<T>): this {
-    this._secretSchema = schema;
-    return this;
+  public registerTool(
+    definition: ToolHandlerDefinition,
+    id: string = 'tool',
+    childManifest?: ToolChildManifestDefinition
+  ): void {
+    this.toolHandlers.set(id, definition);
+    if (childManifest) {
+      this.childManifests.set(id, childManifest);
+    }
   }
 
-  /**
-   * 返回插件的静态配置，写入 config.json 并响应 getConfig IPC。
-   *
-   * 格式：
-   *   单工具:  { inputSchema: {}, outputSchema: {}, secretSchema?: {} }
-   *   工具集:  { secretSchema?: {}, tool1: { inputSchema: {}, outputSchema: {} }, tool2: { ... } }
-   */
-  public override getConfig(): Record<string, unknown> {
-    const toEntry = (def: ToolHandlerDefinition<any, any, any>) => {
-      const entry: Record<string, unknown> = {
-        inputSchema: z.toJSONSchema(def.inputSchema),
-        outputSchema: z.toJSONSchema(def.outputSchema)
-      };
-      if (def.secretSchema) {
-        entry.secretSchema = z.toJSONSchema(def.secretSchema);
-      }
-      return entry;
-    };
+  private static instance: ToolFactory;
 
-    if (this._tools.size === 1 && this._tools.has('')) {
-      return toEntry(this._tools.get('')!);
+  static getInstance(userToolManifest: UserToolManifestType): ToolFactory {
+    if (!ToolFactory.instance) {
+      ToolFactory.instance = new ToolFactory(userToolManifest);
     }
-
-    const config: Record<string, unknown> = {};
-    if (this._secretSchema) {
-      config.secretSchema = z.toJSONSchema(this._secretSchema);
-    }
-    for (const [name, def] of this._tools) {
-      config[name] = toEntry(def);
-    }
-    return config;
+    return ToolFactory.instance;
   }
 
-  private _resolveTool(toolName?: string): ToolHandlerDefinition<any, any, any> {
-    if (toolName !== undefined) {
-      const def = this._tools.get(toolName);
-      if (!def) throw new Error(`Tool not found: ${toolName}`);
-      return def;
-    }
-    // 未指定 toolName：要求恰好注册了一个 tool（单工具模式）
-    if (this._tools.size === 1) {
-      const def = [...this._tools.values()][0];
-      if (!def) throw new Error('No tool registered');
-      return def;
-    }
-    throw new Error('toolName is required for toolsets');
+  public getSecretSchema() {
+    return this.secretSchema;
+  }
+  /** 获取单独的工具 */
+  public getToolHandler(): ToolHandlerDefinition;
+  /** 获取子工具信息 */
+  public getToolHandler(childId: string = 'tool'): ToolHandlerDefinition | undefined {
+    return this.toolHandlers.get(childId);
+  }
+  public getUserToolManifest(): UserToolManifestType {
+    return this.userToolManifest;
+  }
+
+  public getChildManifests(): ToolChildManifestDefinition[] {
+    return [...this.childManifests.values()];
   }
 }

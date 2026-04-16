@@ -1,4 +1,5 @@
 import z from 'zod';
+
 import { I18nStringStrictSchema } from '../value-objects/i18n-string.vo';
 
 // 模型类型枚举
@@ -114,7 +115,8 @@ export type ModelItemType = z.infer<typeof ModelItemSchema>;
 
 export const ModelProviderSchema = z.object({
   id: z.string(),
-  name: I18nStringStrictSchema
+  name: I18nStringStrictSchema,
+  avatar: z.string()
 });
 
 export type ModelProviderType = z.infer<typeof ModelProviderSchema>;

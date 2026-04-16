@@ -13,7 +13,7 @@
   "dependencies": {},
   "devDependencies": {
     "@fastgpt-plugin/cli": "catalog:",
-    "@fastgpt-plugin/helpers": "catalog:",
+    "@fastgpt-plugin/sdk-factory": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"

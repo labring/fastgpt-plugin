@@ -1,7 +1,7 @@
-import { isNotNil } from 'es-toolkit';
-import type { Env } from 'hono';
 import { OpenAPIHono, type OpenAPIHonoOptions } from '@hono/zod-openapi';
 import { R } from '@interface-adapter/http/http.type';
+import { isNotNil } from 'es-toolkit';
+import type { Env } from 'hono';
 
 export function appendHeaders(headers: Headers, appendHeaders?: HeadersInit) {
   const h = new Headers(headers);

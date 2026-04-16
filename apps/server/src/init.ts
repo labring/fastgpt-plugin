@@ -1,7 +1,15 @@
-import { mongoClient, privateRemoteFileStorageRepo, publicRemoteFileStorageRepo } from './deps';
+import {
+  localFileStorageRepo,
+  mongoClient,
+  privateRemoteFileStorageRepo,
+  publicRemoteFileStorageRepo
+} from './deps';
 
 export const init = async () => {
-  await privateRemoteFileStorageRepo.init();
-  await publicRemoteFileStorageRepo.init();
-  await mongoClient.init();
+  await Promise.all([
+    localFileStorageRepo.initialize(),
+    privateRemoteFileStorageRepo.init(),
+    publicRemoteFileStorageRepo.init(),
+    mongoClient.init()
+  ]);
 };

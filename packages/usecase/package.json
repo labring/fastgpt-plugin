@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "es-toolkit": "^1.44.0",
     "zod": "catalog:"
   },
   "devDependencies": {

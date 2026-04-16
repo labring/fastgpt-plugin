@@ -6,7 +6,6 @@
     "build": "npx @fastgpt-plugin/cli build"
   },
   "dependencies": {
-    "@fastgpt-plugin/helpers": "^0.1.0",
     "zod": "^4"
   },
   "devDependencies": {

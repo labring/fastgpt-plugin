@@ -5,8 +5,7 @@ import { StreamData } from '@domain/value-objects/stream.vo';
 import type {
   PendingEntry,
   PluginIOMessage,
-  PluginMessageErrorType,
-  PluginTransportPort
+  PluginMessageErrorType
 } from '@infrastructure/plugin/plugin-runtime/ports/plugin-io.port';
 
 export interface PluginIpcChannelOptions {
@@ -94,6 +93,8 @@ type PendingStreamWaiter = {
   timer?: ReturnType<typeof setTimeout>;
 };
 
+type PluginIpcEndpoint = ChildProcess | typeof process;
+
 const IPC_STREAM_EVENT_METHOD = '__plugin_ipc_stream__';
 const IPC_REQUEST_INPUT_STREAM_PREFIX = '__plugin_ipc_request_input_stream__';
 const IPC_REQUEST_OUTPUT_STREAM_PREFIX = '__plugin_ipc_request_output_stream__';
@@ -179,14 +180,26 @@ export class PluginIpcChannel {
   private readonly pendingStreamWaiters = new Map<string, PendingStreamWaiter[]>();
   private requestHandler: PluginIpcRequestHandler | null = null;
   private eventHandler: PluginIpcEventHandler | null = null;
+  private readonly endpoint: PluginIpcEndpoint;
+  private readonly options: PluginIpcChannelOptions;
   private readonly unsubscribeMessage: () => void;
   private closed = false;
 
+  constructor(endpoint: PluginIpcEndpoint, options?: PluginIpcChannelOptions);
+  constructor(options?: PluginIpcChannelOptions);
   constructor(
-    private readonly transport: PluginTransportPort,
-    private readonly options: PluginIpcChannelOptions = {}
+    endpointOrOptions?: PluginIpcEndpoint | PluginIpcChannelOptions,
+    maybeOptions: PluginIpcChannelOptions = {}
   ) {
-    this.unsubscribeMessage = transport.onMessage((message) => {
+    if (isPluginIpcEndpoint(endpointOrOptions)) {
+      this.endpoint = endpointOrOptions;
+      this.options = maybeOptions;
+    } else {
+      this.endpoint = process;
+      this.options = endpointOrOptions ?? {};
+    }
+
+    this.unsubscribeMessage = subscribeToIpcMessages(this.endpoint, (message) => {
       void this.dispatch(message).catch((error) => {
         this.emitError(error instanceof Error ? error : new Error(String(error)));
       });
@@ -531,20 +544,18 @@ export class PluginIpcChannel {
         timer
       });
 
-      this.transport
-        .send({
-          id,
-          messageType: 'request',
-          method,
-          params,
-          ...(options?.traceId !== undefined ? { traceId: options.traceId } : {}),
-          timestamp: Date.now()
-        })
-        .catch((error) => {
-          clearTimeout(timer);
-          this.pending.delete(id);
-          reject(error);
-        });
+      this.send({
+        id,
+        messageType: 'request',
+        method,
+        params,
+        ...(options?.traceId !== undefined ? { traceId: options.traceId } : {}),
+        timestamp: Date.now()
+      }).catch((error) => {
+        clearTimeout(timer);
+        this.pending.delete(id);
+        reject(error);
+      });
     });
   }
 
@@ -552,7 +563,7 @@ export class PluginIpcChannel {
   async emit<TData>(event: string, data: TData, traceId?: string): Promise<void> {
     this.ensureOpen();
 
-    await this.transport.send({
+    await this.send({
       id: randomUUID(),
       messageType: 'event',
       method: event,
@@ -566,7 +577,7 @@ export class PluginIpcChannel {
   async sendReady(): Promise<void> {
     this.ensureOpen();
 
-    await this.transport.send({
+    await this.send({
       id: randomUUID(),
       messageType: 'ready',
       timestamp: Date.now()
@@ -577,7 +588,7 @@ export class PluginIpcChannel {
   async reply(message: PluginIOMessage, result: unknown): Promise<void> {
     this.ensureOpen();
 
-    await this.transport.send({
+    await this.send({
       id: message.id,
       messageType: 'response',
       ...(result !== undefined ? { result } : {}),
@@ -599,7 +610,7 @@ export class PluginIpcChannel {
 
     const normalized = normalizePluginMessageError(error);
 
-    await this.transport.send({
+    await this.send({
       id: message.id,
       messageType: 'error',
       error: normalized,
@@ -618,7 +629,6 @@ export class PluginIpcChannel {
     this.rejectAllPending(reason);
     this.rejectAllPendingStreamWaiters(reason);
     this.failAllIncomingStreams(reason);
-    await this.transport.close();
   }
 
   private async dispatch(message: PluginIOMessage): Promise<void> {
@@ -835,88 +845,14 @@ export class PluginIpcChannel {
     this.errorHandlers.forEach((handler) => handler(error));
   }
 
+  private async send(message: PluginIOMessage): Promise<void> {
+    await sendIpcMessage(this.endpoint, message);
+  }
+
   private ensureOpen(): void {
     if (this.closed) {
       throw new Error('IPC channel closed');
     }
-  }
-}
-
-/**
- * Host 侧 IPC transport，包装 ChildProcess 的 IPC channel。
- */
-export class ChildProcessIpcTransport implements PluginTransportPort {
-  readonly transportType = 'ipc' as const;
-
-  constructor(private readonly process: ChildProcess) {}
-
-  async send(message: PluginIOMessage): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.process.send) {
-        reject(new Error('IPC channel not available'));
-        return;
-      }
-
-      this.process.send(message, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-  }
-
-  onMessage(handler: (message: PluginIOMessage) => void): () => void {
-    const listener = (message: unknown) => {
-      if (isPluginIOMessage(message)) {
-        handler(message);
-      }
-    };
-
-    this.process.on('message', listener);
-    return () => this.process.off('message', listener);
-  }
-
-  close(): Promise<void> {
-    return Promise.resolve();
-  }
-}
-
-/**
- * Client 侧 IPC transport，运行在被 fork 的当前子进程中。
- */
-export class CurrentProcessIpcTransport implements PluginTransportPort {
-  readonly transportType = 'ipc' as const;
-
-  async send(message: PluginIOMessage): Promise<void> {
-    if (!process.send) {
-      throw new Error('process.send is not available (not a child process)');
-    }
-
-    return new Promise((resolve, reject) => {
-      (
-        process.send as unknown as (
-          message: PluginIOMessage,
-          cb: (err: Error | null) => void
-        ) => void
-      )(message, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-  }
-
-  onMessage(handler: (message: PluginIOMessage) => void): () => void {
-    const listener = (message: unknown) => {
-      if (isPluginIOMessage(message)) {
-        handler(message);
-      }
-    };
-
-    process.on('message', listener);
-    return () => process.off('message', listener);
-  }
-
-  close(): Promise<void> {
-    return Promise.resolve();
   }
 }
 
@@ -925,14 +861,66 @@ export function createChildProcessIpcChannel(
   process: ChildProcess,
   options?: PluginIpcChannelOptions
 ): PluginIpcChannel {
-  return new PluginIpcChannel(new ChildProcessIpcTransport(process), options);
+  return new PluginIpcChannel(process, options);
 }
 
 /** 在 client 侧直接基于当前进程创建 channel。 */
 export function createCurrentProcessIpcChannel(
   options?: PluginIpcChannelOptions
 ): PluginIpcChannel {
-  return new PluginIpcChannel(new CurrentProcessIpcTransport(), options);
+  return new PluginIpcChannel(process, options);
+}
+
+type PluginIpcMessageListener = (message: unknown) => void;
+
+type PluginIpcPortLike = {
+  send?: (message: unknown, callback?: (error: Error | null | undefined) => void) => boolean;
+  on(event: 'message', listener: PluginIpcMessageListener): unknown;
+  off(event: 'message', listener: PluginIpcMessageListener): unknown;
+};
+
+function subscribeToIpcMessages(
+  endpoint: PluginIpcEndpoint,
+  handler: (message: PluginIOMessage) => void
+): () => void {
+  const port = endpoint as unknown as PluginIpcPortLike;
+  const listener: PluginIpcMessageListener = (message) => {
+    if (isPluginIOMessage(message)) {
+      handler(message);
+    }
+  };
+
+  port.on('message', listener);
+  return () => port.off('message', listener);
+}
+
+function sendIpcMessage(endpoint: PluginIpcEndpoint, message: PluginIOMessage): Promise<void> {
+  const port = endpoint as unknown as PluginIpcPortLike;
+
+  if (typeof port.send !== 'function') {
+    throw new Error('IPC channel not available');
+  }
+
+  return new Promise((resolve, reject) => {
+    port.send!(message, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+function isPluginIpcEndpoint(value: unknown): value is PluginIpcEndpoint {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'on' in value &&
+      typeof value.on === 'function' &&
+      'off' in value &&
+      typeof value.off === 'function'
+  );
 }
 
 function isPluginIOMessage(message: unknown): message is PluginIOMessage {

@@ -40,6 +40,8 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
 
     const entries = await unpkg(stream);
     const result: PkgContentFileObjects = {} as any;
+    result.assets = [];
+    result.logos = [];
 
     for (const entry of entries) {
       const { filename, directory, stream } = entry;
@@ -49,7 +51,8 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
       }
       const [file, err] = await this.deps.localFileStorageRepo.save({
         file: stream!,
-        fileName: filename
+        fileName: filename,
+        overwrite: true
       });
 
       if (err) {
@@ -57,11 +60,11 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
       }
 
       if (filename === 'index.js') {
-        if (FileContentTypeGurad(file, 'application/javascript')) result.index = file;
-      } else if (filename === 'manifest.yaml') {
-        if (FileContentTypeGurad(file, 'application/json')) result.manifest = file;
+        result.index = file;
+      } else if (filename === 'manifest.json') {
+        result.manifest = file;
       } else if (filename === 'README.md') {
-        if (FileContentTypeGurad(file, 'text/markdown')) result.readme = file;
+        result.readme = file;
       } else if (path.dirname(filename) === 'assets') {
         // assets files
         // only images are allowed
@@ -72,11 +75,13 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
           FileContentTypeGurad(file, 'image/gif') ||
           FileContentTypeGurad(file, 'image/webp')
         ) {
-          if (!result.assets.length) result.assets = [file];
-          else result.assets.push(file);
+          result.assets.push(file);
         }
-      } else if (path.basename(filename) === 'logo') {
-        // logo
+      } else if (
+        path.dirname(filename) === '.' &&
+        /^([^.]+\.|)logo\./i.test(path.basename(filename))
+      ) {
+        // logo.* or childId.logo.*
         if (
           FileContentTypeGurad(file, 'image/svg+xml') ||
           FileContentTypeGurad(file, 'image/png') ||
@@ -84,9 +89,31 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
           FileContentTypeGurad(file, 'image/gif') ||
           FileContentTypeGurad(file, 'image/webp')
         ) {
-          result.logo = file;
+          result.logos.push(file);
         }
       }
+    }
+
+    if (result.assets.length === 0) {
+      delete result.assets;
+    }
+
+    if (result.logos.length === 0) {
+      delete result.logos;
+    }
+
+    if (!result.index) {
+      return failureResult({
+        en: 'Missing index.js in plugin package',
+        'zh-CN': '插件包缺少 index.js'
+      });
+    }
+
+    if (!result.manifest) {
+      return failureResult({
+        en: 'Missing manifest.json in plugin package',
+        'zh-CN': '插件包缺少 manifest.json'
+      });
     }
 
     const etag = getPluginEtag({
@@ -107,6 +134,7 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
 
     const [info, err3] = await loadPlugin({
       etag,
+      availableFiles: entries.filter((entry) => !entry.directory).map((entry) => entry.filename),
       getAccessURL: async ({ filePath, pluginId, version }) => {
         const [accessURL, err] = await this.deps.pluginRepo.getPluginFileAccessURL(
           {

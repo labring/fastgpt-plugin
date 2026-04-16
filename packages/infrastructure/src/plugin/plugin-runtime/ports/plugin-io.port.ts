@@ -1,9 +1,5 @@
 import z from 'zod';
 
-export const TransportSchema = z.enum(['ipc']);
-export const TransportTypeEnum = TransportSchema.enum;
-export type TransportType = z.infer<typeof TransportSchema>;
-
 export const PluginMessageTypeSchema = z.enum(['request', 'response', 'event', 'ready', 'error']);
 export const PluginMessageTypeEnum = PluginMessageTypeSchema.enum;
 export type PluginMessageType = z.infer<typeof PluginMessageTypeSchema>;
@@ -34,21 +30,3 @@ export type PendingEntry = {
   reject: (e: Error) => void;
   timer: ReturnType<typeof setTimeout>;
 };
-/**
- * Plugin 通信架构
- *
- * PluginService => PluginRouter
- */
-
-/**
- * Plugin Transport (底层)
- * Plugin 通信的底层设计，
- */
-export interface PluginTransportPort {
-  readonly transportType: TransportType;
-
-  send(message: PluginIOMessage): Promise<void>;
-  /** 注册消息处理器，返回取消订阅函数 */
-  onMessage(handler: (message: PluginIOMessage) => void): () => void;
-  close(): Promise<void>;
-}

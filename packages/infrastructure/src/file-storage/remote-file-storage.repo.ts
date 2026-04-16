@@ -11,14 +11,16 @@ import {
   type FileMetaType
 } from '@domain/value-objects/file/file.vo';
 import { FileObject } from '@domain/value-objects/file/file-object.vo';
-import { detectMimeTypeFromContent } from '@domain/value-objects/file/MIME.vo';
+import {
+  detectMimeTypeFromContent,
+  getMimeTypeFromFilename,
+  type MIMEType
+} from '@domain/value-objects/file/MIME.vo';
 import type { Result } from '@domain/value-objects/result.vo';
 import { failureResult, successResult } from '@domain/value-objects/result.vo';
 
 import { env } from '../env';
 import { MongoClient } from '../storage/mongo';
-
-import { getMetaFromStream } from './utils';
 
 export type RemoteFileStorageDeps = {
   mongoClient: MongoClient;
@@ -32,15 +34,15 @@ export class RemoteFileStorageRepo implements RemoteFileStoragePort {
   private _basePath: string = env.S3_FILE_BASE_PATH;
   private _getURLExpiresIn: number = 3600;
 
-  static _instance: RemoteFileStorageRepo;
-  static getInstance(deps: RemoteFileStorageDeps): RemoteFileStorageRepo {
-    if (!this._instance) {
-      this._instance = new RemoteFileStorageRepo(deps);
-    }
-    return this._instance;
-  }
+  // static _instance: RemoteFileStorageRepo;
+  // static getInstance(deps: RemoteFileStorageDeps): RemoteFileStorageRepo {
+  //   if (!this._instance) {
+  //     this._instance = new RemoteFileStorageRepo(deps);
+  //   }
+  //   return this._instance;
+  // }
 
-  private constructor(private deps: RemoteFileStorageDeps) {}
+  public constructor(private deps: RemoteFileStorageDeps) {}
 
   public async init() {
     await this.deps.s3Clients.internalClient.ensureBucket();
@@ -70,14 +72,10 @@ export class RemoteFileStorageRepo implements RemoteFileStoragePort {
     try {
       const parsed = FileMetaSchema.parse({
         contentType: metadata.contentType,
-        createTime: new Date(metadata.metadata['createAt']),
+        createTime: new Date(metadata.metadata['createTime']),
         etag: metadata.etag,
         fileKey,
-        fileName: metadata.metadata['content-disposition']
-          ?.split(';')
-          .find((part) => part.trim().startsWith('filename='))
-          ?.split('=')[1]
-          ?.replace(/^"|"$/g, ''),
+        fileName: metadata.metadata['fileName'],
         size: metadata.contentLength
       });
 
@@ -127,26 +125,24 @@ export class RemoteFileStorageRepo implements RemoteFileStoragePort {
   }
 
   async save(input: FileCreateType): Promise<Result<FileObject>> {
-    const { file, fileName, overwrite } = input;
+    const { file, fileName, contentType: providedContentType } = input;
     const fileKey = this.joinPath(input.fileKey ?? randomUUID());
     const targetFileName = fileName ?? fileKey.split('/').pop() ?? fileKey;
     const createTime = new Date();
 
-    if (!overwrite) {
-      const existingFile = await this.getInfo(fileKey);
-      if (existingFile) {
-        return failureResult({
-          en: 'File already exists',
-          'zh-CN': '文件已存在'
-        });
-      }
-    }
-
     const isBuffer = (f: typeof file): f is Buffer => f instanceof Buffer;
 
     const contentType = isBuffer(file)
-      ? detectMimeTypeFromContent(file)
-      : (await getMetaFromStream(file as Readable)).contentType;
+      ? this.resolveContentType({
+          provided: providedContentType,
+          detected: detectMimeTypeFromContent(file),
+          fileName: targetFileName
+        })
+      : this.resolveContentType({
+          provided: providedContentType,
+          detected: 'application/octet-stream',
+          fileName: targetFileName
+        });
 
     try {
       await this.deps.s3Clients.internalClient.uploadObject({
@@ -310,5 +306,25 @@ export class RemoteFileStorageRepo implements RemoteFileStoragePort {
         e
       );
     }
+  }
+
+  private resolveContentType({
+    provided,
+    detected,
+    fileName
+  }: {
+    provided?: MIMEType;
+    detected: MIMEType;
+    fileName: string;
+  }): MIMEType {
+    if (provided) {
+      return provided;
+    }
+
+    if (detected !== 'application/octet-stream') {
+      return detected;
+    }
+
+    return getMimeTypeFromFilename(fileName) ?? detected;
   }
 }

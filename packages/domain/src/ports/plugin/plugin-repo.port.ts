@@ -1,11 +1,16 @@
 import type { PluginTagType, PluginType, PluginTypeType } from '../../entities/plugin.entity';
 import type { FileObject } from '../../value-objects/file/file-object.vo';
 import type { PkgContentFileObjects } from '../../value-objects/file/pkg-file.vo';
-import type { PluginTagListType, PluginUniqueIdType } from '../../value-objects/plugin.vo';
+import type {
+  PluginTagListType,
+  PluginUniqueIdType,
+  UserPluginIdType
+} from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
 
 /** 操作 Plugin S3, Mongo，本地缓存, 代码里面的静态配置 ...*/
 export interface PluginRepoPort {
+  init(): Promise<Result>;
   /** 获取 pending 的 plugin id */
   getPendingPluginIds(): Promise<Result<PluginUniqueIdType[]>>;
   /** 创建插件 */
@@ -24,6 +29,7 @@ export interface PluginRepoPort {
   ): Promise<Result<{ info: PluginType; indexFile: FileObject }>>;
 
   getPluginsByPluginId(pluginId: string): Promise<Result<PluginType[]>>;
+  getPluginByUserPluginId(userPluginId: UserPluginIdType): Promise<Result<PluginType>>;
 
   /** 列出所有插件 */
   list(arg: {

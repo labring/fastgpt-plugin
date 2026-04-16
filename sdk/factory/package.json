@@ -3,6 +3,20 @@
   "version": "0.0.1-alpha.1",
   "dependencies": {
     "@fastgpt-plugin/domain": "workspace:*",
-    "@fastgpt-plugin/helpers": "workspace:*"
-  }
+    "@fastgpt-plugin/infrastructure": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsdown"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "private": "false"
 }

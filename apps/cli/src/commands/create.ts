@@ -1,11 +1,12 @@
-import type { Command } from 'commander';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { CreatePluginCommandOptions } from '@fastgpt-plugin/cli/interfaces/command';
-import { logger } from '@fastgpt-plugin/cli/helpers';
-import { DEFAULT_PLUGIN_DESCRIPTION, TOOL_TEMPLATES_DIR } from '@fastgpt-plugin/cli/constants';
+
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
+import { DEFAULT_PLUGIN_DESCRIPTION, TOOL_TEMPLATES_DIR } from '@fastgpt-plugin/cli/constants';
+import { logger } from '@fastgpt-plugin/cli/helpers';
+import type { CreatePluginCommandOptions } from '@fastgpt-plugin/cli/interfaces/command';
 import { CreatePrompt } from '@fastgpt-plugin/cli/prompts/create';
+import type { Command } from 'commander';
 import { kebabCase } from 'es-toolkit';
 
 export class CreateCommand extends BaseCommand {

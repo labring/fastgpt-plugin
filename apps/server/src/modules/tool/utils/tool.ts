@@ -269,8 +269,8 @@ export const parsePkg = async (filepath: string, temp: boolean = true) => {
     return;
   }
 
-  // 1. 读取 manifest.yaml
-  const manifestPath = path.join(tempDir, 'manifest.yaml');
+  // 1. 读取 manifest.json
+  const manifestPath = path.join(tempDir, 'manifest.json');
   const manifest = await loadManifest(manifestPath);
   const toolId = buildGlobalToolId(manifest.author, manifest.toolId, manifest.version, etag);
 

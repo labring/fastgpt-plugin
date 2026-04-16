@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { BoolStringSchema, PositiveIntSchema } from '@domain/value-objects/baisc.vo';
 import { PluginRuntimeModeEnum, PluginRuntimeModeSchema } from '@domain/value-objects/plugin.vo';
+import path from 'node:path';
 
 export const env = createEnv({
   runtimeEnv: process.env,
@@ -45,7 +46,7 @@ export const env = createEnv({
 
     // 基础设施配置
     // 文件存储配置
-    LOCAL_FILE_BASE_PATH: z.string().default(os.tmpdir()),
+    LOCAL_FILE_BASE_PATH: z.string().default(path.join(os.tmpdir(), 'fastgpt-plugin')),
     S3_FILE_BASE_PATH: z.string().default('system/plugin'),
 
     // 系统

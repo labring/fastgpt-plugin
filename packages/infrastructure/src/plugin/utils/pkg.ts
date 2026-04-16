@@ -7,7 +7,7 @@ import { ReadableStream } from 'node:stream/web';
  * ```ts
  * // a normal file
  * {
- *   filename: 'manifest.yaml',
+ *   filename: 'manifest.json',
  *   directory: false,
  *   readable: new Blob(['demo']).stream(),
  * };
@@ -36,7 +36,7 @@ export type EntiesType = {
  * ```ts
  * const input = ReadableStream.from([
  *   {
- *     filename: 'manifest.yaml',
+ *     filename: 'manifest.json',
  *     readable: new Blob(['demo']).stream(),
  *   },
  *   {
@@ -81,7 +81,7 @@ export const pkg = async (entries: EntiesType): Promise<Readable> => {
  * const pkgStream = pkg(
  *   ReadableStream.from([
  *     {
- *       filename: 'manifest.yaml',
+ *       filename: 'manifest.json',
  *       readable: new Blob(['demo']).stream(),
  *     },
  *   ]),

@@ -97,8 +97,34 @@ function buildErrorResponse<C extends number, E extends I18nStringType>(
   contentType: 'application/json';
   body: { error: E };
 };
-function buildErrorResponse<C extends number, E extends I18nStringType>(statusCode: C, error: E) {
-  return buildResponse({ status: statusCode, error });
+function buildErrorResponse<C extends number>(
+  statusCode: C,
+  error: z.ZodError
+): {
+  status: C;
+  contentType: 'application/json';
+  body: { error: I18nStringType };
+};
+function buildErrorResponse<C extends number>(
+  statusCode: C,
+  error: I18nStringType | z.ZodError
+) {
+  const normalizedError = error instanceof z.ZodError ? zodErrorToI18nString(error) : error;
+  return buildResponse({ status: statusCode, error: normalizedError });
+}
+
+function zodErrorToI18nString(error: z.ZodError): I18nStringType {
+  const details = error.issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join('.') : '(root)';
+      return `${path}: ${issue.message}`;
+    })
+    .join('; ');
+
+  return {
+    en: details ? `Validation failed: ${details}` : 'Validation failed',
+    'zh-CN': details ? `数据校验失败: ${details}` : '数据校验失败'
+  };
 }
 
 export const R = {

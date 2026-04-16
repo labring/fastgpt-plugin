@@ -17,7 +17,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@fastgpt-plugin/helpers": "workspace:*",
     "@fastgpt-plugin/domain": "workspace:*",
     "@fastgpt-plugin/infrastructure": "workspace:*",
     "@fastgpt-plugin/interface-adapter": "workspace:*",

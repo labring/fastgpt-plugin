@@ -42,7 +42,7 @@
   "include": [
     "packages/**/*.ts",
     "apps/**/*.ts",
-    "sdks/**/*.ts",
+    "sdk/**/*.ts",
     "tests/**/*.ts",
     "packages/**/*.d.ts"
   ]

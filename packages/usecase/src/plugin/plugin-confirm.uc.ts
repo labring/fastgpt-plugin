@@ -5,7 +5,7 @@
  * Author：FinleyGe
  */
 
-import { deepEqual } from 'assert';
+import { isEqual } from 'es-toolkit';
 
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
@@ -43,8 +43,7 @@ export const makePluginConfirmUC =
     }
 
     // 2. check the id
-    //
-    if (!pendingIds.some((pendingId) => deepEqual(pendingId, uniqueId))) {
+    if (!pendingIds.some((pendingId) => isEqual(pendingId, uniqueId))) {
       return failureResult({
         en: 'Pending Plugin not found',
         'zh-CN': '待确认插件未找到'

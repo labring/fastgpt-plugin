@@ -1,4 +1,5 @@
-import { ToolPlugin, createToolHandler } from "@fastgpt-plugin/helpers/index";
+import { Readable } from "node:stream";
+import { randomUUID } from "node:crypto";
 
 //#region \0rolldown/runtime.js
 var __defProp = Object.defineProperty;
@@ -9794,7 +9795,7 @@ function initializeContext(params) {
 		external: params?.external ?? void 0
 	};
 }
-function process(schema, ctx, _params = {
+function process$1(schema, ctx, _params = {
 	path: [],
 	schemaPath: []
 }) {
@@ -9831,7 +9832,7 @@ function process(schema, ctx, _params = {
 		const parent = schema._zod.parent;
 		if (parent) {
 			if (!result.ref) result.ref = parent;
-			process(parent, ctx, params);
+			process$1(parent, ctx, params);
 			ctx.seen.get(parent).isParent = true;
 		}
 	}
@@ -10043,7 +10044,7 @@ const createToJSONSchemaMethod = (schema, processors = {}) => (params) => {
 		...params,
 		processors
 	});
-	process(schema, ctx);
+	process$1(schema, ctx);
 	extractDefs(ctx, schema);
 	return finalize(ctx, schema);
 };
@@ -10055,7 +10056,7 @@ const createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params)
 		io,
 		processors
 	});
-	process(schema, ctx);
+	process$1(schema, ctx);
 	extractDefs(ctx, schema);
 	return finalize(ctx, schema);
 };
@@ -10227,7 +10228,7 @@ const arrayProcessor = (schema, ctx, _json, params) => {
 	if (typeof minimum === "number") json.minItems = minimum;
 	if (typeof maximum === "number") json.maxItems = maximum;
 	json.type = "array";
-	json.items = process(def.element, ctx, {
+	json.items = process$1(def.element, ctx, {
 		...params,
 		path: [...params.path, "items"]
 	});
@@ -10238,7 +10239,7 @@ const objectProcessor = (schema, ctx, _json, params) => {
 	json.type = "object";
 	json.properties = {};
 	const shape = def.shape;
-	for (const key in shape) json.properties[key] = process(shape[key], ctx, {
+	for (const key in shape) json.properties[key] = process$1(shape[key], ctx, {
 		...params,
 		path: [
 			...params.path,
@@ -10256,7 +10257,7 @@ const objectProcessor = (schema, ctx, _json, params) => {
 	if (def.catchall?._zod.def.type === "never") json.additionalProperties = false;
 	else if (!def.catchall) {
 		if (ctx.io === "output") json.additionalProperties = false;
-	} else if (def.catchall) json.additionalProperties = process(def.catchall, ctx, {
+	} else if (def.catchall) json.additionalProperties = process$1(def.catchall, ctx, {
 		...params,
 		path: [...params.path, "additionalProperties"]
 	});
@@ -10264,7 +10265,7 @@ const objectProcessor = (schema, ctx, _json, params) => {
 const unionProcessor = (schema, ctx, json, params) => {
 	const def = schema._zod.def;
 	const isExclusive = def.inclusive === false;
-	const options = def.options.map((x, i) => process(x, ctx, {
+	const options = def.options.map((x, i) => process$1(x, ctx, {
 		...params,
 		path: [
 			...params.path,
@@ -10277,7 +10278,7 @@ const unionProcessor = (schema, ctx, json, params) => {
 };
 const intersectionProcessor = (schema, ctx, json, params) => {
 	const def = schema._zod.def;
-	const a = process(def.left, ctx, {
+	const a = process$1(def.left, ctx, {
 		...params,
 		path: [
 			...params.path,
@@ -10285,7 +10286,7 @@ const intersectionProcessor = (schema, ctx, json, params) => {
 			0
 		]
 	});
-	const b = process(def.right, ctx, {
+	const b = process$1(def.right, ctx, {
 		...params,
 		path: [
 			...params.path,
@@ -10302,7 +10303,7 @@ const tupleProcessor = (schema, ctx, _json, params) => {
 	json.type = "array";
 	const prefixPath = ctx.target === "draft-2020-12" ? "prefixItems" : "items";
 	const restPath = ctx.target === "draft-2020-12" ? "items" : ctx.target === "openapi-3.0" ? "items" : "additionalItems";
-	const prefixItems = def.items.map((x, i) => process(x, ctx, {
+	const prefixItems = def.items.map((x, i) => process$1(x, ctx, {
 		...params,
 		path: [
 			...params.path,
@@ -10310,7 +10311,7 @@ const tupleProcessor = (schema, ctx, _json, params) => {
 			i
 		]
 	}));
-	const rest = def.rest ? process(def.rest, ctx, {
+	const rest = def.rest ? process$1(def.rest, ctx, {
 		...params,
 		path: [
 			...params.path,
@@ -10341,7 +10342,7 @@ const recordProcessor = (schema, ctx, _json, params) => {
 	const keyType = def.keyType;
 	const patterns = keyType._zod.bag?.patterns;
 	if (def.mode === "loose" && patterns && patterns.size > 0) {
-		const valueSchema = process(def.valueType, ctx, {
+		const valueSchema = process$1(def.valueType, ctx, {
 			...params,
 			path: [
 				...params.path,
@@ -10352,11 +10353,11 @@ const recordProcessor = (schema, ctx, _json, params) => {
 		json.patternProperties = {};
 		for (const pattern of patterns) json.patternProperties[pattern.source] = valueSchema;
 	} else {
-		if (ctx.target === "draft-07" || ctx.target === "draft-2020-12") json.propertyNames = process(def.keyType, ctx, {
+		if (ctx.target === "draft-07" || ctx.target === "draft-2020-12") json.propertyNames = process$1(def.keyType, ctx, {
 			...params,
 			path: [...params.path, "propertyNames"]
 		});
-		json.additionalProperties = process(def.valueType, ctx, {
+		json.additionalProperties = process$1(def.valueType, ctx, {
 			...params,
 			path: [...params.path, "additionalProperties"]
 		});
@@ -10369,7 +10370,7 @@ const recordProcessor = (schema, ctx, _json, params) => {
 };
 const nullableProcessor = (schema, ctx, json, params) => {
 	const def = schema._zod.def;
-	const inner = process(def.innerType, ctx, params);
+	const inner = process$1(def.innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	if (ctx.target === "openapi-3.0") {
 		seen.ref = def.innerType;
@@ -10378,27 +10379,27 @@ const nullableProcessor = (schema, ctx, json, params) => {
 };
 const nonoptionalProcessor = (schema, ctx, _json, params) => {
 	const def = schema._zod.def;
-	process(def.innerType, ctx, params);
+	process$1(def.innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = def.innerType;
 };
 const defaultProcessor = (schema, ctx, json, params) => {
 	const def = schema._zod.def;
-	process(def.innerType, ctx, params);
+	process$1(def.innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = def.innerType;
 	json.default = JSON.parse(JSON.stringify(def.defaultValue));
 };
 const prefaultProcessor = (schema, ctx, json, params) => {
 	const def = schema._zod.def;
-	process(def.innerType, ctx, params);
+	process$1(def.innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = def.innerType;
 	if (ctx.io === "input") json._prefault = JSON.parse(JSON.stringify(def.defaultValue));
 };
 const catchProcessor = (schema, ctx, json, params) => {
 	const def = schema._zod.def;
-	process(def.innerType, ctx, params);
+	process$1(def.innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = def.innerType;
 	let catchValue;
@@ -10412,32 +10413,32 @@ const catchProcessor = (schema, ctx, json, params) => {
 const pipeProcessor = (schema, ctx, _json, params) => {
 	const def = schema._zod.def;
 	const innerType = ctx.io === "input" ? def.in._zod.def.type === "transform" ? def.out : def.in : def.out;
-	process(innerType, ctx, params);
+	process$1(innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = innerType;
 };
 const readonlyProcessor = (schema, ctx, json, params) => {
 	const def = schema._zod.def;
-	process(def.innerType, ctx, params);
+	process$1(def.innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = def.innerType;
 	json.readOnly = true;
 };
 const promiseProcessor = (schema, ctx, _json, params) => {
 	const def = schema._zod.def;
-	process(def.innerType, ctx, params);
+	process$1(def.innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = def.innerType;
 };
 const optionalProcessor = (schema, ctx, _json, params) => {
 	const def = schema._zod.def;
-	process(def.innerType, ctx, params);
+	process$1(def.innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = def.innerType;
 };
 const lazyProcessor = (schema, ctx, _json, params) => {
 	const innerType = schema._zod.innerType;
-	process(innerType, ctx, params);
+	process$1(innerType, ctx, params);
 	const seen = ctx.seen.get(schema);
 	seen.ref = innerType;
 };
@@ -10492,7 +10493,7 @@ function toJSONSchema(input, params) {
 		const defs = {};
 		for (const entry of registry._idmap.entries()) {
 			const [_, schema] = entry;
-			process(schema, ctx);
+			process$1(schema, ctx);
 		}
 		const schemas = {};
 		ctx.external = {
@@ -10512,7 +10513,7 @@ function toJSONSchema(input, params) {
 		...params,
 		processors: allProcessors
 	});
-	process(input, ctx);
+	process$1(input, ctx);
 	extractDefs(ctx, input);
 	return finalize(ctx, input);
 }
@@ -10589,7 +10590,7 @@ var JSONSchemaGenerator = class {
 		path: [],
 		schemaPath: []
 	}) {
-		return process(schema, this.ctx, _params);
+		return process$1(schema, this.ctx, _params);
 	}
 	/**
 	* Emit the final JSON Schema after processing.
@@ -10873,7 +10874,7 @@ var core_exports = /* @__PURE__ */ __exportAll({
 	parse: () => parse$1,
 	parseAsync: () => parseAsync$1,
 	prettifyError: () => prettifyError,
-	process: () => process,
+	process: () => process$1,
 	regexes: () => regexes_exports,
 	registry: () => registry,
 	safeDecode: () => safeDecode$1,
@@ -12871,51 +12872,653 @@ config(en_default());
 var zod_default = external_exports;
 
 //#endregion
-//#region .build-temp/src/schemas.ts
-const InputSchema = object({ msg: string$1().meta({
-	title: "消息",
-	description: "消息内容"
-}) });
-const OutputSchema = object({
-	time: string$1().meta({
-		title: "当前时间",
-		description: "当前时间"
-	}),
-	test: string$1().meta({
-		title: "测试字段",
-		description: "测试字段"
-	})
+//#region ../../../../../../sdk/factory/dist/index.js
+var r = class e {
+	stream;
+	closed = !1;
+	constructor(e) {
+		this.stream = new Readable({
+			objectMode: !0,
+			read() {}
+		}), e?.(this);
+	}
+	static create(t) {
+		return new e(t);
+	}
+	write(e) {
+		this.ensureWritable(), this.stream.push(e);
+	}
+	send(e) {
+		this.write(e);
+	}
+	close() {
+		this.closed || (this.closed = !0, this.stream.push(null));
+	}
+	end() {
+		this.close();
+	}
+	fail(e) {
+		this.closed = !0, this.stream.destroy(e);
+	}
+	toReadable() {
+		return this.stream;
+	}
+	onData(e) {
+		return this.stream.on(`data`, e), this;
+	}
+	onEnd(e) {
+		return this.stream.on(`end`, e), this;
+	}
+	onError(e) {
+		return this.stream.on(`error`, e), this;
+	}
+	async consume(e) {
+		for await (let t of this.values()) await e(t);
+	}
+	async *values() {
+		for await (let e of this.stream) yield e;
+	}
+	ensureWritable() {
+		if (this.closed || this.stream.destroyed) throw Error(`StreamData is already closed`);
+	}
+};
+const i = (e) => (e = e.replace(/(?<=https?:\/\/)[^\s]+/g, `xxx`), e = e.replace(/ns-[\w-]+/g, `xxx`), e), a = (e, t = ``) => i(typeof e == `string` ? e : e?.response?.data?.message || e?.response?.message || e?.message || e?.response?.data?.msg || e?.response?.msg || e?.msg || t), o = zod_default.enum([
+	`en`,
+	`zh-CN`,
+	`zh-Hant`
+]).enum;
+zod_default.object({
+	[o.en]: zod_default.string(),
+	[o[`zh-CN`]]: zod_default.string().optional(),
+	[o[`zh-Hant`]]: zod_default.string().optional()
 });
-
-//#endregion
-//#region .build-temp/src/tool.ts
-const handler = createToolHandler({
-	inputSchema: InputSchema,
-	outputSchema: OutputSchema,
-	secretSchema: zod_default.object({ test: zod_default.string().meta({
-		title: "测试字段",
-		description: "这是一个测试字段"
-	}) }),
-	handler: async (input, { systemVar, hostEmitter, secrets }) => {
-		await hostEmitter.streamResponse({
-			type: "answer",
-			content: "hi"
+const s = zod_default.object({
+	[o.en]: zod_default.string(),
+	[o[`zh-CN`]]: zod_default.string(),
+	[o[`zh-Hant`]]: zod_default.string()
+});
+zod_default.object({
+	pluginId: zod_default.string(),
+	version: zod_default.string(),
+	etag: zod_default.string()
+});
+const c = zod_default.literal(`system`).or(zod_default.string());
+zod_default.array(zod_default.record(zod_default.string(), s));
+const l = zod_default.enum([`localPool`, `serverless`]).enum;
+zod_default.object({
+	pluginId: zod_default.string(),
+	version: zod_default.string(),
+	source: c
+});
+const u = `__plugin_ipc_stream__`, d = `__pluginIpcDuplexReply__`;
+var f = class {
+	pending = /* @__PURE__ */ new Map();
+	readyHandlers = /* @__PURE__ */ new Set();
+	errorHandlers = /* @__PURE__ */ new Set();
+	streamHandlers = /* @__PURE__ */ new Map();
+	incomingStreams = /* @__PURE__ */ new Map();
+	bufferedIncomingStreams = /* @__PURE__ */ new Map();
+	pendingStreamWaiters = /* @__PURE__ */ new Map();
+	requestHandler = null;
+	eventHandler = null;
+	endpoint;
+	options;
+	unsubscribeMessage;
+	closed = !1;
+	constructor(e, t = {}) {
+		g(e) ? (this.endpoint = e, this.options = t) : (this.endpoint = process, this.options = e ?? {}), this.unsubscribeMessage = m(this.endpoint, (e) => {
+			this.dispatch(e).catch((e) => {
+				this.emitError(e instanceof Error ? e : Error(String(e)));
+			});
 		});
-		await hostEmitter.streamResponse({
-			type: "answer",
-			content: input.msg
-		});
-		return {
-			time: systemVar.time,
-			test: secrets.test
+	}
+	onReady(e) {
+		return this.readyHandlers.add(e), () => {
+			this.readyHandlers.delete(e);
 		};
 	}
-});
+	onError(e) {
+		return this.errorHandlers.add(e), () => {
+			this.errorHandlers.delete(e);
+		};
+	}
+	setRequestHandler(e) {
+		this.requestHandler = e;
+	}
+	setEventHandler(e) {
+		this.eventHandler = e;
+	}
+	async requestDuplex(e, t, r) {
+		this.ensureOpen();
+		let i = r?.requestId ?? randomUUID(), a = r?.timeoutMs ?? this.options.defaultTimeoutMs ?? 3e4, o = Date.now(), s = r?.input === void 0 ? void 0 : this.pipeStream(w(i), r.input, {
+			traceId: r.traceId,
+			streamId: r.inputStreamId,
+			meta: r.inputMeta
+		});
+		s && s.catch((e) => {
+			this.emitError(e instanceof Error ? e : Error(String(e)));
+		});
+		let c = await this.request(e, t, {
+			timeoutMs: a,
+			traceId: r?.traceId,
+			requestId: i
+		});
+		if (!y(c)) return {
+			requestId: i,
+			result: c,
+			...s === void 0 ? {} : { inputDone: s }
+		};
+		let l;
+		if (c.hasOutputStream) {
+			let e = Date.now() - o, t = Math.max(1, a - e);
+			l = await this.waitForStream(T(i), { timeoutMs: t });
+		}
+		return {
+			requestId: i,
+			result: c.result,
+			...l === void 0 ? {} : { output: l },
+			...s === void 0 ? {} : { inputDone: s }
+		};
+	}
+	replyDuplex(e, t, n) {
+		return {
+			[d]: !0,
+			...t === void 0 ? {} : { result: t },
+			...n?.output === void 0 ? {} : { output: n.output },
+			...n === void 0 ? {} : { options: {
+				...n.traceId === void 0 ? {} : { traceId: n.traceId },
+				...n.outputStreamId === void 0 ? {} : { outputStreamId: n.outputStreamId },
+				...n.outputMeta === void 0 ? {} : { outputMeta: n.outputMeta }
+			} }
+		};
+	}
+	async waitForRequestInputStream(e, t) {
+		return this.waitForStream(w(e.id), t);
+	}
+	onStream(e, t) {
+		this.streamHandlers.has(e) || this.streamHandlers.set(e, /* @__PURE__ */ new Set());
+		let n = this.streamHandlers.get(e), r = t;
+		return n.add(r), () => {
+			n.delete(r), n.size === 0 && this.streamHandlers.delete(e);
+		};
+	}
+	async waitForStream(e, t) {
+		this.ensureOpen();
+		let n = this.bufferedIncomingStreams.get(e);
+		if (n && n.length > 0) {
+			let t = n.shift();
+			return n.length === 0 && this.bufferedIncomingStreams.delete(e), t;
+		}
+		return new Promise((n, r) => {
+			let i = {
+				resolve: n,
+				reject: r
+			};
+			t?.timeoutMs !== void 0 && (i.timer = setTimeout(() => {
+				let t = this.pendingStreamWaiters.get(e);
+				if (!t) return;
+				let n = t.indexOf(i);
+				n >= 0 && t.splice(n, 1), t.length === 0 && this.pendingStreamWaiters.delete(e), r(Error(`Wait stream timeout: ${e}`));
+			}, t.timeoutMs)), this.pendingStreamWaiters.has(e) || this.pendingStreamWaiters.set(e, []), this.pendingStreamWaiters.get(e).push(i);
+		});
+	}
+	async createWritableStream(e, t) {
+		this.ensureOpen();
+		let r = t?.streamId ?? randomUUID(), i = !1;
+		return await this.sendStreamFrame({
+			type: `start`,
+			streamId: r,
+			streamName: e,
+			...t?.meta === void 0 ? {} : { meta: t.meta }
+		}, t?.traceId), {
+			streamId: r,
+			write: async (e) => {
+				if (i) throw Error(`Stream is already closed: ${r}`);
+				await this.sendStreamFrame({
+					type: `chunk`,
+					streamId: r,
+					chunk: e
+				}, t?.traceId);
+			},
+			end: async () => {
+				i || (i = !0, await this.sendStreamFrame({
+					type: `end`,
+					streamId: r
+				}, t?.traceId));
+			},
+			fail: async (e) => {
+				i || (i = !0, await this.sendStreamFrame({
+					type: `error`,
+					streamId: r,
+					error: x(e)
+				}, t?.traceId));
+			}
+		};
+	}
+	async pipeStream(e, t, n) {
+		let r = await this.createWritableStream(e, n);
+		try {
+			for await (let e of C(t)) await r.write(e);
+			await r.end();
+		} catch (e) {
+			throw await r.fail(e instanceof Error ? e : Error(String(e))), e;
+		}
+	}
+	async request(e, t, r) {
+		this.ensureOpen();
+		let i = r?.requestId ?? randomUUID(), a = r?.timeoutMs ?? this.options.defaultTimeoutMs ?? 3e4;
+		return new Promise((n, o) => {
+			let s = setTimeout(() => {
+				this.pending.delete(i), o(Object.assign(Error(`Request timeout: ${e}`), {
+					code: `REQUEST_TIMEOUT`,
+					requestId: i,
+					method: e
+				}));
+			}, a);
+			this.pending.set(i, {
+				resolve: n,
+				reject: o,
+				timer: s
+			}), this.send({
+				id: i,
+				messageType: `request`,
+				method: e,
+				params: t,
+				...r?.traceId === void 0 ? {} : { traceId: r.traceId },
+				timestamp: Date.now()
+			}).catch((e) => {
+				clearTimeout(s), this.pending.delete(i), o(e);
+			});
+		});
+	}
+	async emit(e, t, r) {
+		this.ensureOpen(), await this.send({
+			id: randomUUID(),
+			messageType: `event`,
+			method: e,
+			params: t,
+			...r === void 0 ? {} : { traceId: r },
+			timestamp: Date.now()
+		});
+	}
+	async sendReady() {
+		this.ensureOpen(), await this.send({
+			id: randomUUID(),
+			messageType: `ready`,
+			timestamp: Date.now()
+		});
+	}
+	async reply(e, t) {
+		this.ensureOpen(), await this.send({
+			id: e.id,
+			messageType: `response`,
+			...t === void 0 ? {} : { result: t },
+			...e.traceId === void 0 ? {} : { traceId: e.traceId },
+			timestamp: Date.now()
+		});
+	}
+	async replyError(e, t) {
+		this.ensureOpen();
+		let n = x(t);
+		await this.send({
+			id: e.id,
+			messageType: `error`,
+			error: n,
+			...e.traceId === void 0 ? {} : { traceId: e.traceId },
+			timestamp: Date.now()
+		});
+	}
+	async close(e = Error(`IPC channel closed`)) {
+		this.closed || (this.closed = !0, this.unsubscribeMessage(), this.rejectAllPending(e), this.rejectAllPendingStreamWaiters(e), this.failAllIncomingStreams(e));
+	}
+	async dispatch(e) {
+		if (!this.closed) {
+			if (e.messageType === `response` || e.messageType === `error`) {
+				this.handleResponse(e);
+				return;
+			}
+			if (e.messageType === `ready`) {
+				this.readyHandlers.forEach((t) => t(e));
+				return;
+			}
+			if (e.messageType === `event`) {
+				if (v(e)) {
+					await this.handleStreamFrameMessage(e);
+					return;
+				}
+				await this.eventHandler?.(e);
+				return;
+			}
+			e.messageType === `request` && await this.handleRequest(e);
+		}
+	}
+	handleResponse(e) {
+		let t = this.pending.get(e.id);
+		if (t) {
+			if (clearTimeout(t.timer), this.pending.delete(e.id), e.error) {
+				t.reject(S(e.error));
+				return;
+			}
+			t.resolve(e.result);
+		}
+	}
+	async handleRequest(e) {
+		if (!e.method) {
+			await this.replyError(e, {
+				code: `INVALID_REQUEST`,
+				message: `Request method is required`
+			});
+			return;
+		}
+		if (!this.requestHandler) {
+			await this.replyError(e, {
+				code: `METHOD_NOT_FOUND`,
+				message: `Method not found: ${e.method}`
+			});
+			return;
+		}
+		try {
+			let t = await this.requestHandler(e);
+			if (b(t)) {
+				await this.handleDuplexReply(e, t);
+				return;
+			}
+			await this.reply(e, t);
+		} catch (t) {
+			await this.replyError(e, t instanceof Error ? t : Error(String(t)));
+		}
+	}
+	rejectAllPending(e) {
+		this.pending.forEach((t, n) => {
+			clearTimeout(t.timer), t.reject(e), this.pending.delete(n);
+		});
+	}
+	rejectAllPendingStreamWaiters(e) {
+		this.pendingStreamWaiters.forEach((t, n) => {
+			t.forEach((t) => {
+				t.timer && clearTimeout(t.timer), t.reject(e);
+			}), this.pendingStreamWaiters.delete(n);
+		});
+	}
+	failAllIncomingStreams(e) {
+		this.incomingStreams.forEach((t, n) => {
+			t.stream.fail(e), this.incomingStreams.delete(n);
+		}), this.bufferedIncomingStreams.clear();
+	}
+	async sendStreamFrame(e, t) {
+		await this.emit(u, e, t);
+	}
+	async handleDuplexReply(e, t) {
+		let n = t.options?.traceId ?? e.traceId;
+		t.output !== void 0 && this.pipeStream(T(e.id), t.output, {
+			traceId: n,
+			streamId: t.options?.outputStreamId,
+			meta: t.options?.outputMeta
+		}).catch((e) => {
+			this.emitError(e instanceof Error ? e : Error(String(e)));
+		}), await this.reply(e, {
+			[d]: !0,
+			hasOutputStream: t.output !== void 0,
+			...t.result === void 0 ? {} : { result: t.result }
+		});
+	}
+	async handleStreamFrameMessage(e) {
+		let t = e.params;
+		switch (t.type) {
+			case `start`: {
+				let n = {
+					streamId: t.streamId,
+					streamName: t.streamName,
+					stream: r.create(),
+					...e.traceId === void 0 ? {} : { traceId: e.traceId },
+					...t.meta === void 0 ? {} : { meta: t.meta }
+				};
+				this.incomingStreams.set(t.streamId, n), this.dispatchIncomingStream(n);
+				return;
+			}
+			case `chunk`: {
+				let e = this.incomingStreams.get(t.streamId);
+				if (!e) {
+					this.emitError(Error(`Stream not found: ${t.streamId}`));
+					return;
+				}
+				e.stream.write(t.chunk);
+				return;
+			}
+			case `end`: {
+				let e = this.incomingStreams.get(t.streamId);
+				if (!e) return;
+				e.stream.close(), this.incomingStreams.delete(t.streamId);
+				return;
+			}
+			case `error`: {
+				let e = this.incomingStreams.get(t.streamId);
+				if (!e) return;
+				e.stream.fail(S(t.error)), this.incomingStreams.delete(t.streamId);
+				return;
+			}
+		}
+	}
+	dispatchIncomingStream(e) {
+		let t = !1, n = this.pendingStreamWaiters.get(e.streamName);
+		if (n && n.length > 0) {
+			let r = n.shift();
+			r.timer && clearTimeout(r.timer), n.length === 0 && this.pendingStreamWaiters.delete(e.streamName), r.resolve(e), t = !0;
+		}
+		let r = this.streamHandlers.get(e.streamName);
+		if (r && r.size > 0) {
+			r.forEach((t) => {
+				Promise.resolve(t(e)).catch((e) => {
+					this.emitError(e instanceof Error ? e : Error(String(e)));
+				});
+			});
+			return;
+		}
+		t || (this.bufferedIncomingStreams.has(e.streamName) || this.bufferedIncomingStreams.set(e.streamName, []), this.bufferedIncomingStreams.get(e.streamName).push(e));
+	}
+	emitError(e) {
+		this.errorHandlers.forEach((t) => t(e));
+	}
+	async send(e) {
+		await h(this.endpoint, e);
+	}
+	ensureOpen() {
+		if (this.closed) throw Error(`IPC channel closed`);
+	}
+};
+function p(e) {
+	return new f(process, e);
+}
+function m(e, t) {
+	let n = e, r = (e) => {
+		_(e) && t(e);
+	};
+	return n.on(`message`, r), () => n.off(`message`, r);
+}
+function h(e, t) {
+	let n = e;
+	if (typeof n.send != `function`) throw Error(`IPC channel not available`);
+	return new Promise((e, r) => {
+		n.send(t, (t) => {
+			if (t) {
+				r(t);
+				return;
+			}
+			e();
+		});
+	});
+}
+function g(e) {
+	return !!(e && typeof e == `object` && `on` in e && typeof e.on == `function` && `off` in e && typeof e.off == `function`);
+}
+function _(e) {
+	return !!(e && typeof e == `object` && `messageType` in e);
+}
+function v(e) {
+	return e.messageType === `event` && e.method === u;
+}
+function y(e) {
+	return !!(e && typeof e == `object` && d in e && `hasOutputStream` in e);
+}
+function b(e) {
+	return !!(e && typeof e == `object` && d in e);
+}
+function x(e) {
+	return typeof e == `string` ? {
+		code: `HANDLER_ERROR`,
+		message: e
+	} : (e instanceof Error, {
+		code: e.code ?? `HANDLER_ERROR`,
+		message: e.message,
+		...e.stack === void 0 ? {} : { stack: e.stack }
+	});
+}
+function S(e) {
+	return Object.assign(Error(e.message), {
+		code: e.code,
+		stack: e.stack
+	});
+}
+function C(e) {
+	return e instanceof r ? e.values() : e;
+}
+function w(e) {
+	return `__plugin_ipc_request_input_stream__:${e}`;
+}
+function T(e) {
+	return `__plugin_ipc_request_output_stream__:${e}`;
+}
+var E = class {
+	channel;
+	invoke;
+	getChannel() {
+		if (!this.channel) throw Error(`Channel is not initialized yet.`);
+		return this.channel;
+	}
+	getInvoke() {
+		if (!this.invoke) throw Error(`Invoke client is not initialized yet.`);
+		return this.invoke;
+	}
+	mode;
+	checkRuntimeMode() {
+		process.env.RUNTIME_MODE == l.localPool && (this.mode = l.localPool);
+	}
+	async init() {
+		this.checkRuntimeMode(), this.mode === `localPool` && (this.channel = p(), setImmediate(() => this.getChannel().sendReady())), this.mode === `dev` && (this.channel = { setRequestHandler: (e) => {
+			console.info(`[Local Dev] Request handler registered:`, e);
+		} }, console.info(`[Local Dev] Plugin initialized successfully.`));
+	}
+	constructor() {
+		this.init();
+	}
+};
+function D(e) {
+	return e;
+}
+var O = class t extends E {
+	toolHandlers = /* @__PURE__ */ new Map();
+	childManifests = /* @__PURE__ */ new Map();
+	secretSchema = zod_default.record(zod_default.string(), zod_default.unknown());
+	constructor(e) {
+		super(), this.userToolManifest = e, this.mode && this.getChannel().setRequestHandler(async (e) => {
+			if (e.method === `run`) try {
+				let { input: t, systemVar: n, childId: i, secrets: a } = e.params, o = this.toolHandlers.get(i ?? `toolI`);
+				if (!o) throw Error(`No tool registered`);
+				let s = r.create(), c = r.create();
+				s.onData((e) => {
+					c.send({
+						type: `stream`,
+						data: e
+					});
+				});
+				let l = await o.handler(t, {
+					systemVar: n,
+					secrets: a,
+					invoke: this.getInvoke(),
+					streamResponse: (e) => {
+						s.send(e);
+					}
+				});
+				return c.send({
+					type: `reponse`,
+					data: l
+				}), this.getChannel().replyDuplex(e, void 0, { output: c });
+			} catch (t) {
+				let n = r.create();
+				return n.write({
+					data: a(t),
+					type: `error`
+				}), this.getChannel().replyDuplex(e, void 0, { output: n });
+			}
+		});
+	}
+	setSecretSchema(e) {
+		this.secretSchema = e;
+	}
+	registerTool(e, t = `tool`, n) {
+		this.toolHandlers.set(t, e), n && this.childManifests.set(t, n);
+	}
+	static instance;
+	static getInstance(e) {
+		return t.instance ||= new t(e), t.instance;
+	}
+	getSecretSchema() {
+		return this.secretSchema;
+	}
+	getToolHandler(e = `tool`) {
+		return this.toolHandlers.get(e);
+	}
+	getUserToolManifest() {
+		return this.userToolManifest;
+	}
+	getChildManifests() {
+		return [...this.childManifests.values()];
+	}
+};
+const k = ({ manifest: t, handler: n }) => {
+	let r = O.getInstance(t);
+	return r.setSecretSchema(n.secretSchema ?? zod_default.object()), r.registerTool(n), r;
+}, A = ({ manifest: t, children: n, secretSchema: r }) => {
+	let i = O.getInstance(t);
+	return n.forEach((e) => {
+		i.registerTool(e.handler, e.id, {
+			id: e.id,
+			description: e.description,
+			name: e.name,
+			...e.icon === void 0 ? {} : { icon: e.icon },
+			...e.toolDescription === void 0 ? {} : { toolDescription: e.toolDescription }
+		});
+	}), i.setSecretSchema(r ?? zod_default.object()), i;
+};
 
 //#endregion
 //#region .build-temp/index.ts
-const plugin = new ToolPlugin();
-plugin.registerTool(handler);
+const handler = D({
+	inputSchema: zod_default.object({}),
+	outputSchema: zod_default.object({ time: zod_default.string() }),
+	handler: async (_input, ctx) => {
+		return { time: ctx.systemVar.time };
+	}
+});
+var _build_temp_default = k({
+	manifest: {
+		description: {
+			en: "Get current time",
+			"zh-CN": "获取当前时间"
+		},
+		name: {
+			en: "Get Time",
+			"zh-CN": "获取时间"
+		},
+		pluginId: "getTime",
+		version: "1.0.0",
+		versionDescription: {
+			en: "Initial version",
+			"zh-CN": "初始版本"
+		}
+	},
+	handler
+});
 
 //#endregion
-export { plugin };
+export { _build_temp_default as default };

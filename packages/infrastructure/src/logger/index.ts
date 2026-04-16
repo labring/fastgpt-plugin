@@ -175,11 +175,11 @@ export async function destroyLogger() {
   }
 }
 
-export { type Logger, withContext, getConfig } from '@logtape/logtape';
+export { getConfig, type Logger, withContext } from '@logtape/logtape';
 
 export function getContext(): Record<string, unknown> | undefined {
   const config = getLogTapeConfig();
   return config?.contextLocalStorage?.getStore();
 }
 export type { LogCategory } from './categories';
-export { root, http, middleware, mod, infra } from './categories';
+export { http, infra, middleware, mod, root } from './categories';

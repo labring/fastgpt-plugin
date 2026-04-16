@@ -21,6 +21,7 @@ import {
   type PluginIpcIncomingStream
 } from './ipc-channel';
 import type { PodInfo, PodStatus } from './types';
+import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
 
 export interface PluginPodCallbacks {
   onReady?: (info: PodInfo) => void;
@@ -85,7 +86,10 @@ export class PluginPod {
     return new Promise((resolve, reject) => {
       try {
         this.process = fork(this.options.pluginPath, [], {
-          stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+          stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+          env: {
+            RUNTIME_MODE: PluginRuntimeModeEnum.localPool
+          }
         });
 
         this.channel = createChildProcessIpcChannel(this.process, {

@@ -1,7 +1,7 @@
-import type { Command } from 'commander';
-import { logger } from '@fastgpt-plugin/cli/helpers';
-import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
 import { buildToolPackage, type ToolBuildOptions } from '@fastgpt-plugin/cli/build';
+import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
+import { logger } from '@fastgpt-plugin/cli/helpers';
+import type { Command } from 'commander';
 
 export class BuildCommand extends BaseCommand {
   public register(parent: Command): void {

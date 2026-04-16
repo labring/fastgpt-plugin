@@ -14,6 +14,7 @@ import type {
 } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import type { StreamData } from '@domain/value-objects/stream.vo';
 
 import { env } from '../../../../env';
 import { getLogger, mod } from '../../../../logger';
@@ -30,7 +31,6 @@ import type {
   LocalPoolPluginItemType,
   ServiceMetrics
 } from './types';
-import type { StreamData } from '@domain/value-objects/stream.vo';
 
 export type LocalPoolPluginRuntimeManagerDeps = {
   versionKeyStore: VersionKeyStore;
@@ -232,8 +232,8 @@ export class LocalPoolPluginRuntimeManager
     if (err) {
       return failureResult(
         {
-          en: 'Register plugin error',
-          'zh-CN': '注册插件失败'
+          en: 'Register plugin error, can not get plugin info',
+          'zh-CN': '注册插件失败，无法获取插件信息'
         },
         err
       );
@@ -308,7 +308,12 @@ export class LocalPoolPluginRuntimeManager
     return successResult({});
   }
 
-  async invoke<E extends PluginInvokeEventNameType, P = unknown, R = unknown>({
+  async invoke<
+    E extends PluginInvokeEventNameType,
+    P = unknown,
+    R = unknown,
+    S extends boolean = boolean
+  >({
     uniqueId,
     eventName,
     payload,
@@ -317,8 +322,8 @@ export class LocalPoolPluginRuntimeManager
     uniqueId: PluginUniqueIdType;
     eventName: E;
     payload: P;
-    returnStream: boolean;
-  }): Promise<Result<R>> {
+    returnStream: S;
+  }): Promise<Result<S extends true ? StreamData<R> : R>> {
     if (this.destroyed)
       return failureResult({
         en: 'PluginManager already destoryed',
@@ -339,7 +344,7 @@ export class LocalPoolPluginRuntimeManager
 
     if (check()) {
       try {
-        const result = await plugin.service.invoke<P, R>({ eventName, payload, returnStream });
+        const result = await plugin.service.invoke<P, R, S>({ eventName, payload, returnStream });
         return successResult(result);
       } catch (error) {
         return failureResult({ en: 'Invoke failed', 'zh-CN': '调用失败' }, error);
@@ -347,30 +352,6 @@ export class LocalPoolPluginRuntimeManager
     }
     return failureResult({ en: 'Event not supported', 'zh-CN': '不支持的事件' });
   }
-
-  // async invoke<E extends PluginInvokeEventNameType, P = any, R = any>(
-  //   uniqueId: PluginUniqueIdType,
-  //   eventName: E,
-  //   payload: P
-  // ): Promise<Result<R>> {
-
-  // async invoke<T extends PluginInvokeEventNameType>(
-  //   uniqueId: PluginUniqueIdType,
-  //   payload: PluginRuntimeInvokeEvent<T>
-  // ): Promise<Result<PluginRuntimeInvokeEventResult<T>>> {
-  //   if (this.destroyed)
-  //     return failureResult({
-  //       en: 'PluginManager already destoryed',
-  //       'zh-CN': '插件管理器已销毁'
-  //     });
-
-  //   const plugin = await this.getPlugin(uniqueId);
-  //   if (!plugin) return failureResult({ en: 'Plugin not found', 'zh-CN': '插件未找到' });
-
-  //   const { event, input } = payload;
-
-  //   return plugin.service.invoke(event, input);
-  // }
 
   // ============ 指标 ============
 

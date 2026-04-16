@@ -51,6 +51,13 @@ export class LocalFileStorageRepo implements LocalFileStoragePort {
 
   private constructor() {}
 
+  public async initialize() {
+    // Ensure base path exists
+    // clean the base path on initialization to avoid stale files from previous runs
+    await rm(this.basePath, { recursive: true, force: true });
+    await mkdir(this.basePath, { recursive: true });
+  }
+
   static getInstance(): LocalFileStorageRepo {
     if (!this._instance) {
       this._instance = new LocalFileStorageRepo();

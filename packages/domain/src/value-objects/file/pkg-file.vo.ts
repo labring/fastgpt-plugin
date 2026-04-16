@@ -33,7 +33,7 @@ export const ImageFileSchema = z.object({
 //   /** 可运行的入口文件 */
 //   index: buildSpecialFileSchema('application/javascript', 'index.js'),
 //   /** 基础配置 */
-//   manifest: buildSpecialFileSchema('application/yaml', 'manifest.yaml'),
+//   manifest: buildSpecialFileSchema('application/json', 'manifest.json'),
 //   /** 自动生成的配置文件 */
 //   config: buildSpecialFileSchema('application/json', 'config.json'),
 //   /** 静态资源，目前只允许图片类型 */
@@ -69,7 +69,7 @@ export type PluginReadmeFileType = z.infer<typeof PluginReadmeFileSchema>;
 
 export const PluginLogoFileSchema = z.object({
   ...ImageFileSchema.shape,
-  fileName: z.string().refine((name) => name.startsWith('logo'))
+  fileName: z.string().refine((name) => /^([^.]+\.|)logo\./i.test(name))
 });
 
 export type PluginLogoFileType = z.infer<typeof PluginLogoFileSchema>;
@@ -77,7 +77,7 @@ export type PluginLogoFileType = z.infer<typeof PluginLogoFileSchema>;
 export type PkgContentFileObjects = {
   index: FileObject;
   manifest: FileObject;
-  assets: FileObject[];
-  readme: FileObject;
-  logo: FileObject;
+  assets?: FileObject[];
+  readme?: FileObject;
+  logos?: FileObject[];
 };

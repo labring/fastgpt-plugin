@@ -22,7 +22,8 @@ export const makePluginUploadUC =
     // 1. recieve the file and save it to local storage
     const [localPkgFile, err] = await deps.localFileStorageRepo.save({
       file: input.file,
-      contentType: 'application/zip'
+      contentType: 'application/zip',
+      overwrite: true
     });
 
     if (err)
@@ -43,12 +44,13 @@ export const makePluginUploadUC =
     );
 
     if (parseErr) {
+      deps.localFileStorageRepo.delete(localPkgFile.metaData.fileKey); // 删除临时文件
       return failureResult(
         {
           en: 'Failed to parse the plugin package',
           'zh-CN': '解析插件包失败'
         },
-        err
+        parseErr
       );
     }
 

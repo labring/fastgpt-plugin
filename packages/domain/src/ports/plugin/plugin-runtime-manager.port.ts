@@ -1,9 +1,10 @@
 import z from 'zod';
 
+import type { StreamData } from '@domain/value-objects/stream.vo';
+
 import type { PluginRuntimeConfigType } from '../../entities/plugin.entity';
 import type { PluginUniqueIdType } from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
-import type { StreamData } from '@domain/value-objects/stream.vo';
 
 export const PluginInvokeEventnameSchema = z.enum(['run']);
 export type PluginInvokeEventNameType = z.infer<typeof PluginInvokeEventnameSchema>;
@@ -14,8 +15,7 @@ export const PluginInvokeEventnameEnum = PluginInvokeEventnameSchema.enum;
  */
 export interface PluginRuntimeManagerPort<
   Config extends PluginRuntimeConfigType = PluginRuntimeConfigType,
-  PluginStatus = unknown,
-  GlobalStatus = unknown
+  PluginStatus = unknown
 > {
   /**
    * 注册 Plugin
@@ -56,11 +56,16 @@ export interface PluginRuntimeManagerPort<
   /** 调用某个插件的方法
    * 泛型在最上层（上层 Manager）或最下层（SDK和插件构建工厂中）实现就行
    */
-  invoke<E extends PluginInvokeEventNameType, P = unknown, R = unknown>(arg0: {
+  invoke<
+    R = unknown,
+    S extends boolean = boolean,
+    E extends PluginInvokeEventNameType = PluginInvokeEventNameType,
+    P = unknown
+  >(arg0: {
     uniqueId: PluginUniqueIdType;
     eventName: E;
     payload: P;
-    returnStream: boolean;
+    returnStream: S;
     // sendStream?: boolean
-  }): Promise<Result<R>>;
+  }): Promise<Result<S extends true ? StreamData<R> : R>>;
 }

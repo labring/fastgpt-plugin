@@ -17,8 +17,7 @@ export class InvokeManager implements InvokePort {
   async uploadFile(input: InvokeUploadFileInputType): Promise<Result<InvokeUploadFileOutputType>> {
     const [file, err] = await this.deps.publicRemoteFileStorageRepo.save({
       file: input.file,
-      contentType: input.contentType,
-      path: input.path
+      contentType: input.contentType
     });
     if (err) return failureResult(err);
 

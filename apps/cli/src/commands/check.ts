@@ -1,13 +1,13 @@
-import type { Command } from 'commander';
-import { logger } from '@fastgpt-plugin/cli/helpers';
-import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
 import { checkBuildOutput, type CheckOptions } from '@fastgpt-plugin/cli/check';
+import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
+import { logger } from '@fastgpt-plugin/cli/helpers';
+import type { Command } from 'commander';
 
 export class CheckCommand extends BaseCommand {
   public register(parent: Command): void {
     parent
       .command('check')
-      .description('检查构建产物的正确性（manifest.yaml、config.json、index.js）')
+      .description('检查构建产物的正确性（manifest.json、config.json、index.js）')
       .option('-e, --entry <path>', '工具源码目录', process.cwd())
       .option('-o, --output <path>', '构建输出目录', './dist')
       .action(async (opts: CheckOptions) => {
