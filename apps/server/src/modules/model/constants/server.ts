@@ -1,8 +1,11 @@
 // Server-side constants - depend on env, should not be imported in SDK bundles
-import type { ListModelsType } from '../api/type';
-import { env } from '@/env';
-import { ModelProviderMap } from './shared';
 import type { I18nStringStrictType } from '@fastgpt-plugin/helpers/common/schemas/i18n';
+
+import { env } from '@/env';
+
+import type { ListModelsType } from '../api/type';
+
+import { ModelProviderMap } from './shared';
 
 export const modelsBuffer: {
   data: ListModelsType;

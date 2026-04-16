@@ -1,3 +1,6 @@
+import { getLogger, mod } from '@/lib/logger';
+
+import ai360 from './provider/ai360';
 import alicloud from './provider/AliCloud';
 import baai from './provider/BAAI';
 import baichuan from './provider/Baichuan';
@@ -10,6 +13,7 @@ import fishaudio from './provider/FishAudio';
 import gemini from './provider/Gemini';
 import grok from './provider/Grok';
 import groq from './provider/Groq';
+import huggingface from './provider/HuggingFace';
 import hunyuan from './provider/Hunyuan';
 import intern from './provider/InternLM';
 import jina from './provider/Jina';
@@ -18,8 +22,10 @@ import minimax from './provider/MiniMax';
 import mistralai from './provider/MistralAI';
 import moka from './provider/Moka';
 import moonshot from './provider/Moonshot';
+import novita from './provider/novita';
 import ollama from './provider/Ollama';
 import openai from './provider/OpenAI';
+import openrouter from './provider/OpenRouter';
 import other from './provider/Other';
 import ppio from './provider/PPIO';
 import qwen from './provider/Qwen';
@@ -27,14 +33,9 @@ import siliconflow from './provider/Siliconflow';
 import sparkdesk from './provider/SparkDesk';
 import stepfun from './provider/StepFun';
 import yi from './provider/Yi';
-import ai360 from './provider/ai360';
-import huggingface from './provider/HuggingFace';
-import novita from './provider/novita';
-import openrouter from './provider/OpenRouter';
-import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
-import { modelsBuffer } from './constants';
-import { getLogger, mod } from '@/lib/logger';
 import { initModelAvatars } from './avatars';
+import { modelsBuffer } from './constants';
+import { ModelItemSchema, ModelTypeEnum, type ProviderConfigType } from './type';
 
 const logger = getLogger(mod.model);
 

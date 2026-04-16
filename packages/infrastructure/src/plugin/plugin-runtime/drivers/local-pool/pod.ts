@@ -21,7 +21,7 @@ import {
   type PluginIpcDuplexReplyOptions,
   type PluginIpcIncomingStream
 } from './ipc-channel';
-import type { PodInfo, PodStatus } from './types';
+import type { InvokeOptions, PodInfo, PodStatus } from './types';
 
 export interface PluginPodCallbacks {
   onReady?: (info: PodInfo) => void;
@@ -42,7 +42,7 @@ export interface PluginPodOptions {
   /** 插件声明的宿主调用权限 */
   pluginPermissions: PluginPermissionEnumType[];
   callbacks?: PluginPodCallbacks;
-  invokeManager: InvokePort;
+  getInvokeSession: (invocationId?: string) => InvokePort | undefined;
 }
 
 export interface PluginPodClientRequestContext {
@@ -61,7 +61,6 @@ export interface PluginPodClientRequestContext {
 }
 
 export interface PluginPodClientRequestPayload {
-  requestId: string;
   method: string;
   args: unknown;
 }
@@ -160,11 +159,13 @@ export class PluginPod {
   async invoke<P, R, S extends boolean>({
     eventName,
     payload,
-    returnStream
+    returnStream,
+    options
   }: {
     eventName: PluginInvokeEventNameType;
     payload: P;
     returnStream: S;
+    options?: InvokeOptions;
   }): Promise<S extends true ? StreamData<R> : R> {
     if (!this.isAvailable()) {
       throw new Error(`Pod not available: ${this.status}`);
@@ -186,7 +187,8 @@ export class PluginPod {
         ? await this.channel
             .requestDuplex<P, void, never, R>(eventName, payload, {
               requestId,
-              timeoutMs: this.options.podTimeout
+              timeoutMs: options?.timeout ?? this.options.podTimeout,
+              traceId: options?.invocationId
             })
             .then(({ output }) => {
               if (!output) {
@@ -195,8 +197,9 @@ export class PluginPod {
               return output.stream;
             })
         : await this.channel.request<P, R>(eventName, payload, {
-            timeoutMs: this.options.podTimeout,
-            requestId
+            timeoutMs: options?.timeout ?? this.options.podTimeout,
+            requestId,
+            traceId: options?.invocationId
           });
 
       this.requestsExecuted++;
@@ -297,13 +300,7 @@ export class PluginPod {
       throw new Error('Channel not available');
     }
 
-    const { requestId, method, args } = message.params as PluginPodClientRequestPayload;
-
-    if (!requestId) {
-      throw Object.assign(new Error('Client requestId is required'), {
-        code: 'INVALID_REQUEST'
-      });
-    }
+    const { method, args } = message.params as PluginPodClientRequestPayload;
 
     if (!method) {
       throw Object.assign(new Error('Client request method is required'), {
@@ -312,7 +309,7 @@ export class PluginPod {
     }
 
     return {
-      requestId,
+      requestId: message.id,
       method,
       args,
       traceId: message.traceId,
@@ -331,9 +328,14 @@ export class PluginPod {
    * 后续如果要在 pod 内直接实现或引入独立 handler，就从这里接入。
    */
   private async routeClientRequest(request: PluginPodClientRequestContext): Promise<unknown> {
+    const invokeSession = this.options.getInvokeSession(request.traceId);
+    if (!invokeSession) {
+      return Promise.reject(new Error('Invoke session not found'));
+    }
+
     switch (request.method) {
       case InvokeMethodEnum.uploadFile: {
-        return this.options.invokeManager.uploadFile({
+        return invokeSession.uploadFile({
           ...(request.args as unknown as InvokeUploadFileInputType),
           file: (await request.waitForInputStream()).stream.toReadable()
         });

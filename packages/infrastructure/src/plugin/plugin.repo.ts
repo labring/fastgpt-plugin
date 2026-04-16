@@ -41,6 +41,10 @@ export class PluginRepo implements PluginRepoPort {
   private static _instance: PluginRepo;
   private static ExpiresMinutes: number = 120;
 
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   private toMongoPlugin(plugin: PluginType) {
     switch (plugin.type) {
       case 'tool': {
@@ -192,6 +196,7 @@ export class PluginRepo implements PluginRepoPort {
 
   async confirmPlugin(pluginId: PluginUniqueIdType): Promise<Result<PluginType>> {
     try {
+      const pluginModel = this.deps.mongoClient.getModel('plugin');
       const plugin = await this.deps.mongoClient
         .getModel('plugin')
         .findOne({
@@ -261,8 +266,27 @@ export class PluginRepo implements PluginRepoPort {
         );
       }
 
-      await this.deps.mongoClient
-        .getModel('plugin')
+      await pluginModel.updateMany(
+        {
+          pluginId: plugin.pluginId,
+          version: plugin.version,
+          etag: {
+            $ne: plugin.etag
+          },
+          status: PluginStatusEnum.active
+        },
+        {
+          $set: {
+            status: PluginStatusEnum.disabled,
+            updateAt: new Date()
+          },
+          $unset: {
+            expiredAt: 1
+          }
+        }
+      );
+
+      await pluginModel
         .findOneAndUpdate(
           {
             ...pluginId
@@ -270,7 +294,8 @@ export class PluginRepo implements PluginRepoPort {
           {
             $set: {
               ...this.toMongoPlugin(confirmedPlugin),
-              status: PluginStatusEnum.active
+              status: PluginStatusEnum.active,
+              updateAt: new Date()
             },
             $unset: {
               expiredAt: 1
@@ -312,7 +337,7 @@ export class PluginRepo implements PluginRepoPort {
     op?: 'or' | 'and';
   }): Promise<Result<PluginType[]>> {
     try {
-      const conditions = [] as Array<Record<string, unknown>>;
+      const conditions = [{ status: PluginStatusEnum.active }] as Array<Record<string, unknown>>;
 
       if (types && types.length > 0) {
         conditions.push({ type: { $in: types } });
@@ -351,6 +376,95 @@ export class PluginRepo implements PluginRepoPort {
         {
           en: 'Failed to list active plugins',
           'zh-CN': '获取 active 插件列表失败'
+        },
+        error
+      );
+    }
+  }
+
+  async pruneDisabled(): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>> {
+    try {
+      const pluginModel = this.deps.mongoClient.getModel('plugin');
+      const disabledPlugins = await pluginModel
+        .find(
+          {
+            status: PluginStatusEnum.disabled
+          },
+          {
+            _id: true,
+            pluginId: true,
+            version: true,
+            etag: true
+          }
+        )
+        .lean();
+
+      if (disabledPlugins.length === 0) {
+        return successResult({
+          count: 0,
+          plugins: []
+        });
+      }
+
+      const pluginIds = disabledPlugins.map((plugin) => PluginUniqueIdSchema.parse(plugin));
+      const pluginObjectIds = disabledPlugins.map((plugin) => plugin._id);
+      const s3ttlModel = this.deps.mongoClient.getModel('s3ttl');
+      const pluginInstallationModel = this.deps.mongoClient.getModel('pluginInstallation');
+
+      for (const uniqueId of pluginIds) {
+        const activePrefix = this.getFileKey(uniqueId, [], false);
+        const pendingPrefix = this.getFileKey(uniqueId, [], true);
+
+        const cleanupSteps = await Promise.all([
+          this.deps.publicRemoteFileStorageRepo.deletePath(activePrefix),
+          this.deps.privateRemoteFileStorageRepo.deletePath(activePrefix),
+          this.deps.localFileStorageRepo.deletePath(activePrefix),
+          this.deps.publicRemoteFileStorageRepo.deletePath(pendingPrefix),
+          this.deps.privateRemoteFileStorageRepo.deletePath(pendingPrefix),
+          this.deps.localFileStorageRepo.deletePath(pendingPrefix)
+        ]);
+
+        const cleanupErr = cleanupSteps.find(([, err]) => err)?.[1];
+        if (cleanupErr) {
+          return failureResult(
+            {
+              en: 'Failed to delete disabled plugin files',
+              'zh-CN': '删除 disabled 插件文件失败'
+            },
+            cleanupErr
+          );
+        }
+
+        const prefixes = [activePrefix, pendingPrefix].map((prefix) => ({
+          $regex: `^${this.escapeRegex(prefix)}`
+        }));
+
+        await s3ttlModel.deleteMany({
+          $or: prefixes.map((minioKey) => ({ minioKey }))
+        });
+      }
+
+      await pluginInstallationModel.deleteMany({
+        pluginObjectId: {
+          $in: pluginObjectIds
+        }
+      });
+
+      await pluginModel.deleteMany({
+        _id: {
+          $in: pluginObjectIds
+        }
+      });
+
+      return successResult({
+        count: pluginIds.length,
+        plugins: pluginIds
+      });
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Failed to prune disabled plugins',
+          'zh-CN': '清理 disabled 插件失败'
         },
         error
       );
@@ -533,7 +647,7 @@ export class PluginRepo implements PluginRepoPort {
 
   async getPluginById(
     uniqueId: PluginUniqueIdType
-  ): Promise<Result<{ info: PluginType; indexFile: FileObject }>> {
+  ): Promise<Result<{ info: PluginType; indexFile: FileObject; entryFilePath: string }>> {
     try {
       const model = this.deps.mongoClient.getModel('plugin');
       const result = await model
@@ -603,7 +717,8 @@ export class PluginRepo implements PluginRepoPort {
 
       return successResult({
         info,
-        indexFile
+        indexFile,
+        entryFilePath: this.deps.localFileStorageRepo.joinPath(indexFileKey)
       });
     } catch (error) {
       return failureResult(

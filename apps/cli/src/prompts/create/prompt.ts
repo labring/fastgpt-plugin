@@ -1,9 +1,9 @@
 import { DEFAULT_PLUGIN_DESCRIPTION, DEFAULT_PLUGIN_NAME } from '@fastgpt-plugin/cli/constants';
 import type { CreatePluginCommandOptions } from '@fastgpt-plugin/cli/interfaces/command';
 import type { IPrompt } from '@fastgpt-plugin/cli/prompts/base/types';
-import type { RawCreateCliOptions, PluginType } from '@fastgpt-plugin/cli/prompts/create/types';
 import { defaultDeps, type PromptDeps } from '@fastgpt-plugin/cli/prompts/create/deps';
 import { inputPrompt } from '@fastgpt-plugin/cli/prompts/create/input-prompt';
+import type { PluginType,RawCreateCliOptions } from '@fastgpt-plugin/cli/prompts/create/types';
 
 export class CreatePrompt implements IPrompt<RawCreateCliOptions, CreatePluginCommandOptions> {
   private readonly deps: PromptDeps;

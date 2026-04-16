@@ -1,9 +1,9 @@
-import { defineConfig } from 'eslint/config';
 import js from '@eslint/js';
+import json from '@eslint/json';
+import { defineConfig } from 'eslint/config';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import json from '@eslint/json';
-import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default defineConfig([
   {

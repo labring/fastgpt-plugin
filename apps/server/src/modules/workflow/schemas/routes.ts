@@ -1,5 +1,7 @@
 import { createRoute } from '@hono/zod-openapi';
+
 import { createResponseSchema, ErrorResponseSchema } from '@/utils/http';
+
 import { TemplateListSchema } from './common';
 
 // GET /list - List all workflow templates

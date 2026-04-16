@@ -13,7 +13,7 @@ const handler = createToolHandler({
   }
 });
 
-export default defineTool({
+const tool = defineTool({
   manifest: {
     description: {
       en: 'Get current time',
@@ -32,3 +32,5 @@ export default defineTool({
   },
   handler
 });
+
+export default tool;

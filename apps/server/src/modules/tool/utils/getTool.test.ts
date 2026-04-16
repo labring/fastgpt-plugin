@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getTool } from '../tool';
+import type { ToolSetType,ToolType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { getCachedData } from '@/lib/cache';
 import { SystemCacheKeyEnum } from '@/lib/cache/type';
-import type { ToolType, ToolSetType } from '@fastgpt-plugin/helpers/tools/schemas/tool';
+
+import { getTool } from '../tool';
 
 vi.mock('@/lib/cache', () => ({
   getCachedData: vi.fn()

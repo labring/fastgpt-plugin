@@ -1,2 +1,2 @@
 // Re-export SDK-safe constants from helpers - no env dependency
-export { UploadToolsS3Path, PluginBaseS3Prefix } from '@fastgpt-plugin/helpers/tools/constants';
+export { PluginBaseS3Prefix,UploadToolsS3Path } from '@fastgpt-plugin/helpers/tools/constants';

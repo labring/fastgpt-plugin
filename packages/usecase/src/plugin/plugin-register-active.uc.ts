@@ -14,8 +14,7 @@ type Output = Promise<Result>;
 const isRunnablePlugin = (plugin: PluginType) => plugin.type === 'tool';
 
 export const makePluginRegisterActiveUC =
-  (deps: PluginRegisterActiveUCDeps) =>
-  async (): Output => {
+  (deps: PluginRegisterActiveUCDeps) => async (): Output => {
     const [plugins, listErr] = await deps.pluginRepo.listActive();
 
     if (listErr) {
@@ -47,5 +46,5 @@ export const makePluginRegisterActiveUC =
       }
     }
 
-    return successResult({});
+    return successResult('ok');
   };

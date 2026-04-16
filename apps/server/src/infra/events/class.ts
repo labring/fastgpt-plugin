@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+
 import type { EventEnumType } from '@fastgpt-plugin/helpers/events';
 import type { EventDataType, EventResponseType } from '@fastgpt-plugin/helpers/events/schemas';
 import type { SystemVarType } from '@fastgpt-plugin/helpers/index';

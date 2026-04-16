@@ -1,6 +1,7 @@
 import type { HostEmitter } from '@fastgpt-plugin/helpers/events/type';
-import type { SubPub } from './class';
 import type { SystemVarType } from '@fastgpt-plugin/helpers/index';
+
+import type { SubPub } from './class';
 
 export const createEventEmitter = (sp: SubPub, props: { systemVar: SystemVarType }) => {
   const eventEmiter: HostEmitter = {

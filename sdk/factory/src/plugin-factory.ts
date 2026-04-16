@@ -1,4 +1,3 @@
-import type { InvokePort } from '@domain/ports/invoke.port';
 import { PluginRuntimeModeEnum, type PluginRuntimeModeType } from '@domain/value-objects/plugin.vo';
 import {
   createCurrentProcessIpcChannel,
@@ -13,7 +12,6 @@ import {
  */
 export class PluginFactory {
   private channel: PluginIpcChannel | undefined;
-  private invoke: InvokePort | undefined;
 
   protected getChannel() {
     if (!this.channel) {
@@ -22,14 +20,6 @@ export class PluginFactory {
     return this.channel;
   }
 
-  protected getInvoke() {
-    if (!this.invoke) {
-      throw new Error('Invoke client is not initialized yet.');
-    }
-    return this.invoke;
-  }
-
-  // protected invoke = new InvokeClient(this.channel);
   protected mode: PluginRuntimeModeType | 'dev' | undefined;
 
   private checkRuntimeMode() {

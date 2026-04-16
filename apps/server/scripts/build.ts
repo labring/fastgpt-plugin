@@ -1,7 +1,6 @@
-import { $ } from 'bun';
+import { existsSync, mkdirSync } from 'node:fs';
 import { cp } from 'node:fs/promises';
 import { join } from 'node:path';
-import { existsSync, mkdirSync } from 'node:fs';
 
 // 1. build worker
 await $`bun run build:worker`;

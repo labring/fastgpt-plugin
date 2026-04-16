@@ -25,7 +25,7 @@ export interface PluginRepoPort {
   /** 获取某个插件信息 */
   getPluginById(
     uniqueId: PluginUniqueIdType
-  ): Promise<Result<{ info: PluginType; indexFile: FileObject }>>;
+  ): Promise<Result<{ info: PluginType; indexFile: FileObject; entryFilePath: string }>>;
 
   getPluginsByPluginId(pluginId: string): Promise<Result<PluginType[]>>;
   getPluginByUserPluginId(userPluginId: UserPluginIdType): Promise<Result<PluginType>>;
@@ -37,6 +37,7 @@ export interface PluginRepoPort {
     op?: 'or' | 'and';
   }): Promise<Result<PluginType[]>>;
   listActive(): Promise<Result<PluginType[]>>;
+  pruneDisabled(): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>>;
 
   listTags(): Promise<Result<PluginTagListType>>;
 

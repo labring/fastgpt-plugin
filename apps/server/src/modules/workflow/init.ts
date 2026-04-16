@@ -1,8 +1,10 @@
-import { isProd } from '@/constants';
-import { readFile, readdir } from 'fs/promises';
+import { readdir,readFile } from 'fs/promises';
 import { join } from 'path';
-import type { TemplateItemType, TemplateListType } from './type';
+
+import { isProd } from '@/constants';
 import { getLogger, mod } from '@/lib/logger';
+
+import type { TemplateItemType, TemplateListType } from './type';
 
 const logger = getLogger(mod.workflow);
 

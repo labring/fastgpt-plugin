@@ -1,20 +1,17 @@
 // Re-export schemas and types from helpers
-export {
-  DatasetSourceIdEnum,
-  FormFieldTypeEnum,
-  FormFieldConfigSchema,
-  DatasetSourceInfoSchema,
-  DatasetSourceConfigSchema,
-  FileItemSchema,
-  FileContentResponseSchema
-} from '@fastgpt-plugin/helpers/datasets/schemas';
-
 export type {
-  DatasetSourceId,
-  FormFieldType,
-  FormFieldConfig,
-  DatasetSourceInfo,
   DatasetSourceConfig,
+  DatasetSourceId,
+  DatasetSourceInfo,
+  FileContentResponse,
   FileItem,
-  FileContentResponse
-} from '@fastgpt-plugin/helpers/datasets/schemas';
+  FormFieldConfig,
+  FormFieldType} from '@fastgpt-plugin/helpers/datasets/schemas';
+export {
+  DatasetSourceConfigSchema,
+  DatasetSourceIdEnum,
+  DatasetSourceInfoSchema,
+  FileContentResponseSchema,
+  FileItemSchema,
+  FormFieldConfigSchema,
+  FormFieldTypeEnum} from '@fastgpt-plugin/helpers/datasets/schemas';

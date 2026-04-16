@@ -1,8 +1,9 @@
 // Server-side constants - depend on env, should not be imported in SDK bundles
-import { isProd } from '@/constants';
-import { env } from '@/env';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+import { isProd } from '@/constants';
+import { env } from '@/env';
 
 export const basePath = isProd ? process.cwd() : join(process.cwd(), '..');
 

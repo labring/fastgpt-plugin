@@ -15,7 +15,7 @@ const pod = new PluginPod('test', {
     process.cwd(),
     'src/plugin/plugin-runtime/drivers/local-pool/test/fixtures/child.js'
   ),
-  invokeManager: fakeInvokeManager,
+  getInvokeSession: () => fakeInvokeManager,
   maxConcurrentRequests: 1,
   maxRequests: 1,
   pluginPermissions: [],

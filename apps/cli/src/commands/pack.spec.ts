@@ -1,9 +1,10 @@
-import { mkdir, rm, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { mkdir, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { run } from '@fastgpt-plugin/cli/cmd';
 import { logger } from '@fastgpt-plugin/cli/helpers';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const FIXTURE_ROOT = path.join(__dirname, '../../test/fixtures');
 const DBOPS_SUITE_DIR = path.join(FIXTURE_ROOT, 'tool-suites', 'dbops');

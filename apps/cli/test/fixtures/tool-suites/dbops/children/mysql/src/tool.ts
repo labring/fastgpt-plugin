@@ -1,6 +1,7 @@
 import type { ToolContextType } from '@fastgpt-plugin/helpers';
-import { InputSchema, OutputSchema } from './schemas';
 import { createToolHandler } from '@fastgpt-plugin/helpers/index';
+
+import { InputSchema, OutputSchema } from './schemas';
 
 export const tool = createToolHandler({
   inputSchema: InputSchema,

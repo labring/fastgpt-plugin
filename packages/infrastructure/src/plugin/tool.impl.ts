@@ -1,14 +1,21 @@
+import { randomUUID } from 'node:crypto';
+
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
-import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
+import type {
+  PluginRuntimeInvokeOptions,
+  PluginRuntimeManagerPort} from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { ToolManagerPort } from '@domain/ports/plugin/tool.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
+import { InvokeManager, type InvokeUploadFileHandler } from './invoke/invoke.impl';
+
 export type ToolManagerDeps = {
   pluginRepo: PluginRepoPort;
   pluginRuntimeManager: PluginRuntimeManagerPort;
+  uploadFileHandler: InvokeUploadFileHandler;
 };
 
 export type PluginToolRunPayloadType = {
@@ -21,6 +28,11 @@ export type PluginToolRunPayloadType = {
 export class ToolManager implements ToolManagerPort {
   private static instance: ToolManager;
   private constructor(private deps: ToolManagerDeps) {}
+
+  private getInvokeToken(systemVar: SystemVarType) {
+    const token = systemVar.tool.token ?? systemVar.tool.accessToken;
+    return typeof token === 'string' ? token : '';
+  }
 
   public static getInstance(deps: ToolManagerDeps): ToolManager {
     if (!ToolManager.instance) {
@@ -63,6 +75,14 @@ export class ToolManager implements ToolManagerPort {
       secrets
     } satisfies PluginToolRunPayloadType;
 
+    const options: PluginRuntimeInvokeOptions = {
+      invocationId: randomUUID(),
+      invoke: new InvokeManager({
+        token: this.getInvokeToken(systemVar),
+        uploadFileHandler: this.deps.uploadFileHandler
+      })
+    };
+
     const [invokeRes, invokeErr] = await this.deps.pluginRuntimeManager.invoke<
       ToolStreamMessageType,
       true
@@ -74,7 +94,8 @@ export class ToolManager implements ToolManagerPort {
       },
       eventName: 'run',
       payload,
-      returnStream: true
+      returnStream: true,
+      options
     });
 
     if (invokeErr) {

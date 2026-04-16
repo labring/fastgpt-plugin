@@ -1,7 +1,7 @@
-import { join } from 'path';
-import { readdir } from 'fs/promises';
-import { existsSync } from 'fs';
 import { ensureDir } from '@fastgpt-plugin/helpers/common/fs';
+import { existsSync } from 'fs';
+import { readdir } from 'fs/promises';
+import { join } from 'path';
 
 export const workersSourceDir = join(__dirname, '..', 'worker');
 const workersDistDir = join(__dirname, '..', '..', '..', 'dist', 'workers', 'tool');

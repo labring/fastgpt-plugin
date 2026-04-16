@@ -1,5 +1,6 @@
-import packageJson from '../package.json' assert { type: 'json' };
 import path from 'node:path';
+
+import packageJson from '../package.json' assert { type: 'json' };
 
 export const CLI_NAME = packageJson.name;
 export const CLI_VERSION = packageJson.version;

@@ -10,6 +10,7 @@ import { makeSetPluginConfigUC } from '@usecase/plugin/plugin-config-set.uc';
 import { makePluginConfirmUC, type PluginConfirmUCDeps } from '@usecase/plugin/plugin-confirm.uc';
 import { makePluginInstallUC, type PluginInstallUCDeps } from '@usecase/plugin/plugin-install.uc';
 import { makePluginListUC } from '@usecase/plugin/plugin-list.uc';
+import { makePluginPruneDisabledUC } from '@usecase/plugin/plugin-prune-disabled.uc';
 import { makePluginTagListUC } from '@usecase/plugin/plugin-tag-list.uc';
 import { makePluginUploadUC, type PluginUploadUCDeps } from '@usecase/plugin/plugin-upload.uc';
 import { createOpenAPIHono } from '@infrastructure/hono/utils/response';
@@ -124,7 +125,41 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
         return c.json(R.fail(500, err.reason).body, 500);
       }
 
-      return new Response(null, { status: 200 });
+      return c.json({ ok: true }, 200);
+    }
+  );
+
+  route.openapi(
+    createRoute({
+      ...PluginContract.PruneDisabled.meta,
+      responses: {
+        200: {
+          description: 'HTTP 200 response',
+          content: {
+            'application/json': {
+              schema: PluginContract.PruneDisabled.response[200]
+            }
+          }
+        },
+        500: {
+          description: 'HTTP 500 response',
+          content: {
+            'application/json': {
+              schema: PluginContract.PruneDisabled.response[500]
+            }
+          }
+        }
+      }
+    }),
+    async (c) => {
+      const pluginPruneDisabledUC = makePluginPruneDisabledUC(deps);
+      const [result, err] = await pluginPruneDisabledUC();
+
+      if (err) {
+        return c.json(R.fail(500, err.reason).body, 500);
+      }
+
+      return c.json(R.success(result).body, 200);
     }
   );
 

@@ -61,9 +61,9 @@ export interface PodInfo {
 
 export interface InvokeOptions {
   timeout?: number;
-  traceId?: string;
+  invocationId?: string;
   priority?: number;
-  invoke: InvokePort;
+  invoke?: InvokePort;
 }
 
 // ============ 监控指标类型 ============
@@ -91,6 +91,7 @@ export interface ServiceMetrics {
   errorRate: number;
   crashCount: number;
   totalRequests: number;
+  minPods?: number;
   maxPods?: number;
 }
 
@@ -98,8 +99,8 @@ export interface GlobalMetrics {
   totalServices: number;
   totalPods: number;
   totalRequests: number;
-  avgResponseTime: number;
-  errorRate: number;
+  // errorRate: number;
+  services: Record<string, ServiceMetrics>;
 }
 
 // ============ 销毁选项 ============

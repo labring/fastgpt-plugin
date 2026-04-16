@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
-import { existsSync, rmSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { transformToolConfig } from './ast-transform';
+import { join } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
 import { buildToolPackage } from './index';
 
 const FIXTURE_ROOT = join(__dirname, '../../test/fixtures');

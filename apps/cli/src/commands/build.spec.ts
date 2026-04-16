@@ -1,7 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
-import { BuildCommand } from './build';
+import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { existsSync, rmSync, readdirSync, statSync } from 'node:fs';
+
+import { describe, expect, it, vi } from 'vitest';
+
+import { BuildCommand } from './build';
 
 const FIXTURE_ROOT = join(__dirname, '../../test/fixtures');
 const SNAPSHOT_ROOT = join(process.cwd(), '__build_snapshot__');

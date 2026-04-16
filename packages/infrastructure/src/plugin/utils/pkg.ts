@@ -1,6 +1,7 @@
-import { ZipReaderStream, ZipWriterStream } from '@zip.js/zip.js';
 import { Readable } from 'node:stream';
 import { ReadableStream } from 'node:stream/web';
+
+import { ZipReaderStream, ZipWriterStream } from '@zip.js/zip.js';
 
 /**
  * @example

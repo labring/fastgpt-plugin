@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { tool } from './tool';
+import { describe, expect,it } from 'vitest';
+
 import { InputType, OutputType } from './schemas';
+import { tool } from './tool';
 
 describe('clickhouse child tool', () => {
   it('should run with valid IO schemas', async () => {

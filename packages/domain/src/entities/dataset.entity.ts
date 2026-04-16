@@ -1,6 +1,7 @@
 import z from 'zod';
-import { I18nStringSchema } from '../value-objects/i18n-string.vo';
+
 import { DatasetFormFieldConfigSchema } from '../value-objects/dataset.vo';
+import { I18nStringSchema } from '../value-objects/i18n-string.vo';
 
 // 数据源完整配置
 export const DatasetSourceConfigSchema = z.object({

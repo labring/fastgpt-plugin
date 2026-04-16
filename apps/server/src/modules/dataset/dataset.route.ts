@@ -1,13 +1,13 @@
-import { sourceRegistry } from './source/registry';
+import { createOpenAPIHono, R } from '@/routes/utils';
+
 import {
-  listSourcesRoute,
+  getContentRoute,
+  getDetailRoute,
+  getPreviewUrlRoute,
   getSourceConfigRoute,
   listFilesRoute,
-  getContentRoute,
-  getPreviewUrlRoute,
-  getDetailRoute
-} from './schemas/routes';
-import { createOpenAPIHono, R } from '@/routes/utils';
+  listSourcesRoute} from './schemas/routes';
+import { sourceRegistry } from './source/registry';
 
 // 延迟注册数据源，避免在模块加载时触发 S3 访问
 let sourcesRegistered = false;

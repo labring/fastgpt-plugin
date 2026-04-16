@@ -1,7 +1,7 @@
 // Re-export API schemas and types from schemas module
 export {
   TemplateItemSchema,
-  TemplateListSchema,
   type TemplateItemType,
+  TemplateListSchema,
   type TemplateListType
 } from './schemas/common';

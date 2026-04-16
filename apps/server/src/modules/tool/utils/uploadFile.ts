@@ -1,5 +1,5 @@
-import type { FileInput } from '@/lib/s3/type';
 import { getPublicS3Server } from '@/lib/s3';
+import type { FileInput } from '@/lib/s3/type';
 import { getCurrentToolPrefix } from '@/utils/context';
 
 // Extend global type to access currentToolPrefix set by worker

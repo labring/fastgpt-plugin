@@ -1,4 +1,5 @@
 import { createToolHandler } from '@fastgpt-plugin/helpers';
+
 import { InputSchema, OutputSchema } from './schemas';
 
 export const tool = createToolHandler({

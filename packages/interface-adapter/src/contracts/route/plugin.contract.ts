@@ -5,6 +5,7 @@ import {
   PluginDTOSchema,
   PluginInstallDTOSchema,
   PluginListParamsSchema,
+  PluginPruneDisabledResponseDTOSchema,
   PluginRuntimeConfigGetParamsSchema,
   PluginRuntimeConfigSchema,
   PluginRuntimeConfigSetParamsSchema,
@@ -45,6 +46,21 @@ export const PluginContract = {
     request: PluginUniqueIdDTOSchema,
     response: {
       200: emptyResponse(),
+      500: jsonResponse({ error: I18nStringSchema })
+    }
+  }),
+  PruneDisabled: defineContract({
+    meta: {
+      method: 'post',
+      path: '/plugin/prune-disabled',
+      operationId: 'plugin.pruneDisabled',
+      description: 'Delete all disabled plugin data from Mongo and storage',
+      summary: 'Prune disabled plugins',
+      tags: ['plugin'],
+      security: authToken
+    },
+    response: {
+      200: jsonResponse({ data: PluginPruneDisabledResponseDTOSchema }),
       500: jsonResponse({ error: I18nStringSchema })
     }
   }),

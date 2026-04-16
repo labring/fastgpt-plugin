@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { DatasetSourceIdEnum, type DatasetSourceConfig } from '../../type/source';
+
 import { getDatasetSourceAvatarUrl, getDatasetSourceOutlineAvatarUrl } from '../../dataset.init';
+import { type DatasetSourceConfig,DatasetSourceIdEnum } from '../../type/source';
 
 const SOURCE_ID = DatasetSourceIdEnum.enum.yuque;
 

@@ -1,6 +1,6 @@
-import { defineConfig } from 'tsdown';
 import { globSync } from 'glob';
 import { basename } from 'path';
+import { defineConfig } from 'tsdown';
 
 // 查找所有 worker 文件
 const workerFiles = globSync('src/workers/*.ts');

@@ -1,5 +1,5 @@
 import { makePluginRegisterActiveUC } from '@usecase/plugin/plugin-register-active.uc';
-import { getLogger, root } from '@infrastructure/logger';
+import { configureLogger, getLogger, root } from '@infrastructure/logger';
 
 import {
   localFileStorageRepo,
@@ -11,6 +11,7 @@ import {
 } from './deps';
 
 export const init = async () => {
+  await configureLogger(); // setup logger
   await Promise.all([
     localFileStorageRepo.initialize(),
     privateRemoteFileStorageRepo.init(),
@@ -25,7 +26,11 @@ export const init = async () => {
     pluginRuntimeManager
   });
 
-  const [, err] = await pluginRegisterActiveUC();
+  const [res, err] = await pluginRegisterActiveUC();
+  logger.info('Register active plugins on init completed', {
+    result: res,
+    error: err
+  });
   if (err) {
     logger.error('Register active plugins on init failed', {
       error: err.error,

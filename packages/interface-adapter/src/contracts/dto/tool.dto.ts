@@ -41,6 +41,10 @@ export const ToolRunInputDTOSchema = z.object({
     description: 'Plugin version',
     example: '1.0.0'
   }),
+  source: z.string().optional().openapi({
+    description: 'Plugin source, optional, default is "system"',
+    example: 'system'
+  }),
   systemVar: SystemVarDTOSchema,
   input: z.record(z.string(), z.unknown()).openapi({
     description: 'Tool input parameters, key-value pairs',

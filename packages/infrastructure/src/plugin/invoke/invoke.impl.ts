@@ -1,4 +1,3 @@
-import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import {
   type InvokePort,
   type InvokeUploadFileInputType,
@@ -7,30 +6,36 @@ import {
 } from '@domain/ports/invoke.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
+export type InvokeUploadFileHandler = (arg: {
+  token: string;
+  input: InvokeUploadFileInputType;
+}) => Promise<Result<InvokeUploadFileOutputType>>;
+
 export type InvokeManagerDeps = {
-  publicRemoteFileStorageRepo: RemoteFileStoragePort;
+  token: string;
+  uploadFileHandler: InvokeUploadFileHandler;
 };
 
 export class InvokeManager implements InvokePort {
   constructor(private readonly deps: InvokeManagerDeps) {}
 
   async uploadFile(input: InvokeUploadFileInputType): Promise<Result<InvokeUploadFileOutputType>> {
-    const [file, err] = await this.deps.publicRemoteFileStorageRepo.save({
-      file: input.file,
-      contentType: input.contentType
+    const [result, err] = await this.deps.uploadFileHandler({
+      token: this.deps.token,
+      input
     });
     if (err) return failureResult(err);
 
-    const [accessURL, accErr] = await this.deps.publicRemoteFileStorageRepo.getAccessUrl(
-      file.metaData.fileKey
-    );
-    if (accErr) return failureResult(accErr);
-
-    return successResult(
-      InvokeUploadFileOutputSchema.parse({
-        ...file.metaData,
-        accessURL: accessURL
-      })
-    );
+    try {
+      return successResult(InvokeUploadFileOutputSchema.parse(result));
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Invalid invoke upload file output',
+          'zh-CN': '反向调用上传文件返回数据格式错误'
+        },
+        error
+      );
+    }
   }
 }

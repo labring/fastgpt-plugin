@@ -23,7 +23,7 @@ export class PluginRuntimeConfigRepo<T extends object> {
       })
       .lean();
     if (result) {
-      return successResult(result.config as T);
+      return successResult({ ...this.default_config, ...result.config } as T);
     } else {
       return successResult(this.default_config);
     }

@@ -2,13 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { logger } from '@fastgpt-plugin/cli/helpers';
+import { build as tsdownBuild } from 'tsdown';
+import z from 'zod';
+
 import {
   ToolManifestSchema,
   type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
-import { logger } from '@fastgpt-plugin/cli/helpers';
-import { build as tsdownBuild } from 'tsdown';
-import z from 'zod';
 
 export interface ToolBuildOptions {
   entry: string;
@@ -92,7 +93,7 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
       format: [options.format],
       clean: true,
       minify: options.minify,
-      inlineOnly: false,
+      inlineOnly: ['*'],
       nodeProtocol: true,
       platform: 'node',
       target: 'node22',
@@ -253,11 +254,7 @@ async function copySourceFiles(sourceDir: string, targetDir: string): Promise<vo
   const files = await fs.readdir(sourceDir, { withFileTypes: true });
 
   for (const file of files) {
-    if (
-      file.name === 'node_modules' ||
-      file.name === 'dist' ||
-      file.name.startsWith('.build-')
-    ) {
+    if (file.name === 'node_modules' || file.name === 'dist' || file.name.startsWith('.build-')) {
       continue;
     }
 
@@ -342,18 +339,19 @@ function isPackableToolExport(value: unknown): value is PackableToolExport {
   );
 }
 
-function pickToolDescription(explicitDescription: string | undefined, fallbackSource: unknown): string {
+function pickToolDescription(
+  explicitDescription: string | undefined,
+  fallbackSource: unknown
+): string {
   if (explicitDescription && explicitDescription.trim().length > 0) {
     return explicitDescription;
   }
 
   if (fallbackSource && typeof fallbackSource === 'object') {
     const localized = fallbackSource as Record<string, unknown>;
-    const preferred = [
-      localized['zh-CN'],
-      localized.en,
-      ...Object.values(localized)
-    ].find((value) => typeof value === 'string' && value.trim().length > 0);
+    const preferred = [localized['zh-CN'], localized.en, ...Object.values(localized)].find(
+      (value) => typeof value === 'string' && value.trim().length > 0
+    );
 
     if (typeof preferred === 'string') {
       return preferred;

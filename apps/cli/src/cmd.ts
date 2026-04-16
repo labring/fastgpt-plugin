@@ -1,9 +1,9 @@
-import { Command } from 'commander';
-import { CLI_NAME, CLI_VERSION } from '@fastgpt-plugin/cli/constants';
 import { BuildCommand } from '@fastgpt-plugin/cli/commands/build';
 import { CheckCommand } from '@fastgpt-plugin/cli/commands/check';
 import { CreateCommand } from '@fastgpt-plugin/cli/commands/create';
 import { PackCommand } from '@fastgpt-plugin/cli/commands/pack';
+import { CLI_NAME, CLI_VERSION } from '@fastgpt-plugin/cli/constants';
+import { Command } from 'commander';
 
 function createProgram(): Command {
   const program = new Command();

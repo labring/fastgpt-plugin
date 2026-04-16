@@ -1,5 +1,6 @@
 import { createMiddleware } from 'hono/factory';
 import { HTTPException } from 'hono/http-exception';
+
 import { env } from '../../env';
 
 const PREFIX = 'Bearer ';

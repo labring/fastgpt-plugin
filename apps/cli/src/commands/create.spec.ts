@@ -1,9 +1,9 @@
-import { mkdir, readdir, readFile, rm } from 'fs/promises';
-import path from 'path';
-import { tmpdir } from 'os';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { run } from '@fastgpt-plugin/cli/cmd';
 import { logger } from '@fastgpt-plugin/cli/helpers';
+import { mkdir, readdir, readFile, rm } from 'fs/promises';
+import { tmpdir } from 'os';
+import path from 'path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn().mockResolvedValue('test-plugin'),

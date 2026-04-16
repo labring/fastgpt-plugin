@@ -7,6 +7,7 @@ import type { ToolAnswerType, ToolStreamMessageType } from '@domain/value-object
 import type { PluginToolRunPayloadType } from '@infrastructure/plugin/tool.impl';
 import { getErrText } from '@shared/utils/err';
 
+import { InvokeClient } from './invoke.client';
 import type { UserToolManifestType } from './manifest.type';
 import { PluginFactory } from './plugin-factory';
 export type ToolContextType<TSecret = Record<string, unknown>> = {
@@ -81,7 +82,7 @@ export class ToolFactory extends PluginFactory {
           try {
             const { input, systemVar, childId, secrets } = msg.params as PluginToolRunPayloadType;
             // 处理工具执行请求
-            const def = this.toolHandlers.get(childId ?? 'toolI');
+            const def = this.toolHandlers.get(childId ?? 'tool');
 
             if (!def) {
               throw new Error('No tool registered');
@@ -100,16 +101,19 @@ export class ToolFactory extends PluginFactory {
             const result = await def.handler(input, {
               systemVar,
               secrets,
-              invoke: this.getInvoke(),
+              invoke: new InvokeClient(this.getChannel(), {
+                invocationId: msg.traceId
+              }),
               streamResponse: (msg: ToolAnswerType) => {
                 streamResponse.send(msg);
               }
             });
 
             output.send({
-              type: 'reponse',
+              type: 'response',
               data: result
             });
+            output.end();
 
             return this.getChannel().replyDuplex(msg, undefined, {
               output
@@ -120,6 +124,7 @@ export class ToolFactory extends PluginFactory {
               data: getErrText(err),
               type: 'error'
             });
+            output.end();
             return this.getChannel().replyDuplex(msg, undefined, {
               output
             });

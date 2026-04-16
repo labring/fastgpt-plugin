@@ -1,21 +1,16 @@
 {
-  "name": "delay",
-  "version": "0.0.1",
-  "description": "延迟执行",
+  "name": "fastgpt-tools-get-current-time",
+  "module": "index.ts",
   "type": "module",
-  "main": "dist/index.js",
   "scripts": {
-    "build": "npx @fastgpt-plugin/cli build --minify",
-    "build:dev": "npx @fastgpt-plugin/cli build",
-    "pack": "npx @fastgpt-plugin/cli pack",
-    "test": "vitest run"
+    "build": "npx @fastgpt-plugin/cli build",
+    "pack": "npx @fastgpt-plugin/cli pack"
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^4",
+    "@fastgpt-plugin/cli": "link:../../../../../cli"
+  },
   "devDependencies": {
-    "@fastgpt-plugin/cli": "catalog:",
-    "@fastgpt-plugin/helpers": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
-    "zod": "catalog:"
+    "typescript": "^5"
   }
 }

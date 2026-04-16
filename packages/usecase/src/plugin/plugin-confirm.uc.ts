@@ -10,7 +10,7 @@ import { isEqual } from 'es-toolkit';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
-import { failureResult, type Result } from '@domain/value-objects/result.vo';
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
 /** Dependencies */
 export type PluginConfirmUCDeps = {
@@ -29,6 +29,25 @@ type Output = Promise<Result>;
 export const makePluginConfirmUC =
   (deps: PluginConfirmUCDeps) =>
   async ({ uniqueId }: Input): Output => {
+    const [activePlugins, activeErr] = await deps.pluginRepo.listActive();
+
+    if (activeErr) {
+      return failureResult(
+        {
+          en: 'Failed to get active plugins',
+          'zh-CN': '获取 active 插件失败'
+        },
+        activeErr
+      );
+    }
+
+    const replacedPlugins = activePlugins.filter(
+      (plugin) =>
+        plugin.pluginId === uniqueId.pluginId &&
+        plugin.version === uniqueId.version &&
+        plugin.etag !== uniqueId.etag
+    );
+
     // 1. get pending plugins
     const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
 
@@ -65,7 +84,47 @@ export const makePluginConfirmUC =
 
     // 4. register the plugin to runtime (when it is runable)
     if (plugin.type === 'tool') {
-      return deps.pluginRuntimeManager.register(uniqueId);
+      const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
+      if (registerErr) {
+        return failureResult(
+          {
+            en: 'Failed to register confirmed plugin',
+            'zh-CN': '注册确认后的插件失败'
+          },
+          registerErr
+        );
+      }
+
+      await Promise.all(
+        replacedPlugins
+          .filter((item) => item.type === 'tool')
+          .map(async (item) => {
+            try {
+              const [, unregisterErr] = await deps.pluginRuntimeManager.unregister({
+                pluginId: item.pluginId,
+                version: item.version,
+                etag: item.etag
+              });
+              if (unregisterErr) {
+                console.error('Failed to unregister replaced plugin runtime', {
+                  pluginId: item.pluginId,
+                  version: item.version,
+                  etag: item.etag,
+                  error: unregisterErr
+                });
+              }
+            } catch (error) {
+              console.error('Failed to unregister replaced plugin runtime', {
+                pluginId: item.pluginId,
+                version: item.version,
+                etag: item.etag,
+                error
+              });
+            }
+          })
+      );
+
+      return successResult({});
     }
 
     // 5. (unimplemented) when it is not runable(model, workflow ...) cache it here or a plugin cache manager.

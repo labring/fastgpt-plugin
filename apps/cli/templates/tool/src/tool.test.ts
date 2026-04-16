@@ -1,7 +1,8 @@
+import { mockedEventEmitter, mockedSystemVar } from '@fastgpt-plugin/helpers/tools/mocks';
 import { describe, expect, it } from 'vitest';
+
 import { InputSchema, OutputSchema } from './schemas';
 import { tool } from './tool';
-import { mockedEventEmitter, mockedSystemVar } from '@fastgpt-plugin/helpers/tools/mocks';
 
 describe('get-time', () => {
   it('should run with valid IO schemas', async () => {

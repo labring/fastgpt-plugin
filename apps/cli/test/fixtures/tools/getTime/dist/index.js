@@ -1,4 +1,4 @@
-import { Readable } from "node:stream";
+import n, { Readable } from "node:stream";
 import { randomUUID } from "node:crypto";
 
 //#region \0rolldown/runtime.js
@@ -2292,7 +2292,7 @@ const $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) 
             })));
           }
         }
-
+        
         if (${id}.value === undefined) {
           if (${k} in input) {
             newResult[${k}] = undefined;
@@ -2300,7 +2300,7 @@ const $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) 
         } else {
           newResult[${k}] = ${id}.value;
         }
-
+        
       `);
 			else doc.write(`
         if (${id}.issues.length) {
@@ -2309,7 +2309,7 @@ const $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) 
             path: iss.path ? [${k}, ...iss.path] : [${k}]
           })));
         }
-
+        
         if (${id}.value === undefined) {
           if (${k} in input) {
             newResult[${k}] = undefined;
@@ -2317,7 +2317,7 @@ const $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) 
         } else {
           newResult[${k}] = ${id}.value;
         }
-
+        
       `);
 		}
 		doc.write(`payload.value = newResult;`);
@@ -12277,7 +12277,7 @@ var ZodFirstPartyTypeKind;
 
 //#endregion
 //#region ../../../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/from-json-schema.js
-const z = {
+const z$1 = {
 	...schemas_exports,
 	...checks_exports,
 	iso: iso_exports
@@ -12362,7 +12362,7 @@ function resolveRef(ref, ctx) {
 }
 function convertBaseSchema(schema, ctx) {
 	if (schema.not !== void 0) {
-		if (typeof schema.not === "object" && Object.keys(schema.not).length === 0) return z.never();
+		if (typeof schema.not === "object" && Object.keys(schema.not).length === 0) return z$1.never();
 		throw new Error("not is not supported in Zod (except { not: {} } for never)");
 	}
 	if (schema.unevaluatedItems !== void 0) throw new Error("unevaluatedItems is not supported");
@@ -12372,7 +12372,7 @@ function convertBaseSchema(schema, ctx) {
 	if (schema.$ref) {
 		const refPath = schema.$ref;
 		if (ctx.refs.has(refPath)) return ctx.refs.get(refPath);
-		if (ctx.processing.has(refPath)) return z.lazy(() => {
+		if (ctx.processing.has(refPath)) return z$1.lazy(() => {
 			if (!ctx.refs.has(refPath)) throw new Error(`Circular reference not resolved: ${refPath}`);
 			return ctx.refs.get(refPath);
 		});
@@ -12384,19 +12384,19 @@ function convertBaseSchema(schema, ctx) {
 	}
 	if (schema.enum !== void 0) {
 		const enumValues = schema.enum;
-		if (ctx.version === "openapi-3.0" && schema.nullable === true && enumValues.length === 1 && enumValues[0] === null) return z.null();
-		if (enumValues.length === 0) return z.never();
-		if (enumValues.length === 1) return z.literal(enumValues[0]);
-		if (enumValues.every((v) => typeof v === "string")) return z.enum(enumValues);
-		const literalSchemas = enumValues.map((v) => z.literal(v));
+		if (ctx.version === "openapi-3.0" && schema.nullable === true && enumValues.length === 1 && enumValues[0] === null) return z$1.null();
+		if (enumValues.length === 0) return z$1.never();
+		if (enumValues.length === 1) return z$1.literal(enumValues[0]);
+		if (enumValues.every((v) => typeof v === "string")) return z$1.enum(enumValues);
+		const literalSchemas = enumValues.map((v) => z$1.literal(v));
 		if (literalSchemas.length < 2) return literalSchemas[0];
-		return z.union([
+		return z$1.union([
 			literalSchemas[0],
 			literalSchemas[1],
 			...literalSchemas.slice(2)
 		]);
 	}
-	if (schema.const !== void 0) return z.literal(schema.const);
+	if (schema.const !== void 0) return z$1.literal(schema.const);
 	const type = schema.type;
 	if (Array.isArray(type)) {
 		const typeSchemas = type.map((t) => {
@@ -12405,40 +12405,40 @@ function convertBaseSchema(schema, ctx) {
 				type: t
 			}, ctx);
 		});
-		if (typeSchemas.length === 0) return z.never();
+		if (typeSchemas.length === 0) return z$1.never();
 		if (typeSchemas.length === 1) return typeSchemas[0];
-		return z.union(typeSchemas);
+		return z$1.union(typeSchemas);
 	}
-	if (!type) return z.any();
+	if (!type) return z$1.any();
 	let zodSchema;
 	switch (type) {
 		case "string": {
-			let stringSchema = z.string();
+			let stringSchema = z$1.string();
 			if (schema.format) {
 				const format = schema.format;
-				if (format === "email") stringSchema = stringSchema.check(z.email());
-				else if (format === "uri" || format === "uri-reference") stringSchema = stringSchema.check(z.url());
-				else if (format === "uuid" || format === "guid") stringSchema = stringSchema.check(z.uuid());
-				else if (format === "date-time") stringSchema = stringSchema.check(z.iso.datetime());
-				else if (format === "date") stringSchema = stringSchema.check(z.iso.date());
-				else if (format === "time") stringSchema = stringSchema.check(z.iso.time());
-				else if (format === "duration") stringSchema = stringSchema.check(z.iso.duration());
-				else if (format === "ipv4") stringSchema = stringSchema.check(z.ipv4());
-				else if (format === "ipv6") stringSchema = stringSchema.check(z.ipv6());
-				else if (format === "mac") stringSchema = stringSchema.check(z.mac());
-				else if (format === "cidr") stringSchema = stringSchema.check(z.cidrv4());
-				else if (format === "cidr-v6") stringSchema = stringSchema.check(z.cidrv6());
-				else if (format === "base64") stringSchema = stringSchema.check(z.base64());
-				else if (format === "base64url") stringSchema = stringSchema.check(z.base64url());
-				else if (format === "e164") stringSchema = stringSchema.check(z.e164());
-				else if (format === "jwt") stringSchema = stringSchema.check(z.jwt());
-				else if (format === "emoji") stringSchema = stringSchema.check(z.emoji());
-				else if (format === "nanoid") stringSchema = stringSchema.check(z.nanoid());
-				else if (format === "cuid") stringSchema = stringSchema.check(z.cuid());
-				else if (format === "cuid2") stringSchema = stringSchema.check(z.cuid2());
-				else if (format === "ulid") stringSchema = stringSchema.check(z.ulid());
-				else if (format === "xid") stringSchema = stringSchema.check(z.xid());
-				else if (format === "ksuid") stringSchema = stringSchema.check(z.ksuid());
+				if (format === "email") stringSchema = stringSchema.check(z$1.email());
+				else if (format === "uri" || format === "uri-reference") stringSchema = stringSchema.check(z$1.url());
+				else if (format === "uuid" || format === "guid") stringSchema = stringSchema.check(z$1.uuid());
+				else if (format === "date-time") stringSchema = stringSchema.check(z$1.iso.datetime());
+				else if (format === "date") stringSchema = stringSchema.check(z$1.iso.date());
+				else if (format === "time") stringSchema = stringSchema.check(z$1.iso.time());
+				else if (format === "duration") stringSchema = stringSchema.check(z$1.iso.duration());
+				else if (format === "ipv4") stringSchema = stringSchema.check(z$1.ipv4());
+				else if (format === "ipv6") stringSchema = stringSchema.check(z$1.ipv6());
+				else if (format === "mac") stringSchema = stringSchema.check(z$1.mac());
+				else if (format === "cidr") stringSchema = stringSchema.check(z$1.cidrv4());
+				else if (format === "cidr-v6") stringSchema = stringSchema.check(z$1.cidrv6());
+				else if (format === "base64") stringSchema = stringSchema.check(z$1.base64());
+				else if (format === "base64url") stringSchema = stringSchema.check(z$1.base64url());
+				else if (format === "e164") stringSchema = stringSchema.check(z$1.e164());
+				else if (format === "jwt") stringSchema = stringSchema.check(z$1.jwt());
+				else if (format === "emoji") stringSchema = stringSchema.check(z$1.emoji());
+				else if (format === "nanoid") stringSchema = stringSchema.check(z$1.nanoid());
+				else if (format === "cuid") stringSchema = stringSchema.check(z$1.cuid());
+				else if (format === "cuid2") stringSchema = stringSchema.check(z$1.cuid2());
+				else if (format === "ulid") stringSchema = stringSchema.check(z$1.ulid());
+				else if (format === "xid") stringSchema = stringSchema.check(z$1.xid());
+				else if (format === "ksuid") stringSchema = stringSchema.check(z$1.ksuid());
 			}
 			if (typeof schema.minLength === "number") stringSchema = stringSchema.min(schema.minLength);
 			if (typeof schema.maxLength === "number") stringSchema = stringSchema.max(schema.maxLength);
@@ -12448,7 +12448,7 @@ function convertBaseSchema(schema, ctx) {
 		}
 		case "number":
 		case "integer": {
-			let numberSchema = type === "integer" ? z.number().int() : z.number();
+			let numberSchema = type === "integer" ? z$1.number().int() : z$1.number();
 			if (typeof schema.minimum === "number") numberSchema = numberSchema.min(schema.minimum);
 			if (typeof schema.maximum === "number") numberSchema = numberSchema.max(schema.maximum);
 			if (typeof schema.exclusiveMinimum === "number") numberSchema = numberSchema.gt(schema.exclusiveMinimum);
@@ -12460,10 +12460,10 @@ function convertBaseSchema(schema, ctx) {
 			break;
 		}
 		case "boolean":
-			zodSchema = z.boolean();
+			zodSchema = z$1.boolean();
 			break;
 		case "null":
-			zodSchema = z.null();
+			zodSchema = z$1.null();
 			break;
 		case "object": {
 			const shape = {};
@@ -12475,14 +12475,14 @@ function convertBaseSchema(schema, ctx) {
 			}
 			if (schema.propertyNames) {
 				const keySchema = convertSchema(schema.propertyNames, ctx);
-				const valueSchema = schema.additionalProperties && typeof schema.additionalProperties === "object" ? convertSchema(schema.additionalProperties, ctx) : z.any();
+				const valueSchema = schema.additionalProperties && typeof schema.additionalProperties === "object" ? convertSchema(schema.additionalProperties, ctx) : z$1.any();
 				if (Object.keys(shape).length === 0) {
-					zodSchema = z.record(keySchema, valueSchema);
+					zodSchema = z$1.record(keySchema, valueSchema);
 					break;
 				}
-				const objectSchema = z.object(shape).passthrough();
-				const recordSchema = z.looseRecord(keySchema, valueSchema);
-				zodSchema = z.intersection(objectSchema, recordSchema);
+				const objectSchema = z$1.object(shape).passthrough();
+				const recordSchema = z$1.looseRecord(keySchema, valueSchema);
+				zodSchema = z$1.intersection(objectSchema, recordSchema);
 				break;
 			}
 			if (schema.patternProperties) {
@@ -12491,22 +12491,22 @@ function convertBaseSchema(schema, ctx) {
 				const looseRecords = [];
 				for (const pattern of patternKeys) {
 					const patternValue = convertSchema(patternProps[pattern], ctx);
-					const keySchema = z.string().regex(new RegExp(pattern));
-					looseRecords.push(z.looseRecord(keySchema, patternValue));
+					const keySchema = z$1.string().regex(new RegExp(pattern));
+					looseRecords.push(z$1.looseRecord(keySchema, patternValue));
 				}
 				const schemasToIntersect = [];
-				if (Object.keys(shape).length > 0) schemasToIntersect.push(z.object(shape).passthrough());
+				if (Object.keys(shape).length > 0) schemasToIntersect.push(z$1.object(shape).passthrough());
 				schemasToIntersect.push(...looseRecords);
-				if (schemasToIntersect.length === 0) zodSchema = z.object({}).passthrough();
+				if (schemasToIntersect.length === 0) zodSchema = z$1.object({}).passthrough();
 				else if (schemasToIntersect.length === 1) zodSchema = schemasToIntersect[0];
 				else {
-					let result = z.intersection(schemasToIntersect[0], schemasToIntersect[1]);
-					for (let i = 2; i < schemasToIntersect.length; i++) result = z.intersection(result, schemasToIntersect[i]);
+					let result = z$1.intersection(schemasToIntersect[0], schemasToIntersect[1]);
+					for (let i = 2; i < schemasToIntersect.length; i++) result = z$1.intersection(result, schemasToIntersect[i]);
 					zodSchema = result;
 				}
 				break;
 			}
-			const objectSchema = z.object(shape);
+			const objectSchema = z$1.object(shape);
 			if (schema.additionalProperties === false) zodSchema = objectSchema.strict();
 			else if (typeof schema.additionalProperties === "object") zodSchema = objectSchema.catchall(convertSchema(schema.additionalProperties, ctx));
 			else zodSchema = objectSchema.passthrough();
@@ -12518,24 +12518,24 @@ function convertBaseSchema(schema, ctx) {
 			if (prefixItems && Array.isArray(prefixItems)) {
 				const tupleItems = prefixItems.map((item) => convertSchema(item, ctx));
 				const rest = items && typeof items === "object" && !Array.isArray(items) ? convertSchema(items, ctx) : void 0;
-				if (rest) zodSchema = z.tuple(tupleItems).rest(rest);
-				else zodSchema = z.tuple(tupleItems);
-				if (typeof schema.minItems === "number") zodSchema = zodSchema.check(z.minLength(schema.minItems));
-				if (typeof schema.maxItems === "number") zodSchema = zodSchema.check(z.maxLength(schema.maxItems));
+				if (rest) zodSchema = z$1.tuple(tupleItems).rest(rest);
+				else zodSchema = z$1.tuple(tupleItems);
+				if (typeof schema.minItems === "number") zodSchema = zodSchema.check(z$1.minLength(schema.minItems));
+				if (typeof schema.maxItems === "number") zodSchema = zodSchema.check(z$1.maxLength(schema.maxItems));
 			} else if (Array.isArray(items)) {
 				const tupleItems = items.map((item) => convertSchema(item, ctx));
 				const rest = schema.additionalItems && typeof schema.additionalItems === "object" ? convertSchema(schema.additionalItems, ctx) : void 0;
-				if (rest) zodSchema = z.tuple(tupleItems).rest(rest);
-				else zodSchema = z.tuple(tupleItems);
-				if (typeof schema.minItems === "number") zodSchema = zodSchema.check(z.minLength(schema.minItems));
-				if (typeof schema.maxItems === "number") zodSchema = zodSchema.check(z.maxLength(schema.maxItems));
+				if (rest) zodSchema = z$1.tuple(tupleItems).rest(rest);
+				else zodSchema = z$1.tuple(tupleItems);
+				if (typeof schema.minItems === "number") zodSchema = zodSchema.check(z$1.minLength(schema.minItems));
+				if (typeof schema.maxItems === "number") zodSchema = zodSchema.check(z$1.maxLength(schema.maxItems));
 			} else if (items !== void 0) {
 				const element = convertSchema(items, ctx);
-				let arraySchema = z.array(element);
+				let arraySchema = z$1.array(element);
 				if (typeof schema.minItems === "number") arraySchema = arraySchema.min(schema.minItems);
 				if (typeof schema.maxItems === "number") arraySchema = arraySchema.max(schema.maxItems);
 				zodSchema = arraySchema;
-			} else zodSchema = z.array(z.any());
+			} else zodSchema = z$1.array(z$1.any());
 			break;
 		}
 		default: throw new Error(`Unsupported type: ${type}`);
@@ -12545,28 +12545,28 @@ function convertBaseSchema(schema, ctx) {
 	return zodSchema;
 }
 function convertSchema(schema, ctx) {
-	if (typeof schema === "boolean") return schema ? z.any() : z.never();
+	if (typeof schema === "boolean") return schema ? z$1.any() : z$1.never();
 	let baseSchema = convertBaseSchema(schema, ctx);
 	const hasExplicitType = schema.type || schema.enum !== void 0 || schema.const !== void 0;
 	if (schema.anyOf && Array.isArray(schema.anyOf)) {
 		const options = schema.anyOf.map((s) => convertSchema(s, ctx));
-		const anyOfUnion = z.union(options);
-		baseSchema = hasExplicitType ? z.intersection(baseSchema, anyOfUnion) : anyOfUnion;
+		const anyOfUnion = z$1.union(options);
+		baseSchema = hasExplicitType ? z$1.intersection(baseSchema, anyOfUnion) : anyOfUnion;
 	}
 	if (schema.oneOf && Array.isArray(schema.oneOf)) {
 		const options = schema.oneOf.map((s) => convertSchema(s, ctx));
-		const oneOfUnion = z.xor(options);
-		baseSchema = hasExplicitType ? z.intersection(baseSchema, oneOfUnion) : oneOfUnion;
+		const oneOfUnion = z$1.xor(options);
+		baseSchema = hasExplicitType ? z$1.intersection(baseSchema, oneOfUnion) : oneOfUnion;
 	}
-	if (schema.allOf && Array.isArray(schema.allOf)) if (schema.allOf.length === 0) baseSchema = hasExplicitType ? baseSchema : z.any();
+	if (schema.allOf && Array.isArray(schema.allOf)) if (schema.allOf.length === 0) baseSchema = hasExplicitType ? baseSchema : z$1.any();
 	else {
 		let result = hasExplicitType ? baseSchema : convertSchema(schema.allOf[0], ctx);
 		const startIdx = hasExplicitType ? 0 : 1;
-		for (let i = startIdx; i < schema.allOf.length; i++) result = z.intersection(result, convertSchema(schema.allOf[i], ctx));
+		for (let i = startIdx; i < schema.allOf.length; i++) result = z$1.intersection(result, convertSchema(schema.allOf[i], ctx));
 		baseSchema = result;
 	}
-	if (schema.nullable === true && ctx.version === "openapi-3.0") baseSchema = z.nullable(baseSchema);
-	if (schema.readOnly === true) baseSchema = z.readonly(baseSchema);
+	if (schema.nullable === true && ctx.version === "openapi-3.0") baseSchema = z$1.nullable(baseSchema);
+	if (schema.readOnly === true) baseSchema = z$1.readonly(baseSchema);
 	const extraMeta = {};
 	for (const key of [
 		"$id",
@@ -12589,7 +12589,7 @@ function convertSchema(schema, ctx) {
 /**
 * Converts a JSON Schema to a Zod schema. This function should be considered semi-experimental. It's behavior is liable to change. */
 function fromJSONSchema(schema, params) {
-	if (typeof schema === "boolean") return schema ? z.any() : z.never();
+	if (typeof schema === "boolean") return schema ? z$1.any() : z$1.never();
 	return convertSchema(schema, {
 		version: detectVersion(schema, params?.defaultTarget),
 		defs: schema.$defs || schema.definitions || {},
@@ -12873,7 +12873,7 @@ var zod_default = external_exports;
 
 //#endregion
 //#region ../../../../../../sdk/factory/dist/index.js
-var r = class e {
+var a = class e {
 	stream;
 	closed = !1;
 	constructor(e) {
@@ -12922,36 +12922,8 @@ var r = class e {
 		if (this.closed || this.stream.destroyed) throw Error(`StreamData is already closed`);
 	}
 };
-const i = (e) => (e = e.replace(/(?<=https?:\/\/)[^\s]+/g, `xxx`), e = e.replace(/ns-[\w-]+/g, `xxx`), e), a = (e, t = ``) => i(typeof e == `string` ? e : e?.response?.data?.message || e?.response?.message || e?.message || e?.response?.data?.msg || e?.response?.msg || e?.msg || t), o = zod_default.enum([
-	`en`,
-	`zh-CN`,
-	`zh-Hant`
-]).enum;
-zod_default.object({
-	[o.en]: zod_default.string(),
-	[o[`zh-CN`]]: zod_default.string().optional(),
-	[o[`zh-Hant`]]: zod_default.string().optional()
-});
-const s = zod_default.object({
-	[o.en]: zod_default.string(),
-	[o[`zh-CN`]]: zod_default.string(),
-	[o[`zh-Hant`]]: zod_default.string()
-});
-zod_default.object({
-	pluginId: zod_default.string(),
-	version: zod_default.string(),
-	etag: zod_default.string()
-});
-const c = zod_default.literal(`system`).or(zod_default.string());
-zod_default.array(zod_default.record(zod_default.string(), s));
-const l = zod_default.enum([`localPool`, `serverless`]).enum;
-zod_default.object({
-	pluginId: zod_default.string(),
-	version: zod_default.string(),
-	source: c
-});
-const u = `__plugin_ipc_stream__`, d = `__pluginIpcDuplexReply__`;
-var f = class {
+const o = (e) => (e = e.replace(/(?<=https?:\/\/)[^\s]+/g, `xxx`), e = e.replace(/ns-[\w-]+/g, `xxx`), e), s = (e, t = ``) => o(typeof e == `string` ? e : e?.response?.data?.message || e?.response?.message || e?.message || e?.response?.data?.msg || e?.response?.msg || e?.msg || t), c = `__plugin_ipc_stream__`, l = `__pluginIpcDuplexReply__`;
+var u = class {
 	pending = /* @__PURE__ */ new Map();
 	readyHandlers = /* @__PURE__ */ new Set();
 	errorHandlers = /* @__PURE__ */ new Set();
@@ -12966,7 +12938,7 @@ var f = class {
 	unsubscribeMessage;
 	closed = !1;
 	constructor(e, t = {}) {
-		g(e) ? (this.endpoint = e, this.options = t) : (this.endpoint = process, this.options = e ?? {}), this.unsubscribeMessage = m(this.endpoint, (e) => {
+		m(e) ? (this.endpoint = e, this.options = t) : (this.endpoint = process, this.options = e ?? {}), this.unsubscribeMessage = f(this.endpoint, (e) => {
 			this.dispatch(e).catch((e) => {
 				this.emitError(e instanceof Error ? e : Error(String(e)));
 			});
@@ -12988,33 +12960,33 @@ var f = class {
 	setEventHandler(e) {
 		this.eventHandler = e;
 	}
-	async requestDuplex(e, t, r) {
+	async requestDuplex(e, t, n) {
 		this.ensureOpen();
-		let i = r?.requestId ?? randomUUID(), a = r?.timeoutMs ?? this.options.defaultTimeoutMs ?? 3e4, o = Date.now(), s = r?.input === void 0 ? void 0 : this.pipeStream(w(i), r.input, {
-			traceId: r.traceId,
-			streamId: r.inputStreamId,
-			meta: r.inputMeta
+		let r = n?.requestId ?? randomUUID(), a = n?.timeoutMs ?? this.options.defaultTimeoutMs ?? 3e4, o = Date.now(), s = n?.input === void 0 ? void 0 : this.pipeStream(S(r), n.input, {
+			traceId: n.traceId,
+			streamId: n.inputStreamId,
+			meta: n.inputMeta
 		});
 		s && s.catch((e) => {
 			this.emitError(e instanceof Error ? e : Error(String(e)));
 		});
 		let c = await this.request(e, t, {
 			timeoutMs: a,
-			traceId: r?.traceId,
-			requestId: i
+			traceId: n?.traceId,
+			requestId: r
 		});
-		if (!y(c)) return {
-			requestId: i,
+		if (!_(c)) return {
+			requestId: r,
 			result: c,
 			...s === void 0 ? {} : { inputDone: s }
 		};
 		let l;
 		if (c.hasOutputStream) {
 			let e = Date.now() - o, t = Math.max(1, a - e);
-			l = await this.waitForStream(T(i), { timeoutMs: t });
+			l = await this.waitForStream(C(r), { timeoutMs: t });
 		}
 		return {
-			requestId: i,
+			requestId: r,
 			result: c.result,
 			...l === void 0 ? {} : { output: l },
 			...s === void 0 ? {} : { inputDone: s }
@@ -13022,7 +12994,7 @@ var f = class {
 	}
 	replyDuplex(e, t, n) {
 		return {
-			[d]: !0,
+			[l]: !0,
 			...t === void 0 ? {} : { result: t },
 			...n?.output === void 0 ? {} : { output: n.output },
 			...n === void 0 ? {} : { options: {
@@ -13033,7 +13005,7 @@ var f = class {
 		};
 	}
 	async waitForRequestInputStream(e, t) {
-		return this.waitForStream(w(e.id), t);
+		return this.waitForStream(S(e.id), t);
 	}
 	onStream(e, t) {
 		this.streamHandlers.has(e) || this.streamHandlers.set(e, /* @__PURE__ */ new Set());
@@ -13064,33 +13036,33 @@ var f = class {
 	}
 	async createWritableStream(e, t) {
 		this.ensureOpen();
-		let r = t?.streamId ?? randomUUID(), i = !1;
+		let n = t?.streamId ?? randomUUID(), r = !1;
 		return await this.sendStreamFrame({
 			type: `start`,
-			streamId: r,
+			streamId: n,
 			streamName: e,
 			...t?.meta === void 0 ? {} : { meta: t.meta }
 		}, t?.traceId), {
-			streamId: r,
+			streamId: n,
 			write: async (e) => {
-				if (i) throw Error(`Stream is already closed: ${r}`);
+				if (r) throw Error(`Stream is already closed: ${n}`);
 				await this.sendStreamFrame({
 					type: `chunk`,
-					streamId: r,
+					streamId: n,
 					chunk: e
 				}, t?.traceId);
 			},
 			end: async () => {
-				i || (i = !0, await this.sendStreamFrame({
+				r || (r = !0, await this.sendStreamFrame({
 					type: `end`,
-					streamId: r
+					streamId: n
 				}, t?.traceId));
 			},
 			fail: async (e) => {
-				i || (i = !0, await this.sendStreamFrame({
+				r || (r = !0, await this.sendStreamFrame({
 					type: `error`,
-					streamId: r,
-					error: x(e)
+					streamId: n,
+					error: y(e)
 				}, t?.traceId));
 			}
 		};
@@ -13098,46 +13070,46 @@ var f = class {
 	async pipeStream(e, t, n) {
 		let r = await this.createWritableStream(e, n);
 		try {
-			for await (let e of C(t)) await r.write(e);
+			for await (let e of x(t)) await r.write(e);
 			await r.end();
 		} catch (e) {
 			throw await r.fail(e instanceof Error ? e : Error(String(e))), e;
 		}
 	}
-	async request(e, t, r) {
+	async request(e, t, n) {
 		this.ensureOpen();
-		let i = r?.requestId ?? randomUUID(), a = r?.timeoutMs ?? this.options.defaultTimeoutMs ?? 3e4;
-		return new Promise((n, o) => {
+		let r = n?.requestId ?? randomUUID(), a = n?.timeoutMs ?? this.options.defaultTimeoutMs ?? 3e4;
+		return new Promise((i, o) => {
 			let s = setTimeout(() => {
-				this.pending.delete(i), o(Object.assign(Error(`Request timeout: ${e}`), {
+				this.pending.delete(r), o(Object.assign(Error(`Request timeout: ${e}`), {
 					code: `REQUEST_TIMEOUT`,
-					requestId: i,
+					requestId: r,
 					method: e
 				}));
 			}, a);
-			this.pending.set(i, {
-				resolve: n,
+			this.pending.set(r, {
+				resolve: i,
 				reject: o,
 				timer: s
 			}), this.send({
-				id: i,
+				id: r,
 				messageType: `request`,
 				method: e,
 				params: t,
-				...r?.traceId === void 0 ? {} : { traceId: r.traceId },
+				...n?.traceId === void 0 ? {} : { traceId: n.traceId },
 				timestamp: Date.now()
 			}).catch((e) => {
-				clearTimeout(s), this.pending.delete(i), o(e);
+				clearTimeout(s), this.pending.delete(r), o(e);
 			});
 		});
 	}
-	async emit(e, t, r) {
+	async emit(e, t, n) {
 		this.ensureOpen(), await this.send({
 			id: randomUUID(),
 			messageType: `event`,
 			method: e,
 			params: t,
-			...r === void 0 ? {} : { traceId: r },
+			...n === void 0 ? {} : { traceId: n },
 			timestamp: Date.now()
 		});
 	}
@@ -13159,7 +13131,7 @@ var f = class {
 	}
 	async replyError(e, t) {
 		this.ensureOpen();
-		let n = x(t);
+		let n = y(t);
 		await this.send({
 			id: e.id,
 			messageType: `error`,
@@ -13182,7 +13154,7 @@ var f = class {
 				return;
 			}
 			if (e.messageType === `event`) {
-				if (v(e)) {
+				if (g(e)) {
 					await this.handleStreamFrameMessage(e);
 					return;
 				}
@@ -13196,7 +13168,7 @@ var f = class {
 		let t = this.pending.get(e.id);
 		if (t) {
 			if (clearTimeout(t.timer), this.pending.delete(e.id), e.error) {
-				t.reject(S(e.error));
+				t.reject(b(e.error));
 				return;
 			}
 			t.resolve(e.result);
@@ -13219,7 +13191,7 @@ var f = class {
 		}
 		try {
 			let t = await this.requestHandler(e);
-			if (b(t)) {
+			if (v(t)) {
 				await this.handleDuplexReply(e, t);
 				return;
 			}
@@ -13246,18 +13218,18 @@ var f = class {
 		}), this.bufferedIncomingStreams.clear();
 	}
 	async sendStreamFrame(e, t) {
-		await this.emit(u, e, t);
+		await this.emit(c, e, t);
 	}
 	async handleDuplexReply(e, t) {
 		let n = t.options?.traceId ?? e.traceId;
-		t.output !== void 0 && this.pipeStream(T(e.id), t.output, {
+		t.output !== void 0 && this.pipeStream(C(e.id), t.output, {
 			traceId: n,
 			streamId: t.options?.outputStreamId,
 			meta: t.options?.outputMeta
 		}).catch((e) => {
 			this.emitError(e instanceof Error ? e : Error(String(e)));
 		}), await this.reply(e, {
-			[d]: !0,
+			[l]: !0,
 			hasOutputStream: t.output !== void 0,
 			...t.result === void 0 ? {} : { result: t.result }
 		});
@@ -13269,7 +13241,7 @@ var f = class {
 				let n = {
 					streamId: t.streamId,
 					streamName: t.streamName,
-					stream: r.create(),
+					stream: a.create(),
 					...e.traceId === void 0 ? {} : { traceId: e.traceId },
 					...t.meta === void 0 ? {} : { meta: t.meta }
 				};
@@ -13294,7 +13266,7 @@ var f = class {
 			case `error`: {
 				let e = this.incomingStreams.get(t.streamId);
 				if (!e) return;
-				e.stream.fail(S(t.error)), this.incomingStreams.delete(t.streamId);
+				e.stream.fail(b(t.error)), this.incomingStreams.delete(t.streamId);
 				return;
 			}
 		}
@@ -13320,22 +13292,22 @@ var f = class {
 		this.errorHandlers.forEach((t) => t(e));
 	}
 	async send(e) {
-		await h(this.endpoint, e);
+		await p(this.endpoint, e);
 	}
 	ensureOpen() {
 		if (this.closed) throw Error(`IPC channel closed`);
 	}
 };
-function p(e) {
-	return new f(process, e);
+function d(e) {
+	return new u(process, e);
 }
-function m(e, t) {
+function f(e, t) {
 	let n = e, r = (e) => {
-		_(e) && t(e);
+		h(e) && t(e);
 	};
 	return n.on(`message`, r), () => n.off(`message`, r);
 }
-function h(e, t) {
+function p(e, t) {
 	let n = e;
 	if (typeof n.send != `function`) throw Error(`IPC channel not available`);
 	return new Promise((e, r) => {
@@ -13348,22 +13320,22 @@ function h(e, t) {
 		});
 	});
 }
-function g(e) {
+function m(e) {
 	return !!(e && typeof e == `object` && `on` in e && typeof e.on == `function` && `off` in e && typeof e.off == `function`);
 }
-function _(e) {
+function h(e) {
 	return !!(e && typeof e == `object` && `messageType` in e);
 }
+function g(e) {
+	return e.messageType === `event` && e.method === c;
+}
+function _(e) {
+	return !!(e && typeof e == `object` && l in e && `hasOutputStream` in e);
+}
 function v(e) {
-	return e.messageType === `event` && e.method === u;
+	return !!(e && typeof e == `object` && l in e);
 }
 function y(e) {
-	return !!(e && typeof e == `object` && d in e && `hasOutputStream` in e);
-}
-function b(e) {
-	return !!(e && typeof e == `object` && d in e);
-}
-function x(e) {
 	return typeof e == `string` ? {
 		code: `HANDLER_ERROR`,
 		message: e
@@ -13373,58 +13345,140 @@ function x(e) {
 		...e.stack === void 0 ? {} : { stack: e.stack }
 	});
 }
-function S(e) {
+function b(e) {
 	return Object.assign(Error(e.message), {
 		code: e.code,
 		stack: e.stack
 	});
 }
-function C(e) {
-	return e instanceof r ? e.values() : e;
+function x(e) {
+	return e instanceof a ? e.values() : e;
 }
-function w(e) {
+function S(e) {
 	return `__plugin_ipc_request_input_stream__:${e}`;
 }
-function T(e) {
+function C(e) {
 	return `__plugin_ipc_request_output_stream__:${e}`;
 }
-var E = class {
+const w = `application/javascript,application/json,application/yaml,application/zip,image/jpeg,image/png,image/gif,image/webp,image/svg+xml,application/pdf,text/plain,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/msword,application/vnd.ms-excel,application/vnd.ms-powerpoint,text/markdown,audio/mpeg,video/mp4,audio/wav,text/html,application/xml,application/gzip,application/octet-stream,multipart/form-data,text/event-stream`.split(`,`), T = zod_default.enum(w).and(zod_default.string().regex(/^[^/]+\/[^/]+$/)), E = zod_default.object({
+	fileKey: zod_default.string(),
+	fileName: zod_default.string(),
+	contentType: T,
+	size: zod_default.number(),
+	etag: zod_default.string(),
+	createTime: zod_default.date()
+}), D = zod_default.object({
+	fileKey: zod_default.string().optional(),
+	path: zod_default.string().optional(),
+	fileName: zod_default.string().optional(),
+	contentType: T.optional(),
+	overwrite: zod_default.boolean().optional(),
+	file: zod_default.union([zod_default.instanceof(Readable, { error: `Stream cannot be empty` }), zod_default.union([zod_default.instanceof(Buffer, { error: `Buffer is required` }), zod_default.instanceof(Uint8Array, { error: `Uint8Array is required` })]).transform((e) => e instanceof Uint8Array && !(e instanceof Buffer) ? Buffer.from(e) : e)])
+});
+zod_default.object({ ...D.omit({
+	fileKey: !0,
+	overwrite: !0,
+	path: !0
+}).shape });
+const O = zod_default.object({
+	...E.omit({ fileKey: !0 }).shape,
+	accessURL: zod_default.string()
+}), k = zod_default.enum([`uploadFile`]).enum, A = (e) => [e, null];
+function j(e, t) {
+	return M(e) ? [null, e] : [null, {
+		reason: e,
+		error: t
+	}];
+}
+function M(e) {
+	return !!(e && typeof e == `object` && `reason` in e && `error` in e);
+}
+var N = class {
+	constructor(e, t = {}) {
+		this.channel = e, this.options = t;
+	}
+	async uploadFile(e) {
+		try {
+			let t = await this.channel.requestDuplex(`__host_invoke__`, {
+				method: k.uploadFile,
+				args: {
+					contentType: e.contentType,
+					fileName: e.fileName
+				}
+			}, {
+				requestId: randomUUID(),
+				traceId: this.options.invocationId,
+				input: Buffer.isBuffer(e.file) ? n.Readable.from(e.file) : e.file
+			});
+			return A(O.parse(t.result));
+		} catch (e) {
+			return j({
+				en: `Failed to upload file`,
+				"zh-CN": `上传文件失败`
+			}, e);
+		}
+	}
+};
+const P = zod_default.enum([
+	`en`,
+	`zh-CN`,
+	`zh-Hant`
+]).enum;
+zod_default.object({
+	[P.en]: zod_default.string(),
+	[P[`zh-CN`]]: zod_default.string().optional(),
+	[P[`zh-Hant`]]: zod_default.string().optional()
+});
+const F = zod_default.object({
+	[P.en]: zod_default.string(),
+	[P[`zh-CN`]]: zod_default.string(),
+	[P[`zh-Hant`]]: zod_default.string()
+});
+zod_default.object({
+	pluginId: zod_default.string(),
+	version: zod_default.string(),
+	etag: zod_default.string()
+});
+const I = zod_default.literal(`system`).or(zod_default.string());
+zod_default.array(zod_default.record(zod_default.string(), F));
+const L = zod_default.enum([`localPool`, `serverless`]).enum;
+zod_default.object({
+	pluginId: zod_default.string(),
+	version: zod_default.string(),
+	source: I.optional()
+});
+var R = class {
 	channel;
-	invoke;
 	getChannel() {
 		if (!this.channel) throw Error(`Channel is not initialized yet.`);
 		return this.channel;
 	}
-	getInvoke() {
-		if (!this.invoke) throw Error(`Invoke client is not initialized yet.`);
-		return this.invoke;
-	}
 	mode;
 	checkRuntimeMode() {
-		process.env.RUNTIME_MODE == l.localPool && (this.mode = l.localPool);
+		process.env.RUNTIME_MODE == L.localPool && (this.mode = L.localPool);
 	}
 	async init() {
-		this.checkRuntimeMode(), this.mode === `localPool` && (this.channel = p(), setImmediate(() => this.getChannel().sendReady())), this.mode === `dev` && (this.channel = { setRequestHandler: (e) => {
-			console.info(`[Local Dev] Request handler registered:`, e);
-		} }, console.info(`[Local Dev] Plugin initialized successfully.`));
+		this.checkRuntimeMode(), this.mode === `localPool` && (this.channel = d(), setImmediate(() => this.getChannel().sendReady())), this.mode === `dev` && (this.channel = { setRequestHandler: (e) => {
+			console.log(`[Local Dev] Request handler registered:`, e);
+		} }, console.log(`[Local Dev] Plugin initialized successfully.`));
 	}
 	constructor() {
 		this.init();
 	}
 };
-function D(e) {
+function z(e) {
 	return e;
 }
-var O = class t extends E {
+var B = class t extends R {
 	toolHandlers = /* @__PURE__ */ new Map();
 	childManifests = /* @__PURE__ */ new Map();
 	secretSchema = zod_default.record(zod_default.string(), zod_default.unknown());
 	constructor(e) {
 		super(), this.userToolManifest = e, this.mode && this.getChannel().setRequestHandler(async (e) => {
 			if (e.method === `run`) try {
-				let { input: t, systemVar: n, childId: i, secrets: a } = e.params, o = this.toolHandlers.get(i ?? `toolI`);
+				let { input: t, systemVar: n, childId: r, secrets: i } = e.params, o = this.toolHandlers.get(r ?? `tool`);
 				if (!o) throw Error(`No tool registered`);
-				let s = r.create(), c = r.create();
+				let s = a.create(), c = a.create();
 				s.onData((e) => {
 					c.send({
 						type: `stream`,
@@ -13433,22 +13487,22 @@ var O = class t extends E {
 				});
 				let l = await o.handler(t, {
 					systemVar: n,
-					secrets: a,
-					invoke: this.getInvoke(),
+					secrets: i,
+					invoke: new N(this.getChannel(), { invocationId: e.traceId }),
 					streamResponse: (e) => {
 						s.send(e);
 					}
 				});
 				return c.send({
-					type: `reponse`,
+					type: `response`,
 					data: l
-				}), this.getChannel().replyDuplex(e, void 0, { output: c });
+				}), c.end(), this.getChannel().replyDuplex(e, void 0, { output: c });
 			} catch (t) {
-				let n = r.create();
+				let n = a.create();
 				return n.write({
-					data: a(t),
+					data: s(t),
 					type: `error`
-				}), this.getChannel().replyDuplex(e, void 0, { output: n });
+				}), n.end(), this.getChannel().replyDuplex(e, void 0, { output: n });
 			}
 		});
 	}
@@ -13475,11 +13529,11 @@ var O = class t extends E {
 		return [...this.childManifests.values()];
 	}
 };
-const k = ({ manifest: t, handler: n }) => {
-	let r = O.getInstance(t);
+const V = ({ manifest: t, handler: n }) => {
+	let r = B.getInstance(t);
 	return r.setSecretSchema(n.secretSchema ?? zod_default.object()), r.registerTool(n), r;
-}, A = ({ manifest: t, children: n, secretSchema: r }) => {
-	let i = O.getInstance(t);
+}, H = ({ manifest: t, children: n, secretSchema: r }) => {
+	let i = B.getInstance(t);
 	return n.forEach((e) => {
 		i.registerTool(e.handler, e.id, {
 			id: e.id,
@@ -13493,14 +13547,14 @@ const k = ({ manifest: t, handler: n }) => {
 
 //#endregion
 //#region .build-temp/index.ts
-const handler = D({
+const handler = z({
 	inputSchema: zod_default.object({}),
 	outputSchema: zod_default.object({ time: zod_default.string() }),
 	handler: async (_input, ctx) => {
 		return { time: ctx.systemVar.time };
 	}
 });
-var _build_temp_default = k({
+const tool = V({
 	manifest: {
 		description: {
 			en: "Get current time",
@@ -13521,4 +13575,4 @@ var _build_temp_default = k({
 });
 
 //#endregion
-export { _build_temp_default as default };
+export { tool as default };

@@ -10,6 +10,7 @@ import { Mutex } from 'es-toolkit';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type {
   PluginInvokeEventNameType,
+  PluginRuntimeInvokeOptions,
   PluginRuntimeManagerPort
 } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
@@ -26,13 +27,12 @@ import { LOCAL_POOL_DEFAULT_SERVICE_CONFIG } from './const';
 import { PluginService } from './service';
 import type {
   DestroyOptions,
+  GlobalMetrics,
   LocalPoolGlobalConfigType,
   LocalPoolPluginConfigType,
   LocalPoolPluginItemType,
   ServiceMetrics
 } from './types';
-import { InvokeManager } from '@infrastructure/plugin/invoke/invoke.impl';
-
 export type LocalPoolPluginRuntimeManagerDeps = {
   versionKeyStore: VersionKeyStore;
   mongoClient: MongoClient;
@@ -87,8 +87,19 @@ export class LocalPoolPluginRuntimeManager
     this.startHealthCheck();
   }
 
-  globalStatus(): Promise<Result<unknown>> {
-    throw new Error('Method not implemented.');
+  async globalStatus(): Promise<Result<GlobalMetrics>> {
+    const totalPods = this.getTotalPods();
+    const services = Object.fromEntries(
+      [...this.plugins.entries()].map(([id, { service }]) => [id, service.getMetrics()])
+    );
+
+    const metrics = {
+      services,
+      totalPods,
+      totalRequests: Object.values(services).reduce((sum, m) => sum + m.totalRequests, 0),
+      totalServices: Object.keys(services).length
+    } satisfies GlobalMetrics;
+    return successResult(metrics);
   }
 
   /** uniqueId 转为一个字符串，可以直接从 map 中拿到 */
@@ -107,14 +118,7 @@ export class LocalPoolPluginRuntimeManager
       // 1. 获取旧 service, 停机
       await this.unregister(uniqueId);
 
-      // 2. 获取新数据
-      const [config, err] = await this.configRepo.getPluginRuntimeConfig(uniqueId.pluginId);
-
-      if (err) {
-        return Promise.reject('Can not find the plugin or config');
-      }
-
-      await this.register(uniqueId, config);
+      await this.register(uniqueId);
     }
     // 缓存 key 命中，未过期
     // 或该插件不存在
@@ -194,7 +198,7 @@ export class LocalPoolPluginRuntimeManager
    * 注册一个插件。
    * IPC 模式下会初始化进程池（minPods 个 Pod 立即启动）。
    */
-  async register(uniqueId: PluginUniqueIdType, config: LocalPoolPluginConfigType): Promise<Result> {
+  async register(uniqueId: PluginUniqueIdType): Promise<Result> {
     const id = this.getRuntimeId(uniqueId);
     if (this.destroyed)
       return failureResult({
@@ -207,6 +211,15 @@ export class LocalPoolPluginRuntimeManager
         en: 'Plugin already registered',
         'zh-CN': '插件已注册'
       });
+
+    const [config, configErr] = await this.configRepo.getPluginRuntimeConfig(uniqueId.pluginId);
+
+    if (configErr) {
+      return failureResult({
+        en: 'Failed to get plugin runtime config',
+        'zh-CN': '获取插件运行时配置失败'
+      });
+    }
 
     const svcConfig: LocalPoolPluginConfigType = {
       ...LOCAL_POOL_DEFAULT_SERVICE_CONFIG,
@@ -239,45 +252,50 @@ export class LocalPoolPluginRuntimeManager
         err
       );
     }
-
     const service = new PluginService(
       id,
-      info.indexFile.metaData.fileKey,
+      info.entryFilePath,
       svcConfig,
       {
-        // onPodCreated: () => {
-        //   const totalPods = this.getTotalPods();
-        //   if (totalPods > this.managerConfig.maxTotalPods) {
-        //     this.logger.warn('Plugin runtime exceeded global pod quota', {
-        //       current: totalPods,
-        //       max: this.managerConfig.maxTotalPods,
-        //       pluginId: id
-        //     });
-        //   }
-        // }
-        // onRequestCompleted: ({ duration }: { requestId: string; duration: number }) => {
-        //   // this.globalMetrics.globalTotalRequests++;
-        //   // this.globalMetrics.globalResponseTimes.push(duration);
-        //   // if (this.globalMetrics.globalResponseTimes.length > 2000) {
-        //   //   this.globalMetrics.globalResponseTimes.shift();
-        //   // }
-        // },
-        // onPodLog: ({
-        //   podId,
-        //   level,
-        //   message
-        // }: {
-        //   podId: string;
-        //   level: 'debug' | 'error';
-        //   message: string;
-        // }) => {
-        //   const prefix = `[plugin:${id}][pod:${podId.slice(0, 8)}]`;
-        //   if (level === 'error') {
-        //     this.logger.error(`${prefix} ${message}`);
-        //   } else {
-        //     this.logger.debug(`${prefix} ${message}`);
-        //   }
-        // }
+        onPodCreated: () => {
+          const totalPods = this.getTotalPods();
+          if (totalPods > this.managerConfig.maxTotalPods) {
+            this.logger.warn('Plugin runtime exceeded global pod quota', {
+              current: totalPods,
+              max: this.managerConfig.maxTotalPods,
+              pluginId: id
+            });
+          }
+        },
+        onRequestCompleted: ({ duration }: { requestId: string; duration: number }) => {
+          this.logger.debug(`Plugin request completed`, { pluginId: id, duration });
+          // this.globalMetrics.globalTotalRequests++;
+          // this.globalMetrics.globalResponseTimes.push(duration);
+          // if (this.globalMetrics.globalResponseTimes.length > 2000) {
+          //   this.globalMetrics.globalResponseTimes.shift();
+          // }
+        },
+        onRequestFailed: ({ error }: { requestId: string; error: unknown }) => {
+          this.logger.error(`Plugin request failed`, { pluginId: id, error });
+          // this.globalMetrics.globalTotalRequests++;
+          // this.globalMetrics.globalErrors++;
+        },
+        onPodLog: ({
+          podId,
+          level,
+          message
+        }: {
+          podId: string;
+          level: 'debug' | 'error';
+          message: string;
+        }) => {
+          const prefix = `[plugin:${id}][pod:${podId.slice(0, 8)}]`;
+          if (level === 'error') {
+            this.logger.error(`${prefix} ${message}`);
+          } else {
+            this.logger.debug(`${prefix} ${message}`);
+          }
+        }
       },
       info.info.permission ?? []
     );
@@ -286,7 +304,7 @@ export class LocalPoolPluginRuntimeManager
 
     this.plugins.set(id, {
       config,
-      filePath: info.indexFile.metaData.fileKey,
+      filePath: info.entryFilePath,
       service,
       meta: info.info,
       mutex: new Mutex()
@@ -318,12 +336,14 @@ export class LocalPoolPluginRuntimeManager
     uniqueId,
     eventName,
     payload,
-    returnStream
+    returnStream,
+    options
   }: {
     uniqueId: PluginUniqueIdType;
     eventName: E;
     payload: P;
     returnStream: S;
+    options?: PluginRuntimeInvokeOptions;
   }): Promise<Result<S extends true ? StreamData<R> : R>> {
     if (this.destroyed)
       return failureResult({
@@ -345,7 +365,12 @@ export class LocalPoolPluginRuntimeManager
 
     if (check()) {
       try {
-        const result = await plugin.service.invoke<P, R, S>({ eventName, payload, returnStream });
+        const result = await plugin.service.invoke<P, R, S>({
+          eventName,
+          payload,
+          returnStream,
+          options
+        });
         return successResult(result);
       } catch (error) {
         return failureResult({ en: 'Invoke failed', 'zh-CN': '调用失败' }, error);
@@ -361,31 +386,6 @@ export class LocalPoolPluginRuntimeManager
     if (!record) throw new Error(`Plugin not found: ${id}`);
     return record.service.getMetrics();
   }
-
-  // getGlobalMetrics(): GlobalMetrics {
-  //   let totalRequests = 0;
-  //   let totalErrors = 0;
-
-  //   for (const { service } of this.plugins.values()) {
-  //     const m = service.getMetrics();
-  //     totalRequests += m.totalRequests;
-  //     totalErrors += m.totalRequests * m.errorRate;
-  //   }
-
-  //   const avgResponseTime =
-  //     this.globalMetrics.globalResponseTimes.length > 0
-  //       ? this.globalMetrics.globalResponseTimes.reduce((s, t) => s + t, 0) /
-  //         this.globalMetrics.globalResponseTimes.length
-  //       : 0;
-
-  //   return {
-  //     totalServices: this.plugins.size,
-  //     totalPods: this.getTotalPods(),
-  //     totalRequests,
-  //     avgResponseTime,
-  //     errorRate: totalRequests > 0 ? totalErrors / totalRequests : 0
-  //   };
-  // }
 
   // ============ 销毁 ============
 

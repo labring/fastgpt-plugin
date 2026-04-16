@@ -1,5 +1,5 @@
-import { mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
+import { mkdir } from 'fs/promises';
 import { rm } from 'fs/promises';
 
 /**

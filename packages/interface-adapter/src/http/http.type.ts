@@ -1,5 +1,6 @@
-import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import z from 'zod';
+
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 
 export const HTTPMethodSchema = z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
 export const HTTPMethodEnum = HTTPMethodSchema.enum;

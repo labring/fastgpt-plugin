@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 
 import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin.entity';
 import { I18nStringSchema, I18nStringStrictSchema } from '@domain/value-objects/i18n-string.vo';
+
 import { I18nStringDTOSchema } from './common.dto';
 
 const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
@@ -96,6 +97,16 @@ export const PluginUniqueIdDTOSchema = z.object({
   etag: z.string().openapi({
     description: 'Plugin etag',
     example: '12345678'
+  })
+});
+
+export const PluginPruneDisabledResponseDTOSchema = z.object({
+  count: z.number().int().nonnegative().openapi({
+    description: 'Number of disabled plugins removed',
+    example: 2
+  }),
+  plugins: z.array(PluginUniqueIdDTOSchema).openapi({
+    description: 'Removed disabled plugin unique ids'
   })
 });
 

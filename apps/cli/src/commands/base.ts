@@ -1,5 +1,5 @@
-import type { Command } from 'commander';
 import type { ICommand } from '@fastgpt-plugin/cli/interfaces/command';
+import type { Command } from 'commander';
 
 /**
  * 所有子命令的基类：

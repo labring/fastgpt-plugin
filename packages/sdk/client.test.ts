@@ -1,6 +1,7 @@
-import { describe, test, expect } from 'bun:test';
-import { FastGPTPluginClient, RunToolWithStream } from './client';
+import { describe, expect,test } from 'bun:test';
+
 import type { SystemVarType } from './client';
+import { FastGPTPluginClient, RunToolWithStream } from './client';
 
 const baseUrl = import.meta.env.FASTGPT_PLUGIN_BASE_URL!;
 const token = import.meta.env.FASTGPT_PLUGIN_TOKEN!;

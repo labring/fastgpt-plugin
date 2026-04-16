@@ -1,4 +1,5 @@
 import z from 'zod';
+
 import { I18nStringSchema } from './i18n-string.vo';
 
 // 表单字段类型

@@ -3,9 +3,11 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "npx @fastgpt-plugin/cli build"
+    "build": "npx @fastgpt-plugin/cli build",
+    "pack": "npx @fastgpt-plugin/cli pack"
   },
   "dependencies": {
+    "@fastgpt-plugin/cli": "link:../../../../../cli",
     "zod": "^4"
   },
   "devDependencies": {

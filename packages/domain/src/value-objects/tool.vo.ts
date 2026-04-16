@@ -1,7 +1,7 @@
 import z from 'zod';
 
-import { SystemVarSchema } from './system-var.vo';
 import { UserPluginIdSchema } from './plugin.vo';
+import { SystemVarSchema } from './system-var.vo';
 
 export const ToolHandlerReturnSchema = z.object({
   error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),

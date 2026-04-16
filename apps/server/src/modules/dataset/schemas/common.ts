@@ -1,11 +1,10 @@
-import { z } from '@hono/zod-openapi';
 import {
+  DatasetSourceConfigSchema as BaseDatasetSourceConfigSchema,
   DatasetSourceIdEnum as BaseDatasetSourceIdEnum,
   DatasetSourceInfoSchema as BaseDatasetSourceInfoSchema,
-  DatasetSourceConfigSchema as BaseDatasetSourceConfigSchema,
-  FileItemSchema as BaseFileItemSchema,
-  FileContentResponseSchema as BaseFileContentResponseSchema
-} from '@fastgpt-plugin/helpers/datasets/schemas';
+  FileContentResponseSchema as BaseFileContentResponseSchema,
+  FileItemSchema as BaseFileItemSchema} from '@fastgpt-plugin/helpers/datasets/schemas';
+import { z } from '@hono/zod-openapi';
 
 // Convert base schemas to OpenAPI schemas
 export const DatasetSourceIdEnum = z
@@ -49,11 +48,10 @@ export const FileOperationBodySchema = z.object({
 
 // Re-export types from helpers
 export type {
-  DatasetSourceId,
-  FormFieldType,
-  FormFieldConfig,
-  DatasetSourceInfo,
   DatasetSourceConfig,
+  DatasetSourceId,
+  DatasetSourceInfo,
+  FileContentResponse,
   FileItem,
-  FileContentResponse
-} from '@fastgpt-plugin/helpers/datasets/schemas';
+  FormFieldConfig,
+  FormFieldType} from '@fastgpt-plugin/helpers/datasets/schemas';

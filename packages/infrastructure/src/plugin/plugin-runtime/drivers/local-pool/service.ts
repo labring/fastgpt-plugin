@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
+import type { InvokePort } from '@domain/ports/invoke.port';
 import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginPermissionEnumType } from '@domain/value-objects/permission.vo';
-import type { StreamData } from '@domain/value-objects/stream.vo';
+import { StreamData } from '@domain/value-objects/stream.vo';
 
 import { PluginPod } from './pod';
 import type {
@@ -13,6 +14,8 @@ import type {
   ServiceMetrics
 } from './types';
 import { LocalPoolPluginConfigSchema } from './types';
+
+const MAX_CONSECUTIVE_POD_STARTUP_FAILURES = 3;
 
 interface QueuedRequest {
   requestId: string;
@@ -29,11 +32,16 @@ interface QueuedRequest {
 export class PluginService {
   private pods = new Map<string, PluginPod>();
   private queue: QueuedRequest[] = [];
+  private activeInvokeSessions = new Map<string, InvokePort>();
   private initialized = false;
   private destroyed = false;
   private idleCheckTimer: NodeJS.Timeout | null = null;
   /** 正在启动中（尚未加入 this.pods）的 Pod 数量，用于防止并发超量创建 */
   private pendingPods = 0;
+  /** 连续 Pod 启动失败次数；成功启动后清零 */
+  private consecutivePodStartupFailures = 0;
+  /** 达到上限后熔断，避免无限重试拉起坏 Pod */
+  private podStartupDisabledError: Error | null = null;
 
   // 统计信息
   private totalRequests = 0;
@@ -90,11 +98,13 @@ export class PluginService {
   async invoke<P, R, S extends boolean>({
     eventName,
     payload,
-    returnStream
+    returnStream,
+    options
   }: {
     eventName: PluginInvokeEventNameType;
     payload: P;
     returnStream: S;
+    options?: InvokeOptions;
   }): Promise<S extends true ? StreamData<R> : R> {
     if (!this.initialized) {
       throw new Error('Service not initialized');
@@ -105,6 +115,7 @@ export class PluginService {
 
     this.totalRequests++;
     const startTime = Date.now();
+    const resolvedOptions = this.resolveInvokeOptions(options);
 
     // 尝试立即获取可用的 Pod
     let pod = this.findIdlePod();
@@ -128,7 +139,8 @@ export class PluginService {
         const result = await pod.invoke<P, R, S>({
           eventName,
           payload,
-          returnStream
+          returnStream,
+          options: resolvedOptions
         });
 
         // 记录响应时间
@@ -144,6 +156,8 @@ export class PluginService {
         // 释放 Pod
         this.releasePod(pod);
 
+        this.bindInvokeSessionLifecycle(resolvedOptions?.invocationId, result);
+
         return result as S extends true ? StreamData<R> : R;
       } catch (error) {
         this.failedRequests++;
@@ -151,15 +165,27 @@ export class PluginService {
 
         // 释放 Pod
         this.releasePod(pod);
+        this.cleanupInvokeSession(resolvedOptions?.invocationId);
 
         throw error;
       }
     }
 
+    const startupBlockedError = this.getPodStartupBlockedError();
+    if (startupBlockedError) {
+      this.failedRequests++;
+      this.cleanupInvokeSession(resolvedOptions?.invocationId);
+      throw startupBlockedError;
+    }
+
     // 没有可用 Pod，排队等待
-    return this.queueAndWait(eventName, payload, returnStream, undefined, startTime) as Promise<
-      S extends true ? StreamData<R> : R
-    >;
+    return this.queueAndWait(
+      eventName,
+      payload,
+      returnStream,
+      resolvedOptions,
+      startTime
+    ) as Promise<S extends true ? StreamData<R> : R>;
   }
 
   /**
@@ -176,6 +202,7 @@ export class PluginService {
       // 检查队列是否已满
       if (this.queue.length >= this.config.maxQueueSize) {
         this.failedRequests++;
+        this.cleanupInvokeSession(options?.invocationId);
         reject(new Error('Queue is full'));
         return;
       }
@@ -190,6 +217,7 @@ export class PluginService {
           this.queue.splice(index, 1);
         }
         this.failedRequests++;
+        this.cleanupInvokeSession(options?.invocationId);
         reject(new Error('Queue wait timeout'));
       }, queueTimeout);
 
@@ -204,7 +232,8 @@ export class PluginService {
             const result = await pod.invoke({
               eventName: method,
               payload: params,
-              returnStream
+              returnStream,
+              options
             });
 
             // 记录响应时间
@@ -220,6 +249,8 @@ export class PluginService {
             // 释放 Pod
             this.releasePod(pod);
 
+            this.bindInvokeSessionLifecycle(options?.invocationId, result);
+
             resolve(result);
           } catch (error) {
             this.failedRequests++;
@@ -227,6 +258,7 @@ export class PluginService {
 
             // 释放 Pod
             this.releasePod(pod);
+            this.cleanupInvokeSession(options?.invocationId);
 
             reject(error);
           }
@@ -270,6 +302,10 @@ export class PluginService {
    * 创建新 Pod
    */
   private async createPod(): Promise<PluginPod> {
+    if (this.podStartupDisabledError) {
+      return Promise.reject(this.podStartupDisabledError);
+    }
+
     const podId = randomUUID();
     const pod = new PluginPod(podId, {
       pluginPath: this.pluginPath,
@@ -277,6 +313,8 @@ export class PluginService {
       maxRequests: this.config.maxRequestsPerPod,
       maxConcurrentRequests: this.config.maxConcurrentRequestsPerPod,
       pluginPermissions: this.pluginPermissions,
+      getInvokeSession: (invocationId?: string) =>
+        invocationId ? this.activeInvokeSessions.get(invocationId) : undefined,
       callbacks: {
         onError: (error: Error) => {
           this.handlePodError(pod, error);
@@ -296,13 +334,58 @@ export class PluginService {
       }
     });
 
-    // 启动 Pod
-    await pod.start();
+    try {
+      // 启动 Pod
+      await pod.start();
+    } catch (error) {
+      const startupError = toError(error);
+      this.recordPodStartupFailure(startupError);
+      return Promise.reject(this.podStartupDisabledError ?? startupError);
+    }
 
+    this.recordPodStartupSuccess();
     this.pods.set(podId, pod);
     this.callbacks.onPodCreated?.();
 
     return pod;
+  }
+
+  private resolveInvokeOptions(options?: InvokeOptions): InvokeOptions | undefined {
+    if (!options?.invoke) {
+      return options;
+    }
+
+    const invocationId = options.invocationId ?? randomUUID();
+    this.activeInvokeSessions.set(invocationId, options.invoke);
+
+    return {
+      ...options,
+      invocationId
+    };
+  }
+
+  private bindInvokeSessionLifecycle(invocationId: string | undefined, result: unknown) {
+    if (!invocationId) {
+      return;
+    }
+
+    if (result instanceof StreamData) {
+      const cleanup = () => {
+        this.cleanupInvokeSession(invocationId);
+      };
+      result.onEnd(cleanup).onError(cleanup);
+      return;
+    }
+
+    this.cleanupInvokeSession(invocationId);
+  }
+
+  private cleanupInvokeSession(invocationId?: string) {
+    if (!invocationId) {
+      return;
+    }
+
+    this.activeInvokeSessions.delete(invocationId);
   }
 
   /**
@@ -316,6 +399,7 @@ export class PluginService {
       if (this.pods.size < this.config.minPods) {
         this.createPod().catch((error) => {
           console.error('Failed to create Pod:', error);
+          this.rejectQueuedRequestsIfPodStartupDisabled();
         });
       }
       return;
@@ -332,8 +416,15 @@ export class PluginService {
     while (this.queue.length > 0) {
       const idlePod = this.findIdlePod();
       if (!idlePod) {
+        if (this.podStartupDisabledError && this.pods.size === 0 && this.pendingPods === 0) {
+          this.rejectQueuedRequestsIfPodStartupDisabled();
+        }
+
         // 队列有请求但没有空闲 Pod，若未达上限则触发扩容
-        if (this.pods.size + this.pendingPods < this.config.maxPods) {
+        if (
+          !this.podStartupDisabledError &&
+          this.pods.size + this.pendingPods < this.config.maxPods
+        ) {
           this.pendingPods++;
           this.createPod()
             .then((pod) => {
@@ -343,6 +434,7 @@ export class PluginService {
             })
             .catch(() => {
               this.pendingPods--;
+              this.rejectQueuedRequestsIfPodStartupDisabled();
             });
         }
         break;
@@ -388,6 +480,7 @@ export class PluginService {
     if (this.pods.size < this.config.minPods && !this.destroyed) {
       this.createPod().catch((error) => {
         console.error('Failed to auto-replenish Pod:', error);
+        this.rejectQueuedRequestsIfPodStartupDisabled();
       });
     }
 
@@ -406,6 +499,7 @@ export class PluginService {
     if (this.pods.size < this.config.minPods && !this.destroyed) {
       this.createPod().catch((error) => {
         console.error('Failed to replenish Pod:', error);
+        this.rejectQueuedRequestsIfPodStartupDisabled();
       });
     }
   }
@@ -421,6 +515,62 @@ export class PluginService {
 
     pod.kill();
     this.pods.delete(podId);
+  }
+
+  private recordPodStartupSuccess(): void {
+    this.consecutivePodStartupFailures = 0;
+    this.podStartupDisabledError = null;
+  }
+
+  private recordPodStartupFailure(error: Error): void {
+    this.consecutivePodStartupFailures += 1;
+    console.error(
+      `[${this.serviceName}] Pod startup failed (${this.consecutivePodStartupFailures}/${MAX_CONSECUTIVE_POD_STARTUP_FAILURES})`,
+      error
+    );
+
+    if (this.consecutivePodStartupFailures < MAX_CONSECUTIVE_POD_STARTUP_FAILURES) {
+      return;
+    }
+
+    this.podStartupDisabledError = new Error(
+      `[${this.serviceName}] Pod startup failed ${this.consecutivePodStartupFailures} times consecutively; pod creation has been disabled`
+    );
+    console.error(this.podStartupDisabledError);
+  }
+
+  private getPodStartupBlockedError(): Error | null {
+    if (!this.podStartupDisabledError) {
+      return null;
+    }
+
+    if (this.pods.size > 0 || this.pendingPods > 0) {
+      return null;
+    }
+
+    return this.podStartupDisabledError;
+  }
+
+  private rejectQueuedRequestsIfPodStartupDisabled(): void {
+    const error = this.getPodStartupBlockedError();
+    if (!error) {
+      return;
+    }
+
+    while (this.queue.length > 0) {
+      const queuedRequest = this.queue.shift();
+      if (!queuedRequest) {
+        break;
+      }
+
+      if (queuedRequest.timeout) {
+        clearTimeout(queuedRequest.timeout);
+      }
+
+      this.failedRequests++;
+      this.cleanupInvokeSession(queuedRequest.options?.invocationId);
+      queuedRequest.reject(error);
+    }
   }
 
   /**
@@ -499,7 +649,8 @@ export class PluginService {
       errorRate: this.totalRequests > 0 ? this.failedRequests / this.totalRequests : 0,
       crashCount: this.crashCount,
       totalRequests: this.totalRequests,
-      maxPods: this.config.maxPods
+      maxPods: this.config.maxPods,
+      minPods: this.config.minPods
     };
   }
 
@@ -560,6 +711,7 @@ export class PluginService {
       if (queuedRequest.timeout) {
         clearTimeout(queuedRequest.timeout);
       }
+      this.cleanupInvokeSession(queuedRequest.options?.invocationId);
       queuedRequest.reject(new Error('Service closed'));
     }
     this.queue = [];
@@ -608,4 +760,12 @@ export class PluginService {
       }
     }
   }
+}
+
+function toError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error(String(error));
 }

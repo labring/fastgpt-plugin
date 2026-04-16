@@ -1,7 +1,9 @@
 import { z } from 'zod';
-import { defineSource, type DatasetSourceCallbacks } from '../../source/registry';
-import { yuqueConfig, YuqueConfigSchema, type YuqueConfig } from './config';
-import type { FileItem, FileContentResponse } from '../../type/source';
+
+import { type DatasetSourceCallbacks,defineSource } from '../../source/registry';
+import type { FileContentResponse,FileItem } from '../../type/source';
+
+import { type YuqueConfig,yuqueConfig, YuqueConfigSchema } from './config';
 
 const YUQUE_BASE_URL = process.env.YUQUE_BASE_URL || 'https://www.yuque.com';
 
