@@ -1,5 +1,6 @@
 import { PluginListParamsSchema } from '@interface-adapter/contracts/dto/plugin.dto';
 import {
+  PluginGetParamsSchema,
   PluginInstallDTOSchema,
   PluginRuntimeConfigGetParamsSchema,
   PluginRuntimeConfigSetParamsSchema,
@@ -17,6 +18,8 @@ import type {
   FastGPTPluginClientOptions,
   ModelListType,
   ModelProviderListType,
+  PluginDetailType,
+  PluginGetParamsType,
   PluginInstallResultType,
   PluginListParamsType,
   PluginListType,
@@ -115,6 +118,20 @@ export class FastGPTPluginClient {
       path: this.withApiPath(PluginContract.Install.meta.path),
       method: PluginContract.Install.meta.method,
       body: payload,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async getPlugin(
+    params: PluginGetParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<PluginDetailType> {
+    const query = PluginGetParamsSchema.parse(params);
+
+    return this.transport.requestData<PluginDetailType>({
+      path: this.withApiPath(PluginContract.Get.meta.path),
+      method: PluginContract.Get.meta.method,
+      query,
       signal: requestOptions?.signal
     });
   }

@@ -2,7 +2,7 @@ import { serve, type ServerType } from '@hono/node-server';
 
 import { env } from '@infrastructure/env';
 import { app } from '@infrastructure/hono/app';
-import { configureLogger, destroyLogger, getLogger, root } from '@infrastructure/logger';
+import { destroyLogger, getLogger, root } from '@infrastructure/logger';
 import { configureProxy } from '@infrastructure/utils/proxy';
 
 import deps from './src/deps';

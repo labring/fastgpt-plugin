@@ -14,6 +14,7 @@
     "deploy:marketplace-data": "pnpm exec tsx --env-file=.env.marketplace.local ./scripts/deploy-marketplace.ts",
     "prepare": "husky install",
     "lint": "eslint --fix",
+    "typecheck": "tsc --noEmit",
     "prettier": "prettier --write \"./**/*.{ts,js,json}\""
   },
   "devDependencies": {
@@ -45,5 +46,8 @@
       "pnpm run lint",
       "pnpm run prettier"
     ]
+  },
+  "dependencies": {
+    "sdk": "link:/Volumes/Code/fastgpt-plugin/sdk"
   }
 }

@@ -7,6 +7,7 @@ import { PluginContract } from '@interface-adapter/contracts/route/plugin.contra
 import { makePluginConfigGetUC } from '@usecase/plugin/plugin-config-get.uc';
 import { makeSetPluginConfigUC } from '@usecase/plugin/plugin-config-set.uc';
 import { makePluginConfirmUC, type PluginConfirmUCDeps } from '@usecase/plugin/plugin-confirm.uc';
+import { makePluginGetOneUC, type PluginGetOneDeps } from '@usecase/plugin/plugin-get.uc';
 import { makePluginInstallUC, type PluginInstallUCDeps } from '@usecase/plugin/plugin-install.uc';
 import { makePluginListUC } from '@usecase/plugin/plugin-list.uc';
 import { makePluginPruneDisabledUC } from '@usecase/plugin/plugin-prune-disabled.uc';
@@ -14,7 +15,11 @@ import { makePluginTagListUC } from '@usecase/plugin/plugin-tag-list.uc';
 import { makePluginUploadUC, type PluginUploadUCDeps } from '@usecase/plugin/plugin-upload.uc';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 
-export type PluginRouteDeps = PluginInstallUCDeps & PluginUploadUCDeps & PluginConfirmUCDeps;
+export type PluginRouteDeps =
+  & PluginInstallUCDeps
+  & PluginUploadUCDeps
+  & PluginConfirmUCDeps
+  & PluginGetOneDeps;
 
 export const makePluginRoute = (deps: PluginRouteDeps) => {
   const route = createOpenAPIHono();
@@ -197,6 +202,46 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
 
       if (err) {
         return R.fail(c, 500, err.reason);
+      }
+
+      return R.success(c, result);
+    }
+  );
+
+  route.openapi(
+    createRoute({
+      ...PluginContract.Get.meta,
+      request: {
+        query: PluginContract.Get.request
+      },
+      responses: {
+        200: {
+          description: 'HTTP 200 response',
+          content: {
+            'application/json': {
+              schema: PluginContract.Get.response[200]
+            }
+          }
+        },
+        404: {
+          description: 'HTTP 404 response',
+          content: {
+            'application/json': {
+              schema: PluginContract.Get.response[404]
+            }
+          }
+        }
+      }
+    }),
+    async (c) => {
+      const pluginGetOneUC = makePluginGetOneUC(deps);
+      const query = c.req.valid('query');
+      const [result, err] = await pluginGetOneUC({
+        userPluginId: query
+      });
+
+      if (err) {
+        return R.fail(c, 404, err.reason);
       }
 
       return R.success(c, result);

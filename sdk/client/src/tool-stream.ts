@@ -7,11 +7,25 @@ import type {
   ClientRequestOptions,
   FastGPTPluginClientOptions,
   RunToolStreamParams,
-  ToolHandlerReturnType,
-  ToolStreamMessageType
+  ToolAnswerType,
+  ToolHandlerReturnType
 } from './types';
 
 const TOOL_RUN_STREAM_PATH = '/api/tool/runStream';
+
+type ParsedToolStreamMessage =
+  | {
+      type: 'response';
+      data: ToolHandlerReturnType;
+    }
+  | {
+      type: 'stream';
+      data: ToolAnswerType;
+    }
+  | {
+      type: 'error';
+      data: string;
+    };
 
 export class RunToolWithStream {
   private readonly transport: ClientTransport;
@@ -106,7 +120,7 @@ export class RunToolWithStream {
     throw new Error('Tool stream closed without terminal event');
   }
 
-  private parseStreamMessage(chunk: string): ToolStreamMessageType | null {
+  private parseStreamMessage(chunk: string): ParsedToolStreamMessage | null {
     const normalized = chunk
       .split('\n')
       .map((line) => (line.startsWith('data:') ? line.slice(5).trimStart() : line))
@@ -119,7 +133,7 @@ export class RunToolWithStream {
 
     try {
       const parsed = JSON.parse(normalized);
-      return ToolStreamMessageSchema.parse(parsed) as ToolStreamMessageType;
+      return ToolStreamMessageSchema.parse(parsed) as ParsedToolStreamMessage;
     } catch {
       return null;
     }

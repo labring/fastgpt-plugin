@@ -2,14 +2,8 @@ import path from 'node:path';
 
 import { addMinutes } from 'date-fns';
 
-import {
-  PluginSchema,
-  type PluginTagType,
-  type PluginType,
-  type PluginTypeType
-} from '@domain/entities/plugin.entity';
+import { type PluginTagType, type PluginType, type PluginTypeType } from '@domain/entities/plugin.entity';
 import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
-import type { ToolType } from '@domain/entities/tool.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import type { FileTTLPort } from '@domain/ports/file-ttl.port';
@@ -29,6 +23,8 @@ import type { MongoPluginSchemaType } from '@infrastructure/storage/mongo/models
 import { MongoClient } from '../storage/mongo';
 import { isDuplicateKeyError } from '../storage/mongo/utils';
 
+import { pluginCodecRegistry, PluginRecordSchema } from './codec';
+
 export type PluginRepoDeps = {
   mongoClient: MongoClient;
   localFileStorageRepo: LocalFileStoragePort;
@@ -45,31 +41,12 @@ export class PluginRepo implements PluginRepoPort {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  private toMongoPlugin(plugin: PluginType) {
-    switch (plugin.type) {
-      case 'tool': {
-        const { toolDescription, inputSchema, outputSchema, secretSchema, children, ...base } =
-          plugin as ToolType;
-
-        return {
-          ...base,
-          data: {
-            toolDescription,
-            inputSchema,
-            outputSchema,
-            secretSchema,
-            children
-          }
-        };
-      }
-    }
+  private toPluginRecord(plugin: PluginType) {
+    return pluginCodecRegistry.toRecord(plugin);
   }
 
   private toDomainPlugin(plugin: MongoPluginSchemaType): PluginType {
-    return PluginSchema.parse({
-      ...plugin,
-      ...(plugin.data ?? {})
-    });
+    return pluginCodecRegistry.fromRecord(PluginRecordSchema.parse(plugin));
   }
 
   private getManagedPublicFileNames(fileKeys: string[]): Set<string> {
@@ -116,38 +93,9 @@ export class PluginRepo implements PluginRepoPort {
       return successResult(url);
     };
 
-    switch (domainPlugin.type) {
-      case 'tool': {
-        const toolPlugin = domainPlugin as ToolType;
-        const [icon, iconErr] = await resolvePublicFileURL(domainPlugin.icon);
-        if (iconErr) return failureResult(iconErr);
-
-        const [readmeUrl, readmeErr] = await resolvePublicFileURL(domainPlugin.readmeUrl);
-        if (readmeErr) return failureResult(readmeErr);
-
-        let children: ToolType['children'];
-        if (toolPlugin.children) {
-          children = [];
-          for (const child of toolPlugin.children) {
-            const [childIcon, childIconErr] = await resolvePublicFileURL(child.icon);
-            if (childIconErr) return failureResult(childIconErr);
-            children.push({
-              ...child,
-              icon: childIcon ?? child.icon
-            });
-          }
-        }
-
-        return successResult({
-          ...domainPlugin,
-          icon: icon ?? domainPlugin.icon,
-          ...(readmeUrl !== undefined ? { readmeUrl } : {}),
-          children
-        });
-      }
-      default:
-        return successResult(domainPlugin);
-    }
+    return pluginCodecRegistry.refreshConfirmedAssets(domainPlugin, {
+      resolvePublicFileURL
+    });
   }
 
   private getFileKey(id: PluginUniqueIdType, filePath: string[], pending: boolean): string {
@@ -293,7 +241,7 @@ export class PluginRepo implements PluginRepoPort {
           },
           {
             $set: {
-              ...this.toMongoPlugin(confirmedPlugin),
+              ...this.toPluginRecord(confirmedPlugin),
               status: PluginStatusEnum.active,
               updateAt: new Date()
             },
@@ -512,7 +460,7 @@ export class PluginRepo implements PluginRepoPort {
     // 1. 保存到 MongoDB
     try {
       await this.deps.mongoClient.getModel('plugin').create({
-        ...this.toMongoPlugin(plugin),
+        ...this.toPluginRecord(plugin),
         ...(pending
           ? {
               status: PluginStatusEnum.pending,

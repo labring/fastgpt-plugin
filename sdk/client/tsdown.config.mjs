@@ -7,7 +7,7 @@ export default defineConfig({
   tsconfig: './tsconfig.json',
   dts: {
     enabled: true,
-    sourcemap: false,
+    sourcemap: true,
     eager: true
   },
   clean: true,
@@ -17,5 +17,7 @@ export default defineConfig({
       js: '.js'
     };
   },
-  external: ['zod']
+  minify: true,
+  external: ['zod'],
+  sourcemap: true
 });

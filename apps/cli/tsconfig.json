@@ -6,35 +6,7 @@
       "@usecase/*": ["packages/usecase/src/*"],
       "@shared/*": ["packages/shared/src/*"],
       "@interface-adapter/*": ["packages/interface-adapter/src/*"],
-      "@infrastructure/*": ["packages/infrastructure/src/*"],
-      "@fastgpt-plugin/cli/*": ["apps/cli/src/*"]
+      "@infrastructure/*": ["packages/infrastructure/src/*"]
     }
   }
 }
-// {
-//   "compilerOptions": {
-//     "module": "esnext",
-//     "target": "es2022",
-//     "moduleResolution": "bundler",
-
-//     "sourceMap": true,
-//     "declaration": true,
-//     "declarationMap": true,
-//     "noUncheckedIndexedAccess": true,
-//     "exactOptionalPropertyTypes": true,
-//     "strict": true,
-//     "verbatimModuleSyntax": true,
-//     "isolatedModules": true,
-//     "noUncheckedSideEffectImports": true,
-//     "moduleDetection": "force",
-//     "skipLibCheck": true,
-
-//     "baseUrl": "./",
-//     "paths": {
-//       "@fastgpt-plugin/cli/*": ["src/*"],
-//       "#test/*": ["test/*"]
-//     }
-//   },
-//   "include": ["src", "test"],
-//   "exclude": ["test/fixtures", "templates"]
-// }

@@ -1,6 +1,8 @@
 import type { Readable } from 'node:stream';
 
-import type { PluginBaseType } from '@domain/entities/plugin.entity';
+import {} from 'packages/infrastructure/src/env';
+
+import type { PluginType } from '@domain/entities/plugin.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
@@ -18,7 +20,7 @@ type Input = {
 
 export const makePluginUploadUC =
   (deps: PluginUploadUCDeps) =>
-  async (input: Input): Promise<Result<PluginBaseType>> => {
+  async (input: Input): Promise<Result<PluginType>> => {
     // 1. recieve the file and save it to local storage
     const [localPkgFile, err] = await deps.localFileStorageRepo.save({
       file: input.file,

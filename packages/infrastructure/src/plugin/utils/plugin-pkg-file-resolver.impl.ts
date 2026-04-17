@@ -1,6 +1,6 @@
 import path from 'path';
 
-import type { PluginBaseType } from '@domain/entities/plugin.entity';
+import type { PluginType } from '@domain/entities/plugin.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import { type PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
@@ -29,7 +29,7 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
   ): Promise<
     Result<{
       files: PkgContentFileObjects;
-      info: PluginBaseType;
+      info: PluginType;
     }>
   > {
     const [stream, err] = await pkgFile.fileStream;

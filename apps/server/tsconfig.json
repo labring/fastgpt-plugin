@@ -1,12 +1,3 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "@domain/*": ["packages/domain/src/*"],
-      "@usecase/*": ["packages/usecase/src/*"],
-      "@shared/*": ["packages/shared/src/*"],
-      "@interface-adapter/*": ["packages/interface-adapter/src/*"],
-      "@infrastructure/*": ["packages/infrastructure/src/*"]
-    }
-  }
+  "extends": "../../tsconfig.json"
 }

@@ -38,16 +38,13 @@ export const init = async () => {
     return Promise.reject(error);
   }
 
+  // TODO: 应当只载入 system 安装的插件
   const pluginRegisterActiveUC = makePluginRegisterActiveUC({
     pluginRepo,
     pluginRuntimeManager
   });
 
-  const [res, err] = await pluginRegisterActiveUC();
-  logger.info('Register active plugins on init completed', {
-    result: res,
-    error: err
-  });
+  const [, err] = await pluginRegisterActiveUC();
   if (err) {
     logger.error('Register active plugins on init failed', {
       error: err.error,
@@ -55,4 +52,5 @@ export const init = async () => {
     });
     return Promise.reject(err.error ?? err);
   }
+  logger.info('Register active plugins on init completed');
 };

@@ -6,7 +6,7 @@ const handler = createToolHandler({
     delay: z.number()
   }),
   outputSchema: z.object({}),
-  handler: async (input, ctx) => {
+  handler: async (input, _ctx) => {
     await new Promise((resolve) => setTimeout(resolve, input.delay));
     return {};
   }

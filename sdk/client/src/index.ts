@@ -13,6 +13,8 @@ export type {
   ModelListType,
   ModelProviderItemType,
   ModelProviderListType,
+  PluginDetailType,
+  PluginGetParamsType,
   PluginInstallFailureType,
   PluginInstallResultType,
   PluginListParamsType,

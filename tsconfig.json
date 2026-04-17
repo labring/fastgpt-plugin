@@ -33,7 +33,8 @@
       "@usecase/*": ["packages/usecase/src/*"],
       "@shared/*": ["packages/shared/src/*"],
       "@interface-adapter/*": ["packages/interface-adapter/src/*"],
-      "@infrastructure/*": ["packages/infrastructure/src/*"]
+      "@infrastructure/*": ["packages/infrastructure/src/*"],
+      "@fastgpt-plugin/cli/*": ["apps/cli/src/*"]
     },
     // Performance optimizations
     "incremental": true,
@@ -46,5 +47,8 @@
     "tests/**/*.ts",
     "packages/**/*.d.ts"
   ],
-  "exclude": ["packages/infrastructure/src/static-data/dataset-source/**/*.ts"]
+  "exclude": [
+    "packages/infrastructure/src/static-data/dataset-source/**/*.ts", // dataset-source 暂时隐藏
+    "apps/cli/templates/**/*.ts" // 忽略 CLI 模板文件
+  ]
 }

@@ -2,7 +2,9 @@ import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
 
 import { defineContract, emptyResponse, jsonResponse } from '../contract.type';
 import {
+  PluginDetailDTOSchema,
   PluginDTOSchema,
+  PluginGetParamsSchema,
   PluginInstallDTOSchema,
   PluginListDTOSchema,
   PluginListParamsSchema,
@@ -79,6 +81,22 @@ export const PluginContract = {
     response: {
       200: jsonResponse({ data: PluginInstallDTOSchema.response }),
       500: jsonResponse({ error: I18nStringSchema })
+    }
+  }),
+  Get: defineContract({
+    meta: {
+      method: 'get',
+      path: '/plugin/get',
+      operationId: 'plugin.get',
+      description: 'Get a plugin by pluginId, version and source',
+      summary: 'Get plugin detail',
+      tags: ['plugin'],
+      security: authToken
+    },
+    request: PluginGetParamsSchema,
+    response: {
+      200: jsonResponse({ data: PluginDetailDTOSchema }),
+      404: jsonResponse({ error: I18nStringSchema })
     }
   }),
   List: defineContract({
