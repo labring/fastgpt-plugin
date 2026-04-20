@@ -13,7 +13,8 @@
   "files": [
     "dist",
     "index.js",
-    "templates"
+    "templates",
+    "skills"
   ],
   "scripts": {
     "build": "tsdown",

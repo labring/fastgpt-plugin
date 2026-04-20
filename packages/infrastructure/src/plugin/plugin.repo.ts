@@ -44,6 +44,13 @@ export class PluginRepo implements PluginRepoPort {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
+  private compareVersions(a: string, b: string) {
+    return a.localeCompare(b, undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    });
+  }
+
   private toPluginRecord(plugin: PluginType) {
     return pluginCodecRegistry.toRecord(plugin);
   }
@@ -115,13 +122,26 @@ export class PluginRepo implements PluginRepoPort {
     source,
     version
   }: UserPluginIdType): Promise<Result<PluginType>> {
-    const plugin = await this.deps.mongoClient
-      .getModel('pluginInstallation')
-      .findOne({ source: source, version, pluginId })
-      .populate<{
-        plugin: MongoPluginSchemaType;
-      }>('plugin')
-      .lean();
+    const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
+    const normalizedSource = source ?? 'system';
+    const normalizedVersion = version?.trim();
+
+    const plugin = normalizedVersion
+      ? await installationModel
+          .findOne({ source: normalizedSource, version: normalizedVersion, pluginId })
+          .populate<{
+            plugin: MongoPluginSchemaType;
+          }>('plugin')
+          .lean()
+      : await installationModel
+          .find({ source: normalizedSource, pluginId })
+          .populate<{
+            plugin: MongoPluginSchemaType;
+          }>('plugin')
+          .lean()
+          .then((items) =>
+            items.sort((a, b) => this.compareVersions(b.version, a.version))[0]
+          );
 
     if (plugin) {
       return successResult(this.toDomainPlugin(plugin.plugin));

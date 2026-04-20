@@ -37,10 +37,13 @@ export const ToolRunInputDTOSchema = z.object({
     description: 'Plugin ID',
     example: 'getTime'
   }),
-  version: z.string().openapi({
-    description: 'Plugin version',
-    example: '1.0.0'
-  }),
+  version: z
+    .string()
+    .optional()
+    .openapi({
+      description: 'Plugin version, optional. Empty or missing means latest version',
+      example: '1.0.0'
+    }),
   source: z.string().optional().openapi({
     description: 'Plugin source, optional, default is "system"',
     example: 'system'

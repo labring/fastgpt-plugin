@@ -37,7 +37,10 @@ export class RunToolWithStream {
   async run(
     params: RunToolStreamParams,
     requestOptions?: ClientRequestOptions
-  ): Promise<ToolHandlerReturnType> {
+  ): Promise<{
+    output?: ToolHandlerReturnType;
+    error?: Error;
+  }> {
     const payload = ToolRunInputDTOSchema.parse({
       pluginId: params.pluginId,
       version: params.version,
@@ -110,11 +113,11 @@ export class RunToolWithStream {
     }
 
     if (finalError) {
-      throw finalError;
+      return { error: finalError };
     }
 
     if (finalResult) {
-      return finalResult;
+      return { output: finalResult };
     }
 
     throw new Error('Tool stream closed without terminal event');

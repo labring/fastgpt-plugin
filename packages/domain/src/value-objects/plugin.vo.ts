@@ -23,7 +23,7 @@ export const PluginRuntimeModeEnum = PluginRuntimeModeSchema.enum;
 // 用户视角能看到的 Plugin ID，去掉了 etag，因为用户不需要关心 etag，通过 source 来定位唯一插件
 export const UserPluginIdSchema = z.object({
   pluginId: z.string(),
-  version: z.string(),
+  version: z.string().optional(),
   source: PluginSourceSchema.optional() // 可选，如果没填，则认为是 system
 });
 

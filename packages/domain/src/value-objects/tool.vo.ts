@@ -1,12 +1,9 @@
 import z from 'zod';
 
-import { UserPluginIdSchema } from './plugin.vo';
+import { PluginSourceSchema } from './plugin.vo';
 import { SystemVarSchema } from './system-var.vo';
 
-export const ToolHandlerReturnSchema = z.object({
-  error: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
-  output: z.record(z.string(), z.any()).optional()
-});
+export const ToolHandlerReturnSchema = z.record(z.string(), z.unknown());
 export type ToolHandlerReturnType = z.infer<typeof ToolHandlerReturnSchema>;
 
 export const StreamMessageTypeSchema = z.enum(['response', 'error', 'stream']);
@@ -24,15 +21,15 @@ export type ToolAnswerType = z.infer<typeof ToolAnswerSchema>;
 
 export const ToolStreamMessageSchema = z.discriminatedUnion('type', [
   z.object({
-    type: StreamMessageTypeEnum.response,
+    type: z.literal(StreamMessageTypeEnum.response),
     data: ToolHandlerReturnSchema
   }),
   z.object({
-    type: StreamMessageTypeEnum.stream,
+    type: z.literal(StreamMessageTypeEnum.stream),
     data: ToolAnswerSchema
   }),
   z.object({
-    type: StreamMessageTypeEnum.error,
+    type: z.literal(StreamMessageTypeEnum.error),
     data: z.string()
   })
 ]);
@@ -44,7 +41,12 @@ export const ToolRunContextSchema = z.object({
 });
 
 export const ToolRunInputSchema = z.object({
-  ...UserPluginIdSchema.shape,
+  pluginId: z.string(),
+  version: z.preprocess((value) => {
+    if (value === '') return undefined;
+    return value;
+  }, z.string().optional()),
+  source: PluginSourceSchema.optional(),
   childId: z.string().optional(), // 工具集时存在
   input: z.record(z.string(), z.unknown()),
   secrets: z.record(z.string(), z.unknown()).optional(),
