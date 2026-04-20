@@ -120,6 +120,19 @@ export const PluginUniqueIdDTOSchema = z.object({
   })
 });
 
+export const PluginConfirmParamsSchema = z.object({
+  uniqueIds: z.array(PluginUniqueIdDTOSchema).min(1).openapi({
+    description: 'Plugin unique id list',
+    example: [
+      {
+        pluginId: 'getTime',
+        version: '1.0.0',
+        etag: '12345678'
+      }
+    ]
+  })
+});
+
 export const PluginPruneDisabledResponseDTOSchema = z.object({
   count: z.number().int().nonnegative().openapi({
     description: 'Number of disabled plugins removed',
@@ -227,6 +240,7 @@ export type PluginDTOType = z.infer<typeof PluginDTOSchema>;
 export type PluginDetailDTOType = z.infer<typeof PluginDetailDTOSchema>;
 export type PluginListDTOType = z.infer<typeof PluginListDTOSchema>;
 export type PluginUniqueIdDTOType = z.infer<typeof PluginUniqueIdDTOSchema>;
+export type PluginConfirmParamsDTOType = z.infer<typeof PluginConfirmParamsSchema>;
 export type PluginPruneDisabledResponseDTOType = z.infer<
   typeof PluginPruneDisabledResponseDTOSchema
 >;

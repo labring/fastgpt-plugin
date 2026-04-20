@@ -3,6 +3,7 @@ import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
 import { defineContract, emptyResponse, jsonResponse } from '../contract.type';
 import {
   PluginDetailDTOSchema,
+  PluginConfirmParamsSchema,
   PluginDTOSchema,
   PluginGetParamsSchema,
   PluginInstallDTOSchema,
@@ -46,7 +47,7 @@ export const PluginContract = {
       tags: ['plugin'],
       security: authToken
     },
-    request: PluginUniqueIdDTOSchema,
+    request: PluginConfirmParamsSchema,
     response: {
       200: emptyResponse(),
       500: jsonResponse({ error: I18nStringSchema })

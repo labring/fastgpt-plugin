@@ -18,14 +18,18 @@ export const toolPluginCodec: PluginCodec<ToolType> = {
         inputSchema,
         outputSchema,
         secretSchema,
-        children
+        ...(children !== undefined ? { children } : {})
       }
     });
   },
   fromRecord(record: PluginRecordType) {
     return ToolSchema.parse({
       ...record,
-      ...record.data
+      ...record.data,
+      children:
+        record.data && 'children' in record.data
+          ? ((record.data.children ?? undefined) as ToolType['children'])
+          : undefined
     });
   },
   async refreshConfirmedAssets(plugin, { resolvePublicFileURL }) {

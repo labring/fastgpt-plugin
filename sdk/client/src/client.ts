@@ -1,10 +1,10 @@
 import { PluginListParamsSchema } from '@interface-adapter/contracts/dto/plugin.dto';
 import {
+  PluginConfirmParamsSchema,
   PluginGetParamsSchema,
   PluginInstallDTOSchema,
   PluginRuntimeConfigGetParamsSchema,
   PluginRuntimeConfigSetParamsSchema,
-  PluginUniqueIdDTOSchema
 } from '@interface-adapter/contracts/dto/plugin.dto';
 import { ToolRunInputDTOSchema } from '@interface-adapter/contracts/dto/tool.dto';
 import { ModelContract } from '@interface-adapter/contracts/route/model.contract';
@@ -85,10 +85,10 @@ export class FastGPTPluginClient {
   }
 
   async confirmPlugin(
-    uniqueId: PluginUniqueIdType,
+    uniqueIds: PluginUniqueIdType[],
     requestOptions?: ClientRequestOptions
   ): Promise<void> {
-    const payload = PluginUniqueIdDTOSchema.parse(uniqueId);
+    const payload = PluginConfirmParamsSchema.parse({ uniqueIds });
 
     await this.transport.requestEmpty({
       path: this.withApiPath(PluginContract.Confirm.meta.path),

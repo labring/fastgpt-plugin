@@ -20,7 +20,7 @@ export type PluginConfirmUCDeps = {
 
 /** Input Type*/
 type Input = {
-  uniqueId: PluginUniqueIdType;
+  uniqueIds: PluginUniqueIdType[];
 };
 
 /** Output Type */
@@ -28,108 +28,117 @@ type Output = Promise<Result>;
 
 export const makePluginConfirmUC =
   (deps: PluginConfirmUCDeps) =>
-  async ({ uniqueId }: Input): Output => {
-    const [activePlugins, activeErr] = await deps.pluginRepo.listActive();
+  async ({ uniqueIds }: Input): Output => {
+    const confirmOne = async (uniqueId: PluginUniqueIdType): Output => {
+      const [activePlugins, activeErr] = await deps.pluginRepo.listActive();
 
-    if (activeErr) {
-      return failureResult(
-        {
-          en: 'Failed to get active plugins',
-          'zh-CN': '获取 active 插件失败'
-        },
-        activeErr
-      );
-    }
-
-    const replacedPlugins = activePlugins.filter(
-      (plugin) =>
-        plugin.pluginId === uniqueId.pluginId &&
-        plugin.version === uniqueId.version &&
-        plugin.etag !== uniqueId.etag
-    );
-
-    // 1. get pending plugins
-    const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
-
-    if (pendingErr) {
-      return failureResult(
-        {
-          en: 'Failed to get pending plugins',
-          'zh-CN': '获取待确认插件失败'
-        },
-        pendingErr
-      );
-    }
-
-    // 2. check the id
-    if (!pendingIds.some((pendingId) => isEqual(pendingId, uniqueId))) {
-      return failureResult({
-        en: 'Pending Plugin not found',
-        'zh-CN': '待确认插件未找到'
-      });
-    }
-
-    // 3. remove pending status
-    const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId);
-
-    if (err) {
-      return failureResult(
-        {
-          en: 'Failed to confirm plugin',
-          'zh-CN': '确认插件失败'
-        },
-        err
-      );
-    }
-
-    // 4. register the plugin to runtime (when it is runable)
-    if (plugin.type === 'tool') {
-      const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
-      if (registerErr) {
+      if (activeErr) {
         return failureResult(
           {
-            en: 'Failed to register confirmed plugin',
-            'zh-CN': '注册确认后的插件失败'
+            en: 'Failed to get active plugins',
+            'zh-CN': '获取 active 插件失败'
           },
-          registerErr
+          activeErr
         );
       }
 
-      await Promise.all(
-        replacedPlugins
-          .filter((item) => item.type === 'tool')
-          .map(async (item) => {
-            try {
-              const [, unregisterErr] = await deps.pluginRuntimeManager.unregister({
-                pluginId: item.pluginId,
-                version: item.version,
-                etag: item.etag
-              });
-              if (unregisterErr) {
+      const replacedPlugins = activePlugins.filter(
+        (plugin) =>
+          plugin.pluginId === uniqueId.pluginId &&
+          plugin.version === uniqueId.version &&
+          plugin.etag !== uniqueId.etag
+      );
+
+      // 1. get pending plugins
+      const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
+
+      if (pendingErr) {
+        return failureResult(
+          {
+            en: 'Failed to get pending plugins',
+            'zh-CN': '获取待确认插件失败'
+          },
+          pendingErr
+        );
+      }
+
+      // 2. check the id
+      if (!pendingIds.some((pendingId) => isEqual(pendingId, uniqueId))) {
+        return failureResult({
+          en: 'Pending Plugin not found',
+          'zh-CN': '待确认插件未找到'
+        });
+      }
+
+      // 3. remove pending status
+      const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId);
+
+      if (err) {
+        return failureResult(
+          {
+            en: 'Failed to confirm plugin',
+            'zh-CN': '确认插件失败'
+          },
+          err
+        );
+      }
+
+      // 4. register the plugin to runtime (when it is runable)
+      if (plugin.type === 'tool') {
+        const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
+        if (registerErr) {
+          return failureResult(
+            {
+              en: 'Failed to register confirmed plugin',
+              'zh-CN': '注册确认后的插件失败'
+            },
+            registerErr
+          );
+        }
+
+        await Promise.all(
+          replacedPlugins
+            .filter((item) => item.type === 'tool')
+            .map(async (item) => {
+              try {
+                const [, unregisterErr] = await deps.pluginRuntimeManager.unregister({
+                  pluginId: item.pluginId,
+                  version: item.version,
+                  etag: item.etag
+                });
+                if (unregisterErr) {
+                  console.error('Failed to unregister replaced plugin runtime', {
+                    pluginId: item.pluginId,
+                    version: item.version,
+                    etag: item.etag,
+                    error: unregisterErr
+                  });
+                }
+              } catch (error) {
                 console.error('Failed to unregister replaced plugin runtime', {
                   pluginId: item.pluginId,
                   version: item.version,
                   etag: item.etag,
-                  error: unregisterErr
+                  error
                 });
               }
-            } catch (error) {
-              console.error('Failed to unregister replaced plugin runtime', {
-                pluginId: item.pluginId,
-                version: item.version,
-                etag: item.etag,
-                error
-              });
-            }
-          })
-      );
+            })
+        );
 
-      return successResult({});
+        return successResult({});
+      }
+
+      // 5. (unimplemented) when it is not runable(model, workflow ...) cache it here or a plugin cache manager.
+      return failureResult({
+        en: 'Plugin type is not supported',
+        'zh-CN': '插件类型不支持'
+      });
+    };
+
+    for (const uniqueId of uniqueIds) {
+      const [, err] = await confirmOne(uniqueId);
+      if (err) return failureResult(err);
     }
 
-    // 5. (unimplemented) when it is not runable(model, workflow ...) cache it here or a plugin cache manager.
-    return failureResult({
-      en: 'Plugin type is not supported',
-      'zh-CN': '插件类型不支持'
-    });
+    return successResult({});
   };

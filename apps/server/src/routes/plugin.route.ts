@@ -15,11 +15,10 @@ import { makePluginTagListUC } from '@usecase/plugin/plugin-tag-list.uc';
 import { makePluginUploadUC, type PluginUploadUCDeps } from '@usecase/plugin/plugin-upload.uc';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 
-export type PluginRouteDeps =
-  & PluginInstallUCDeps
-  & PluginUploadUCDeps
-  & PluginConfirmUCDeps
-  & PluginGetOneDeps;
+export type PluginRouteDeps = PluginInstallUCDeps &
+  PluginUploadUCDeps &
+  PluginConfirmUCDeps &
+  PluginGetOneDeps;
 
 export const makePluginRoute = (deps: PluginRouteDeps) => {
   const route = createOpenAPIHono();
@@ -116,8 +115,8 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
     }),
     async (c) => {
       const pluginConfirmUC = makePluginConfirmUC(deps);
-      const uniqueId = c.req.valid('json');
-      const [, err] = await pluginConfirmUC({ uniqueId });
+      const { uniqueIds } = c.req.valid('json');
+      const [, err] = await pluginConfirmUC({ uniqueIds });
 
       if (err) {
         return R.fail(c, 500, err.reason);

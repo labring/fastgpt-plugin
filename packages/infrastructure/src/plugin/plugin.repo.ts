@@ -25,7 +25,6 @@ import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
 import type { MongoPluginSchemaType } from '@infrastructure/storage/mongo/models/plugin.model';
 
 import { MongoClient } from '../storage/mongo';
-import { isDuplicateKeyError } from '../storage/mongo/utils';
 
 import { pluginCodecRegistry, PluginRecordSchema } from './codec';
 
@@ -461,24 +460,47 @@ export class PluginRepo implements PluginRepoPort {
     pending: boolean;
   }): Promise<Result> {
     const uniqueId = PluginUniqueIdSchema.parse(plugin);
-    // 1. 保存到 MongoDB
+    const pluginModel = this.deps.mongoClient.getModel('plugin');
+    const pendingExpiresAt = pending
+      ? addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
+      : undefined;
+
     try {
-      await this.deps.mongoClient.getModel('plugin').create({
-        ...this.toPluginRecord(plugin),
-        ...(pending
-          ? {
-              status: PluginStatusEnum.pending,
-              expiredAt: addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
+      const existingPlugin = await pluginModel
+        .findOne(
+          uniqueId,
+          {
+            status: true
+          }
+        )
+        .lean();
+
+      if (existingPlugin) {
+        if (pending && existingPlugin.status === PluginStatusEnum.pending) {
+          await pluginModel.updateOne(uniqueId, {
+            $set: {
+              expiredAt: pendingExpiresAt,
+              updateAt: new Date()
             }
-          : {})
-      });
-    } catch (error) {
-      if (isDuplicateKeyError(error)) {
-        return failureResult({
-          en: 'Plugin already exists',
-          'zh-CN': '插件已存在'
+          });
+        } else {
+          return failureResult({
+            en: 'Plugin already exists',
+            'zh-CN': '插件已存在'
+          });
+        }
+      } else {
+        await pluginModel.create({
+          ...this.toPluginRecord(plugin),
+          ...(pending
+            ? {
+                status: PluginStatusEnum.pending,
+                expiredAt: pendingExpiresAt
+              }
+            : {})
         });
       }
+    } catch (error) {
       return failureResult(
         {
           en: 'Failed to create plugin in MongoDB',
@@ -548,8 +570,7 @@ export class PluginRepo implements PluginRepoPort {
         return !err;
       })
     ) {
-      if (pending) {
-        const expiresAt = addMinutes(Date.now(), PluginRepo.ExpiresMinutes);
+      if (pending && pendingExpiresAt) {
         const publicFileKeys = saveFileResults
           .slice(1)
           .map(([result, err]) => {
@@ -563,13 +584,13 @@ export class PluginRepo implements PluginRepoPort {
             ? this.deps.fileTTLManager.setExpiration(
                 publicFileKeys,
                 this.deps.publicRemoteFileStorageRepo.getBucketName(),
-                expiresAt
+                pendingExpiresAt
               )
             : successResult({}),
           this.deps.fileTTLManager.setExpiration(
             [this.getFileKey(uniqueId, ['index.js'], pending)],
             this.deps.privateRemoteFileStorageRepo.getBucketName(),
-            expiresAt
+            pendingExpiresAt
           )
         ]);
 
