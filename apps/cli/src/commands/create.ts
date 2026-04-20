@@ -37,10 +37,7 @@ export class CreateCommand extends BaseCommand {
 
   public async run(options: CreatePluginCommandOptions): Promise<void> {
     const targetDir = path.resolve(options.cwd, options.name);
-    const templateDir = path.join(
-      TOOL_TEMPLATES_DIR,
-      options.type === 'tool-suite' ? 'tool-suite' : 'tool'
-    );
+    const templateDir = path.join(TOOL_TEMPLATES_DIR, 'tool');
     const files = await this.collectTemplateFiles(templateDir);
     const description = options.description ?? DEFAULT_PLUGIN_DESCRIPTION;
 
@@ -54,6 +51,8 @@ export class CreateCommand extends BaseCommand {
       const content = this.applyPlaceholders(raw, options.name, description);
       await fs.writeFile(filePath, content, 'utf-8');
     }
+
+    await this.finalizeIndexTemplate(targetDir, options.type);
 
     logger.success(`创建插件项目: ${options.name} (${options.type})`, {
       cwd: options.cwd
@@ -84,6 +83,27 @@ export class CreateCommand extends BaseCommand {
 
     await walk(root);
     return result.sort();
+  }
+
+  private async finalizeIndexTemplate(
+    targetDir: string,
+    type: CreatePluginCommandOptions['type']
+  ): Promise<void> {
+    const toolIndexPath = path.join(targetDir, 'index.tool.ts');
+    const toolSetIndexPath = path.join(targetDir, 'index.toolset.ts');
+    const finalIndexPath = path.join(targetDir, 'index.ts');
+
+    const sourcePath = type === 'tool-suite' ? toolSetIndexPath : toolIndexPath;
+    const cleanupTargets = [toolIndexPath, toolSetIndexPath];
+
+    await fs.rename(sourcePath, finalIndexPath);
+
+    await Promise.all(
+      cleanupTargets.map(async (filePath) => {
+        if (filePath === sourcePath) return;
+        await fs.rm(filePath, { force: true });
+      })
+    );
   }
 
   private async ensureDir(dir: string): Promise<void> {

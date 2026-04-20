@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+
 import { FastGPTPluginClient } from '../dist/index';
 
 const client = new FastGPTPluginClient({
@@ -6,5 +8,12 @@ const client = new FastGPTPluginClient({
   token: 'token'
 });
 
-// const result = await client.listModels();
-// console.log(result);
+// const result = await client.listPlugins({
+//   types: ['tool']
+// });
+
+const file = new File([readFileSync('./getTime.pkg')], 'getTime.pkg');
+
+const rest = await client.uploadPlugin(file, 'test.txt', {});
+
+console.log(rest);

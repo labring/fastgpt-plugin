@@ -75,7 +75,7 @@ export const makePluginInstallUC =
     const failToInstalled: { fileKey: string; reason: I18nStringType }[] = [];
 
     for await (const { file } of successDownloadedFiles) {
-      const [info, parseErr] = await pluginPKGFileResolver.parsePluginPkg(file, 'system', false);
+      const [info, parseErr] = await pluginPKGFileResolver.parsePluginPkg(file, false);
 
       if (parseErr) {
         failToInstalled.push({

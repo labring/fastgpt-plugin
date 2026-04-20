@@ -2,7 +2,11 @@ import path from 'node:path';
 
 import { addMinutes } from 'date-fns';
 
-import { type PluginTagType, type PluginType, type PluginTypeType } from '@domain/entities/plugin.entity';
+import {
+  type PluginTagType,
+  type PluginType,
+  type PluginTypeType
+} from '@domain/entities/plugin.entity';
 import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';

@@ -2,7 +2,6 @@ import json5 from 'json5';
 
 import type { PluginType } from '@domain/entities/plugin.entity';
 import { ToolSchema, type ToolType } from '@domain/entities/tool.entity';
-import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import {
   PluginManifestBaseSchema,
   ToolManifestSchema,
@@ -16,12 +15,11 @@ type LoadPluginParams = {
   manifest: string;
   etag: string;
   availableFiles: string[];
-  getAccessURL: (arg: {
+  getAccessURL?: (arg: {
     pluginId: string;
     version: string;
     filePath: string[];
   }) => Promise<Result<string>>;
-  source: PluginSourceType;
 };
 
 const resolveAssetURL = async ({
@@ -35,6 +33,13 @@ const resolveAssetURL = async ({
   version: string;
   filePath: string[];
 }): Promise<Result<string>> => {
+  if (!getAccessURL) {
+    return failureResult({
+      en: 'Missing access url resolver',
+      'zh-CN': '缺少访问地址解析器'
+    });
+  }
+
   return getAccessURL({
     pluginId,
     version,
@@ -53,7 +58,7 @@ const loadTool = async ({
   try {
     const availableFileSet = new Set(availableFiles);
     let icon = manifest.icon;
-    if (availableFileSet.has(manifest.icon)) {
+    if (getAccessURL && availableFileSet.has(manifest.icon)) {
       const [resolvedIcon, iconErr] = await resolveAssetURL({
         getAccessURL,
         pluginId: manifest.pluginId,
@@ -73,23 +78,23 @@ const loadTool = async ({
       icon = resolvedIcon;
     }
 
-    const readmeUrl = availableFileSet.has('README.md')
-      ? (
-          await resolveAssetURL({
-            getAccessURL,
-            pluginId: manifest.pluginId,
-            version: manifest.version,
-            filePath: ['README.md']
-          })
-        )[0]
-      : undefined;
+    let readmeUrl: string | undefined;
+    if (getAccessURL && availableFileSet.has('README.md')) {
+      const [resolvedReadmeUrl] = await resolveAssetURL({
+        getAccessURL,
+        pluginId: manifest.pluginId,
+        version: manifest.version,
+        filePath: ['README.md']
+      });
+      readmeUrl = resolvedReadmeUrl ?? undefined;
+    }
 
     let children: ToolType['children'];
     if (manifest.children) {
       children = [];
       for (const childManifest of manifest.children) {
         let childIcon = childManifest.icon;
-        if (availableFileSet.has(childManifest.icon)) {
+        if (getAccessURL && availableFileSet.has(childManifest.icon)) {
           const [resolvedChildIcon, childIconErr] = await resolveAssetURL({
             getAccessURL,
             pluginId: manifest.pluginId,

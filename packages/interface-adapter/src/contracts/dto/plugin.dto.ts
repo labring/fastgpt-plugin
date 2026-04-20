@@ -55,6 +55,17 @@ export const PluginDTOSchema = z.object({
     description: 'Plugin readme URL',
     example: 'https://oss.example.com/getTime/README.md'
   }),
+  repoUrl: z.url().optional().openapi({
+    description: 'Plugin repository URL',
+    example: 'https://git.example.com/example/getTime'
+  }),
+  permission: z
+    .array(z.string())
+    .optional()
+    .openapi({
+      description: 'Plugin permissions',
+      example: ['userInfo:read']
+    }),
   description: I18nStringDTOSchema.optional().openapi({
     description: 'Plugin description',
     example: {
@@ -181,7 +192,7 @@ export const PluginGetParamsSchema = z.object({
     description: 'Plugin version',
     example: '1.0.0'
   }),
-  source: z.string().openapi({
+  source: z.string().optional().default('system').openapi({
     description: 'Plugin source',
     example: 'system'
   })
@@ -216,7 +227,9 @@ export type PluginDTOType = z.infer<typeof PluginDTOSchema>;
 export type PluginDetailDTOType = z.infer<typeof PluginDetailDTOSchema>;
 export type PluginListDTOType = z.infer<typeof PluginListDTOSchema>;
 export type PluginUniqueIdDTOType = z.infer<typeof PluginUniqueIdDTOSchema>;
-export type PluginPruneDisabledResponseDTOType = z.infer<typeof PluginPruneDisabledResponseDTOSchema>;
+export type PluginPruneDisabledResponseDTOType = z.infer<
+  typeof PluginPruneDisabledResponseDTOSchema
+>;
 export type PluginInstallFailureDTOType = z.infer<typeof PluginInstallFailureDTOSchema>;
 export type PluginInstallRequestDTOType = z.infer<typeof PluginInstallDTOSchema.request>;
 export type PluginInstallResponseDTOType = z.infer<typeof PluginInstallDTOSchema.response>;

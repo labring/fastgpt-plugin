@@ -57,15 +57,14 @@ describe('create command', () => {
       cwd: testCwd
     });
     const files = await listCreatedFiles('test-plugin');
-    // 基础文件
-    expect(files).toContain('config.ts');
+    expect(files).toContain('index.ts');
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
+    expect(files).toContain('logo.svg');
+    expect(files).toContain('tsconfig.json');
     expect(files).toContain('vitest.config.ts');
-    // 源码与测试结构
-    expect(files).toContain('src/schemas.ts');
-    expect(files).toContain('src/tool.ts');
-    expect(files).toContain('src/tool.test.ts');
+    expect(files).not.toContain('index.tool.ts');
+    expect(files).not.toContain('index.toolset.ts');
   });
 
   it('应将占位符替换为规范化后的 name 与 description', async () => {
@@ -116,16 +115,17 @@ describe('create command', () => {
       cwd: testCwd
     });
     const files = await listCreatedFiles('my-tool');
-    // 父级配置
-    expect(files).toContain('config.ts');
+    expect(files).toContain('index.ts');
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
+    expect(files).toContain('logo.svg');
+    expect(files).toContain('tsconfig.json');
     expect(files).toContain('vitest.config.ts');
-    // 子工具结构
-    expect(files).toContain('children/tool/config.ts');
-    expect(files).toContain('children/tool/src/schemas.ts');
-    expect(files).toContain('children/tool/src/tool.ts');
-    expect(files).toContain('children/tool/src/tool.test.ts');
+    expect(files).not.toContain('index.tool.ts');
+    expect(files).not.toContain('index.toolset.ts');
+
+    const indexContent = await readFile(path.join(testCwd, 'my-tool', 'index.ts'), 'utf-8');
+    expect(indexContent).toContain('defineToolSet');
   });
 
   it('应能解析 --cwd', async () => {
@@ -146,5 +146,22 @@ describe('create command', () => {
     });
     const files = await listCreatedFiles('foo');
     expect(files.length).toBeGreaterThan(0);
+  });
+
+  it('普通 tool 应使用 index.tool.ts 生成 index.ts', async () => {
+    await run([
+      process.execPath,
+      'cli',
+      'create',
+      'delay-tool',
+      '--type',
+      'tool',
+      '--cwd',
+      testCwd
+    ]);
+
+    const indexContent = await readFile(path.join(testCwd, 'delay-tool', 'index.ts'), 'utf-8');
+    expect(indexContent).toContain('defineTool');
+    expect(indexContent).not.toContain('defineToolSet');
   });
 });

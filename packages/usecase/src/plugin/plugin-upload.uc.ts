@@ -39,11 +39,7 @@ export const makePluginUploadUC =
 
     // 2. upload
     // 2.1. 解析插件信息
-    const [info, parseErr] = await deps.pluginPKGFileResolver.parsePluginPkg(
-      localPkgFile,
-      'system', // 目前指定为 system, 后续开放用户上传，这里需要通过参数传入
-      true
-    );
+    const [info, parseErr] = await deps.pluginPKGFileResolver.parsePluginPkg(localPkgFile, true);
 
     if (parseErr) {
       deps.localFileStorageRepo.delete(localPkgFile.metaData.fileKey); // 删除临时文件
