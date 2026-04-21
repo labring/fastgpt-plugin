@@ -7,25 +7,24 @@ export type VersionKeyStoreDeps = {
 };
 
 export class VersionKeyStore {
-  private static instance: VersionKeyStore;
-  protected versionKeyMap = new Map<string, string>();
+  private versionKeyMap = new Map<string, string>();
 
-  constructor(protected readonly deps: VersionKeyStoreDeps) {}
+  public constructor(
+    private readonly deps: VersionKeyStoreDeps,
+    private prefix: string
+  ) {}
 
-  public static getInstance(deps: VersionKeyStoreDeps): VersionKeyStore {
-    if (!VersionKeyStore.instance) {
-      VersionKeyStore.instance = new VersionKeyStore(deps);
-    }
-    return VersionKeyStore.instance;
+  private generateVersionKey(): string {
+    return randomUUID();
   }
 
-  protected generateVersionKey(): string {
-    return randomUUID();
+  private getRedisKey(key: string): string {
+    return `${this.prefix}:${key}`;
   }
 
   public async isVersionKeyExpired(key: string): Promise<boolean> {
     const localVersionKey = this.versionKeyMap.get(key);
-    const versionKey = await this.deps.redisClient.getClient.get(key);
+    const versionKey = await this.deps.redisClient.getClient.get(this.getRedisKey(key));
     if (!versionKey && !localVersionKey) {
       return false;
     }
@@ -34,7 +33,8 @@ export class VersionKeyStore {
 
   public async refreshVersionKey(key: string): Promise<string> {
     const versionKey = this.generateVersionKey();
-    const result = await this.deps.redisClient.getClient.set(key, versionKey);
+    const result = await this.deps.redisClient.getClient.set(this.getRedisKey(key), versionKey);
+
     if (result === 'OK') {
       this.versionKeyMap.set(key, versionKey);
     }

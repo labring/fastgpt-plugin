@@ -7,7 +7,6 @@
     "pack": "npx @fastgpt-plugin/cli pack"
   },
   "dependencies": {
-    "@fastgpt-plugin/cli": "link:../../../../../cli",
     "zod": "^4"
   },
   "devDependencies": {

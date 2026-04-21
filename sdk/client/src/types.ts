@@ -9,6 +9,7 @@ import type {
   PluginDTOType,
   PluginGetParamsDTOType,
   PluginInstallFailureDTOType,
+  PluginListItemDTOType,
   PluginInstallResponseDTOType,
   PluginListDTOType,
   PluginListParamsDTOType,
@@ -28,7 +29,7 @@ import type {
 } from '@domain/entities/model.entity';
 import type { PluginTagType, PluginTypeType } from '@domain/entities/plugin.entity';
 import type { I18nStringStrictType, I18nStringType } from '@domain/value-objects/i18n-string.vo';
-import type { PluginTagListType, PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
+import type { PluginSourceType, PluginTagListType, PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type { ToolAnswerType, ToolHandlerReturnType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
@@ -41,6 +42,7 @@ export type {
   LLMModelItemType,
   ModelItemType,
   PluginTagListType,
+  PluginSourceType,
   PluginTagType,
   PluginTypeType,
   PluginUniqueIdType,
@@ -59,7 +61,8 @@ export type PluginSummaryType = PluginDTOType;
 export type PluginDetailType = PluginDetailDTOType;
 export type PluginGetParamsType = PluginGetParamsDTOType;
 export type PluginListType = PluginListDTOType;
-export type PluginListParamsType = PluginListParamsDTOType;
+export type PluginListItemType = PluginListItemDTOType;
+export type PluginListParamsType = Partial<PluginListParamsDTOType>;
 export type PluginInstallFailureType = PluginInstallFailureDTOType;
 export type PluginInstallResultType = PluginInstallResponseDTOType;
 export type PluginTagListItemType = PluginTagListType[number];

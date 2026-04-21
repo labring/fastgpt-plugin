@@ -7,11 +7,9 @@ import { env } from '@infrastructure/env';
 import { LocalFileStorageRepo } from '@infrastructure/file-storage/local-file-storage.repo';
 import { RemoteFileStorageRepo } from '@infrastructure/file-storage/remote-file-storage.repo';
 import { FileTTLManager } from '@infrastructure/file-ttl/file-ttl.impl';
-// import { PluginManager } from '@infrastructure/plugin/pl';
 import { PluginRepo } from '@infrastructure/plugin/plugin.repo';
 import { ToolManager } from '@infrastructure/plugin/tool.impl';
 import { RedisClient } from '@infrastructure/redis/redis-client';
-import { VersionKeyStore } from '@infrastructure/redis/version-key';
 import { MongoClient } from '@infrastructure/storage/mongo/index';
 import { createS3Clients } from '@infrastructure/storage/s3';
 import { URLFileFetcher } from '@infrastructure/utils/url-file-fetcher';
@@ -45,7 +43,7 @@ export const invokeUploadFileHandler = createInvokeUploadFileHandler({
   basePath: path.join(env.S3_FILE_BASE_PATH, 'invoke')
 });
 
-export const pluginRepo = new PluginRepo({
+export const pluginRepo = PluginRepo.getInstance({
   localFileStorageRepo,
   mongoClient,
   privateRemoteFileStorageRepo,
@@ -61,14 +59,10 @@ export const pluginPKGFileResolver = new PluginPKFFileResolver({
 export const urlFileFetcher = new URLFileFetcher();
 export const redisClient = RedisClient.getInstance();
 
-const versionKeyStore = new VersionKeyStore({
-  redisClient
-});
-
 const localPoolPluginRuntimeManager = LocalPoolPluginRuntimeManager.getInstance({
   pluginRepo,
   mongoClient,
-  versionKeyStore
+  redisClient
 });
 
 export const pluginRuntimeManager = localPoolPluginRuntimeManager;

@@ -2,16 +2,18 @@ import path from 'node:path';
 
 import { addMinutes } from 'date-fns';
 
-import {
-  type PluginTagType,
-  type PluginType,
-  type PluginTypeType
-} from '@domain/entities/plugin.entity';
+import { type PluginType } from '@domain/entities/plugin.entity';
 import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import type { FileTTLPort } from '@domain/ports/file-ttl.port';
-import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
+import type {
+  PluginListInputType,
+  PluginListItemType,
+  PluginListOutputType,
+  PluginRepoPort
+} from '@domain/ports/plugin/plugin-repo.port';
+import { PluginListItemSchema } from '@domain/ports/plugin/plugin-repo.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import {
@@ -21,6 +23,8 @@ import {
   type UserPluginIdType
 } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import type { RedisClient } from '@infrastructure/redis/redis-client';
+import { VersionKeyStore } from '@infrastructure/redis/version-key';
 import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
 import type { MongoPluginSchemaType } from '@infrastructure/storage/mongo/models/plugin.model';
 
@@ -115,7 +119,7 @@ export class PluginRepo implements PluginRepoPort {
     return path.join(...array);
   }
 
-  constructor(private readonly deps: PluginRepoDeps) {}
+  private constructor(private readonly deps: PluginRepoDeps) {}
 
   async getPluginByUserPluginId({
     pluginId,
@@ -139,9 +143,7 @@ export class PluginRepo implements PluginRepoPort {
             plugin: MongoPluginSchemaType;
           }>('plugin')
           .lean()
-          .then((items) =>
-            items.sort((a, b) => this.compareVersions(b.version, a.version))[0]
-          );
+          .then((items) => items.sort((a, b) => this.compareVersions(b.version, a.version))[0]);
 
     if (plugin) {
       return successResult(this.toDomainPlugin(plugin.plugin));
@@ -301,32 +303,164 @@ export class PluginRepo implements PluginRepoPort {
   async list({
     op,
     types,
-    tags
-  }: {
-    types?: PluginTypeType[];
-    tags?: PluginTagType[];
-    op?: 'or' | 'and';
-  }): Promise<Result<PluginType[]>> {
+    tags,
+    sources
+  }: PluginListInputType): Promise<Result<PluginListOutputType>> {
     try {
-      const conditions = [{ status: PluginStatusEnum.active }] as Array<Record<string, unknown>>;
+      const normalizedSources = sources && sources.length > 0 ? sources : ['system'];
+      const pluginInstallationModel = this.deps.mongoClient.getModel('pluginInstallation');
+      const pluginModel = this.deps.mongoClient.getModel('plugin');
+      const installations = await pluginInstallationModel
+        .find(
+          {
+            source: { $in: normalizedSources }
+          },
+          {
+            _id: 0,
+            source: 1,
+            pluginId: 1,
+            version: 1,
+            pluginObjectId: 1
+          }
+        )
+        .lean();
+
+      const latestInstallationMap = new Map<
+        string,
+        {
+          source: string;
+          pluginId: string;
+          version: string;
+          pluginObjectId?: unknown;
+        }
+      >();
+
+      for (const installation of installations) {
+        if (!installation.pluginObjectId) {
+          continue;
+        }
+
+        const key = `${installation.source}::${installation.pluginId}`;
+        const existingInstallation = latestInstallationMap.get(key);
+
+        if (
+          !existingInstallation ||
+          this.compareVersions(installation.version, existingInstallation.version) > 0
+        ) {
+          latestInstallationMap.set(key, installation);
+        }
+      }
+
+      const latestInstallations = Array.from(latestInstallationMap.values()).sort((a, b) => {
+        const sourceCompare = a.source.localeCompare(b.source);
+        if (sourceCompare !== 0) {
+          return sourceCompare;
+        }
+        return a.pluginId.localeCompare(b.pluginId);
+      });
+
+      if (latestInstallations.length === 0) {
+        return successResult([]);
+      }
+
+      const latestPluginObjectIds = Array.from(
+        latestInstallations
+          .reduce((map, item) => {
+            map.set(String(item.pluginObjectId), item.pluginObjectId);
+            return map;
+          }, new Map<string, unknown>())
+          .values()
+      );
+      const filterConditions = [] as Array<Record<string, unknown>>;
 
       if (types && types.length > 0) {
-        conditions.push({ type: { $in: types } });
+        filterConditions.push({ type: { $in: types } });
       }
 
       if (tags && tags.length > 0) {
-        conditions.push({ tags: { $in: tags } });
+        filterConditions.push({ tags: { $in: tags } });
       }
 
-      const query =
-        conditions.length === 0
-          ? {}
-          : op === 'or'
-            ? { $or: conditions }
-            : Object.assign({}, ...conditions);
+      const query: Record<string, unknown> = {
+        _id: { $in: latestPluginObjectIds },
+        status: PluginStatusEnum.active
+      };
 
-      const results = await this.deps.mongoClient.getModel('plugin').find(query).lean();
-      return successResult(results.map((result) => this.toDomainPlugin(result)));
+      if (filterConditions.length > 0) {
+        if (op === 'or') {
+          query.$or = filterConditions;
+        } else {
+          Object.assign(query, ...filterConditions);
+        }
+      }
+
+      const plugins = await pluginModel
+        .find(query, {
+          pluginId: 1,
+          version: 1,
+          etag: 1,
+          type: 1,
+          author: 1,
+          name: 1,
+          icon: 1,
+          tutorialUrl: 1,
+          readmeUrl: 1,
+          repoUrl: 1,
+          description: 1,
+          tags: 1
+        })
+        .lean();
+
+      const pluginMap = new Map<
+        string,
+        {
+          pluginId: string;
+          version: string;
+          etag: string;
+          type: string;
+          author?: string;
+          name: unknown;
+          icon: string;
+          tutorialUrl?: string;
+          readmeUrl?: string;
+          repoUrl?: string;
+          description: unknown;
+          tags?: string[];
+        }
+      >();
+
+      for (const plugin of plugins) {
+        pluginMap.set(String(plugin._id), {
+          pluginId: plugin.pluginId,
+          version: plugin.version,
+          etag: plugin.etag,
+          type: plugin.type,
+          author: plugin.author ?? undefined,
+          name: plugin.name,
+          icon: plugin.icon,
+          tutorialUrl: plugin.tutorialUrl ?? undefined,
+          readmeUrl: plugin.readmeUrl ?? undefined,
+          repoUrl: plugin.repoUrl ?? undefined,
+          description: plugin.description,
+          tags: plugin.tags ?? undefined
+        });
+      }
+
+      const filteredItems = latestInstallations.flatMap<PluginListItemType>((installation) => {
+        const plugin = pluginMap.get(String(installation.pluginObjectId));
+        if (!plugin) {
+          return [];
+        }
+
+        return [
+          PluginListItemSchema.parse({
+            ...plugin,
+            source: installation.source
+          })
+        ];
+      });
+
+      return successResult(filteredItems);
     } catch (error) {
       return failureResult({ en: 'Failed to list plugins', 'zh-CN': '获取插件列表失败' }, error);
     }
@@ -487,12 +621,9 @@ export class PluginRepo implements PluginRepoPort {
 
     try {
       const existingPlugin = await pluginModel
-        .findOne(
-          uniqueId,
-          {
-            status: true
-          }
-        )
+        .findOne(uniqueId, {
+          status: true
+        })
         .lean();
 
       if (existingPlugin) {

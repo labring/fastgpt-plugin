@@ -16,10 +16,11 @@ import type {
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
+import type { RedisClient } from '@infrastructure/redis/redis-client';
 
 import { env } from '../../../../env';
 import { getLogger, mod } from '../../../../logger';
-import type { VersionKeyStore } from '../../../../redis/version-key';
+import { VersionKeyStore } from '../../../../redis/version-key';
 import type { MongoClient } from '../../../../storage/mongo';
 import { PluginRuntimeConfigRepo } from '../../plugin-runtime-config.repo';
 
@@ -33,9 +34,10 @@ import type {
   LocalPoolPluginItemType,
   ServiceMetrics
 } from './types';
+
 export type LocalPoolPluginRuntimeManagerDeps = {
-  versionKeyStore: VersionKeyStore;
   mongoClient: MongoClient;
+  redisClient: RedisClient;
   pluginRepo: PluginRepoPort;
 };
 
@@ -54,6 +56,7 @@ export class LocalPoolPluginRuntimeManager
   private readonly plugins = new Map<string, LocalPoolPluginItemType>();
   /** key: pluginId, value: 这个 pluginId 对印的所有 id */
   private readonly pluginIdMap = new Map<string, string[]>();
+  private versionKeyStore: VersionKeyStore;
 
   /** 插件运行时配置仓储 */
   private readonly configRepo: PluginRuntimeConfigRepo<LocalPoolPluginConfigType>;
@@ -78,6 +81,12 @@ export class LocalPoolPluginRuntimeManager
       healthCheckInterval: env.POOL_HEALTH_CHECK_INTERVAL,
       maxTotalPods: env.POOL_MAX_TOTAL_PODS
     };
+    this.versionKeyStore = new VersionKeyStore(
+      {
+        redisClient: this.deps.redisClient
+      },
+      'plugin-runtime'
+    );
     this.configRepo = new PluginRuntimeConfigRepo(
       {
         mongoClient: this.deps.mongoClient
@@ -112,7 +121,7 @@ export class LocalPoolPluginRuntimeManager
    */
   private async getPlugin(uniqueId: PluginUniqueIdType) {
     const runtimeId = this.getRuntimeId(uniqueId);
-    if (await this.deps.versionKeyStore.isVersionKeyExpired(runtimeId)) {
+    if (await this.versionKeyStore.isVersionKeyExpired(runtimeId)) {
       // 缓存过期，获取新数据
 
       // 1. 获取旧 service, 停机

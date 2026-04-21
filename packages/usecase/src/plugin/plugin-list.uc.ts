@@ -5,8 +5,11 @@
  * Author：FinleyGe
  */
 
-import type { PluginTagType, PluginType, PluginTypeType } from '@domain/entities/plugin.entity';
-import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
+import type {
+  PluginListInputType,
+  PluginListOutputType,
+  PluginRepoPort
+} from '@domain/ports/plugin/plugin-repo.port';
 import type { Result } from '@domain/value-objects/result.vo';
 /** Dependencies */
 type Deps = {
@@ -14,21 +17,13 @@ type Deps = {
 };
 
 /** Input Type*/
-type Input = {
-  types?: PluginTypeType[];
-  tags?: PluginTagType[];
-  op?: 'or' | 'and';
-};
+type Input = PluginListInputType;
 
 /** Output Type */
-type Output = Promise<Result<PluginType[]>>;
+type Output = Promise<Result<PluginListOutputType>>;
 
 export const makePluginListUC =
   ({ pluginRepo }: Deps) =>
-  async ({ op, tags, types }: Input): Output => {
-    return pluginRepo.list({
-      types,
-      op,
-      tags
-    });
+  async (input: Input): Output => {
+    return pluginRepo.list(input);
   };

@@ -24,7 +24,7 @@ const tool = defineTool({
       'zh-CN': '获取时间'
     },
     pluginId: 'getTime',
-    version: '1.0.0',
+    version: '2.0.0',
     versionDescription: {
       en: 'Initial version',
       'zh-CN': '初始版本'

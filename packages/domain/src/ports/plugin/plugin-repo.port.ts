@@ -1,12 +1,44 @@
-import type { PluginTagType, PluginType, PluginTypeType } from '../../entities/plugin.entity';
+import z from 'zod';
+
+import {
+  PluginBaseSchema,
+  type PluginTagType,
+  type PluginType,
+  type PluginTypeType
+} from '../../entities/plugin.entity';
 import type { FileObject } from '../../value-objects/file/file-object.vo';
 import type { PkgContentFileObjects } from '../../value-objects/file/pkg-file.vo';
-import type {
-  PluginTagListType,
-  PluginUniqueIdType,
-  UserPluginIdType
+import {
+  PluginSourceSchema,
+  type PluginSourceType,
+  type PluginTagListType,
+  type PluginUniqueIdType,
+  type UserPluginIdType
 } from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
+
+export const PluginListItemSchema = z.object({
+  ...PluginBaseSchema.omit({
+    versionDescription: true,
+    permission: true
+  }).shape,
+  source: PluginSourceSchema
+});
+
+export type PluginListItemType = z.infer<typeof PluginListItemSchema>;
+
+export type PluginListInputType = {
+  /** 筛选类型 */
+  types?: PluginTypeType[]; // 筛选 type
+  /** 筛选标签 */
+  tags?: PluginTagType[]; // 筛选 tag
+  /** 操作符，默认为 or */
+  op?: 'or' | 'and'; // 默认为 or
+  /** 插件来源，默认只拉取 system 的*/
+  sources?: PluginSourceType[];
+};
+
+export type PluginListOutputType = PluginListItemType[];
 
 /** 操作 Plugin S3, Mongo，本地缓存, 代码里面的静态配置 ...*/
 export interface PluginRepoPort {
@@ -31,11 +63,7 @@ export interface PluginRepoPort {
   getPluginByUserPluginId(userPluginId: UserPluginIdType): Promise<Result<PluginType>>;
 
   /** 列出所有插件 */
-  list(arg: {
-    types?: PluginTypeType[];
-    tags?: PluginTagType[];
-    op?: 'or' | 'and';
-  }): Promise<Result<PluginType[]>>;
+  list(arg: PluginListInputType): Promise<Result<PluginListOutputType>>;
   listActive(): Promise<Result<PluginType[]>>;
   pruneDisabled(): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>>;
 

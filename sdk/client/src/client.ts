@@ -4,7 +4,7 @@ import {
   PluginGetParamsSchema,
   PluginInstallDTOSchema,
   PluginRuntimeConfigGetParamsSchema,
-  PluginRuntimeConfigSetParamsSchema,
+  PluginRuntimeConfigSetParamsSchema
 } from '@interface-adapter/contracts/dto/plugin.dto';
 import { ToolRunInputDTOSchema } from '@interface-adapter/contracts/dto/tool.dto';
 import { ModelContract } from '@interface-adapter/contracts/route/model.contract';

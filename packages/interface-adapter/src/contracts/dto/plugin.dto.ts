@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 
-import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin.entity';
-import { ToolSchema } from '@domain/entities/tool.entity';
+import { PluginSchema, PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin.entity';
 import { I18nStringSchema, I18nStringStrictSchema } from '@domain/value-objects/i18n-string.vo';
+import { PluginSourceSchema } from '@domain/value-objects/plugin.vo';
 
 import { I18nStringDTOSchema } from './common.dto';
 
@@ -15,7 +15,7 @@ const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
     return Array.isArray(value) ? value : [value];
   }, z.array(schema).optional());
 
-export const PluginDTOSchema = z.object({
+export const PluginBaseDTOSchema = z.object({
   pluginId: z.string().openapi({
     description: 'Plugin ID',
     example: 'getTime'
@@ -83,11 +83,25 @@ export const PluginDTOSchema = z.object({
   versionDescription: I18nStringSchema.optional().describe('Plugin version description')
 });
 
-export const PluginListDTOSchema = z.array(PluginDTOSchema).openapi({
-  description: 'Plugin list'
+export const PluginListItemDTOSchema = PluginBaseDTOSchema.omit({
+  versionDescription: true,
+  permission: true
+})
+  .extend({
+    source: z.string().openapi({
+      description: 'Plugin source',
+      example: 'system'
+    })
+  })
+  .openapi({
+    description: 'Plugin list item'
+  });
+
+export const PluginListDTOSchema = z.array(PluginListItemDTOSchema).openapi({
+  description: 'Plugin List'
 });
 
-export const PluginDetailDTOSchema = z.object(ToolSchema.shape).openapi({
+export const PluginDetailDTOSchema = z.object(PluginSchema.shape).openapi({
   description: 'Plugin detail'
 });
 
@@ -121,16 +135,19 @@ export const PluginUniqueIdDTOSchema = z.object({
 });
 
 export const PluginConfirmParamsSchema = z.object({
-  uniqueIds: z.array(PluginUniqueIdDTOSchema).min(1).openapi({
-    description: 'Plugin unique id list',
-    example: [
-      {
-        pluginId: 'getTime',
-        version: '1.0.0',
-        etag: '12345678'
-      }
-    ]
-  })
+  uniqueIds: z
+    .array(PluginUniqueIdDTOSchema)
+    .min(1)
+    .openapi({
+      description: 'Plugin unique id list',
+      example: [
+        {
+          pluginId: 'getTime',
+          version: '1.0.0',
+          etag: '12345678'
+        }
+      ]
+    })
 });
 
 export const PluginPruneDisabledResponseDTOSchema = z.object({
@@ -193,6 +210,10 @@ export const PluginListParamsSchema = z.object({
   op: z.enum(['or', 'and']).optional().openapi({
     description: 'Filter operator for tags and types',
     example: 'or'
+  }),
+  sources: arrayQueryParam(PluginSourceSchema).openapi({
+    description: 'Filter by plugin sources',
+    example: ['system', 'market']
   })
 });
 
@@ -201,7 +222,7 @@ export const PluginGetParamsSchema = z.object({
     description: 'Plugin ID',
     example: 'getTime'
   }),
-  version: z.string().openapi({
+  version: z.string().optional().openapi({
     description: 'Plugin version',
     example: '1.0.0'
   }),
@@ -236,9 +257,10 @@ export const PluginRuntimeConfigSetParamsSchema = z.object({
   config: PluginRuntimeConfigSchema
 });
 
-export type PluginDTOType = z.infer<typeof PluginDTOSchema>;
+export type PluginDTOType = z.infer<typeof PluginBaseDTOSchema>;
 export type PluginDetailDTOType = z.infer<typeof PluginDetailDTOSchema>;
 export type PluginListDTOType = z.infer<typeof PluginListDTOSchema>;
+export type PluginListItemDTOType = z.infer<typeof PluginListItemDTOSchema>;
 export type PluginUniqueIdDTOType = z.infer<typeof PluginUniqueIdDTOSchema>;
 export type PluginConfirmParamsDTOType = z.infer<typeof PluginConfirmParamsSchema>;
 export type PluginPruneDisabledResponseDTOType = z.infer<
