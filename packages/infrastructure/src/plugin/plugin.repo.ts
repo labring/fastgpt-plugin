@@ -191,9 +191,8 @@ export class PluginRepo implements PluginRepoPort {
         .lean();
 
       const versions = installations
-        .filter(
-          (item): item is typeof item & { plugin: MongoPluginSchemaType } =>
-            Boolean(item.pluginObjectId && item.plugin)
+        .filter((item): item is typeof item & { plugin: MongoPluginSchemaType } =>
+          Boolean(item.pluginObjectId && item.plugin)
         )
         .sort((a, b) => this.compareVersions(b.version, a.version))
         .map((item) => {

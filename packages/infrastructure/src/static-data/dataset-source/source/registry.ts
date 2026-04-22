@@ -2,7 +2,8 @@ import type {
   DatasetSourceConfig,
   DatasetSourceId,
   FileContentResponse,
-  FileItem} from '../type/source';
+  FileItem
+} from '../type/source';
 
 // 数据源回调接口
 export type DatasetSourceCallbacks = {

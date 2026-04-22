@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-import { type DatasetSourceCallbacks,defineSource } from '../../source/registry';
-import type { FileContentResponse,FileItem } from '../../type/source';
+import { type DatasetSourceCallbacks, defineSource } from '../../source/registry';
+import type { FileContentResponse, FileItem } from '../../type/source';
 
-import { type CustomApiConfig,customApiConfig, CustomApiConfigSchema } from './config';
+import { type CustomApiConfig, customApiConfig, CustomApiConfigSchema } from './config';
 
 const ResponseDataSchema = z.object({
   success: z.boolean(),

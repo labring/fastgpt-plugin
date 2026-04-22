@@ -8,6 +8,7 @@ import {
 } from '../../entities/plugin.entity';
 import type { FileObject } from '../../value-objects/file/file-object.vo';
 import type { PkgContentFileObjects } from '../../value-objects/file/pkg-file.vo';
+import { I18nStringSchema } from '../../value-objects/i18n-string.vo';
 import {
   PluginSourceSchema,
   type PluginSourceType,
@@ -15,7 +16,6 @@ import {
   type PluginUniqueIdType,
   type UserPluginIdType
 } from '../../value-objects/plugin.vo';
-import { I18nStringSchema } from '../../value-objects/i18n-string.vo';
 import type { Result } from '../../value-objects/result.vo';
 
 export const PluginListItemSchema = z.object({

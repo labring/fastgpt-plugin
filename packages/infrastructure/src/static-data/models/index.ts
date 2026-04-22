@@ -1,9 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
-import {
-  ModelItemSchema,
-  type ModelItemType,
-  ModelTypeEnum} from '@domain/entities/model.entity';
+import { ModelItemSchema, type ModelItemType, ModelTypeEnum } from '@domain/entities/model.entity';
 import type { I18nStringStrictType } from '@domain/value-objects/i18n-string.vo';
 
 import ai360 from './provider/ai360';
@@ -39,7 +36,7 @@ import siliconflow from './provider/Siliconflow';
 import sparkdesk from './provider/SparkDesk';
 import stepfun from './provider/StepFun';
 import yi from './provider/Yi';
-import { aiproxyIdMap,ModelProviderMap, ModelProviders } from './model';
+import { aiproxyIdMap, ModelProviderMap, ModelProviders } from './model';
 import type { ProviderConfigType } from './type';
 
 export const staticModelDataDir = fileURLToPath(new URL('./', import.meta.url));

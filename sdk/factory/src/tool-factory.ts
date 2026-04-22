@@ -151,13 +151,8 @@ export class ToolFactory extends PluginFactory {
     }
   }
 
-  private static instance: ToolFactory;
-
   static getInstance(userToolManifest: UserToolManifestType): ToolFactory {
-    if (!ToolFactory.instance) {
-      ToolFactory.instance = new ToolFactory(userToolManifest);
-    }
-    return ToolFactory.instance;
+    return new ToolFactory(userToolManifest);
   }
 
   public getSecretSchema() {
