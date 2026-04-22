@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 
-import { PluginSchema, PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin.entity';
+import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin.entity';
 import { I18nStringSchema, I18nStringStrictSchema } from '@domain/value-objects/i18n-string.vo';
 import { PluginSourceSchema } from '@domain/value-objects/plugin.vo';
 
@@ -99,10 +99,6 @@ export const PluginListItemDTOSchema = PluginBaseDTOSchema.omit({
 
 export const PluginListDTOSchema = z.array(PluginListItemDTOSchema).openapi({
   description: 'Plugin List'
-});
-
-export const PluginDetailDTOSchema = z.object(PluginSchema.shape).openapi({
-  description: 'Plugin detail'
 });
 
 export const PluginUploadParamsSchema = z
@@ -217,21 +213,6 @@ export const PluginListParamsSchema = z.object({
   })
 });
 
-export const PluginGetParamsSchema = z.object({
-  pluginId: z.string().openapi({
-    description: 'Plugin ID',
-    example: 'getTime'
-  }),
-  version: z.string().optional().openapi({
-    description: 'Plugin version',
-    example: '1.0.0'
-  }),
-  source: z.string().optional().default('system').openapi({
-    description: 'Plugin source',
-    example: 'system'
-  })
-});
-
 export const PluginVersionItemDTOSchema = z.object({
   version: z.string().openapi({
     description: 'Plugin version',
@@ -287,7 +268,6 @@ export const PluginRuntimeConfigSetParamsSchema = z.object({
 });
 
 export type PluginDTOType = z.infer<typeof PluginBaseDTOSchema>;
-export type PluginDetailDTOType = z.infer<typeof PluginDetailDTOSchema>;
 export type PluginListDTOType = z.infer<typeof PluginListDTOSchema>;
 export type PluginListItemDTOType = z.infer<typeof PluginListItemDTOSchema>;
 export type PluginUniqueIdDTOType = z.infer<typeof PluginUniqueIdDTOSchema>;
@@ -298,7 +278,6 @@ export type PluginPruneDisabledResponseDTOType = z.infer<
 export type PluginInstallFailureDTOType = z.infer<typeof PluginInstallFailureDTOSchema>;
 export type PluginInstallRequestDTOType = z.infer<typeof PluginInstallDTOSchema.request>;
 export type PluginInstallResponseDTOType = z.infer<typeof PluginInstallDTOSchema.response>;
-export type PluginGetParamsDTOType = z.infer<typeof PluginGetParamsSchema>;
 export type PluginListParamsDTOType = z.infer<typeof PluginListParamsSchema>;
 export type PluginVersionItemDTOType = z.infer<typeof PluginVersionItemDTOSchema>;
 export type PluginVersionListDTOType = z.infer<typeof PluginVersionListDTOSchema>;

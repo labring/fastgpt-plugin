@@ -4,8 +4,6 @@ import { defineContract, emptyResponse, jsonResponse } from '../contract.type';
 import {
   PluginBaseDTOSchema,
   PluginConfirmParamsSchema,
-  PluginDetailDTOSchema,
-  PluginGetParamsSchema,
   PluginInstallDTOSchema,
   PluginListDTOSchema,
   PluginListParamsSchema,
@@ -83,22 +81,6 @@ export const PluginContract = {
     response: {
       200: jsonResponse({ data: PluginInstallDTOSchema.response }),
       500: jsonResponse({ error: I18nStringSchema })
-    }
-  }),
-  Get: defineContract({
-    meta: {
-      method: 'get',
-      path: '/plugin',
-      operationId: 'plugin.get',
-      description: 'Get a plugin by pluginId, version and source',
-      summary: 'Get plugin detail',
-      tags: ['plugin'],
-      security: authToken
-    },
-    request: PluginGetParamsSchema,
-    response: {
-      200: jsonResponse({ data: PluginDetailDTOSchema }),
-      404: jsonResponse({ error: I18nStringSchema })
     }
   }),
   List: defineContract({
