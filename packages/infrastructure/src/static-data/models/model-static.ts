@@ -43,7 +43,8 @@ export { aiproxyIdMap, staticModelList as modelList };
 export const getSortedModelProviders = (priority = env.MODEL_PROVIDER_PRIORITY) =>
   getSortedStaticModelProviders(priority);
 
-const getModelLogoFileKey = (providerName: string) => path.posix.join('models', providerName, 'logo');
+const getModelLogoFileKey = (providerName: string) =>
+  path.posix.join('models', providerName, 'logo');
 const getModelLogoObjectKey = (providerName: string) =>
   path.posix.join(MODEL_LOGO_BASE_PATH, providerName, 'logo');
 

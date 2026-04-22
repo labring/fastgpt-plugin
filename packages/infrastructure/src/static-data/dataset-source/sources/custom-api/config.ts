@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { getDatasetSourceAvatarUrl, getDatasetSourceOutlineAvatarUrl } from '../../dataset.init';
-import { type DatasetSourceConfig,DatasetSourceIdEnum } from '../../type/source';
+import { type DatasetSourceConfig, DatasetSourceIdEnum } from '../../type/source';
 
 const SOURCE_ID = DatasetSourceIdEnum.enum['custom-api'];
 

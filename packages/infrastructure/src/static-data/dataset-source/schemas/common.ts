@@ -3,7 +3,8 @@ import {
   DatasetSourceIdEnum as BaseDatasetSourceIdEnum,
   DatasetSourceInfoSchema as BaseDatasetSourceInfoSchema,
   FileContentResponseSchema as BaseFileContentResponseSchema,
-  FileItemSchema as BaseFileItemSchema} from '@fastgpt-plugin/helpers/datasets/schemas';
+  FileItemSchema as BaseFileItemSchema
+} from '@fastgpt-plugin/helpers/datasets/schemas';
 import { z } from '@hono/zod-openapi';
 
 // Convert base schemas to OpenAPI schemas
@@ -54,4 +55,5 @@ export type {
   FileContentResponse,
   FileItem,
   FormFieldConfig,
-  FormFieldType} from '@fastgpt-plugin/helpers/datasets/schemas';
+  FormFieldType
+} from '@fastgpt-plugin/helpers/datasets/schemas';

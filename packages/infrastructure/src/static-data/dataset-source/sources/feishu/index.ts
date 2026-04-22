@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-import { type DatasetSourceCallbacks,defineSource } from '../../source/registry';
-import type { FileContentResponse,FileItem } from '../../type/source';
+import { type DatasetSourceCallbacks, defineSource } from '../../source/registry';
+import type { FileContentResponse, FileItem } from '../../type/source';
 
-import { type FeishuConfig,feishuConfig, FeishuConfigSchema } from './config';
+import { type FeishuConfig, feishuConfig, FeishuConfigSchema } from './config';
 
 const FEISHU_BASE_URL = process.env.FEISHU_BASE_URL || 'https://open.feishu.cn';
 
