@@ -10,17 +10,16 @@ import {
   type InvokeUploadFileOutputType
 } from '@domain/ports/invoke.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
-import {
-  HOST_INVOKE_METHOD,
-  type PluginIpcChannel
-} from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
+import { HOST_INVOKE_METHOD } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
+
+import type { PluginRuntimeChannel } from './runtime-channel.type';
 
 /**
  * 实现反向调用的 Client 侧方法
  */
 export class InvokeClient implements InvokePort {
   constructor(
-    private channel: PluginIpcChannel,
+    private channel: PluginRuntimeChannel,
     private readonly options: { invocationId?: string } = {}
   ) {}
 

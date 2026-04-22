@@ -9,9 +9,9 @@ import type {
   PluginDTOType,
   PluginGetParamsDTOType,
   PluginInstallFailureDTOType,
-  PluginListItemDTOType,
   PluginInstallResponseDTOType,
   PluginListDTOType,
+  PluginListItemDTOType,
   PluginListParamsDTOType,
   PluginPruneDisabledResponseDTOType,
   PluginRuntimeConfigDTOType,
@@ -20,7 +20,10 @@ import type {
   PluginVersionListParamsDTOType
 } from '@interface-adapter/contracts/dto/plugin.dto';
 import type { ToolRunInputDTOType } from '@interface-adapter/contracts/dto/tool.dto';
-import type { WorkflowListDTOType, WorkflowTemplateDTOType } from '@interface-adapter/contracts/dto/workflow.dto';
+import type {
+  WorkflowListDTOType,
+  WorkflowTemplateDTOType
+} from '@interface-adapter/contracts/dto/workflow.dto';
 
 import type {
   EmbeddingModelItemType,
@@ -32,9 +35,17 @@ import type {
 } from '@domain/entities/model.entity';
 import type { PluginTagType, PluginTypeType } from '@domain/entities/plugin.entity';
 import type { I18nStringStrictType, I18nStringType } from '@domain/value-objects/i18n-string.vo';
-import type { PluginSourceType, PluginTagListType, PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
+import type {
+  PluginSourceType,
+  PluginTagListType,
+  PluginUniqueIdType
+} from '@domain/value-objects/plugin.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolAnswerType, ToolHandlerReturnType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import type {
+  ToolAnswerType,
+  ToolHandlerReturnType,
+  ToolStreamMessageType
+} from '@domain/value-objects/tool.vo';
 
 export type JsonObject = Record<string, unknown>;
 
@@ -44,8 +55,8 @@ export type {
   I18nStringType,
   LLMModelItemType,
   ModelItemType,
-  PluginTagListType,
   PluginSourceType,
+  PluginTagListType,
   PluginTagType,
   PluginTypeType,
   PluginUniqueIdType,

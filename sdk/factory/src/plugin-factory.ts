@@ -1,8 +1,11 @@
 import { PluginRuntimeModeEnum, type PluginRuntimeModeType } from '@domain/value-objects/plugin.vo';
+import { createCurrentProcessIpcChannel } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
+
 import {
-  createCurrentProcessIpcChannel,
-  PluginIpcChannel
-} from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
+  LOCAL_DEBUG_RUNTIME_GLOBAL_KEY,
+  type LocalDebugRuntimeLike,
+  type PluginRuntimeChannel
+} from './runtime-channel.type';
 
 // export type PluginFactoryDeps = {};
 
@@ -11,7 +14,7 @@ import {
  * 不要直接实例化这个类，而是继承它来创建具体的 PluginFactory
  */
 export class PluginFactory {
-  private channel: PluginIpcChannel | undefined;
+  private channel: PluginRuntimeChannel | undefined;
 
   protected getChannel() {
     if (!this.channel) {
@@ -26,7 +29,9 @@ export class PluginFactory {
     if (process.env.RUNTIME_MODE == PluginRuntimeModeEnum.localPool) {
       this.mode = PluginRuntimeModeEnum.localPool;
     }
-    // if no RUNTIME_MODE, running in local dev.
+    if (process.env.RUNTIME_MODE === 'dev') {
+      this.mode = 'dev';
+    }
   }
 
   protected async init() {
@@ -38,17 +43,25 @@ export class PluginFactory {
       setImmediate(() => this.getChannel().sendReady());
     }
     if (this.mode === 'dev') {
-      // TODO: 后续提供完全功能的本地 dev 调试工具
-      this.channel = {
-        setRequestHandler: (handler) => {
-          console.log('[Local Dev] Request handler registered:', handler);
-        }
-      } as PluginIpcChannel;
-      console.log('[Local Dev] Plugin initialized successfully.');
+      this.channel = getCurrentLocalDebugRuntime().pluginChannel;
+      setImmediate(() => this.getChannel().sendReady());
     }
   }
 
   protected constructor() {
-    this.init();
+    void this.init();
   }
+}
+
+function getCurrentLocalDebugRuntime(): LocalDebugRuntimeLike {
+  const store = globalThis as typeof globalThis & {
+    [LOCAL_DEBUG_RUNTIME_GLOBAL_KEY]?: LocalDebugRuntimeLike;
+  };
+  const runtime = store[LOCAL_DEBUG_RUNTIME_GLOBAL_KEY];
+
+  if (!runtime) {
+    throw new Error('Local debug runtime is not initialized. Set it before importing the plugin.');
+  }
+
+  return runtime;
 }

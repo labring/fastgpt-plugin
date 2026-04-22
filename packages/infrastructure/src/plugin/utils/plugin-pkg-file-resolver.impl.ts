@@ -6,7 +6,7 @@ import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
-import { parsePkg, type ParsedPkgFile } from './pkg-parser';
+import { type ParsedPkgFile, parsePkg } from './pkg-parser';
 
 export type PluginFileResolverDeps = {
   localFileStorageRepo: LocalFileStoragePort;
@@ -66,7 +66,10 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
 
     const [index, indexErr] = await this.saveParsedFile(parsed.files.index);
     if (indexErr) {
-      return failureResult({ en: 'save extracted file error', 'zh-CN': '保存提取文件错误' }, indexErr);
+      return failureResult(
+        { en: 'save extracted file error', 'zh-CN': '保存提取文件错误' },
+        indexErr
+      );
     }
 
     const [manifest, manifestErr] = await this.saveParsedFile(parsed.files.manifest);
