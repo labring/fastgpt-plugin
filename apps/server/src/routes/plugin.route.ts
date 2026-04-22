@@ -13,6 +13,7 @@ import { makePluginListUC } from '@usecase/plugin/plugin-list.uc';
 import { makePluginPruneDisabledUC } from '@usecase/plugin/plugin-prune-disabled.uc';
 import { makePluginTagListUC } from '@usecase/plugin/plugin-tag-list.uc';
 import { makePluginUploadUC, type PluginUploadUCDeps } from '@usecase/plugin/plugin-upload.uc';
+import { makePluginVersionsUC } from '@usecase/plugin/plugin-versions.uc';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 
 export type PluginRouteDeps = PluginInstallUCDeps &
@@ -276,6 +277,44 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const pluginListUC = makePluginListUC(deps);
       const query = c.req.valid('query');
       const [result, err] = await pluginListUC(query);
+
+      if (err) {
+        return R.fail(c, 500, err.reason);
+      }
+
+      return R.success(c, result);
+    }
+  );
+
+  route.openapi(
+    createRoute({
+      ...PluginContract.Versions.meta,
+      request: {
+        query: PluginContract.Versions.request
+      },
+      responses: {
+        200: {
+          description: 'HTTP 200 response',
+          content: {
+            'application/json': {
+              schema: PluginContract.Versions.response[200]
+            }
+          }
+        },
+        500: {
+          description: 'HTTP 500 response',
+          content: {
+            'application/json': {
+              schema: PluginContract.Versions.response[500]
+            }
+          }
+        }
+      }
+    }),
+    async (c) => {
+      const pluginVersionsUC = makePluginVersionsUC(deps);
+      const query = c.req.valid('query');
+      const [result, err] = await pluginVersionsUC(query);
 
       if (err) {
         return R.fail(c, 500, err.reason);

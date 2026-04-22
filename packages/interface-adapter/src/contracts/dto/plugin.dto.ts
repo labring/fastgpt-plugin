@@ -232,6 +232,35 @@ export const PluginGetParamsSchema = z.object({
   })
 });
 
+export const PluginVersionItemDTOSchema = z.object({
+  version: z.string().openapi({
+    description: 'Plugin version',
+    example: '1.0.0'
+  }),
+  versionDescription: I18nStringDTOSchema.optional().openapi({
+    description: 'Plugin version description',
+    example: {
+      en: 'Initial stable release',
+      'zh-CN': '首个稳定版本'
+    }
+  })
+});
+
+export const PluginVersionListDTOSchema = z.array(PluginVersionItemDTOSchema).openapi({
+  description: 'Plugin version list'
+});
+
+export const PluginVersionListParamsSchema = z.object({
+  pluginId: z.string().openapi({
+    description: 'Plugin ID',
+    example: 'getTime'
+  }),
+  source: z.string().openapi({
+    description: 'Plugin source',
+    example: 'system'
+  })
+});
+
 export const PluginTagListDTOSchema = z
   .array(z.record(z.string(), I18nStringStrictSchema))
   .openapi({
@@ -271,6 +300,9 @@ export type PluginInstallRequestDTOType = z.infer<typeof PluginInstallDTOSchema.
 export type PluginInstallResponseDTOType = z.infer<typeof PluginInstallDTOSchema.response>;
 export type PluginGetParamsDTOType = z.infer<typeof PluginGetParamsSchema>;
 export type PluginListParamsDTOType = z.infer<typeof PluginListParamsSchema>;
+export type PluginVersionItemDTOType = z.infer<typeof PluginVersionItemDTOSchema>;
+export type PluginVersionListDTOType = z.infer<typeof PluginVersionListDTOSchema>;
+export type PluginVersionListParamsDTOType = z.infer<typeof PluginVersionListParamsSchema>;
 export type PluginTagListDTOType = z.infer<typeof PluginTagListDTOSchema>;
 export type PluginRuntimeConfigDTOType = z.infer<typeof PluginRuntimeConfigSchema>;
 export type PluginRuntimeConfigGetParamsDTOType = z.infer<

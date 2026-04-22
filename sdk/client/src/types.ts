@@ -14,7 +14,10 @@ import type {
   PluginListDTOType,
   PluginListParamsDTOType,
   PluginPruneDisabledResponseDTOType,
-  PluginRuntimeConfigDTOType
+  PluginRuntimeConfigDTOType,
+  PluginVersionItemDTOType,
+  PluginVersionListDTOType,
+  PluginVersionListParamsDTOType
 } from '@interface-adapter/contracts/dto/plugin.dto';
 import type { ToolRunInputDTOType } from '@interface-adapter/contracts/dto/tool.dto';
 import type { WorkflowListDTOType, WorkflowTemplateDTOType } from '@interface-adapter/contracts/dto/workflow.dto';
@@ -68,6 +71,9 @@ export type PluginInstallResultType = PluginInstallResponseDTOType;
 export type PluginTagListItemType = PluginTagListType[number];
 export type PluginPruneDisabledResultType = PluginPruneDisabledResponseDTOType;
 export type PluginRuntimeConfigType = PluginRuntimeConfigDTOType;
+export type PluginVersionItemType = PluginVersionItemDTOType;
+export type PluginVersionListType = PluginVersionListDTOType;
+export type PluginVersionListParamsType = PluginVersionListParamsDTOType;
 
 export type ModelListType = ModelListDTOType;
 export type WorkflowTemplateType = WorkflowTemplateDTOType;

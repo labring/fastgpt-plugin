@@ -11,7 +11,9 @@ import type {
   PluginListInputType,
   PluginListItemType,
   PluginListOutputType,
-  PluginRepoPort
+  PluginRepoPort,
+  PluginVersionListInputType,
+  PluginVersionListOutputType
 } from '@domain/ports/plugin/plugin-repo.port';
 import { PluginListItemSchema } from '@domain/ports/plugin/plugin-repo.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
@@ -158,6 +160,61 @@ export class PluginRepo implements PluginRepoPort {
   async getPluginsByPluginId(pluginId: string): Promise<Result<PluginType[]>> {
     const plugins = await this.deps.mongoClient.getModel('plugin').find({ pluginId }).lean();
     return successResult(plugins.map((plugin) => this.toDomainPlugin(plugin)));
+  }
+
+  async listVersions({
+    pluginId,
+    source
+  }: PluginVersionListInputType): Promise<Result<PluginVersionListOutputType>> {
+    try {
+      const installations = await this.deps.mongoClient
+        .getModel('pluginInstallation')
+        .find(
+          {
+            pluginId,
+            source
+          },
+          {
+            _id: 0,
+            pluginObjectId: 1,
+            version: 1
+          }
+        )
+        .populate<{
+          plugin: MongoPluginSchemaType | null;
+        }>({
+          path: 'plugin',
+          match: {
+            status: PluginStatusEnum.active
+          }
+        })
+        .lean();
+
+      const versions = installations
+        .filter(
+          (item): item is typeof item & { plugin: MongoPluginSchemaType } =>
+            Boolean(item.pluginObjectId && item.plugin)
+        )
+        .sort((a, b) => this.compareVersions(b.version, a.version))
+        .map((item) => {
+          const plugin = this.toDomainPlugin(item.plugin);
+
+          return {
+            version: item.version,
+            versionDescription: plugin.versionDescription
+          };
+        });
+
+      return successResult(versions);
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Failed to list plugin versions',
+          'zh-CN': '获取插件版本列表失败'
+        },
+        error
+      );
+    }
   }
 
   public static getInstance(deps: PluginRepoDeps): PluginRepo {

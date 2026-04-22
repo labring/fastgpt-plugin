@@ -15,6 +15,7 @@ import {
   type PluginUniqueIdType,
   type UserPluginIdType
 } from '../../value-objects/plugin.vo';
+import { I18nStringSchema } from '../../value-objects/i18n-string.vo';
 import type { Result } from '../../value-objects/result.vo';
 
 export const PluginListItemSchema = z.object({
@@ -40,6 +41,20 @@ export type PluginListInputType = {
 
 export type PluginListOutputType = PluginListItemType[];
 
+export const PluginVersionItemSchema = z.object({
+  version: z.string(),
+  versionDescription: I18nStringSchema.optional()
+});
+
+export type PluginVersionItemType = z.infer<typeof PluginVersionItemSchema>;
+
+export type PluginVersionListInputType = {
+  pluginId: string;
+  source: PluginSourceType;
+};
+
+export type PluginVersionListOutputType = PluginVersionItemType[];
+
 /** 操作 Plugin S3, Mongo，本地缓存, 代码里面的静态配置 ...*/
 export interface PluginRepoPort {
   /** 获取 pending 的 plugin id */
@@ -61,6 +76,7 @@ export interface PluginRepoPort {
 
   getPluginsByPluginId(pluginId: string): Promise<Result<PluginType[]>>;
   getPluginByUserPluginId(userPluginId: UserPluginIdType): Promise<Result<PluginType>>;
+  listVersions(arg: PluginVersionListInputType): Promise<Result<PluginVersionListOutputType>>;
 
   /** 列出所有插件 */
   list(arg: PluginListInputType): Promise<Result<PluginListOutputType>>;

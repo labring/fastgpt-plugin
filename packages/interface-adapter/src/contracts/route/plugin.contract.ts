@@ -14,7 +14,9 @@ import {
   PluginRuntimeConfigSchema,
   PluginRuntimeConfigSetParamsSchema,
   PluginTagListDTOSchema,
-  PluginUploadParamsSchema
+  PluginUploadParamsSchema,
+  PluginVersionListDTOSchema,
+  PluginVersionListParamsSchema
 } from '../dto/plugin.dto';
 
 import { authToken } from './auth';
@@ -112,6 +114,22 @@ export const PluginContract = {
     request: PluginListParamsSchema,
     response: {
       200: jsonResponse({ data: PluginListDTOSchema }),
+      500: jsonResponse({ error: I18nStringSchema })
+    }
+  }),
+  Versions: defineContract({
+    meta: {
+      method: 'get',
+      path: '/plugin/versions',
+      operationId: 'plugin.versions',
+      description: 'List all versions of a plugin under the given source',
+      summary: 'List plugin versions',
+      tags: ['plugin'],
+      security: authToken
+    },
+    request: PluginVersionListParamsSchema,
+    response: {
+      200: jsonResponse({ data: PluginVersionListDTOSchema }),
       500: jsonResponse({ error: I18nStringSchema })
     }
   }),

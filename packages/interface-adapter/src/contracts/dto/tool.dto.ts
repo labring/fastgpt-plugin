@@ -37,17 +37,24 @@ export const ToolRunInputDTOSchema = z.object({
     description: 'Plugin ID',
     example: 'getTime'
   }),
-  version: z
-    .string()
-    .optional()
-    .openapi({
-      description: 'Plugin version, optional. Empty or missing means latest version',
-      example: '1.0.0'
-    }),
+  version: z.string().optional().openapi({
+    description: 'Plugin version, optional. Empty or missing means latest version',
+    example: '1.0.0'
+  }),
   source: z.string().optional().openapi({
     description: 'Plugin source, optional, default is "system"',
     example: 'system'
   }),
+  secrets: z
+    .record(z.string(), z.string())
+    .optional()
+    .openapi({
+      description: 'Tool secrets, key-value pairs',
+      example: {
+        secretKey1: 'secretValue1',
+        secretKey2: 'secretValue2'
+      }
+    }),
   systemVar: SystemVarDTOSchema,
   input: z.record(z.string(), z.unknown()).openapi({
     description: 'Tool input parameters, key-value pairs',
@@ -58,6 +65,10 @@ export const ToolRunInputDTOSchema = z.object({
         subParam1: 'subValue1'
       }
     }
+  }),
+  childId: z.string().optional().openapi({
+    description: 'Child tool ID, only exists when the tool is part of a toolset',
+    example: 'example-child-tool-id'
   })
 });
 
