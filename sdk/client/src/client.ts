@@ -1,15 +1,20 @@
-import { PluginListParamsSchema } from '@interface-adapter/contracts/dto/plugin.dto';
 import {
   PluginConfirmParamsSchema,
   PluginGetParamsSchema,
   PluginInstallDTOSchema,
+  PluginListParamsSchema,
   PluginRuntimeConfigGetParamsSchema,
   PluginRuntimeConfigSetParamsSchema,
   PluginVersionListParamsSchema
 } from '@interface-adapter/contracts/dto/plugin.dto';
-import { ToolRunInputDTOSchema } from '@interface-adapter/contracts/dto/tool.dto';
+import {
+  ToolGetParamsDTOSchema,
+  ToolListParamsDTOSchema,
+  ToolRunInputDTOSchema
+} from '@interface-adapter/contracts/dto/tool.dto';
 import { ModelContract } from '@interface-adapter/contracts/route/model.contract';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
+import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 import { WorkflowContract } from '@interface-adapter/contracts/route/workflow.contract';
 
 import { RunToolWithStream } from './tool-stream';
@@ -32,7 +37,11 @@ import type {
   PluginVersionListParamsType,
   PluginVersionListType,
   RunToolStreamParams,
+  ToolDetailType,
   ToolHandlerReturnType,
+  ToolGetParamsType,
+  ToolListParamsType,
+  ToolListType,
   WorkflowListType
 } from './types';
 
@@ -65,6 +74,34 @@ export class FastGPTPluginClient {
     return this.transport.requestData<WorkflowListType>({
       path: this.withApiPath(WorkflowContract.List.meta.path),
       method: WorkflowContract.List.meta.method,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async getTool(
+    params: ToolGetParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<ToolDetailType> {
+    const query = ToolGetParamsDTOSchema.parse(params);
+
+    return this.transport.requestData<ToolDetailType>({
+      path: this.withApiPath(ToolContract.Get.meta.path),
+      method: ToolContract.Get.meta.method,
+      query,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async listTools(
+    params: ToolListParamsType = {},
+    requestOptions?: ClientRequestOptions
+  ): Promise<ToolListType> {
+    const query = ToolListParamsDTOSchema.parse(params);
+
+    return this.transport.requestData<ToolListType>({
+      path: this.withApiPath(ToolContract.List.meta.path),
+      method: ToolContract.List.meta.method,
+      query,
       signal: requestOptions?.signal
     });
   }

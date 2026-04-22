@@ -1,4 +1,5 @@
 import { ToolRunInputDTOSchema } from '@interface-adapter/contracts/dto/tool.dto';
+import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 
 import { ToolStreamMessageSchema } from '@domain/value-objects/tool.vo';
 
@@ -10,8 +11,6 @@ import type {
   ToolAnswerType,
   ToolHandlerReturnType
 } from './types';
-
-const TOOL_RUN_STREAM_PATH = '/api/tool/runStream';
 
 type ParsedToolStreamMessage =
   | {
@@ -50,8 +49,8 @@ export class RunToolWithStream {
     });
 
     const response = await this.transport.requestResponse({
-      path: TOOL_RUN_STREAM_PATH,
-      method: 'POST',
+      path: `/api${ToolContract.RunStream.meta.path}`,
+      method: ToolContract.RunStream.meta.method,
       body: payload,
       headers: {
         Accept: 'text/event-stream'

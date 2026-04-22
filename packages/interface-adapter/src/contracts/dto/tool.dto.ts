@@ -1,6 +1,22 @@
 import { z } from '@hono/zod-openapi';
 
+import { PluginTagSchema } from '@domain/entities/plugin.entity';
+import {
+  ToolDetailSchema,
+  ToolListChildItemSchema,
+  ToolListItemSchema
+} from '@domain/ports/plugin/tool.port';
+import { PluginSourceSchema } from '@domain/value-objects/plugin.vo';
 import { SystemVarSchema } from '@domain/value-objects/system-var.vo';
+
+const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => {
+    if (value == null) {
+      return undefined;
+    }
+
+    return Array.isArray(value) ? value : [value];
+  }, z.array(schema).optional());
 
 export const SystemVarDTOSchema = z
   .object({
@@ -73,3 +89,59 @@ export const ToolRunInputDTOSchema = z.object({
 });
 
 export type ToolRunInputDTOType = z.infer<typeof ToolRunInputDTOSchema>;
+
+export const ToolListChildItemDTOSchema = z.object({
+  ...ToolListChildItemSchema.shape
+});
+
+export type ToolListChildItemDTOType = z.infer<typeof ToolListChildItemDTOSchema>;
+
+export const ToolListItemDTOSchema = z.object({
+  ...ToolListItemSchema.shape,
+  children: z.array(ToolListChildItemDTOSchema).optional()
+});
+
+export type ToolListItemDTOType = z.infer<typeof ToolListItemDTOSchema>;
+
+export const ToolListDTOSchema = z.array(ToolListItemDTOSchema);
+export type ToolListDTOType = z.infer<typeof ToolListDTOSchema>;
+
+export const ToolDetailDTOSchema = z.object({
+  ...ToolDetailSchema.shape
+});
+
+export type ToolDetailDTOType = z.infer<typeof ToolDetailDTOSchema>;
+
+export const ToolGetParamsDTOSchema = z.object({
+  pluginId: z.string().openapi({
+    description: 'Tool plugin ID',
+    example: 'getTime'
+  }),
+  version: z.string().optional().openapi({
+    description: 'Tool version',
+    example: '1.0.0'
+  }),
+  source: PluginSourceSchema.optional().default('system').openapi({
+    description: 'Tool source',
+    example: 'system'
+  })
+});
+
+export type ToolGetParamsDTOType = z.infer<typeof ToolGetParamsDTOSchema>;
+
+export const ToolListParamsDTOSchema = z.object({
+  tags: arrayQueryParam(PluginTagSchema).openapi({
+    description: 'Filter by tool tags',
+    example: ['tools']
+  }),
+  op: z.enum(['or', 'and']).optional().openapi({
+    description: 'Filter operator for tags',
+    example: 'or'
+  }),
+  sources: arrayQueryParam(PluginSourceSchema).openapi({
+    description: 'Filter by tool sources',
+    example: ['system']
+  })
+});
+
+export type ToolListParamsDTOType = z.infer<typeof ToolListParamsDTOSchema>;

@@ -1,45 +1,121 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { ToolRunInputDTOSchema } from '@interface-adapter/contracts/dto/tool.dto';
+import { createRoute } from '@hono/zod-openapi';
+import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 
-import {
-  ToolRunInputSchema,
-  ToolStreamMessageSchema,
-  type ToolStreamMessageType
-} from '@domain/value-objects/tool.vo';
+import { type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
+import { makeToolDetailUC, type ToolDetailUCDeps } from '@usecase/tool/tool-detail.uc';
+import { makeToolListUC, type ToolListUCDeps } from '@usecase/tool/tool-list.uc';
 import { makeToolRunUC, type ToolRunUCDeps } from '@usecase/tool/tool-run.uc';
 import { getErrText } from '@shared/utils/err';
 
-export type ToolRouteDeps = ToolRunUCDeps;
+export type ToolRouteDeps = ToolRunUCDeps & ToolListUCDeps & ToolDetailUCDeps;
 
 // PlugininstallUC
 export const makeToolRoute = (deps: ToolRouteDeps) => {
-  const route = new OpenAPIHono();
+  const route = createOpenAPIHono();
 
   route.openapi(
     createRoute({
-      path: '/tool/runStream',
-      tags: ['tool'],
-      method: 'post',
+      ...ToolContract.Get.meta,
+      request: {
+        query: ToolContract.Get.request
+      },
+      responses: {
+        200: {
+          description: 'HTTP 200 response',
+          content: {
+            'application/json': {
+              schema: ToolContract.Get.response[200]
+            }
+          }
+        },
+        404: {
+          description: 'HTTP 404 response',
+          content: {
+            'application/json': {
+              schema: ToolContract.Get.response[404]
+            }
+          }
+        }
+      }
+    }),
+    async (c) => {
+      const toolDetailUC = makeToolDetailUC(deps);
+      const query = c.req.valid('query');
+      const [result, err] = await toolDetailUC(query);
+
+      if (err) {
+        return R.fail(c, 404, err.reason);
+      }
+
+      return R.success(c, result);
+    }
+  );
+
+  route.openapi(
+    createRoute({
+      ...ToolContract.List.meta,
+      request: {
+        query: ToolContract.List.request
+      },
+      responses: {
+        200: {
+          description: 'HTTP 200 response',
+          content: {
+            'application/json': {
+              schema: ToolContract.List.response[200]
+            }
+          }
+        },
+        500: {
+          description: 'HTTP 500 response',
+          content: {
+            'application/json': {
+              schema: ToolContract.List.response[500]
+            }
+          }
+        }
+      }
+    }),
+    async (c) => {
+      const toolListUC = makeToolListUC(deps);
+      const query = c.req.valid('query');
+      const [result, err] = await toolListUC(query);
+
+      if (err) {
+        return R.fail(c, 500, err.reason);
+      }
+
+      return R.success(c, result);
+    }
+  );
+
+  route.openapi(
+    createRoute({
+      ...ToolContract.RunStream.meta,
       request: {
         body: {
           content: {
             'application/json': {
-              schema: ToolRunInputDTOSchema
+              schema: ToolContract.RunStream.request
             }
           }
         }
       },
       responses: {
         200: {
-          description: 'Tool run result stream',
+          description: 'HTTP 200 response',
           content: {
             'text/event-stream': {
-              schema: z.object({
-                type: z.string().openapi({
-                  description: 'Message type, can be "data" or "error"',
-                  example: 'data'
-                })
-              })
+              schema: ToolContract.RunStream.response[200]
+            }
+          }
+        },
+        400: {
+          description: 'HTTP 400 response',
+          content: {
+            'application/json': {
+              schema: ToolContract.RunStream.response[400]
             }
           }
         }
@@ -47,9 +123,9 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
     }),
     async (c) => {
       const encoder = new TextEncoder();
-      const body = await c.req.json();
+      const body = c.req.valid('json');
       const uc = makeToolRunUC(deps);
-      const [result, err] = await uc(ToolRunInputSchema.parse(body));
+      const [result, err] = await uc(body);
       if (err) {
         return c.json({ error: err }, 400);
       }

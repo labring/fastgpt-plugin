@@ -19,8 +19,18 @@ import type {
   PluginVersionListDTOType,
   PluginVersionListParamsDTOType
 } from '@interface-adapter/contracts/dto/plugin.dto';
-import type { ToolRunInputDTOType } from '@interface-adapter/contracts/dto/tool.dto';
-import type { WorkflowListDTOType, WorkflowTemplateDTOType } from '@interface-adapter/contracts/dto/workflow.dto';
+import type {
+  ToolDetailDTOType,
+  ToolGetParamsDTOType,
+  ToolListDTOType,
+  ToolListItemDTOType,
+  ToolListParamsDTOType,
+  ToolRunInputDTOType
+} from '@interface-adapter/contracts/dto/tool.dto';
+import type {
+  WorkflowListDTOType,
+  WorkflowTemplateDTOType
+} from '@interface-adapter/contracts/dto/workflow.dto';
 
 import type {
   EmbeddingModelItemType,
@@ -32,9 +42,17 @@ import type {
 } from '@domain/entities/model.entity';
 import type { PluginTagType, PluginTypeType } from '@domain/entities/plugin.entity';
 import type { I18nStringStrictType, I18nStringType } from '@domain/value-objects/i18n-string.vo';
-import type { PluginSourceType, PluginTagListType, PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
+import type {
+  PluginSourceType,
+  PluginTagListType,
+  PluginUniqueIdType
+} from '@domain/value-objects/plugin.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolAnswerType, ToolHandlerReturnType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import type {
+  ToolAnswerType,
+  ToolHandlerReturnType,
+  ToolStreamMessageType
+} from '@domain/value-objects/tool.vo';
 
 export type JsonObject = Record<string, unknown>;
 
@@ -59,6 +77,11 @@ export type {
 };
 
 export type ToolRunInputType = ToolRunInputDTOType;
+export type ToolDetailType = ToolDetailDTOType;
+export type ToolGetParamsType = ToolGetParamsDTOType;
+export type ToolListType = ToolListDTOType;
+export type ToolListItemType = ToolListItemDTOType;
+export type ToolListParamsType = Partial<ToolListParamsDTOType>;
 
 export type PluginSummaryType = PluginDTOType;
 export type PluginDetailType = PluginDetailDTOType;
