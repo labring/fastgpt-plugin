@@ -11,7 +11,10 @@
     "prettier": "prettier --write \"./**/*.{ts,js,json}\"",
     "build:pkg": "pnpm tsc && pnpm --filter modules/tool build",
     "build:sdk-client": "pnpm --filter @fastgpt-plugin/sdk-client build",
-    "build:sdk-factory": "pnpm --filter @fastgpt-plugin/sdk-factory build"
+    "build:sdk-factory": "pnpm --filter @fastgpt-plugin/sdk-factory build",
+    "build:server": "pnpm --filter @fastgpt-plugin/server build",
+    "build:cli": "pnpm --filter @fastgpt-plugin/cli build",
+    "dev:cli": "pnpm --filter @fastgpt-plugin/cli dev"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
