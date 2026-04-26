@@ -51,6 +51,7 @@ import type {
   ToolHandlerReturnType,
   ToolStreamMessageType
 } from '@domain/value-objects/tool.vo';
+import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
 
 export type JsonObject = Record<string, unknown>;
 
@@ -93,6 +94,10 @@ export type PluginRuntimeConfigType = PluginRuntimeConfigDTOType;
 export type PluginVersionItemType = PluginVersionItemDTOType;
 export type PluginVersionListType = PluginVersionListDTOType;
 export type PluginVersionListParamsType = PluginVersionListParamsDTOType;
+
+export const pluginTagList: PluginTagListType = Object.entries(PluginTagsNameMap).map(
+  ([tag, name]) => ({ [tag]: name })
+);
 
 export type ModelListType = ModelListDTOType;
 export type WorkflowTemplateType = WorkflowTemplateDTOType;

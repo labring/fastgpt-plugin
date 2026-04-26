@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import * as nodeCrypto from 'node:crypto';
 
 import type { ToolType } from '@domain/entities/tool.entity';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
@@ -6,13 +6,13 @@ import type {
   PluginRuntimeInvokeOptions,
   PluginRuntimeManagerPort
 } from '@domain/ports/plugin/plugin-runtime-manager.port';
-import type {
-  ToolDetailInputType,
-  ToolDetailType,
-  ToolListInputType,
-  ToolListItemType,
-  ToolListOutputType,
-  ToolManagerPort
+import {
+  type ToolDetailInputType,
+  type ToolDetailType,
+  type ToolListInputType,
+  ToolListItemSchema,
+  type ToolListOutputType,
+  type ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
@@ -21,6 +21,7 @@ import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 import { InvokeManager, type InvokeUploadFileHandler } from './invoke/invoke.impl';
+import { Semver } from './utils/semver';
 
 export type ToolManagerDeps = {
   pluginRepo: PluginRepoPort;
@@ -44,37 +45,20 @@ export class ToolManager implements ToolManagerPort {
     return typeof token === 'string' ? token : '';
   }
 
-  private toToolListItem(tool: ToolDetailType): ToolListItemType {
-    return {
-      pluginId: tool.pluginId,
-      version: tool.version,
-      etag: tool.etag,
-      type: tool.type,
-      author: tool.author,
-      name: tool.name,
-      icon: tool.icon,
-      tutorialUrl: tool.tutorialUrl,
-      readmeUrl: tool.readmeUrl,
-      repoUrl: tool.repoUrl,
-      description: tool.description,
-      tags: tool.tags,
-      source: tool.source,
-      toolDescription: tool.toolDescription,
-      isToolset: tool.isToolset,
-      children: tool.children?.map((child) => ({
-        childId: child.id,
-        name: child.name,
-        description: child.description,
-        toolDescription: child.toolDescription
-      }))
-    };
-  }
-
-  private toToolDetail(tool: ToolType, source: PluginSourceType): ToolDetailType {
+  private toToolDetail({
+    tool,
+    source,
+    isLatestVersion
+  }: {
+    tool: ToolType;
+    source: PluginSourceType;
+    isLatestVersion: boolean;
+  }): ToolDetailType {
     return {
       ...tool,
       source,
-      isToolset: Boolean(tool.children?.length)
+      isToolset: Boolean(tool.children?.length),
+      isLatestVersion
     };
   }
 
@@ -103,27 +87,7 @@ export class ToolManager implements ToolManagerPort {
       );
     }
 
-    const tools: ToolListOutputType = [];
-
-    for (const plugin of plugins) {
-      const [tool, detailErr] = await this.deps.pluginRepo.getPluginByUserPluginId({
-        pluginId: plugin.pluginId,
-        source: plugin.source,
-        version: plugin.version
-      });
-
-      if (detailErr) {
-        return failureResult(
-          {
-            en: 'Failed to get tool detail',
-            'zh-CN': '获取工具详情失败'
-          },
-          detailErr
-        );
-      }
-
-      tools.push(this.toToolListItem(this.toToolDetail(tool, plugin.source)));
-    }
+    const tools: ToolListOutputType = plugins.map((plugin) => ToolListItemSchema.parse(plugin));
 
     return successResult(tools);
   }
@@ -134,6 +98,18 @@ export class ToolManager implements ToolManagerPort {
     version
   }: ToolDetailInputType): Promise<Result<ToolDetailType>> {
     const normalizedSource = source ?? 'system';
+
+    const [versionList, err] = await this.deps.pluginRepo.listVersions({
+      pluginId,
+      source: normalizedSource
+    });
+
+    if (err) return failureResult(err);
+
+    const latestVersion = versionList.reduce((latest, current) => {
+      return new Semver(latest.version).compare(new Semver(current.version)) > 0 ? latest : current;
+    });
+
     const [tool, detailErr] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
       source: normalizedSource,
@@ -150,7 +126,13 @@ export class ToolManager implements ToolManagerPort {
       );
     }
 
-    return successResult(this.toToolDetail(tool, normalizedSource));
+    return successResult(
+      this.toToolDetail({
+        tool,
+        source: normalizedSource,
+        isLatestVersion: latestVersion.version === version
+      })
+    );
   }
 
   async run({
@@ -188,7 +170,7 @@ export class ToolManager implements ToolManagerPort {
     } satisfies PluginToolRunPayloadType;
 
     const options: PluginRuntimeInvokeOptions = {
-      invocationId: randomUUID(),
+      invocationId: nodeCrypto.randomUUID(),
       invoke: new InvokeManager({
         token: this.getInvokeToken(systemVar),
         uploadFileHandler: this.deps.uploadFileHandler

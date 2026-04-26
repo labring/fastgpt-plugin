@@ -35,12 +35,13 @@ import type {
   PluginVersionListType,
   RunToolStreamParams,
   ToolDetailType,
-  ToolHandlerReturnType,
   ToolGetParamsType,
+  ToolHandlerReturnType,
   ToolListParamsType,
   ToolListType,
   WorkflowListType
 } from './types';
+import { pluginTagList } from './types';
 
 export class FastGPTPluginClient {
   private readonly transport: ClientTransport;
@@ -187,12 +188,8 @@ export class FastGPTPluginClient {
     });
   }
 
-  async listPluginTags(requestOptions?: ClientRequestOptions): Promise<PluginTagListType> {
-    return this.transport.requestData<PluginTagListType>({
-      path: this.withApiPath(PluginContract.TagList.meta.path),
-      method: PluginContract.TagList.meta.method,
-      signal: requestOptions?.signal
-    });
+  async listPluginTags(_requestOptions?: ClientRequestOptions): Promise<PluginTagListType> {
+    return pluginTagList;
   }
 
   async getPluginRuntimeConfig(

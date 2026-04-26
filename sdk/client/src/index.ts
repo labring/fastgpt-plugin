@@ -1,5 +1,6 @@
 export { FastGPTPluginClient } from './client';
 export { RunToolWithStream } from './tool-stream';
+export { pluginTagList } from './types';
 export type {
   AiproxyMapProviderItemType,
   ClientRequestOptions,

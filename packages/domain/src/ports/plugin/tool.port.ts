@@ -12,7 +12,7 @@ import type { StreamData } from '../../value-objects/stream.vo';
 import type { ToolRunInputType, ToolStreamMessageType } from '../../value-objects/tool.vo';
 
 export const ToolListChildItemSchema = z.object({
-  childId: ToolSetChildItemSchema.shape.id,
+  id: ToolSetChildItemSchema.shape.id,
   name: ToolSetChildItemSchema.shape.name,
   description: ToolSetChildItemSchema.shape.description,
   toolDescription: ToolSetChildItemSchema.shape.toolDescription
@@ -47,6 +47,7 @@ export type ToolListOutputType = ToolListItemType[];
 export const ToolDetailSchema = z.object({
   ...ToolSchema.shape,
   source: PluginSourceSchema,
+  isLatestVersion: z.boolean(),
   isToolset: z.boolean()
 });
 

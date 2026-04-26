@@ -25,13 +25,12 @@ import {
   type UserPluginIdType
 } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
-import type { RedisClient } from '@infrastructure/redis/redis-client';
-import { VersionKeyStore } from '@infrastructure/redis/version-key';
 import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
 import type { MongoPluginSchemaType } from '@infrastructure/storage/mongo/models/plugin.model';
 
 import { MongoClient } from '../storage/mongo';
 
+import { Semver } from './utils/semver';
 import { pluginCodecRegistry, PluginRecordSchema } from './codec';
 
 export type PluginRepoDeps = {
@@ -51,10 +50,7 @@ export class PluginRepo implements PluginRepoPort {
   }
 
   private compareVersions(a: string, b: string) {
-    return a.localeCompare(b, undefined, {
-      numeric: true,
-      sensitivity: 'base'
-    });
+    return new Semver(a).compare(new Semver(b));
   }
 
   private toPluginRecord(plugin: PluginType) {
