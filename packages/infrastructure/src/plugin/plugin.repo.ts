@@ -16,9 +16,15 @@ import type {
   PluginVersionListOutputType
 } from '@domain/ports/plugin/plugin-repo.port';
 import { PluginListItemSchema } from '@domain/ports/plugin/plugin-repo.port';
+import {
+  type ToolListInputType,
+  ToolListItemSchema,
+  type ToolListOutputType
+} from '@domain/ports/plugin/tool.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import {
+  type PluginSourceType,
   type PluginTagListType,
   PluginUniqueIdSchema,
   type PluginUniqueIdType,
@@ -32,6 +38,53 @@ import { MongoClient } from '../storage/mongo';
 
 import { Semver } from './utils/semver';
 import { pluginCodecRegistry, PluginRecordSchema } from './codec';
+
+type PluginListView = 'summary' | 'toolSummary';
+
+const PluginListViewProjection = {
+  summary: {
+    pluginId: 1,
+    version: 1,
+    etag: 1,
+    type: 1,
+    author: 1,
+    name: 1,
+    icon: 1,
+    tutorialUrl: 1,
+    readmeUrl: 1,
+    repoUrl: 1,
+    description: 1,
+    tags: 1
+  },
+  toolSummary: {
+    pluginId: 1,
+    version: 1,
+    etag: 1,
+    type: 1,
+    author: 1,
+    name: 1,
+    icon: 1,
+    tutorialUrl: 1,
+    readmeUrl: 1,
+    repoUrl: 1,
+    description: 1,
+    tags: 1,
+    'data.toolDescription': 1,
+    'data.children.id': 1,
+    'data.children.name': 1,
+    'data.children.description': 1,
+    'data.children.toolDescription': 1
+  }
+} satisfies Record<PluginListView, Record<string, 1>>;
+
+type ListedMongoPlugin = MongoPluginSchemaType & {
+  _id: unknown;
+};
+
+type InstalledPluginRecord = {
+  source: PluginSourceType;
+  plugin: ListedMongoPlugin;
+};
 
 export type PluginRepoDeps = {
   mongoClient: MongoClient;
@@ -352,137 +405,127 @@ export class PluginRepo implements PluginRepoPort {
     }
   }
 
-  async list({
-    op,
-    types,
-    tags,
-    sources
-  }: PluginListInputType): Promise<Result<PluginListOutputType>> {
-    try {
-      const normalizedSources = sources && sources.length > 0 ? sources : ['system'];
-      const pluginInstallationModel = this.deps.mongoClient.getModel('pluginInstallation');
-      const pluginModel = this.deps.mongoClient.getModel('plugin');
-      const installations = await pluginInstallationModel
-        .find(
-          {
-            source: { $in: normalizedSources }
-          },
-          {
-            _id: 0,
-            source: 1,
-            pluginId: 1,
-            version: 1,
-            pluginObjectId: 1
-          }
-        )
-        .lean();
-
-      const latestInstallationMap = new Map<
-        string,
+  private async listInstalledPluginsByView(
+    { op, types, tags, sources }: PluginListInputType,
+    view: PluginListView
+  ): Promise<InstalledPluginRecord[]> {
+    const normalizedSources = sources && sources.length > 0 ? sources : ['system'];
+    const pluginInstallationModel = this.deps.mongoClient.getModel('pluginInstallation');
+    const pluginModel = this.deps.mongoClient.getModel('plugin');
+    const installations = await pluginInstallationModel
+      .find(
         {
-          source: string;
-          pluginId: string;
-          version: string;
-          pluginObjectId?: unknown;
-        }
-      >();
-
-      for (const installation of installations) {
-        if (!installation.pluginObjectId) {
-          continue;
-        }
-
-        const key = `${installation.source}::${installation.pluginId}`;
-        const existingInstallation = latestInstallationMap.get(key);
-
-        if (
-          !existingInstallation ||
-          this.compareVersions(installation.version, existingInstallation.version) > 0
-        ) {
-          latestInstallationMap.set(key, installation);
-        }
-      }
-
-      const latestInstallations = Array.from(latestInstallationMap.values()).sort((a, b) => {
-        const sourceCompare = a.source.localeCompare(b.source);
-        if (sourceCompare !== 0) {
-          return sourceCompare;
-        }
-        return a.pluginId.localeCompare(b.pluginId);
-      });
-
-      if (latestInstallations.length === 0) {
-        return successResult([]);
-      }
-
-      const latestPluginObjectIds = Array.from(
-        latestInstallations
-          .reduce((map, item) => {
-            map.set(String(item.pluginObjectId), item.pluginObjectId);
-            return map;
-          }, new Map<string, unknown>())
-          .values()
-      );
-      const filterConditions = [] as Array<Record<string, unknown>>;
-
-      if (types && types.length > 0) {
-        filterConditions.push({ type: { $in: types } });
-      }
-
-      if (tags && tags.length > 0) {
-        filterConditions.push({ tags: { $in: tags } });
-      }
-
-      const query: Record<string, unknown> = {
-        _id: { $in: latestPluginObjectIds },
-        status: PluginStatusEnum.active
-      };
-
-      if (filterConditions.length > 0) {
-        if (op === 'or') {
-          query.$or = filterConditions;
-        } else {
-          Object.assign(query, ...filterConditions);
-        }
-      }
-
-      const plugins = await pluginModel
-        .find(query, {
+          source: { $in: normalizedSources }
+        },
+        {
+          _id: 0,
+          source: 1,
           pluginId: 1,
           version: 1,
-          etag: 1,
-          type: 1,
-          author: 1,
-          name: 1,
-          icon: 1,
-          tutorialUrl: 1,
-          readmeUrl: 1,
-          repoUrl: 1,
-          description: 1,
-          tags: 1
-        })
-        .lean();
-
-      const pluginMap = new Map<
-        string,
-        {
-          pluginId: string;
-          version: string;
-          etag: string;
-          type: string;
-          author?: string;
-          name: unknown;
-          icon: string;
-          tutorialUrl?: string;
-          readmeUrl?: string;
-          repoUrl?: string;
-          description: unknown;
-          tags?: string[];
+          pluginObjectId: 1
         }
-      >();
+      )
+      .lean();
 
-      for (const plugin of plugins) {
-        pluginMap.set(String(plugin._id), {
+    const latestInstallationMap = new Map<
+      string,
+      {
+        source: string;
+        pluginId: string;
+        version: string;
+        pluginObjectId?: unknown;
+      }
+    >();
+
+    for (const installation of installations) {
+      if (!installation.pluginObjectId) {
+        continue;
+      }
+
+      const key = `${installation.source}::${installation.pluginId}`;
+      const existingInstallation = latestInstallationMap.get(key);
+
+      if (
+        !existingInstallation ||
+        this.compareVersions(installation.version, existingInstallation.version) > 0
+      ) {
+        latestInstallationMap.set(key, installation);
+      }
+    }
+
+    const latestInstallations = Array.from(latestInstallationMap.values()).sort((a, b) => {
+      const sourceCompare = a.source.localeCompare(b.source);
+      if (sourceCompare !== 0) {
+        return sourceCompare;
+      }
+      return a.pluginId.localeCompare(b.pluginId);
+    });
+
+    if (latestInstallations.length === 0) {
+      return [];
+    }
+
+    const latestPluginObjectIds = Array.from(
+      latestInstallations
+        .reduce((map, item) => {
+          map.set(String(item.pluginObjectId), item.pluginObjectId);
+          return map;
+        }, new Map<string, unknown>())
+        .values()
+    );
+    const filterConditions = [] as Array<Record<string, unknown>>;
+
+    if (types && types.length > 0) {
+      filterConditions.push({ type: { $in: types } });
+    }
+
+    if (tags && tags.length > 0) {
+      filterConditions.push({ tags: { $in: tags } });
+    }
+
+    const query: Record<string, unknown> = {
+      _id: { $in: latestPluginObjectIds },
+      status: PluginStatusEnum.active
+    };
+
+    if (filterConditions.length > 0) {
+      if (op === 'or') {
+        query.$or = filterConditions;
+      } else {
+        Object.assign(query, ...filterConditions);
+      }
+    }
+
+    const plugins = await pluginModel
+      .find(query, PluginListViewProjection[view])
+      .lean<ListedMongoPlugin[]>();
+
+    const pluginMap = new Map<string, ListedMongoPlugin>();
+
+    for (const plugin of plugins) {
+      pluginMap.set(String(plugin._id), plugin);
+    }
+
+    return latestInstallations.flatMap<InstalledPluginRecord>((installation) => {
+      const plugin = pluginMap.get(String(installation.pluginObjectId));
+      if (!plugin) {
+        return [];
+      }
+
+      return [
+        {
+          source: installation.source,
+          plugin
+        }
+      ];
+    });
+  }
+
+  async list(input: PluginListInputType): Promise<Result<PluginListOutputType>> {
+    try {
+      const installedPlugins = await this.listInstalledPluginsByView(input, 'summary');
+      const items = installedPlugins.map<PluginListItemType>(({ source, plugin }) =>
+        PluginListItemSchema.parse({
           pluginId: plugin.pluginId,
           version: plugin.version,
           etag: plugin.etag,
@@ -494,27 +537,73 @@ export class PluginRepo implements PluginRepoPort {
           readmeUrl: plugin.readmeUrl ?? undefined,
           repoUrl: plugin.repoUrl ?? undefined,
           description: plugin.description,
-          tags: plugin.tags ?? undefined
-        });
-      }
+          tags: plugin.tags ?? undefined,
+          source
+        })
+      );
 
-      const filteredItems = latestInstallations.flatMap<PluginListItemType>((installation) => {
-        const plugin = pluginMap.get(String(installation.pluginObjectId));
-        if (!plugin) {
-          return [];
-        }
-
-        return [
-          PluginListItemSchema.parse({
-            ...plugin,
-            source: installation.source
-          })
-        ];
-      });
-
-      return successResult(filteredItems);
+      return successResult(items);
     } catch (error) {
       return failureResult({ en: 'Failed to list plugins', 'zh-CN': '获取插件列表失败' }, error);
+    }
+  }
+
+  async listToolSummaries({
+    tags,
+    op,
+    sources
+  }: ToolListInputType): Promise<Result<ToolListOutputType>> {
+    try {
+      const installedPlugins = await this.listInstalledPluginsByView(
+        {
+          types: ['tool'],
+          tags,
+          op,
+          sources
+        },
+        'toolSummary'
+      );
+      const tools = installedPlugins.map(({ source, plugin }) => {
+        const data = plugin.data as
+          | {
+              toolDescription?: unknown;
+              children?: Array<{
+                id?: unknown;
+                name?: unknown;
+                description?: unknown;
+                toolDescription?: unknown;
+              }>;
+            }
+          | undefined;
+
+        return ToolListItemSchema.parse({
+          pluginId: plugin.pluginId,
+          version: plugin.version,
+          etag: plugin.etag,
+          type: plugin.type,
+          author: plugin.author ?? undefined,
+          name: plugin.name,
+          icon: plugin.icon,
+          tutorialUrl: plugin.tutorialUrl ?? undefined,
+          readmeUrl: plugin.readmeUrl ?? undefined,
+          repoUrl: plugin.repoUrl ?? undefined,
+          description: plugin.description,
+          tags: plugin.tags ?? undefined,
+          toolDescription: data?.toolDescription,
+          source,
+          isToolset: Boolean(data?.children?.length),
+          children: data?.children?.map((child) => ({
+            id: child.id,
+            name: child.name,
+            description: child.description,
+            toolDescription: child.toolDescription
+          }))
+        });
+      });
+
+      return successResult(tools);
+    } catch (error) {
+      return failureResult({ en: 'Failed to list tools', 'zh-CN': '获取工具列表失败' }, error);
     }
   }
 

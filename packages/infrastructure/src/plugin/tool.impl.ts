@@ -10,7 +10,6 @@ import {
   type ToolDetailInputType,
   type ToolDetailType,
   type ToolListInputType,
-  ToolListItemSchema,
   type ToolListOutputType,
   type ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
@@ -70,8 +69,7 @@ export class ToolManager implements ToolManagerPort {
   }
 
   async list({ tags, op, sources }: ToolListInputType): Promise<Result<ToolListOutputType>> {
-    const [plugins, listErr] = await this.deps.pluginRepo.list({
-      types: ['tool'],
+    const [tools, listErr] = await this.deps.pluginRepo.listToolSummaries({
       tags,
       op,
       sources
@@ -86,8 +84,6 @@ export class ToolManager implements ToolManagerPort {
         listErr
       );
     }
-
-    const tools: ToolListOutputType = plugins.map((plugin) => ToolListItemSchema.parse(plugin));
 
     return successResult(tools);
   }

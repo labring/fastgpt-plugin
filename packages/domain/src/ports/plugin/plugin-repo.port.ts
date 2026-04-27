@@ -17,6 +17,7 @@ import {
   type UserPluginIdType
 } from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
+import type { ToolListInputType, ToolListOutputType } from './tool.port';
 
 export const PluginListItemSchema = z.object({
   ...PluginBaseSchema.omit({
@@ -80,6 +81,7 @@ export interface PluginRepoPort {
 
   /** 列出所有插件 */
   list(arg: PluginListInputType): Promise<Result<PluginListOutputType>>;
+  listToolSummaries(arg: ToolListInputType): Promise<Result<ToolListOutputType>>;
   listActive(): Promise<Result<PluginType[]>>;
   pruneDisabled(): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>>;
 
