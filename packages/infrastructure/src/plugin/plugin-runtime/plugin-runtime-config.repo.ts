@@ -25,7 +25,7 @@ export class PluginRuntimeConfigRepo<T extends object> {
     if (result) {
       return successResult({ ...this.default_config, ...result.config } as T);
     } else {
-      return successResult(this.default_config);
+      return successResult({ ...this.default_config });
     }
   }
 
@@ -40,6 +40,21 @@ export class PluginRuntimeConfigRepo<T extends object> {
         {
           en: 'Save plugin runtime config failed',
           'zh-CN': '保存插件运行时配置失败'
+        },
+        error
+      );
+    }
+  }
+
+  async resetPluginRuntimeConfig(pluginId: string): Promise<Result<T>> {
+    try {
+      await this.deps.mongoClient.getModel('pluginRuntimeConfig').deleteOne({ pluginId });
+      return successResult({ ...this.default_config });
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Reset plugin runtime config failed',
+          'zh-CN': '重置插件运行时配置失败'
         },
         error
       );

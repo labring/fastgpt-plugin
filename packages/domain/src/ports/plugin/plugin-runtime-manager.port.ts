@@ -46,6 +46,11 @@ export interface PluginRuntimeManagerPort<
   updateConfig(pluginId: string, config: Config): Promise<Result>;
 
   /**
+   * 重置插件配置
+   */
+  resetConfig(pluginId: string): Promise<Result>;
+
+  /**
    * 获取插件状态
    */
   status(uniqueId: PluginUniqueIdType): Promise<Result<PluginStatus>>;

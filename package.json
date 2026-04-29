@@ -14,7 +14,8 @@
     "build:sdk-factory": "pnpm --filter @fastgpt-plugin/sdk-factory build",
     "build:server": "pnpm --filter @fastgpt-plugin/server build",
     "build:cli": "pnpm --filter @fastgpt-plugin/cli build",
-    "dev:cli": "pnpm --filter @fastgpt-plugin/cli dev"
+    "dev:cli": "pnpm --filter @fastgpt-plugin/cli dev",
+    "dev:server": "pnpm --filter @fastgpt-plugin/server dev"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
@@ -39,7 +40,7 @@
     "typescript": "catalog:",
     "zod": "catalog:"
   },
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@10.33.2",
   "lint-staged": {
     "**/*.ts": [
       "pnpm run lint",

@@ -178,6 +178,41 @@ export class LocalPoolPluginRuntimeManager
     return successResult({});
   }
 
+  async resetConfig(pluginId: string): Promise<Result> {
+    const [config, err] = await this.configRepo.resetPluginRuntimeConfig(pluginId);
+    if (err) {
+      return failureResult(
+        {
+          en: 'Failed to reset plugin runtime config',
+          'zh-CN': '重置插件运行时配置失败'
+        },
+        err
+      );
+    }
+
+    const pluginRuntimeIds = this.pluginIdMap.get(pluginId);
+    if (!pluginRuntimeIds) {
+      return successResult({});
+    }
+
+    await Promise.all(
+      pluginRuntimeIds.map(async (runtimeId) => {
+        const item = this.plugins.get(runtimeId);
+        if (!item) {
+          return;
+        }
+        try {
+          await item.mutex.acquire();
+          await item.service.updateConfig(config);
+        } finally {
+          item.mutex.release();
+        }
+      })
+    );
+
+    return successResult({});
+  }
+
   async status(uniqueId: PluginUniqueIdType): Promise<Result<ServiceMetrics>> {
     const metric = this.getPluginMetrics(this.getRuntimeId(uniqueId));
     return successResult(metric);

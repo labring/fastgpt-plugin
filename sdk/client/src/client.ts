@@ -3,6 +3,7 @@ import {
   PluginInstallDTOSchema,
   PluginListParamsSchema,
   PluginRuntimeConfigGetParamsSchema,
+  PluginRuntimeConfigResetParamsSchema,
   PluginRuntimeConfigSetParamsSchema,
   PluginVersionListParamsSchema
 } from '@interface-adapter/contracts/dto/plugin.dto';
@@ -216,6 +217,20 @@ export class FastGPTPluginClient {
     await this.transport.requestEmpty({
       path: this.withApiPath(PluginContract.RuntimeConfigSet.meta.path),
       method: PluginContract.RuntimeConfigSet.meta.method,
+      body: payload,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async resetPluginRuntimeConfig(
+    pluginId: string,
+    requestOptions?: ClientRequestOptions
+  ): Promise<void> {
+    const payload = PluginRuntimeConfigResetParamsSchema.parse({ pluginId });
+
+    await this.transport.requestEmpty({
+      path: this.withApiPath(PluginContract.RuntimeConfigReset.meta.path),
+      method: PluginContract.RuntimeConfigReset.meta.method,
       body: payload,
       signal: requestOptions?.signal
     });

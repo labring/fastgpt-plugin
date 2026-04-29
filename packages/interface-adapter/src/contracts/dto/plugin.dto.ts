@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 
 import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin.entity';
-import { I18nStringSchema, I18nStringStrictSchema } from '@domain/value-objects/i18n-string.vo';
-import { PluginSourceSchema } from '@domain/value-objects/plugin.vo';
+import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
+import { PluginSourceSchema, PluginTagListSchema } from '@domain/value-objects/plugin.vo';
 
 import { I18nStringDTOSchema } from './common.dto';
 
@@ -243,7 +243,21 @@ export const PluginVersionListParamsSchema = z.object({
 });
 
 export const PluginTagListDTOSchema = z
-  .array(z.record(z.string(), I18nStringStrictSchema))
+  .array(
+    z.object({
+      id: z.string().openapi({
+        description: 'Plugin tag ID',
+        example: 'tools'
+      }),
+      name: I18nStringDTOSchema.openapi({
+        description: 'Plugin tag name',
+        example: {
+          en: 'Tools',
+          'zh-CN': '工具'
+        }
+      })
+    })
+  )
   .openapi({
     description: 'Plugin tag list'
   });
@@ -265,6 +279,13 @@ export const PluginRuntimeConfigSetParamsSchema = z.object({
     example: 'getTime'
   }),
   config: PluginRuntimeConfigSchema
+});
+
+export const PluginRuntimeConfigResetParamsSchema = z.object({
+  pluginId: z.string().openapi({
+    description: 'Plugin ID',
+    example: 'getTime'
+  })
 });
 
 export type PluginDTOType = z.infer<typeof PluginBaseDTOSchema>;
@@ -289,4 +310,7 @@ export type PluginRuntimeConfigGetParamsDTOType = z.infer<
 >;
 export type PluginRuntimeConfigSetParamsDTOType = z.infer<
   typeof PluginRuntimeConfigSetParamsSchema
+>;
+export type PluginRuntimeConfigResetParamsDTOType = z.infer<
+  typeof PluginRuntimeConfigResetParamsSchema
 >;

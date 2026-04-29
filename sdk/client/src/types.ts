@@ -96,7 +96,10 @@ export type PluginVersionListType = PluginVersionListDTOType;
 export type PluginVersionListParamsType = PluginVersionListParamsDTOType;
 
 export const pluginTagList: PluginTagListType = Object.entries(PluginTagsNameMap).map(
-  ([tag, name]) => ({ [tag]: name })
+  ([id, name]) => ({
+    id,
+    name
+  })
 );
 
 export type ModelListType = ModelListDTOType;

@@ -13,7 +13,12 @@ export type PluginUniqueIdType = z.infer<typeof PluginUniqueIdSchema>;
 export const PluginSourceSchema = z.literal('system').or(z.string());
 export type PluginSourceType = z.infer<typeof PluginSourceSchema>;
 
-export const PluginTagListSchema = z.array(z.record(z.string(), I18nStringStrictSchema));
+export const PluginTagListItemSchema = z.object({
+  id: z.string(),
+  name: I18nStringStrictSchema
+});
+export const PluginTagListSchema = z.array(PluginTagListItemSchema);
+export type PluginTagListItemType = z.infer<typeof PluginTagListItemSchema>;
 export type PluginTagListType = z.infer<typeof PluginTagListSchema>;
 
 export const PluginRuntimeModeSchema = z.enum(['localPool', 'serverless']);

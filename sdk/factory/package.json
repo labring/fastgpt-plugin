@@ -13,7 +13,8 @@
   },
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "exports": {
     ".": {
@@ -25,5 +26,8 @@
       "types": "./dist/*.d.ts"
     }
   },
-  "private": "false"
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  }
 }

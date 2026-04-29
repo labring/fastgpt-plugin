@@ -9,6 +9,7 @@ import {
   PluginListParamsSchema,
   PluginPruneDisabledResponseDTOSchema,
   PluginRuntimeConfigGetParamsSchema,
+  PluginRuntimeConfigResetParamsSchema,
   PluginRuntimeConfigSchema,
   PluginRuntimeConfigSetParamsSchema,
   PluginTagListDTOSchema,
@@ -157,6 +158,22 @@ export const PluginContract = {
       security: authToken
     },
     request: PluginRuntimeConfigSetParamsSchema,
+    response: {
+      200: emptyResponse(),
+      500: jsonResponse({ error: I18nStringSchema })
+    }
+  }),
+  RuntimeConfigReset: defineContract({
+    meta: {
+      method: 'post',
+      path: '/plugin/runtime-config/reset',
+      operationId: 'plugin.runtimeConfig.reset',
+      description: 'Reset plugin runtime config',
+      summary: 'Reset plugin runtime config',
+      tags: ['plugin'],
+      security: authToken
+    },
+    request: PluginRuntimeConfigResetParamsSchema,
     response: {
       200: emptyResponse(),
       500: jsonResponse({ error: I18nStringSchema })

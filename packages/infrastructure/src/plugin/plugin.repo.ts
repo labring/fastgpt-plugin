@@ -1018,6 +1018,11 @@ export class PluginRepo implements PluginRepoPort {
   }
 
   async listTags(): Promise<Result<PluginTagListType>> {
-    return successResult(Object(PluginTagsNameMap));
+    return successResult(
+      Object.entries(PluginTagsNameMap).map(([id, name]) => ({
+        id,
+        name
+      }))
+    );
   }
 }

@@ -5,6 +5,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
 
 import { makePluginConfigGetUC } from '@usecase/plugin/plugin-config-get.uc';
+import { makeResetPluginConfigUC } from '@usecase/plugin/plugin-config-reset.uc';
 import { makeSetPluginConfigUC } from '@usecase/plugin/plugin-config-set.uc';
 import { makePluginConfirmUC, type PluginConfirmUCDeps } from '@usecase/plugin/plugin-confirm.uc';
 import { makePluginInstallUC, type PluginInstallUCDeps } from '@usecase/plugin/plugin-install.uc';
@@ -394,6 +395,47 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [, err] = await pluginConfigSetUC({
         pluginId: body.pluginId,
         config: body.config
+      });
+
+      if (err) {
+        return R.fail(c, 500, err.reason);
+      }
+
+      return R.empty(c);
+    }
+  );
+
+  route.openapi(
+    createRoute({
+      ...PluginContract.RuntimeConfigReset.meta,
+      request: {
+        body: {
+          content: {
+            'application/json': {
+              schema: PluginContract.RuntimeConfigReset.request
+            }
+          }
+        }
+      },
+      responses: {
+        200: {
+          description: 'HTTP 200 response'
+        },
+        500: {
+          description: 'HTTP 500 response',
+          content: {
+            'application/json': {
+              schema: PluginContract.RuntimeConfigReset.response[500]
+            }
+          }
+        }
+      }
+    }),
+    async (c) => {
+      const pluginConfigResetUC = makeResetPluginConfigUC(deps);
+      const body = c.req.valid('json');
+      const [, err] = await pluginConfigResetUC({
+        pluginId: body.pluginId
       });
 
       if (err) {
