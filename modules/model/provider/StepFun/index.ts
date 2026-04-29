@@ -12,6 +12,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -23,6 +24,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -34,6 +36,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -45,6 +48,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -56,6 +60,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -67,6 +72,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -78,6 +84,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -89,6 +96,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -100,6 +108,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -111,6 +120,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {
@@ -122,6 +132,7 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false
     },
     {

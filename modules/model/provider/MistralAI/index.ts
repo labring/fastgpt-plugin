@@ -12,6 +12,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -23,6 +24,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -34,6 +36,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -45,6 +48,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     }
   ]

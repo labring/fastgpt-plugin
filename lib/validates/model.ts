@@ -39,6 +39,7 @@ export const LLMModelItemSchema = PriceSchema.merge(BaseModelItemSchema).extend(
   censor: z.boolean().optional(),
   vision: z.boolean(),
   reasoning: z.boolean(),
+  reasoningEffort: z.boolean(),
   toolChoice: z.boolean(),
 
   // diff function model

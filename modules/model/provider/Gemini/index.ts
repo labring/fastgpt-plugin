@@ -11,7 +11,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -22,7 +23,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -33,7 +35,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
 
@@ -45,7 +48,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -56,7 +60,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
 
@@ -68,7 +73,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -80,6 +86,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -91,6 +98,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -102,6 +110,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -113,6 +122,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -124,6 +134,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -135,6 +146,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -146,6 +158,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -157,6 +170,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -168,6 +182,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -179,6 +194,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -190,6 +206,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -201,6 +218,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -212,6 +230,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {

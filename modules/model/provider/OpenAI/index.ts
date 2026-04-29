@@ -12,7 +12,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -24,7 +25,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -36,7 +38,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -48,7 +51,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -60,7 +64,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -72,7 +77,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -85,6 +91,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_schema'],
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -96,7 +103,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
@@ -111,7 +119,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
@@ -126,7 +135,8 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
@@ -141,6 +151,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
@@ -157,6 +168,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -169,6 +181,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -181,6 +194,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -193,6 +207,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -205,6 +220,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -216,6 +232,7 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       vision: true,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       showStopSign: false,
       fieldMap: {
@@ -231,6 +248,7 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       vision: true,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       showStopSign: false,
       fieldMap: {
@@ -246,6 +264,7 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       vision: false,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       showStopSign: false,
       fieldMap: {
@@ -260,7 +279,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 100000,
       maxTemperature: 2,
       vision: false,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       showStopSign: true,
       responseFormatList: ['text', 'json_object', 'json_schema']
@@ -273,7 +293,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 100000,
       maxTemperature: 2,
       vision: false,
-      reasoning: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       showStopSign: true,
       responseFormatList: ['text', 'json_object', 'json_schema']
@@ -342,6 +363,7 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       vision: true,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: false,
       showStopSign: false,
       fieldMap: {
@@ -357,6 +379,7 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       vision: false,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: false,
       showStopSign: true,
       fieldMap: {
@@ -372,6 +395,7 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       vision: false,
       reasoning: true,
+      reasoningEffort: false,
       toolChoice: false,
       showStopSign: true,
       defaultConfig: {
@@ -390,6 +414,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -401,6 +426,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     }
   ]

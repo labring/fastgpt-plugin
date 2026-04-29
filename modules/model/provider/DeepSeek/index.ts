@@ -13,6 +13,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       defaultConfig: {
         thinking: { type: 'enabled' }
@@ -28,6 +29,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       defaultConfig: {
         thinking: { type: 'enabled' }
@@ -43,6 +45,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -54,6 +57,7 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       vision: false,
       reasoning: true,
+      reasoningEffort: false,
       toolChoice: false,
       showTopP: false,
       showStopSign: false
@@ -68,6 +72,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -80,6 +85,7 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: true
     }
   ]
