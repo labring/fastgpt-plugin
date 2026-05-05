@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { LocalPoolPluginRuntimeManager } from '@fastgpt-plugin/infrastructure/plugin/plugin-runtime/drivers/local-pool/local-pool-runtime.driver';
 import { PluginPKFFileResolver } from '@fastgpt-plugin/infrastructure/plugin/utils/plugin-pkg-file-resolver.impl';
 
@@ -13,8 +11,6 @@ import { RedisClient } from '@infrastructure/redis/redis-client';
 import { MongoClient } from '@infrastructure/storage/mongo/index';
 import { createS3Clients } from '@infrastructure/storage/s3';
 import { URLFileFetcher } from '@infrastructure/utils/url-file-fetcher';
-
-import { createInvokeUploadFileHandler } from './invoke/upload-file.handler';
 
 export const mongoClient = MongoClient.getInstance();
 export const { privateClients: s3PrivateClients, publicClients: s3PublicClients } =
@@ -36,11 +32,6 @@ export const fileTTLManager = new FileTTLManager({
   mongoClient,
   privateRemoteFileStorageRepo,
   publicRemoteFileStorageRepo
-});
-
-export const invokeUploadFileHandler = createInvokeUploadFileHandler({
-  s3Clients: s3PublicClients,
-  basePath: path.join(env.S3_FILE_BASE_PATH, 'invoke')
 });
 
 export const pluginRepo = PluginRepo.getInstance({
@@ -70,7 +61,7 @@ export const pluginRuntimeManager = localPoolPluginRuntimeManager;
 export const toolManager = ToolManager.getInstance({
   pluginRepo,
   pluginRuntimeManager,
-  uploadFileHandler: invokeUploadFileHandler
+  fastgptBaseUrl: env.FASTGPT_BASE_URL
 });
 
 const deps = {
@@ -82,7 +73,6 @@ const deps = {
   pluginRepo,
   mongoClient,
   fileTTLManager,
-  invokeUploadFileHandler,
   toolManager,
   pluginRuntimeManager
 };

@@ -18,6 +18,7 @@ export type {
   PluginListItemType,
   PluginListParamsType,
   PluginListType,
+  PluginPermissionEnumType,
   PluginPruneDisabledResultType,
   PluginRuntimeConfigType,
   PluginSourceType,
@@ -47,4 +48,5 @@ export type {
   WorkflowListType,
   WorkflowTemplateType
 } from './types';
+export { PluginPermissionEnum, PluginPermissionEnumSchema } from './types';
 export { pluginTagList } from './types';

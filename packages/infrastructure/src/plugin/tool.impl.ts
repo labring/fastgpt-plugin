@@ -19,13 +19,13 @@ import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
-import { InvokeManager, type InvokeUploadFileHandler } from './invoke/invoke.impl';
+import { InvokeManager } from './invoke/invoke.impl';
 import { Semver } from './utils/semver';
 
 export type ToolManagerDeps = {
   pluginRepo: PluginRepoPort;
   pluginRuntimeManager: PluginRuntimeManagerPort;
-  uploadFileHandler: InvokeUploadFileHandler;
+  fastgptBaseUrl: string;
 };
 
 export type PluginToolRunPayloadType = {
@@ -40,7 +40,7 @@ export class ToolManager implements ToolManagerPort {
   private constructor(private deps: ToolManagerDeps) {}
 
   private getInvokeToken(systemVar: SystemVarType) {
-    const token = systemVar.tool.token ?? systemVar.tool.accessToken;
+    const token = systemVar.invokeToken;
     return typeof token === 'string' ? token : '';
   }
 
@@ -169,7 +169,7 @@ export class ToolManager implements ToolManagerPort {
       invocationId: randomUUID(),
       invoke: new InvokeManager({
         token: this.getInvokeToken(systemVar),
-        uploadFileHandler: this.deps.uploadFileHandler
+        fastgptBaseUrl: this.deps.fastgptBaseUrl
       })
     };
 

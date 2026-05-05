@@ -7,14 +7,17 @@
 
 import type { ToolManagerPort } from '@domain/ports/plugin/tool.port';
 import type { ToolRunInputType } from '@domain/value-objects/tool.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
 export type ToolRunUCDeps = {
   toolManager: ToolManagerPort;
+  logger: UsecaseLogger;
 };
 
 export const makeToolRunUC =
-  ({ toolManager }: ToolRunUCDeps) =>
+  ({ toolManager, logger }: ToolRunUCDeps) =>
   async (input: ToolRunInputType) => {
+    logger.debug('Tool Run', { input });
     return await toolManager.run(input);
   };

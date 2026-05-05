@@ -7,7 +7,6 @@ export default defineConfig({
   tsconfig: './tsconfig.json',
   dts: {
     enabled: true,
-    sourcemap: true,
     eager: true
   },
   clean: true,

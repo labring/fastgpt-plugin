@@ -123,3 +123,9 @@ export type FastGPTPluginClientOptions = {
 export type ClientRequestOptions = {
   signal?: AbortSignal;
 };
+
+export {
+  PluginPermissionEnum,
+  PluginPermissionEnumSchema,
+  type PluginPermissionEnumType
+} from '@domain/value-objects/permission.vo';

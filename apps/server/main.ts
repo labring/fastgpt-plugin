@@ -2,7 +2,7 @@ import { serve, type ServerType } from '@hono/node-server';
 
 import { env } from '@infrastructure/env';
 import { app } from '@infrastructure/hono/app';
-import { destroyLogger, getLogger, root } from '@infrastructure/logger';
+import { destroyLogger, getLogger, mod, root } from '@infrastructure/logger';
 import { configureProxy } from '@infrastructure/utils/proxy';
 
 import deps from './src/deps';
@@ -16,7 +16,7 @@ import { makeWorkflowRoute } from './src/routes/workflow.route';
 const modelRoute = makeModelRoute(deps);
 const pluginRoute = makePluginRoute(deps);
 const runtimeRoute = makeRuntimeRoute(deps);
-const toolRoute = makeToolRoute(deps);
+const toolRoute = makeToolRoute({ toolManager: deps.toolManager, logger: getLogger(mod.tool) });
 const workflowRoute = makeWorkflowRoute();
 
 app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

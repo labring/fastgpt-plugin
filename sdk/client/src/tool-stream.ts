@@ -40,13 +40,7 @@ export class RunToolWithStream {
     output?: ToolHandlerReturnType;
     error?: Error;
   }> {
-    const payload = ToolRunInputDTOSchema.parse({
-      pluginId: params.pluginId,
-      version: params.version,
-      source: params.source,
-      systemVar: params.systemVar,
-      input: params.input
-    });
+    const payload = ToolRunInputDTOSchema.parse(params);
 
     const response = await this.transport.requestResponse({
       path: `/api${ToolContract.RunStream.meta.path}`,

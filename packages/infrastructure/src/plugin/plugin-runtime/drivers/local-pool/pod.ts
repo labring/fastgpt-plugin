@@ -92,7 +92,6 @@ export class PluginPod {
           }
         });
 
-        console.log('process===============================', this.process);
         // this.process.on('message', (msg) => {
         //   console.log('MESSAGE============================', msg);
         // });

@@ -25,25 +25,16 @@ export const SystemVarDTOSchema = z
   .openapi({
     description: 'System variables provided to the tool when it is run',
     example: {
-      user: {
-        id: 'example-user-tmbId',
-        username: 'example-user',
-        contact: 'example-user@example.com',
-        membername: 'example-user',
-        teamName: 'example-team',
-        teamId: 'example-team-id',
-        name: 'example-user'
-      },
+      time: 'example-time',
       app: {
-        id: 'example-app-id',
-        name: 'example-app'
+        id: 'example-id',
+        name: 'example-name'
       },
-      tool: {
-        id: 'example-tool-id',
-        version: '1.0.0',
-        prefix: 'example-prefix'
+      chat: {
+        chatId: 'example-chat-id',
+        uId: 'example-u-id'
       },
-      time: 'example-time'
+      invokeToken: 'example-invoke-token'
     }
   })
   .openapi('SystemVar');

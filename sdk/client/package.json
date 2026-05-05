@@ -20,5 +20,8 @@
   "license": "MIT",
   "devDependencies": {
     "tsdown": "catalog:"
+  },
+  "peerDependencies": {
+    "zod": "^4"
   }
 }
