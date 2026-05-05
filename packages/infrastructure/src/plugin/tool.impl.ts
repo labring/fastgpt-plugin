@@ -1,4 +1,4 @@
-import * as nodeCrypto from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import type { ToolType } from '@domain/entities/tool.entity';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
@@ -126,7 +126,7 @@ export class ToolManager implements ToolManagerPort {
       this.toToolDetail({
         tool,
         source: normalizedSource,
-        isLatestVersion: latestVersion.version === version
+        isLatestVersion: version ? latestVersion.version === version : true // version 为 undefined 时，isLatestVersion 为 true
       })
     );
   }
@@ -166,7 +166,7 @@ export class ToolManager implements ToolManagerPort {
     } satisfies PluginToolRunPayloadType;
 
     const options: PluginRuntimeInvokeOptions = {
-      invocationId: nodeCrypto.randomUUID(),
+      invocationId: randomUUID(),
       invoke: new InvokeManager({
         token: this.getInvokeToken(systemVar),
         uploadFileHandler: this.deps.uploadFileHandler

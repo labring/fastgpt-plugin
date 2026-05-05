@@ -3,14 +3,14 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file=.env.local  main.ts",
+    "dev": "tsx watch --env-file-if-exists=.env.local  main.ts",
     "build": "tsdown"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/semver": "^7.7.1",
     "@types/turndown": "^5.0.6",
-    "tsdown": "^0.20.1",
+    "tsdown": "catalog:",
     "tsx": "^4.19.2"
   },
   "peerDependencies": {

@@ -1,15 +1,22 @@
 {
   "name": "fastgpt-tools-get-current-time",
-  "module": "index.ts",
+  "version": "0.0.1",
+  "description": "Get current time",
   "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "npx @fastgpt-plugin/cli build",
-    "pack": "npx @fastgpt-plugin/cli pack"
+    "build": "npx @fastgpt-plugin/cli build --minify",
+    "build:dev": "npx @fastgpt-plugin/cli build",
+    "pack": "npx @fastgpt-plugin/cli pack",
+    "test": "vitest run"
   },
   "dependencies": {
-    "zod": "^4"
+    "zod": "*"
   },
   "devDependencies": {
-    "typescript": "^5"
+    "@fastgpt-plugin/cli": "*",
+    "typescript": "*",
+    "vitest": "*",
+    "@fastgpt-plugin/sdk-factory": "*"
   }
 }

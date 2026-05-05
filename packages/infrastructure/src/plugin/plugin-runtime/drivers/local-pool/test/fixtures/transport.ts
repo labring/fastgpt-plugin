@@ -1,5 +1,3 @@
-// import { vi } from 'vitest';
-
 import { resolve } from 'node:path';
 
 import type { InvokePort } from '@domain/ports/invoke.port';
@@ -10,11 +8,12 @@ const fakeInvokeManager: InvokePort = {
   uploadFile: () => {}
 } as unknown as InvokePort;
 
+const pluginPath = resolve(process.cwd(), 'index.js');
+
+console.log('pluginPath', pluginPath);
+
 const pod = new PluginPod('test', {
-  pluginPath: resolve(
-    process.cwd(),
-    'src/plugin/plugin-runtime/drivers/local-pool/test/fixtures/child.js'
-  ),
+  pluginPath,
   getInvokeSession: () => fakeInvokeManager,
   maxConcurrentRequests: 1,
   maxRequests: 1,
@@ -28,12 +27,18 @@ const pod = new PluginPod('test', {
 });
 
 await pod.start();
+console.log(pod.getInfo(), pod.isAvailable());
+
 console.log(
   await pod.invoke({
     eventName: 'run',
     payload: {
-      input: 'hello'
+      input: 'hello',
+      systemVar: {
+        time: 'test time'
+      }
     },
-    returnStream: false
+    returnStream: false,
+    options: {}
   })
 );

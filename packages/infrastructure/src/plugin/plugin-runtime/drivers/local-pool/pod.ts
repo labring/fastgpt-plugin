@@ -86,10 +86,16 @@ export class PluginPod {
       try {
         this.process = fork(this.options.pluginPath, [], {
           stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+          // execArgv: [],
           env: {
             RUNTIME_MODE: PluginRuntimeModeEnum.localPool
           }
         });
+
+        console.log('process===============================', this.process);
+        // this.process.on('message', (msg) => {
+        //   console.log('MESSAGE============================', msg);
+        // });
 
         this.channel = createChildProcessIpcChannel(this.process, {
           defaultTimeoutMs: this.options.podTimeout
@@ -146,6 +152,7 @@ export class PluginPod {
           createInterface({ input: this.process.stderr, crlfDelay: Infinity }).on(
             'line',
             (line) => {
+              console.log('stderr', line);
               this.options.callbacks?.onStderr?.(line);
             }
           );

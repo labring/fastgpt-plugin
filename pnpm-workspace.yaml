@@ -8,4 +8,4 @@ catalog:
   '@fastgpt-sdk/storage': ^0.6.14
   'typescript': '^5.9.3'
   'zod': '^4'
-  'tsdown': '^0.20.1'
+  'tsdown': '^0.21.10'

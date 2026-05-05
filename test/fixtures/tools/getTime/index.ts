@@ -1,35 +1,43 @@
 import { createToolHandler, defineTool } from '@fastgpt-plugin/sdk-factory';
+import { InputType, OutputType, tool as toolCb } from './src';
 import z from 'zod';
 
+const secretSchema = z.object({});
+const inputSchema = z.object({});
+const outputSchema = z.object({
+  time: z.string().optional()
+});
+
 const handler = createToolHandler({
-  inputSchema: z.object({}),
-  outputSchema: z.object({
-    time: z.string()
-  }),
-  handler: async (_input, ctx) => {
-    return {
-      time: ctx.systemVar.time
-    };
+  inputSchema,
+  outputSchema,
+  secretSchema,
+  handler: async (input, ctx) => {
+    const parsedInput = await InputType.parseAsync(input);
+    const output = await toolCb(parsedInput, ctx);
+    return OutputType.parseAsync(output);
   }
 });
 
 const tool = defineTool({
   manifest: {
+    pluginId: 'getTime',
+    name: {
+      en: 'Get current time',
+      'zh-CN': '获取当前时间'
+    },
     description: {
       en: 'Get current time',
       'zh-CN': '获取当前时间'
     },
-    name: {
-      en: 'Get Time',
-      'zh-CN': '获取时间'
-    },
-    pluginId: 'getTime',
-    version: '2.0.0',
+    version: '0.1.1',
     versionDescription: {
-      en: 'Initial version',
-      'zh-CN': '初始版本'
-    }
+      en: 'Default version',
+      'zh-CN': 'Default version'
+    },
+    tags: ['tools']
   },
+  secretSchema,
   handler
 });
 

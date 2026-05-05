@@ -88,18 +88,20 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
     const tempIndexPath = path.join(tempDir, 'index.ts');
     const tBuildStart = Date.now();
     await tsdownBuild({
+      deps: {
+        alwaysBundle: ['*']
+      },
       entry: { index: tempIndexPath },
       outDir: outputDir,
       format: [options.format],
       clean: true,
       minify: options.minify,
-      inlineOnly: ['*'],
       nodeProtocol: true,
       platform: 'node',
       target: 'node22',
       dts: false,
       treeshake: true,
-      noExternal: ['*'],
+      // noExternal: ['*'],
       outExtensions: () => ({ dts: '.d.ts', js: '.js' })
     });
     tBuild = Date.now() - tBuildStart;
