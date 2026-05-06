@@ -50,3 +50,9 @@ export type {
 } from './types';
 export { PluginPermissionEnum, PluginPermissionEnumSchema } from './types';
 export { pluginTagList } from './types';
+export type {
+  ParsedPkgFile,
+  ParsedPkgFiles,
+  ParsePkgParams
+} from '@infrastructure/plugin/utils/pkg-parser';
+export { parsePkg } from '@infrastructure/plugin/utils/pkg-parser';
