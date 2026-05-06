@@ -1,0 +1,37 @@
+{
+  "providers": {
+    "OpenAI": {
+      "source": "https://platform.openai.com/docs/models",
+      "checkedAt": "2026-05-04",
+      "auditStatus": "checked",
+      "add": [],
+      "remove": []
+    },
+    "ExampleProvider": {
+      "source": "https://example.invalid/official-model-catalog",
+      "checkedAt": "2026-05-04",
+      "auditStatus": "changed",
+      "add": [
+        {
+          "model": "example-new-model",
+          "cloneFrom": "example-existing-model",
+          "reason": "Official model catalog lists this as a new public model.",
+          "replace": {
+            "maxContext": 128000,
+            "maxTokens": 16000,
+            "vision": true,
+            "fieldMap": {
+              "max_tokens": "max_completion_tokens"
+            }
+          }
+        }
+      ],
+      "remove": [
+        {
+          "model": "example-retired-model",
+          "reason": "Official deprecation notice marks this exact model as retired."
+        }
+      ]
+    }
+  }
+}

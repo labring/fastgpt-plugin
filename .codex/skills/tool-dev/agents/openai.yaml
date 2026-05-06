@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tool Dev"
+  short_description: "Build FastGPT plugin tools"
+  default_prompt: "Use $tool-dev to implement or review a FastGPT plugin tool with repo-specific validation."

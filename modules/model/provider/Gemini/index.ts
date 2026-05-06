@@ -5,6 +5,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'gemini-3.1-pro-preview-customtools',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gemini-3.1-flash-lite-preview',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -39,7 +51,6 @@ const models: ProviderConfigType = {
       reasoningEffort: true,
       toolChoice: true
     },
-
     {
       type: ModelTypeEnum.llm,
       model: 'gemini-3-flash-preview',
@@ -55,19 +66,6 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gemini-3-flash',
-      maxContext: 1024000,
-      maxTokens: 64000,
-      quoteMaxToken: 1000000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true
-    },
-
-    {
-      type: ModelTypeEnum.llm,
-      model: 'gemini-3-pro-preview',
       maxContext: 1024000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,

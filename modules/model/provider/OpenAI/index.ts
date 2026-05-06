@@ -5,6 +5,32 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'gpt-5.5',
+      maxContext: 250000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5.5-pro',
+      maxContext: 250000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5.4',
       maxContext: 250000,
       maxTokens: 128000,
@@ -157,7 +183,6 @@ const models: ProviderConfigType = {
         max_tokens: 'max_completion_tokens'
       }
     },
-
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-4.1',
@@ -299,7 +324,6 @@ const models: ProviderConfigType = {
       showStopSign: true,
       responseFormatList: ['text', 'json_object', 'json_schema']
     },
-
     {
       type: ModelTypeEnum.embedding,
       model: 'text-embedding-3-large',
@@ -352,8 +376,6 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.stt,
       model: 'whisper-1'
     },
-
-    // Deprecated models
     {
       type: ModelTypeEnum.llm,
       model: 'o1',

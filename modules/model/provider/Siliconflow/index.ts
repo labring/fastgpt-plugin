@@ -98,7 +98,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
-      model: 'BAAI/bge-reranker-v2-m3'
+      model: 'BAAI/bge-reranker-v2-m3',
+      maxToken: 8192
     }
   ]
 };
