@@ -184,18 +184,6 @@ const models: ProviderConfigType = {
       toolChoice: false
     },
     {
-      type: ModelTypeEnum.llm,
-      model: 'step-2-16k-exp',
-      maxContext: 16000,
-      maxTokens: 4000,
-      quoteMaxToken: 4000,
-      maxTemperature: 2,
-      vision: false,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: false
-    },
-    {
       type: ModelTypeEnum.tts,
       model: 'step-tts-mini',
       voices: [

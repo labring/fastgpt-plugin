@@ -410,25 +410,6 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'o1-preview',
-      maxContext: 128000,
-      maxTokens: 4000,
-      quoteMaxToken: 120000,
-      maxTemperature: null,
-      vision: false,
-      reasoning: true,
-      reasoningEffort: false,
-      toolChoice: false,
-      showStopSign: true,
-      defaultConfig: {
-        stream: false
-      },
-      fieldMap: {
-        max_tokens: 'max_completion_tokens'
-      }
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'gpt-3.5-turbo',
       maxContext: 16000,
       maxTokens: 4000,

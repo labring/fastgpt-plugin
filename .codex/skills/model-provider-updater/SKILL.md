@@ -30,6 +30,8 @@ Only work on providers already registered by `modules/model/init.ts`; never add 
 
    Remove a preset only when an official source explicitly marks the model as deprecated, retired, unavailable, or when an authoritative model-list API/document states that only the returned/listed models are supported and the local model is absent. Do not delete local custom placeholders in `Other`, `Ollama`, `HuggingFace`, `OpenRouter`, or similar open catalogs unless the provider explicitly removes that exact model from its own official API/catalog.
 
+   Remove preview, experimental, or dated candidate presets when the same model family has a stable public model ID in the same provider and official docs describe the preview/experimental ID as deprecated, superseded, unavailable, or no longer recommended. Do not remove a preview ID solely because a stable-looking sibling exists; keep it when official docs still list it as current, required for a distinct capability, or the stable ID has not reached the same capability.
+
 4. Create and apply an update plan.
 
    Generate a template and fill only confirmed additions/removals:

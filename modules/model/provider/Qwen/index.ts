@@ -6,7 +6,7 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.rerank,
       model: 'qwen3-rerank',
-      maxToken: 4000
+      maxToken: 32000
     },
     {
       type: ModelTypeEnum.llm,
