@@ -4,6 +4,11 @@ const models: ProviderConfigType = {
   provider: 'Qwen',
   list: [
     {
+      type: ModelTypeEnum.rerank,
+      model: 'qwen3-rerank',
+      maxToken: 32000
+    },
+    {
       type: ModelTypeEnum.llm,
       model: 'qwen3.6-max-preview',
       maxContext: 260000,
@@ -466,7 +471,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
-      model: 'gte-rerank-v2'
+      model: 'gte-rerank-v2',
+      maxToken: 30000
     }
   ]
 };

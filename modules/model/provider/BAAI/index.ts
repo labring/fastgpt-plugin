@@ -11,7 +11,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
-      model: 'bge-reranker-v2-m3'
+      model: 'bge-reranker-v2-m3',
+      maxToken: 8192
     }
   ]
 };

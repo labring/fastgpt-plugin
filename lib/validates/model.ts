@@ -69,7 +69,8 @@ export const EmbeddingModelItemSchema = PriceSchema.merge(BaseModelItemSchema).e
 
 // Rerank 模型类型 schema
 export const RerankModelItemSchema = PriceSchema.merge(BaseModelItemSchema).extend({
-  type: z.literal(ModelTypeEnum.rerank)
+  type: z.literal(ModelTypeEnum.rerank),
+  maxToken: z.number()
 });
 
 // TTS 模型类型 schema
