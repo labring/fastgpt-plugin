@@ -1,14 +1,86 @@
 import { ModelTypeEnum, type ProviderConfigType } from '../../type';
 
+const ttsVoices = [
+  {
+    label: 'Alloy',
+    value: 'alloy'
+  },
+  {
+    label: 'Ash',
+    value: 'ash'
+  },
+  {
+    label: 'Ballad',
+    value: 'ballad'
+  },
+  {
+    label: 'Coral',
+    value: 'coral'
+  },
+  {
+    label: 'Echo',
+    value: 'echo'
+  },
+  {
+    label: 'Fable',
+    value: 'fable'
+  },
+  {
+    label: 'Nova',
+    value: 'nova'
+  },
+  {
+    label: 'Onyx',
+    value: 'onyx'
+  },
+  {
+    label: 'Sage',
+    value: 'sage'
+  },
+  {
+    label: 'Shimmer',
+    value: 'shimmer'
+  },
+  {
+    label: 'Verse',
+    value: 'verse'
+  },
+  {
+    label: 'Marin',
+    value: 'marin'
+  },
+  {
+    label: 'Cedar',
+    value: 'cedar'
+  }
+];
+
+const legacyTtsVoices = ttsVoices.filter(
+  ({ value }) => !['ballad', 'verse', 'marin', 'cedar'].includes(value)
+);
+
 const models: ProviderConfigType = {
   provider: 'OpenAI',
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: 'gpt-5.4',
-      maxContext: 250000,
+      model: 'gpt-5.5',
+      maxContext: 1050000,
       maxTokens: 128000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 1000000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5.4',
+      maxContext: 1050000,
+      maxTokens: 128000,
+      quoteMaxToken: 1000000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
@@ -19,9 +91,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-5.4-pro',
-      maxContext: 250000,
+      maxContext: 1050000,
       maxTokens: 128000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 1000000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
@@ -45,9 +117,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-5.4-nano',
-      maxContext: 250000,
+      maxContext: 400000,
       maxTokens: 128000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 350000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
@@ -58,9 +130,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-5.2',
-      maxContext: 250000,
+      maxContext: 400000,
       maxTokens: 128000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 350000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
@@ -71,9 +143,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-5.1',
-      maxContext: 250000,
+      maxContext: 400000,
       maxTokens: 128000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 350000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
@@ -97,9 +169,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-5',
-      maxContext: 250000,
+      maxContext: 400000,
       maxTokens: 128000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 350000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
@@ -113,9 +185,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-5-mini',
-      maxContext: 250000,
+      maxContext: 400000,
       maxTokens: 128000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 350000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
@@ -129,9 +201,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-5-nano',
-      maxContext: 250000,
+      maxContext: 400000,
       maxTokens: 128000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 350000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
@@ -320,33 +392,26 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
+      model: 'gpt-4o-mini-tts',
+      voices: ttsVoices
+    },
+    {
+      type: ModelTypeEnum.tts,
       model: 'tts-1',
-      voices: [
-        {
-          label: 'Alloy',
-          value: 'alloy'
-        },
-        {
-          label: 'Echo',
-          value: 'echo'
-        },
-        {
-          label: 'Fable',
-          value: 'fable'
-        },
-        {
-          label: 'Onyx',
-          value: 'onyx'
-        },
-        {
-          label: 'Nova',
-          value: 'nova'
-        },
-        {
-          label: 'Shimmer',
-          value: 'shimmer'
-        }
-      ]
+      voices: legacyTtsVoices
+    },
+    {
+      type: ModelTypeEnum.tts,
+      model: 'tts-1-hd',
+      voices: legacyTtsVoices
+    },
+    {
+      type: ModelTypeEnum.stt,
+      model: 'gpt-4o-transcribe'
+    },
+    {
+      type: ModelTypeEnum.stt,
+      model: 'gpt-4o-mini-transcribe'
     },
     {
       type: ModelTypeEnum.stt,
