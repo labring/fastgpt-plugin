@@ -21,6 +21,7 @@ function mockResponse(data: unknown): RequestResponse<unknown> {
 
 function createInput(overrides: Partial<InputProps> = {}): InputProps {
   return {
+    deploymentType: 'api',
     apiKey: 'test-api-key',
     baseUrl: 'https://example.test/api/v1',
     file: ['https://example.test/sample.pdf'],
@@ -139,6 +140,68 @@ describe('SoMarkDocumentParser tool', () => {
       enable_image_understanding: false,
       keep_header_footer: true
     });
+  });
+
+  test('omits api_key for private deployment', async () => {
+    mockFetchFile();
+    mockedPOST.mockResolvedValueOnce(
+      mockResponse({
+        code: 0,
+        message: 'ok',
+        data: {
+          result: {
+            outputs: {
+              markdown: '# Private',
+              json: { private: true }
+            }
+          }
+        }
+      })
+    );
+
+    const result = await tool(
+      createInput({
+        deploymentType: 'private',
+        apiKey: '',
+        baseUrl: 'https://somark.internal/api/v1'
+      })
+    );
+
+    const form = mockedPOST.mock.calls[0][1] as FormData;
+    const entries = formEntries(form);
+    expect(entries.api_key).toBeUndefined();
+    expect(mockedPOST).toHaveBeenCalledWith('/parse/sync', expect.any(FormData), {
+      baseURL: 'https://somark.internal/api/v1',
+      headers: {},
+      timeout: 120_000,
+      retries: 1
+    });
+    expect(result).toEqual({
+      markdown: '# Private',
+      json: { private: true }
+    });
+  });
+
+  test('requires apiKey for SoMark API mode', async () => {
+    await expect(tool(createInput({ apiKey: '' }))).rejects.toThrow(
+      'apiKey is required when using SoMark API'
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockedPOST).not.toHaveBeenCalled();
+  });
+
+  test('requires custom baseUrl for private deployment', async () => {
+    await expect(
+      tool(
+        createInput({
+          deploymentType: 'private',
+          apiKey: '',
+          baseUrl: 'https://somark.tech/api/v1'
+        })
+      )
+    ).rejects.toThrow('baseUrl is required when using private deployment');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockedPOST).not.toHaveBeenCalled();
   });
 
   test('uses a file url string and omits unrequested markdown output', async () => {

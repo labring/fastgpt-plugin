@@ -9,11 +9,14 @@ const ImageFormatEnum = z.enum(['url', 'base64', 'none']);
 const FormulaFormatEnum = z.enum(['latex', 'mathml', 'ascii']);
 const TableFormatEnum = z.enum(['markdown', 'html', 'image']);
 const ChemicalStructureFormatEnum = z.enum(['image']);
+const DeploymentTypeEnum = z.enum(['api', 'private']);
+const DEFAULT_BASE_URL = 'https://somark.tech/api/v1';
 
 export const InputType = z.object({
   // ----- Secrets (from secretInputConfig) -----
-  apiKey: z.string().min(1, 'apiKey is required'),
-  baseUrl: z.url().default('https://somark.tech/api/v1'),
+  deploymentType: DeploymentTypeEnum.default('api'),
+  apiKey: z.string().optional().default(''),
+  baseUrl: z.url().default(DEFAULT_BASE_URL),
 
   // ----- File input -----
   // FastGPT fileSelect passes selected file URLs as an array.
@@ -79,6 +82,7 @@ async function fetchFileBlob(fileUrl: string): Promise<{ blob: Blob; filename: s
  */
 export async function tool(props: InputProps): Promise<OutputProps> {
   const {
+    deploymentType,
     apiKey,
     baseUrl,
     file,
@@ -101,12 +105,20 @@ export async function tool(props: InputProps): Promise<OutputProps> {
   if (!fileUrl) {
     throw new Error('Cannot resolve file url from input');
   }
+  if (deploymentType === 'api' && apiKey.trim().length === 0) {
+    throw new Error('apiKey is required when using SoMark API');
+  }
+  if (deploymentType === 'private' && baseUrl === DEFAULT_BASE_URL) {
+    throw new Error('baseUrl is required when using private deployment');
+  }
   const { blob, filename } = await fetchFileBlob(fileUrl);
 
   // --- Build form-data payload ---
   const form = new FormData();
   form.append('file', blob, filename);
-  form.append('api_key', apiKey);
+  if (deploymentType === 'api') {
+    form.append('api_key', apiKey);
+  }
   for (const format of outputFormats) {
     form.append('output_formats', format);
   }

@@ -21,20 +21,32 @@ export default defineTool({
     'A precise and reliable tool that utilizes the SoMark API to convert various document formats (PDF, PNG, JPG, etc.) into clean, structured Markdown or JSON format, preserving the original layout and content hierarchy.',
   secretInputConfig: [
     {
+      key: 'deploymentType',
+      label: '部署方式',
+      description: '选择使用 SoMark 官方 API，或连接私有化部署的 SoMark 服务。',
+      required: true,
+      inputType: 'select',
+      // defaultValue: 'api',
+      list: [
+        { label: 'SoMark API', value: 'api' },
+        { label: '私有化部署', value: 'private' }
+      ]
+    },
+    {
       key: 'apiKey',
       label: 'API Key',
       description: '前往 https://somark.tech 注册账号，并在控制台获取 API Key。',
-      required: true,
+      required: false,
       inputType: 'secret'
     },
     {
       key: 'baseUrl',
       label: 'Base URL',
       description:
-        'SoMark API BaseUrl，默认使用官方服务地址。仅在私有化部署或自定义网关场景下需要修改。',
+        'SoMark API BaseUrl，官方 API 默认使用官方服务地址；私有化部署时填写私有服务地址。',
       required: false,
-      inputType: 'input',
-      defaultValue: 'https://somark.tech/api/v1'
+      inputType: 'input'
+      // defaultValue: 'https://somark.tech/api/v1'
     }
   ],
   versionList: [
