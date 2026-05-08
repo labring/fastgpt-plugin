@@ -27,7 +27,6 @@ export default defineTool({
       description: '选择使用 SoMark 官方 API，或连接私有化部署的 SoMark 服务。',
       required: true,
       inputType: 'select',
-      // defaultValue: 'api',
       list: [
         { label: 'SoMark API', value: 'api' },
         { label: '私有化部署', value: 'private' }
@@ -46,7 +45,6 @@ export default defineTool({
       description: '私有化部署时填写服务地址；使用 SoMark 官方 API 时留空即可。',
       required: false,
       inputType: 'input'
-      // defaultValue: 'https://somark.tech/api/v1'
     }
   ],
   versionList: [
