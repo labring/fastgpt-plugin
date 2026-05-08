@@ -16,18 +16,8 @@ export const InputType = z.object({
   baseUrl: z.url().default('https://somark.tech/api/v1'),
 
   // ----- File input -----
-  // FastGPT passes a file as an array of file-like objects.
-  // The shape commonly contains { url, name, type, ... }.
-  file: z
-    .array(
-      z.looseObject({
-        url: z.string().optional(),
-        path: z.string().optional(),
-        name: z.string().optional(),
-        type: z.string().optional()
-      })
-    )
-    .length(1, 'file is required'),
+  // FastGPT fileSelect passes selected file URLs as an array.
+  file: z.array(z.string()).length(1, 'file is required'),
 
   // ----- Output / element formats -----
   outputFormats: z.array(OutputFormatEnum).min(1).default(['json', 'markdown']),
@@ -52,6 +42,28 @@ export const OutputType = z.object({
   json: z.record(z.string(), z.any()).default({})
 });
 export type OutputProps = z.infer<typeof OutputType>;
+
+function getFileName(fileUrl: string): string {
+  try {
+    const { pathname } = new URL(fileUrl);
+    const name = decodeURIComponent(pathname.split('/').filter(Boolean).at(-1) ?? '');
+    return name || 'document';
+  } catch {
+    return 'document';
+  }
+}
+
+async function fetchFileBlob(fileUrl: string): Promise<{ blob: Blob; filename: string }> {
+  const response = await fetch(fileUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: getFileName(fileUrl)
+  };
+}
 
 // ---------- Tool ----------
 
@@ -85,15 +97,15 @@ export async function tool(props: InputProps): Promise<OutputProps> {
   } = props;
 
   // --- Resolve file URL ---
-  const fileItem = file[0];
-  const fileUrl = fileItem?.url ?? fileItem?.path;
+  const fileUrl = file[0];
   if (!fileUrl) {
     throw new Error('Cannot resolve file url from input');
   }
+  const { blob, filename } = await fetchFileBlob(fileUrl);
 
   // --- Build form-data payload ---
   const form = new FormData();
-  form.append('file', fileUrl);
+  form.append('file', blob, filename);
   form.append('api_key', apiKey);
   for (const format of outputFormats) {
     form.append('output_formats', format);

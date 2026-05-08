@@ -47,7 +47,7 @@ export default defineTool({
           label: '文件',
           description: '待解析的文件，支持 PDF、图片、Office 格式。',
           renderTypeList: [FlowNodeInputTypeEnum.fileSelect, FlowNodeInputTypeEnum.reference],
-          valueType: WorkflowIOValueTypeEnum.arrayObject,
+          valueType: WorkflowIOValueTypeEnum.arrayString,
           required: true,
           canSelectFile: true,
           canSelectImg: true,
