@@ -36,7 +36,7 @@ import siliconflow from './provider/Siliconflow';
 import sparkdesk from './provider/SparkDesk';
 import stepfun from './provider/StepFun';
 import yi from './provider/Yi';
-import { aiproxyIdMap, ModelProviderMap, ModelProviders } from './model';
+import { aiproxyChannels, ModelProviderMap, ModelProviders } from './model';
 import type { ProviderConfigType } from './type';
 
 export const staticModelDataDir = fileURLToPath(new URL('./', import.meta.url));
@@ -129,4 +129,4 @@ export const staticModelList: ModelItemType[] = staticModelProviderConfigs.flatM
   )
 );
 
-export { aiproxyIdMap, ModelProviderMap, ModelProviders };
+export { aiproxyChannels, ModelProviderMap, ModelProviders };

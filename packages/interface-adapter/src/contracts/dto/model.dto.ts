@@ -22,13 +22,13 @@ export const ModelProviderItemDTOSchema = z.object({
   })
 });
 
-export const AiproxyMapProviderItemDTOSchema = z.object({
+export const AIProxyChannelItemDTOSchema = z.object({
+  channelId: z.number().openapi({
+    description: 'AIProxy channel id',
+    example: 1
+  }),
   name: I18nStringStrictDTOSchema.openapi({
     description: 'AIProxy provider display name'
-  }),
-  provider: z.string().optional().openapi({
-    description: 'Mapped model provider id',
-    example: 'OpenAI'
   }),
   avatar: z.string().optional().openapi({
     description: 'Custom avatar url'
@@ -39,12 +39,12 @@ export const ModelProviderListDTOSchema = z.object({
   modelProviders: z.array(ModelProviderItemDTOSchema).openapi({
     description: 'Model provider list'
   }),
-  aiproxyIdMap: z.record(z.string(), AiproxyMapProviderItemDTOSchema).openapi({
-    description: 'AIProxy provider mapping'
+  aiproxyChannels: z.array(AIProxyChannelItemDTOSchema).openapi({
+    description: 'AIProxy channel list'
   })
 });
 
 export type ModelListDTOType = z.infer<typeof ModelListDTOSchema>;
 export type ModelProviderItemDTOType = z.infer<typeof ModelProviderItemDTOSchema>;
-export type AiproxyMapProviderItemDTOType = z.infer<typeof AiproxyMapProviderItemDTOSchema>;
+export type AiproxyMapProviderItemDTOType = z.infer<typeof AIProxyChannelItemDTOSchema>;
 export type ModelProviderListDTOType = z.infer<typeof ModelProviderListDTOSchema>;

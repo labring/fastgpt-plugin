@@ -4,11 +4,16 @@ import type { ReadableStream } from 'node:stream/web';
 import { createRoute, z } from '@hono/zod-openapi';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
 
+import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
+import type { PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';
+import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
+import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
+import type { URLFileFetcherPort } from '@domain/ports/url-file-fetcher.port';
 import { makePluginConfigGetUC } from '@usecase/plugin/plugin-config-get.uc';
 import { makeResetPluginConfigUC } from '@usecase/plugin/plugin-config-reset.uc';
 import { makeSetPluginConfigUC } from '@usecase/plugin/plugin-config-set.uc';
-import { makePluginConfirmUC, type PluginConfirmUCDeps } from '@usecase/plugin/plugin-confirm.uc';
-import { makePluginInstallUC, type PluginInstallUCDeps } from '@usecase/plugin/plugin-install.uc';
+import { makePluginConfirmUC } from '@usecase/plugin/plugin-confirm.uc';
+import { makePluginInstallUC } from '@usecase/plugin/plugin-install.uc';
 import { makePluginListUC } from '@usecase/plugin/plugin-list.uc';
 import { makePluginPruneDisabledUC } from '@usecase/plugin/plugin-prune-disabled.uc';
 import { makePluginTagListUC } from '@usecase/plugin/plugin-tag-list.uc';
@@ -18,11 +23,11 @@ import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import { getLogger, mod } from '@infrastructure/logger';
 
 export type PluginRouteDeps = {
-  localFileStorageRepo: PluginInstallUCDeps['localFileStorageRepo'];
-  urlFileFetcher: PluginInstallUCDeps['urlFileFetcher'];
-  pluginPKGFileResolver: PluginInstallUCDeps['pluginPKGFileResolver'];
-  pluginRepo: PluginInstallUCDeps['pluginRepo'];
-  pluginRuntimeManager: PluginConfirmUCDeps['pluginRuntimeManager'];
+  localFileStorageRepo: LocalFileStoragePort;
+  urlFileFetcher: URLFileFetcherPort;
+  pluginPKGFileResolver: PluginPKGFilePort;
+  pluginRepo: PluginRepoPort;
+  pluginRuntimeManager: PluginRuntimeManagerPort;
 };
 
 export const makePluginRoute = (deps: PluginRouteDeps) => {

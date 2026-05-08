@@ -185,309 +185,121 @@ export const ModelProviders: { provider: string; value: I18nStringStrictType }[]
   value
 }));
 
-export type AiproxyMapProviderType = Record<
-  number,
-  {
-    name: I18nStringStrictType;
-    provider?: string; // Use to sort, get avatar
-    avatar?: string;
-  }
->;
+export type AIProxyChannelsType = {
+  channelId: number;
+  name: I18nStringStrictType | string;
+  avatar: string;
+}[];
 
-export const aiproxyIdMap: AiproxyMapProviderType = {
-  1: {
-    name: {
-      en: 'OpenAI',
-      'zh-CN': 'OpenAI',
-      'zh-Hant': 'OpenAI'
-    },
-    provider: 'OpenAI'
+export const aiproxyChannels: AIProxyChannelsType = [
+  // 海外模型厂商 + 云厂商
+  { channelId: 1, name: 'OpenAI', avatar: 'openai' },
+  { channelId: 14, name: 'Anthropic', avatar: 'anthropic' },
+  { channelId: 24, name: 'Google Gemini', avatar: 'gemini' },
+  { channelId: 28, name: 'Mistral AI', avatar: 'mistralai' },
+  { channelId: 45, name: 'Grok', avatar: 'grok' },
+
+  {
+    channelId: 3,
+    name: { en: '微软 Azure', 'zh-CN': 'Azure', 'zh-Hant': 'Azure' },
+    avatar: 'azure'
   },
-  3: {
-    name: {
-      en: '微软 Azure',
-      'zh-CN': 'Azure',
-      'zh-Hant': 'Azure'
-    },
-    avatar: 'model/azure',
-    provider: 'OpenAI'
+  { channelId: 33, name: 'AWS', avatar: 'aws' },
+
+  // 国内厂商 + 云厂商
+  {
+    channelId: 17,
+    name: { en: 'Qwen', 'zh-CN': '阿里百炼', 'zh-Hant': '阿里百煉' },
+    avatar: 'qwen'
   },
-  4: {
-    name: {
-      en: 'Azure (deprecated)',
-      'zh-CN': 'Azure（已弃用）',
-      'zh-Hant': 'Azure（已弃用）'
-    },
-    avatar: 'model/azure',
-    provider: 'Other'
+  {
+    channelId: 40,
+    name: { en: 'Doubao', 'zh-CN': '火山引擎（豆包）', 'zh-Hant': '火山引擎（豆包）' },
+    avatar: 'doubao'
   },
-  14: {
-    name: {
-      en: 'Anthropic',
-      'zh-CN': 'Anthropic',
-      'zh-Hant': 'Anthropic'
-    },
-    provider: 'Claude'
+  {
+    channelId: 25,
+    name: { en: 'Moonshot', 'zh-CN': '月之暗面', 'zh-Hant': '月之暗面' },
+    avatar: 'moonshot'
   },
-  12: {
-    name: {
-      en: 'Google Gemini(OpenAI)',
-      'zh-CN': 'Google Gemini（OpenAI）',
-      'zh-Hant': 'Google Gemini（OpenAI）'
-    },
-    provider: 'Gemini'
+  { channelId: 36, name: 'DeepSeek', avatar: 'deepseek' },
+  {
+    channelId: 23,
+    name: { en: 'Hunyuan', 'zh-CN': '腾讯混元', 'zh-Hant': '騰訊混元' },
+    avatar: 'hunyuan'
   },
-  24: {
-    name: {
-      en: 'Google Gemini',
-      'zh-CN': 'Google Gemini',
-      'zh-Hant': 'Google Gemini'
-    },
-    provider: 'Gemini'
+  {
+    channelId: 13,
+    name: { en: 'Ernie V2', 'zh-CN': '百度智能云 V2', 'zh-Hant': '百度智能云 V2' },
+    avatar: 'ernie-v2'
   },
-  28: {
-    name: {
-      en: 'Mistral AI',
-      'zh-CN': 'Mistral AI',
-      'zh-Hant': 'Mistral AI'
-    },
-    provider: 'MistralAI'
+  {
+    channelId: 16,
+    name: { en: 'ChatGLM', 'zh-CN': '智谱清言', 'zh-Hant': '智譜清言' },
+    avatar: 'chatglm'
   },
-  29: {
-    name: {
-      en: 'Groq',
-      'zh-CN': 'Groq',
-      'zh-Hant': 'Groq'
-    },
-    provider: 'Groq'
+  {
+    channelId: 18,
+    name: { en: 'SparkDesk', 'zh-CN': '讯飞星火', 'zh-Hant': '訊飛星火' },
+    avatar: 'sparkdesk'
   },
-  17: {
-    name: {
-      en: 'Qwen',
-      'zh-CN': '阿里百炼',
-      'zh-Hant': '阿里百煉'
-    },
-    provider: 'Qwen'
+  {
+    channelId: 54,
+    name: { en: 'Ant Ling', 'zh-CN': '蚂蚁百灵', 'zh-Hant': '螞蟻百靈' },
+    avatar: 'antling'
   },
-  40: {
-    name: {
-      en: 'Doubao',
-      'zh-CN': '火山引擎（豆包）',
-      'zh-Hant': '火山引擎（豆包）'
-    },
-    provider: 'Doubao'
+  {
+    channelId: 26,
+    name: { en: 'Baichuan', 'zh-CN': '百川智能', 'zh-Hant': '百川智能' },
+    avatar: 'baichuan'
   },
-  36: {
-    name: {
-      en: 'DeepSeek',
-      'zh-CN': 'DeepSeek',
-      'zh-Hant': 'DeepSeek'
-    },
-    provider: 'DeepSeek'
+  { channelId: 27, name: 'MiniMax', avatar: 'minimax' },
+  {
+    channelId: 31,
+    name: { en: 'Yi', 'zh-CN': '零一万物', 'zh-Hant': '零一萬物' },
+    avatar: 'yi'
   },
-  13: {
-    name: {
-      en: 'Ernie V2',
-      'zh-CN': '百度智能云 V2',
-      'zh-Hant': '百度智能云 V2'
-    },
-    provider: 'Ernie'
+  {
+    channelId: 32,
+    name: { en: 'StepFun', 'zh-CN': '阶跃星辰', 'zh-Hant': '階躍星辰' },
+    avatar: 'stepfun'
   },
-  15: {
-    name: {
-      en: 'Ernie',
-      'zh-CN': '百度智能云',
-      'zh-Hant': '百度智能云'
-    },
-    provider: 'Ernie'
+  { channelId: 19, name: 'ai360', avatar: 'ai360' },
+  {
+    channelId: 43,
+    name: { en: 'Siliconflow', 'zh-CN': '硅基流动', 'zh-Hant': '矽基流動' },
+    avatar: 'siliconflow'
   },
-  16: {
-    name: {
-      en: 'ChatGLM',
-      'zh-CN': '智谱清言',
-      'zh-Hant': '智譜清言'
-    },
-    provider: 'ChatGLM'
+
+  // 集成商
+  { channelId: 20, name: 'OpenRouter', avatar: 'openrouter' },
+  { channelId: 29, name: 'Groq', avatar: 'groq' },
+  { channelId: 47, name: 'JinaAI', avatar: 'jina' },
+  { channelId: 35, name: 'Cohere', avatar: 'cohere' },
+  { channelId: 37, name: 'Cloudflare', avatar: 'cloudflare' },
+  { channelId: 42, name: 'vertexai', avatar: 'vertexai' },
+  { channelId: 41, name: 'novita', avatar: 'novita' },
+  { channelId: 30, name: 'Ollama', avatar: 'ollama' },
+  { channelId: 48, name: 'Sangfor', avatar: 'sangfor' },
+
+  // 三方 AI，非模型提供商
+  { channelId: 46, name: 'Doc2X', avatar: 'doc2x' },
+  { channelId: 34, name: 'Coze', avatar: 'coze' },
+  // 弃用的
+  { channelId: 12, name: 'Google Gemini(OpenAI)', avatar: 'gemini-openai' },
+  { channelId: 4, name: `azure (弃用)`, avatar: 'azure-deprecated' },
+  {
+    channelId: 15,
+    name: { en: 'Ernie', 'zh-CN': '百度智能云', 'zh-Hant': '百度智能云' },
+    avatar: 'ernie'
   },
-  18: {
-    name: {
-      en: 'SparkDesk',
-      'zh-CN': '讯飞星火',
-      'zh-Hant': '訊飛星火'
-    },
-    provider: 'SparkDesk'
-  },
-  25: {
-    name: {
-      en: 'Moonshot',
-      'zh-CN': '月之暗面',
-      'zh-Hant': '月之暗面'
-    },
-    provider: 'Moonshot'
-  },
-  26: {
-    name: {
-      en: 'Baichuan',
-      'zh-CN': '百川智能',
-      'zh-Hant': '百川智能'
-    },
-    provider: 'Baichuan'
-  },
-  27: {
-    name: {
-      en: 'MiniMax',
-      'zh-CN': 'MiniMax',
-      'zh-Hant': 'MiniMax'
-    },
-    provider: 'MiniMax'
-  },
-  31: {
-    name: {
-      en: 'Yi',
-      'zh-CN': '零一万物',
-      'zh-Hant': '零一萬物'
-    },
-    provider: 'Yi'
-  },
-  32: {
-    name: {
-      en: 'StepFun',
-      'zh-CN': '阶跃星辰',
-      'zh-Hant': '階躍星辰'
-    },
-    provider: 'StepFun'
-  },
-  43: {
-    name: {
-      en: 'Siliconflow',
-      'zh-CN': '硅基流动',
-      'zh-Hant': '矽基流動'
-    },
-    provider: 'Siliconflow'
-  },
-  30: {
-    name: {
-      en: 'Ollama',
-      'zh-CN': 'Ollama',
-      'zh-Hant': 'Ollama'
-    },
-    provider: 'Ollama'
-  },
-  23: {
-    name: {
-      en: 'Hunyuan',
-      'zh-CN': '腾讯混元',
-      'zh-Hant': '騰訊混元'
-    },
-    provider: 'Hunyuan'
-  },
-  44: {
+  {
+    channelId: 44,
     name: {
       en: 'Doubao Audio',
       'zh-CN': '火山引擎（豆包音频）',
       'zh-Hant': '火山引擎（豆包音频）'
     },
-    provider: 'Doubao'
-  },
-  33: {
-    name: {
-      en: 'AWS',
-      'zh-CN': 'AWS',
-      'zh-Hant': 'AWS'
-    },
-    provider: 'Other',
-    avatar: 'model/aws'
-  },
-  35: {
-    name: {
-      en: 'Cohere',
-      'zh-CN': 'Cohere',
-      'zh-Hant': 'Cohere'
-    },
-    provider: 'Other',
-    avatar: 'model/cohere'
-  },
-  37: {
-    name: {
-      en: 'Cloudflare',
-      'zh-CN': 'Cloudflare',
-      'zh-Hant': 'Cloudflare'
-    },
-    provider: 'Other',
-    avatar: 'model/cloudflare'
-  },
-  20: {
-    name: {
-      en: 'OpenRouter',
-      'zh-CN': 'OpenRouter',
-      'zh-Hant': 'OpenRouter'
-    },
-    provider: 'OpenRouter'
-  },
-  47: {
-    name: {
-      en: 'JinaAI',
-      'zh-CN': 'JinaAI',
-      'zh-Hant': 'JinaAI'
-    },
-    provider: 'Jina'
-  },
-  19: {
-    name: {
-      en: 'ai360',
-      'zh-CN': 'ai360',
-      'zh-Hant': 'ai360'
-    },
-    provider: 'ai360'
-  },
-  42: {
-    name: {
-      en: 'vertexai',
-      'zh-CN': 'vertexai',
-      'zh-Hant': 'vertexai'
-    },
-    provider: 'vertexai'
-  },
-  41: {
-    name: {
-      en: 'novita',
-      'zh-CN': 'novita',
-      'zh-Hant': 'novita'
-    },
-    provider: 'novita'
-  },
-  45: {
-    name: {
-      en: 'Grok',
-      'zh-CN': 'Grok',
-      'zh-Hant': 'Grok'
-    },
-    provider: 'Grok'
-  },
-  46: {
-    name: {
-      en: 'Doc2X',
-      'zh-CN': 'Doc2X',
-      'zh-Hant': 'Doc2X'
-    },
-    provider: 'Other',
-    avatar: 'plugins/doc2x'
-  },
-  34: {
-    name: {
-      en: 'Coze',
-      'zh-CN': '扣子',
-      'zh-Hant': '扣子'
-    },
-    provider: 'Other',
-    avatar: 'model/coze'
-  },
-  48: {
-    name: {
-      en: 'Sangfor',
-      'zh-CN': '深信服',
-      'zh-Hant': '深信服'
-    },
-    provider: 'Sangfor'
+    avatar: 'doubao-audio'
   }
-};
+];

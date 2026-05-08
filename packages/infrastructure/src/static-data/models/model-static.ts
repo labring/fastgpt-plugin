@@ -13,7 +13,7 @@ import { getLogger, mod } from '../../logger';
 import type { RedisClient } from '../../redis/redis-client';
 
 import {
-  aiproxyIdMap,
+  aiproxyChannels,
   getSortedStaticModelProviders,
   staticModelDataDir,
   staticModelList,
@@ -38,7 +38,7 @@ type ModelLogoItem = {
   logoPath: string;
 };
 
-export { aiproxyIdMap, staticModelList as modelList };
+export { aiproxyChannels, staticModelList as modelList };
 
 export const getSortedModelProviders = (priority = env.MODEL_PROVIDER_PRIORITY) =>
   getSortedStaticModelProviders(priority);

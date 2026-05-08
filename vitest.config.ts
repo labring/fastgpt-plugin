@@ -22,7 +22,12 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src'),
       '@tool': resolve(__dirname, 'modules/tool'),
-      '@domain': resolve(__dirname, 'packages/domain/src')
+      '@domain': resolve(__dirname, 'packages/domain/src'),
+      '@usecase': resolve(__dirname, 'packages/usecase/src'),
+      '@shared': resolve(__dirname, 'packages/shared/src'),
+      '@interface-adapter': resolve(__dirname, 'packages/interface-adapter/src'),
+      '@infrastructure': resolve(__dirname, 'packages/infrastructure/src'),
+      '@fastgpt-plugin/cli': resolve(__dirname, 'apps/cli/src')
     }
   }
 });

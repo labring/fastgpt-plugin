@@ -88,32 +88,37 @@ export class ToolFactory extends PluginFactory {
               throw new Error('No tool registered');
             }
 
-            const streamResponse = StreamData.create<ToolAnswerType>();
             const output = StreamData.create<ToolStreamMessageType>();
 
-            streamResponse.onData((msg) => {
-              output.send({
-                type: 'stream',
-                data: msg
-              });
-            });
+            void (async () => {
+              try {
+                const result = await def.handler(input, {
+                  systemVar,
+                  secrets,
+                  invoke: new InvokeClient(this.getChannel(), {
+                    invocationId: msg.traceId
+                  }),
+                  streamResponse: (msg: ToolAnswerType) => {
+                    output.send({
+                      type: 'stream',
+                      data: msg
+                    });
+                  }
+                });
 
-            const result = await def.handler(input, {
-              systemVar,
-              secrets,
-              invoke: new InvokeClient(this.getChannel(), {
-                invocationId: msg.traceId
-              }),
-              streamResponse: (msg: ToolAnswerType) => {
-                streamResponse.send(msg);
+                output.send({
+                  type: 'response',
+                  data: result
+                });
+              } catch (err) {
+                output.send({
+                  data: getErrText(err, 'Unknown error during tool execution'),
+                  type: 'error'
+                });
+              } finally {
+                output.end();
               }
-            });
-
-            output.send({
-              type: 'response',
-              data: result
-            });
-            output.end();
+            })();
 
             return this.getChannel().replyDuplex(msg, undefined, {
               output

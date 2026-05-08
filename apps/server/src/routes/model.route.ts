@@ -4,7 +4,7 @@ import { ModelContract } from '@interface-adapter/contracts/route/model.contract
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import {
-  aiproxyIdMap,
+  aiproxyChannels,
   getModelAvatarUrl,
   getSortedModelProviders,
   modelList
@@ -74,7 +74,7 @@ export const makeModelRoute = (deps: ModelRouteDeps) => {
 
       return R.success(c, {
         modelProviders,
-        aiproxyIdMap
+        aiproxyChannels
       });
     }
   );

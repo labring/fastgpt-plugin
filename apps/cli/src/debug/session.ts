@@ -207,43 +207,28 @@ export function createDebugSystemVar(
   overrides?: Partial<SystemVarType>
 ): SystemVarType {
   const base: SystemVarType = {
-    user: {
-      id: 'debug-user',
-      username: 'debug-user',
-      contact: 'debug@example.com',
-      membername: 'debug-member',
-      teamName: 'debug-team',
-      teamId: 'debug-team-id',
-      name: 'Local Debug User'
-    },
     app: {
       id: 'debug-app',
       name: 'FastGPT Local Debug'
     },
-    tool: {
-      id: snapshot.pluginId,
-      version: snapshot.version,
-      prefix: snapshot.isToolSet ? toolId : snapshot.pluginId,
-      token: 'debug-token',
-      accessToken: 'debug-access-token'
+    chat: {
+      chatId: 'debug-chat',
+      uid: 'debugger'
     },
+    invokeToken: 'debug-invoke-token',
     time: new Date().toISOString()
   };
 
   return SystemVarSchema.parse({
     ...base,
     ...overrides,
-    user: {
-      ...base.user,
-      ...(overrides?.user ?? {})
-    },
     app: {
       ...base.app,
       ...(overrides?.app ?? {})
     },
-    tool: {
-      ...base.tool,
-      ...(overrides?.tool ?? {})
+    chat: {
+      ...base.chat,
+      ...(overrides?.chat ?? {})
     }
   });
 }

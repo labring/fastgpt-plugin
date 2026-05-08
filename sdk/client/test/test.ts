@@ -17,20 +17,11 @@ const result = await client.runToolStream({
       id: 'test-app',
       name: 'Test App'
     },
-    user: {
-      contact: 'test',
-      id: 'test-user',
-      membername: 'Test User',
-      name: 'Test User',
-      teamId: 'test-team',
-      teamName: 'Test Team',
-      username: 'testuser'
+    chat: {
+      chatId: 'test-chat',
+      uid: 'test-user'
     },
-    tool: {
-      id: 'getTime',
-      version: '1.0.0',
-      prefix: '111'
-    }
+    invokeToken: ''
   },
   version: '1.0.0',
   onMessage: (message) => {
