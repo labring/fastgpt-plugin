@@ -116,7 +116,7 @@ export async function tool(props: InputProps): Promise<OutputProps> {
       image: imageFormat,
       formula: formulaFormat,
       table: tableFormat,
-      chemical_structure: chemicalStructureFormat
+      cs: chemicalStructureFormat
     })
   );
   form.append(
