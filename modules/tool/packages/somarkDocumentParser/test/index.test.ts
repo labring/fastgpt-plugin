@@ -260,6 +260,25 @@ describe('somarkDocumentParser tool', () => {
     expect((entries.file[0] as File).name).toBe('document');
   });
 
+  test('uses a fallback filename when the file url path is empty', async () => {
+    mockFetchFile();
+    mockedPOST.mockResolvedValueOnce(
+      mockResponse({
+        code: 0,
+        message: 'ok',
+        data: {
+          result: {}
+        }
+      })
+    );
+
+    await tool(createInput({ file: ['https://example.test/'] }));
+
+    const form = mockedPOST.mock.calls[0][1] as FormData;
+    const entries = formEntries(form);
+    expect((entries.file[0] as File).name).toBe('document');
+  });
+
   test('throws when the source file cannot be fetched', async () => {
     fetchMock.mockResolvedValueOnce(
       new Response('missing', {
