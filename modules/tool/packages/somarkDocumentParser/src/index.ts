@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 export const InputType = z.object({
   apiKey: z.string(),
+  baseUrl: z.string(),
+  file: z.array(z.record(z.any())).min(1),
   formatStr: z.string().optional().default('yyyy-MM-dd HH:mm:ss')
 });
 
