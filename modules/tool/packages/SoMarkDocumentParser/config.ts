@@ -14,11 +14,12 @@ export default defineTool({
   },
   tags: [ToolTagEnum.enum.tools],
   description: {
-    'zh-CN': '使用 SoMark API 将各种文档（如 PDF、图片等）转换为结构化的 Markdown 或 JSON 格式。',
-    en: 'Convert various document types—including PDFs, images, and more—into structured Markdown or JSON using the SoMark API.'
+    'zh-CN':
+      '使用 SoMark 文档解析工具 将各种文档（如 PDF、图片等）转换为结构化的 Markdown 或 JSON 格式。',
+    en: 'Convert various document types—including PDFs, images, and more—into structured Markdown or JSON using the SoMark Document Parser.'
   },
   toolDescription:
-    'A precise and reliable tool that utilizes the SoMark API to convert various document formats (PDF, PNG, JPG, etc.) into clean, structured Markdown or JSON format, preserving the original layout and content hierarchy.',
+    'A precise and reliable tool that utilizes the SoMark Document Parser to convert various document formats (PDF, PNG, JPG, etc.) into clean, structured Markdown or JSON format, preserving the original layout and content hierarchy.',
   secretInputConfig: [
     {
       key: 'deploymentType',
@@ -35,15 +36,14 @@ export default defineTool({
     {
       key: 'apiKey',
       label: 'API Key',
-      description: '前往 https://somark.tech 注册账号，并在控制台获取 API Key。',
+      description: '使用 SoMark 官方 API 时填写；私有化部署无需填写。',
       required: false,
       inputType: 'secret'
     },
     {
       key: 'baseUrl',
       label: 'Base URL',
-      description:
-        'SoMark API BaseUrl，官方 API 默认使用官方服务地址；私有化部署时填写私有服务地址。',
+      description: '私有化部署时填写服务地址；使用 SoMark 官方 API 时留空即可。',
       required: false,
       inputType: 'input'
       // defaultValue: 'https://somark.tech/api/v1'

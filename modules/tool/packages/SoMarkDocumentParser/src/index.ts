@@ -14,9 +14,9 @@ const DEFAULT_BASE_URL = 'https://somark.tech/api/v1';
 
 export const InputType = z.object({
   // ----- Secrets (from secretInputConfig) -----
-  deploymentType: DeploymentTypeEnum.default('api'),
+  deploymentType: DeploymentTypeEnum,
   apiKey: z.string().optional().default(''),
-  baseUrl: z.url().default(DEFAULT_BASE_URL),
+  baseUrl: z.string().optional().default(''),
 
   // ----- File input -----
   // FastGPT fileSelect passes selected file URLs as an array.
@@ -46,11 +46,21 @@ export const OutputType = z.object({
 });
 export type OutputProps = z.infer<typeof OutputType>;
 
+function normalizeFileName(filename: string): string {
+  return filename.split(/[\\/]/).at(-1)?.trim() || '';
+}
+
 function getFileName(fileUrl: string): string {
   try {
-    const { pathname } = new URL(fileUrl);
+    const url = new URL(fileUrl);
+    const filename = url.searchParams.get('filename');
+    if (filename) {
+      return normalizeFileName(filename) || 'document';
+    }
+
+    const { pathname } = url;
     const name = decodeURIComponent(pathname.split('/').filter(Boolean).at(-1) ?? '');
-    return name || 'document';
+    return normalizeFileName(name) || 'document';
   } catch {
     return 'document';
   }
@@ -103,13 +113,24 @@ export async function tool(props: InputProps): Promise<OutputProps> {
   // --- Resolve file URL ---
   const fileUrl = file[0];
   if (!fileUrl) {
-    throw new Error('Cannot resolve file url from input');
+    throw new Error('File path is required');
   }
+  let handledBaseUrl = baseUrl.trim();
+
+  if (deploymentType === 'api' && handledBaseUrl === '') {
+    handledBaseUrl = DEFAULT_BASE_URL;
+  }
+
+  if (deploymentType === 'api' && handledBaseUrl !== DEFAULT_BASE_URL) {
+    throw new Error('Base URL must be https://somark.tech/api/v1 when using SoMark API');
+  }
+
   if (deploymentType === 'api' && apiKey.trim().length === 0) {
-    throw new Error('apiKey is required when using SoMark API');
+    throw new Error('API Key is required when using SoMark API');
   }
-  if (deploymentType === 'private' && baseUrl === DEFAULT_BASE_URL) {
-    throw new Error('baseUrl is required when using private deployment');
+
+  if (deploymentType === 'private' && handledBaseUrl.length === 0) {
+    throw new Error('Base URL is required when using private deployment');
   }
   const { blob, filename } = await fetchFileBlob(fileUrl);
 
@@ -155,7 +176,7 @@ export async function tool(props: InputProps): Promise<OutputProps> {
       result?: { outputs?: { markdown?: string; json?: Record<string, any> } };
     } | null;
   }>('/parse/sync', form, {
-    baseURL: baseUrl,
+    baseURL: handledBaseUrl,
     headers: {}, // 显式传空 headers，覆盖默认的 Content-Type: application/json
     timeout: 120_000,
     retries: 1

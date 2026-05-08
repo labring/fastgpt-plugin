@@ -23,7 +23,7 @@ function createInput(overrides: Partial<InputProps> = {}): InputProps {
   return {
     deploymentType: 'api',
     apiKey: 'test-api-key',
-    baseUrl: 'https://example.test/api/v1',
+    baseUrl: '',
     file: ['https://example.test/sample.pdf'],
     outputFormats: ['json', 'markdown'],
     imageFormat: 'url',
@@ -111,7 +111,7 @@ describe('SoMarkDocumentParser tool', () => {
     });
     expect(mockedPOST).toHaveBeenCalledTimes(1);
     expect(mockedPOST).toHaveBeenCalledWith('/parse/sync', expect.any(FormData), {
-      baseURL: 'https://example.test/api/v1',
+      baseURL: 'https://somark.tech/api/v1',
       headers: {},
       timeout: 120_000,
       retries: 1
@@ -184,7 +184,7 @@ describe('SoMarkDocumentParser tool', () => {
 
   test('requires apiKey for SoMark API mode', async () => {
     await expect(tool(createInput({ apiKey: '' }))).rejects.toThrow(
-      'apiKey is required when using SoMark API'
+      'API Key is required when using SoMark API'
     );
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mockedPOST).not.toHaveBeenCalled();
@@ -196,10 +196,10 @@ describe('SoMarkDocumentParser tool', () => {
         createInput({
           deploymentType: 'private',
           apiKey: '',
-          baseUrl: 'https://somark.tech/api/v1'
+          baseUrl: ''
         })
       )
-    ).rejects.toThrow('baseUrl is required when using private deployment');
+    ).rejects.toThrow('Base URL is required when using private deployment');
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mockedPOST).not.toHaveBeenCalled();
   });
@@ -246,6 +246,31 @@ describe('SoMarkDocumentParser tool', () => {
       markdown: '',
       json: { blocks: [] }
     });
+  });
+
+  test('uses filename query parameter for downloaded files', async () => {
+    mockFetchFile();
+    mockedPOST.mockResolvedValueOnce(
+      mockResponse({
+        code: 0,
+        message: 'ok',
+        data: {
+          result: {}
+        }
+      })
+    );
+
+    await tool(
+      createInput({
+        file: [
+          'http://localhost:3001/api/system/file/download/download-token?filename=%E4%B8%AA%E4%BA%BA%E7%9F%A5%E8%AF%86%E5%BA%93.pdf'
+        ]
+      })
+    );
+
+    const form = mockedPOST.mock.calls[0][1] as FormData;
+    const entries = formEntries(form);
+    expect((entries.file[0] as File).name).toBe('个人知识库.pdf');
   });
 
   test('omits unrequested json output', async () => {
@@ -298,9 +323,7 @@ describe('SoMarkDocumentParser tool', () => {
   });
 
   test('throws when the input file has no resolvable url', async () => {
-    await expect(tool(createInput({ file: [''] }))).rejects.toThrow(
-      'Cannot resolve file url from input'
-    );
+    await expect(tool(createInput({ file: [''] }))).rejects.toThrow('File path is required');
     expect(mockedPOST).not.toHaveBeenCalled();
   });
 
