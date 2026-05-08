@@ -132,7 +132,7 @@ export async function tool(props: InputProps): Promise<OutputProps> {
     } | null;
   }>('/parse/sync', form, {
     baseURL: baseUrl,
-    headers: {}, // ← 必须显式传空 headers，覆盖默认的 Content-Type: application/json
+    headers: {}, // 显式传空 headers，覆盖默认的 Content-Type: application/json
     timeout: 120_000,
     retries: 1
   });
