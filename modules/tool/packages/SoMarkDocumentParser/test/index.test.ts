@@ -64,7 +64,7 @@ function formEntries(form: FormData): Record<string, unknown[]> {
   return entries;
 }
 
-describe('somarkDocumentParser tool', () => {
+describe('SoMarkDocumentParser tool', () => {
   beforeEach(() => {
     mockedPOST.mockReset();
     fetchMock.mockReset();
@@ -128,7 +128,7 @@ describe('somarkDocumentParser tool', () => {
       image: 'url',
       formula: 'latex',
       table: 'html',
-      chemical_structure: 'image'
+      cs: 'image'
     });
     expect(JSON.parse(entries.feature_configs[0] as string)).toEqual({
       enable_text_cross_page: true,
@@ -177,7 +177,7 @@ describe('somarkDocumentParser tool', () => {
       image: 'base64',
       formula: 'mathml',
       table: 'markdown',
-      chemical_structure: 'image'
+      cs: 'image'
     });
     expect(result).toEqual({
       markdown: '',

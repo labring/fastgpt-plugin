@@ -7,7 +7,7 @@ import {
 import { ToolTagEnum } from '@tool/type/tags';
 
 export default defineTool({
-  toolId: 'somarkDocumentParser',
+  toolId: 'SoMarkDocumentParser',
   name: {
     'zh-CN': 'SoMark 文档解析',
     en: 'SoMark Document Parser'
