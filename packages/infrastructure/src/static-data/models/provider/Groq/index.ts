@@ -12,7 +12,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -23,7 +24,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     }
   ]
 };

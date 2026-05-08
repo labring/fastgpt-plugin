@@ -61,3 +61,5 @@ export const defineToolSet = ({
   toolSet.setSecretSchema(secretSchema ?? z.object());
   return toolSet;
 };
+
+export type { ToolHandlerContext } from './tool-factory';

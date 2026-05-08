@@ -89,7 +89,7 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
     const tBuildStart = Date.now();
     await tsdownBuild({
       deps: {
-        alwaysBundle: ['*']
+        alwaysBundle: ['*', '*/*', '@*/*']
       },
       entry: { index: tempIndexPath },
       outDir: outputDir,
@@ -102,7 +102,10 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
       dts: false,
       treeshake: true,
       // noExternal: ['*'],
-      outExtensions: () => ({ dts: '.d.ts', js: '.js' })
+      outExtensions: () => ({ dts: '.d.ts', js: '.js' }),
+      outputOptions: {
+        codeSplitting: false
+      }
     });
     tBuild = Date.now() - tBuildStart;
 

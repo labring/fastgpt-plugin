@@ -5,39 +5,68 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: 'qwen3.5-plus',
+      model: 'qwen3.6-max-preview',
+      maxContext: 260000,
+      maxTokens: 64000,
+      quoteMaxToken: 260000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3.6-plus',
       maxContext: 1000000,
-      maxTokens: 65536,
+      maxTokens: 64000,
       quoteMaxToken: 1000000,
       maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
+      responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'qwen-max',
-      maxContext: 128000,
-      maxTokens: 8000,
-      quoteMaxToken: 120000,
+      model: 'qwen3.6-flash',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
       maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: false,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'qwen-vl-max',
-      maxContext: 128000,
-      maxTokens: 8000,
-      quoteMaxToken: 120000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
+      responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
-      reasoning: false,
-      toolChoice: false
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3.5-flash',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3.5-plus',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -49,7 +78,60 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3-vl-flash',
+      maxContext: 25000,
+      maxTokens: 8000,
+      quoteMaxToken: 20000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: false,
+      toolChoice: true,
+      reasoningEffort: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3-vl-plus',
+      maxContext: 25000,
+      maxTokens: 8000,
+      quoteMaxToken: 20000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: false,
+      toolChoice: true,
+      reasoningEffort: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen-max',
+      maxContext: 128000,
+      maxTokens: 8000,
+      quoteMaxToken: 120000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: false,
+      reasoning: false,
+      toolChoice: true,
+      reasoningEffort: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen-vl-max',
+      maxContext: 128000,
+      maxTokens: 8000,
+      quoteMaxToken: 120000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: false,
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -61,7 +143,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -73,7 +156,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: true,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -82,10 +166,11 @@ const models: ProviderConfigType = {
       maxTokens: 16000,
       quoteMaxToken: 1000000,
       maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
+      responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -97,7 +182,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -112,31 +198,8 @@ const models: ProviderConfigType = {
       toolChoice: true,
       defaultConfig: {
         stream: true
-      }
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'qwen3-vl-flash',
-      maxContext: 25000,
-      maxTokens: 8000,
-      quoteMaxToken: 20000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: true,
-      reasoning: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'qwen3-vl-plus',
-      maxContext: 25000,
-      maxTokens: 8000,
-      quoteMaxToken: 20000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: true,
-      reasoning: false,
-      toolChoice: true
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -151,7 +214,8 @@ const models: ProviderConfigType = {
       toolChoice: true,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -166,7 +230,8 @@ const models: ProviderConfigType = {
       toolChoice: true,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -181,7 +246,8 @@ const models: ProviderConfigType = {
       toolChoice: true,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -196,7 +262,8 @@ const models: ProviderConfigType = {
       toolChoice: true,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -211,7 +278,8 @@ const models: ProviderConfigType = {
       toolChoice: true,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -226,7 +294,8 @@ const models: ProviderConfigType = {
       toolChoice: true,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -241,7 +310,8 @@ const models: ProviderConfigType = {
       toolChoice: true,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -260,7 +330,8 @@ const models: ProviderConfigType = {
       showStopSign: false,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -279,7 +350,8 @@ const models: ProviderConfigType = {
       showStopSign: false,
       defaultConfig: {
         stream: true
-      }
+      },
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -290,7 +362,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -302,7 +375,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -314,7 +388,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -326,7 +401,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -338,7 +414,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -350,7 +427,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -368,7 +446,8 @@ const models: ProviderConfigType = {
       usedInExtractFields: false,
       usedInToolCall: false,
       showTopP: false,
-      showStopSign: false
+      showStopSign: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.embedding,

@@ -5,6 +5,19 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'glm-5.1',
+      maxContext: 200000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'glm-5',
       maxContext: 200000,
       maxTokens: 128000,
@@ -13,42 +26,124 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'glm-5-turbo',
+      maxContext: 200000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'glm-5v-turbo',
+      maxContext: 200000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
       model: 'glm-4.7',
       maxContext: 200000,
-      maxTokens: 130000,
+      maxTokens: 128000,
       quoteMaxToken: 200000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'glm-4.7-flashx',
+      maxContext: 200000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'glm-4.7-flash',
+      maxContext: 200000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
       model: 'glm-4.6',
       maxContext: 200000,
-      maxTokens: 130000,
+      maxTokens: 128000,
       quoteMaxToken: 200000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
       model: 'glm-4.6v',
       maxContext: 128000,
       maxTokens: 16000,
-      quoteMaxToken: 200000,
+      quoteMaxToken: 120000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: true,
       reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'glm-4.6v-flashx',
+      maxContext: 128000,
+      maxTokens: 16000,
+      quoteMaxToken: 120000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'glm-4.6v-flash',
+      maxContext: 128000,
+      maxTokens: 16000,
+      quoteMaxToken: 120000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
@@ -61,7 +156,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -73,7 +169,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -85,7 +182,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -97,7 +195,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -109,53 +208,58 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
       model: 'glm-4.1v-thinking-flashx',
       maxContext: 64000,
       maxTokens: 16000,
-      quoteMaxToken: 64000,
+      quoteMaxToken: 60000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
-      toolChoice: false
+      reasoning: true,
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
       model: 'glm-4.1v-thinking-flash',
       maxContext: 64000,
       maxTokens: 16000,
-      quoteMaxToken: 64000,
+      quoteMaxToken: 60000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
-      toolChoice: false
+      reasoning: true,
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
       model: 'glm-4-air',
       maxContext: 128000,
-      maxTokens: 4000,
+      maxTokens: 16000,
       quoteMaxToken: 120000,
       maxTemperature: 0.99,
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
       model: 'glm-4-flash',
       maxContext: 128000,
-      maxTokens: 4000,
+      maxTokens: 16000,
       quoteMaxToken: 120000,
       maxTemperature: 0.99,
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -167,7 +271,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -179,7 +284,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -190,18 +296,20 @@ const models: ProviderConfigType = {
       maxTemperature: 0.99,
       vision: true,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
       model: 'glm-4v-plus',
-      maxContext: 8000,
-      maxTokens: 1000,
-      quoteMaxToken: 6000,
+      maxContext: 16000,
+      maxTokens: 4000,
+      quoteMaxToken: 12000,
       maxTemperature: 0.99,
       vision: true,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.embedding,

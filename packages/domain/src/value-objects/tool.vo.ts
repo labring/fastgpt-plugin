@@ -36,10 +36,6 @@ export const ToolStreamMessageSchema = z.discriminatedUnion('type', [
 
 export type ToolStreamMessageType = z.infer<typeof ToolStreamMessageSchema>;
 
-export const ToolRunContextSchema = z.object({
-  systemVar: z.record(z.string(), z.unknown())
-});
-
 export const ToolRunInputSchema = z.object({
   pluginId: z.string(),
   version: z.preprocess((value) => {

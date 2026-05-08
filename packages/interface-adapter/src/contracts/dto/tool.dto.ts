@@ -53,7 +53,7 @@ export const ToolRunInputDTOSchema = z.object({
     example: 'system'
   }),
   secrets: z
-    .record(z.string(), z.string())
+    .record(z.string(), z.any())
     .optional()
     .openapi({
       description: 'Tool secrets, key-value pairs',

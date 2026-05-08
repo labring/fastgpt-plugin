@@ -5,14 +5,15 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: 'kimi-k2.5',
-      maxContext: 256000,
+      model: 'kimi-k2.6',
+      maxContext: 262144,
       maxTokens: 32000,
-      quoteMaxToken: 250000,
+      quoteMaxToken: 256000,
       maxTemperature: null,
       responseFormatList: ['text', 'json_object'],
-      vision: false,
+      vision: true,
       reasoning: true,
+      reasoningEffort: true,
       toolChoice: true,
       showTopP: false,
       defaultConfig: {
@@ -20,6 +21,25 @@ const models: ProviderConfigType = {
           type: 'enabled'
         }
       }
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'kimi-k2.5',
+      maxContext: 262144,
+      maxTokens: 32000,
+      quoteMaxToken: 256000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: true,
+      toolChoice: true,
+      showTopP: false,
+      defaultConfig: {
+        thinking: {
+          type: 'enabled'
+        }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -31,7 +51,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -43,7 +64,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -55,7 +77,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -67,7 +90,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -79,7 +103,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -91,7 +116,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -103,7 +129,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -115,7 +142,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -127,7 +155,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -139,7 +168,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -151,7 +181,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -163,7 +194,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -175,7 +207,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -187,7 +220,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     }
   ]
 };

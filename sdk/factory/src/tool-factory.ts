@@ -31,7 +31,7 @@ type ToolSecretValue<TSecret extends ToolSecretSchema> = TSecret extends z.ZodTy
   ? z.output<NoInfer<TSecret>>
   : undefined;
 
-type ToolHandlerContext<TSecret extends ToolSecretSchema> = {
+export type ToolHandlerContext<TSecret extends ToolSecretSchema> = {
   systemVar: SystemVarType;
   secrets?: ToolSecretValue<TSecret>;
   invoke: InvokePort;
@@ -121,7 +121,7 @@ export class ToolFactory extends PluginFactory {
           } catch (err) {
             const output: StreamData<ToolStreamMessageType> = StreamData.create();
             output.write({
-              data: getErrText(err),
+              data: getErrText(err, 'Unknown error during tool execution'),
               type: 'error'
             });
             output.end();

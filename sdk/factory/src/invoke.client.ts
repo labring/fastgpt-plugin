@@ -7,7 +7,8 @@ import {
   type InvokePort,
   type InvokeUploadFileInputType,
   InvokeUploadFileOutputSchema,
-  type InvokeUploadFileOutputType
+  type InvokeUploadFileOutputType,
+  type InvokeUserInfoOutputType
 } from '@domain/ports/invoke.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { HOST_INVOKE_METHOD } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
@@ -23,6 +24,35 @@ export class InvokeClient implements InvokePort {
     private readonly options: { invocationId?: string } = {}
   ) {}
 
+  async userInfo(): Promise<Result<InvokeUserInfoOutputType>> {
+    try {
+      const response = await this.channel.requestDuplex(
+        HOST_INVOKE_METHOD,
+        {
+          method: InvokeMethodEnum.userInfo,
+          args: {}
+        },
+        {
+          requestId: randomUUID(),
+          traceId: this.options.invocationId
+        }
+      );
+
+      const [result, responseErr] = response.result as [InvokeUserInfoOutputType, unknown];
+      if (responseErr)
+        return failureResult(
+          {
+            en: 'Failed to get user info',
+            'zh-CN': '获取用户信息失败'
+          },
+          responseErr
+        );
+      return successResult(result);
+    } catch (error) {
+      return failureResult({ en: 'Failed to get user info', 'zh-CN': '获取用户信息失败' }, error);
+    }
+  }
+
   async uploadFile(input: InvokeUploadFileInputType): Promise<Result<InvokeUploadFileOutputType>> {
     try {
       const response = await this.channel.requestDuplex(
@@ -37,13 +67,21 @@ export class InvokeClient implements InvokePort {
         {
           requestId: randomUUID(),
           traceId: this.options.invocationId,
-          input: Buffer.isBuffer(input.file)
-            ? Stream.Readable.from(input.file)
-            : (input.file as Stream.Readable)
+          input: this.toUploadInputStream(input.file)
         }
       );
 
-      return successResult(InvokeUploadFileOutputSchema.parse(response.result));
+      const [result, err] = response.result as [InvokeUploadFileOutputType, unknown];
+      if (err)
+        return failureResult(
+          {
+            en: 'Failed to upload file',
+            'zh-CN': '上传文件失败'
+          },
+          err
+        );
+
+      return successResult(InvokeUploadFileOutputSchema.parse(result));
     } catch (err) {
       return failureResult(
         {
@@ -53,5 +91,10 @@ export class InvokeClient implements InvokePort {
         err
       );
     }
+  }
+
+  private toUploadInputStream(file: InvokeUploadFileInputType['file']): Stream.Readable {
+    if (file instanceof Stream.Readable) return file;
+    return Stream.Readable.from(Buffer.from(file));
   }
 }

@@ -14,7 +14,6 @@ import type {
   ServiceMetrics
 } from './types';
 import { LocalPoolPluginConfigSchema } from './types';
-import { existsSync } from 'node:fs';
 
 const MAX_CONSECUTIVE_POD_STARTUP_FAILURES = 3;
 

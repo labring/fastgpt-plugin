@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
-import { buffer as readStreamToBuffer } from 'node:stream/consumers';
 
 import {
   type InvokePort,
   type InvokeUploadFileInputType,
   InvokeUploadFileOutputSchema,
-  type InvokeUploadFileOutputType
+  type InvokeUploadFileOutputType,
+  InvokeUserInfoOutputSchema,
+  type InvokeUserInfoOutputType
 } from '@domain/ports/invoke.port';
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
 export type InvokeUploadFileHandler = (arg: {
@@ -20,70 +22,92 @@ export type InvokeManagerDeps = {
   fastgptBaseUrl: string;
 };
 
+type InvokeUploadFileRequest = {
+  formData: FormData;
+  meta: {
+    fileName: string;
+    contentType: string;
+  };
+};
+
+type SerializedBufferChunk = {
+  type: 'Buffer';
+  data: number[];
+};
+
 export class InvokeManager implements InvokePort {
   constructor(private readonly deps: InvokeManagerDeps) {}
 
-  async uploadFile(input: InvokeUploadFileInputType): Promise<Result<InvokeUploadFileOutputType>> {
-    let formData: FormData;
-    try {
-      formData = await this.buildFormData(input);
-    } catch (error) {
-      return failureResult(
-        {
-          en: 'Invoke upload file failed',
-          'zh-CN': '反向调用上传文件失败'
-        },
-        error
-      );
-    }
+  async userInfo(): Promise<Result<InvokeUserInfoOutputType>> {
+    const [result, responseErr] = await this.requestFastGPT({
+      path: '/api/invoke/userInfo',
+      init: {
+        method: 'GET'
+      },
+      failureReason: {
+        en: 'Invoke user info failed',
+        'zh-CN': '反向调用用户信息失败'
+      },
+      invalidJsonReason: {
+        en: 'Invalid invoke user info output',
+        'zh-CN': '反向调用用户信息返回数据格式错误'
+      }
+    });
 
-    let response: Response;
-    try {
-      response = await fetch(this.buildUrl('/api/invoke/fileUpload'), {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.deps.token}`
-        },
-        body: formData
-      });
-    } catch (error) {
-      return failureResult(
-        {
-          en: 'Invoke upload file failed',
-          'zh-CN': '反向调用上传文件失败'
-        },
-        error
-      );
-    }
-
-    if (!response.ok) {
-      return failureResult(
-        {
-          en: 'Invoke upload file failed',
-          'zh-CN': '反向调用上传文件失败'
-        },
-        await this.readErrorResponse(response)
-      );
-    }
-
-    let payload: unknown;
-    try {
-      payload = await response.json();
-    } catch (error) {
-      return failureResult(
-        {
-          en: 'Invalid invoke upload file output',
-          'zh-CN': '反向调用上传文件返回数据格式错误'
-        },
-        error
-      );
-    }
-
-    const [result, responseErr] = this.parseResponse(payload);
     if (responseErr) return failureResult(responseErr);
 
     try {
-      return successResult(InvokeUploadFileOutputSchema.parse(this.normalizeOutput(result)));
+      return successResult(InvokeUserInfoOutputSchema.parse(result));
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Invalid invoke user info output',
+          'zh-CN': '反向调用用户信息返回数据格式错误'
+        },
+        error
+      );
+    }
+  }
+
+  async uploadFile(input: InvokeUploadFileInputType): Promise<Result<InvokeUploadFileOutputType>> {
+    let request: InvokeUploadFileRequest;
+    try {
+      request = await this.buildUploadFileRequest(input);
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Invoke upload file failed',
+          'zh-CN': '反向调用上传文件失败'
+        },
+        error
+      );
+    }
+
+    const [result, responseErr] = await this.requestFastGPT<{
+      url: string;
+    }>({
+      path: '/api/invoke/fileUpload',
+      init: {
+        method: 'POST',
+        body: request.formData
+      },
+      failureReason: {
+        en: 'Invoke upload file failed',
+        'zh-CN': '反向调用上传文件失败'
+      },
+      invalidJsonReason: {
+        en: 'Invalid invoke upload file output',
+        'zh-CN': '反向调用上传文件返回数据格式错误'
+      }
+    });
+    if (responseErr) return failureResult(responseErr);
+
+    try {
+      return successResult(
+        InvokeUploadFileOutputSchema.parse({
+          accessURL: result.url
+        })
+      );
     } catch (error) {
       return failureResult(
         {
@@ -99,7 +123,9 @@ export class InvokeManager implements InvokePort {
     return new URL(path, this.deps.fastgptBaseUrl).toString();
   }
 
-  private async buildFormData(input: InvokeUploadFileInputType): Promise<FormData> {
+  private async buildUploadFileRequest(
+    input: InvokeUploadFileInputType
+  ): Promise<InvokeUploadFileRequest> {
     const formData = new FormData();
     const fileBuffer = await this.toBuffer(input.file);
     const fileName = input.fileName ?? randomUUID();
@@ -111,23 +137,100 @@ export class InvokeManager implements InvokePort {
     if (input.fileName) formData.append('fileName', input.fileName);
     if (input.contentType) formData.append('contentType', input.contentType);
 
-    return formData;
+    return {
+      formData,
+      meta: {
+        fileName,
+        contentType
+      }
+    };
   }
 
   private async toBuffer(file: InvokeUploadFileInputType['file']): Promise<Buffer> {
     if (Buffer.isBuffer(file)) return file;
-    if (file instanceof Readable) return readStreamToBuffer(file);
+    if (file instanceof Readable) {
+      const chunks: Buffer[] = [];
+      for await (const chunk of file) {
+        chunks.push(this.toBufferChunk(chunk));
+      }
+      return Buffer.concat(chunks);
+    }
     return Buffer.from(file);
   }
 
-  private parseResponse(payload: unknown): Result<unknown> {
-    if (!this.isRecord(payload)) return successResult(payload);
+  private toBufferChunk(chunk: unknown): Buffer {
+    if (Buffer.isBuffer(chunk)) return chunk;
+    if (chunk instanceof Uint8Array) return Buffer.from(chunk);
+    if (chunk instanceof ArrayBuffer) return Buffer.from(chunk);
+    if (ArrayBuffer.isView(chunk)) {
+      return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    }
+    if (typeof chunk === 'string') return Buffer.from(chunk);
+    if (typeof chunk === 'number') return Buffer.from([chunk]);
+    if (this.isSerializedBufferChunk(chunk)) return Buffer.from(chunk.data);
+
+    throw new TypeError(
+      `Unsupported upload file stream chunk type: ${Object.prototype.toString.call(chunk)}`
+    );
+  }
+
+  private isSerializedBufferChunk(value: unknown): value is SerializedBufferChunk {
+    return (
+      this.isRecord(value) &&
+      value.type === 'Buffer' &&
+      Array.isArray(value.data) &&
+      value.data.every(
+        (item) => Number.isInteger(item) && Number.isSafeInteger(item) && item >= 0 && item <= 255
+      )
+    );
+  }
+
+  private async requestFastGPT<T = unknown>({
+    path,
+    init,
+    failureReason,
+    invalidJsonReason
+  }: {
+    path: string;
+    init?: RequestInit;
+    failureReason: I18nStringType;
+    invalidJsonReason: I18nStringType;
+  }): Promise<Result<T>> {
+    const headers = new Headers(init?.headers);
+    headers.set('Authorization', `Bearer ${this.deps.token}`);
+
+    let response: Response;
+    try {
+      response = await fetch(this.buildUrl(path), {
+        ...init,
+        headers
+      });
+    } catch (error) {
+      return failureResult(failureReason, error);
+    }
+
+    if (!response.ok) {
+      return failureResult(failureReason, await this.readErrorResponse(response));
+    }
+
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      return failureResult(invalidJsonReason, error);
+    }
+
+    return this.parseResponse<T>(payload, failureReason);
+  }
+
+  private parseResponse<T = unknown>(payload: unknown, fallbackReason: I18nStringType): Result<T> {
+    if (!this.isRecord(payload)) return successResult(payload as T);
 
     if (payload.success === false) {
       return failureResult(
         {
-          en: this.getResponseMessage(payload) ?? 'Invoke upload file failed',
-          'zh-CN': this.getResponseMessage(payload) ?? '反向调用上传文件失败'
+          en: this.getResponseMessage(payload) ?? fallbackReason.en,
+          'zh-CN': this.getResponseMessage(payload) ?? fallbackReason['zh-CN']
         },
         payload
       );
@@ -136,29 +239,14 @@ export class InvokeManager implements InvokePort {
     if (typeof payload.code === 'number' && payload.code >= 400) {
       return failureResult(
         {
-          en: this.getResponseMessage(payload) ?? 'Invoke upload file failed',
-          'zh-CN': this.getResponseMessage(payload) ?? '反向调用上传文件失败'
+          en: this.getResponseMessage(payload) ?? fallbackReason.en,
+          'zh-CN': this.getResponseMessage(payload) ?? fallbackReason['zh-CN']
         },
         payload
       );
     }
 
-    return successResult('data' in payload ? payload.data : payload);
-  }
-
-  private normalizeOutput(payload: unknown): unknown {
-    if (!this.isRecord(payload)) return payload;
-
-    const output = { ...payload };
-    const createTime = output.createTime;
-    if (typeof createTime === 'string' || typeof createTime === 'number') {
-      output.createTime = new Date(createTime);
-    }
-    if (output.accessURL === undefined && typeof output.accessUrl === 'string') {
-      output.accessURL = output.accessUrl;
-    }
-
-    return output;
+    return successResult(('data' in payload ? payload.data : payload) as T);
   }
 
   private async readErrorResponse(response: Response) {

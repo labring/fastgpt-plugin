@@ -12,6 +12,11 @@ import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runti
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
+import {
+  disableAndUnregisterReplacedPlugins,
+  listReplacedActivePlugins
+} from './plugin-replace-active';
+
 /** Dependencies */
 export type PluginConfirmUCDeps = {
   pluginRepo: PluginRepoPort;
@@ -30,24 +35,20 @@ export const makePluginConfirmUC =
   (deps: PluginConfirmUCDeps) =>
   async ({ uniqueIds }: Input): Output => {
     const confirmOne = async (uniqueId: PluginUniqueIdType): Output => {
-      const [activePlugins, activeErr] = await deps.pluginRepo.listActive();
+      const [replacedPlugins, replacedErr] = await listReplacedActivePlugins(
+        deps.pluginRepo,
+        uniqueId
+      );
 
-      if (activeErr) {
+      if (replacedErr) {
         return failureResult(
           {
             en: 'Failed to get active plugins',
             'zh-CN': '获取 active 插件失败'
           },
-          activeErr
+          replacedErr
         );
       }
-
-      const replacedPlugins = activePlugins.filter(
-        (plugin) =>
-          plugin.pluginId === uniqueId.pluginId &&
-          plugin.version === uniqueId.version &&
-          plugin.etag !== uniqueId.etag
-      );
 
       // 1. get pending plugins
       const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
@@ -96,34 +97,14 @@ export const makePluginConfirmUC =
           );
         }
 
-        await Promise.all(
+        const [, replaceErr] = await disableAndUnregisterReplacedPlugins({
+          ...deps,
           replacedPlugins
-            .filter((item) => item.type === 'tool')
-            .map(async (item) => {
-              try {
-                const [, unregisterErr] = await deps.pluginRuntimeManager.unregister({
-                  pluginId: item.pluginId,
-                  version: item.version,
-                  etag: item.etag
-                });
-                if (unregisterErr) {
-                  console.error('Failed to unregister replaced plugin runtime', {
-                    pluginId: item.pluginId,
-                    version: item.version,
-                    etag: item.etag,
-                    error: unregisterErr
-                  });
-                }
-              } catch (error) {
-                console.error('Failed to unregister replaced plugin runtime', {
-                  pluginId: item.pluginId,
-                  version: item.version,
-                  etag: item.etag,
-                  error
-                });
-              }
-            })
-        );
+        });
+
+        if (replaceErr) {
+          return failureResult(replaceErr);
+        }
 
         return successResult({});
       }

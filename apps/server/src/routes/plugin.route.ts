@@ -12,16 +12,22 @@ import { makePluginInstallUC, type PluginInstallUCDeps } from '@usecase/plugin/p
 import { makePluginListUC } from '@usecase/plugin/plugin-list.uc';
 import { makePluginPruneDisabledUC } from '@usecase/plugin/plugin-prune-disabled.uc';
 import { makePluginTagListUC } from '@usecase/plugin/plugin-tag-list.uc';
-import { makePluginUploadUC, type PluginUploadUCDeps } from '@usecase/plugin/plugin-upload.uc';
+import { makePluginUploadUC } from '@usecase/plugin/plugin-upload.uc';
 import { makePluginVersionsUC } from '@usecase/plugin/plugin-versions.uc';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
+import { getLogger, mod } from '@infrastructure/logger';
 
-export type PluginRouteDeps = PluginInstallUCDeps &
-  PluginUploadUCDeps &
-  PluginConfirmUCDeps;
+export type PluginRouteDeps = {
+  localFileStorageRepo: PluginInstallUCDeps['localFileStorageRepo'];
+  urlFileFetcher: PluginInstallUCDeps['urlFileFetcher'];
+  pluginPKGFileResolver: PluginInstallUCDeps['pluginPKGFileResolver'];
+  pluginRepo: PluginInstallUCDeps['pluginRepo'];
+  pluginRuntimeManager: PluginConfirmUCDeps['pluginRuntimeManager'];
+};
 
 export const makePluginRoute = (deps: PluginRouteDeps) => {
   const route = createOpenAPIHono();
+  const logger = getLogger(mod.plugin);
 
   route.openapi(
     createRoute({
@@ -57,7 +63,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginUploadUC = makePluginUploadUC(deps);
+      const pluginUploadUC = makePluginUploadUC({ ...deps, logger });
       const formData = await c.req.formData();
       const file = formData.get('file');
 
@@ -192,7 +198,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginInstallUC = makePluginInstallUC(deps);
+      const pluginInstallUC = makePluginInstallUC({ ...deps, logger });
       const body = c.req.valid('json');
       const [result, err] = await pluginInstallUC({
         urls: body.urls,

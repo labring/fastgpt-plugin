@@ -124,7 +124,6 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
     async (c) => {
       const encoder = new TextEncoder();
       const body = c.req.valid('json');
-      console.log('Tool Run Request', { body });
       const uc = makeToolRunUC(deps);
       const [result, err] = await uc(body);
       if (err) {

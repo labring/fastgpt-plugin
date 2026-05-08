@@ -50,6 +50,8 @@ export type {
 } from './types';
 export { PluginPermissionEnum, PluginPermissionEnumSchema } from './types';
 export { pluginTagList } from './types';
+
+// PKG 解析
 export type {
   ParsedPkgFile,
   ParsedPkgFiles,

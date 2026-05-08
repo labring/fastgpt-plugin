@@ -21,7 +21,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@tool': resolve(__dirname, 'modules/tool')
+      '@tool': resolve(__dirname, 'modules/tool'),
+      '@domain': resolve(__dirname, 'packages/domain/src')
     }
   }
 });

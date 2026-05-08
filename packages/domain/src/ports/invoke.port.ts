@@ -12,20 +12,32 @@ export const InvokeUploadFileInputSchema = z.object({
 });
 
 export const InvokeUploadFileOutputSchema = z.object({
-  ...FileMetaSchema.omit({
-    fileKey: true
-  }).shape,
   accessURL: z.string()
 });
 
 export type InvokeUploadFileInputType = z.infer<typeof InvokeUploadFileInputSchema>;
 export type InvokeUploadFileOutputType = z.infer<typeof InvokeUploadFileOutputSchema>;
 
+export const InvokeUserInfoOutputSchema = z.object({
+  username: z.string(),
+  contact: z.string().nullish(),
+  memberName: z.string().nullish(),
+  orgs: z.array(
+    z.object({
+      pathId: z.string(),
+      name: z.string()
+    })
+  ),
+  groups: z.array(z.object({ name: z.string() }))
+});
+
+export type InvokeUserInfoOutputType = z.infer<typeof InvokeUserInfoOutputSchema>;
+
 export const InvokeMethodEnumSchema = z.enum([
-  'uploadFile'
+  'uploadFile',
+  'userInfo'
   // 'chatCompletion',
   // 'datasetQuery',
-  // 'userInfo',
   // 'teamInfo'
 ]);
 
@@ -38,6 +50,7 @@ export type InvokeMethodType = z.infer<typeof InvokeMethodEnumSchema>;
 export interface InvokePort {
   /** 上传文件 */
   uploadFile(input: InvokeUploadFileInputType): Promise<Result<InvokeUploadFileOutputType>>;
+  userInfo(): Promise<Result<InvokeUserInfoOutputType>>; // 调用插件者的个人信息
 
   // /** 模型调用 */
   // chatCompletion(): any;
@@ -47,6 +60,5 @@ export interface InvokePort {
 
   // // 信息获取
   // // TODO
-  // userInfo(): any; // 调用插件者的个人信息
   // teamInfo(): any; // 调用插件者的团队信息
 }

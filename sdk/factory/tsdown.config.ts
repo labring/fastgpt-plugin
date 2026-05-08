@@ -1,7 +1,9 @@
 import { defineConfig } from 'tsdown';
 
 export default defineConfig({
-  external: ['zod'],
+  deps: {
+    neverBundle: ['zod']
+  },
   entry: './src/index.ts',
   format: 'esm',
   outDir: './dist',

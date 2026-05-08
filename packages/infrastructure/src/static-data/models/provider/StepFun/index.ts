@@ -12,7 +12,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -23,7 +24,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -34,7 +36,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -45,7 +48,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -56,7 +60,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -67,7 +72,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: true,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -78,7 +84,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: true,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -89,7 +96,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: true,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -100,7 +108,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -111,7 +120,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -122,31 +132,89 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.tts,
       model: 'step-tts-mini',
       voices: [
-        { label: 'cixingnansheng', value: 'cixingnansheng' },
-        { label: 'zhengpaiqingnian', value: 'zhengpaiqingnian' },
-        { label: 'yuanqinansheng', value: 'yuanqinansheng' },
-        { label: 'qingniandaxuesheng', value: 'qingniandaxuesheng' },
-        { label: 'boyinnansheng', value: 'boyinnansheng' },
-        { label: 'ruyananshi', value: 'ruyananshi' },
-        { label: 'shenchennanyin', value: 'shenchennanyin' },
-        { label: 'qinqienvsheng', value: 'qinqienvsheng' },
-        { label: 'wenrounvsheng', value: 'wenrounvsheng' },
-        { label: 'jilingshaonv', value: 'jilingshaonv' },
-        { label: 'yuanqishaonv', value: 'yuanqishaonv' },
-        { label: 'ruanmengnvsheng', value: 'ruanmengnvsheng' },
-        { label: 'youyanvsheng', value: 'youyanvsheng' },
-        { label: 'lengyanyujie', value: 'lengyanyujie' },
-        { label: 'shuangkuaijiejie', value: 'shuangkuaijiejie' },
-        { label: 'wenjingxuejie', value: 'wenjingxuejie' },
-        { label: 'linjiajiejie', value: 'linjiajiejie' },
-        { label: 'linjiameimei', value: 'linjiameimei' },
-        { label: 'zhixingjiejie', value: 'zhixingjiejie' }
+        {
+          label: 'cixingnansheng',
+          value: 'cixingnansheng'
+        },
+        {
+          label: 'zhengpaiqingnian',
+          value: 'zhengpaiqingnian'
+        },
+        {
+          label: 'yuanqinansheng',
+          value: 'yuanqinansheng'
+        },
+        {
+          label: 'qingniandaxuesheng',
+          value: 'qingniandaxuesheng'
+        },
+        {
+          label: 'boyinnansheng',
+          value: 'boyinnansheng'
+        },
+        {
+          label: 'ruyananshi',
+          value: 'ruyananshi'
+        },
+        {
+          label: 'shenchennanyin',
+          value: 'shenchennanyin'
+        },
+        {
+          label: 'qinqienvsheng',
+          value: 'qinqienvsheng'
+        },
+        {
+          label: 'wenrounvsheng',
+          value: 'wenrounvsheng'
+        },
+        {
+          label: 'jilingshaonv',
+          value: 'jilingshaonv'
+        },
+        {
+          label: 'yuanqishaonv',
+          value: 'yuanqishaonv'
+        },
+        {
+          label: 'ruanmengnvsheng',
+          value: 'ruanmengnvsheng'
+        },
+        {
+          label: 'youyanvsheng',
+          value: 'youyanvsheng'
+        },
+        {
+          label: 'lengyanyujie',
+          value: 'lengyanyujie'
+        },
+        {
+          label: 'shuangkuaijiejie',
+          value: 'shuangkuaijiejie'
+        },
+        {
+          label: 'wenjingxuejie',
+          value: 'wenjingxuejie'
+        },
+        {
+          label: 'linjiajiejie',
+          value: 'linjiajiejie'
+        },
+        {
+          label: 'linjiameimei',
+          value: 'linjiameimei'
+        },
+        {
+          label: 'zhixingjiejie',
+          value: 'zhixingjiejie'
+        }
       ]
     }
   ]

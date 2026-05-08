@@ -40,80 +40,84 @@ export class RunToolWithStream {
     output?: ToolHandlerReturnType;
     error?: Error;
   }> {
-    const payload = ToolRunInputDTOSchema.parse(params);
+    try {
+      const payload = ToolRunInputDTOSchema.parse(params);
 
-    const response = await this.transport.requestResponse({
-      path: `/api${ToolContract.RunStream.meta.path}`,
-      method: ToolContract.RunStream.meta.method,
-      body: payload,
-      headers: {
-        Accept: 'text/event-stream'
-      },
-      signal: requestOptions?.signal
-    });
+      const response = await this.transport.requestResponse({
+        path: `/api${ToolContract.RunStream.meta.path}`,
+        method: ToolContract.RunStream.meta.method,
+        body: payload,
+        headers: {
+          Accept: 'text/event-stream'
+        },
+        signal: requestOptions?.signal
+      });
 
-    if (!response.body) {
-      throw new Error('Tool stream response body is empty');
-    }
+      if (!response.body) {
+        throw new Error('Tool stream response body is empty');
+      }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let finalResult: ToolHandlerReturnType | undefined;
-    let finalError: Error | undefined;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finalResult: ToolHandlerReturnType | undefined;
+      let finalError: Error | undefined;
 
-    while (true) {
-      const { value, done } = await reader.read();
-      buffer += decoder.decode(value, { stream: !done });
+      while (true) {
+        const { value, done } = await reader.read();
+        buffer += decoder.decode(value, { stream: !done });
 
-      const chunks = buffer.split('\n\n');
-      buffer = chunks.pop() ?? '';
+        const chunks = buffer.split('\n\n');
+        buffer = chunks.pop() ?? '';
 
-      for (const chunk of chunks) {
-        const message = this.parseStreamMessage(chunk);
-        if (!message) continue;
+        for (const chunk of chunks) {
+          const message = this.parseStreamMessage(chunk);
+          if (!message) continue;
 
-        if (message.type === 'stream') {
-          params.onMessage?.(message.data);
-          continue;
-        }
+          if (message.type === 'stream') {
+            params.onMessage?.(message.data);
+            continue;
+          }
 
-        if (message.type === 'response') {
-          finalResult = message.data;
+          if (message.type === 'response') {
+            finalResult = message.data;
+            await reader.cancel();
+            break;
+          }
+
+          finalError = new Error(message.data);
           await reader.cancel();
           break;
         }
 
-        finalError = new Error(message.data);
-        await reader.cancel();
-        break;
+        if (done || finalResult || finalError) {
+          break;
+        }
       }
 
-      if (done || finalResult || finalError) {
-        break;
+      if (!finalResult && !finalError) {
+        const trailingMessage = this.parseStreamMessage(buffer);
+        if (trailingMessage?.type === 'response') {
+          finalResult = trailingMessage.data;
+        } else if (trailingMessage?.type === 'error') {
+          finalError = new Error(trailingMessage.data);
+        } else if (trailingMessage?.type === 'stream') {
+          params.onMessage?.(trailingMessage.data);
+        }
       }
-    }
 
-    if (!finalResult && !finalError) {
-      const trailingMessage = this.parseStreamMessage(buffer);
-      if (trailingMessage?.type === 'response') {
-        finalResult = trailingMessage.data;
-      } else if (trailingMessage?.type === 'error') {
-        finalError = new Error(trailingMessage.data);
-      } else if (trailingMessage?.type === 'stream') {
-        params.onMessage?.(trailingMessage.data);
+      if (finalError) {
+        return { error: finalError };
       }
-    }
 
-    if (finalError) {
-      return { error: finalError };
-    }
+      if (finalResult) {
+        return { output: finalResult };
+      }
 
-    if (finalResult) {
-      return { output: finalResult };
+      throw new Error('Tool stream closed without terminal event');
+    } catch (e) {
+      return { error: e instanceof Error ? e : new Error(String(e)) };
     }
-
-    throw new Error('Tool stream closed without terminal event');
   }
 
   private parseStreamMessage(chunk: string): ParsedToolStreamMessage | null {

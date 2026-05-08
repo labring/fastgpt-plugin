@@ -81,6 +81,16 @@ type ListedMongoPlugin = MongoPluginSchemaType & {
   _id: unknown;
 };
 
+type InstalledPluginIdentity = {
+  pluginId: string;
+  version: string;
+  etag: string;
+};
+
+type MongoPluginWithId = MongoPluginSchemaType & {
+  _id: unknown;
+};
+
 type InstalledPluginRecord = {
   source: PluginSourceType;
   plugin: ListedMongoPlugin;
@@ -112,6 +122,31 @@ export class PluginRepo implements PluginRepoPort {
 
   private toDomainPlugin(plugin: MongoPluginSchemaType): PluginType {
     return pluginCodecRegistry.fromRecord(PluginRecordSchema.parse(plugin));
+  }
+
+  private getInstalledPluginKey({ pluginId, version, etag }: InstalledPluginIdentity) {
+    return `${pluginId}::${version}::${etag}`;
+  }
+
+  private async updateSystemInstallation(plugin: MongoPluginWithId) {
+    const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
+
+    await installationModel.updateOne(
+      {
+        source: 'system',
+        pluginId: plugin.pluginId,
+        version: plugin.version
+      },
+      {
+        $set: {
+          etag: plugin.etag,
+          pluginObjectId: plugin._id
+        }
+      },
+      {
+        upsert: true
+      }
+    );
   }
 
   private getManagedPublicFileNames(fileKeys: string[]): Set<string> {
@@ -178,26 +213,38 @@ export class PluginRepo implements PluginRepoPort {
     version
   }: UserPluginIdType): Promise<Result<PluginType>> {
     const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
+    const pluginModel = this.deps.mongoClient.getModel('plugin');
     const normalizedSource = source ?? 'system';
     const normalizedVersion = version?.trim();
 
-    const plugin = normalizedVersion
+    const installation = normalizedVersion
       ? await installationModel
-          .findOne({ source: normalizedSource, version: normalizedVersion, pluginId })
-          .populate<{
-            plugin: MongoPluginSchemaType;
-          }>('plugin')
+          .findOne(
+            { source: normalizedSource, version: normalizedVersion, pluginId },
+            { _id: 0, pluginId: 1, version: 1, etag: 1 }
+          )
           .lean()
       : await installationModel
-          .find({ source: normalizedSource, pluginId })
-          .populate<{
-            plugin: MongoPluginSchemaType;
-          }>('plugin')
+          .find(
+            { source: normalizedSource, pluginId },
+            { _id: 0, pluginId: 1, version: 1, etag: 1 }
+          )
           .lean()
           .then((items) => items.sort((a, b) => this.compareVersions(b.version, a.version))[0]);
 
-    if (plugin) {
-      return successResult(this.toDomainPlugin(plugin.plugin));
+    if (installation) {
+      const plugin = await pluginModel
+        .findOne({
+          pluginId: installation.pluginId,
+          version: installation.version,
+          etag: installation.etag,
+          status: PluginStatusEnum.active
+        })
+        .lean();
+
+      if (plugin) {
+        return successResult(this.toDomainPlugin(plugin));
+      }
     }
 
     return failureResult({
@@ -225,31 +272,40 @@ export class PluginRepo implements PluginRepoPort {
           },
           {
             _id: 0,
-            pluginObjectId: 1,
+            pluginId: 1,
+            etag: 1,
             version: 1
           }
         )
-        .populate<{
-          plugin: MongoPluginSchemaType | null;
-        }>({
-          path: 'plugin',
-          match: {
-            status: PluginStatusEnum.active
-          }
-        })
         .lean();
 
+      const pluginConditions = installations.map((item) => ({
+        pluginId: item.pluginId,
+        version: item.version,
+        etag: item.etag
+      }));
+      const plugins = pluginConditions.length
+        ? await this.deps.mongoClient
+            .getModel('plugin')
+            .find({
+              status: PluginStatusEnum.active,
+              $or: pluginConditions
+            })
+            .lean()
+        : [];
+      const pluginMap = new Map(
+        plugins.map((plugin) => [this.getInstalledPluginKey(plugin), this.toDomainPlugin(plugin)])
+      );
+
       const versions = installations
-        .filter((item): item is typeof item & { plugin: MongoPluginSchemaType } =>
-          Boolean(item.pluginObjectId && item.plugin)
-        )
+        .filter((item) => pluginMap.has(this.getInstalledPluginKey(item)))
         .sort((a, b) => this.compareVersions(b.version, a.version))
         .map((item) => {
-          const plugin = this.toDomainPlugin(item.plugin);
+          const plugin = pluginMap.get(this.getInstalledPluginKey(item));
 
           return {
             version: item.version,
-            versionDescription: plugin.versionDescription
+            versionDescription: plugin?.versionDescription
           };
         });
 
@@ -344,26 +400,6 @@ export class PluginRepo implements PluginRepoPort {
         );
       }
 
-      await pluginModel.updateMany(
-        {
-          pluginId: plugin.pluginId,
-          version: plugin.version,
-          etag: {
-            $ne: plugin.etag
-          },
-          status: PluginStatusEnum.active
-        },
-        {
-          $set: {
-            status: PluginStatusEnum.disabled,
-            updateAt: new Date()
-          },
-          $unset: {
-            expiredAt: 1
-          }
-        }
-      );
-
       await pluginModel
         .findOneAndUpdate(
           {
@@ -382,22 +418,7 @@ export class PluginRepo implements PluginRepoPort {
         )
         .lean();
 
-      await this.deps.mongoClient.getModel('pluginInstallation').updateOne(
-        {
-          source: 'system',
-          pluginId: plugin.pluginId,
-          version: plugin.version
-        },
-        {
-          $set: {
-            etag: plugin.etag,
-            pluginObjectId: plugin._id
-          }
-        },
-        {
-          upsert: true
-        }
-      );
+      await this.updateSystemInstallation(plugin);
 
       return successResult(confirmedPlugin);
     } catch (error) {
@@ -422,6 +443,7 @@ export class PluginRepo implements PluginRepoPort {
           source: 1,
           pluginId: 1,
           version: 1,
+          etag: 1,
           pluginObjectId: 1
         }
       )
@@ -433,15 +455,12 @@ export class PluginRepo implements PluginRepoPort {
         source: string;
         pluginId: string;
         version: string;
+        etag: string;
         pluginObjectId?: unknown;
       }
     >();
 
     for (const installation of installations) {
-      if (!installation.pluginObjectId) {
-        continue;
-      }
-
       const key = `${installation.source}::${installation.pluginId}`;
       const existingInstallation = latestInstallationMap.get(key);
 
@@ -465,14 +484,6 @@ export class PluginRepo implements PluginRepoPort {
       return [];
     }
 
-    const latestPluginObjectIds = Array.from(
-      latestInstallations
-        .reduce((map, item) => {
-          map.set(String(item.pluginObjectId), item.pluginObjectId);
-          return map;
-        }, new Map<string, unknown>())
-        .values()
-    );
     const filterConditions = [] as Array<Record<string, unknown>>;
 
     if (types && types.length > 0) {
@@ -483,14 +494,20 @@ export class PluginRepo implements PluginRepoPort {
       filterConditions.push({ tags: { $in: tags } });
     }
 
+    const installedPluginConditions = latestInstallations.map((item) => ({
+      pluginId: item.pluginId,
+      version: item.version,
+      etag: item.etag
+    }));
     const query: Record<string, unknown> = {
-      _id: { $in: latestPluginObjectIds },
-      status: PluginStatusEnum.active
+      status: PluginStatusEnum.active,
+      $or: installedPluginConditions
     };
 
     if (filterConditions.length > 0) {
       if (op === 'or') {
-        query.$or = filterConditions;
+        query.$and = [{ $or: installedPluginConditions }, { $or: filterConditions }];
+        delete query.$or;
       } else {
         Object.assign(query, ...filterConditions);
       }
@@ -503,11 +520,11 @@ export class PluginRepo implements PluginRepoPort {
     const pluginMap = new Map<string, ListedMongoPlugin>();
 
     for (const plugin of plugins) {
-      pluginMap.set(String(plugin._id), plugin);
+      pluginMap.set(this.getInstalledPluginKey(plugin), plugin);
     }
 
     return latestInstallations.flatMap<InstalledPluginRecord>((installation) => {
-      const plugin = pluginMap.get(String(installation.pluginObjectId));
+      const plugin = pluginMap.get(this.getInstalledPluginKey(installation));
       if (!plugin) {
         return [];
       }
@@ -622,6 +639,39 @@ export class PluginRepo implements PluginRepoPort {
         {
           en: 'Failed to list active plugins',
           'zh-CN': '获取 active 插件列表失败'
+        },
+        error
+      );
+    }
+  }
+
+  async disablePlugins(uniqueIds: PluginUniqueIdType[]): Promise<Result> {
+    try {
+      if (uniqueIds.length === 0) {
+        return successResult({});
+      }
+
+      await this.deps.mongoClient.getModel('plugin').updateMany(
+        {
+          $or: uniqueIds
+        },
+        {
+          $set: {
+            status: PluginStatusEnum.disabled,
+            updateAt: new Date()
+          },
+          $unset: {
+            expiredAt: 1
+          }
+        }
+      );
+
+      return successResult({});
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Failed to disable plugins',
+          'zh-CN': '禁用插件失败'
         },
         error
       );
@@ -760,9 +810,12 @@ export class PluginRepo implements PluginRepoPort {
       ? addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
       : undefined;
 
+    let installedPlugin: MongoPluginWithId | undefined;
+
     try {
       const existingPlugin = await pluginModel
         .findOne(uniqueId, {
+          _id: true,
           status: true
         })
         .lean();
@@ -775,6 +828,11 @@ export class PluginRepo implements PluginRepoPort {
               updateAt: new Date()
             }
           });
+        } else if (!pending && existingPlugin.status === PluginStatusEnum.active) {
+          installedPlugin = {
+            ...this.toPluginRecord(plugin),
+            _id: existingPlugin._id
+          } as MongoPluginWithId;
         } else {
           return failureResult({
             en: 'Plugin already exists',
@@ -782,7 +840,7 @@ export class PluginRepo implements PluginRepoPort {
           });
         }
       } else {
-        await pluginModel.create({
+        const createdPlugin = await pluginModel.create({
           ...this.toPluginRecord(plugin),
           ...(pending
             ? {
@@ -791,6 +849,7 @@ export class PluginRepo implements PluginRepoPort {
               }
             : {})
         });
+        installedPlugin = createdPlugin.toObject();
       }
     } catch (error) {
       return failureResult(
@@ -894,6 +953,20 @@ export class PluginRepo implements PluginRepoPort {
               'zh-CN': '设置临时文件过期时间失败'
             },
             ttlErr
+          );
+        }
+      }
+
+      if (!pending && installedPlugin) {
+        try {
+          await this.updateSystemInstallation(installedPlugin);
+        } catch (error) {
+          return failureResult(
+            {
+              en: 'Failed to update plugin installation',
+              'zh-CN': '更新插件安装记录失败'
+            },
+            error
           );
         }
       }

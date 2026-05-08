@@ -7,11 +7,13 @@ import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file
 import type { PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type PluginUploadUCDeps = {
   localFileStorageRepo: LocalFileStoragePort;
   pluginPKGFileResolver: PluginPKGFilePort;
   pluginRepo: PluginRepoPort;
+  logger: UsecaseLogger;
 };
 
 type Input = {
@@ -21,12 +23,17 @@ type Input = {
 export const makePluginUploadUC =
   (deps: PluginUploadUCDeps) =>
   async (input: Input): Promise<Result<PluginType>> => {
+    const { logger } = deps;
+    logger.info('Upload a .pkg file');
+
     // 1. recieve the file and save it to local storage
     const [localPkgFile, err] = await deps.localFileStorageRepo.save({
       file: input.file,
       contentType: 'application/zip',
       overwrite: true
     });
+
+    logger.debug('localPkgFile', { localPkgFile });
 
     if (err)
       return failureResult(
@@ -40,6 +47,7 @@ export const makePluginUploadUC =
     // 2. upload
     // 2.1. 解析插件信息
     const [info, parseErr] = await deps.pluginPKGFileResolver.parsePluginPkg(localPkgFile, true);
+    logger.debug('plugin info', { info });
 
     if (parseErr) {
       deps.localFileStorageRepo.delete(localPkgFile.metaData.fileKey); // 删除临时文件
@@ -68,6 +76,12 @@ export const makePluginUploadUC =
         createErr
       );
     }
+
+    logger.info('Plugin uploaded successfully', {
+      pluginId: info.info.pluginId,
+      version: info.info.version,
+      etag: localPkgFile.metaData.etag
+    });
 
     return successResult(info.info);
   };

@@ -5,6 +5,58 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'gpt-5.4',
+      maxContext: 250000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5.4-pro',
+      maxContext: 250000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5.4-mini',
+      maxContext: 400000,
+      maxTokens: 128000,
+      quoteMaxToken: 350000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5.4-nano',
+      maxContext: 250000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5.2',
       maxContext: 250000,
       maxTokens: 128000,
@@ -12,8 +64,9 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
-      toolChoice: true
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -24,8 +77,9 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
-      toolChoice: true
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -37,7 +91,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -48,11 +103,12 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -63,11 +119,12 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -78,11 +135,12 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       responseFormatList: ['text', 'json_schema'],
       vision: true,
-      reasoning: false,
+      reasoning: true,
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -96,9 +154,9 @@ const models: ProviderConfigType = {
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: false
     },
-
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-4.1',
@@ -109,7 +167,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -121,7 +180,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -133,7 +193,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -145,7 +206,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -157,7 +219,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -172,7 +235,8 @@ const models: ProviderConfigType = {
       showStopSign: false,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -187,7 +251,8 @@ const models: ProviderConfigType = {
       showStopSign: false,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -202,7 +267,8 @@ const models: ProviderConfigType = {
       showStopSign: false,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -212,10 +278,11 @@ const models: ProviderConfigType = {
       quoteMaxToken: 100000,
       maxTemperature: 2,
       vision: false,
-      reasoning: false,
+      reasoning: true,
       toolChoice: true,
       showStopSign: true,
-      responseFormatList: ['text', 'json_object', 'json_schema']
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -225,12 +292,12 @@ const models: ProviderConfigType = {
       quoteMaxToken: 100000,
       maxTemperature: 2,
       vision: false,
-      reasoning: false,
+      reasoning: true,
       toolChoice: true,
       showStopSign: true,
-      responseFormatList: ['text', 'json_object', 'json_schema']
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      reasoningEffort: true
     },
-
     {
       type: ModelTypeEnum.embedding,
       model: 'text-embedding-3-large',
@@ -283,8 +350,6 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.stt,
       model: 'whisper-1'
     },
-
-    // Deprecated models
     {
       type: ModelTypeEnum.llm,
       model: 'o1',
@@ -298,7 +363,8 @@ const models: ProviderConfigType = {
       showStopSign: false,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -313,7 +379,8 @@ const models: ProviderConfigType = {
       showStopSign: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -331,7 +398,8 @@ const models: ProviderConfigType = {
       },
       fieldMap: {
         max_tokens: 'max_completion_tokens'
-      }
+      },
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -342,7 +410,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -353,7 +422,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     }
   ]
 };

@@ -12,7 +12,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -23,7 +24,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -34,7 +36,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -45,62 +48,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-251015',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-250615',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-flash-250828',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-flash-250615',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-thinking-250615',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.embedding,
@@ -115,6 +64,66 @@ const models: ProviderConfigType = {
       defaultToken: 512,
       maxToken: 4096,
       normalization: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-1-6-251015',
+      maxContext: 220000,
+      maxTokens: 16000,
+      quoteMaxToken: 220000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-1-6-250615',
+      maxContext: 220000,
+      maxTokens: 16000,
+      quoteMaxToken: 220000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-1-6-flash-250828',
+      maxContext: 220000,
+      maxTokens: 16000,
+      quoteMaxToken: 220000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-1-6-flash-250615',
+      maxContext: 220000,
+      maxTokens: 16000,
+      quoteMaxToken: 220000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-1-6-thinking-250615',
+      maxContext: 220000,
+      maxTokens: 16000,
+      quoteMaxToken: 220000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: false
     }
   ]
 };

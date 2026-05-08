@@ -1,6 +1,5 @@
 import z from 'zod';
 
-import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
 import { ToolManifestSchema } from '@domain/value-objects/plugin/plugin-manifest.vo';
 
 export const UserToolManifestSchema = z.object({

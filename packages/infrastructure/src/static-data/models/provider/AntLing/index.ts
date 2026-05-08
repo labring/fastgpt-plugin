@@ -13,7 +13,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -25,7 +26,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -37,7 +39,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -50,7 +53,8 @@ const models: ProviderConfigType = {
       reasoning: true,
       toolChoice: false,
       showTopP: false,
-      showStopSign: false
+      showStopSign: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -63,7 +67,8 @@ const models: ProviderConfigType = {
       reasoning: true,
       toolChoice: false,
       showTopP: false,
-      showStopSign: false
+      showStopSign: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -76,7 +81,8 @@ const models: ProviderConfigType = {
       reasoning: true,
       toolChoice: false,
       showTopP: false,
-      showStopSign: false
+      showStopSign: false,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -87,7 +93,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -98,7 +105,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: false
+      toolChoice: false,
+      reasoningEffort: false
     }
   ]
 };

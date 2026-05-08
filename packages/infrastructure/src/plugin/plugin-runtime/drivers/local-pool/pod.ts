@@ -10,6 +10,7 @@ import {
 import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginPermissionEnumType } from '@domain/value-objects/permission.vo';
 import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
+import { failureResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 
 import type { PluginIOMessage } from '../../ports/plugin-io.port';
@@ -86,15 +87,12 @@ export class PluginPod {
       try {
         this.process = fork(this.options.pluginPath, [], {
           stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+          serialization: 'advanced',
           // execArgv: [],
           env: {
             RUNTIME_MODE: PluginRuntimeModeEnum.localPool
           }
         });
-
-        // this.process.on('message', (msg) => {
-        //   console.log('MESSAGE============================', msg);
-        // });
 
         this.channel = createChildProcessIpcChannel(this.process, {
           defaultTimeoutMs: this.options.podTimeout
@@ -346,9 +344,17 @@ export class PluginPod {
           file: (await request.waitForInputStream()).stream.toReadable()
         });
       }
+      case InvokeMethodEnum.userInfo: {
+        return invokeSession.userInfo();
+      }
     }
-
-    return Promise.reject(`Method not found: ${request.method}`);
+    return failureResult(
+      {
+        en: `Method not found: ${request.method}`,
+        'zh-CN': `未找到方法: ${request.method}`
+      },
+      null
+    );
   }
 }
 

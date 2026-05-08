@@ -15,7 +15,8 @@ export const mod = {
   tool: ['mod', 'tool'],
   model: ['mod', 'model'],
   workflow: ['mod', 'workflow'],
-  dataset: ['mod', 'dataset']
+  dataset: ['mod', 'dataset'],
+  plugin: ['mod', 'plugin']
 } as const;
 
 export const infra = {

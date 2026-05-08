@@ -11,8 +11,9 @@ const models: ProviderConfigType = {
       quoteMaxToken: 200000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
-      toolChoice: true
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -22,8 +23,9 @@ const models: ProviderConfigType = {
       quoteMaxToken: 200000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
-      toolChoice: true
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -33,8 +35,9 @@ const models: ProviderConfigType = {
       quoteMaxToken: 100000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
-      toolChoice: true
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -44,8 +47,9 @@ const models: ProviderConfigType = {
       quoteMaxToken: 100000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
-      toolChoice: true
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -55,8 +59,9 @@ const models: ProviderConfigType = {
       quoteMaxToken: 100000,
       maxTemperature: 1,
       vision: true,
-      reasoning: false,
-      toolChoice: true
+      reasoning: true,
+      toolChoice: true,
+      reasoningEffort: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -67,7 +72,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -78,7 +84,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -89,7 +96,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -100,7 +108,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -111,7 +120,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -122,7 +132,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -133,7 +144,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -144,7 +156,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true
+      toolChoice: true,
+      reasoningEffort: false
     }
   ]
 };
