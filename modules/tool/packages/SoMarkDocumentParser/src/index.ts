@@ -115,30 +115,44 @@ export async function tool(props: InputProps): Promise<OutputProps> {
   if (!fileUrl) {
     throw new Error('File path is required');
   }
-  let handledBaseUrl = baseUrl.trim();
+  const handledBaseUrl = baseUrl.trim();
 
-  if (deploymentType === 'api' && handledBaseUrl === '') {
-    handledBaseUrl = DEFAULT_BASE_URL;
+  if (handledBaseUrl === '') {
+    throw new Error('Base URL is required');
   }
 
   if (deploymentType === 'api' && handledBaseUrl !== DEFAULT_BASE_URL) {
-    throw new Error('Base URL must be https://somark.tech/api/v1 when using SoMark API');
+    throw new Error('Base URL or API Key is invalid, please check the configuration and try again');
   }
 
-  if (deploymentType === 'api' && apiKey.trim().length === 0) {
-    throw new Error('API Key is required when using SoMark API');
+  const handledApiKey = apiKey.trim();
+
+  if (
+    deploymentType === 'api' &&
+    (handledApiKey.length === 0 || !handledApiKey.startsWith('sk-'))
+  ) {
+    throw new Error('Base URL or API Key is invalid, please check the configuration and try again');
   }
 
   if (deploymentType === 'private' && handledBaseUrl.length === 0) {
-    throw new Error('Base URL is required when using private deployment');
+    throw new Error('Base URL is required when using SoMark Self-host');
   }
+
   const { blob, filename } = await fetchFileBlob(fileUrl);
+
+  let url = '';
+
+  if (deploymentType === 'api') {
+    url = '/parse/sync';
+  } else {
+    url = '/extract';
+  }
 
   // --- Build form-data payload ---
   const form = new FormData();
   form.append('file', blob, filename);
   if (deploymentType === 'api') {
-    form.append('api_key', apiKey);
+    form.append('api_key', handledApiKey);
   }
   for (const format of outputFormats) {
     form.append('output_formats', format);
@@ -175,7 +189,7 @@ export async function tool(props: InputProps): Promise<OutputProps> {
       metadata?: Record<string, any>;
       result?: { outputs?: { markdown?: string; json?: Record<string, any> } };
     } | null;
-  }>('/parse/sync', form, {
+  }>(url, form, {
     baseURL: handledBaseUrl,
     headers: {}, // 显式传空 headers，覆盖默认的 Content-Type: application/json
     timeout: 120_000,
