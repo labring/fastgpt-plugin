@@ -259,6 +259,15 @@ describe('SoMarkDocumentParser tool', () => {
       expect((getCallEntries().file[0] as File).name).toBe('document');
     });
 
+    test('falls back to "document" when filename query resolves to whitespace', async () => {
+      mockFetchFile();
+      mockApiResponse();
+
+      await tool(createInput({ file: ['https://example.test/sample.pdf?filename=%20%20%20'] }));
+
+      expect((getCallEntries().file[0] as File).name).toBe('document');
+    });
+
     test('throws when file URL is empty', async () => {
       await expect(tool(createInput({ file: [''] }))).rejects.toThrow('File path is required');
       expect(mockedPOST).not.toHaveBeenCalled();
