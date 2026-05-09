@@ -136,10 +136,6 @@ export async function tool(props: InputProps): Promise<OutputProps> {
     throw new Error('Base URL or API Key is invalid, please check the configuration and try again');
   }
 
-  if (deploymentType === 'private' && handledBaseUrl.length === 0) {
-    throw new Error('Base URL is required when using SoMark Self-host');
-  }
-
   const { blob, filename } = await fetchFileBlob(fileUrl);
 
   let url = '';
