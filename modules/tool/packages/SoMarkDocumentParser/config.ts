@@ -24,26 +24,27 @@ export default defineTool({
     {
       key: 'deploymentType',
       label: '部署方式',
-      description: '选择使用 SoMark 官方 API，或连接私有化部署的 SoMark 服务。',
+      description: '选择使用 SoMark 官方 API 或 SoMark Self-host。',
       required: true,
       inputType: 'select',
       list: [
         { label: 'SoMark API', value: 'api' },
-        { label: '私有化部署', value: 'private' }
+        { label: 'SoMark Self-host', value: 'private' }
       ]
     },
     {
       key: 'apiKey',
       label: 'API Key',
-      description: '使用 SoMark 官方 API 时填写；私有化部署无需填写。',
+      description: '使用 SoMark 官方 API 时填写；SoMark Self-host 无需填写。',
       required: false,
       inputType: 'secret'
     },
     {
       key: 'baseUrl',
       label: 'Base URL',
-      description: '私有化部署时填写服务地址；使用 SoMark 官方 API 时留空即可。',
-      required: false,
+      description:
+        '使用 SoMark Self-host 时填写 Base URL；使用 SoMark 官方 API 时填写 https://somark.tech/api/v1。',
+      required: true,
       inputType: 'input'
     }
   ],
