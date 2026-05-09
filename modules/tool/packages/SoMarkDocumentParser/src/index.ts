@@ -185,20 +185,21 @@ export async function tool(props: InputProps): Promise<OutputProps> {
   const { data } = await POST<{
     code: number;
     message: string;
-    data: {
-      task_id?: string;
+    // 公有 API 壳
+    data?: {
       error?: unknown;
-      metadata?: Record<string, any>;
       result?: { outputs?: { markdown?: string; json?: Record<string, any> } };
     } | null;
+    // 私有化壳
+    outputs?: { markdown?: string; json?: Record<string, any> };
   }>(url, form, {
     baseURL: handledBaseUrl,
-    headers: {}, // 显式传空 headers，覆盖默认的 Content-Type: application/json
+    headers: {},
     timeout: 120_000,
     retries: 1
   });
 
-  if (data?.code !== undefined && data.code !== 0) {
+  if (data?.code !== 0) {
     const detail =
       (typeof data?.data?.error === 'string' ? data.data.error : '') ||
       data?.message ||
@@ -206,8 +207,12 @@ export async function tool(props: InputProps): Promise<OutputProps> {
     throw new Error(`SoMark API error: ${detail}`);
   }
 
-  // --- Map response to declared outputs ---
-  const outputs = data?.data?.result?.outputs ?? {};
+  const outputs = deploymentType === 'api' ? data?.data?.result?.outputs : data?.outputs;
+
+  if (!outputs) {
+    throw new Error('SoMark response has no outputs');
+  }
+
   const markdown = outputFormats.includes('markdown') ? outputs.markdown ?? '' : '';
   const json = outputFormats.includes('json') ? outputs.json ?? {} : {};
   return { markdown, json };

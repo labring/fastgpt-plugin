@@ -34,19 +34,19 @@ export default defineTool({
       ]
     },
     {
-      key: 'apiKey',
-      label: 'API Key',
-      description: '使用 SoMark 官方 API 时填写；SoMark Self-host 无需填写',
-      required: false,
-      inputType: 'secret'
-    },
-    {
       key: 'baseUrl',
       label: 'Base URL',
       description:
         '使用SoMark API时填写 https://somark.tech/api/v1;SoMark Self-host 时填写本地部署的Base URL。',
       required: true,
       inputType: 'input'
+    },
+    {
+      key: 'apiKey',
+      label: 'API Key',
+      description: '使用 SoMark 官方 API 时填写；SoMark Self-host 无需填写',
+      required: false,
+      inputType: 'secret'
     }
   ],
   versionList: [
