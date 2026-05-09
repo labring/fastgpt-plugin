@@ -30,7 +30,7 @@ export const AIProxyChannelItemDTOSchema = z.object({
   name: I18nStringStrictDTOSchema.openapi({
     description: 'AIProxy provider display name'
   }),
-  avatar: z.string().optional().openapi({
+  avatar: z.string().openapi({
     description: 'Custom avatar url'
   })
 });
@@ -46,5 +46,5 @@ export const ModelProviderListDTOSchema = z.object({
 
 export type ModelListDTOType = z.infer<typeof ModelListDTOSchema>;
 export type ModelProviderItemDTOType = z.infer<typeof ModelProviderItemDTOSchema>;
-export type AiproxyMapProviderItemDTOType = z.infer<typeof AIProxyChannelItemDTOSchema>;
+export type AIProxyChannelItemDTOType = z.infer<typeof AIProxyChannelItemDTOSchema>;
 export type ModelProviderListDTOType = z.infer<typeof ModelProviderListDTOSchema>;

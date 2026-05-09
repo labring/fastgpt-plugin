@@ -8,6 +8,7 @@ import {
   STTModelSchema,
   TTSModelSchema
 } from '@domain/entities/model.entity';
+import type { I18nStringStrictType } from '@domain/value-objects/i18n-string.vo';
 
 // ==================== Module-specific Schemas ====================
 
@@ -46,3 +47,9 @@ export const ProviderConfigSchema = z.object({
 export type ProviderConfigType = z.infer<typeof ProviderConfigSchema>;
 
 export { ModelTypeEnum };
+
+export type AIProxyChannelsType = {
+  channelId: number;
+  name: I18nStringStrictType;
+  avatar: string;
+}[];

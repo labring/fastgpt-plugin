@@ -7,6 +7,39 @@ import { z } from 'zod';
 import { BoolStringSchema, PositiveIntSchema } from '@domain/value-objects/baisc.vo';
 import { PluginRuntimeModeEnum, PluginRuntimeModeSchema } from '@domain/value-objects/plugin.vo';
 
+const DEV_AUTH_TOKEN = 'token';
+const MIN_PRODUCTION_AUTH_TOKEN_LENGTH = 32;
+const WEAK_AUTH_TOKENS = new Set(['token', 'changeme', 'password', 'secret', 'default']);
+
+const AuthTokenSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value, ctx) => {
+    const token = value || DEV_AUTH_TOKEN;
+
+    if (process.env.NODE_ENV !== 'production') {
+      return token;
+    }
+
+    if (!value) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'AUTH_TOKEN is required in production'
+      });
+    } else if (
+      token.length < MIN_PRODUCTION_AUTH_TOKEN_LENGTH ||
+      WEAK_AUTH_TOKENS.has(token.toLowerCase())
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `AUTH_TOKEN must be at least ${MIN_PRODUCTION_AUTH_TOKEN_LENGTH} characters and not use a default value in production`
+      });
+    }
+
+    return token;
+  });
+
 export const env = createEnv({
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -21,12 +54,12 @@ export const env = createEnv({
 
     // 服务器配置
     PORT: PositiveIntSchema.min(1024).max(65535).default(3000),
-    AUTH_TOKEN: z.string().default('token'),
+    AUTH_TOKEN: AuthTokenSchema,
     JWT_SECRET: z.string().default('fastgpt-plugin-secret'),
 
     // 安全配置
     ALLOWED_INSTALL_HOSTS: z.string().optional(),
-    DISABLE_SSRF_CHECK: BoolStringSchema.default(true),
+    DISABLE_SSRF_CHECK: BoolStringSchema.default(false),
 
     // 插件运行配置
     PLUGIN_RUNTIME_MODE: PluginRuntimeModeSchema.default(PluginRuntimeModeEnum['localPool']),

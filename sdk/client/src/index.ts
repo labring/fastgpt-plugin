@@ -1,7 +1,7 @@
 export { FastGPTPluginClient } from './client';
 export { RunToolWithStream } from './tool-stream';
 export type {
-  AiproxyMapProviderItemType,
+  AIProxyChannelItemType as AiproxyMapProviderItemType,
   ClientRequestOptions,
   EmbeddingModelItemType,
   FastGPTPluginClientOptions,
@@ -58,3 +58,4 @@ export type {
   ParsePkgParams
 } from '@infrastructure/plugin/utils/pkg-parser';
 export { parsePkg } from '@infrastructure/plugin/utils/pkg-parser';
+export { type AIProxyChannelsType } from '@infrastructure/static-data/models/type';

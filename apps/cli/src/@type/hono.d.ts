@@ -1,4 +1,4 @@
-import type { Logger } from '@logtape/logtape';
+import type { Logger } from '@infrastructure/logger';
 
 declare global {
   type Env = {

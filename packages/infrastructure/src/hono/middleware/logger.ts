@@ -1,7 +1,6 @@
-import { getLogger, withContext } from '@logtape/logtape';
 import { createMiddleware } from 'hono/factory';
 
-import { http } from '../../logger/categories';
+import { getLogger, http, withContext } from '../../logger';
 
 export const loggerHonoMiddleware = createMiddleware<Env>(async (c, next) => {
   const requestId = c.get('requestId');

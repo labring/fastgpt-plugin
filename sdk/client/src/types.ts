@@ -1,5 +1,5 @@
 import type {
-  AiproxyMapProviderItemDTOType,
+  AIProxyChannelItemDTOType,
   ModelListDTOType,
   ModelProviderItemDTOType,
   ModelProviderListDTOType
@@ -107,7 +107,7 @@ export type WorkflowTemplateType = WorkflowTemplateDTOType;
 export type WorkflowListType = WorkflowListDTOType;
 
 export type ModelProviderItemType = ModelProviderItemDTOType;
-export type AiproxyMapProviderItemType = AiproxyMapProviderItemDTOType;
+export type AIProxyChannelItemType = AIProxyChannelItemDTOType;
 export type ModelProviderListType = ModelProviderListDTOType;
 
 export type RunToolStreamParams = ToolRunInputType & {

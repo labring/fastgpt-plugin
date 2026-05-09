@@ -1,7 +1,5 @@
 import type { Readable } from 'node:stream';
 
-import {} from 'packages/infrastructure/src/env';
-
 import type { PluginType } from '@domain/entities/plugin.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';

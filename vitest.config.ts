@@ -15,7 +15,7 @@ export default defineConfig({
       include: ['apps/**/*.ts', 'packages/**/src/*.ts', 'sdk/**/*.ts']
     },
     reporters: ['github-actions', 'default'],
-    include: ['apps/**/*.test.ts', 'packages/**/src/*.test.ts', 'sdk/**/*.test.ts'],
+    include: ['apps/**/*.test.ts', 'packages/**/*.test.ts', 'sdk/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**']
   },
   resolve: {

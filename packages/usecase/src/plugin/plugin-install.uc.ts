@@ -99,10 +99,7 @@ export const makePluginInstallUC =
       }
 
       const uniqueId = PluginUniqueIdSchema.parse(info.info);
-      const [replacedPlugins, replacedErr] = await listReplacedActivePlugins(
-        pluginRepo,
-        uniqueId
-      );
+      const [replacedPlugins, replacedErr] = await listReplacedActivePlugins(pluginRepo, uniqueId);
 
       if (replacedErr) {
         failToInstalled.push({
@@ -162,8 +159,7 @@ export const makePluginInstallUC =
       })),
       ...(failToInstalled.map((item) => ({
         url:
-          successDownloadedFiles.find((s) => s.file?.metaData.fileKey === item.fileKey)?.url ??
-          '',
+          successDownloadedFiles.find((s) => s.file?.metaData.fileKey === item.fileKey)?.url ?? '',
         reason: item.reason
       })) ?? [])
     ];

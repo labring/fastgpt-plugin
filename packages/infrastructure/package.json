@@ -9,11 +9,9 @@
   "type": "module",
   "license": "ISC",
   "dependencies": {
+    "@fastgpt-sdk/otel": "^0.1.2",
     "@fastgpt-sdk/storage": "^0.6.15",
     "@hono/zod-openapi": "^1.2.1",
-    "@logtape/logtape": "^2.0.2",
-    "@logtape/otel": "^2.0.5",
-    "@logtape/pretty": "^2.0.5",
     "@scalar/hono-api-reference": "^0.9.40",
     "@t3-oss/env-core": "^0.13.10",
     "@zip.js/zip.js": "^2.8.26",

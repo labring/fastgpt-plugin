@@ -1,35 +1,22 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import type { Config as LogTapeConfig } from '@logtape/logtape';
 import {
-  configure,
-  dispose,
-  getConfig as getLogTapeConfig,
-  getConsoleSink,
-  getLevelFilter,
-  getLogger as getLogTapeLogger,
-  type LogLevel,
-  withFilter
-} from '@logtape/logtape';
+  configureLogger as configureOtelLogger,
+  disposeLogger,
+  getLogger as getOtelLogger,
+  type LoggerConfig,
+  type LoggerSinkId,
+  withContext
+} from '@fastgpt-sdk/otel/logger';
 
 import { env } from '../env';
 
 import type { LogCategory } from './categories';
 
-type SinkId = 'console' | 'jsonl' | 'otel';
+type LogLevel = 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'fatal';
+export type Logger = ReturnType<typeof getOtelLogger>;
 
-type FilterId = string;
-
-type Config<S extends string = SinkId, F extends string = FilterId> = LogTapeConfig<S, F>;
-
-const formatTimestamp = (timestamp: number) => {
-  const date = new Date(timestamp);
-  const pad = (value: number) => String(value).padStart(2, '0');
-
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(
-    date.getHours()
-  )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-};
+const contextLocalStorage = new AsyncLocalStorage<Record<string, unknown>>();
 
 let configured = false;
 export async function configureLogger() {
@@ -44,15 +31,6 @@ export async function configureLogger() {
   const otelUrl = env.LOG_OTEL_URL;
   const otelLevel = env.LOG_OTEL_LEVEL;
 
-  const sinkConfig = {
-    bufferSize: 8192,
-    flushInterval: 5000,
-    nonBlocking: true,
-    lazy: true
-  } as const;
-
-  const sinks: Config<string>['sinks'] = {};
-  const composedSinks: SinkId[] = [];
   let otelSinkEnabled = false;
 
   // 日志级别顺序（从低到高）
@@ -71,70 +49,24 @@ export async function configureLogger() {
     lowestLevel = otelLevel;
   }
 
+  const composedSinks: LoggerSinkId[] = [];
+
   if (enableConsole) {
-    const prettyModule = await import('@logtape/pretty').catch(() => null);
-    const consoleSink = getConsoleSink({
-      ...sinkConfig,
-      ...(prettyModule
-        ? {
-            formatter: prettyModule.getPrettyFormatter({
-              icons: false,
-              level: 'ABBR',
-              wordWrap: false,
-              categorySeparator: ':',
-              messageColor: null,
-              categoryColor: null,
-              timestampColor: null,
-              levelStyle: 'reset',
-              messageStyle: 'reset',
-              categoryStyle: 'reset',
-              timestampStyle: 'reset',
-              timestamp: formatTimestamp,
-              properties: true // 显示结构化数据
-            })
-          }
-        : {})
-    });
-    if (!prettyModule) {
-      console.warn(
-        'Logtape pretty formatter is not available, falling back to default console sink'
-      );
-    }
-    // 如果 console level 比 lowestLevel 高，添加 filter
-    sinks.console =
-      consoleLevel !== lowestLevel
-        ? withFilter(consoleSink, getLevelFilter(consoleLevel))
-        : consoleSink;
     composedSinks.push('console');
     console.log('✓ Logtape console sink enabled');
   }
 
   if (enableOtel) {
-    const otelModule = await import('@logtape/otel').catch(() => null);
-    if (!otelModule) {
-      console.warn('Logtape OpenTelemetry is enabled, but @logtape/otel is not available');
-    } else {
-      const { getOpenTelemetrySink } = otelModule;
-      const otelSink = getOpenTelemetrySink({
-        serviceName: otelServiceName,
-        otlpExporterConfig: {
-          url: otelUrl
-        }
-      });
-      // 如果 otel level 比 lowestLevel 高，添加 filter
-      sinks.otel =
-        otelLevel !== lowestLevel ? withFilter(otelSink, getLevelFilter(otelLevel)) : otelSink;
-      composedSinks.push('otel');
-      otelSinkEnabled = true;
-      console.log(`✓ Logtape OpenTelemetry URL: ${otelUrl}`);
-      console.log(`✓ Logtape OpenTelemetry service name: ${otelServiceName}`);
-      console.log(`✓ Logtape OpenTelemetry level: ${otelLevel}`);
-      console.log('✓ Logtape OpenTelemetry enabled');
-    }
+    composedSinks.push('otel');
+    otelSinkEnabled = true;
+    console.log(`✓ Logtape OpenTelemetry URL: ${otelUrl}`);
+    console.log(`✓ Logtape OpenTelemetry service name: ${otelServiceName}`);
+    console.log(`✓ Logtape OpenTelemetry level: ${otelLevel}`);
+    console.log('✓ Logtape OpenTelemetry enabled');
   }
 
   const categories = ['app', 'error', 'http', 'middleware', 'infra', 'mod'];
-  const loggers: Config['loggers'] = [
+  const loggers: LoggerConfig = [
     {
       category: ['logtape', 'meta'],
       sinks: []
@@ -155,31 +87,42 @@ export async function configureLogger() {
   if (otelSinkEnabled) enabledSinks.push(`otel(${otelLevel})`);
   console.log('✓ Logtape has enabled sinks:', enabledSinks.join(', '));
 
-  await configure({
-    sinks: sinks,
-    loggers: loggers,
-    contextLocalStorage: new AsyncLocalStorage()
+  await configureOtelLogger({
+    console: {
+      enabled: enableConsole,
+      level: consoleLevel
+    },
+    otel: enableOtel
+      ? {
+          enabled: true,
+          level: otelLevel,
+          serviceName: otelServiceName,
+          url: otelUrl
+        }
+      : false,
+    loggers,
+    contextLocalStorage,
+    defaultCategory: ['app']
   });
 
   configured = true;
 }
 
 export function getLogger(category: LogCategory) {
-  return getLogTapeLogger(category);
+  return getOtelLogger(category);
 }
 
 export async function destroyLogger() {
   if (configured) {
-    await dispose();
+    await disposeLogger();
     configured = false;
   }
 }
 
-export { getConfig, type Logger, withContext } from '@logtape/logtape';
+export { withContext };
 
 export function getContext(): Record<string, unknown> | undefined {
-  const config = getLogTapeConfig();
-  return config?.contextLocalStorage?.getStore();
+  return contextLocalStorage.getStore();
 }
 export type { LogCategory } from './categories';
 export { http, infra, middleware, mod, root } from './categories';

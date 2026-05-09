@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-plugin/sdk-client",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.2",
   "description": "FastGPT Plugin service client SDK",
   "type": "module",
   "files": [
@@ -23,5 +23,9 @@
   },
   "peerDependencies": {
     "zod": "^4"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": false
 }
