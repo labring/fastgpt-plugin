@@ -11,11 +11,13 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
-      model: 'jina-reranker-v2-base-multilingual'
+      model: 'jina-reranker-v2-base-multilingual',
+      maxToken: 1024
     },
     {
       type: ModelTypeEnum.rerank,
-      model: 'jina-reranker-m0'
+      model: 'jina-reranker-m0',
+      maxToken: 10240
     }
   ]
 };

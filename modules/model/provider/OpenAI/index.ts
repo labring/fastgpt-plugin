@@ -111,6 +111,7 @@ const models: ProviderConfigType = {
       maxTokens: 128000,
       quoteMaxToken: 1000000,
       maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
       vision: true,
       reasoning: true,
       reasoningEffort: true,
@@ -244,7 +245,6 @@ const models: ProviderConfigType = {
         max_tokens: 'max_completion_tokens'
       }
     },
-
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-4.1',
@@ -386,7 +386,6 @@ const models: ProviderConfigType = {
       showStopSign: true,
       responseFormatList: ['text', 'json_object', 'json_schema']
     },
-
     {
       type: ModelTypeEnum.embedding,
       model: 'text-embedding-3-large',
@@ -432,8 +431,6 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.stt,
       model: 'whisper-1'
     },
-
-    // Deprecated models
     {
       type: ModelTypeEnum.llm,
       model: 'o1',
@@ -462,25 +459,6 @@ const models: ProviderConfigType = {
       reasoningEffort: true,
       toolChoice: false,
       showStopSign: true,
-      fieldMap: {
-        max_tokens: 'max_completion_tokens'
-      }
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'o1-preview',
-      maxContext: 128000,
-      maxTokens: 4000,
-      quoteMaxToken: 120000,
-      maxTemperature: null,
-      vision: false,
-      reasoning: true,
-      reasoningEffort: false,
-      toolChoice: false,
-      showStopSign: true,
-      defaultConfig: {
-        stream: false
-      },
       fieldMap: {
         max_tokens: 'max_completion_tokens'
       }
