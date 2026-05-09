@@ -406,11 +406,6 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
-      model: 'gpt-4o-mini-tts',
-      voices: ttsVoices
-    },
-    {
-      type: ModelTypeEnum.tts,
       model: 'tts-1',
       voices: legacyTtsVoices
     },
@@ -421,71 +416,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.stt,
-      model: 'gpt-4o-transcribe'
-    },
-    {
-      type: ModelTypeEnum.stt,
-      model: 'gpt-4o-mini-transcribe'
-    },
-    {
-      type: ModelTypeEnum.stt,
       model: 'whisper-1'
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'o1',
-      maxContext: 195000,
-      maxTokens: 8000,
-      quoteMaxToken: 120000,
-      maxTemperature: null,
-      vision: true,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: false,
-      showStopSign: false,
-      fieldMap: {
-        max_tokens: 'max_completion_tokens'
-      }
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'o1-mini',
-      maxContext: 128000,
-      maxTokens: 4000,
-      quoteMaxToken: 120000,
-      maxTemperature: null,
-      vision: false,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: false,
-      showStopSign: true,
-      fieldMap: {
-        max_tokens: 'max_completion_tokens'
-      }
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'gpt-3.5-turbo',
-      maxContext: 16000,
-      maxTokens: 4000,
-      quoteMaxToken: 13000,
-      maxTemperature: 1.2,
-      vision: false,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'gpt-4-turbo',
-      maxContext: 128000,
-      maxTokens: 4000,
-      quoteMaxToken: 60000,
-      maxTemperature: 1.2,
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
     }
   ]
 };
