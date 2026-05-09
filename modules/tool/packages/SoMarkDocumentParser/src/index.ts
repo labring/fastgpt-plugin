@@ -115,11 +115,13 @@ export async function tool(props: InputProps): Promise<OutputProps> {
   if (!fileUrl) {
     throw new Error('File path is required');
   }
-  const handledBaseUrl = baseUrl.trim();
+  let handledBaseUrl = baseUrl.trim();
 
   if (handledBaseUrl === '') {
     throw new Error('Base URL is required');
   }
+
+  handledBaseUrl = handledBaseUrl.replace(/\/+$/, '');
 
   if (deploymentType === 'api' && handledBaseUrl !== DEFAULT_BASE_URL) {
     throw new Error('Base URL or API Key is invalid, please check the configuration and try again');

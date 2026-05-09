@@ -24,7 +24,8 @@ export default defineTool({
     {
       key: 'deploymentType',
       label: '部署方式',
-      description: '选择使用 SoMark 官方 API 或 SoMark Self-host。',
+      description:
+        '选择"SoMark API"使用官方云服务；如果是自建 SoMark 服务，请选择"SoMark Self-host"。',
       required: true,
       inputType: 'select',
       list: [
@@ -35,7 +36,7 @@ export default defineTool({
     {
       key: 'apiKey',
       label: 'API Key',
-      description: '使用 SoMark 官方 API 时填写；SoMark Self-host 无需填写。',
+      description: '使用 SoMark 官方 API 时填写；SoMark Self-host 无需填写',
       required: false,
       inputType: 'secret'
     },
@@ -43,7 +44,7 @@ export default defineTool({
       key: 'baseUrl',
       label: 'Base URL',
       description:
-        '使用 SoMark Self-host 时填写 Base URL；使用 SoMark 官方 API 时填写 https://somark.tech/api/v1。',
+        '使用SoMark API时填写 https://somark.tech/api/v1;SoMark Self-host 时填写本地部署的Base URL。',
       required: true,
       inputType: 'input'
     }
