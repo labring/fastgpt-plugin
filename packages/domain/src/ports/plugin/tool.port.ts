@@ -5,7 +5,7 @@ import { ToolSchema, ToolSetChildItemSchema } from '../../entities/tool.entity';
 import {
   PluginSourceSchema,
   type PluginSourceType,
-  type UserPluginIdType
+  UserPluginIdSchema
 } from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
 import type { StreamData } from '../../value-objects/stream.vo';
@@ -51,7 +51,11 @@ export const ToolDetailSchema = z.object({
   isToolset: z.boolean()
 });
 
-export type ToolDetailInputType = UserPluginIdType;
+export const ToolDetailInputSchema = UserPluginIdSchema.extend({
+  fallbackLatestVersion: z.boolean().optional()
+});
+
+export type ToolDetailInputType = z.infer<typeof ToolDetailInputSchema>;
 export type ToolDetailType = z.infer<typeof ToolDetailSchema>;
 
 export interface ToolManagerPort {

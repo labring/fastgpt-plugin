@@ -61,6 +61,16 @@ export class ToolManager implements ToolManagerPort {
     };
   }
 
+  private getLatestVersion<T extends { version: string }>(versionList: T[]): T | undefined {
+    return versionList.reduce<T | undefined>((latest, current) => {
+      if (!latest) {
+        return current;
+      }
+
+      return new Semver(latest.version).compare(new Semver(current.version)) > 0 ? latest : current;
+    }, undefined);
+  }
+
   public static getInstance(deps: ToolManagerDeps): ToolManager {
     if (!ToolManager.instance) {
       ToolManager.instance = new ToolManager(deps);
@@ -91,9 +101,11 @@ export class ToolManager implements ToolManagerPort {
   async detail({
     pluginId,
     source,
-    version
+    version,
+    fallbackLatestVersion
   }: ToolDetailInputType): Promise<Result<ToolDetailType>> {
     const normalizedSource = source ?? 'system';
+    const normalizedVersion = version?.trim();
 
     const [versionList, err] = await this.deps.pluginRepo.listVersions({
       pluginId,
@@ -102,17 +114,33 @@ export class ToolManager implements ToolManagerPort {
 
     if (err) return failureResult(err);
 
-    const latestVersion = versionList.reduce((latest, current) => {
-      return new Semver(latest.version).compare(new Semver(current.version)) > 0 ? latest : current;
-    });
+    const latestVersion = this.getLatestVersion(versionList);
 
     const [tool, detailErr] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
       source: normalizedSource,
-      version
+      version: normalizedVersion
     });
 
     if (detailErr) {
+      if (fallbackLatestVersion && normalizedVersion && latestVersion) {
+        const [fallbackTool, fallbackErr] = await this.deps.pluginRepo.getPluginByUserPluginId({
+          pluginId,
+          source: normalizedSource,
+          version: latestVersion.version
+        });
+
+        if (!fallbackErr) {
+          return successResult(
+            this.toToolDetail({
+              tool: fallbackTool,
+              source: normalizedSource,
+              isLatestVersion: true
+            })
+          );
+        }
+      }
+
       return failureResult(
         {
           en: 'Failed to get tool detail',
@@ -126,7 +154,7 @@ export class ToolManager implements ToolManagerPort {
       this.toToolDetail({
         tool,
         source: normalizedSource,
-        isLatestVersion: version ? latestVersion.version === version : true // version 为 undefined 时，isLatestVersion 为 true
+        isLatestVersion: latestVersion ? tool.version === latestVersion.version : !normalizedVersion
       })
     );
   }

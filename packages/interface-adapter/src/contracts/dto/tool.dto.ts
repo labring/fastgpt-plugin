@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 
 import { PluginTagSchema } from '@domain/entities/plugin.entity';
 import {
+  ToolDetailInputSchema,
   ToolDetailSchema,
   ToolListChildItemSchema,
   ToolListItemSchema
@@ -115,6 +116,10 @@ export const ToolGetParamsDTOSchema = z.object({
   source: PluginSourceSchema.optional().default('system').openapi({
     description: 'Tool source',
     example: 'system'
+  }),
+  fallbackLatestVersion: ToolDetailInputSchema.shape.fallbackLatestVersion.openapi({
+    description: 'Fallback to latest version when the requested version is missing',
+    example: true
   })
 });
 
