@@ -26,9 +26,6 @@ importers:
 
   .:
     dependencies:
-      sdk:
-        specifier: link:/Volumes/Code/fastgpt-plugin/sdk
-        version: link:sdk
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -325,13 +322,6 @@ importers:
         version: 0.21.10(typescript@5.9.3)
 
   sdk/factory:
-    dependencies:
-      '@fastgpt-plugin/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      '@fastgpt-plugin/infrastructure':
-        specifier: workspace:*
-        version: link:../../packages/infrastructure
     devDependencies:
       tsdown:
         specifier: 'catalog:'

@@ -15,15 +15,13 @@ import {
 } from './deps';
 
 export const init = async () => {
-  await configureLogger(); // setup logger
+  const logger = getLogger(root);
   await Promise.all([
     localFileStorageRepo.initialize(),
     privateRemoteFileStorageRepo.init(),
     publicRemoteFileStorageRepo.init(),
     mongoClient.init()
   ]);
-
-  const logger = getLogger(root);
 
   try {
     await Promise.all([

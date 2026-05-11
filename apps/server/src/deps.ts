@@ -1,12 +1,11 @@
-import { LocalPoolPluginRuntimeManager } from '@fastgpt-plugin/infrastructure/plugin/plugin-runtime/drivers/local-pool/local-pool-runtime.driver';
-import { PluginPKFFileResolver } from '@fastgpt-plugin/infrastructure/plugin/utils/plugin-pkg-file-resolver.impl';
-
 import { env } from '@infrastructure/env';
 import { LocalFileStorageRepo } from '@infrastructure/file-storage/local-file-storage.repo';
 import { RemoteFileStorageRepo } from '@infrastructure/file-storage/remote-file-storage.repo';
 import { FileTTLManager } from '@infrastructure/file-ttl/file-ttl.impl';
+import { LocalPoolPluginRuntimeManager } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/local-pool-runtime.driver';
 import { PluginRepo } from '@infrastructure/plugin/plugin.repo';
 import { ToolManager } from '@infrastructure/plugin/tool.impl';
+import { PluginPKFFileResolver } from '@infrastructure/plugin/utils/plugin-pkg-file-resolver.impl';
 import { RedisClient } from '@infrastructure/redis/redis-client';
 import { MongoClient } from '@infrastructure/storage/mongo/index';
 import { createS3Clients } from '@infrastructure/storage/s3';

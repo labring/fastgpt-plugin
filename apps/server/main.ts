@@ -2,7 +2,7 @@ import { serve, type ServerType } from '@hono/node-server';
 
 import { env } from '@infrastructure/env';
 import { app } from '@infrastructure/hono/app';
-import { destroyLogger, getLogger, mod, root } from '@infrastructure/logger';
+import { configureLogger, destroyLogger, getLogger, mod, root } from '@infrastructure/logger';
 import { configureProxy } from '@infrastructure/utils/proxy';
 
 import deps from './src/deps';
@@ -12,6 +12,10 @@ import { makePluginRoute } from './src/routes/plugin.route';
 import { makeRuntimeRoute } from './src/routes/runtime.route';
 import { makeToolRoute } from './src/routes/tool.route';
 import { makeWorkflowRoute } from './src/routes/workflow.route';
+
+await configureLogger(); // setup logger
+const logger = getLogger(root);
+logger.debug(env);
 
 const modelRoute = makeModelRoute(deps);
 const pluginRoute = makePluginRoute(deps);
@@ -29,8 +33,6 @@ app.route('/api', pluginRoute);
 app.route('/api', runtimeRoute);
 app.route('/api', toolRoute);
 app.route('/api', workflowRoute);
-
-const logger = getLogger(root);
 
 let server: ServerType | null = null;
 
