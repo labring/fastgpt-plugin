@@ -19,6 +19,27 @@ const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
     return Array.isArray(value) ? value : [value];
   }, z.array(schema).optional());
 
+const booleanQueryParam = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    if (value === 'true') {
+      return true;
+    }
+
+    if (value === 'false') {
+      return false;
+    }
+
+    return value;
+  }, schema);
+
 export const SystemVarDTOSchema = z
   .object({
     ...SystemVarSchema.shape
@@ -117,7 +138,9 @@ export const ToolGetParamsDTOSchema = z.object({
     description: 'Tool source',
     example: 'system'
   }),
-  fallbackLatestVersion: ToolDetailInputSchema.shape.fallbackLatestVersion.openapi({
+  fallbackLatestVersion: booleanQueryParam(
+    ToolDetailInputSchema.shape.fallbackLatestVersion
+  ).openapi({
     description: 'Fallback to latest version when the requested version is missing',
     example: true
   })
