@@ -131,6 +131,15 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  apps/debug-runtime-monitor:
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.1
+        version: 6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
+
   apps/server:
     dependencies:
       '@fastgpt-plugin/domain':
@@ -8170,11 +8179,11 @@ snapshots:
   vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
       postcss: 8.5.8
       rollup: 4.59.0
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.16
     optionalDependencies:
       '@types/node': 25.5.0
       fsevents: 2.3.3
