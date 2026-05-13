@@ -426,6 +426,50 @@ export class PluginRepo implements PluginRepoPort {
     }
   }
 
+  async deletePendingPlugin(uniqueId: PluginUniqueIdType): Promise<Result> {
+    try {
+      const pendingPrefix = this.getFileKey(uniqueId, [], true);
+      const pendingPathPrefix = `${pendingPrefix}/`;
+      const cleanupSteps = await Promise.all([
+        this.deps.publicRemoteFileStorageRepo.deletePath(pendingPrefix),
+        this.deps.privateRemoteFileStorageRepo.deletePath(pendingPrefix),
+        this.deps.localFileStorageRepo.deletePath(pendingPrefix)
+      ]);
+
+      const cleanupErr = cleanupSteps.find(([, err]) => err)?.[1];
+      if (cleanupErr) {
+        return failureResult(
+          {
+            en: 'Failed to delete pending plugin files',
+            'zh-CN': '删除 pending 插件文件失败'
+          },
+          cleanupErr
+        );
+      }
+
+      await this.deps.mongoClient.getModel('s3ttl').deleteMany({
+        minioKey: {
+          $regex: `^${this.escapeRegex(pendingPathPrefix)}`
+        }
+      });
+
+      await this.deps.mongoClient.getModel('plugin').deleteOne({
+        ...uniqueId,
+        status: PluginStatusEnum.pending
+      });
+
+      return successResult({});
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Failed to delete pending plugin',
+          'zh-CN': '删除 pending 插件失败'
+        },
+        error
+      );
+    }
+  }
+
   private async listInstalledPluginsByView(
     { op, types, tags, sources }: PluginListInputType,
     view: PluginListView

@@ -1,8 +1,9 @@
 import { Readable } from 'node:stream';
 import type { ReadableStream } from 'node:stream/web';
 
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
+import type { Context } from 'hono';
 
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';
@@ -35,69 +36,41 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
   const logger = getLogger(mod.plugin);
   const usecaseDeps = { ...deps, logger };
 
-  route.openapi(
-    createRoute({
-      ...PluginContract.Upload.meta,
-      request: {
-        body: {
-          content: {
-            'multipart/form-data': {
-              schema: z.object({
-                file: z.any()
-              })
-            }
-          }
-        }
-      },
-      responses: {
-        200: {
-          description: 'HTTP 200 response',
-          content: {
-            'application/json': {
-              schema: PluginContract.Upload.response[200]
-            }
-          }
-        },
-        400: {
-          description: 'HTTP 400 response',
-          content: {
-            'application/json': {
-              schema: PluginContract.Upload.response[400]
-            }
-          }
-        }
-      }
-    }),
-    async (c) => {
-      const pluginUploadUC = makePluginUploadUC(usecaseDeps);
-      const formData = await c.req.formData();
-      const file = formData.get('file');
+  const handleUpload = async (c: Context) => {
+    const pluginUploadUC = makePluginUploadUC(usecaseDeps);
+    const formData = await c.req.formData();
+    const files = formData.getAll('files');
 
-      if (!file) {
-        return R.fail(c, 400, {
-          en: 'file is required',
-          'zh-CN': '没有上传文件'
-        });
-      }
-
-      if (!(file instanceof File)) {
-        return R.fail(c, 400, {
-          en: 'file must be a File instance',
-          'zh-CN': '上传的文件必须是一个 File 实例'
-        });
-      }
-
-      const [result, err] = await pluginUploadUC({
-        file: Readable.fromWeb(file.stream() as ReadableStream)
+    if (!files.length) {
+      return R.fail(c, 400, {
+        en: 'file is required',
+        'zh-CN': '没有上传文件'
       });
-
-      if (err) {
-        return c.json(err, 400);
-      }
-
-      return R.success(c, result);
     }
-  );
+
+    const invalidFile = files.find((file) => !(file instanceof File));
+    if (invalidFile) {
+      return R.fail(c, 400, {
+        en: 'file must be a File instance',
+        'zh-CN': '上传的文件必须是一个 File 实例'
+      });
+    }
+
+    const [result, err] = await pluginUploadUC({
+      files: files.map((file) => ({
+        file: Readable.fromWeb((file as File).stream() as ReadableStream),
+        fileName: (file as File).name
+      }))
+    });
+
+    if (err) {
+      return R.fail(c, 400, err.reason);
+    }
+
+    return R.success(c, result);
+  };
+
+  route.openapi(createRoute(PluginContract.Upload.openapi), handleUpload);
 
   route.openapi(
     createRoute({

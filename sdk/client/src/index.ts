@@ -28,6 +28,7 @@ export type {
   PluginTagType,
   PluginTypeType,
   PluginUniqueIdType,
+  PluginUploadResultType,
   PluginVersionItemType,
   PluginVersionListParamsType,
   PluginVersionListType,

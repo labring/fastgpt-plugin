@@ -29,9 +29,9 @@ import type {
   PluginListType,
   PluginPruneDisabledResultType,
   PluginRuntimeConfigType,
-  PluginSummaryType,
   PluginTagListType,
   PluginUniqueIdType,
+  PluginUploadResultType,
   PluginVersionListParamsType,
   PluginVersionListType,
   RunToolStreamParams,
@@ -106,16 +106,21 @@ export class FastGPTPluginClient {
   }
 
   async uploadPlugin(
-    file: Blob,
-    filename?: string,
+    files: (Blob | { file: Blob; filename?: string })[],
     requestOptions?: ClientRequestOptions
-  ): Promise<PluginSummaryType> {
+  ): Promise<PluginUploadResultType> {
     const formData = new FormData();
-    const defaultName =
-      typeof File !== 'undefined' && file instanceof File ? file.name : 'plugin.pkg';
-    formData.append('file', file, filename ?? defaultName);
 
-    return this.transport.requestData<PluginSummaryType>({
+    files.forEach((item, index) => {
+      const file = item instanceof Blob ? item : item.file;
+      const filename = item instanceof Blob ? undefined : item.filename;
+      const defaultName =
+        typeof File !== 'undefined' && file instanceof File ? file.name : `plugin-${index}.pkg`;
+
+      formData.append('files', file, filename ?? defaultName);
+    });
+
+    return this.transport.requestData<PluginUploadResultType>({
       path: this.withApiPath(PluginContract.Upload.meta.path),
       method: PluginContract.Upload.meta.method,
       body: formData,

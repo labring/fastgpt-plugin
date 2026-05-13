@@ -3,6 +3,30 @@ import { ReadableStream } from 'node:stream/web';
 
 import { ZipReaderStream, ZipWriterStream } from '@zip.js/zip.js';
 
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+
+export const bufferToReadable = (buffer: Buffer): Readable => Readable.from([buffer]);
+
+export const readStreamToBuffer = async (stream: Readable): Promise<Result<Buffer>> => {
+  try {
+    const chunks: Buffer[] = [];
+
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+
+    return successResult(Buffer.concat(chunks));
+  } catch (error) {
+    return failureResult(
+      {
+        en: 'Failed to read stream into buffer',
+        'zh-CN': '读取流到内存缓冲区失败'
+      },
+      error
+    );
+  }
+};
+
 /**
  * @example
  * ```ts

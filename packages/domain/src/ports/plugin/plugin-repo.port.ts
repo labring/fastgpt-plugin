@@ -70,6 +70,8 @@ export interface PluginRepoPort {
 
   /** 移除某个插件的 pending 状态 */
   confirmPlugin(uniqueId: PluginUniqueIdType): Promise<Result<PluginType>>;
+  /** 删除 pending 插件及其临时文件 */
+  deletePendingPlugin(uniqueId: PluginUniqueIdType): Promise<Result>;
 
   /** 获取某个插件信息 */
   getPluginById(

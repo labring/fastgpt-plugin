@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { Readable } from 'node:stream';
+import type { Readable } from 'node:stream';
 
 import type { PluginType } from '@domain/entities/plugin.entity';
 import {
@@ -10,7 +10,7 @@ import {
 } from '@domain/value-objects/file/MIME.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
-import { unpkg } from './pkg';
+import { bufferToReadable, readStreamToBuffer, unpkg } from './pkg';
 import { loadPlugin } from './tool-loader';
 
 const IMAGE_CONTENT_TYPES = new Set<MIMEType>([
@@ -44,28 +44,6 @@ export type ParsePkgParams = {
     filePath: string[];
     etag: string;
   }) => Promise<Result<string>>;
-};
-
-const bufferToReadable = (buffer: Buffer): Readable => Readable.from([buffer]);
-
-const readStreamToBuffer = async (stream: Readable): Promise<Result<Buffer>> => {
-  try {
-    const chunks: Buffer[] = [];
-
-    for await (const chunk of stream) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-
-    return successResult(Buffer.concat(chunks));
-  } catch (error) {
-    return failureResult(
-      {
-        en: 'Failed to read stream into buffer',
-        'zh-CN': '读取流到内存缓冲区失败'
-      },
-      error
-    );
-  }
 };
 
 const ensureBuffer = async (input: Buffer | Readable): Promise<Result<Buffer>> => {

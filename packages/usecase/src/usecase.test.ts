@@ -1,5 +1,7 @@
 import { Readable } from 'node:stream';
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { PluginType } from '@domain/entities/plugin.entity';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import type { PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
@@ -7,7 +9,6 @@ import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeModelListUC } from './model/model-list.uc';
 import { makeProviderListUC } from './model/providers.uc';
@@ -63,6 +64,18 @@ const fileObject = (fileKey: string, etag = `${fileKey}-etag`) =>
     }
   }) as FileObject;
 
+const namedFileObject = (fileKey: string, fileName: string, etag = `${fileKey}-etag`) =>
+  ({
+    metaData: {
+      fileKey,
+      fileName,
+      contentType: 'application/zip',
+      size: 3,
+      etag,
+      createTime: new Date('2026-01-01T00:00:00Z')
+    }
+  }) as FileObject;
+
 const files = () =>
   ({
     index: fileObject('index', 'index-etag'),
@@ -97,6 +110,7 @@ const basePluginRepo = (overrides: Record<string, unknown> = {}) => ({
   getPendingPluginIds: vi.fn(),
   createPlugin: vi.fn(),
   confirmPlugin: vi.fn(),
+  deletePendingPlugin: vi.fn().mockResolvedValue(successResult({})),
   getPluginById: vi.fn(),
   getPluginsByPluginId: vi.fn(),
   getPluginByUserPluginId: vi.fn(),
@@ -231,9 +245,11 @@ describe('makePluginUploadUC', () => {
         delete: vi.fn().mockResolvedValue(successResult(true))
       },
       pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
         parsePluginPkg: vi.fn().mockResolvedValue(successResult(pluginPkgInfo()))
       },
       pluginRepo: basePluginRepo({
+        getPendingPluginIds: vi.fn().mockResolvedValue(successResult([])),
         createPlugin: vi.fn().mockResolvedValue(successResult({}))
       }),
       logger: logger(),
@@ -248,49 +264,341 @@ describe('makePluginUploadUC', () => {
       }
     });
 
-    const [, err] = await makePluginUploadUC(deps)({ file: stream() });
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'plugin.pkg' }]
+    });
 
     expect(err?.reason.en).toBe('Failed to Upload');
+    expect(deps.pluginPKGFileResolver.parsePluginPkg).not.toHaveBeenCalled();
+  });
+
+  it('requires at least one uploaded package', async () => {
+    const deps = makeDeps();
+
+    const [, err] = await makePluginUploadUC(deps)({ files: [] });
+
+    expect(err?.reason.en).toBe('file is required');
+    expect(deps.localFileStorageRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('deletes the uploaded file when package extraction fails', async () => {
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(namedFileObject('upload', 'bundle.zip'))),
+        delete: vi.fn().mockResolvedValue(successResult(true))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn().mockResolvedValue(failureResult(reason('extract failed'))),
+        parsePluginPkg: vi.fn()
+      }
+    });
+
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'bundle.zip' }]
+    });
+
+    expect(err?.reason.en).toBe('Failed to parse the plugin package');
+    expect(deps.localFileStorageRepo.delete).toHaveBeenCalledWith('upload');
     expect(deps.pluginPKGFileResolver.parsePluginPkg).not.toHaveBeenCalled();
   });
 
   it('deletes the temporary file when package parsing fails', async () => {
     const deps = makeDeps({
       pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
         parsePluginPkg: vi.fn().mockResolvedValue(failureResult(reason('parse failed')))
       }
     });
 
-    const [, err] = await makePluginUploadUC(deps)({ file: stream() });
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'plugin.pkg' }]
+    });
 
     expect(err?.reason.en).toBe('Failed to parse the plugin package');
     expect(deps.localFileStorageRepo.delete).toHaveBeenCalledWith('upload');
   });
 
+  it('deletes unsupported uploaded package files', async () => {
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(namedFileObject('upload', 'plugin.txt'))),
+        delete: vi.fn().mockResolvedValue(successResult(true))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
+        parsePluginPkg: vi.fn()
+      }
+    });
+
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'plugin.txt' }]
+    });
+
+    expect(err?.reason.en).toBe('Failed to parse the plugin package');
+    expect(deps.localFileStorageRepo.delete).toHaveBeenCalledWith('upload');
+    expect(deps.pluginPKGFileResolver.parsePluginZipFiles).not.toHaveBeenCalled();
+    expect(deps.pluginPKGFileResolver.parsePluginPkg).not.toHaveBeenCalled();
+  });
+
   it('returns create failure when the pending plugin cannot be saved', async () => {
     const deps = makeDeps({
       pluginRepo: basePluginRepo({
+        getPendingPluginIds: vi.fn().mockResolvedValue(successResult([])),
         createPlugin: vi.fn().mockResolvedValue(failureResult(reason('create failed')))
       })
     });
 
-    const [, err] = await makePluginUploadUC(deps)({ file: stream() });
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'plugin.pkg' }]
+    });
 
     expect(err?.reason.en).toBe('Failed to create the plugin');
+  });
+
+  it('returns failure when existing pending plugins cannot be listed before create', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        getPendingPluginIds: vi.fn().mockResolvedValue(failureResult(reason('pending failed'))),
+        createPlugin: vi.fn().mockResolvedValue(successResult({}))
+      })
+    });
+
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'plugin.pkg' }]
+    });
+
+    expect(err?.reason.en).toBe('Failed to get pending plugin ids');
+    expect(deps.pluginRepo.createPlugin).not.toHaveBeenCalled();
   });
 
   it('stores the uploaded plugin as pending on success', async () => {
     const deps = makeDeps();
 
-    const [uploaded, err] = await makePluginUploadUC(deps)({ file: stream() });
+    const [uploaded, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'plugin.pkg' }]
+    });
 
     expect(err).toBeNull();
-    expect(uploaded).toEqual(plugin());
+    expect(uploaded).toEqual([plugin()]);
+    expect(deps.localFileStorageRepo.save).toHaveBeenCalledWith({
+      file: expect.any(Readable),
+      fileKey: expect.any(String),
+      fileName: 'plugin.pkg',
+      contentType: 'application/zip',
+      overwrite: true
+    });
     expect(deps.pluginRepo.createPlugin).toHaveBeenCalledWith({
       files: files(),
       plugin: plugin(),
       pending: true
     });
+  });
+
+  it('parses the whole uploaded batch before creating pending plugins', async () => {
+    const firstFile = fileObject('first');
+    const secondFile = fileObject('second');
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(firstFile))
+          .mockResolvedValueOnce(successResult(secondFile)),
+        delete: vi.fn().mockResolvedValue(successResult(true))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
+        parsePluginPkg: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin({ pluginId: 'first' }))))
+          .mockResolvedValueOnce(failureResult(reason('parse failed')))
+      }
+    });
+
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [
+        { file: stream(), fileName: 'first.pkg' },
+        { file: stream(), fileName: 'second.pkg' }
+      ]
+    });
+
+    expect(err?.reason.en).toBe('Failed to parse the plugin package');
+    expect(deps.pluginRepo.createPlugin).not.toHaveBeenCalled();
+    expect(deps.pluginRepo.deletePendingPlugin).not.toHaveBeenCalled();
+    expect(deps.localFileStorageRepo.delete).toHaveBeenCalledWith('second');
+  });
+
+  it('rolls back created pending plugins when a later pending create fails', async () => {
+    const firstPlugin = plugin({ pluginId: 'first', etag: 'first-etag' });
+    const secondPlugin = plugin({ pluginId: 'second', etag: 'second-etag' });
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(fileObject('first')))
+          .mockResolvedValueOnce(successResult(fileObject('second'))),
+        delete: vi.fn().mockResolvedValue(successResult(true))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
+        parsePluginPkg: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(firstPlugin)))
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(secondPlugin)))
+      },
+      pluginRepo: basePluginRepo({
+        getPendingPluginIds: vi.fn().mockResolvedValue(successResult([])),
+        createPlugin: vi
+          .fn()
+          .mockResolvedValueOnce(successResult({}))
+          .mockResolvedValueOnce(failureResult(reason('create failed'))),
+        deletePendingPlugin: vi.fn().mockResolvedValue(successResult({}))
+      })
+    });
+
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [
+        { file: stream(), fileName: 'first.pkg' },
+        { file: stream(), fileName: 'second.pkg' }
+      ]
+    });
+
+    expect(err?.reason.en).toBe('Failed to create the plugin');
+    expect(deps.pluginRepo.deletePendingPlugin).toHaveBeenNthCalledWith(1, {
+      pluginId: 'first',
+      version: '1.0.0',
+      etag: 'first-etag'
+    });
+    expect(deps.pluginRepo.deletePendingPlugin).toHaveBeenNthCalledWith(2, {
+      pluginId: 'second',
+      version: '1.0.0',
+      etag: 'second-etag'
+    });
+  });
+
+  it('logs rollback failures without masking the create failure', async () => {
+    const appLogger = logger();
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        getPendingPluginIds: vi.fn().mockResolvedValue(successResult([])),
+        createPlugin: vi.fn().mockResolvedValue(failureResult(reason('create failed'))),
+        deletePendingPlugin: vi.fn().mockResolvedValue(failureResult(reason('rollback failed')))
+      }),
+      logger: appLogger
+    });
+
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'plugin.pkg' }]
+    });
+
+    expect(err?.reason.en).toBe('Failed to create the plugin');
+    expect(appLogger.warn).toHaveBeenCalledWith('Failed to rollback pending plugin', {
+      uniqueId,
+      reason: reason('rollback failed')
+    });
+  });
+
+  it('does not delete pending plugins that existed before the upload batch', async () => {
+    const firstPlugin = plugin({ pluginId: 'first', etag: 'first-etag' });
+    const secondPlugin = plugin({ pluginId: 'second', etag: 'second-etag' });
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(fileObject('first')))
+          .mockResolvedValueOnce(successResult(fileObject('second'))),
+        delete: vi.fn().mockResolvedValue(successResult(true))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
+        parsePluginPkg: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(firstPlugin)))
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(secondPlugin)))
+      },
+      pluginRepo: basePluginRepo({
+        getPendingPluginIds: vi.fn().mockResolvedValue(successResult([firstPlugin])),
+        createPlugin: vi
+          .fn()
+          .mockResolvedValueOnce(successResult({}))
+          .mockResolvedValueOnce(failureResult(reason('create failed'))),
+        deletePendingPlugin: vi.fn().mockResolvedValue(successResult({}))
+      })
+    });
+
+    const [, err] = await makePluginUploadUC(deps)({
+      files: [
+        { file: stream(), fileName: 'first.pkg' },
+        { file: stream(), fileName: 'second.pkg' }
+      ]
+    });
+
+    expect(err?.reason.en).toBe('Failed to create the plugin');
+    expect(deps.pluginRepo.deletePendingPlugin).toHaveBeenCalledTimes(1);
+    expect(deps.pluginRepo.deletePendingPlugin).toHaveBeenCalledWith({
+      pluginId: 'second',
+      version: '1.0.0',
+      etag: 'second-etag'
+    });
+  });
+
+  it('stores every uploaded package in a batch as pending', async () => {
+    const firstFile = fileObject('first');
+    const secondFile = fileObject('second');
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(firstFile))
+          .mockResolvedValueOnce(successResult(secondFile)),
+        delete: vi.fn().mockResolvedValue(successResult(true))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
+        parsePluginPkg: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin({ pluginId: 'first' }))))
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin({ pluginId: 'second' }))))
+      }
+    });
+
+    const [uploaded, err] = await makePluginUploadUC(deps)({
+      files: [
+        { file: stream(), fileName: 'first.pkg' },
+        { file: stream(), fileName: 'second.pkg' }
+      ]
+    });
+
+    expect(err).toBeNull();
+    expect(uploaded?.map((item) => item.pluginId)).toEqual(['first', 'second']);
+    expect(deps.pluginRepo.createPlugin).toHaveBeenCalledTimes(2);
+  });
+
+  it('extracts zip uploads and stores every package as pending', async () => {
+    const bundleFile = namedFileObject('bundle', 'bundle.zip');
+    const firstFile = fileObject('first');
+    const secondFile = fileObject('second');
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(bundleFile)),
+        delete: vi.fn().mockResolvedValue(successResult(true))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn().mockResolvedValue(successResult([firstFile, secondFile])),
+        parsePluginPkg: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin({ pluginId: 'first' }))))
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin({ pluginId: 'second' }))))
+      }
+    });
+
+    const [uploaded, err] = await makePluginUploadUC(deps)({
+      files: [{ file: stream(), fileName: 'bundle.zip' }]
+    });
+
+    expect(err).toBeNull();
+    expect(uploaded?.map((item) => item.pluginId)).toEqual(['first', 'second']);
+    expect(deps.pluginPKGFileResolver.parsePluginZipFiles).toHaveBeenCalledWith(bundleFile);
+    expect(deps.pluginRepo.createPlugin).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -304,6 +612,7 @@ describe('makePluginInstallUC', () => {
         getFileStream: vi.fn().mockResolvedValue(successResult(stream()))
       },
       pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
         parsePluginPkg: vi.fn().mockResolvedValue(successResult(pluginPkgInfo()))
       },
       pluginRepo: basePluginRepo({
@@ -345,6 +654,7 @@ describe('makePluginInstallUC', () => {
   it('reports package parse failures for downloaded files', async () => {
     const deps = makeDeps({
       pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
         parsePluginPkg: vi.fn().mockResolvedValue(failureResult(reason('parse failed')))
       }
     });
@@ -362,13 +672,113 @@ describe('makePluginInstallUC', () => {
     ]);
   });
 
+  it('expands zip package downloads before direct installation', async () => {
+    const zipFile = namedFileObject('bundle', 'bundle.zip', 'bundle-etag');
+    const firstPkg = fileObject('first-pkg', 'first-etag');
+    const secondPkg = fileObject('second-pkg', 'second-etag');
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(zipFile))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn().mockResolvedValue(successResult([firstPkg, secondPkg])),
+        parsePluginPkg: vi
+          .fn()
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin({ pluginId: 'first' }))))
+          .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin({ pluginId: 'second' }))))
+      }
+    });
+
+    const [result, err] = await makePluginInstallUC(deps)({
+      urls: ['https://example.com/plugins.zip'],
+      batchDownloadSize: 1
+    });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.localFileStorageRepo.save).toHaveBeenCalledWith({
+      file: expect.any(Readable),
+      fileKey: expect.any(String),
+      fileName: 'plugins.zip'
+    });
+    expect(deps.pluginPKGFileResolver.parsePluginPkg).toHaveBeenCalledTimes(2);
+    expect(deps.pluginRepo.createPlugin).toHaveBeenNthCalledWith(1, {
+      files: files(),
+      plugin: plugin({ pluginId: 'first' }),
+      pending: false
+    });
+    expect(deps.pluginRepo.createPlugin).toHaveBeenNthCalledWith(2, {
+      files: files(),
+      plugin: plugin({ pluginId: 'second' }),
+      pending: false
+    });
+  });
+
+  it('reports extract failures for downloaded files', async () => {
+    const zipFile = namedFileObject('bad', 'bad.zip', 'bad-etag');
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(zipFile))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn().mockResolvedValue(failureResult(reason('extract failed'))),
+        parsePluginPkg: vi.fn()
+      }
+    });
+
+    const [result] = await makePluginInstallUC(deps)({
+      urls: ['https://example.com/bad.zip'],
+      batchDownloadSize: 1
+    });
+
+    expect(result?.failed).toEqual([
+      {
+        url: 'https://example.com/bad.zip',
+        reason: reason('extract failed')
+      }
+    ]);
+    expect(deps.pluginPKGFileResolver.parsePluginPkg).not.toHaveBeenCalled();
+  });
+
+  it('maps parse failures from zip entries back to the downloaded url', async () => {
+    const zipFile = namedFileObject('bundle', 'bundle.zip', 'bundle-etag');
+    const entryPkg = fileObject('entry-pkg', 'entry-etag');
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(zipFile))
+      },
+      pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn().mockResolvedValue(successResult([entryPkg])),
+        parsePluginPkg: vi.fn().mockResolvedValue(failureResult(reason('parse failed')))
+      }
+    });
+
+    const [result] = await makePluginInstallUC(deps)({
+      urls: ['https://example.com/plugins.zip'],
+      batchDownloadSize: 1
+    });
+
+    expect(result?.failed).toEqual([
+      {
+        url: 'https://example.com/plugins.zip',
+        reason: reason('parse failed')
+      }
+    ]);
+  });
+
   it('uses an empty URL fallback when an install failure cannot be matched to a download', async () => {
     let metadataReads = 0;
     const shiftingFile = {
       get metaData() {
         metadataReads += 1;
+        const fileKeys = [
+          'initial-file-key',
+          'failed-file-key',
+          'installable-mismatch-file-key',
+          'download-mismatch-file-key'
+        ];
         return {
-          fileKey: metadataReads === 1 ? 'missing-file-key' : 'changed-file-key',
+          fileKey: fileKeys[metadataReads - 1] ?? 'extra-mismatch-file-key',
           fileName: 'changed.pkg',
           contentType: 'application/zip',
           size: 3,
@@ -381,10 +791,11 @@ describe('makePluginInstallUC', () => {
       localFileStorageRepo: {
         save: vi
           .fn()
-          .mockResolvedValueOnce(successResult(undefined as unknown as FileObject))
+          .mockResolvedValueOnce(successResult(fileObject('ghost')))
           .mockResolvedValueOnce(successResult(shiftingFile))
       },
       pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
         parsePluginPkg: vi
           .fn()
           .mockResolvedValueOnce(
@@ -432,6 +843,7 @@ describe('makePluginInstallUC', () => {
           .mockResolvedValueOnce(successResult(fileObject('replace')))
       },
       pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
         parsePluginPkg: vi
           .fn()
           .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin({ pluginId: 'create' }))))
@@ -476,6 +888,7 @@ describe('makePluginInstallUC', () => {
           .mockResolvedValueOnce(successResult(fileObject('workflow')))
       },
       pluginPKGFileResolver: {
+        parsePluginZipFiles: vi.fn(),
         parsePluginPkg: vi
           .fn()
           .mockResolvedValueOnce(successResult(pluginPkgInfo(plugin())))

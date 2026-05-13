@@ -4,6 +4,8 @@ import type { PkgContentFileObjects } from '../../value-objects/file/pkg-file.vo
 import type { Result } from '../../value-objects/result.vo';
 
 export interface PluginPKGFilePort {
+  parsePluginZipFiles(zipFile: FileObject): Promise<Result<FileObject[]>>;
+
   parsePluginPkg(
     pkgFile: FileObject,
     pending: boolean

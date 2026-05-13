@@ -1,6 +1,13 @@
+import { z } from '@hono/zod-openapi';
+
 import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
 
-import { defineContract, emptyResponse, jsonResponse } from '../contract.type';
+import {
+  type ContractMetaType,
+  defineContract,
+  emptyResponse,
+  jsonResponse
+} from '../contract.type';
 import {
   PluginBaseDTOSchema,
   PluginConfirmParamsSchema,
@@ -14,27 +21,65 @@ import {
   PluginRuntimeConfigSetParamsSchema,
   PluginTagListDTOSchema,
   PluginUploadParamsSchema,
+  PluginUploadResponseDTOSchema,
   PluginVersionListDTOSchema,
   PluginVersionListParamsSchema
 } from '../dto/plugin.dto';
 
 import { authToken } from './auth';
 
+const uploadMeta = {
+  method: 'post',
+  path: '/plugin/upload',
+  operationId: 'plugin.upload',
+  description:
+    'Upload plugin .pkg files or .zip package collection files and get parsed plugin info',
+  summary: 'Upload plugin packages',
+  tags: ['plugin'],
+  security: authToken
+} satisfies ContractMetaType;
+
+const uploadResponse = {
+  200: jsonResponse({ data: PluginUploadResponseDTOSchema }),
+  400: jsonResponse({ error: I18nStringSchema })
+};
+
 export const PluginContract = {
   Upload: defineContract({
-    meta: {
-      method: 'post',
-      path: '/plugin/upload',
-      operationId: 'plugin.upload',
-      description: 'Upload a plugin .pkg file and get the plugin info',
-      summary: 'Upload a .pkg plugin',
-      tags: ['plugin'],
-      security: authToken
-    },
+    meta: uploadMeta,
     request: PluginUploadParamsSchema,
-    response: {
-      200: jsonResponse({ data: PluginBaseDTOSchema }),
-      400: jsonResponse({ error: I18nStringSchema })
+    response: uploadResponse,
+    openapi: {
+      ...uploadMeta,
+      request: {
+        body: {
+          content: {
+            'multipart/form-data': {
+              schema: z.object({
+                files: z.any()
+              })
+            }
+          }
+        }
+      },
+      responses: {
+        200: {
+          description: 'HTTP 200 response',
+          content: {
+            'application/json': {
+              schema: uploadResponse[200]
+            }
+          }
+        },
+        400: {
+          description: 'HTTP 400 response',
+          content: {
+            'application/json': {
+              schema: uploadResponse[400]
+            }
+          }
+        }
+      }
     }
   }),
   Confirm: defineContract({

@@ -13,6 +13,7 @@ import type {
   PluginListParamsDTOType,
   PluginPruneDisabledResponseDTOType,
   PluginRuntimeConfigDTOType,
+  PluginUploadResponseDTOType,
   PluginVersionItemDTOType,
   PluginVersionListDTOType,
   PluginVersionListParamsDTOType
@@ -83,6 +84,7 @@ export type ToolListItemType = ToolListItemDTOType;
 export type ToolListParamsType = Partial<ToolListParamsDTOType>;
 
 export type PluginSummaryType = PluginDTOType;
+export type PluginUploadResultType = PluginUploadResponseDTOType;
 export type PluginListType = PluginListDTOType;
 export type PluginListItemType = PluginListItemDTOType;
 export type PluginListParamsType = Partial<PluginListParamsDTOType>;

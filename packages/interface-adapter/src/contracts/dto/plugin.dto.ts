@@ -101,17 +101,24 @@ export const PluginListDTOSchema = z.array(PluginListItemDTOSchema).openapi({
   description: 'Plugin List'
 });
 
+export const PluginUploadResponseDTOSchema = z.array(PluginBaseDTOSchema).openapi({
+  description: 'Parsed uploaded plugin list'
+});
+
 export const PluginUploadParamsSchema = z
   .object({
-    file: z.file().openapi({
-      description: 'Plugin zip file',
-      example: 'example.pkg'
-    })
+    files: z
+      .array(z.file())
+      .min(1)
+      .openapi({
+        description: 'Plugin .pkg files or .zip package collection files',
+        example: ['example.pkg']
+      })
   })
   .openapi({
     description: 'Plugin upload parameters',
     example: {
-      file: 'example.pkg'
+      files: ['example.pkg']
     }
   });
 
@@ -289,6 +296,7 @@ export const PluginRuntimeConfigResetParamsSchema = z.object({
 });
 
 export type PluginDTOType = z.infer<typeof PluginBaseDTOSchema>;
+export type PluginUploadResponseDTOType = z.infer<typeof PluginUploadResponseDTOSchema>;
 export type PluginListDTOType = z.infer<typeof PluginListDTOSchema>;
 export type PluginListItemDTOType = z.infer<typeof PluginListItemDTOSchema>;
 export type PluginUniqueIdDTOType = z.infer<typeof PluginUniqueIdDTOSchema>;
