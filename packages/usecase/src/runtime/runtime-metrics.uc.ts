@@ -7,8 +7,12 @@
 
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { Result } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 /** Dependencies */
-export type RuntimeMetricsUCDeps = { pluginRuntimeManager: PluginRuntimeManagerPort };
+export type RuntimeMetricsUCDeps = {
+  pluginRuntimeManager: PluginRuntimeManagerPort;
+  logger: UsecaseLogger;
+};
 
 /** Input Type*/
 type Input = object;
@@ -17,7 +21,8 @@ type Input = object;
 type Output = Promise<Result<unknown>>;
 
 export const makeRuntimeMetricsUC =
-  (deps: RuntimeMetricsUCDeps) =>
+  ({ logger, pluginRuntimeManager }: RuntimeMetricsUCDeps) =>
   async (_input: Input): Output => {
-    return deps.pluginRuntimeManager.globalStatus();
+    logger.debug('Runtime Metrics');
+    return pluginRuntimeManager.globalStatus();
   };

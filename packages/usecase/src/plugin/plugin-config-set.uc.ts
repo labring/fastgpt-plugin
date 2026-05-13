@@ -7,10 +7,12 @@
 import type { PluginRuntimeConfigType } from '@domain/entities/plugin.entity';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { Result } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
 export type PluginConfigSetUCDeps = {
   pluginRuntimeManager: PluginRuntimeManagerPort;
+  logger: UsecaseLogger;
 };
 
 /** Input Type*/
@@ -23,7 +25,8 @@ type Input<T extends PluginRuntimeConfigType> = {
 type Output = Promise<Result>;
 
 export const makeSetPluginConfigUC =
-  <T extends PluginRuntimeConfigType>({ pluginRuntimeManager }: PluginConfigSetUCDeps) =>
+  <T extends PluginRuntimeConfigType>({ logger, pluginRuntimeManager }: PluginConfigSetUCDeps) =>
   async (input: Input<T>): Output => {
+    logger.debug('Plugin Config Set', { input });
     return pluginRuntimeManager.updateConfig(input.pluginId, input.config);
   };

@@ -5,11 +5,13 @@ import {
   type RuntimeMetricsUCDeps
 } from '@usecase/runtime/runtime-metrics.uc';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
+import { getLogger, root } from '@infrastructure/logger';
 
-export type RuntimeRouteDeps = RuntimeMetricsUCDeps;
+export type RuntimeRouteDeps = Omit<RuntimeMetricsUCDeps, 'logger'>;
 
 export const makeRuntimeRoute = (deps: RuntimeRouteDeps) => {
   const route = createOpenAPIHono();
+  const logger = getLogger(root);
 
   route.openapi(
     createRoute({
@@ -44,7 +46,7 @@ export const makeRuntimeRoute = (deps: RuntimeRouteDeps) => {
       }
     }),
     async (c) => {
-      const runtimeMetricsUC = makeRuntimeMetricsUC(deps);
+      const runtimeMetricsUC = makeRuntimeMetricsUC({ ...deps, logger });
       const [result, err] = await runtimeMetricsUC({});
 
       if (err) {

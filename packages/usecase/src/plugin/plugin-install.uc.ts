@@ -157,11 +157,11 @@ export const makePluginInstallUC =
           'zh-CN': `下载失败`
         }
       })),
-      ...(failToInstalled.map((item) => ({
+      ...failToInstalled.map((item) => ({
         url:
           successDownloadedFiles.find((s) => s.file?.metaData.fileKey === item.fileKey)?.url ?? '',
         reason: item.reason
-      })) ?? [])
+      }))
     ];
 
     logger.debug('plugin install', { failed, failToInstalled, successDownloadedFiles });

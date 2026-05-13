@@ -9,9 +9,11 @@
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginTagListType } from '@domain/value-objects/plugin.vo';
 import type { Result } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 /** Dependencies */
 type Deps = {
   pluginRepo: PluginRepoPort;
+  logger: UsecaseLogger;
   // plugin: PluginManagerPort;
 };
 
@@ -22,7 +24,8 @@ type Input = object;
 type Output = Promise<Result<PluginTagListType>>;
 
 export const makePluginTagListUC =
-  (deps: Deps) =>
+  ({ logger, pluginRepo }: Deps) =>
   async (_input: Input): Output => {
-    return deps.pluginRepo.listTags();
+    logger.debug('Plugin Tag List');
+    return pluginRepo.listTags();
   };

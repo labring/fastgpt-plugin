@@ -33,6 +33,7 @@ export type PluginRouteDeps = {
 export const makePluginRoute = (deps: PluginRouteDeps) => {
   const route = createOpenAPIHono();
   const logger = getLogger(mod.plugin);
+  const usecaseDeps = { ...deps, logger };
 
   route.openapi(
     createRoute({
@@ -68,7 +69,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginUploadUC = makePluginUploadUC({ ...deps, logger });
+      const pluginUploadUC = makePluginUploadUC(usecaseDeps);
       const formData = await c.req.formData();
       const file = formData.get('file');
 
@@ -125,7 +126,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginConfirmUC = makePluginConfirmUC(deps);
+      const pluginConfirmUC = makePluginConfirmUC(usecaseDeps);
       const { uniqueIds } = c.req.valid('json');
       const [, err] = await pluginConfirmUC({ uniqueIds });
 
@@ -160,7 +161,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginPruneDisabledUC = makePluginPruneDisabledUC(deps);
+      const pluginPruneDisabledUC = makePluginPruneDisabledUC(usecaseDeps);
       const [result, err] = await pluginPruneDisabledUC();
 
       if (err) {
@@ -203,7 +204,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginInstallUC = makePluginInstallUC({ ...deps, logger });
+      const pluginInstallUC = makePluginInstallUC(usecaseDeps);
       const body = c.req.valid('json');
       const [result, err] = await pluginInstallUC({
         urls: body.urls,
@@ -244,7 +245,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginListUC = makePluginListUC(deps);
+      const pluginListUC = makePluginListUC(usecaseDeps);
       const query = c.req.valid('query');
       const [result, err] = await pluginListUC(query);
 
@@ -282,7 +283,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginVersionsUC = makePluginVersionsUC(deps);
+      const pluginVersionsUC = makePluginVersionsUC(usecaseDeps);
       const query = c.req.valid('query');
       const [result, err] = await pluginVersionsUC(query);
 
@@ -317,7 +318,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginTagListUC = makePluginTagListUC(deps);
+      const pluginTagListUC = makePluginTagListUC(usecaseDeps);
       const [result, err] = await pluginTagListUC({});
 
       if (err) {
@@ -360,7 +361,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginConfigGetUC = makePluginConfigGetUC(deps);
+      const pluginConfigGetUC = makePluginConfigGetUC(usecaseDeps);
       const body = c.req.valid('json');
       const [result, err] = await pluginConfigGetUC({
         pluginId: body.pluginId
@@ -401,7 +402,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginConfigSetUC = makeSetPluginConfigUC(deps);
+      const pluginConfigSetUC = makeSetPluginConfigUC(usecaseDeps);
       const body = c.req.valid('json');
       const [, err] = await pluginConfigSetUC({
         pluginId: body.pluginId,
@@ -443,7 +444,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
     }),
     async (c) => {
-      const pluginConfigResetUC = makeResetPluginConfigUC(deps);
+      const pluginConfigResetUC = makeResetPluginConfigUC(usecaseDeps);
       const body = c.req.valid('json');
       const [, err] = await pluginConfigResetUC({
         pluginId: body.pluginId

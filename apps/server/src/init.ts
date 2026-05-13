@@ -39,7 +39,8 @@ export const init = async () => {
   // TODO: 应当只载入 system 安装的插件
   const pluginRegisterActiveUC = makePluginRegisterActiveUC({
     pluginRepo,
-    pluginRuntimeManager
+    pluginRuntimeManager,
+    logger
   });
 
   const [, err] = await pluginRegisterActiveUC();

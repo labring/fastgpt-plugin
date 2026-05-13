@@ -11,6 +11,7 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 import {
   disableAndUnregisterReplacedPlugins,
@@ -21,6 +22,7 @@ import {
 export type PluginConfirmUCDeps = {
   pluginRepo: PluginRepoPort;
   pluginRuntimeManager: PluginRuntimeManagerPort;
+  logger: UsecaseLogger;
 };
 
 /** Input Type*/
@@ -34,7 +36,11 @@ type Output = Promise<Result>;
 export const makePluginConfirmUC =
   (deps: PluginConfirmUCDeps) =>
   async ({ uniqueIds }: Input): Output => {
+    deps.logger.debug('Plugin Confirm', { uniqueIds });
+
     const confirmOne = async (uniqueId: PluginUniqueIdType): Output => {
+      deps.logger.debug('Plugin Confirm One', { uniqueId });
+
       const [replacedPlugins, replacedErr] = await listReplacedActivePlugins(
         deps.pluginRepo,
         uniqueId

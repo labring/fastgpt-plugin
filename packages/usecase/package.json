@@ -4,7 +4,9 @@
   "private": true,
   "version": "1.0.0",
   "description": "",
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts --coverage"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

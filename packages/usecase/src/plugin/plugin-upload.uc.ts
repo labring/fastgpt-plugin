@@ -22,6 +22,7 @@ export const makePluginUploadUC =
   (deps: PluginUploadUCDeps) =>
   async (input: Input): Promise<Result<PluginType>> => {
     const { logger } = deps;
+    logger.debug('Plugin Upload', { hasFile: Boolean(input.file) });
     logger.info('Upload a .pkg file');
 
     // 1. recieve the file and save it to local storage

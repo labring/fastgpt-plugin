@@ -3,10 +3,12 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type PluginRegisterActiveUCDeps = {
   pluginRepo: PluginRepoPort;
   pluginRuntimeManager: PluginRuntimeManagerPort;
+  logger: UsecaseLogger;
 };
 
 type Output = Promise<Result>;
@@ -15,6 +17,8 @@ const isRunnablePlugin = (plugin: PluginType) => plugin.type === 'tool';
 
 export const makePluginRegisterActiveUC =
   (deps: PluginRegisterActiveUCDeps) => async (): Output => {
+    deps.logger.debug('Plugin Register Active');
+
     const [plugins, listErr] = await deps.pluginRepo.listActive();
 
     if (listErr) {
@@ -32,9 +36,12 @@ export const makePluginRegisterActiveUC =
         continue;
       }
 
-      const [, registerErr] = await deps.pluginRuntimeManager.register(
-        PluginUniqueIdSchema.parse(plugin)
-      );
+      const uniqueId = PluginUniqueIdSchema.parse(plugin);
+      deps.logger.debug('Plugin Register Active One', {
+        uniqueId
+      });
+
+      const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
       if (registerErr) {
         return failureResult(
           {

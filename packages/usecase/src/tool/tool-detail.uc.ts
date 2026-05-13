@@ -11,16 +11,19 @@ import type {
   ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
 import type { Result } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type ToolDetailUCDeps = {
   toolManager: ToolManagerPort;
+  logger: UsecaseLogger;
 };
 
 type Input = ToolDetailInputType;
 type Output = Promise<Result<ToolDetailType>>;
 
 export const makeToolDetailUC =
-  ({ toolManager }: ToolDetailUCDeps) =>
+  ({ logger, toolManager }: ToolDetailUCDeps) =>
   async (input: Input): Output => {
+    logger.debug('Tool Detail', { input });
     return toolManager.detail(input);
   };

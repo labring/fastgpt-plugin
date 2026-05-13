@@ -11,9 +11,11 @@ import type {
   PluginVersionListOutputType
 } from '@domain/ports/plugin/plugin-repo.port';
 import type { Result } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 type PluginVersionsDeps = {
   pluginRepo: PluginRepoPort;
+  logger: UsecaseLogger;
 };
 
 type Input = PluginVersionListInputType;
@@ -21,7 +23,8 @@ type Input = PluginVersionListInputType;
 type Output = Promise<Result<PluginVersionListOutputType>>;
 
 export const makePluginVersionsUC =
-  ({ pluginRepo }: PluginVersionsDeps) =>
+  ({ logger, pluginRepo }: PluginVersionsDeps) =>
   async (input: Input): Output => {
+    logger.debug('Plugin Versions', { input });
     return pluginRepo.listVersions(input);
   };

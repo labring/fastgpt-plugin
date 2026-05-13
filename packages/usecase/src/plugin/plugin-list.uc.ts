@@ -11,9 +11,11 @@ import type {
   PluginRepoPort
 } from '@domain/ports/plugin/plugin-repo.port';
 import type { Result } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 /** Dependencies */
 type Deps = {
   pluginRepo: PluginRepoPort;
+  logger: UsecaseLogger;
 };
 
 /** Input Type*/
@@ -23,7 +25,8 @@ type Input = PluginListInputType;
 type Output = Promise<Result<PluginListOutputType>>;
 
 export const makePluginListUC =
-  ({ pluginRepo }: Deps) =>
+  ({ logger, pluginRepo }: Deps) =>
   async (input: Input): Output => {
+    logger.debug('Plugin List', { input });
     return pluginRepo.list(input);
   };

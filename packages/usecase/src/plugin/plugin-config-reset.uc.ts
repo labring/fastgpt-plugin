@@ -6,10 +6,12 @@
  */
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { Result } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
 export type PluginConfigResetUCDeps = {
   pluginRuntimeManager: PluginRuntimeManagerPort;
+  logger: UsecaseLogger;
 };
 
 /** Input Type*/
@@ -21,7 +23,8 @@ type Input = {
 type Output = Promise<Result>;
 
 export const makeResetPluginConfigUC =
-  ({ pluginRuntimeManager }: PluginConfigResetUCDeps) =>
+  ({ logger, pluginRuntimeManager }: PluginConfigResetUCDeps) =>
   async ({ pluginId }: Input): Output => {
+    logger.debug('Plugin Config Reset', { pluginId });
     return pluginRuntimeManager.resetConfig(pluginId);
   };

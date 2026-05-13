@@ -8,10 +8,12 @@
 import type { PluginRuntimeConfigType } from '@domain/entities/plugin.entity';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { Result } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
 export type PluginConfigGetUCDeps = {
   pluginRuntimeManager: PluginRuntimeManagerPort;
+  logger: UsecaseLogger;
 };
 
 /** Input Type*/
@@ -23,7 +25,8 @@ type Input = {
 type Output = Promise<Result<PluginRuntimeConfigType>>;
 
 export const makePluginConfigGetUC =
-  (deps: PluginConfigGetUCDeps) =>
+  ({ logger, pluginRuntimeManager }: PluginConfigGetUCDeps) =>
   async ({ pluginId }: Input): Output => {
-    return deps.pluginRuntimeManager.getConfig(pluginId);
+    logger.debug('Plugin Config Get', { pluginId });
+    return pluginRuntimeManager.getConfig(pluginId);
   };
