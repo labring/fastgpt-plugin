@@ -101,9 +101,32 @@ export const PluginListDTOSchema = z.array(PluginListItemDTOSchema).openapi({
   description: 'Plugin List'
 });
 
-export const PluginUploadResponseDTOSchema = z.array(PluginBaseDTOSchema).openapi({
-  description: 'Parsed uploaded plugin list'
-});
+export const PluginUploadFailureDTOSchema = z
+  .object({
+    fileName: z.string().optional().openapi({
+      description: 'Failed upload file name',
+      example: 'bad.pkg'
+    }),
+    reason: I18nStringSchema.openapi({
+      description: 'Upload failure reason'
+    })
+  })
+  .openapi({
+    description: 'Plugin upload failure'
+  });
+
+export const PluginUploadResponseDTOSchema = z
+  .object({
+    plugins: z.array(PluginBaseDTOSchema).openapi({
+      description: 'Parsed uploaded plugin list'
+    }),
+    failed: z.array(PluginUploadFailureDTOSchema).optional().openapi({
+      description: 'Failed uploaded plugin files'
+    })
+  })
+  .openapi({
+    description: 'Plugin upload response'
+  });
 
 export const PluginUploadParamsSchema = z
   .object({
@@ -296,6 +319,7 @@ export const PluginRuntimeConfigResetParamsSchema = z.object({
 });
 
 export type PluginDTOType = z.infer<typeof PluginBaseDTOSchema>;
+export type PluginUploadFailureDTOType = z.infer<typeof PluginUploadFailureDTOSchema>;
 export type PluginUploadResponseDTOType = z.infer<typeof PluginUploadResponseDTOSchema>;
 export type PluginListDTOType = z.infer<typeof PluginListDTOSchema>;
 export type PluginListItemDTOType = z.infer<typeof PluginListItemDTOSchema>;

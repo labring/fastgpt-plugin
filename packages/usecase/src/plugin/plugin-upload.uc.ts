@@ -6,6 +6,7 @@ import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file
 import type { PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import type { PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import { PluginUniqueIdSchema, type PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
@@ -23,6 +24,16 @@ type Input = {
     file: Readable;
     fileName?: string;
   }[];
+};
+
+type UploadFailure = {
+  fileName?: string;
+  reason: I18nStringType;
+};
+
+type Output = {
+  plugins: PluginType[];
+  failed?: UploadFailure[];
 };
 
 const resolveUploadPkgFiles = (
@@ -78,9 +89,20 @@ const rollbackPendingPlugins = async (
   }
 };
 
+const addFailure = (
+  failed: UploadFailure[],
+  fileName: string | undefined,
+  reason: I18nStringType
+) => {
+  failed.push({
+    fileName,
+    reason
+  });
+};
+
 export const makePluginUploadUC =
   (deps: PluginUploadUCDeps) =>
-  async (input: Input): Promise<Result<PluginType[]>> => {
+  async (input: Input): Promise<Result<Output>> => {
     const { logger } = deps;
     logger.debug('Plugin Upload', { fileCount: input.files.length });
     logger.info('Upload plugin package files');
@@ -92,73 +114,8 @@ export const makePluginUploadUC =
       });
     }
 
-    const parsedPackages: ParsedPluginPackage[] = [];
-
-    for (const uploadedFile of input.files) {
-      const [localPkgFile, err] = await deps.localFileStorageRepo.save({
-        file: uploadedFile.file,
-        fileKey: randomUUID(),
-        fileName: uploadedFile.fileName,
-        contentType: 'application/zip',
-        overwrite: true
-      });
-
-      logger.debug('localPkgFile', { localPkgFile });
-
-      if (err) {
-        return failureResult(
-          {
-            en: 'Failed to Upload',
-            'zh-CN': '上传失败'
-          },
-          err
-        );
-      }
-
-      const [pkgFiles, extractErr] = await resolveUploadPkgFiles(
-        deps.pluginPKGFileResolver,
-        localPkgFile
-      );
-
-      if (extractErr) {
-        void deps.localFileStorageRepo.delete(localPkgFile.metaData.fileKey);
-
-        return failureResult(
-          {
-            en: 'Failed to parse the plugin package',
-            'zh-CN': '解析插件包失败'
-          },
-          extractErr
-        );
-      }
-
-      for (const pkgFile of pkgFiles) {
-        const [info, parseErr] = await deps.pluginPKGFileResolver.parsePluginPkg(pkgFile, true);
-        logger.debug('plugin info', { info });
-
-        if (parseErr) {
-          void deps.localFileStorageRepo.delete(pkgFile.metaData.fileKey);
-
-          return failureResult(
-            {
-              en: 'Failed to parse the plugin package',
-              'zh-CN': '解析插件包失败'
-            },
-            parseErr
-          );
-        }
-
-        parsedPackages.push({
-          files: info.files,
-          pkgFile,
-          plugin: info.info,
-          uniqueId: PluginUniqueIdSchema.parse(info.info)
-        });
-      }
-    }
-
     const uploadedPlugins: PluginType[] = [];
-    const createdPluginIds: PluginUniqueIdType[] = [];
+    const failed: UploadFailure[] = [];
     const [existingPendingPlugins, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
 
     if (pendingErr) {
@@ -173,38 +130,76 @@ export const makePluginUploadUC =
 
     const existingPendingPluginKeys = new Set(existingPendingPlugins.map(toPluginKey));
 
-    for (const parsedPackage of parsedPackages) {
-      const [, createErr] = await deps.pluginRepo.createPlugin({
-        files: parsedPackage.files,
-        plugin: parsedPackage.plugin,
-        pending: true
+    for (const uploadedFile of input.files) {
+      const [localPkgFile, err] = await deps.localFileStorageRepo.save({
+        file: uploadedFile.file,
+        fileKey: randomUUID(),
+        fileName: uploadedFile.fileName,
+        contentType: 'application/zip',
+        overwrite: true
       });
 
-      if (createErr) {
-        await rollbackPendingPlugins(
-          deps,
-          [...createdPluginIds, parsedPackage.uniqueId],
-          existingPendingPluginKeys
-        );
+      logger.debug('localPkgFile', { localPkgFile });
 
-        return failureResult(
-          {
-            en: 'Failed to create the plugin',
-            'zh-CN': '创建插件失败'
-          },
-          createErr
-        );
+      if (err) {
+        addFailure(failed, uploadedFile.fileName, err.reason);
+        continue;
       }
 
-      logger.info('Plugin uploaded successfully', {
-        pluginId: parsedPackage.plugin.pluginId,
-        version: parsedPackage.plugin.version,
-        etag: parsedPackage.pkgFile.metaData.etag
-      });
+      const [pkgFiles, extractErr] = await resolveUploadPkgFiles(
+        deps.pluginPKGFileResolver,
+        localPkgFile
+      );
 
-      createdPluginIds.push(parsedPackage.uniqueId);
-      uploadedPlugins.push(parsedPackage.plugin);
+      if (extractErr) {
+        void deps.localFileStorageRepo.delete(localPkgFile.metaData.fileKey);
+
+        addFailure(failed, localPkgFile.metaData.fileName, extractErr.reason);
+        continue;
+      }
+
+      for (const pkgFile of pkgFiles) {
+        const [info, parseErr] = await deps.pluginPKGFileResolver.parsePluginPkg(pkgFile, true);
+        logger.debug('plugin info', { info });
+
+        if (parseErr) {
+          void deps.localFileStorageRepo.delete(pkgFile.metaData.fileKey);
+
+          addFailure(failed, pkgFile.metaData.fileName, parseErr.reason);
+          continue;
+        }
+
+        const parsedPackage: ParsedPluginPackage = {
+          files: info.files,
+          pkgFile,
+          plugin: info.info,
+          uniqueId: PluginUniqueIdSchema.parse(info.info)
+        };
+
+        const [, createErr] = await deps.pluginRepo.createPlugin({
+          files: parsedPackage.files,
+          plugin: parsedPackage.plugin,
+          pending: true
+        });
+
+        if (createErr) {
+          await rollbackPendingPlugins(deps, [parsedPackage.uniqueId], existingPendingPluginKeys);
+          addFailure(failed, parsedPackage.pkgFile.metaData.fileName, createErr.reason);
+          continue;
+        }
+
+        logger.info('Plugin uploaded successfully', {
+          pluginId: parsedPackage.plugin.pluginId,
+          version: parsedPackage.plugin.version,
+          etag: parsedPackage.pkgFile.metaData.etag
+        });
+
+        uploadedPlugins.push(parsedPackage.plugin);
+      }
     }
 
-    return successResult(uploadedPlugins);
+    return successResult({
+      plugins: uploadedPlugins,
+      ...(failed.length ? { failed } : {})
+    });
   };

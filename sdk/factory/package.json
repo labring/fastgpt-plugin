@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-plugin/sdk-factory",
-  "version": "0.0.1-alpha.4",
+  "version": "0.0.1-alpha.5",
   "scripts": {
     "build": "tsdown"
   },
@@ -10,7 +10,8 @@
   "type": "module",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "skills"
   ],
   "exports": {
     ".": {
