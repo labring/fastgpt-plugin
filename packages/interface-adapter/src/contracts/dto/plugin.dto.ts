@@ -107,7 +107,7 @@ export const PluginUploadFailureDTOSchema = z
       description: 'Failed upload file name',
       example: 'bad.pkg'
     }),
-    reason: I18nStringSchema.openapi({
+    reason: I18nStringDTOSchema.openapi({
       description: 'Upload failure reason'
     })
   })

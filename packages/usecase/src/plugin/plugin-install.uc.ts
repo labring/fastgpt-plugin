@@ -23,6 +23,7 @@ import {
   disableAndUnregisterReplacedPlugins,
   listReplacedActivePlugins
 } from './plugin-replace-active';
+import { createEmitAndSemanticDiagnosticsBuilderProgram } from 'typescript';
 
 /** Dependencies */
 export type PluginInstallUCDeps = {
@@ -195,8 +196,8 @@ export const makePluginInstallUC =
       ...failedDownloadFiles.map((item) => ({
         url: item.url,
         reason: {
-          en: `Download failed`,
-          'zh-CN': `下载失败`
+          en: `Download failed:` + item.err?.reason.en,
+          'zh-CN': `下载失败:` + item.err?.reason['zh-CN']
         }
       })),
       ...failToInstalled.map((item) => ({
