@@ -18,10 +18,8 @@ const manager = new PluginServiceManager({
 await manager.registerService('weather', '/path/to/weather-plugin.js', {
   minPods: 2,
   maxPods: 10,
-  idleTimeout: 60000,
   podTimeout: 30000,
-  maxRequestsPerPod: 100,
-  maxQueueSize: 200,
+  maxConcurrentRequestsPerPod: 10,
 });
 
 // 调用插件
@@ -136,20 +134,21 @@ async function handleMethod(method: string, params: any) {
 interface GlobalConfig {
   maxTotalPods: number;        // 全局最大 Pod 总数（必须）
   healthCheckInterval?: number; // 健康检查间隔（毫秒，默认 30000）
+  idleTimeout: number;         // 全局 Pod 空闲超时（毫秒）
+  maxRequestsPerPod: number;   // 全局单个 Pod 最大请求数
+  maxQueueSize: number;        // 全局最大队列长度
+  queueTimeout: number;        // 全局队列等待超时（毫秒）
 }
 ```
 
-### 服务配置
+### 插件级服务配置
 
 ```typescript
 interface ServiceConfig {
   minPods: number;            // 最小 Pod 数量
   maxPods: number;            // 最大 Pod 数量
-  idleTimeout: number;        // Pod 空闲超时（毫秒）
   podTimeout: number;         // Pod 执行超时（毫秒）
-  maxRequestsPerPod: number;  // 单个 Pod 最大请求数
-  maxQueueSize: number;       // 最大队列长度
-  queueTimeout?: number;      // 队列等待超时（毫秒，可选）
+  maxConcurrentRequestsPerPod: number; // 单个 Pod 最大并发请求数
 }
 ```
 
@@ -159,10 +158,8 @@ interface ServiceConfig {
 |------|---------|------|
 | minPods | 1~2 | 低延迟诉求高则 2 |
 | maxPods | 5~20 | 视 CPU/内存 |
-| idleTimeout | 30s~5min | Pod 空闲超时 |
 | podTimeout | 10s~60s | 按插件特性 |
-| maxRequestsPerPod | 50~500 | 防泄漏/碎片化 |
-| maxQueueSize | 100~2000 | 按 QPS 与可接受延迟 |
+| maxConcurrentRequestsPerPod | 1~10 | 按插件 CPU/IO 特性 |
 
 ## 监控指标
 
@@ -284,10 +281,8 @@ await manager.invoke('weather', 'getTemperature', { city: 'Beijing' }, {
 await manager.updateServiceConfig('weather', {
   minPods: 3,
   maxPods: 15,
-  idleTimeout: 120000,
   podTimeout: 30000,
-  maxRequestsPerPod: 200,
-  maxQueueSize: 300,
+  maxConcurrentRequestsPerPod: 10,
 });
 ```
 

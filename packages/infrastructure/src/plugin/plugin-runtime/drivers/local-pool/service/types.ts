@@ -4,7 +4,7 @@ import type { PluginPermissionEnumType } from '@domain/value-objects/permission.
 
 import type {
   InvokeOptions,
-  LocalPoolPluginConfigType as ServiceConfig,
+  LocalPoolServiceConfigType as ServiceConfig,
   PluginServiceCallbacks
 } from '../types';
 

@@ -128,14 +128,16 @@ interface PluginMessage {
 |------|---------|------|
 | minPods | 1~2 | 低延迟诉求高则 2 |
 | maxPods | 5~20 | 视 CPU/内存 |
-| idleTimeout | 30s~5min | Pod 空闲超时 |
 | podTimeout | 10s~60s | 按插件特性 |
-| maxRequestsPerPod | 50~500 | 防泄漏/碎片化 |
-| maxQueueSize | 100~2000 | 按 QPS 与可接受延迟 |
+| maxConcurrentRequestsPerPod | 1~10 | 按插件 CPU/IO 特性 |
 
 ### 全局配置
 
 - **maxTotalPods**：必须设置（避免多插件总和把宿主机器打爆）
+- **idleTimeout**：Pod 空闲超时
+- **maxRequestsPerPod**：防泄漏/碎片化
+- **maxQueueSize**：按 QPS 与可接受延迟
+- **queueTimeout**：队列等待超时
 
 ---
 

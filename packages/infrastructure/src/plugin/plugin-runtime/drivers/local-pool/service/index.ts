@@ -10,11 +10,11 @@ import { ensureSdkFactoryRuntimeDependency } from '../sdk-factory-runtime';
 import type {
   DestroyOptions,
   InvokeOptions,
-  LocalPoolPluginConfigType as ServiceConfig,
+  LocalPoolServiceConfigType as ServiceConfig,
   PluginServiceCallbacks,
   ServiceMetrics
 } from '../types';
-import { LocalPoolPluginConfigSchema } from '../types';
+import { LocalPoolServiceConfigSchema } from '../types';
 
 import { PodFleet } from './pod-fleet';
 import { createServiceRequest } from './request';
@@ -181,7 +181,7 @@ export class PluginService {
   }
 
   private validateConfig(config: ServiceConfig): ServiceConfig {
-    return LocalPoolPluginConfigSchema.parse(config);
+    return LocalPoolServiceConfigSchema.parse(config);
   }
 
   private assertReady(): void {

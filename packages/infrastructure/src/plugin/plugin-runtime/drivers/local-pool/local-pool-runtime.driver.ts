@@ -25,15 +25,17 @@ import type { MongoClient } from '../../../../storage/mongo';
 import { PluginRuntimeConfigRepo } from '../../plugin-runtime-config.repo';
 
 import { PluginService } from './service/index';
-import { LOCAL_POOL_DEFAULT_SERVICE_CONFIG } from './const';
+import { LOCAL_POOL_DEFAULT_PLUGIN_CONFIG, LOCAL_POOL_GLOBAL_SERVICE_CONFIG } from './const';
 import type {
   DestroyOptions,
   GlobalMetrics,
   LocalPoolGlobalConfigType,
   LocalPoolPluginConfigType,
   LocalPoolPluginItemType,
+  LocalPoolServiceConfigType,
   ServiceMetrics
 } from './types';
+import { LocalPoolPluginConfigSchema } from './types';
 
 export type LocalPoolPluginRuntimeManagerDeps = {
   mongoClient: MongoClient;
@@ -91,7 +93,7 @@ export class LocalPoolPluginRuntimeManager
       {
         mongoClient: this.deps.mongoClient
       },
-      LOCAL_POOL_DEFAULT_SERVICE_CONFIG
+      LOCAL_POOL_DEFAULT_PLUGIN_CONFIG
     );
     this.startHealthCheck();
   }
@@ -140,11 +142,31 @@ export class LocalPoolPluginRuntimeManager
   // ========================================
 
   async getConfig(pluginId: string): Promise<Result<LocalPoolPluginConfigType>> {
-    return this.configRepo.getPluginRuntimeConfig(pluginId);
+    const [config, err] = await this.configRepo.getPluginRuntimeConfig(pluginId);
+    if (err) {
+      return failureResult(
+        {
+          en: 'Failed to get plugin runtime config',
+          'zh-CN': '获取插件运行时配置失败'
+        },
+        err
+      );
+    }
+    const [pluginConfig, parseErr] = this.parsePluginConfig(config);
+    if (parseErr) {
+      return failureResult(parseErr);
+    }
+
+    return successResult(pluginConfig);
   }
 
   async updateConfig(pluginId: string, config: LocalPoolPluginConfigType): Promise<Result> {
-    const [, err] = await this.configRepo.savePluginRuntimeConfig(pluginId, config);
+    const [pluginConfig, parseErr] = this.parsePluginConfig(config);
+    if (parseErr) {
+      return failureResult(parseErr);
+    }
+
+    const [, err] = await this.configRepo.savePluginRuntimeConfig(pluginId, pluginConfig);
     if (err) {
       return failureResult(
         {
@@ -168,7 +190,8 @@ export class LocalPoolPluginRuntimeManager
         }
         try {
           await item.mutex.acquire();
-          await item.service.updateConfig(config);
+          item.config = pluginConfig;
+          await item.service.updateConfig(this.toServiceConfig(pluginConfig));
         } finally {
           item.mutex.release();
         }
@@ -190,6 +213,11 @@ export class LocalPoolPluginRuntimeManager
       );
     }
 
+    const [pluginConfig, parseErr] = this.parsePluginConfig(config);
+    if (parseErr) {
+      return failureResult(parseErr);
+    }
+
     const pluginRuntimeIds = this.pluginIdMap.get(pluginId);
     if (!pluginRuntimeIds) {
       return successResult({});
@@ -203,7 +231,8 @@ export class LocalPoolPluginRuntimeManager
         }
         try {
           await item.mutex.acquire();
-          await item.service.updateConfig(config);
+          item.config = pluginConfig;
+          await item.service.updateConfig(this.toServiceConfig(pluginConfig));
         } finally {
           item.mutex.release();
         }
@@ -265,10 +294,12 @@ export class LocalPoolPluginRuntimeManager
       });
     }
 
-    const svcConfig: LocalPoolPluginConfigType = {
-      ...LOCAL_POOL_DEFAULT_SERVICE_CONFIG,
-      ...config
-    };
+    const [pluginConfig, parseErr] = this.parsePluginConfig(config);
+    if (parseErr) {
+      return failureResult(parseErr);
+    }
+
+    const svcConfig = this.toServiceConfig(pluginConfig);
 
     // 检查全局 Pod 配额
     const currentPods = this.getTotalPods();
@@ -347,12 +378,13 @@ export class LocalPoolPluginRuntimeManager
     await service.initialize();
 
     this.plugins.set(id, {
-      config,
+      config: pluginConfig,
       filePath: info.entryFilePath,
       service,
       meta: info.info,
       mutex: new Mutex()
     });
+    this.addPluginRuntimeId(uniqueId.pluginId, id);
 
     return successResult({});
   }
@@ -368,6 +400,7 @@ export class LocalPoolPluginRuntimeManager
 
     await record.service.destroy();
     this.plugins.delete(id);
+    this.removePluginRuntimeId(uniqueId.pluginId, id);
     return successResult({});
   }
 
@@ -454,6 +487,52 @@ export class LocalPoolPluginRuntimeManager
       total += service.getMetrics().pods.total;
     }
     return total;
+  }
+
+  private toServiceConfig(config: LocalPoolPluginConfigType): LocalPoolServiceConfigType {
+    return {
+      ...config,
+      ...LOCAL_POOL_GLOBAL_SERVICE_CONFIG
+    };
+  }
+
+  private parsePluginConfig(config: LocalPoolPluginConfigType): Result<LocalPoolPluginConfigType> {
+    const result = LocalPoolPluginConfigSchema.safeParse(config);
+
+    if (!result.success) {
+      return failureResult(
+        {
+          en: 'Invalid plugin runtime config',
+          'zh-CN': '插件运行时配置无效'
+        },
+        result.error
+      );
+    }
+
+    return successResult(result.data);
+  }
+
+  private addPluginRuntimeId(pluginId: string, runtimeId: string): void {
+    const runtimeIds = this.pluginIdMap.get(pluginId) ?? [];
+    if (!runtimeIds.includes(runtimeId)) {
+      runtimeIds.push(runtimeId);
+    }
+    this.pluginIdMap.set(pluginId, runtimeIds);
+  }
+
+  private removePluginRuntimeId(pluginId: string, runtimeId: string): void {
+    const runtimeIds = this.pluginIdMap.get(pluginId);
+    if (!runtimeIds) {
+      return;
+    }
+
+    const nextRuntimeIds = runtimeIds.filter((id) => id !== runtimeId);
+    if (nextRuntimeIds.length === 0) {
+      this.pluginIdMap.delete(pluginId);
+      return;
+    }
+
+    this.pluginIdMap.set(pluginId, nextRuntimeIds);
   }
 
   private startHealthCheck(): void {

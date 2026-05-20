@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PluginService } from './service/index';
-import type { LocalPoolPluginConfigType } from './types';
+import type { LocalPoolServiceConfigType } from './types';
 
 const podMock = vi.hoisted(() => ({
   pods: [] as any[],
@@ -117,7 +117,7 @@ vi.mock('./pod', () => {
   return { PluginPod };
 });
 
-const baseConfig: LocalPoolPluginConfigType = {
+const baseConfig: LocalPoolServiceConfigType = {
   minPods: 1,
   maxPods: 1,
   idleTimeout: 1000,
@@ -128,7 +128,9 @@ const baseConfig: LocalPoolPluginConfigType = {
   queueTimeout: 1000
 };
 
-function makeConfig(overrides: Partial<LocalPoolPluginConfigType> = {}): LocalPoolPluginConfigType {
+function makeConfig(
+  overrides: Partial<LocalPoolServiceConfigType> = {}
+): LocalPoolServiceConfigType {
   return {
     ...baseConfig,
     ...overrides
@@ -166,7 +168,7 @@ async function waitFor(assertion: () => void, timeoutMs = 1000): Promise<void> {
 
 const services: PluginService[] = [];
 
-function createService(config: LocalPoolPluginConfigType) {
+function createService(config: LocalPoolServiceConfigType) {
   const service = new PluginService('test-service', '/virtual/plugin.js', config);
   services.push(service);
   return service;

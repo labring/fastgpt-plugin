@@ -64,18 +64,19 @@ export const env = createEnv({
     // 插件运行配置
     PLUGIN_RUNTIME_MODE: PluginRuntimeModeSchema.default(PluginRuntimeModeEnum['localPool']),
 
-    // 进程池默认配置（可被 MongoDB 中的 pluginConfig 覆盖）
+    // 进程池配置（插件级配置可被 MongoDB 中的 pluginConfig 覆盖）
     // 进程池全局设置
     POOL_HEALTH_CHECK_INTERVAL: PositiveIntSchema.default(30_000), // 健康检查时间 (ms)
     POOL_MAX_TOTAL_PODS: PositiveIntSchema.default(100), // 最大总进程数
+
     POOL_SERVICE_MIN_PODS: z.coerce.number().int().min(0).default(0), // 某个 Service 的最小进程数
     POOL_SERVICE_MAX_PODS: PositiveIntSchema.default(5), // 某个 Service 的最大进程数
-    POOL_SERVICE_IDLE_TIMEOUT: PositiveIntSchema.default(60_000), // 空闲超时时间 (ms)
-    POOL_SERVICE_POD_TIMEOUT: PositiveIntSchema.default(30_000), // 进程运行超时时间 (ms)
-    POOL_SERVICE_MAX_CONCURRENT_REQUESTS_PER_POD: PositiveIntSchema.default(1), // 单个进程最大并发请求数
-    POOL_SERVICE_MAX_REQUESTS_PER_POD: PositiveIntSchema.default(100), // 单个进程最大请求数,超出后自动进行自动轮换
-    POOL_SERVICE_MAX_QUEUE_SIZE: PositiveIntSchema.default(500), // 进程队列最大长度
-    POOL_SERVICE_QUEUE_TIMEOUT: PositiveIntSchema.default(60_000), // 进程队列超时时间 (ms)
+    POOL_SERVICE_IDLE_TIMEOUT: PositiveIntSchema.default(60_000), // 全局空闲超时时间 (ms)
+    POOL_SERVICE_POD_TIMEOUT: PositiveIntSchema.default(120_000), // 进程运行超时时间 (ms)
+    POOL_SERVICE_MAX_CONCURRENT_REQUESTS_PER_POD: PositiveIntSchema.default(10), // 单个进程最大并发请求数
+    POOL_SERVICE_MAX_REQUESTS_PER_POD: PositiveIntSchema.default(100), // 全局单个进程最大请求数，超出后自动轮换
+    POOL_SERVICE_MAX_QUEUE_SIZE: PositiveIntSchema.default(500), // 全局进程队列最大长度
+    POOL_SERVICE_QUEUE_TIMEOUT: PositiveIntSchema.default(60_000), // 全局进程队列超时时间 (ms)
 
     // 基础设施配置
     // 文件存储配置

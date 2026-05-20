@@ -15,23 +15,40 @@ export type LocalPoolPluginItemType = {
   mutex: Mutex;
 };
 
-export const LocalPoolPluginConfigSchema = z
-  .object({
-    minPods: z.number().nonnegative(),
-    maxPods: z.number().positive(),
-    idleTimeout: z.number().positive(),
-    podTimeout: z.number().positive(),
-    maxRequestsPerPod: z.number().nonnegative(),
-    maxConcurrentRequestsPerPod: z.number().positive(),
-    maxQueueSize: z.number().positive(),
-    queueTimeout: z.number().nonnegative()
-  })
-  .refine((config) => config.minPods <= config.maxPods, {
+const LocalPoolPluginConfigBaseSchema = z.object({
+  minPods: z.number().nonnegative(),
+  maxPods: z.number().positive(),
+  podTimeout: z.number().positive(),
+  maxConcurrentRequestsPerPod: z.number().positive()
+});
+
+export const LocalPoolPluginConfigSchema = LocalPoolPluginConfigBaseSchema.refine(
+  (config) => config.minPods <= config.maxPods,
+  {
     message: 'minPods cannot be greater than maxPods',
     path: ['minPods']
-  });
+  }
+);
 
 export type LocalPoolPluginConfigType = z.infer<typeof LocalPoolPluginConfigSchema>;
+
+export const LocalPoolGlobalServiceConfigSchema = z.object({
+  idleTimeout: z.number().positive(),
+  maxRequestsPerPod: z.number().nonnegative(),
+  maxQueueSize: z.number().positive(),
+  queueTimeout: z.number().nonnegative()
+});
+
+export type LocalPoolGlobalServiceConfigType = z.infer<typeof LocalPoolGlobalServiceConfigSchema>;
+
+export const LocalPoolServiceConfigSchema = LocalPoolPluginConfigBaseSchema.merge(
+  LocalPoolGlobalServiceConfigSchema
+).refine((config) => config.minPods <= config.maxPods, {
+  message: 'minPods cannot be greater than maxPods',
+  path: ['minPods']
+});
+
+export type LocalPoolServiceConfigType = z.infer<typeof LocalPoolServiceConfigSchema>;
 
 export const LocalPoolGlobalConfigSchema = z.object({
   maxTotalPods: z.number().nonnegative(),

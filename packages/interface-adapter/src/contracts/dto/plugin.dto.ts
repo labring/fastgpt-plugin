@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 
 import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin.entity';
 import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
-import { PluginSourceSchema, PluginTagListSchema } from '@domain/value-objects/plugin.vo';
+import { PluginSourceSchema } from '@domain/value-objects/plugin.vo';
 
 import { I18nStringDTOSchema } from './common.dto';
 
@@ -292,9 +292,39 @@ export const PluginTagListDTOSchema = z
     description: 'Plugin tag list'
   });
 
-export const PluginRuntimeConfigSchema = z.object({}).catchall(z.unknown()).openapi({
-  description: 'Plugin runtime config'
-});
+export const PluginRuntimeConfigSchema = z
+  .object({
+    minPods: z.number().int().nonnegative().openapi({
+      description: 'Minimum pods kept warm for one plugin',
+      example: 0
+    }),
+    maxPods: z.number().int().positive().openapi({
+      description: 'Maximum pods allowed for one plugin',
+      example: 5
+    }),
+    podTimeout: z.number().int().positive().openapi({
+      description: 'Plugin pod request timeout in milliseconds',
+      example: 120000
+    }),
+    maxConcurrentRequestsPerPod: z.number().int().positive().openapi({
+      description: 'Maximum concurrent requests per pod',
+      example: 10
+    })
+  })
+  .strict()
+  .refine((config) => config.minPods <= config.maxPods, {
+    message: 'minPods cannot be greater than maxPods',
+    path: ['minPods']
+  })
+  .openapi({
+    description: 'Plugin runtime config. Global local-pool settings are configured by env only.',
+    example: {
+      minPods: 0,
+      maxPods: 5,
+      podTimeout: 120000,
+      maxConcurrentRequestsPerPod: 10
+    }
+  });
 
 export const PluginRuntimeConfigGetParamsSchema = z.object({
   pluginId: z.string().openapi({
