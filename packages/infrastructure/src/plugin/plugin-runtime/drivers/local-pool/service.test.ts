@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { PluginService } from './service';
+import { PluginService } from './service/index';
 import type { LocalPoolPluginConfigType } from './types';
 
 const podMock = vi.hoisted(() => ({
@@ -93,7 +93,7 @@ vi.mock('./pod', () => {
 
     isAvailable(): boolean {
       return (
-        this.status === 'idle' &&
+        (this.status === 'idle' || this.status === 'running') &&
         this.activeRequests < this.maxConcurrentRequests &&
         this.requestsExecuted < this.options.maxRequests
       );
@@ -249,6 +249,50 @@ describe('PluginService', () => {
     expect(executionOrder).toEqual(['busy', 'high', 'low']);
   });
 
+  it('balances work across the least loaded available pods', async () => {
+    const service = createService(
+      makeConfig({
+        minPods: 2,
+        maxPods: 2,
+        maxConcurrentRequestsPerPod: 2
+      })
+    );
+    const releaseFirst = createDeferred<string>();
+    const executionPods: string[] = [];
+
+    podMock.invokeHandlers.push(
+      ({ pod }) => {
+        executionPods.push(pod.podId);
+        return releaseFirst.promise;
+      },
+      ({ pod, payload }) => {
+        executionPods.push(pod.podId);
+        return payload.name;
+      }
+    );
+
+    await service.initialize();
+
+    const first = service.invoke({
+      eventName: 'run',
+      payload: { name: 'first' },
+      returnStream: false
+    });
+    await waitFor(() => expect(service.getMetrics().pods.busy).toBe(1));
+
+    const second = service.invoke({
+      eventName: 'run',
+      payload: { name: 'second' },
+      returnStream: false
+    });
+
+    await expect(second).resolves.toBe('second');
+    expect(executionPods[1]).not.toBe(executionPods[0]);
+
+    releaseFirst.resolve('first');
+    await expect(first).resolves.toBe('first');
+  });
+
   it('rejects new work when the queue is full', async () => {
     const service = createService(makeConfig({ minPods: 1, maxPods: 1, maxQueueSize: 1 }));
     const releaseBusy = createDeferred<string>();
@@ -309,6 +353,33 @@ describe('PluginService', () => {
       maxPods: 3
     });
     expect(podMock.pods.every((pod) => pod.isAvailable())).toBe(true);
+  });
+
+  it('rolls idle pods immediately and retires busy pods after release', async () => {
+    const service = createService(makeConfig({ minPods: 1, maxPods: 2 }));
+    const releaseBusy = createDeferred<string>();
+
+    podMock.invokeHandlers.push(() => releaseBusy.promise);
+
+    await service.initialize();
+    const originalPod = podMock.pods[0];
+    const busy = service.invoke({
+      eventName: 'run',
+      payload: { name: 'busy' },
+      returnStream: false
+    });
+    await waitFor(() => expect(originalPod.activeRequests).toBe(1));
+
+    await service.updateConfig({ podTimeout: 2000 });
+
+    expect(podMock.pods).toHaveLength(2);
+    expect(originalPod.killedWith).toBeUndefined();
+    expect(service.getMetrics().pods.total).toBe(2);
+
+    releaseBusy.resolve('busy-result');
+    await expect(busy).resolves.toBe('busy-result');
+    await waitFor(() => expect(originalPod.killedWith).toBe('SIGTERM'));
+    expect(service.getMetrics().pods.total).toBe(1);
   });
 
   it('recycles a pod after it reaches maxRequestsPerPod', async () => {

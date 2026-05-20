@@ -1,54 +1,53 @@
 import { randomUUID } from 'node:crypto';
 
 import { StreamData } from '@domain/value-objects/stream.vo';
-import type {
-  PluginIpcDuplexReplyOptions,
-  PluginIpcDuplexRequestOptions,
-  PluginIpcDuplexResponse,
-  PluginIpcIncomingStream,
-  PluginIpcRequestHandler,
-  PluginIpcStreamSource
-} from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
-import type { PluginIOMessage } from '@infrastructure/plugin/plugin-runtime/ports/plugin-io.port';
+import {
+  PluginChannelClientMethod,
+  type PluginChannelHandlerResult,
+  PluginChannelHostMethod,
+  type PluginChannelIncomingStream,
+  type PluginChannelNotificationHandler,
+  type PluginChannelNotifyOptions,
+  type PluginChannelReceivedNotificationContext,
+  type PluginChannelReceivedRequestContext,
+  type PluginChannelRequestHandler,
+  type PluginChannelRequestOptions,
+  type PluginChannelRequestResult,
+  type PluginChannelSendNotificationMap,
+  type PluginChannelSendRequestMap,
+  type PluginChannelSide,
+  type PluginChannelSideNotificationParams,
+  type PluginChannelSideRequestInput,
+  type PluginChannelSideRequestOutput,
+  type PluginChannelSideRequestParams,
+  type PluginChannelSideRequestResultData,
+  type PluginChannelStreamOptions,
+  type PluginChannelStreamSource,
+  type PluginChannelWritableStream,
+  type PluginRuntimeChannelPort
+} from '@infrastructure/plugin/plugin-runtime/ports/channel';
 
 const LOCAL_DEBUG_RUNTIME_GLOBAL_KEY = '__FASTGPT_PLUGIN_LOCAL_DEBUG_RUNTIME__';
-const LOCAL_DEBUG_DUPLEX_REPLY_MARK = '__localDebugDuplexReply__';
+const LOCAL_DEBUG_REPLY_MARK = '__localDebugReply__';
 
 type LocalDebugReplyDescriptor<TResult = unknown, TOutput = unknown> = {
-  [LOCAL_DEBUG_DUPLEX_REPLY_MARK]: true;
+  [LOCAL_DEBUG_REPLY_MARK]: true;
   result?: TResult;
-  output?: PluginIpcStreamSource<TOutput>;
-  options?: {
-    traceId?: string;
-    outputStreamId?: string;
-    outputMeta?: unknown;
-  };
-};
-
-type PluginRuntimeChannel = {
-  setRequestHandler(handler: PluginIpcRequestHandler | null): void;
-  requestDuplex<TParams, TResult, TInput = unknown, TOutput = unknown>(
-    method: string,
-    params: TParams,
-    options?: PluginIpcDuplexRequestOptions<TInput>
-  ): Promise<PluginIpcDuplexResponse<TResult, TOutput>>;
-  replyDuplex<TResult = unknown, TOutput = unknown>(
-    message: PluginIOMessage,
-    result?: TResult,
-    options?: PluginIpcDuplexReplyOptions<TOutput>
-  ): LocalDebugReplyDescriptor<TResult, TOutput>;
-  sendReady(): void;
+  output?: PluginChannelStreamSource<TOutput>;
+  outputStream?: PluginChannelStreamOptions;
 };
 
 export interface LocalDebugHostRequestContext<TArgs = unknown, TInput = unknown> {
-  message: PluginIOMessage;
   method: string;
   args: TArgs;
   traceId?: string;
-  input?: PluginIpcStreamSource<TInput>;
-  replyDuplex<TResult = unknown, TOutput = unknown>(
+  input?: PluginChannelStreamSource<TInput>;
+  createReply<TResult = unknown, TOutput = unknown>(
     result?: TResult,
-    options?: PluginIpcDuplexReplyOptions<TOutput>
+    options?: {
+      output?: PluginChannelStreamSource<TOutput>;
+      outputStream?: PluginChannelStreamOptions;
+    }
   ): LocalDebugReplyDescriptor<TResult, TOutput>;
 }
 
@@ -56,72 +55,141 @@ export type LocalDebugHostRequestHandler = (
   request: LocalDebugHostRequestContext
 ) => Promise<unknown> | unknown;
 
-type DispatchOptions<TInput> = PluginIpcDuplexRequestOptions<TInput> & {
-  streamName: string;
-};
+class LocalDebugChannel<TSide extends PluginChannelSide>
+  implements PluginRuntimeChannelPort<TSide>
+{
+  readonly transport = 'local-debug';
+  private requestHandler: PluginChannelRequestHandler<TSide> | null = null;
+  private notificationHandler: PluginChannelNotificationHandler<TSide> | null = null;
+  private readonly errorHandlers = new Set<(error: Error) => void>();
+  private readonly closeHandlers = new Set<(reason?: Error) => void>();
 
-class LocalDebugChannel implements PluginRuntimeChannel {
-  constructor(private readonly runtime: LocalDebugRuntime) {}
+  constructor(
+    readonly side: TSide,
+    private readonly runtime: LocalDebugRuntime
+  ) {}
 
-  setRequestHandler(handler: PluginIpcRequestHandler | null): void {
-    this.runtime.setPluginRequestHandler(handler);
+  async request<TMethod extends keyof PluginChannelSendRequestMap<TSide>>(
+    method: TMethod,
+    params: PluginChannelSideRequestParams<TSide, TMethod>,
+    options?: PluginChannelRequestOptions<PluginChannelSideRequestInput<TSide, TMethod>>
+  ): Promise<
+    PluginChannelRequestResult<
+      PluginChannelSideRequestResultData<TSide, TMethod>,
+      PluginChannelSideRequestOutput<TSide, TMethod>
+    >
+  > {
+    return this.runtime.dispatchFromSide(this.side, method, params, options);
   }
 
-  async requestDuplex<TParams, TResult, TInput = unknown, TOutput = unknown>(
-    method: string,
-    params: TParams,
-    options?: PluginIpcDuplexRequestOptions<TInput>
-  ): Promise<PluginIpcDuplexResponse<TResult, TOutput>> {
-    return this.runtime.invokeHost(method, params, {
-      ...options,
-      streamName: method
-    });
+  async notify<TMethod extends keyof PluginChannelSendNotificationMap<TSide>>(
+    method: TMethod,
+    params: PluginChannelSideNotificationParams<TSide, TMethod>,
+    options?: PluginChannelNotifyOptions
+  ): Promise<void> {
+    await this.runtime.notifyFromSide(this.side, method, params, options);
   }
 
-  replyDuplex<TResult = unknown, TOutput = unknown>(
-    _message: PluginIOMessage,
-    result?: TResult,
-    options?: PluginIpcDuplexReplyOptions<TOutput>
-  ): LocalDebugReplyDescriptor<TResult, TOutput> {
+  setRequestHandler(handler: PluginChannelRequestHandler<TSide> | null): void {
+    this.requestHandler = handler;
+  }
+
+  setNotificationHandler(handler: PluginChannelNotificationHandler<TSide> | null): void {
+    this.notificationHandler = handler;
+  }
+
+  async waitForStream<T = unknown>(): Promise<PluginChannelIncomingStream<T>> {
+    throw new Error('Local debug channel does not support detached stream waiters.');
+  }
+
+  async createWritableStream<T = unknown>(
+    streamName: string,
+    options?: PluginChannelStreamOptions
+  ): Promise<PluginChannelWritableStream<T>> {
+    const stream = StreamData.create<T>();
     return {
-      [LOCAL_DEBUG_DUPLEX_REPLY_MARK]: true,
-      ...(result !== undefined ? { result } : {}),
-      ...(options?.output !== undefined ? { output: options.output } : {}),
-      ...(options
-        ? {
-            options: {
-              traceId: options.traceId,
-              outputMeta: options.outputMeta,
-              outputStreamId: options.outputStreamId
-            }
-          }
-        : {})
+      streamId: options?.streamId ?? randomUUID(),
+      streamName: options?.streamName ?? streamName,
+      ...(options?.meta !== undefined ? { meta: options.meta } : {}),
+      write: async (chunk) => stream.write(chunk),
+      end: async () => stream.end(),
+      fail: async (error) => stream.fail(error instanceof Error ? error : new Error(String(error)))
     };
   }
 
-  sendReady(): void {
-    this.runtime.markReady();
+  async pipeStream(): Promise<void> {
+    throw new Error('Local debug channel does not support detached stream piping.');
+  }
+
+  createReply<TResult = unknown, TOutput = unknown>(
+    result?: TResult,
+    options?: {
+      output?: PluginChannelStreamSource<TOutput>;
+      outputStream?: PluginChannelStreamOptions;
+    }
+  ): PluginChannelHandlerResult<TResult, TOutput> {
+    return {
+      [LOCAL_DEBUG_REPLY_MARK]: true,
+      ...(result !== undefined ? { result } : {}),
+      ...(options?.output !== undefined ? { output: options.output } : {}),
+      ...(options?.outputStream !== undefined ? { outputStream: options.outputStream } : {})
+    } as PluginChannelHandlerResult<TResult, TOutput>;
+  }
+
+  onError(handler: (error: Error) => void): () => void {
+    this.errorHandlers.add(handler);
+    return () => {
+      this.errorHandlers.delete(handler);
+    };
+  }
+
+  onClose(handler: (reason?: Error) => void): () => void {
+    this.closeHandlers.add(handler);
+    return () => {
+      this.closeHandlers.delete(handler);
+    };
+  }
+
+  async close(reason?: Error): Promise<void> {
+    this.closeHandlers.forEach((handler) => handler(reason));
+  }
+
+  async handleRequest(
+    request: PluginChannelReceivedRequestContext<TSide>
+  ): Promise<PluginChannelHandlerResult> {
+    if (!this.requestHandler) {
+      throw new Error(`Local debug request handler is not configured: ${String(request.method)}`);
+    }
+    return this.requestHandler(request);
+  }
+
+  async handleNotification(
+    notification: PluginChannelReceivedNotificationContext<TSide>
+  ): Promise<void> {
+    await this.notificationHandler?.(notification);
   }
 }
 
 export class LocalDebugRuntime {
-  private pluginRequestHandler: PluginIpcRequestHandler | null = null;
   private hostRequestHandler: LocalDebugHostRequestHandler | null = null;
   private ready = false;
   private readonly readyPromise: Promise<void>;
   private resolveReady!: () => void;
 
-  readonly pluginChannel: PluginRuntimeChannel;
+  readonly hostChannel: LocalDebugChannel<'host'>;
+  readonly pluginChannel: LocalDebugChannel<'client'>;
 
   constructor() {
-    this.pluginChannel = new LocalDebugChannel(this);
+    this.hostChannel = new LocalDebugChannel('host', this);
+    this.pluginChannel = new LocalDebugChannel('client', this);
+    this.hostChannel.setNotificationHandler(async (notification) => {
+      if (notification.method === PluginChannelClientMethod.ready) {
+        this.markReady();
+      }
+    });
     this.readyPromise = new Promise<void>((resolve) => {
       this.resolveReady = resolve;
     });
-  }
-
-  setPluginRequestHandler(handler: PluginIpcRequestHandler | null): void {
-    this.pluginRequestHandler = handler;
   }
 
   setHostRequestHandler(handler: LocalDebugHostRequestHandler | null): void {
@@ -144,52 +212,108 @@ export class LocalDebugRuntime {
   async invokePlugin<TParams, TResult, TInput = unknown, TOutput = unknown>(
     method: string,
     params: TParams,
-    options?: PluginIpcDuplexRequestOptions<TInput>
-  ): Promise<PluginIpcDuplexResponse<TResult, TOutput>> {
-    if (!this.pluginRequestHandler) {
-      throw new Error('Plugin request handler is not initialized.');
-    }
-
-    return this.dispatch<TResult, TOutput>(this.pluginRequestHandler, method, params, {
-      ...options,
-      streamName: method
-    });
+    options?: PluginChannelRequestOptions<TInput>
+  ): Promise<PluginChannelRequestResult<TResult, TOutput>> {
+    return this.hostChannel.request(
+      PluginChannelHostMethod.request,
+      {
+        eventName: method,
+        payload: params,
+        returnStream: true
+      },
+      options
+    ) as Promise<PluginChannelRequestResult<TResult, TOutput>>;
   }
 
-  async invokeHost<TParams, TResult, TInput = unknown, TOutput = unknown>(
-    method: string,
-    params: TParams,
-    options: DispatchOptions<TInput>
-  ): Promise<PluginIpcDuplexResponse<TResult, TOutput>> {
+  async dispatchFromSide<
+    TSide extends PluginChannelSide,
+    TMethod extends keyof PluginChannelSendRequestMap<TSide>
+  >(
+    side: TSide,
+    method: TMethod,
+    params: PluginChannelSideRequestParams<TSide, TMethod>,
+    options?: PluginChannelRequestOptions<PluginChannelSideRequestInput<TSide, TMethod>>
+  ): Promise<
+    PluginChannelRequestResult<
+      PluginChannelSideRequestResultData<TSide, TMethod>,
+      PluginChannelSideRequestOutput<TSide, TMethod>
+    >
+  > {
+    const requestId = options?.id ?? randomUUID();
+    const target = side === 'host' ? this.pluginChannel : this.hostChannel;
+    const response =
+      side === 'client' && method === PluginChannelClientMethod.request
+        ? await this.invokeHostRequest(params as never, options)
+        : await target.handleRequest({
+            id: requestId,
+            method: method as never,
+            params: params as never,
+            ...(options?.traceId !== undefined ? { traceId: options.traceId } : {}),
+            raw: {
+              protocol: '1.0',
+              id: requestId,
+              method: String(method),
+              params,
+              ...(options?.traceId !== undefined ? { traceId: options.traceId } : {}),
+              timestamp: Date.now()
+            },
+            waitForInputStream: async () =>
+              createIncomingStream({
+                source: options?.input ?? StreamData.create<unknown>(),
+                streamName: String(method),
+                streamId: randomUUID(),
+                traceId: options?.traceId
+              })
+          } as never);
+
+    return toRequestResult(requestId, response, options);
+  }
+
+  async notifyFromSide<
+    TSide extends PluginChannelSide,
+    TMethod extends keyof PluginChannelSendNotificationMap<TSide>
+  >(
+    side: TSide,
+    method: TMethod,
+    params: PluginChannelSideNotificationParams<TSide, TMethod>,
+    options?: PluginChannelNotifyOptions
+  ): Promise<void> {
+    const target = side === 'host' ? this.pluginChannel : this.hostChannel;
+    await target.handleNotification({
+      method: method as never,
+      params: params as never,
+      ...(options?.traceId !== undefined ? { traceId: options.traceId } : {}),
+      raw: {
+        protocol: '1.0',
+        method: String(method),
+        params,
+        ...(options?.traceId !== undefined ? { traceId: options.traceId } : {}),
+        timestamp: Date.now()
+      }
+    } as never);
+  }
+
+  private async invokeHostRequest<TInput>(
+    params: { method: string; args: unknown },
+    options?: PluginChannelRequestOptions<TInput>
+  ): Promise<unknown> {
     if (!this.hostRequestHandler) {
-      throw new Error(`Local debug host handler is not configured: ${method}`);
+      throw new Error(`Local debug host handler is not configured: ${params.method}`);
     }
 
-    const message = createMessage(method, params, options);
-    const response = await this.hostRequestHandler({
-      message,
-      method,
-      args: params,
-      traceId: options.traceId,
-      input: options.input,
-      replyDuplex: <R = unknown, O = unknown>(
+    return this.hostRequestHandler({
+      method: params.method,
+      args: params.args,
+      traceId: options?.traceId,
+      input: options?.input,
+      createReply: <R = unknown, O = unknown>(
         result?: R,
-        replyOptions?: PluginIpcDuplexReplyOptions<O>
-      ) => this.pluginChannel.replyDuplex(message, result, replyOptions)
+        replyOptions?: {
+          output?: PluginChannelStreamSource<O>;
+          outputStream?: PluginChannelStreamOptions;
+        }
+      ) => this.pluginChannel.createReply(result, replyOptions) as LocalDebugReplyDescriptor<R, O>
     });
-
-    return toDuplexResponse<TResult, TOutput>(message, response, options);
-  }
-
-  private async dispatch<TResult, TOutput>(
-    handler: PluginIpcRequestHandler,
-    method: string,
-    params: unknown,
-    options: DispatchOptions<unknown>
-  ): Promise<PluginIpcDuplexResponse<TResult, TOutput>> {
-    const message = createMessage(method, params, options);
-    const response = await handler(message);
-    return toDuplexResponse<TResult, TOutput>(message, response, options);
   }
 }
 
@@ -208,44 +332,27 @@ export const setCurrentLocalDebugRuntime = (runtime?: LocalDebugRuntime): void =
   store[LOCAL_DEBUG_RUNTIME_GLOBAL_KEY] = runtime;
 };
 
-function createMessage(
-  method: string,
-  params: unknown,
-  options?: PluginIpcDuplexRequestOptions<unknown>
-): PluginIOMessage {
-  return {
-    id: options?.requestId ?? randomUUID(),
-    messageType: 'request',
-    method,
-    params,
-    traceId: options?.traceId,
-    timestamp: Date.now()
-  };
-}
-
 function isLocalDebugReplyDescriptor<TResult = unknown, TOutput = unknown>(
   value: unknown
 ): value is LocalDebugReplyDescriptor<TResult, TOutput> {
   return Boolean(
     value &&
       typeof value === 'object' &&
-      LOCAL_DEBUG_DUPLEX_REPLY_MARK in value &&
-      (value as Record<string, unknown>)[LOCAL_DEBUG_DUPLEX_REPLY_MARK] === true
+      LOCAL_DEBUG_REPLY_MARK in value &&
+      (value as Record<string, unknown>)[LOCAL_DEBUG_REPLY_MARK] === true
   );
 }
 
-function toDuplexResponse<TResult, TOutput>(
-  message: PluginIOMessage,
+function toRequestResult<TResult, TOutput>(
+  requestId: string | number,
   response: unknown,
-  options?: PluginIpcDuplexRequestOptions<unknown> & {
-    streamName?: string;
-  }
-): PluginIpcDuplexResponse<TResult, TOutput> {
+  options?: PluginChannelRequestOptions<unknown>
+): PluginChannelRequestResult<TResult, TOutput> {
   const inputDone = options?.input !== undefined ? Promise.resolve() : undefined;
 
   if (!isLocalDebugReplyDescriptor<TResult, TOutput>(response)) {
     return {
-      requestId: message.id,
+      requestId,
       result: response as TResult,
       ...(inputDone ? { inputDone } : {})
     };
@@ -255,16 +362,15 @@ function toDuplexResponse<TResult, TOutput>(
     response.output !== undefined
       ? createIncomingStream<TOutput>({
           source: response.output,
-          streamName:
-            response.options?.outputStreamId ?? options?.streamName ?? message.method ?? 'stream',
-          streamId: response.options?.outputStreamId ?? randomUUID(),
-          traceId: response.options?.traceId ?? message.traceId,
-          meta: response.options?.outputMeta
+          streamName: response.outputStream?.streamName ?? 'stream',
+          streamId: response.outputStream?.streamId ?? randomUUID(),
+          traceId: response.outputStream?.traceId,
+          meta: response.outputStream?.meta
         })
       : undefined;
 
   return {
-    requestId: message.id,
+    requestId,
     result: response.result as TResult,
     ...(output ? { output } : {}),
     ...(inputDone ? { inputDone } : {})
@@ -278,12 +384,12 @@ function createIncomingStream<T>({
   traceId,
   meta
 }: {
-  source: PluginIpcStreamSource<T>;
+  source: PluginChannelStreamSource<T>;
   streamName: string;
   streamId: string;
   traceId?: string;
   meta?: unknown;
-}): PluginIpcIncomingStream<T> {
+}): PluginChannelIncomingStream<T> {
   return {
     streamId,
     streamName,
@@ -293,7 +399,7 @@ function createIncomingStream<T>({
   };
 }
 
-function toStreamData<T>(source: PluginIpcStreamSource<T>): StreamData<T> {
+function toStreamData<T>(source: PluginChannelStreamSource<T>): StreamData<T> {
   if (source instanceof StreamData) {
     return source;
   }

@@ -4,7 +4,8 @@ import z from 'zod';
 import type { PluginType } from '@domain/entities/plugin.entity';
 import type { InvokePort } from '@domain/ports/invoke.port';
 
-import type { PluginService } from './service';
+import type { PluginService } from './service/index';
+export type { PodInfo, PodStatus } from './pod/type';
 
 export type LocalPoolPluginItemType = {
   filePath: string; // for loading the .js file to execute
@@ -38,24 +39,6 @@ export const LocalPoolGlobalConfigSchema = z.object({
 });
 
 export type LocalPoolGlobalConfigType = z.infer<typeof LocalPoolGlobalConfigSchema>;
-
-// ============ Pod 相关类型 ============
-
-export type PodStatus = 'pending' | 'running' | 'idle' | 'terminating' | 'failed';
-
-/**
- * PluginPod 信息
- */
-export interface PodInfo {
-  podId: string;
-  status: PodStatus;
-  requestsExecuted: number;
-  /** 当前正在处理的并发请求数 */
-  activeRequests: number;
-  createdAt: number;
-  lastActiveAt: number;
-  pid?: number;
-}
 
 // ============ 调用选项 ============
 

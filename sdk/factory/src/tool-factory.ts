@@ -4,6 +4,7 @@ import type { InvokePort } from '@domain/ports/invoke.port';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type { ToolAnswerType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import { PluginChannelHostMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
 import type { PluginToolRunPayloadType } from '@infrastructure/plugin/tool.impl';
 import { getErrText } from '@shared/utils/err';
 
@@ -78,9 +79,10 @@ export class ToolFactory extends PluginFactory {
 
     if (this.mode)
       this.getChannel().setRequestHandler(async (msg) => {
-        if (msg.method === 'run') {
+        if (msg.method === PluginChannelHostMethod.request && msg.params.eventName === 'run') {
           try {
-            const { input, systemVar, childId, secrets } = msg.params as PluginToolRunPayloadType;
+            const { input, systemVar, childId, secrets } = msg.params
+              .payload as PluginToolRunPayloadType;
             // 处理工具执行请求
             const def = this.toolHandlers.get(childId ?? 'tool');
 
@@ -120,7 +122,7 @@ export class ToolFactory extends PluginFactory {
               }
             })();
 
-            return this.getChannel().replyDuplex(msg, undefined, {
+            return this.getChannel().createReply(undefined, {
               output
             });
           } catch (err) {
@@ -130,7 +132,7 @@ export class ToolFactory extends PluginFactory {
               type: 'error'
             });
             output.end();
-            return this.getChannel().replyDuplex(msg, undefined, {
+            return this.getChannel().createReply(undefined, {
               output
             });
           }

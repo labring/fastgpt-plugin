@@ -1,5 +1,6 @@
 import { PluginRuntimeModeEnum, type PluginRuntimeModeType } from '@domain/value-objects/plugin.vo';
-import { createCurrentProcessIpcChannel } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
+import { createCurrentProcessPluginChannel } from '@infrastructure/plugin/plugin-runtime/drivers/channel/ipc';
+import { PluginChannelClientMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
 
 import {
   LOCAL_DEBUG_RUNTIME_GLOBAL_KEY,
@@ -39,12 +40,24 @@ export class PluginFactory {
     // 1. 注册监听
     // 2. 发送 ready 信号
     if (this.mode === 'localPool') {
-      this.channel = createCurrentProcessIpcChannel();
-      setImmediate(() => this.getChannel().sendReady());
+      this.channel = createCurrentProcessPluginChannel();
+      setImmediate(() => {
+        void this.getChannel().notify(PluginChannelClientMethod.ready, {
+          pid: process.pid,
+          runtimeMode: PluginRuntimeModeEnum.localPool,
+          startedAt: Date.now()
+        });
+      });
     }
     if (this.mode === 'dev') {
       this.channel = getCurrentLocalDebugRuntime().pluginChannel;
-      setImmediate(() => this.getChannel().sendReady());
+      setImmediate(() => {
+        void this.getChannel().notify(PluginChannelClientMethod.ready, {
+          pid: process.pid,
+          runtimeMode: 'dev',
+          startedAt: Date.now()
+        });
+      });
     }
   }
 

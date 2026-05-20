@@ -4,7 +4,6 @@ import z from 'zod';
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
 import { failureResult } from '@domain/value-objects/result.vo';
 import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
-import { HOST_INVOKE_METHOD } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
 
 import {
   createLocalDebugRuntime,
@@ -148,10 +147,8 @@ describe('ToolFactory streaming', () => {
     });
 
     runtime.setHostRequestHandler(({ method, args }) => {
-      expect(method).toBe(HOST_INVOKE_METHOD);
-      expect(args).toMatchObject({
-        method: InvokeMethodEnum.userInfo
-      });
+      expect(method).toBe(InvokeMethodEnum.userInfo);
+      expect(args).toEqual({});
 
       return failureResult(
         {

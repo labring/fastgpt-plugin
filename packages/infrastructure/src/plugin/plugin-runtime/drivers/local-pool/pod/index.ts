@@ -2,73 +2,40 @@ import { type ChildProcess, fork } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { createInterface } from 'node:readline';
 
-import {
-  InvokeMethodEnum,
-  type InvokePort,
-  type InvokeUploadFileInputType
-} from '@domain/ports/invoke.port';
-import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
-import type { PluginPermissionEnumType } from '@domain/value-objects/permission.vo';
+import { InvokeMethodEnum, type InvokeUploadFileInputType } from '@domain/ports/invoke.port';
 import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
 import { failureResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 
-import type { PluginIOMessage } from '../../ports/plugin-io.port';
-
 import {
-  createChildProcessIpcChannel,
-  HOST_INVOKE_METHOD,
-  type PluginIpcChannel,
-  type PluginIpcDuplexReplyOptions,
-  type PluginIpcIncomingStream
-} from './ipc-channel';
-import type { InvokeOptions, PodInfo, PodStatus } from './types';
+  PluginChannelClientMethod,
+  PluginChannelHostMethod,
+  type PluginChannelIncomingStream,
+  type PluginChannelReceivedRequestContext,
+  type PluginRuntimeChannelPort
+} from '../../../ports/channel';
+import { createChildProcessPluginChannel } from '../../channel/ipc';
 
-export interface PluginPodCallbacks {
-  onReady?: (info: PodInfo) => void;
-  onRequestCompleted?: (payload: { requestId: string; duration: number }) => void;
-  onTimeout?: (payload: { requestId: string; method: PluginInvokeEventNameType }) => void;
-  onError?: (error: Error) => void;
-  onExit?: (payload: { code: number | null; signal: string | null; wasRunning: boolean }) => void;
-  onStdout?: (line: string) => void;
-  onStderr?: (line: string) => void;
-}
+import type {
+  PluginPodClientRequestContext,
+  PluginPodInvokeInput,
+  PluginPodOptions,
+  PodInfo,
+  PodStatus
+} from './type';
 
-export interface PluginPodOptions {
-  pluginPath: string;
-  podTimeout: number;
-  maxRequests: number;
-  /** 最大并发请求数（默认 1，I/O 密集型工具可调高） */
-  maxConcurrentRequests: number;
-  /** 插件声明的宿主调用权限 */
-  pluginPermissions: PluginPermissionEnumType[];
-  callbacks?: PluginPodCallbacks;
-  getInvokeSession: (invocationId?: string) => InvokePort | undefined;
-}
-
-export interface PluginPodClientRequestContext {
-  requestId: string;
-  method: string;
-  args: unknown;
-  traceId?: string;
-  permissions: PluginPermissionEnumType[];
-  waitForInputStream: <T = unknown>(options?: {
-    timeoutMs?: number;
-  }) => Promise<PluginIpcIncomingStream<T>>;
-  replyDuplex: <R = unknown, O = unknown>(
-    result?: R,
-    options?: PluginIpcDuplexReplyOptions<O>
-  ) => unknown;
-}
-
-export interface PluginPodClientRequestPayload {
-  method: string;
-  args: unknown;
-}
+export type {
+  PluginPodCallbacks,
+  PluginPodClientRequestContext,
+  PluginPodInvokeInput,
+  PluginPodOptions,
+  PodInfo,
+  PodStatus
+} from './type';
 
 export class PluginPod {
   private process: ChildProcess | null = null;
-  private channel: PluginIpcChannel | null = null;
+  private channel: PluginRuntimeChannelPort<'host'> | null = null;
   private status: PodStatus = 'pending';
   private requestsExecuted = 0;
   private activeRequests = 0;
@@ -88,19 +55,17 @@ export class PluginPod {
         this.process = fork(this.options.pluginPath, [], {
           stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
           serialization: 'advanced',
-          // execArgv: [],
           env: {
             RUNTIME_MODE: PluginRuntimeModeEnum.localPool
           }
         });
 
-        this.channel = createChildProcessIpcChannel(this.process, {
+        this.channel = createChildProcessPluginChannel(this.process, {
           defaultTimeoutMs: this.options.podTimeout
         });
         this.channel.onError((error) => this.handleError(error));
         this.channel.setRequestHandler((message) => this.handleClientRequest(message));
 
-        // 等待 ready 信号（pod 生命周期，不走 router）
         let settled = false;
         const settle = (fn: () => void) => {
           if (settled) return;
@@ -117,26 +82,44 @@ export class PluginPod {
           });
         }, 10_000);
 
-        const unsubReady = this.channel.onReady((msg) => {
-          if (msg.messageType === 'ready') {
+        const activeChannel = this.channel;
+        activeChannel.setNotificationHandler((notification) => {
+          if (notification.method === PluginChannelClientMethod.ready) {
             settle(() => {
               this.status = 'idle';
               this.options.callbacks?.onReady?.(this.getInfo());
               resolve();
             });
+            return;
+          }
+
+          if (notification.method === PluginChannelClientMethod.stdio) {
+            const { stream, chunk } = notification.params;
+            if (stream === 'stdout') {
+              this.options.callbacks?.onStdout?.(chunk);
+              return;
+            }
+            this.options.callbacks?.onStderr?.(chunk);
+            return;
+          }
+
+          if (notification.method === PluginChannelClientMethod.fail) {
+            this.handleError(
+              new Error(notification.params.error?.message ?? notification.params.reason)
+            );
           }
         });
 
+        const unsubReady = () => {};
+
         this.process.on('error', (err) => this.handleError(err));
         this.process.on('exit', (code, signal) => {
-          // 若 ready 尚未收到，立即 reject（不等 10 秒超时）
           settle(() => {
             reject(new Error(`Pod process exited before ready: code=${code}, signal=${signal}`));
           });
           this.handleExit(code, signal);
         });
 
-        // 转发 stdout / stderr 输出（逐行）
         if (this.process.stdout) {
           createInterface({ input: this.process.stdout, crlfDelay: Infinity }).on(
             'line',
@@ -149,7 +132,6 @@ export class PluginPod {
           createInterface({ input: this.process.stderr, crlfDelay: Infinity }).on(
             'line',
             (line) => {
-              console.log('stderr', line);
               this.options.callbacks?.onStderr?.(line);
             }
           );
@@ -160,17 +142,11 @@ export class PluginPod {
     });
   }
 
-  async invoke<P, R, S extends boolean>({
-    eventName,
-    payload,
-    returnStream,
-    options
-  }: {
-    eventName: PluginInvokeEventNameType;
-    payload: P;
-    returnStream: S;
-    options?: InvokeOptions;
-  }): Promise<S extends true ? StreamData<R> : R> {
+  async invoke<P, R, S extends boolean>(
+    input: PluginPodInvokeInput<P, S>
+  ): Promise<S extends true ? StreamData<R> : R> {
+    const { eventName, payload, returnStream, options } = input;
+
     if (!this.isAvailable()) {
       throw new Error(`Pod not available: ${this.status}`);
     }
@@ -189,22 +165,40 @@ export class PluginPod {
 
       const result = returnStream
         ? await this.channel
-            .requestDuplex<P, void, never, R>(eventName, payload, {
-              requestId,
-              timeoutMs: options?.timeout ?? this.options.podTimeout,
-              traceId: options?.invocationId
-            })
+            .request(
+              PluginChannelHostMethod.request,
+              {
+                eventName,
+                payload,
+                returnStream
+              },
+              {
+                id: requestId,
+                timeoutMs: options?.timeout ?? this.options.podTimeout,
+                traceId: options?.invocationId
+              }
+            )
             .then(({ output }) => {
               if (!output) {
                 throw new Error(`Request did not return an output stream: ${eventName}`);
               }
               return output.stream;
             })
-        : await this.channel.request<P, R>(eventName, payload, {
-            timeoutMs: options?.timeout ?? this.options.podTimeout,
-            requestId,
-            traceId: options?.invocationId
-          });
+        : await this.channel
+            .request(
+              PluginChannelHostMethod.request,
+              {
+                eventName,
+                payload,
+                returnStream
+              },
+              {
+                timeoutMs: options?.timeout ?? this.options.podTimeout,
+                id: requestId,
+                traceId: options?.invocationId
+              }
+            )
+            .then(({ result }) => result as R);
 
       this.requestsExecuted++;
       const finishedAt = Date.now();
@@ -216,6 +210,7 @@ export class PluginPod {
       return result as S extends true ? StreamData<R> : R;
     } catch (error) {
       if (isRequestTimeoutError(error)) {
+        error.method = eventName;
         this.options.callbacks?.onTimeout?.({ requestId, method: eventName });
       }
       this.status = 'failed';
@@ -229,23 +224,6 @@ export class PluginPod {
         this.status = this.activeRequests > 0 ? 'running' : 'idle';
       }
     }
-  }
-
-  private handleError(error: Error): void {
-    this.status = 'failed';
-    void this.channel?.close(error);
-    this.options.callbacks?.onError?.(error);
-  }
-
-  private handleExit(code: number | null, signal: string | null): void {
-    const wasRunning = ['running', 'idle'].includes(this.status) || this.activeRequests > 0;
-    void this.channel?.close(
-      new Error(`Pod process exited: code=${String(code)}, signal=${String(signal)}`)
-    );
-    this.status = 'failed';
-    this.options.callbacks?.onExit?.({ code, signal, wasRunning });
-    this.channel = null;
-    this.process = null;
   }
 
   kill(signal: NodeJS.Signals = 'SIGTERM'): void {
@@ -270,41 +248,54 @@ export class PluginPod {
   isIdle(): boolean {
     return this.status === 'idle' && this.activeRequests === 0;
   }
+
   isBusy(): boolean {
     return this.activeRequests > 0;
   }
+
   isAvailable(): boolean {
     return (
-      this.status === 'idle' &&
+      (this.status === 'idle' || this.status === 'running') &&
       this.activeRequests < this.options.maxConcurrentRequests &&
       this.requestsExecuted < this.options.maxRequests
     );
   }
+
   getIdleTime(): number {
     return this.activeRequests === 0 && this.status === 'idle' ? Date.now() - this.lastActiveAt : 0;
   }
 
-  /** 即时更新最大并发槽数 */
   updateMaxConcurrentRequests(n: number): void {
     this.options.maxConcurrentRequests = n;
   }
 
-  private async handleClientRequest(message: PluginIOMessage): Promise<unknown> {
-    if (message.method !== HOST_INVOKE_METHOD) {
-      throw Object.assign(new Error(`Method not found: ${message.method}`), {
-        code: 'METHOD_NOT_FOUND'
-      });
-    }
+  private handleError(error: Error): void {
+    this.status = 'failed';
+    void this.channel?.close(error);
+    this.options.callbacks?.onError?.(error);
+  }
 
+  private handleExit(code: number | null, signal: string | null): void {
+    const wasRunning = ['running', 'idle'].includes(this.status) || this.activeRequests > 0;
+    void this.channel?.close(
+      new Error(`Pod process exited: code=${String(code)}, signal=${String(signal)}`)
+    );
+    this.status = 'failed';
+    this.options.callbacks?.onExit?.({ code, signal, wasRunning });
+    this.channel = null;
+    this.process = null;
+  }
+
+  private async handleClientRequest(
+    message: PluginChannelReceivedRequestContext<'host'>
+  ): Promise<unknown> {
     return this.routeClientRequest(this.createClientRequestContext(message));
   }
 
-  private createClientRequestContext(message: PluginIOMessage): PluginPodClientRequestContext {
-    if (!this.channel) {
-      throw new Error('Channel not available');
-    }
-
-    const { method, args } = message.params as PluginPodClientRequestPayload;
+  private createClientRequestContext(
+    message: PluginChannelReceivedRequestContext<'host'>
+  ): PluginPodClientRequestContext {
+    const { method, args } = message.params;
 
     if (!method) {
       throw Object.assign(new Error('Client request method is required'), {
@@ -313,24 +304,16 @@ export class PluginPod {
     }
 
     return {
-      requestId: message.id,
+      requestId: String(message.id),
       method,
       args,
       traceId: message.traceId,
       permissions: this.options.pluginPermissions,
       waitForInputStream: <T = unknown>(options?: { timeoutMs?: number }) =>
-        this.channel!.waitForRequestInputStream<T>(message, options),
-      replyDuplex: <R = unknown, O = unknown>(
-        result?: R,
-        options?: PluginIpcDuplexReplyOptions<O>
-      ) => this.channel!.replyDuplex(message, result, options)
+        message.waitForInputStream(options) as Promise<PluginChannelIncomingStream<T>>
     };
   }
 
-  /**
-   * client -> host 请求的统一接入点。
-   * 后续如果要在 pod 内直接实现或引入独立 handler，就从这里接入。
-   */
   private async routeClientRequest(request: PluginPodClientRequestContext): Promise<unknown> {
     const invokeSession = this.options.getInvokeSession(request.traceId);
     if (!invokeSession) {

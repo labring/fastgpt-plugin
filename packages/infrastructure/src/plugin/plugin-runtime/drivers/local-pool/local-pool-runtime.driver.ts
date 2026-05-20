@@ -24,8 +24,8 @@ import { VersionKeyStore } from '../../../../redis/version-key';
 import type { MongoClient } from '../../../../storage/mongo';
 import { PluginRuntimeConfigRepo } from '../../plugin-runtime-config.repo';
 
+import { PluginService } from './service/index';
 import { LOCAL_POOL_DEFAULT_SERVICE_CONFIG } from './const';
-import { PluginService } from './service';
 import type {
   DestroyOptions,
   GlobalMetrics,

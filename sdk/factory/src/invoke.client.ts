@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import Stream from 'stream';
 
 import {
@@ -11,7 +9,7 @@ import {
   type InvokeUserInfoOutputType
 } from '@domain/ports/invoke.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
-import { HOST_INVOKE_METHOD } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
+import { PluginChannelClientMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
 
 import type { PluginRuntimeChannel } from './runtime-channel.type';
 
@@ -26,14 +24,13 @@ export class InvokeClient implements InvokePort {
 
   async userInfo(): Promise<Result<InvokeUserInfoOutputType>> {
     try {
-      const response = await this.channel.requestDuplex(
-        HOST_INVOKE_METHOD,
+      const response = await this.channel.request(
+        PluginChannelClientMethod.request,
         {
           method: InvokeMethodEnum.userInfo,
           args: {}
         },
         {
-          requestId: randomUUID(),
           traceId: this.options.invocationId
         }
       );
@@ -55,8 +52,8 @@ export class InvokeClient implements InvokePort {
 
   async uploadFile(input: InvokeUploadFileInputType): Promise<Result<InvokeUploadFileOutputType>> {
     try {
-      const response = await this.channel.requestDuplex(
-        HOST_INVOKE_METHOD,
+      const response = await this.channel.request(
+        PluginChannelClientMethod.request,
         {
           method: InvokeMethodEnum.uploadFile,
           args: {
@@ -65,7 +62,6 @@ export class InvokeClient implements InvokePort {
           }
         },
         {
-          requestId: randomUUID(),
           traceId: this.options.invocationId,
           input: this.toUploadInputStream(input.file)
         }

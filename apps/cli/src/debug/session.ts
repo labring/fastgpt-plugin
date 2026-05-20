@@ -10,7 +10,6 @@ import { InvokeMethodEnum } from '@domain/ports/invoke.port';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { SystemVarSchema, type SystemVarType } from '@domain/value-objects/system-var.vo';
 import { ToolStreamMessageSchema, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
-import { HOST_INVOKE_METHOD } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/ipc-channel';
 
 import {
   createLocalDebugRuntime,
@@ -329,15 +328,9 @@ function pickTargetTool(snapshot: DebugPluginSnapshot, toolId?: string): DebugTo
 
 function createVirtualHostHandler(uploadDir: string) {
   return async ({ method, args, input }: LocalDebugHostRequestContext): Promise<unknown> => {
-    if (method !== HOST_INVOKE_METHOD) {
-      throw new Error(`本地虚拟环境暂不支持反向调用: ${method}`);
-    }
+    const invokeArgs = ensurePlainObject(args);
 
-    const payload = ensurePlainObject(args);
-    const invokeMethod = payload.method;
-    const invokeArgs = ensurePlainObject(payload.args);
-
-    switch (invokeMethod) {
+    switch (method) {
       case InvokeMethodEnum.uploadFile: {
         const buffer = await readSourceToBuffer(input);
         const fileName = sanitizeFileName(
@@ -368,7 +361,7 @@ function createVirtualHostHandler(uploadDir: string) {
         };
       }
       default:
-        throw new Error(`本地虚拟环境暂不支持反向调用: ${String(invokeMethod)}`);
+        throw new Error(`本地虚拟环境暂不支持反向调用: ${String(method)}`);
     }
   };
 }
