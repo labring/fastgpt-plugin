@@ -11,6 +11,8 @@ import {
   type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
 
+const SDK_FACTORY_PACKAGE = '@fastgpt-plugin/sdk-factory';
+
 export interface ToolBuildOptions {
   entry: string;
   output: string;
@@ -88,8 +90,10 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
     const tempIndexPath = path.join(tempDir, 'index.ts');
     const tBuildStart = Date.now();
     await tsdownBuild({
+      config: false,
       deps: {
-        alwaysBundle: ['*', '*/*', '@*/*']
+        alwaysBundle: (id) => !isSdkFactoryImport(id),
+        neverBundle: [SDK_FACTORY_PACKAGE, `${SDK_FACTORY_PACKAGE}/*`]
       },
       entry: { index: tempIndexPath },
       outDir: outputDir,
@@ -368,6 +372,10 @@ function pickToolDescription(
 
 function getOptionalString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
+}
+
+function isSdkFactoryImport(id: string): boolean {
+  return id === SDK_FACTORY_PACKAGE || id.startsWith(`${SDK_FACTORY_PACKAGE}/`);
 }
 
 function escapeRegExp(value: string): string {

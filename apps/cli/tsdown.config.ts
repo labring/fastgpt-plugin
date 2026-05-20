@@ -4,7 +4,10 @@ export default defineConfig({
   entry: ['src/index.ts'],
   minify: false,
   unbundle: false,
-  inlineOnly: false,
+  deps: {
+    neverBundle: ['@fastgpt-plugin/sdk-factory', '@fastgpt-plugin/sdk-factory/*'],
+    onlyBundle: false
+  },
   fixedExtension: false,
   failOnWarn: false
 });

@@ -1,12 +1,13 @@
 import { existsSync } from 'node:fs';
-import { mkdir, rm, stat } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 import { run } from '@fastgpt-plugin/cli/cmd';
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const FIXTURE_ROOT = path.join(__dirname, '../../test/fixtures');
+const FIXTURE_ROOT = path.join(__dirname, '../../../../test/fixtures');
 const DBOPS_SUITE_DIR = path.join(FIXTURE_ROOT, 'tool-suites', 'dbops');
 const GETTIME_TOOL_DIR = path.join(FIXTURE_ROOT, 'tools', 'getTime');
 
@@ -30,72 +31,96 @@ describe('pack command', () => {
   });
 
   it('应能使用 fixtures 中的 getTime 单工具进行打包', async () => {
-    const outputDir = path.join(GETTIME_TOOL_DIR, '__pack_output__');
+    const workspaceDir = await mkdtemp(path.join(os.tmpdir(), 'fastgpt-pack-gettime-'));
+    const entryDir = path.join(workspaceDir, 'getTime');
+    const outputDir = path.join(workspaceDir, 'output');
     const pkgName = 'getTime';
 
     try {
-      await rm(outputDir, { recursive: true, force: true });
-    } catch {
-      // ignore
+      await preparePackFixture(GETTIME_TOOL_DIR, entryDir);
+
+      await run([
+        process.execPath,
+        'cli',
+        'pack',
+        '--entry',
+        entryDir,
+        '--output',
+        outputDir,
+        '--name',
+        pkgName
+      ]);
+
+      const pkgPath = path.join(outputDir, `${pkgName}.pkg`);
+      expect(existsSync(pkgPath)).toBe(true);
+      await expectSdkFactoryExternalized(entryDir);
+
+      const pkgStat = await stat(pkgPath);
+      expect(pkgStat.size).toBeGreaterThan(0);
+
+      expect(loggerSpy.success).toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+    } finally {
+      await rm(workspaceDir, { recursive: true, force: true });
     }
-
-    await mkdir(outputDir, { recursive: true });
-
-    await run([
-      process.execPath,
-      'cli',
-      'pack',
-      '--entry',
-      GETTIME_TOOL_DIR,
-      '--output',
-      outputDir,
-      '--name',
-      pkgName
-    ]);
-
-    const pkgPath = path.join(outputDir, `${pkgName}.pkg`);
-    expect(existsSync(pkgPath)).toBe(true);
-
-    const pkgStat = await stat(pkgPath);
-    expect(pkgStat.size).toBeGreaterThan(0);
-
-    expect(loggerSpy.success).toHaveBeenCalled();
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-    expect(exitSpy).not.toHaveBeenCalled();
   });
 
   it('应能使用 fixtures 中的 dbops 工具集进行打包', async () => {
-    const outputDir = path.join(DBOPS_SUITE_DIR, '__pack_output__');
+    const workspaceDir = await mkdtemp(path.join(os.tmpdir(), 'fastgpt-pack-dbops-'));
+    const entryDir = path.join(workspaceDir, 'dbops');
+    const outputDir = path.join(workspaceDir, 'output');
     const pkgName = 'dbops';
 
     try {
-      await rm(outputDir, { recursive: true, force: true });
-    } catch {
-      // ignore
+      await preparePackFixture(DBOPS_SUITE_DIR, entryDir);
+
+      await run([
+        process.execPath,
+        'cli',
+        'pack',
+        '--entry',
+        entryDir,
+        '--output',
+        outputDir,
+        '--name',
+        pkgName
+      ]);
+
+      const pkgPath = path.join(outputDir, `${pkgName}.pkg`);
+      expect(existsSync(pkgPath)).toBe(true);
+      await expectSdkFactoryExternalized(entryDir);
+
+      const pkgStat = await stat(pkgPath);
+      expect(pkgStat.size).toBeGreaterThan(0);
+
+      expect(loggerSpy.success).toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+    } finally {
+      await rm(workspaceDir, { recursive: true, force: true });
     }
-
-    await mkdir(outputDir, { recursive: true });
-
-    await run([
-      process.execPath,
-      'cli',
-      'pack',
-      '--entry',
-      DBOPS_SUITE_DIR,
-      '--output',
-      outputDir,
-      '--name',
-      pkgName
-    ]);
-
-    const pkgPath = path.join(outputDir, `${pkgName}.pkg`);
-    expect(existsSync(pkgPath)).toBe(true);
-
-    const pkgStat = await stat(pkgPath);
-    expect(pkgStat.size).toBeGreaterThan(0);
-
-    expect(loggerSpy.success).toHaveBeenCalled();
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-    expect(exitSpy).not.toHaveBeenCalled();
   });
 });
+
+async function preparePackFixture(sourceDir: string, targetDir: string): Promise<void> {
+  await cp(sourceDir, targetDir, {
+    recursive: true,
+    dereference: false,
+    filter: (source) => {
+      const relativePath = path.relative(sourceDir, source);
+      return !relativePath.split(path.sep).some((part) => part === 'dist');
+    }
+  });
+}
+
+async function expectSdkFactoryExternalized(entryDir: string): Promise<void> {
+  const distIndex = path.join(entryDir, 'dist/index.js');
+  const source = await readFile(distIndex, 'utf-8');
+
+  expect(source).toContain('@fastgpt-plugin/sdk-factory');
+  expect(source).not.toContain('class ToolFactory');
+  expect(
+    existsSync(path.join(entryDir, 'node_modules/@fastgpt-plugin/sdk-factory/package.json'))
+  ).toBe(true);
+}

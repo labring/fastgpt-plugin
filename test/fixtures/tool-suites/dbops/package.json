@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@fastgpt-plugin/cli": "link:../../../../../cli",
+    "@fastgpt-plugin/sdk-factory": "*",
     "zod": "^4"
   },
   "devDependencies": {

@@ -14,6 +14,12 @@ const podMock = vi.hoisted(() => ({
   }
 }));
 
+const sdkFactoryRuntimeMock = vi.hoisted(() => ({
+  ensureSdkFactoryRuntimeDependency: vi.fn()
+}));
+
+vi.mock('./sdk-factory-runtime', () => sdkFactoryRuntimeMock);
+
 vi.mock('./pod', () => {
   class PluginPod {
     public status = 'pending';
@@ -169,6 +175,8 @@ function createService(config: LocalPoolPluginConfigType) {
 describe('PluginService', () => {
   beforeEach(() => {
     podMock.reset();
+    sdkFactoryRuntimeMock.ensureSdkFactoryRuntimeDependency.mockReset();
+    sdkFactoryRuntimeMock.ensureSdkFactoryRuntimeDependency.mockResolvedValue(undefined);
   });
 
   afterEach(async () => {
@@ -180,6 +188,12 @@ describe('PluginService', () => {
     const service = createService(makeConfig({ minPods: 2, maxPods: 2 }));
 
     await service.initialize();
+
+    expect(sdkFactoryRuntimeMock.ensureSdkFactoryRuntimeDependency).toHaveBeenCalledWith({
+      pluginIndexPath: '/virtual/plugin.js',
+      searchFrom: expect.stringContaining('service/index.ts')
+    });
+
     const result = await service.invoke({
       eventName: 'run',
       payload: { value: 1 },

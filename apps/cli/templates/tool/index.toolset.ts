@@ -1,5 +1,4 @@
-import { defineToolSet } from 'sdk/factory/dist';
-import { createToolHandler } from 'sdk/factory/src';
+import { createToolHandler, defineToolSet } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const secretSchema = z.object({

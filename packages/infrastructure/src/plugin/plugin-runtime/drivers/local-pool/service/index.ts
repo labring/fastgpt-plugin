@@ -6,6 +6,7 @@ import type { PluginPermissionEnumType } from '@domain/value-objects/permission.
 import { StreamData } from '@domain/value-objects/stream.vo';
 
 import type { PluginPod } from '../pod';
+import { ensureSdkFactoryRuntimeDependency } from '../sdk-factory-runtime';
 import type {
   DestroyOptions,
   InvokeOptions,
@@ -76,6 +77,10 @@ export class PluginService {
       throw new Error('Service already destroyed');
     }
 
+    await ensureSdkFactoryRuntimeDependency({
+      pluginIndexPath: this.pluginPath,
+      searchFrom: import.meta.url
+    });
     await this.fleet.ensureMinPods();
     this.startIdleCheck();
     this.initialized = true;

@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-plugin/cli",
-  "version": "0.1.0-beta.7",
+  "version": "0.1.0-beta.8",
   "type": "module",
   "private": false,
   "publishConfig": {
@@ -24,6 +24,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@fastgpt-plugin/sdk-factory": "workspace:*",
     "@oxc-parser/binding-wasm32-wasi": "^0.112.0",
     "@inquirer/prompts": "^8.2.0",
     "commander": "^14.0.3",

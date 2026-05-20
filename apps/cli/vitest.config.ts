@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@fastgpt-plugin/cli': resolve(__dirname, './src'),
-      '@fastgpt-plugin/sdk-factory': resolve(__dirname, '../../sdk/factory/src'),
+      '@fastgpt-plugin/sdk-factory': resolve(__dirname, '../../sdk/factory/src/index.ts'),
       '@fastgpt-plugin/sdk-client': resolve(__dirname, '../../sdk/client/src'),
       'sdk/factory/src': resolve(__dirname, '../../sdk/factory/src/index.ts'),
       'sdk/factory/dist': resolve(__dirname, '../../sdk/factory/src/index.ts'),
