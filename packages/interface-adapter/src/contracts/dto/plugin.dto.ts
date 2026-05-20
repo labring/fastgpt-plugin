@@ -186,6 +186,21 @@ export const PluginPruneDisabledResponseDTOSchema = z.object({
   })
 });
 
+export const PluginDeleteParamsSchema = z.object({
+  pluginId: z.string().openapi({
+    description: 'Plugin ID',
+    example: 'getTime'
+  }),
+  source: z.string().openapi({
+    description: 'Plugin source',
+    example: 'system'
+  }),
+  version: z.string().openapi({
+    description: 'Plugin version',
+    example: '1.0.0'
+  })
+});
+
 export const PluginInstallFailureDTOSchema = z.object({
   url: z.string(),
   reason: I18nStringSchema
@@ -358,6 +373,7 @@ export type PluginConfirmParamsDTOType = z.infer<typeof PluginConfirmParamsSchem
 export type PluginPruneDisabledResponseDTOType = z.infer<
   typeof PluginPruneDisabledResponseDTOSchema
 >;
+export type PluginDeleteParamsDTOType = z.infer<typeof PluginDeleteParamsSchema>;
 export type PluginInstallFailureDTOType = z.infer<typeof PluginInstallFailureDTOSchema>;
 export type PluginInstallRequestDTOType = z.infer<typeof PluginInstallDTOSchema.request>;
 export type PluginInstallResponseDTOType = z.infer<typeof PluginInstallDTOSchema.response>;

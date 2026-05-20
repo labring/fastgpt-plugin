@@ -14,6 +14,7 @@ import { makePluginConfigGetUC } from '@usecase/plugin/plugin-config-get.uc';
 import { makeResetPluginConfigUC } from '@usecase/plugin/plugin-config-reset.uc';
 import { makeSetPluginConfigUC } from '@usecase/plugin/plugin-config-set.uc';
 import { makePluginConfirmUC } from '@usecase/plugin/plugin-confirm.uc';
+import { makePluginDeleteUC } from '@usecase/plugin/plugin-delete.uc';
 import { makePluginInstallUC } from '@usecase/plugin/plugin-install.uc';
 import { makePluginListUC } from '@usecase/plugin/plugin-list.uc';
 import { makePluginPruneDisabledUC } from '@usecase/plugin/plugin-prune-disabled.uc';
@@ -142,6 +143,45 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       }
 
       return R.success(c, result);
+    }
+  );
+
+  route.openapi(
+    createRoute({
+      ...PluginContract.Delete.meta,
+      request: {
+        body: {
+          content: {
+            'application/json': {
+              schema: PluginContract.Delete.request
+            }
+          }
+        }
+      },
+      responses: {
+        200: {
+          description: 'HTTP 200 response'
+        },
+        500: {
+          description: 'HTTP 500 response',
+          content: {
+            'application/json': {
+              schema: PluginContract.Delete.response[500]
+            }
+          }
+        }
+      }
+    }),
+    async (c) => {
+      const pluginDeleteUC = makePluginDeleteUC(usecaseDeps);
+      const body = c.req.valid('json');
+      const [, err] = await pluginDeleteUC(body);
+
+      if (err) {
+        return R.fail(c, 500, err.reason);
+      }
+
+      return R.empty(c);
     }
   );
 

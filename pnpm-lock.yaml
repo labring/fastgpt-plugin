@@ -87,9 +87,6 @@ importers:
 
   apps/cli:
     dependencies:
-      '@fastgpt-plugin/sdk-factory':
-        specifier: workspace:*
-        version: link:../../sdk/factory
       '@inquirer/prompts':
         specifier: ^8.2.0
         version: 8.3.0(@types/node@25.5.0)

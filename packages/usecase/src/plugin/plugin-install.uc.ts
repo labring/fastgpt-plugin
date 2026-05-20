@@ -23,7 +23,6 @@ import {
   disableAndUnregisterReplacedPlugins,
   listReplacedActivePlugins
 } from './plugin-replace-active';
-import { createEmitAndSemanticDiagnosticsBuilderProgram } from 'typescript';
 
 /** Dependencies */
 export type PluginInstallUCDeps = {

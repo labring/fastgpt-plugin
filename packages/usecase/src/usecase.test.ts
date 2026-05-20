@@ -16,6 +16,7 @@ import { makePluginConfigGetUC } from './plugin/plugin-config-get.uc';
 import { makeResetPluginConfigUC } from './plugin/plugin-config-reset.uc';
 import { makeSetPluginConfigUC } from './plugin/plugin-config-set.uc';
 import { makePluginConfirmUC } from './plugin/plugin-confirm.uc';
+import { makePluginDeleteUC } from './plugin/plugin-delete.uc';
 import { makePluginInstallUC, type PluginInstallUCDeps } from './plugin/plugin-install.uc';
 import { makePluginListUC } from './plugin/plugin-list.uc';
 import { makePluginPruneDisabledUC } from './plugin/plugin-prune-disabled.uc';
@@ -1236,6 +1237,104 @@ describe('makePluginRegisterActiveUC', () => {
     const [, err] = await makePluginRegisterActiveUC(deps)();
 
     expect(err?.reason.en).toBe('Failed to register active plugin');
+  });
+});
+
+describe('makePluginDeleteUC', () => {
+  const input = {
+    pluginId: uniqueId.pluginId,
+    source: 'system',
+    version: uniqueId.version
+  };
+
+  const makeDeps = (overrides: Record<string, unknown> = {}) => ({
+    pluginRepo: basePluginRepo({
+      getPluginByUserPluginId: vi.fn().mockResolvedValue(successResult(plugin())),
+      disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+    }),
+    pluginRuntimeManager: baseRuntimeManager({
+      unregister: vi.fn().mockResolvedValue(successResult({}))
+    }),
+    logger: logger(),
+    ...overrides
+  });
+
+  it('disables the installed plugin resolved by source, plugin id, and version', async () => {
+    const deps = makeDeps();
+
+    const [result, err] = await makePluginDeleteUC(deps)(input);
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.pluginRepo.getPluginByUserPluginId).toHaveBeenCalledWith(input);
+    expect(deps.pluginRepo.disablePlugins).toHaveBeenCalledWith([uniqueId]);
+    expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(uniqueId);
+  });
+
+  it('returns failure when plugin cannot be resolved', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        getPluginByUserPluginId: vi.fn().mockResolvedValue(failureResult(reason('not found')))
+      })
+    });
+
+    const [, err] = await makePluginDeleteUC(deps)(input);
+
+    expect(err?.reason.en).toBe('Plugin not found');
+    expect(deps.pluginRepo.disablePlugins).not.toHaveBeenCalled();
+  });
+
+  it('returns failure when disabling the plugin fails', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        getPluginByUserPluginId: vi.fn().mockResolvedValue(successResult(plugin())),
+        disablePlugins: vi.fn().mockResolvedValue(failureResult(reason('disable failed')))
+      })
+    });
+
+    const [, err] = await makePluginDeleteUC(deps)(input);
+
+    expect(err?.reason.en).toBe('Failed to delete plugin');
+    expect(deps.pluginRuntimeManager.unregister).not.toHaveBeenCalled();
+  });
+
+  it('logs unregister failures after disabling runnable plugins', async () => {
+    const appLogger = logger();
+    const deps = makeDeps({
+      pluginRuntimeManager: baseRuntimeManager({
+        unregister: vi.fn().mockResolvedValue(failureResult(reason('unregister failed')))
+      }),
+      logger: appLogger
+    });
+
+    const [result, err] = await makePluginDeleteUC(deps)(input);
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(appLogger.error).toHaveBeenCalledWith('Failed to unregister deleted plugin runtime', {
+      pluginId: uniqueId.pluginId,
+      source: input.source,
+      version: uniqueId.version,
+      etag: uniqueId.etag,
+      error: expect.objectContaining({
+        reason: reason('unregister failed')
+      })
+    });
+  });
+
+  it('does not unregister non-runnable plugins', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        getPluginByUserPluginId: vi.fn().mockResolvedValue(successResult(nonRunnablePlugin())),
+        disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+      })
+    });
+
+    const [result, err] = await makePluginDeleteUC(deps)(input);
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.pluginRuntimeManager.unregister).not.toHaveBeenCalled();
   });
 });
 

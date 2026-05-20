@@ -14,6 +14,7 @@ import {
   PluginInstallDTOSchema,
   PluginListDTOSchema,
   PluginListParamsSchema,
+  PluginDeleteParamsSchema,
   PluginPruneDisabledResponseDTOSchema,
   PluginRuntimeConfigGetParamsSchema,
   PluginRuntimeConfigResetParamsSchema,
@@ -110,6 +111,22 @@ export const PluginContract = {
     },
     response: {
       200: jsonResponse({ data: PluginPruneDisabledResponseDTOSchema }),
+      500: jsonResponse({ error: I18nStringSchema })
+    }
+  }),
+  Delete: defineContract({
+    meta: {
+      method: 'post',
+      path: '/plugin/delete',
+      operationId: 'plugin.delete',
+      description: 'Disable an installed plugin by source, plugin id, and version',
+      summary: 'Delete a plugin',
+      tags: ['plugin'],
+      security: authToken
+    },
+    request: PluginDeleteParamsSchema,
+    response: {
+      200: emptyResponse(),
       500: jsonResponse({ error: I18nStringSchema })
     }
   }),
