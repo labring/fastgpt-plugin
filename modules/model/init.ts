@@ -1,5 +1,6 @@
 import alicloud from './provider/AliCloud';
 import antling from './provider/AntLing';
+import apiyi from './provider/APIYI';
 import baai from './provider/BAAI';
 import baichuan from './provider/Baichuan';
 import chatglm from './provider/ChatGLM';
@@ -45,6 +46,7 @@ const allProviders: ProviderConfigType[] = [
   ai360,
   alicloud,
   antling,
+  apiyi,
   baai,
   baichuan,
   chatglm,
