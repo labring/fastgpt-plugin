@@ -1,16 +1,29 @@
-import { createToolHandler, defineToolSet } from 'sdk/factory/src';
+import {
+  createToolHandler,
+  defineToolSet,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType,
+  type SecretSchemaMetaType
+} from 'sdk/factory/src';
 import z from 'zod';
 
 const toolSetSecretSchema = z.object({
-  apikey: z.string()
+  apikey: z.string().meta({
+    title: 'API Key',
+    isSecret: true
+  } satisfies SecretSchemaMetaType)
 });
 
 const handler = createToolHandler({
   inputSchema: z.object({
-    msg: z.string()
+    msg: z.string().meta({
+      title: 'Message'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    reply: z.string()
+    reply: z.string().meta({
+      title: 'Reply'
+    } satisfies OutputSchemaMetaType)
   }),
   secretSchema: toolSetSecretSchema,
   handler: async (input, ctx) => {

@@ -1,11 +1,20 @@
-import { createToolHandler, defineTool } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineTool,
+  type OutputSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import { InputType, OutputType, tool as toolCb } from './src';
 import z from 'zod';
 
 const secretSchema = z.object({});
 const inputSchema = z.object({});
 const outputSchema = z.object({
-  time: z.string().optional()
+  time: z
+    .string()
+    .optional()
+    .meta({
+      title: 'Time'
+    } satisfies OutputSchemaMetaType)
 });
 
 const handler = createToolHandler({

@@ -9,7 +9,6 @@
   "type": "module",
   "license": "ISC",
   "dependencies": {
-    "@fastgpt-plugin/sdk-factory": "workspace:*",
     "@fastgpt-sdk/otel": "^0.1.2",
     "@fastgpt-sdk/storage": "^0.6.15",
     "@hono/zod-openapi": "^1.2.1",

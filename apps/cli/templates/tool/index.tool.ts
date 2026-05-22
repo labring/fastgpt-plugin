@@ -1,11 +1,19 @@
-import { createToolHandler, defineTool } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineTool,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const handler = createToolHandler({
   inputSchema: z.object({
-    delay: z.number()
+    delay: z.number().meta({
+      title: 'Delay',
+      description: 'Delay duration in milliseconds'
+    } satisfies InputSchemaMetaType)
   }),
-  outputSchema: z.object({}),
+  outputSchema: z.object({}).meta({} satisfies OutputSchemaMetaType),
   handler: async (input, _ctx) => {
     await new Promise((resolve) => setTimeout(resolve, input.delay));
     return {};

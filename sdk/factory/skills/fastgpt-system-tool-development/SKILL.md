@@ -61,6 +61,9 @@ npx @fastgpt-plugin/cli pack --entry <plugin-directory> --dist <plugin-directory
 - 多个相关工具组成一个插件时使用 `defineToolSet()`。
 - 每个 handler 用 `createToolHandler()` 定义。
 - `inputSchema` 和 `outputSchema` 使用 `z.object(...)`。
+- `inputSchema` 字段使用 `.meta({ ... } satisfies InputSchemaMetaType)`。
+- `outputSchema` 字段使用 `.meta({ ... } satisfies OutputSchemaMetaType)`。
+- `secretSchema` 字段使用 `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)`；需要加密存储的字段标记为 `isSecret: true`。
 - handler 返回值必须匹配 `outputSchema`。
 
 manifest 至少包含：
@@ -87,7 +90,7 @@ manifest 至少包含：
 - 用户配置的密钥、API Key、Base URL 等使用 `secretSchema` 描述，通过 `ctx.secrets` 读取。
 - 错误信息应能帮助定位问题，同时避免暴露密钥、令牌和完整上游敏感响应。
 - 需要向用户展示执行进度时使用 `ctx.streamResponse()`。
-- 需要生成文件时使用 `ctx.invoke.uploadFile()`。
+- 需要生成文件时使用 `ctx.invoke.uploadFile()`；收到 `[result, err]` 的 `err` 时保留原始 `err`，避免覆盖反向调用的宿主错误信息。
 
 ## 头像规范
 
@@ -111,15 +114,24 @@ CLI 构建时会自动扫描系统工具根目录中的头像文件，并写入 
 ## 单工具模板
 
 ```ts
-import { createToolHandler, defineTool } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineTool,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const handler = createToolHandler({
   inputSchema: z.object({
-    text: z.string().min(1)
+    text: z.string().min(1).meta({
+      title: 'Text'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    result: z.string()
+    result: z.string().meta({
+      title: 'Result'
+    } satisfies OutputSchemaMetaType)
   }),
   handler: async (input) => {
     return {
@@ -152,19 +164,32 @@ export default defineTool({
 ## 工具集模板
 
 ```ts
-import { createToolHandler, defineToolSet } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineToolSet,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType,
+  type SecretSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const secretSchema = z.object({
-  apiKey: z.string().min(1)
+  apiKey: z.string().min(1).meta({
+    title: 'API Key',
+    isSecret: true
+  } satisfies SecretSchemaMetaType)
 });
 
 const searchHandler = createToolHandler({
   inputSchema: z.object({
-    query: z.string().min(1)
+    query: z.string().min(1).meta({
+      title: 'Query'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    items: z.array(z.string())
+    items: z.array(z.string()).meta({
+      title: 'Items'
+    } satisfies OutputSchemaMetaType)
   }),
   secretSchema,
   handler: async (input, ctx) => {

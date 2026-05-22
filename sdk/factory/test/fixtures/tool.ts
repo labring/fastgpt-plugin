@@ -1,16 +1,29 @@
 import z from 'zod';
 
-import { createToolHandler, defineTool } from '../../src/index';
+import {
+  createToolHandler,
+  defineTool,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType,
+  type SecretSchemaMetaType
+} from '../../src/index';
 
 const handler = createToolHandler({
   inputSchema: z.object({
-    msg: z.string()
+    msg: z.string().meta({
+      title: 'Message'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    reply: z.string()
+    reply: z.string().meta({
+      title: 'Reply'
+    } satisfies OutputSchemaMetaType)
   }),
   secretSchema: z.object({
-    apikey: z.string()
+    apikey: z.string().meta({
+      title: 'API Key',
+      isSecret: true
+    } satisfies SecretSchemaMetaType)
   }),
   handler: async (input, ctx) => {
     const msg = 'Hello!' + input.msg + ctx.secrets;

@@ -1,6 +1,5 @@
 import { type ChildProcess, fork } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { createInterface } from 'node:readline';
 
 import { InvokeMethodEnum, type InvokeUploadFileInputType } from '@domain/ports/invoke.port';
 import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
@@ -121,20 +120,16 @@ export class PluginPod {
         });
 
         if (this.process.stdout) {
-          createInterface({ input: this.process.stdout, crlfDelay: Infinity }).on(
-            'line',
-            (line) => {
-              this.options.callbacks?.onStdout?.(line);
-            }
-          );
+          this.process.stdout.setEncoding('utf8');
+          this.process.stdout.on('data', (chunk: string) => {
+            this.options.callbacks?.onStdout?.(chunk);
+          });
         }
         if (this.process.stderr) {
-          createInterface({ input: this.process.stderr, crlfDelay: Infinity }).on(
-            'line',
-            (line) => {
-              this.options.callbacks?.onStderr?.(line);
-            }
-          );
+          this.process.stderr.setEncoding('utf8');
+          this.process.stderr.on('data', (chunk: string) => {
+            this.options.callbacks?.onStderr?.(chunk);
+          });
         }
       } catch (error) {
         reject(error);

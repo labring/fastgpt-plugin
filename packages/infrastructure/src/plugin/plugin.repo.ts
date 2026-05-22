@@ -70,6 +70,7 @@ const PluginListViewProjection = {
     description: 1,
     tags: 1,
     'data.toolDescription': 1,
+    'data.secretSchema': 1,
     'data.children.id': 1,
     'data.children.name': 1,
     'data.children.description': 1,
@@ -126,6 +127,33 @@ export class PluginRepo implements PluginRepoPort {
 
   private getInstalledPluginKey({ pluginId, version, etag }: InstalledPluginIdentity) {
     return `${pluginId}::${version}::${etag}`;
+  }
+
+  private hasSecretSchema(secretSchema: unknown): boolean {
+    if (!secretSchema || typeof secretSchema !== 'object') {
+      return false;
+    }
+
+    const schema = secretSchema as {
+      $schema?: unknown;
+      additionalProperties?: unknown;
+      properties?: unknown;
+      type?: unknown;
+    };
+
+    if ('properties' in schema) {
+      return Boolean(
+        schema.properties &&
+          typeof schema.properties === 'object' &&
+          Object.keys(schema.properties).length > 0
+      );
+    }
+
+    if ('$schema' in schema || 'additionalProperties' in schema || schema.type === 'object') {
+      return false;
+    }
+
+    return Object.keys(schema).length > 0;
   }
 
   private async updateSystemInstallation(plugin: MongoPluginWithId) {
@@ -203,6 +231,10 @@ export class PluginRepo implements PluginRepoPort {
       ? ['temp', id.pluginId, id.version, id.etag, ...filePath]
       : [id.pluginId, id.version, id.etag, ...filePath];
     return path.join(...array);
+  }
+
+  private getLocalPluginRuntimeFileKey(id: PluginUniqueIdType, filePath: string[]): string {
+    return path.join('plugin', id.pluginId, id.version, id.etag, ...filePath);
   }
 
   private constructor(private readonly deps: PluginRepoDeps) {}
@@ -628,6 +660,7 @@ export class PluginRepo implements PluginRepoPort {
         const data = plugin.data as
           | {
               toolDescription?: unknown;
+              secretSchema?: unknown;
               children?: Array<{
                 id?: unknown;
                 name?: unknown;
@@ -653,6 +686,7 @@ export class PluginRepo implements PluginRepoPort {
           toolDescription: data?.toolDescription,
           source,
           isToolset: Boolean(data?.children?.length),
+          hasSecret: this.hasSecretSchema(data?.secretSchema),
           children: data?.children?.map((child) => ({
             id: child.id,
             name: child.name,
@@ -753,11 +787,13 @@ export class PluginRepo implements PluginRepoPort {
 
       for (const uniqueId of pluginIds) {
         const activePrefix = this.getFileKey(uniqueId, [], false);
+        const localActivePrefix = this.getLocalPluginRuntimeFileKey(uniqueId, []);
         const pendingPrefix = this.getFileKey(uniqueId, [], true);
 
         const cleanupSteps = await Promise.all([
           this.deps.publicRemoteFileStorageRepo.deletePath(activePrefix),
           this.deps.privateRemoteFileStorageRepo.deletePath(activePrefix),
+          this.deps.localFileStorageRepo.deletePath(localActivePrefix),
           this.deps.localFileStorageRepo.deletePath(activePrefix),
           this.deps.publicRemoteFileStorageRepo.deletePath(pendingPrefix),
           this.deps.privateRemoteFileStorageRepo.deletePath(pendingPrefix),
@@ -879,8 +915,8 @@ export class PluginRepo implements PluginRepoPort {
           } as MongoPluginWithId;
         } else {
           return failureResult({
-            en: 'Plugin already exists',
-            'zh-CN': '插件已存在'
+            en: 'Plugin with the same version and etag already exists',
+            'zh-CN': '已存在相同版本且 etag 相同的插件'
           });
         }
       } else {
@@ -1047,14 +1083,15 @@ export class PluginRepo implements PluginRepoPort {
 
       const info = this.toDomainPlugin(result);
 
-      const indexFileKey = this.getFileKey(uniqueId, ['index.js'], false);
+      const remoteIndexFileKey = this.getFileKey(uniqueId, ['index.js'], false);
+      const localIndexFileKey = this.getLocalPluginRuntimeFileKey(uniqueId, ['index.js']);
 
       const [indexFile, err] = await (async () => {
-        const [exists, existsErr] = await this.deps.localFileStorageRepo.exists(indexFileKey);
+        const [exists, existsErr] = await this.deps.localFileStorageRepo.exists(localIndexFileKey);
         if (!exists || existsErr) {
           // get the file first
           const [remoteIndexFile, err] =
-            await this.deps.privateRemoteFileStorageRepo.getFileObject(indexFileKey);
+            await this.deps.privateRemoteFileStorageRepo.getFileObject(remoteIndexFileKey);
           if (err) {
             return failureResult(
               {
@@ -1077,14 +1114,14 @@ export class PluginRepo implements PluginRepoPort {
           }
 
           return await this.deps.localFileStorageRepo.save({
-            fileKey: indexFileKey,
+            fileKey: localIndexFileKey,
             file: fileStream,
             contentType: remoteIndexFile.metaData.contentType,
             fileName: remoteIndexFile.metaData.fileName
           });
         }
 
-        return await this.deps.localFileStorageRepo.getFileObject(indexFileKey);
+        return await this.deps.localFileStorageRepo.getFileObject(localIndexFileKey);
       })();
 
       if (err) {
@@ -1100,7 +1137,7 @@ export class PluginRepo implements PluginRepoPort {
       return successResult({
         info,
         indexFile,
-        entryFilePath: this.deps.localFileStorageRepo.joinPath(indexFileKey)
+        entryFilePath: this.deps.localFileStorageRepo.joinPath(localIndexFileKey)
       });
     } catch (error) {
       return failureResult(
@@ -1130,7 +1167,9 @@ export class PluginRepo implements PluginRepoPort {
   }
 
   async getPluginLocalPath(pluginId: PluginUniqueIdType): Promise<Result<string>> {
-    const result = this.deps.localFileStorageRepo.joinPath(this.getFileKey(pluginId, [], false));
+    const result = this.deps.localFileStorageRepo.joinPath(
+      this.getLocalPluginRuntimeFileKey(pluginId, [])
+    );
     return successResult(result);
   }
 

@@ -192,8 +192,7 @@ describe('PluginService', () => {
     await service.initialize();
 
     expect(sdkFactoryRuntimeMock.ensureSdkFactoryRuntimeDependency).toHaveBeenCalledWith({
-      pluginIndexPath: '/virtual/plugin.js',
-      searchFrom: expect.stringContaining('service/index.ts')
+      pluginIndexPath: '/virtual/plugin.js'
     });
 
     const result = await service.invoke({

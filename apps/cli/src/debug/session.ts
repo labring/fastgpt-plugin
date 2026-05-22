@@ -7,6 +7,7 @@ import { ensureDebugImportHooks } from '@fastgpt-plugin/cli/debug/import-hooks';
 import z from 'zod';
 
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
+import { successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { SystemVarSchema, type SystemVarType } from '@domain/value-objects/system-var.vo';
 import { ToolStreamMessageSchema, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
@@ -351,14 +352,14 @@ function createVirtualHostHandler(uploadDir: string) {
         await fs.mkdir(saveDir, { recursive: true });
         await fs.writeFile(outputPath, buffer);
 
-        return {
+        return successResult({
           fileName,
           contentType,
           size: buffer.length,
           etag: createHash('md5').update(buffer).digest('hex'),
           createTime: new Date(),
           accessURL: pathToFileURL(outputPath).href
-        };
+        });
       }
       default:
         throw new Error(`本地虚拟环境暂不支持反向调用: ${String(method)}`);

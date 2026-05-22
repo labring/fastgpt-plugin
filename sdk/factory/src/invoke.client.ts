@@ -37,13 +37,10 @@ export class InvokeClient implements InvokePort {
 
       const [result, responseErr] = response.result as [InvokeUserInfoOutputType, unknown];
       if (responseErr)
-        return failureResult(
-          {
-            en: 'Failed to get user info',
-            'zh-CN': '获取用户信息失败'
-          },
-          responseErr
-        );
+        return failureResult({
+          en: 'Failed to get user info',
+          'zh-CN': '获取用户信息失败'
+        });
       return successResult(result);
     } catch (error) {
       return failureResult({ en: 'Failed to get user info', 'zh-CN': '获取用户信息失败' }, error);
@@ -69,23 +66,17 @@ export class InvokeClient implements InvokePort {
 
       const [result, err] = response.result as [InvokeUploadFileOutputType, unknown];
       if (err)
-        return failureResult(
-          {
-            en: 'Failed to upload file',
-            'zh-CN': '上传文件失败'
-          },
-          err
-        );
-
-      return successResult(InvokeUploadFileOutputSchema.parse(result));
-    } catch (err) {
-      return failureResult(
-        {
+        return failureResult({
           en: 'Failed to upload file',
           'zh-CN': '上传文件失败'
-        },
-        err
-      );
+        });
+
+      return successResult(InvokeUploadFileOutputSchema.parse(result));
+    } catch {
+      return failureResult({
+        en: 'Failed to upload file',
+        'zh-CN': '上传文件失败'
+      });
     }
   }
 

@@ -9,6 +9,7 @@ const modelProviderDir = join(
   configDir,
   '../../packages/infrastructure/src/static-data/models/provider'
 );
+const sdkFactoryDir = join(configDir, '../../sdk/factory');
 const modelLogoExtensions = ['svg', 'png', 'jpeg', 'webp', 'jpg'];
 
 const modelLogoCopyEntries = readdirSync(modelProviderDir, { withFileTypes: true }).flatMap(
@@ -44,6 +45,14 @@ export default defineConfig({
     {
       from: '../../packages/infrastructure/src/static-data/workflow/templates',
       to: 'dist'
+    },
+    {
+      from: join(sdkFactoryDir, 'package.json'),
+      to: 'dist/runtime-sdk/@fastgpt-plugin/sdk-factory'
+    },
+    {
+      from: join(sdkFactoryDir, 'dist/*'),
+      to: 'dist/runtime-sdk/@fastgpt-plugin/sdk-factory/dist'
     }
   ],
   dts: {

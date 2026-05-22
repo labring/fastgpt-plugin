@@ -31,6 +31,7 @@ export const ToolListItemSchema = z.object({
   }).shape,
   source: PluginSourceSchema,
   isToolset: z.boolean(),
+  hasSecret: z.boolean(),
   children: z.array(ToolListChildItemSchema).optional()
 });
 

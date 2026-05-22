@@ -12,15 +12,24 @@ Use this skill when working on a FastGPT Tool Plugin that imports `@fastgpt-plug
 Plugin entry files default-export the instance returned by `defineTool()` or `defineToolSet()`.
 
 ```ts
-import { createToolHandler, defineTool } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineTool,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const handler = createToolHandler({
   inputSchema: z.object({
-    text: z.string()
+    text: z.string().meta({
+      title: 'Text'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    result: z.string()
+    result: z.string().meta({
+      title: 'Result'
+    } satisfies OutputSchemaMetaType)
   }),
   handler: async (input) => ({
     result: input.text.toUpperCase()
@@ -53,6 +62,9 @@ export default defineTool({
 
 - Define handlers with `createToolHandler({ inputSchema, outputSchema, secretSchema?, handler })`.
 - Use `z.object(...)` for `inputSchema` and `outputSchema` so TypeScript can infer `input` and return types.
+- Import `InputSchemaMetaType`, `OutputSchemaMetaType`, and `SecretSchemaMetaType` from `@fastgpt-plugin/sdk-factory` when schema metadata is used.
+- Add `.meta({ ... } satisfies InputSchemaMetaType)` to input fields and `.meta({ ... } satisfies OutputSchemaMetaType)` to output fields that need UI/manifest metadata.
+- Add `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)` to every `secretSchema` field; set `isSecret: true` for values that must be encrypted at rest.
 - Return an object that matches `outputSchema`; throw errors for failed operations.
 - Add `secretSchema` when plugin configuration needs secrets such as API keys.
 - Read secrets from `ctx.secrets`; the value is typed from `secretSchema`.
@@ -61,15 +73,22 @@ export default defineTool({
 
 ```ts
 const secretSchema = z.object({
-  apiKey: z.string()
+  apiKey: z.string().meta({
+    title: 'API Key',
+    isSecret: true
+  } satisfies SecretSchemaMetaType)
 });
 
 const handler = createToolHandler({
   inputSchema: z.object({
-    query: z.string()
+    query: z.string().meta({
+      title: 'Query'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    answer: z.string()
+    answer: z.string().meta({
+      title: 'Answer'
+    } satisfies OutputSchemaMetaType)
   }),
   secretSchema,
   handler: async (input, ctx) => {
@@ -112,16 +131,33 @@ Keep `pluginId`, child tool `id`, input field names, and output field names stab
 Use `defineToolSet()` for one plugin with multiple child tools. Put shared metadata in the top-level `manifest`; put each child tool's `id`, `name`, `description`, optional `icon`, optional `toolDescription`, and `handler` in `children`.
 
 ```ts
-import { createToolHandler, defineToolSet } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineToolSet,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType,
+  type SecretSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const secretSchema = z.object({
-  apiKey: z.string()
+  apiKey: z.string().meta({
+    title: 'API Key',
+    isSecret: true
+  } satisfies SecretSchemaMetaType)
 });
 
 const searchHandler = createToolHandler({
-  inputSchema: z.object({ query: z.string() }),
-  outputSchema: z.object({ items: z.array(z.string()) }),
+  inputSchema: z.object({
+    query: z.string().meta({
+      title: 'Query'
+    } satisfies InputSchemaMetaType)
+  }),
+  outputSchema: z.object({
+    items: z.array(z.string()).meta({
+      title: 'Items'
+    } satisfies OutputSchemaMetaType)
+  }),
   secretSchema,
   handler: async (input) => ({ items: [input.query] })
 });
@@ -160,17 +196,25 @@ export default defineToolSet({
 
 ## Host Invocation
 
-Use `ctx.invoke` for host capabilities. The SDK exposes `userInfo()` and `uploadFile()`. These methods return a `Result` tuple shaped as `[result, err]`; check `err` before using `result`.
+Use `ctx.invoke` for host capabilities. The SDK exposes `userInfo()` and `uploadFile()`. These methods return a `Result` tuple shaped as `[result, err]`; check `err` before using `result`. When `err` is present, throw or return that original `err` so host-side error details are preserved.
 
 ```ts
 const uploadHandler = createToolHandler({
   inputSchema: z.object({
-    content: z.string()
+    content: z.string().meta({
+      title: 'Content'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    accessURL: z.string(),
-    fileName: z.string(),
-    size: z.number()
+    accessURL: z.string().meta({
+      title: 'Access URL'
+    } satisfies OutputSchemaMetaType),
+    fileName: z.string().meta({
+      title: 'File Name'
+    } satisfies OutputSchemaMetaType),
+    size: z.number().meta({
+      title: 'Size'
+    } satisfies OutputSchemaMetaType)
   }),
   handler: async (input, { invoke }) => {
     const [result, err] = await invoke.uploadFile({
@@ -179,7 +223,10 @@ const uploadHandler = createToolHandler({
       file: Buffer.from(input.content, 'utf-8')
     });
 
-    if (err || !result) {
+    if (err) {
+      throw err;
+    }
+    if (!result) {
       throw new Error('Failed to upload file');
     }
 

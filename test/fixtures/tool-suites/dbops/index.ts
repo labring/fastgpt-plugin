@@ -1,20 +1,45 @@
-import { createToolHandler, defineToolSet } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineToolSet,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType,
+  type SecretSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const secretSchema = z.object({
-  host: z.string(),
-  port: z.number(),
-  username: z.string(),
-  password: z.string(),
-  database: z.string()
+  host: z.string().meta({
+    title: 'Host',
+    isSecret: false
+  } satisfies SecretSchemaMetaType),
+  port: z.number().meta({
+    title: 'Port',
+    isSecret: false
+  } satisfies SecretSchemaMetaType),
+  username: z.string().meta({
+    title: 'Username',
+    isSecret: false
+  } satisfies SecretSchemaMetaType),
+  password: z.string().meta({
+    title: 'Password',
+    isSecret: true
+  } satisfies SecretSchemaMetaType),
+  database: z.string().meta({
+    title: 'Database',
+    isSecret: false
+  } satisfies SecretSchemaMetaType)
 });
 
 const mysqlHandler = createToolHandler({
   inputSchema: z.object({
-    query: z.string()
+    query: z.string().meta({
+      title: 'SQL Query'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    results: z.array(z.record(z.string(), z.unknown()))
+    results: z.array(z.record(z.string(), z.unknown())).meta({
+      title: 'Query Results'
+    } satisfies OutputSchemaMetaType)
   }),
   secretSchema,
   handler: async (input, ctx) => {
@@ -36,10 +61,14 @@ const mysqlHandler = createToolHandler({
 
 const pgsqlHandler = createToolHandler({
   inputSchema: z.object({
-    query: z.string()
+    query: z.string().meta({
+      title: 'SQL Query'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    results: z.array(z.record(z.string(), z.unknown()))
+    results: z.array(z.record(z.string(), z.unknown())).meta({
+      title: 'Query Results'
+    } satisfies OutputSchemaMetaType)
   }),
   secretSchema,
   handler: async (input, ctx) => {

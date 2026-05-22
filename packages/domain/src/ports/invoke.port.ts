@@ -12,6 +12,11 @@ export const InvokeUploadFileInputSchema = z.object({
 });
 
 export const InvokeUploadFileOutputSchema = z.object({
+  ...FileMetaSchema.omit({
+    fileKey: true
+  })
+    .partial()
+    .shape,
   accessURL: z.string()
 });
 

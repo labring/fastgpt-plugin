@@ -78,8 +78,7 @@ export class PluginService {
     }
 
     await ensureSdkFactoryRuntimeDependency({
-      pluginIndexPath: this.pluginPath,
-      searchFrom: import.meta.url
+      pluginIndexPath: this.pluginPath
     });
     await this.fleet.ensureMinPods();
     this.startIdleCheck();

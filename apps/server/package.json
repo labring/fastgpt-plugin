@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env.local  main.ts",
-    "build": "tsdown"
+    "build": "pnpm --filter @fastgpt-plugin/sdk-factory build && tsdown"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",

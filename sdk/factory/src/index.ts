@@ -10,6 +10,15 @@ import {
 
 export { createToolHandler };
 
+export type InputSchemaMetaType = z.GlobalMeta;
+
+export type OutputSchemaMetaType = z.GlobalMeta;
+
+export type SecretSchemaMetaType = z.GlobalMeta & {
+  /** 标注该字段是否需要加密存储 */
+  isSecret: boolean;
+};
+
 export interface DefinedToolFactory {
   setSecretSchema<TSecret extends Record<string, unknown>>(schema: z.ZodType<TSecret>): void;
   registerTool(

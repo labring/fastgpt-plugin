@@ -26,7 +26,9 @@ COPY sdk/factory/package.json sdk/factory/package.json
 
 RUN --mount=type=cache,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store && \
-    pnpm install --frozen-lockfile --ignore-scripts --filter @fastgpt-plugin/server...
+    pnpm install --frozen-lockfile --ignore-scripts \
+      --filter @fastgpt-plugin/server... \
+      --filter @fastgpt-plugin/sdk-factory
 
 # --------- builder -----------
 FROM deps AS builder

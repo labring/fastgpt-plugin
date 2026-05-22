@@ -21,15 +21,24 @@ When developing inside this monorepo, use the workspace dependency directly.
 The plugin entry file must default-export the instance returned by `defineTool()` or `defineToolSet()`.
 
 ```ts
-import { createToolHandler, defineTool } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineTool,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const handler = createToolHandler({
   inputSchema: z.object({
-    text: z.string()
+    text: z.string().meta({
+      title: 'Text'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    result: z.string()
+    result: z.string().meta({
+      title: 'Result'
+    } satisfies OutputSchemaMetaType)
   }),
   handler: async (input) => {
     return {
@@ -71,13 +80,20 @@ Defines a tool handler and infers `input`, `output`, and `secrets` types from Zo
 ```ts
 const handler = createToolHandler({
   inputSchema: z.object({
-    query: z.string()
+    query: z.string().meta({
+      title: 'Query'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    answer: z.string()
+    answer: z.string().meta({
+      title: 'Answer'
+    } satisfies OutputSchemaMetaType)
   }),
   secretSchema: z.object({
-    apiKey: z.string()
+    apiKey: z.string().meta({
+      title: 'API Key',
+      isSecret: true
+    } satisfies SecretSchemaMetaType)
   }),
   handler: async (input, ctx) => {
     ctx.streamResponse({
@@ -124,14 +140,30 @@ Defines a tool set with multiple child tools. All child tools share the top-leve
 
 ```ts
 const searchHandler = createToolHandler({
-  inputSchema: z.object({ query: z.string() }),
-  outputSchema: z.object({ items: z.array(z.string()) }),
+  inputSchema: z.object({
+    query: z.string().meta({
+      title: 'Query'
+    } satisfies InputSchemaMetaType)
+  }),
+  outputSchema: z.object({
+    items: z.array(z.string()).meta({
+      title: 'Items'
+    } satisfies OutputSchemaMetaType)
+  }),
   handler: async (input) => ({ items: [input.query] })
 });
 
 const summaryHandler = createToolHandler({
-  inputSchema: z.object({ content: z.string() }),
-  outputSchema: z.object({ summary: z.string() }),
+  inputSchema: z.object({
+    content: z.string().meta({
+      title: 'Content'
+    } satisfies InputSchemaMetaType)
+  }),
+  outputSchema: z.object({
+    summary: z.string().meta({
+      title: 'Summary'
+    } satisfies OutputSchemaMetaType)
+  }),
   handler: async (input) => ({ summary: input.content.slice(0, 100) })
 });
 
@@ -206,14 +238,33 @@ export default defineToolSet({
 
 A single tool can declare `secretSchema` in its handler. A tool set can declare a shared `secretSchema` at the top level of `defineToolSet()`.
 
+Schema 字段元数据通过 Zod `.meta()` 写入构建后的 JSON Schema。输入字段使用 `InputSchemaMetaType`，输出字段使用 `OutputSchemaMetaType`，密钥字段使用 `SecretSchemaMetaType`。`secretSchema` 的每个字段都要包含 `isSecret`，需要加密存储时设为 `true`。
+
+Schema field metadata is written into the built JSON Schema through Zod `.meta()`. Use `InputSchemaMetaType` for input fields, `OutputSchemaMetaType` for output fields, and `SecretSchemaMetaType` for secret fields. Every `secretSchema` field must include `isSecret`; set it to `true` for values that need encrypted storage.
+
 ```ts
 const secretSchema = z.object({
-  apiKey: z.string()
+  apiKey: z.string().meta({
+    title: 'API Key',
+    isSecret: true
+  } satisfies SecretSchemaMetaType),
+  baseURL: z.url().meta({
+    title: 'Base URL',
+    isSecret: false
+  } satisfies SecretSchemaMetaType)
 });
 
 const handler = createToolHandler({
-  inputSchema: z.object({ prompt: z.string() }),
-  outputSchema: z.object({ text: z.string() }),
+  inputSchema: z.object({
+    prompt: z.string().meta({
+      title: 'Prompt'
+    } satisfies InputSchemaMetaType)
+  }),
+  outputSchema: z.object({
+    text: z.string().meta({
+      title: 'Text'
+    } satisfies OutputSchemaMetaType)
+  }),
   secretSchema,
   handler: async (input, ctx) => {
     return {
@@ -232,12 +283,20 @@ Use `ctx.invoke` to call FastGPT host capabilities. The SDK currently exposes fi
 ```ts
 const handler = createToolHandler({
   inputSchema: z.object({
-    content: z.string()
+    content: z.string().meta({
+      title: 'Content'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    accessURL: z.string(),
-    fileName: z.string(),
-    size: z.number()
+    accessURL: z.string().meta({
+      title: 'Access URL'
+    } satisfies OutputSchemaMetaType),
+    fileName: z.string().meta({
+      title: 'File Name'
+    } satisfies OutputSchemaMetaType),
+    size: z.number().meta({
+      title: 'Size'
+    } satisfies OutputSchemaMetaType)
   }),
   handler: async (input, { invoke }) => {
     const [result, err] = await invoke.uploadFile({
@@ -246,7 +305,10 @@ const handler = createToolHandler({
       file: Buffer.from(input.content, 'utf-8')
     });
 
-    if (err || !result) {
+    if (err) {
+      throw err;
+    }
+    if (!result) {
       throw new Error('Failed to upload file');
     }
 

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SDK_FACTORY_PACKAGE = '@fastgpt-plugin/sdk-factory';
+const SDK_FACTORY_PATH_ENV = 'FASTGPT_PLUGIN_SDK_FACTORY_PATH';
 
 export interface EnsureSdkFactoryRuntimeOptions {
   pluginIndexPath: string;
@@ -14,9 +15,9 @@ export async function ensureSdkFactoryRuntimeDependency({
   pluginIndexPath,
   searchFrom
 }: EnsureSdkFactoryRuntimeOptions): Promise<void> {
-  const packageRoot = resolveSdkFactoryPackageRoot(searchFrom ?? pluginIndexPath);
-  const pluginNodeModules = path.join(path.dirname(pluginIndexPath), '..', 'node_modules');
-  const targetRoot = path.join(pluginNodeModules, '@fastgpt-plugin');
+  const packageRoot = resolveSdkFactoryPackageRoot(searchFrom);
+  const runtimeRoot = resolveRuntimeRoot(pluginIndexPath);
+  const targetRoot = path.join(runtimeRoot, 'node_modules', '@fastgpt-plugin');
   const targetPath = path.join(targetRoot, 'sdk-factory');
 
   if (await packagePointsToSource(packageRoot, targetPath)) {
@@ -33,15 +34,48 @@ export async function ensureSdkFactoryRuntimeDependency({
   }
 }
 
-export function resolveSdkFactoryPackageRoot(searchFrom: string): string {
-  const anchorPath = pathToRequireAnchor(searchFrom);
-  const packageRoot = findNodeModulesPackageRoot(path.dirname(anchorPath), SDK_FACTORY_PACKAGE);
+export function resolveRuntimeRoot(pluginIndexPath: string): string {
+  const pluginRoot = `${path.sep}plugin${path.sep}`;
+  const normalizedPath = pathToRequireAnchor(pluginIndexPath);
+  const pluginRootIndex = normalizedPath.lastIndexOf(pluginRoot);
+
+  if (pluginRootIndex >= 0) {
+    return normalizedPath.slice(0, pluginRootIndex);
+  }
+
+  return path.dirname(normalizedPath);
+}
+
+export function resolveSdkFactoryPackageRoot(searchFrom?: string): string {
+  const packageRoot = resolveOptionalSdkFactoryPackageRoot(searchFrom);
 
   if (!packageRoot) {
-    throw new Error(`Cannot find ${SDK_FACTORY_PACKAGE} from ${anchorPath}`);
+    throw new Error(
+      `Cannot find ${SDK_FACTORY_PACKAGE}. Set ${SDK_FACTORY_PATH_ENV} to the built SDK package path.`
+    );
   }
 
   return packageRoot;
+}
+
+function resolveOptionalSdkFactoryPackageRoot(searchFrom?: string): string | undefined {
+  const configuredPath = process.env[SDK_FACTORY_PATH_ENV];
+  if (configuredPath && isPackageRoot(configuredPath, SDK_FACTORY_PACKAGE)) {
+    return configuredPath;
+  }
+
+  if (searchFrom) {
+    const anchorPath = pathToRequireAnchor(searchFrom);
+    const packageRoot = findNodeModulesPackageRoot(path.dirname(anchorPath), SDK_FACTORY_PACKAGE);
+    if (packageRoot) {
+      return packageRoot;
+    }
+  }
+
+  return (
+    findBundledSdkFactoryPackageRoot(process.cwd()) ??
+    findWorkspaceSdkFactoryPackageRoot(process.cwd())
+  );
 }
 
 async function packageExists(packageRoot: string): Promise<boolean> {
@@ -117,6 +151,47 @@ function findNodeModulesPackageRoot(startDir: string, packageName: string): stri
       if (isPackageRoot(candidate, packageName)) {
         return candidate;
       }
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      return undefined;
+    }
+
+    currentDir = parentDir;
+  }
+}
+
+function findBundledSdkFactoryPackageRoot(startDir: string): string | undefined {
+  let currentDir = path.resolve(startDir);
+
+  while (true) {
+    const candidate = path.join(currentDir, 'dist', 'runtime-sdk', '@fastgpt-plugin', 'sdk-factory');
+    if (isPackageRoot(candidate, SDK_FACTORY_PACKAGE)) {
+      return candidate;
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      return undefined;
+    }
+
+    currentDir = parentDir;
+  }
+}
+
+function findWorkspaceSdkFactoryPackageRoot(startDir: string): string | undefined {
+  let currentDir = path.resolve(startDir);
+
+  while (true) {
+    const candidate = path.join(currentDir, 'sdk', 'factory');
+    if (isPackageRoot(candidate, SDK_FACTORY_PACKAGE)) {
+      return candidate;
+    }
+
+    const nodeModulesPackageRoot = findNodeModulesPackageRoot(currentDir, SDK_FACTORY_PACKAGE);
+    if (nodeModulesPackageRoot) {
+      return nodeModulesPackageRoot;
     }
 
     const parentDir = path.dirname(currentDir);

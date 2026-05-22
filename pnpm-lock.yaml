@@ -216,9 +216,6 @@ importers:
 
   packages/infrastructure:
     dependencies:
-      '@fastgpt-plugin/sdk-factory':
-        specifier: workspace:*
-        version: link:../../sdk/factory
       '@fastgpt-sdk/otel':
         specifier: ^0.1.2
         version: 0.1.2

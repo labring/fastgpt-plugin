@@ -1,6 +1,8 @@
 import { fileURLToPath } from 'node:url';
 
+import type { InvokePort } from '@domain/ports/invoke.port';
 import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
+import { failureResult } from '@domain/value-objects/result.vo';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PluginPod } from './pod';
@@ -17,6 +19,20 @@ function createPod(callbacks: ConstructorParameters<typeof PluginPod>[1]['callba
     pluginPermissions: [],
     getInvokeSession: () => undefined,
     callbacks
+  });
+  activePods.push(pod);
+  return pod;
+}
+
+function createPodWithInvokeSession(invokeSession: InvokePort) {
+  const pod = new PluginPod('pod-test', {
+    pluginPath: echoChildPath,
+    podTimeout: 1000,
+    maxRequests: 10,
+    maxConcurrentRequests: 1,
+    pluginPermissions: [],
+    getInvokeSession: () => invokeSession,
+    callbacks: {}
   });
   activePods.push(pod);
   return pod;
@@ -82,5 +98,69 @@ describe('PluginPod', () => {
         method: 'run'
       })
     );
+  });
+
+  it('keeps reverse invocation nested error messages over IPC', async () => {
+    const userInfo = vi.fn(async () =>
+      failureResult(
+        {
+          en: 'Host user info failed',
+          'zh-CN': '宿主用户信息失败'
+        },
+        new Error('upstream user info unavailable')
+      )
+    );
+    const pod = createPodWithInvokeSession({
+      userInfo
+    } as unknown as InvokePort);
+
+    await pod.start();
+
+    const result = await pod.invoke<
+      { mode: string },
+      Awaited<ReturnType<InvokePort['userInfo']>>,
+      false
+    >({
+      eventName: 'run',
+      payload: { mode: 'reverse-invoke-error' },
+      returnStream: false,
+      options: {
+        timeout: 1000,
+        invocationId: 'invoke-session-id'
+      }
+    });
+
+    const [, err] = result;
+
+    expect(userInfo).toHaveBeenCalledTimes(1);
+    expect(err).toMatchObject({
+      reason: {
+        'zh-CN': '宿主用户信息失败'
+      }
+    });
+    expect(err?.error).toBeInstanceOf(Error);
+    expect(err?.error).toMatchObject({
+      message: 'upstream user info unavailable'
+    });
+  });
+
+  it('forwards child stdio as chunks instead of splitting lines', async () => {
+    const onStdout = vi.fn();
+    const onStderr = vi.fn();
+    const pod = createPod({ onStdout, onStderr });
+
+    await pod.start();
+
+    await pod.invoke({
+      eventName: 'run',
+      payload: { mode: 'stdio-chunk' },
+      returnStream: false,
+      options: { timeout: 1000 }
+    });
+
+    await vi.waitFor(() => {
+      expect(onStdout).toHaveBeenCalledWith('stdout-first\nstdout-second\n');
+      expect(onStderr).toHaveBeenCalledWith('stderr-first\nstderr-second\n');
+    });
   });
 });

@@ -1,14 +1,27 @@
-import { createToolHandler, defineTool } from '@fastgpt-plugin/sdk-factory';
+import {
+  createToolHandler,
+  defineTool,
+  type InputSchemaMetaType,
+  type OutputSchemaMetaType
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const handler = createToolHandler({
   inputSchema: z.object({
-    content: z.string()
+    content: z.string().meta({
+      title: 'Content'
+    } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
-    accessURL: z.string(),
-    fileName: z.string(),
-    size: z.number()
+    accessURL: z.string().meta({
+      title: 'Access URL'
+    } satisfies OutputSchemaMetaType),
+    fileName: z.string().meta({
+      title: 'File Name'
+    } satisfies OutputSchemaMetaType),
+    size: z.number().meta({
+      title: 'Size'
+    } satisfies OutputSchemaMetaType)
   }),
   handler: async (input, { invoke }) => {
     const [result, err] = await invoke.uploadFile({
@@ -17,7 +30,10 @@ const handler = createToolHandler({
       file: Buffer.from(input.content, 'utf-8')
     });
 
-    if (err || !result) {
+    if (err) {
+      throw err;
+    }
+    if (!result) {
       throw new Error('uploadFile 调用失败');
     }
 
