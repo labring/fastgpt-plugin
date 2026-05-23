@@ -26,7 +26,9 @@ Only work on providers already registered by `modules/model/init.ts`; never add 
 
 3. Classify differences conservatively.
 
-   Add a preset when an official source lists a model that is absent locally and it belongs to an existing provider. Clone the closest existing preset in the same provider and family, then adjust context, output limit, vision, reasoning, tool calling, response-format, and field-map fields from official docs or the closest local pattern.
+   For a general model refresh, add only primary LLM/chat/reasoning models. Do not add derived or specialized non-LLM variants just because the provider docs list them, such as TTS, STT, transcription, audio, image, video, realtime, moderation, or batch-only model IDs (`gpt-4o-transcribe`, `gpt-4o-mini-tts`, and similar). Handle those only when the user explicitly asks for that modality or when the provider itself is a modality-specific provider already maintained for that type.
+
+   Add a preset when an official source lists an in-scope model that is absent locally and it belongs to an existing provider. Clone the closest existing preset in the same provider and family, then adjust context, output limit, vision, reasoning, tool calling, response-format, and field-map fields from official docs or the closest local pattern.
 
    Remove a preset only when an official source explicitly marks the model as deprecated, retired, unavailable, or when an authoritative model-list API/document states that only the returned/listed models are supported and the local model is absent. Do not delete local custom placeholders in `Other`, `Ollama`, `HuggingFace`, `OpenRouter`, or similar open catalogs unless the provider explicitly removes that exact model from its own official API/catalog.
 
@@ -70,6 +72,7 @@ Only work on providers already registered by `modules/model/init.ts`; never add 
 - Record the official source URL and check date in the plan for every provider audited, including providers with no changes.
 - For removals, record a non-empty official-source reason on each remove item. Do not use string-only remove entries.
 - Prefer primary API references over marketing pages when fields disagree.
+- When official docs group many modality-specific variants under one family, treat the main public chat/LLM model as the preset target and skip derivative IDs unless the request names that capability.
 - Treat aliases such as `*-latest` as stable presets only if the provider documents them as public model IDs.
 - Keep existing ordering style inside each provider file: newest or most capable models first when that is already the local pattern.
 - Preserve local compatibility fields unless official docs prove they are wrong.
