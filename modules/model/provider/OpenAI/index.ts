@@ -405,11 +405,6 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
-      model: 'gpt-4o-mini-tts',
-      voices: ttsVoices
-    },
-    {
-      type: ModelTypeEnum.tts,
       model: 'tts-1',
       voices: legacyTtsVoices
     },
@@ -417,14 +412,6 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.tts,
       model: 'tts-1-hd',
       voices: legacyTtsVoices
-    },
-    {
-      type: ModelTypeEnum.stt,
-      model: 'gpt-4o-transcribe'
-    },
-    {
-      type: ModelTypeEnum.stt,
-      model: 'gpt-4o-mini-transcribe'
     },
     {
       type: ModelTypeEnum.stt,
