@@ -379,8 +379,34 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: false,
-      reasoning: false,
-      reasoningEffort: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3-coder-flash',
+      maxContext: 1024000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3-coder-next',
+      maxContext: 256000,
+      maxTokens: 64000,
+      quoteMaxToken: 256000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
