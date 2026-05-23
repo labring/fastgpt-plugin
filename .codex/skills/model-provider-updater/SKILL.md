@@ -26,7 +26,7 @@ Only work on providers already registered by `modules/model/init.ts`; never add 
 
 3. Classify differences conservatively.
 
-   For a general model refresh, add only primary LLM/chat/reasoning models. Do not add derived or specialized non-LLM variants just because the provider docs list them, such as TTS, STT, transcription, audio, image, video, realtime, moderation, or batch-only model IDs (`gpt-4o-transcribe`, `gpt-4o-mini-tts`, and similar). Handle those only when the user explicitly asks for that modality or when the provider itself is a modality-specific provider already maintained for that type.
+   For a general model refresh, add only primary LLM/chat/reasoning models. Do not add derived or specialized non-LLM variants just because the provider docs list them, such as TTS, STT, transcription, audio, image, video, realtime, moderation, or batch-only model IDs (`gpt-4o-transcribe`, `gpt-4o-mini-tts`, and similar). Also skip open-weight/checkpoint style IDs that encode parameter scale or architecture details when the provider has productized main model IDs, such as Qwen `qwen3.6-27b`, `qwen3.5-397b-a17b`, `qwen3.5-122b-a10b`, or `qwen3.5-35b-a3b`; prefer `max`, `plus`, `flash`, or other documented main product model IDs instead. Handle those only when the user explicitly asks for that modality/model class or when the provider itself is a modality-specific or open-model provider already maintained for that type.
 
    Add a preset when an official source lists an in-scope model that is absent locally and it belongs to an existing provider. Clone the closest existing preset in the same provider and family, then adjust context, output limit, vision, reasoning, tool calling, response-format, and field-map fields from official docs or the closest local pattern.
 
@@ -73,6 +73,7 @@ Only work on providers already registered by `modules/model/init.ts`; never add 
 - For removals, record a non-empty official-source reason on each remove item. Do not use string-only remove entries.
 - Prefer primary API references over marketing pages when fields disagree.
 - When official docs group many modality-specific variants under one family, treat the main public chat/LLM model as the preset target and skip derivative IDs unless the request names that capability.
+- When official docs list both provider-hosted main model IDs and open-weight/checkpoint IDs in one table, target the main hosted IDs and skip parameter-scale checkpoint IDs unless the user explicitly asks to support open-source model names.
 - Treat aliases such as `*-latest` as stable presets only if the provider documents them as public model IDs.
 - Keep existing ordering style inside each provider file: newest or most capable models first when that is already the local pattern.
 - Preserve local compatibility fields unless official docs prove they are wrong.
