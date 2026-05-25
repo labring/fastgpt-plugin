@@ -1095,8 +1095,8 @@ export class PluginRepo implements PluginRepoPort {
           if (err) {
             return failureResult(
               {
-                en: 'Failed to get plugin index file from remote storage',
-                'zh-CN': '从远程存储获取插件索引文件失败'
+                en: 'Failed to get plugin index.js from remote storage',
+                'zh-CN': '从远程存储获取插件 index.js 失败'
               },
               err
             );
@@ -1106,8 +1106,8 @@ export class PluginRepo implements PluginRepoPort {
           if (streamErr) {
             return failureResult(
               {
-                en: 'Failed to read plugin index file stream',
-                'zh-CN': '读取插件索引文件流失败'
+                en: 'Failed to read plugin index.js file stream',
+                'zh-CN': '读取插件 index.js 文件流失败'
               },
               streamErr
             );

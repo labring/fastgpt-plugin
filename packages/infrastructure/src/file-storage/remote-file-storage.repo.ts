@@ -67,9 +67,9 @@ export class RemoteFileStorageRepo implements RemoteFileStoragePort {
 
   async getInfo(_fileKey: string): Promise<Result<FileMetaType>> {
     const fileKey = this.joinPath(_fileKey);
-    const metadata = await this.deps.s3Clients.internalClient.getObjectMetadata({ key: fileKey });
 
     try {
+      const metadata = await this.deps.s3Clients.internalClient.getObjectMetadata({ key: fileKey });
       const parsed = FileMetaSchema.parse({
         contentType: metadata.contentType,
         createTime: new Date(metadata.metadata['createTime']),
