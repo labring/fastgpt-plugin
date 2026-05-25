@@ -1,9 +1,12 @@
+import { inspect } from 'node:util';
+
 import { serve, type ServerType } from '@hono/node-server';
 
 import { env } from '@infrastructure/env';
 import { app } from '@infrastructure/hono/app';
 import { configureLogger, destroyLogger, getLogger, mod, root } from '@infrastructure/logger';
 import { configureProxy } from '@infrastructure/utils/proxy';
+import { getErrText } from '@shared/utils/err';
 
 import deps from './src/deps';
 import { init } from './src/init';
@@ -58,10 +61,10 @@ async function main() {
   try {
     await prepare();
   } catch (error) {
-    console.error(error);
-    console.info(
-      `Failed startup server: ${error instanceof Error ? error.message : 'Unknown server internal error while preparing'}`
-    );
+    const errorMessage = getErrText(error, 'Unknown server internal error while preparing');
+
+    console.error(inspect(error, { depth: null }));
+    console.info(`Failed startup server: ${errorMessage}`);
     shutdown();
   }
 

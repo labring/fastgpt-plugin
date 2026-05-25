@@ -67,9 +67,22 @@ export class RemoteFileStorageRepo implements RemoteFileStoragePort {
 
   async getInfo(_fileKey: string): Promise<Result<FileMetaType>> {
     const fileKey = this.joinPath(_fileKey);
+    const bucket = this.getBucketName();
+    let metadata: Awaited<ReturnType<IStorage['getObjectMetadata']>>;
 
     try {
-      const metadata = await this.deps.s3Clients.internalClient.getObjectMetadata({ key: fileKey });
+      metadata = await this.deps.s3Clients.internalClient.getObjectMetadata({ key: fileKey });
+    } catch (error) {
+      return failureResult(
+        {
+          en: `Failed to get remote file metadata: ${fileKey}`,
+          'zh-CN': `获取远程文件元数据失败：${fileKey}`
+        },
+        { bucket, fileKey, error }
+      );
+    }
+
+    try {
       const parsed = FileMetaSchema.parse({
         contentType: metadata.contentType,
         createTime: new Date(metadata.metadata['createTime']),
@@ -83,10 +96,10 @@ export class RemoteFileStorageRepo implements RemoteFileStoragePort {
     } catch (error) {
       return failureResult(
         {
-          en: 'Failed to parse file metadata',
-          'zh-CN': '解析文件元数据失败'
+          en: `Failed to parse remote file metadata: ${fileKey}`,
+          'zh-CN': `解析远程文件元数据失败：${fileKey}`
         },
-        error
+        { bucket, fileKey, metadata, error }
       );
     }
   }
