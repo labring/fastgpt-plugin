@@ -396,7 +396,12 @@ export class LocalPoolPluginRuntimeManager
     const id = this.getRuntimeId(uniqueId);
 
     const record = this.plugins.get(id);
-    if (!record) throw new Error(`Plugin not found: ${uniqueId}`);
+    if (!record) {
+      return failureResult({
+        en: 'Plugin not found',
+        'zh-CN': '插件未找到'
+      });
+    }
 
     await record.service.destroy();
     this.plugins.delete(id);

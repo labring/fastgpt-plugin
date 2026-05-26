@@ -110,3 +110,19 @@ describe('LocalPoolPluginRuntimeManager config', () => {
     await manager.shutdown();
   });
 });
+
+describe('LocalPoolPluginRuntimeManager unregister', () => {
+  it('returns a failure result when the plugin is not cached', async () => {
+    const manager = createManager();
+
+    const [, err] = await manager.unregister({
+      pluginId: 'weather',
+      version: '1.0.0',
+      etag: 'etag-weather'
+    });
+
+    expect(err?.reason.en).toBe('Plugin not found');
+
+    await manager.shutdown();
+  });
+});

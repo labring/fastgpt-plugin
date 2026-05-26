@@ -43,7 +43,13 @@ export const makePluginDeleteUC =
     }
 
     if (plugin.type === 'tool') {
-      const [, unregisterErr] = await pluginRuntimeManager.unregister(uniqueId);
+      let unregisterErr;
+
+      try {
+        [, unregisterErr] = await pluginRuntimeManager.unregister(uniqueId);
+      } catch (error) {
+        unregisterErr = error;
+      }
 
       if (unregisterErr) {
         logger.error('Failed to unregister deleted plugin runtime', {

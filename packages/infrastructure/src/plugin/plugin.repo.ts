@@ -729,7 +729,10 @@ export class PluginRepo implements PluginRepoPort {
         return successResult({});
       }
 
-      await this.deps.mongoClient.getModel('plugin').updateMany(
+      const pluginModel = this.deps.mongoClient.getModel('plugin');
+      const pluginInstallationModel = this.deps.mongoClient.getModel('pluginInstallation');
+
+      await pluginModel.updateMany(
         {
           $or: uniqueIds
         },
@@ -743,6 +746,14 @@ export class PluginRepo implements PluginRepoPort {
           }
         }
       );
+
+      await pluginInstallationModel.deleteMany({
+        $or: uniqueIds.map(({ pluginId, version, etag }) => ({
+          pluginId,
+          version,
+          etag
+        }))
+      });
 
       return successResult({});
     } catch (error) {
@@ -908,6 +919,18 @@ export class PluginRepo implements PluginRepoPort {
               updateAt: new Date()
             }
           });
+        } else if (pending && existingPlugin.status === PluginStatusEnum.disabled) {
+          await pluginModel.updateOne(uniqueId, {
+            $set: {
+              status: PluginStatusEnum.pending,
+              updateAt: new Date()
+            },
+            $unset: {
+              expiredAt: 1
+            }
+          });
+
+          return successResult({});
         } else if (!pending && existingPlugin.status === PluginStatusEnum.active) {
           installedPlugin = {
             ...this.toPluginRecord(plugin),

@@ -1322,6 +1322,29 @@ describe('makePluginDeleteUC', () => {
     });
   });
 
+  it('logs unregister exceptions after disabling runnable plugins', async () => {
+    const unregisterError = new Error('runtime cache missed');
+    const appLogger = logger();
+    const deps = makeDeps({
+      pluginRuntimeManager: baseRuntimeManager({
+        unregister: vi.fn().mockRejectedValue(unregisterError)
+      }),
+      logger: appLogger
+    });
+
+    const [result, err] = await makePluginDeleteUC(deps)(input);
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(appLogger.error).toHaveBeenCalledWith('Failed to unregister deleted plugin runtime', {
+      pluginId: uniqueId.pluginId,
+      source: input.source,
+      version: uniqueId.version,
+      etag: uniqueId.etag,
+      error: unregisterError
+    });
+  });
+
   it('does not unregister non-runnable plugins', async () => {
     const deps = makeDeps({
       pluginRepo: basePluginRepo({

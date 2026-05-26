@@ -38,7 +38,63 @@ const pluginRecord = () => {
 };
 
 describe('PluginRepo.createPlugin', () => {
+  it('restores a disabled plugin with the same version and etag to pending without rewriting files', async () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const updateOne = vi.fn().mockResolvedValue({ modifiedCount: 1 });
+    const pluginModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          _id: 'existing-plugin',
+          status: PluginStatusEnum.disabled
+        })
+      }),
+      updateOne
+    };
+    const privateSave = vi.fn();
+    const publicSave = vi.fn();
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        getModel: vi.fn().mockReturnValue(pluginModel)
+      },
+      privateRemoteFileStorageRepo: {
+        save: privateSave
+      },
+      publicRemoteFileStorageRepo: {
+        save: publicSave
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [, err] = await repo.createPlugin({
+      plugin: plugin(),
+      files: {} as PkgContentFileObjects,
+      pending: true
+    });
+
+    expect(err).toBeNull();
+    expect(updateOne).toHaveBeenCalledWith(
+      {
+        pluginId: 'plugin-a',
+        version: '1.0.0',
+        etag: 'etag-a'
+      },
+      {
+        $set: {
+          status: PluginStatusEnum.pending,
+          updateAt: expect.any(Date)
+        },
+        $unset: {
+          expiredAt: 1
+        }
+      }
+    );
+    expect(privateSave).not.toHaveBeenCalled();
+    expect(publicSave).not.toHaveBeenCalled();
+  });
+
   it('reports same version and etag when uploading an already installed plugin', async () => {
+    (PluginRepo as any)._instance = undefined;
+
     const pluginModel = {
       findOne: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue({
@@ -133,6 +189,58 @@ describe('PluginRepo.getPluginById', () => {
     expect(result?.entryFilePath).toBe(
       path.join(basePath, 'plugin/plugin-a/1.0.0/etag-a/index.js')
     );
+  });
+});
+
+describe('PluginRepo.disablePlugins', () => {
+  it('disables plugins and removes matching installation records', async () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const uniqueId = {
+      pluginId: 'plugin-a',
+      version: '1.0.0',
+      etag: 'etag-a'
+    };
+    const pluginModel = {
+      updateMany: vi.fn()
+    };
+    const pluginInstallationModel = {
+      deleteMany: vi.fn()
+    };
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginInstallation' ? pluginInstallationModel : pluginModel
+        )
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [, err] = await repo.disablePlugins([uniqueId]);
+
+    expect(err).toBeNull();
+    expect(pluginModel.updateMany).toHaveBeenCalledWith(
+      {
+        $or: [uniqueId]
+      },
+      {
+        $set: {
+          status: PluginStatusEnum.disabled,
+          updateAt: expect.any(Date)
+        },
+        $unset: {
+          expiredAt: 1
+        }
+      }
+    );
+    expect(pluginInstallationModel.deleteMany).toHaveBeenCalledWith({
+      $or: [
+        {
+          pluginId: uniqueId.pluginId,
+          version: uniqueId.version,
+          etag: uniqueId.etag
+        }
+      ]
+    });
   });
 });
 
