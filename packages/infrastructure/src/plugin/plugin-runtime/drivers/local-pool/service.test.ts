@@ -308,6 +308,50 @@ describe('PluginService', () => {
     await expect(first).resolves.toBe('first');
   });
 
+  it('does not assign concurrent requests to a pod before it is marked busy', async () => {
+    const service = createService(
+      makeConfig({
+        minPods: 1,
+        maxPods: 50,
+        maxQueueSize: 100
+      })
+    );
+    const releaseAll = createDeferred<void>();
+
+    for (let i = 0; i < 50; i++) {
+      podMock.invokeHandlers.push(async ({ payload }) => {
+        await releaseAll.promise;
+        return payload.index;
+      });
+    }
+
+    await service.initialize();
+
+    const requests = Array.from({ length: 50 }, (_, index) =>
+      service.invoke({
+        eventName: 'run',
+        payload: { index },
+        returnStream: false
+      })
+    );
+
+    await waitFor(() => expect(service.getMetrics().pods.busy).toBe(50));
+
+    releaseAll.resolve();
+
+    await expect(Promise.all(requests)).resolves.toEqual(
+      Array.from({ length: 50 }, (_, index) => index)
+    );
+    expect(service.getMetrics()).toMatchObject({
+      pods: {
+        total: 50,
+        idle: 50
+      },
+      queueLength: 0,
+      errorRate: 0
+    });
+  });
+
   it('rejects new work when the queue is full', async () => {
     const service = createService(makeConfig({ minPods: 1, maxPods: 1, maxQueueSize: 1 }));
     const releaseBusy = createDeferred<string>();

@@ -102,10 +102,10 @@ export class PluginService {
 
     const startedAt = Date.now();
     const resolvedOptions = this.resolveInvokeOptions(options);
-    const pod = await this.acquirePodForImmediateInvoke();
+    const availablePod = this.fleet.selectAvailablePod();
 
-    // 快路径：已有可用 Pod 或可立即扩容时直接执行，避免进入队列增加一次调度延迟。
-    if (pod) {
+    // 快路径：已有可用 Pod 时立即派发，并同步把 Pod 标记为忙碌。
+    if (availablePod) {
       const { request, promise } = createServiceRequest({
         eventName,
         payload,
@@ -113,7 +113,21 @@ export class PluginService {
         options: resolvedOptions,
         startedAt
       });
-      this.executeRequest(request, pod);
+      this.executeRequest(request, availablePod);
+      return promise as Promise<S extends true ? StreamData<R> : R>;
+    }
+
+    const createdPod = await this.createPodForImmediateInvoke();
+    if (createdPod) {
+      // 冷启动成功后直接派发，避免进入队列增加一次调度延迟。
+      const { request, promise } = createServiceRequest({
+        eventName,
+        payload,
+        returnStream,
+        options: resolvedOptions,
+        startedAt
+      });
+      this.executeRequest(request, createdPod);
       return promise as Promise<S extends true ? StreamData<R> : R>;
     }
 
@@ -195,12 +209,7 @@ export class PluginService {
     }
   }
 
-  private async acquirePodForImmediateInvoke(): Promise<PluginPod | null> {
-    const availablePod = this.fleet.selectAvailablePod();
-    if (availablePod) {
-      return availablePod;
-    }
-
+  private async createPodForImmediateInvoke(): Promise<PluginPod | null> {
     if (!this.fleet.canScaleUp()) {
       return null;
     }
