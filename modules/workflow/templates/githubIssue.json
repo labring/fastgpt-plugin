@@ -39,7 +39,7 @@
           },
           {
             "key": "questionGuide",
-            "valueType": "hidden",
+            "valueType": "any",
             "renderTypeList": ["hidden"],
             "label": "core.app.Question Guide",
             "value": {
@@ -157,6 +157,7 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js",
             "valueDesc": "",
@@ -167,6 +168,7 @@
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main() {\n  const date = new Date();\n  date.setDate(date.getDate() - 3);\n  const day = date.getDate();\n  const month = date.getMonth() + 1;\n  const year = date.getFullYear();\n  const hours = date.getHours();\n  const minutes = date.getMinutes();\n\n  return {\n    date: `${year}-${month}-${day}T${hours}:${minutes}:000Z`,\n  }\n }",
             "valueDesc": "",
@@ -516,6 +518,7 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js",
             "valueDesc": "",
@@ -526,6 +529,7 @@
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({res}) {\n    const issues = JSON.parse(res);\n    const ret = [];\n    for(const issue of issues) {\n        if (issue.pull_request) continue;\n        ret.push({\n            title: issue.title,\n            body: issue.body,\n            url: issue.html_url\n        })\n    }\n\n    return {\n        ret: JSON.stringify(ret)\n    }\n}",
             "valueDesc": "",

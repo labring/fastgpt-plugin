@@ -109,8 +109,8 @@ export async function connectMongo(db: Mongoose, url: string): Promise<Mongoose>
 
     await db.connect(url, {
       bufferCommands: true,
-      maxPoolSize: Math.max(30, env.MONGO_MAX_LINK),
-      minPoolSize: 20,
+      maxPoolSize: Math.max(5, env.MONGO_MAX_LINK),
+      minPoolSize: 0,
       connectTimeoutMS: 60000,
       waitQueueTimeoutMS: 60000,
       socketTimeoutMS: 60000,

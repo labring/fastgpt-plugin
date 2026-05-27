@@ -45,7 +45,7 @@ export const env = createEnv({
       .default(
         'mongodb://username:password@localhost:27017/fastgpt?authSource=admin&directConnection=true'
       ),
-    MONGO_MAX_LINK: PositiveIntSchema.default(20),
+    MONGO_MAX_LINK: PositiveIntSchema.default(5),
     SYNC_INDEX: BoolSchema.default(true),
     REDIS_URL: z.string().nonempty().default('redis://default:password@localhost:6379/0'),
 

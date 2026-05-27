@@ -336,6 +336,7 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js",
             "valueDesc": "",
@@ -346,6 +347,7 @@
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({svg_str}){\n\n    // 使用正则表达式匹配代码块中的内容\n    const match = svg_str.match(/```[\\w]*\\n([\\s\\S]*?)```/);\n\n    if (!match) {\n        // 如果没有匹配到代码块，返回一个错误信息或空结果\n        return {\n            result: null,\n            error: \"未找到有效的代码块标记。\"\n        };\n    }\n\n    // 提取代码块中的 SVG 内容\n    const extractedSvg = match[1].trim();\n    \n    const base64 = strToBase64(extractedSvg,'data:image/svg+xml;base64,')\n\n    return {\n        result: base64\n    }\n}",
             "valueDesc": "",
