@@ -30,6 +30,7 @@ export class RequestQueue {
       queuedAt: Date.now()
     });
 
+    // 队列超时只覆盖等待阶段；请求被派发给 Pod 时 shift() 会清掉这个计时器。
     const timeoutMs = this.getQueueTimeoutMs();
     request.timeout = setTimeout(() => {
       if (!this.remove(request.requestId)) {
@@ -70,6 +71,7 @@ export class RequestQueue {
     const priority = getPriority(request.options);
     let insertIndex = this.requests.length;
 
+    // 高 priority 插到更靠前的位置；相同 priority 保持 FIFO，避免同级请求乱序。
     for (let i = 0; i < this.requests.length; i++) {
       if (priority > getPriority(this.requests[i].options)) {
         insertIndex = i;

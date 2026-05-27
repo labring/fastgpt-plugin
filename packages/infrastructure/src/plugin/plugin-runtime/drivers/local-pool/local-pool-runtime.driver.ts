@@ -455,7 +455,7 @@ export class LocalPoolPluginRuntimeManager
         });
         return successResult(result);
       } catch (error) {
-        return failureResult({ en: 'Invoke failed', 'zh-CN': '调用失败' }, error);
+        return failureResult(toInvokeFailureReason(error), error);
       }
     }
     return failureResult({ en: 'Event not supported', 'zh-CN': '不支持的事件' });
@@ -562,4 +562,30 @@ export class LocalPoolPluginRuntimeManager
     // 不阻塞进程退出
     this.healthCheckTimer.unref?.();
   }
+}
+
+function toInvokeFailureReason(error: unknown) {
+  const errorMessage = getErrorMessage(error);
+
+  if (!errorMessage) {
+    return {
+      en: 'Invoke failed',
+      'zh-CN': '调用失败'
+    };
+  }
+
+  return {
+    en: `Invoke failed: ${errorMessage}`,
+    'zh-CN': `调用失败：${errorMessage}`
+  };
+}
+
+function getErrorMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return undefined;
 }

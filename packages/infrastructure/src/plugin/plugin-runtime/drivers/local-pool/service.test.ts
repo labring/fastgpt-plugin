@@ -348,6 +348,43 @@ describe('PluginService', () => {
     expect(service.getMetrics().errorRate).toBe(1 / 3);
   });
 
+  it('rejects an invoke-triggered startup after pod startup retries are exhausted', async () => {
+    const service = createService(
+      makeConfig({
+        minPods: 0,
+        maxPods: 1,
+        queueTimeout: 10_000
+      })
+    );
+    podMock.startErrors.push(
+      new Error('startup failed 1'),
+      new Error('startup failed 2'),
+      new Error('startup failed 3')
+    );
+
+    await service.initialize();
+
+    await expect(
+      service.invoke({
+        eventName: 'run',
+        payload: { name: 'cold-start' },
+        returnStream: false
+      })
+    ).rejects.toThrow(
+      '[test-service] Pod startup failed 3 times consecutively; pod creation has been disabled'
+    );
+    expect(podMock.pods).toHaveLength(3);
+    expect(service.getMetrics()).toMatchObject({
+      pods: {
+        total: 0,
+        pending: 0
+      },
+      queueLength: 0,
+      totalRequests: 1,
+      errorRate: 1
+    });
+  });
+
   it('updates live concurrency and adds pods when minPods increases', async () => {
     const service = createService(makeConfig({ minPods: 1, maxPods: 3 }));
 

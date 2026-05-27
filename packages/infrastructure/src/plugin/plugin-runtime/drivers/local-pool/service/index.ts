@@ -27,6 +27,7 @@ export class PluginService {
   private readonly fleet: PodFleet;
   private readonly queue: RequestQueue;
   private readonly stats = new ServiceStats();
+  // 流式调用期间，子进程可能反向请求宿主能力；这里用 invocationId 把两端会话绑定起来。
   private readonly activeInvokeSessions = new Map<string, InvokePort>();
   private initialized = false;
   private destroyed = false;
@@ -103,6 +104,7 @@ export class PluginService {
     const resolvedOptions = this.resolveInvokeOptions(options);
     const pod = await this.acquirePodForImmediateInvoke();
 
+    // 快路径：已有可用 Pod 或可立即扩容时直接执行，避免进入队列增加一次调度延迟。
     if (pod) {
       const { request, promise } = createServiceRequest({
         eventName,
@@ -115,6 +117,7 @@ export class PluginService {
       return promise as Promise<S extends true ? StreamData<R> : R>;
     }
 
+    // Pod 连续启动失败后会触发启动熔断；当没有存量 Pod 可兜底时，新请求直接失败。
     const startupBlockedError = this.fleet.getStartupBlockedError();
     if (startupBlockedError) {
       this.stats.recordFailed();
@@ -228,6 +231,7 @@ export class PluginService {
       return;
     }
 
+    // 队列由 Pod 创建、释放、配置更新和崩溃恢复等事件驱动；只要有容量就持续 drain。
     while (this.queue.length > 0) {
       const pod = this.fleet.selectAvailablePod();
       if (!pod) {
@@ -250,6 +254,7 @@ export class PluginService {
       return;
     }
 
+    // 扩容是异步补容量：成功后继续消费队列，失败后重新检查启动熔断并尝试用存量 Pod 处理。
     void this.fleet
       .createPod()
       .then(() => {
@@ -257,6 +262,7 @@ export class PluginService {
       })
       .catch(() => {
         this.rejectQueuedRequestsIfPodStartupDisabled();
+        this.processQueue();
       });
   }
 
@@ -277,6 +283,7 @@ export class PluginService {
       this.stats.recordCompleted(duration);
       this.callbacks.onRequestCompleted?.({ requestId: request.requestId, duration });
       this.releasePod(pod);
+      // 普通结果可立即释放 InvokePort；流式结果需要等 stream end/error 后再释放。
       this.bindInvokeSessionLifecycle(request.options?.invocationId, result);
       request.resolve(result);
     } catch (error) {

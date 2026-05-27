@@ -45,6 +45,7 @@ export class PodFleet {
     const target = Math.min(config.minPods, config.maxPods);
     const creates: Promise<PluginPod>[] = [];
 
+    // pendingPods 也计入容量，避免并发预热时超过 min/max 约束。
     while (this.totalIncludingPending < target && this.canScaleUp()) {
       creates.push(this.createPod());
     }
@@ -94,6 +95,7 @@ export class PodFleet {
       }
     });
 
+    // start() 完成前先占住 pending 额度，防止多个请求同时冷启动时冲破 maxPods。
     this.pendingPods++;
     try {
       await pod.start();
@@ -115,6 +117,7 @@ export class PodFleet {
       (pod) => !this.retiringPods.has(pod.podId) && pod.isAvailable()
     );
 
+    // 负载最轻、执行次数更少、更久未活跃的 Pod 优先，减少热点和寿命倾斜。
     candidates.sort(comparePodLoad);
     return candidates[0] ?? null;
   }
@@ -193,6 +196,7 @@ export class PodFleet {
 
       this.retiringPods.add(pod.podId);
 
+      // 先补后退，尽量让 podTimeout/maxRequestsPerPod 等配置变更不降低服务容量。
       if (this.canScaleUp()) {
         try {
           await this.createPod();
@@ -221,6 +225,7 @@ export class PodFleet {
     if (!this.podStartupDisabledError) {
       return null;
     }
+    // 仍有存量或正在启动的 Pod 时，队列还有可能被处理；只在完全无 Pod 时对外暴露熔断错误。
     if (this.pods.size > 0 || this.pendingPods > 0) {
       return null;
     }
@@ -356,6 +361,7 @@ export class PodFleet {
       return;
     }
 
+    // 连续失败通常是插件入口或依赖损坏；禁用继续拉起，避免请求无限排队和刷屏重试。
     this.podStartupDisabledError = new Error(
       `[${this.options.serviceName}] Pod startup failed ${this.consecutivePodStartupFailures} times consecutively; pod creation has been disabled`
     );

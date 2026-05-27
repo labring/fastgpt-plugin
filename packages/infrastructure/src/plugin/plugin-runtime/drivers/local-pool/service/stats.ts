@@ -18,6 +18,7 @@ export class ServiceStats {
   recordCompleted(duration: number): void {
     this.completedRequests++;
     this.responseTimes.push(duration);
+    // 只保留最近样本，避免长生命周期服务的指标数组无限增长。
     if (this.responseTimes.length > MAX_RESPONSE_TIME_SAMPLES) {
       this.responseTimes.shift();
     }

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { PluginTypeEnum } from '@domain/entities/plugin-base.entity';
+
 import { LocalPoolPluginRuntimeManager } from './local-pool-runtime.driver';
 import type { LocalPoolPluginConfigType } from './types';
 
@@ -122,6 +124,67 @@ describe('LocalPoolPluginRuntimeManager unregister', () => {
     });
 
     expect(err?.reason.en).toBe('Plugin not found');
+
+    await manager.shutdown();
+  });
+});
+
+describe('LocalPoolPluginRuntimeManager invoke', () => {
+  it('returns the original invoke error message when plugin service invoke fails', async () => {
+    const manager = createManager();
+    const startupError = new Error(
+      '[test-service] Pod startup failed 3 times consecutively; pod creation has been disabled'
+    );
+    const runtimeId = 'localPool@weather@1.0.0@etag-weather';
+
+    (manager as any).plugins.set(runtimeId, {
+      config: {
+        minPods: 0,
+        maxPods: 1,
+        podTimeout: 120000,
+        maxConcurrentRequestsPerPod: 1
+      },
+      filePath: '/virtual/weather.js',
+      service: {
+        invoke: vi.fn(async () => {
+          throw startupError;
+        }),
+        getMetrics: vi.fn()
+      },
+      meta: {
+        pluginId: 'weather',
+        version: '1.0.0',
+        etag: 'etag-weather',
+        type: PluginTypeEnum.tool,
+        name: { en: 'Weather' },
+        icon: 'https://example.com/icon.svg',
+        description: { en: 'Weather' },
+        toolDescription: 'Weather'
+      },
+      mutex: {
+        acquire: vi.fn(),
+        release: vi.fn()
+      }
+    });
+
+    const [result, err] = await manager.invoke({
+      uniqueId: {
+        pluginId: 'weather',
+        version: '1.0.0',
+        etag: 'etag-weather'
+      },
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+
+    expect(result).toBeNull();
+    expect(err?.reason).toEqual({
+      en: 'Invoke failed: [test-service] Pod startup failed 3 times consecutively; pod creation has been disabled',
+      'zh-CN':
+        '调用失败：[test-service] Pod startup failed 3 times consecutively; pod creation has been disabled'
+    });
+    expect(err?.error).toBe(startupError);
 
     await manager.shutdown();
   });
