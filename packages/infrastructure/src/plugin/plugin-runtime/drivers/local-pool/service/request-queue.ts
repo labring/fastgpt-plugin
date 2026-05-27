@@ -30,18 +30,7 @@ export class RequestQueue {
       queuedAt: Date.now()
     });
 
-    // 队列超时只覆盖等待阶段；请求被派发给 Pod 时 shift() 会清掉这个计时器。
-    const timeoutMs = this.getQueueTimeoutMs();
-    request.timeout = setTimeout(() => {
-      if (!this.remove(request.requestId)) {
-        return;
-      }
-
-      const error = new Error('Queue wait timeout');
-      this.options.onTimeout(request, error);
-      request.reject(error);
-    }, timeoutMs);
-
+    this.armTimeout(request);
     this.insertByPriority(request);
     return promise;
   }
@@ -53,6 +42,26 @@ export class RequestQueue {
       request.timeout = undefined;
     }
     return request;
+  }
+
+  drain(): ServiceRequest[] {
+    const requests = this.requests.splice(0);
+    for (const request of requests) {
+      if (request.timeout) {
+        clearTimeout(request.timeout);
+        request.timeout = undefined;
+      }
+    }
+    return requests;
+  }
+
+  append(request: ServiceRequest): void {
+    if (this.requests.length >= this.options.maxSize()) {
+      throw new Error('Queue is full');
+    }
+
+    this.armTimeout(request);
+    this.insertByPriority(request);
   }
 
   rejectAll(error: Error, onReject?: (request: ServiceRequest) => void): void {
@@ -94,6 +103,23 @@ export class RequestQueue {
       request.timeout = undefined;
     }
     return true;
+  }
+
+  private armTimeout(request: ServiceRequest): void {
+    // 队列超时只覆盖等待阶段；请求被派发给 Pod 时 shift() 会清掉这个计时器。
+    const timeoutMs = this.getQueueTimeoutMs();
+    const queuedAt = request.queuedAt ?? Date.now();
+    const elapsedMs = Date.now() - queuedAt;
+    const remainingMs = Math.max(1, timeoutMs - elapsedMs);
+    request.timeout = setTimeout(() => {
+      if (!this.remove(request.requestId)) {
+        return;
+      }
+
+      const error = new Error('Queue wait timeout');
+      this.options.onTimeout(request, error);
+      request.reject(error);
+    }, remainingMs);
   }
 
   private getQueueTimeoutMs(): number {

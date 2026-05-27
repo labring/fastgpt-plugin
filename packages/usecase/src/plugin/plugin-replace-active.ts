@@ -33,6 +33,7 @@ export const listReplacedActivePlugins = async (
 export const disableAndUnregisterReplacedPlugins = async (deps: {
   pluginRepo: PluginRepoPort;
   pluginRuntimeManager: PluginRuntimeManagerPort;
+  replacementUniqueId?: PluginUniqueIdType;
   replacedPlugins: PluginType[];
 }): Promise<Result> => {
   const replacedPluginIds = deps.replacedPlugins.map((plugin) =>
@@ -57,7 +58,9 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
   await Promise.all(
     replacedRunnablePluginIds.map(async (uniqueId) => {
       try {
-        const [, unregisterErr] = await deps.pluginRuntimeManager.unregister(uniqueId);
+        const [, unregisterErr] = await deps.pluginRuntimeManager.unregister(uniqueId, {
+          replacementUniqueId: deps.replacementUniqueId
+        });
         if (unregisterErr) {
           console.error('Failed to unregister replaced plugin runtime', {
             pluginId: uniqueId.pluginId,

@@ -392,7 +392,10 @@ export class LocalPoolPluginRuntimeManager
   /**
    * 注销一个插件，优雅关闭其进程池。
    */
-  async unregister(uniqueId: PluginUniqueIdType): Promise<Result> {
+  async unregister(
+    uniqueId: PluginUniqueIdType,
+    options?: { replacementUniqueId?: PluginUniqueIdType }
+  ): Promise<Result> {
     const id = this.getRuntimeId(uniqueId);
 
     const record = this.plugins.get(id);
@@ -403,7 +406,21 @@ export class LocalPoolPluginRuntimeManager
       });
     }
 
-    await record.service.destroy();
+    if (options?.replacementUniqueId) {
+      const replacementId = this.getRuntimeId(options.replacementUniqueId);
+      const replacement = this.plugins.get(replacementId);
+      if (!replacement) {
+        return failureResult({
+          en: 'Replacement plugin not found',
+          'zh-CN': '替换插件未找到'
+        });
+      }
+
+      await record.service.drainTo(replacement.service);
+    } else {
+      await record.service.destroy();
+    }
+
     this.plugins.delete(id);
     this.removePluginRuntimeId(uniqueId.pluginId, id);
     return successResult({});

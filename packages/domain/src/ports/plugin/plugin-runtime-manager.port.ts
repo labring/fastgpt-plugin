@@ -33,7 +33,12 @@ export interface PluginRuntimeManagerPort<
   /**
    * 注销 Plugin,
    */
-  unregister(uniqueId: PluginUniqueIdType): Promise<Result>;
+  unregister(
+    uniqueId: PluginUniqueIdType,
+    options?: {
+      replacementUniqueId?: PluginUniqueIdType;
+    }
+  ): Promise<Result>;
 
   /**
    * 获取插件的配置

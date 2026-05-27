@@ -127,6 +127,77 @@ describe('LocalPoolPluginRuntimeManager unregister', () => {
 
     await manager.shutdown();
   });
+
+  it('drains a cached plugin service to its replacement before unregistering it', async () => {
+    const manager = createManager();
+    const oldRuntimeId = 'localPool@weather@1.0.0@old-etag';
+    const newRuntimeId = 'localPool@weather@1.0.0@new-etag';
+    const oldService = {
+      drainTo: vi.fn(async () => {}),
+      destroy: vi.fn(),
+      getMetrics: vi.fn(() => ({
+        pods: { total: 0 }
+      }))
+    };
+    const newService = {
+      destroy: vi.fn(),
+      getMetrics: vi.fn(() => ({
+        pods: { total: 0 }
+      }))
+    };
+    const item = (etag: string, service: unknown) => ({
+      config: {
+        minPods: 0,
+        maxPods: 1,
+        podTimeout: 120000,
+        maxConcurrentRequestsPerPod: 1
+      },
+      filePath: `/virtual/${etag}.js`,
+      service,
+      meta: {
+        pluginId: 'weather',
+        version: '1.0.0',
+        etag,
+        type: PluginTypeEnum.tool,
+        name: { en: 'Weather' },
+        icon: 'https://example.com/icon.svg',
+        description: { en: 'Weather' },
+        toolDescription: 'Weather'
+      },
+      mutex: {
+        acquire: vi.fn(),
+        release: vi.fn()
+      }
+    });
+
+    (manager as any).plugins.set(oldRuntimeId, item('old-etag', oldService));
+    (manager as any).plugins.set(newRuntimeId, item('new-etag', newService));
+    (manager as any).pluginIdMap.set('weather', [oldRuntimeId, newRuntimeId]);
+
+    const [, err] = await manager.unregister(
+      {
+        pluginId: 'weather',
+        version: '1.0.0',
+        etag: 'old-etag'
+      },
+      {
+        replacementUniqueId: {
+          pluginId: 'weather',
+          version: '1.0.0',
+          etag: 'new-etag'
+        }
+      }
+    );
+
+    expect(err).toBeNull();
+    expect(oldService.drainTo).toHaveBeenCalledWith(newService);
+    expect(oldService.destroy).not.toHaveBeenCalled();
+    expect((manager as any).plugins.has(oldRuntimeId)).toBe(false);
+    expect((manager as any).plugins.has(newRuntimeId)).toBe(true);
+    expect((manager as any).pluginIdMap.get('weather')).toEqual([newRuntimeId]);
+
+    await manager.shutdown();
+  });
 });
 
 describe('LocalPoolPluginRuntimeManager invoke', () => {

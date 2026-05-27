@@ -100,6 +100,37 @@ describe('PluginPod', () => {
     );
   });
 
+  it('keeps a streaming request active until the output stream ends', async () => {
+    const pod = createPod();
+
+    await pod.start();
+
+    const stream = await pod.invoke<{ mode: string }, { value: string }, true>({
+      eventName: 'run',
+      payload: { mode: 'slow-stream' },
+      returnStream: true,
+      options: { timeout: 1000 }
+    });
+
+    expect(pod.getInfo()).toMatchObject({
+      status: 'running',
+      activeRequests: 1
+    });
+
+    stream.onEnd(() => pod.completeStreamRequest()).onError(() => pod.completeStreamRequest());
+
+    const chunks: { value: string }[] = [];
+    await stream.consume((chunk) => {
+      chunks.push(chunk);
+    });
+
+    expect(chunks).toEqual([{ value: 'chunk' }]);
+    expect(pod.getInfo()).toMatchObject({
+      status: 'idle',
+      activeRequests: 0
+    });
+  });
+
   it('keeps reverse invocation nested error messages over IPC', async () => {
     const userInfo = vi.fn(async () =>
       failureResult(

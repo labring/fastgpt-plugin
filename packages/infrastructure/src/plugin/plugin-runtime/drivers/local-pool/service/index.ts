@@ -31,6 +31,7 @@ export class PluginService {
   private readonly activeInvokeSessions = new Map<string, InvokePort>();
   private initialized = false;
   private destroyed = false;
+  private drainingTo: PluginService | null = null;
   private idleCheckTimer: NodeJS.Timeout | null = null;
 
   constructor(
@@ -97,6 +98,15 @@ export class PluginService {
     returnStream: S;
     options?: InvokeOptions;
   }): Promise<S extends true ? StreamData<R> : R> {
+    if (this.drainingTo) {
+      return this.drainingTo.invoke({
+        eventName,
+        payload,
+        returnStream,
+        options
+      });
+    }
+
     this.assertReady();
     this.stats.recordRequest();
 
@@ -196,6 +206,23 @@ export class PluginService {
     await this.fleet.destroy(options);
   }
 
+  async drainTo(replacement: PluginService, options?: DestroyOptions): Promise<void> {
+    if (replacement === this) {
+      throw new Error('Cannot drain service to itself');
+    }
+    if (this.destroyed) {
+      return;
+    }
+
+    this.drainingTo = replacement;
+
+    const queuedRequests = this.queue.drain();
+    this.moveInvokeSessionsTo(replacement, queuedRequests);
+    replacement.acceptTransferredRequests(queuedRequests);
+
+    await this.destroyWhenDrained(options);
+  }
+
   private validateConfig(config: ServiceConfig): ServiceConfig {
     return LocalPoolServiceConfigSchema.parse(config);
   }
@@ -207,6 +234,54 @@ export class PluginService {
     if (this.destroyed) {
       throw new Error('Service already closed');
     }
+  }
+
+  private acceptTransferredRequests(requests: ServiceRequest[]): void {
+    this.assertReady();
+    for (const request of requests) {
+      try {
+        this.stats.recordRequest();
+        this.queue.append(request);
+      } catch (error) {
+        this.stats.recordFailed();
+        this.cleanupInvokeSession(request.options?.invocationId);
+        request.reject(toError(error));
+      }
+    }
+    this.processQueue();
+  }
+
+  private moveInvokeSessionsTo(replacement: PluginService, requests: ServiceRequest[]): void {
+    for (const request of requests) {
+      const invocationId = request.options?.invocationId;
+      if (!invocationId) {
+        continue;
+      }
+
+      const invokeSession = this.activeInvokeSessions.get(invocationId);
+      if (!invokeSession) {
+        continue;
+      }
+
+      replacement.activeInvokeSessions.set(invocationId, invokeSession);
+      this.activeInvokeSessions.delete(invocationId);
+    }
+  }
+
+  private async destroyWhenDrained(options?: DestroyOptions): Promise<void> {
+    this.destroyed = true;
+
+    if (this.idleCheckTimer) {
+      clearInterval(this.idleCheckTimer);
+      this.idleCheckTimer = null;
+    }
+
+    this.queue.rejectAll(new Error('Service closed'), (request) => {
+      this.cleanupInvokeSession(request.options?.invocationId);
+    });
+
+    await this.fleet.destroy(options);
+    this.activeInvokeSessions.clear();
   }
 
   private async createPodForImmediateInvoke(): Promise<PluginPod | null> {
@@ -291,9 +366,12 @@ export class PluginService {
       const duration = Date.now() - request.startedAt;
       this.stats.recordCompleted(duration);
       this.callbacks.onRequestCompleted?.({ requestId: request.requestId, duration });
-      this.releasePod(pod);
-      // 普通结果可立即释放 InvokePort；流式结果需要等 stream end/error 后再释放。
-      this.bindInvokeSessionLifecycle(request.options?.invocationId, result);
+      // 普通结果可立即释放资源；流式结果需要等 stream end/error 后再释放。
+      this.bindResultLifecycle({
+        invocationId: request.options?.invocationId,
+        pod,
+        result
+      });
       request.resolve(result);
     } catch (error) {
       const normalizedError = toError(error);
@@ -347,20 +425,32 @@ export class PluginService {
     };
   }
 
-  private bindInvokeSessionLifecycle(invocationId: string | undefined, result: unknown): void {
-    if (!invocationId) {
-      return;
-    }
-
+  private bindResultLifecycle({
+    invocationId,
+    pod,
+    result
+  }: {
+    invocationId: string | undefined;
+    pod: PluginPod;
+    result: unknown;
+  }): void {
     if (result instanceof StreamData) {
+      let released = false;
       const cleanup = () => {
+        if (released) {
+          return;
+        }
+        released = true;
         this.cleanupInvokeSession(invocationId);
+        pod.completeStreamRequest();
+        this.releasePod(pod);
       };
       result.onEnd(cleanup).onError(cleanup);
       return;
     }
 
     this.cleanupInvokeSession(invocationId);
+    this.releasePod(pod);
   }
 
   private cleanupInvokeSession(invocationId?: string): void {

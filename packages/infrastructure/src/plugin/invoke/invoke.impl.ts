@@ -7,7 +7,8 @@ import {
   InvokeUploadFileOutputSchema,
   type InvokeUploadFileOutputType,
   InvokeUserInfoOutputSchema,
-  type InvokeUserInfoOutputType
+  type InvokeUserInfoOutputType,
+  type InvokeWecomCorpTokenOutputType
 } from '@domain/ports/invoke.port';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
@@ -37,6 +38,26 @@ type SerializedBufferChunk = {
 
 export class InvokeManager implements InvokePort {
   constructor(private readonly deps: InvokeManagerDeps) {}
+
+  async getWecomCorpToken(): Promise<Result<InvokeWecomCorpTokenOutputType>> {
+    const [result, responseErr] = await this.requestFastGPT({
+      path: '/api/proApi/support/wecom/getCorpToken',
+      init: {
+        method: 'GET'
+      },
+      failureReason: {
+        en: 'Get wecom corp token failed',
+        'zh-CN': '获取企业微信企业令牌失败'
+      },
+      invalidJsonReason: {
+        en: 'Invalid wecom corp token output',
+        'zh-CN': '获取企业微信企业令牌返回数据格式错误'
+      }
+    });
+
+    if (responseErr) return failureResult(responseErr);
+    return successResult(result as InvokeWecomCorpTokenOutputType);
+  }
 
   async userInfo(): Promise<Result<InvokeUserInfoOutputType>> {
     const [result, responseErr] = await this.requestFastGPT({

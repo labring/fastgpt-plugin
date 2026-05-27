@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { InvokeMethodEnum, type InvokeUploadFileInputType } from '@domain/ports/invoke.port';
 import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
 import { failureResult } from '@domain/value-objects/result.vo';
-import type { StreamData } from '@domain/value-objects/stream.vo';
+import { StreamData } from '@domain/value-objects/stream.vo';
 
 import {
   PluginChannelClientMethod,
@@ -148,6 +148,7 @@ export class PluginPod {
 
     const requestId = randomUUID();
     const startedAt = Date.now();
+    let streamTransferred = false;
 
     this.activeRequests++;
     this.status = 'running';
@@ -202,6 +203,11 @@ export class PluginPod {
         duration: finishedAt - startedAt
       });
 
+      if (result instanceof StreamData) {
+        streamTransferred = true;
+        return result as S extends true ? StreamData<R> : R;
+      }
+
       return result as S extends true ? StreamData<R> : R;
     } catch (error) {
       if (isRequestTimeoutError(error)) {
@@ -212,13 +218,14 @@ export class PluginPod {
       this.kill();
       throw error;
     } finally {
-      this.activeRequests = Math.max(0, this.activeRequests - 1);
-      this.lastActiveAt = Date.now();
-
-      if (this.process && this.status === 'running') {
-        this.status = this.activeRequests > 0 ? 'running' : 'idle';
+      if (!streamTransferred) {
+        this.completeRequest();
       }
     }
+  }
+
+  completeStreamRequest(): void {
+    this.completeRequest();
   }
 
   kill(signal: NodeJS.Signals = 'SIGTERM'): void {
@@ -262,6 +269,15 @@ export class PluginPod {
 
   updateMaxConcurrentRequests(n: number): void {
     this.options.maxConcurrentRequests = n;
+  }
+
+  private completeRequest(): void {
+    this.activeRequests = Math.max(0, this.activeRequests - 1);
+    this.lastActiveAt = Date.now();
+
+    if (this.process && this.status === 'running') {
+      this.status = this.activeRequests > 0 ? 'running' : 'idle';
+    }
   }
 
   private handleError(error: Error): void {
@@ -324,6 +340,9 @@ export class PluginPod {
       }
       case InvokeMethodEnum.userInfo: {
         return invokeSession.userInfo();
+      }
+      case InvokeMethodEnum.wecomCorpToken: {
+        return invokeSession.getWecomCorpToken();
       }
     }
     return failureResult(

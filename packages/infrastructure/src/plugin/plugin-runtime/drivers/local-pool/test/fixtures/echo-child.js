@@ -20,6 +20,55 @@ process.on('message', (message) => {
     process.stderr.write('stderr-first\nstderr-second\n');
   }
 
+  if (payload?.mode === 'slow-stream') {
+    const streamId = `${message.id}:output`;
+    process.send?.({
+      protocol: '1.0',
+      method: 'channel.stream',
+      params: {
+        type: 'start',
+        streamId,
+        streamName: `request.output:${message.id}`
+      },
+      ...(message.traceId !== undefined ? { traceId: message.traceId } : {}),
+      timestamp: Date.now()
+    });
+    process.send?.({
+      protocol: '1.0',
+      id: message.id,
+      result: {
+        __fastgptChannelReply__: true,
+        hasOutputStream: true
+      },
+      ...(message.traceId !== undefined ? { traceId: message.traceId } : {}),
+      timestamp: Date.now()
+    });
+    setTimeout(() => {
+      process.send?.({
+        protocol: '1.0',
+        method: 'channel.stream',
+        params: {
+          type: 'chunk',
+          streamId,
+          chunk: { value: 'chunk' }
+        },
+        ...(message.traceId !== undefined ? { traceId: message.traceId } : {}),
+        timestamp: Date.now()
+      });
+      process.send?.({
+        protocol: '1.0',
+        method: 'channel.stream',
+        params: {
+          type: 'end',
+          streamId
+        },
+        ...(message.traceId !== undefined ? { traceId: message.traceId } : {}),
+        timestamp: Date.now()
+      });
+    }, 30);
+    return;
+  }
+
   if (payload?.mode === 'reverse-invoke-error') {
     const requestId = `${message.id}:reverse`;
     const handleReverseResponse = (response) => {

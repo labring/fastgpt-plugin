@@ -1034,6 +1034,14 @@ describe('makePluginInstallUC', () => {
     expect(result).toEqual({});
     expect(deps.pluginRuntimeManager.register).toHaveBeenCalledTimes(1);
     expect(deps.pluginRepo.disablePlugins).toHaveBeenCalledTimes(1);
+    expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(
+      {
+        pluginId: uniqueId.pluginId,
+        version: uniqueId.version,
+        etag: 'old-etag'
+      },
+      { replacementUniqueId: uniqueId }
+    );
   });
 });
 
@@ -1172,6 +1180,31 @@ describe('makePluginConfirmUC', () => {
     expect(err).toBeNull();
     expect(result).toEqual({});
     expect(deps.pluginRepo.confirmPlugin).toHaveBeenCalledTimes(2);
+  });
+
+  it('drains replaced runtimes to the confirmed plugin runtime', async () => {
+    const oldPlugin = plugin({ etag: 'old' });
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        listActive: vi.fn().mockResolvedValue(successResult([oldPlugin])),
+        getPendingPluginIds: vi.fn().mockResolvedValue(successResult([uniqueId])),
+        confirmPlugin: vi.fn().mockResolvedValue(successResult(plugin())),
+        disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+      })
+    });
+
+    const [result, err] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId] });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(
+      {
+        pluginId: oldPlugin.pluginId,
+        version: oldPlugin.version,
+        etag: oldPlugin.etag
+      },
+      { replacementUniqueId: uniqueId }
+    );
   });
 
   it('returns unsupported failure for non-runnable plugins', async () => {

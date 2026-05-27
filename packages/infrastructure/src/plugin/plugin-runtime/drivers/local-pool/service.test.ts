@@ -352,6 +352,64 @@ describe('PluginService', () => {
     });
   });
 
+  it('drains queued work to a replacement service without interrupting running work', async () => {
+    const oldService = createService(makeConfig({ minPods: 1, maxPods: 1, maxQueueSize: 10 }));
+    const newService = createService(makeConfig({ minPods: 1, maxPods: 1, maxQueueSize: 10 }));
+    const releaseOldRunning = createDeferred<string>();
+    const executed: string[] = [];
+
+    podMock.invokeHandlers.push(
+      ({ payload }) => {
+        executed.push(`old:${payload.name}`);
+        return releaseOldRunning.promise;
+      },
+      ({ payload }) => {
+        executed.push(`new:${payload.name}`);
+        return payload.name;
+      },
+      ({ payload }) => {
+        executed.push(`new:${payload.name}`);
+        return payload.name;
+      }
+    );
+
+    await oldService.initialize();
+
+    const running = oldService.invoke({
+      eventName: 'run',
+      payload: { name: 'running' },
+      returnStream: false
+    });
+    await waitFor(() => expect(oldService.getMetrics().pods.busy).toBe(1));
+
+    const queued = oldService.invoke({
+      eventName: 'run',
+      payload: { name: 'queued' },
+      returnStream: false
+    });
+    await waitFor(() => expect(oldService.getMetrics().queueLength).toBe(1));
+
+    await newService.initialize();
+    const drain = oldService.drainTo(newService);
+
+    await expect(queued).resolves.toBe('queued');
+    await waitFor(() => expect(newService.getMetrics().queueLength).toBe(0));
+
+    const future = oldService.invoke({
+      eventName: 'run',
+      payload: { name: 'future' },
+      returnStream: false
+    });
+
+    await expect(future).resolves.toBe('future');
+    expect(executed).toEqual(['old:running', 'new:queued', 'new:future']);
+
+    releaseOldRunning.resolve('running');
+    await expect(running).resolves.toBe('running');
+    await drain;
+    expect(oldService.getMetrics().pods.total).toBe(0);
+  });
+
   it('rejects new work when the queue is full', async () => {
     const service = createService(makeConfig({ minPods: 1, maxPods: 1, maxQueueSize: 1 }));
     const releaseBusy = createDeferred<string>();
