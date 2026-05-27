@@ -68,8 +68,31 @@ const createParsedPkgFile = (filename: string, buffer: Buffer): ParsedPkgFile =>
   stream: bufferToReadable(buffer)
 });
 
-const getPkgEtag = (pkgBuffer: Buffer): string => {
-  return createHash('md5').update(pkgBuffer).digest('hex').slice(0, 8);
+type PkgFileEntry = {
+  filename: string;
+  buffer: Buffer;
+};
+
+const md5 = (input: string | Buffer): string => createHash('md5').update(input).digest('hex');
+
+const getPkgEtag = (files: PkgFileEntry[]): string => {
+  const hash = createHash('md5');
+  const sortedFiles = [...files].sort((a, b) => {
+    if (a.filename < b.filename) return -1;
+    if (a.filename > b.filename) return 1;
+    return 0;
+  });
+
+  for (const file of sortedFiles) {
+    hash.update(file.filename);
+    hash.update('\0');
+    hash.update(md5(file.buffer));
+    hash.update('\0');
+    hash.update(String(file.buffer.length));
+    hash.update('\n');
+  }
+
+  return hash.digest('hex').slice(0, 8);
 };
 
 export const parsePkg = async ({
@@ -88,16 +111,8 @@ export const parsePkg = async ({
     );
   }
 
-  const etag = getPkgEtag(pkgBuffer);
   const entries = await unpkg(bufferToReadable(pkgBuffer));
-  const availableFiles = entries.filter((entry) => !entry.directory).map((entry) => entry.filename);
-
-  let index: ParsedPkgFile | undefined;
-  let manifest: ParsedPkgFile | undefined;
-  let manifestText: string | undefined;
-  let readme: ParsedPkgFile | undefined;
-  const assets: ParsedPkgFile[] = [];
-  const logos: ParsedPkgFile[] = [];
+  const fileEntries: PkgFileEntry[] = [];
 
   for (const entry of entries) {
     if (entry.directory || !entry.stream) continue;
@@ -113,7 +128,24 @@ export const parsePkg = async ({
       );
     }
 
-    const file = createParsedPkgFile(entry.filename, buffer);
+    fileEntries.push({
+      filename: entry.filename,
+      buffer
+    });
+  }
+
+  const etag = getPkgEtag(fileEntries);
+  const availableFiles = fileEntries.map((entry) => entry.filename);
+
+  let index: ParsedPkgFile | undefined;
+  let manifest: ParsedPkgFile | undefined;
+  let manifestText: string | undefined;
+  let readme: ParsedPkgFile | undefined;
+  const assets: ParsedPkgFile[] = [];
+  const logos: ParsedPkgFile[] = [];
+
+  for (const entry of fileEntries) {
+    const file = createParsedPkgFile(entry.filename, entry.buffer);
 
     if (entry.filename === 'index.js') {
       index = file;
@@ -122,7 +154,7 @@ export const parsePkg = async ({
 
     if (entry.filename === 'manifest.json') {
       manifest = file;
-      manifestText = buffer.toString();
+      manifestText = entry.buffer.toString();
       continue;
     }
 
