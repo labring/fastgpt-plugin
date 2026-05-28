@@ -39,7 +39,7 @@
           },
           {
             "key": "questionGuide",
-            "valueType": "any",
+            "valueType": "object",
             "renderTypeList": ["hidden"],
             "label": "core.app.Question Guide",
             "value": {
