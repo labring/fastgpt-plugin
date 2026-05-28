@@ -39,7 +39,7 @@
           },
           {
             "key": "questionGuide",
-            "valueType": "any",
+            "valueType": "object",
             "renderTypeList": ["hidden"],
             "label": "core.app.Question Guide",
             "value": {
@@ -446,12 +446,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({chunks, currentChunk}){\n    const findIndex = chunks.findIndex((item) => item === currentChunk)\n\n    return {\n        isEnd: chunks.length-1 === findIndex,\n        i: findIndex + 1,\n    }\n}"
           },
@@ -618,12 +620,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({source_text_chunks, i=0}){\n    let before = source_text_chunks.slice(0, i).join(\"\");\n    let current = \" <TRANSLATE_THIS>\" + source_text_chunks[i] + \"</TRANSLATE_THIS>\";\n    let after = source_text_chunks.slice(i + 1).join(\"\");\n    let tagged_text = before + current + after;\n\n    return {\n        tagged_text,\n        chunk_to_translate: source_text_chunks[i],\n    }\n}"
           },
@@ -819,12 +823,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({data1}){\n    const result = data1.split(\"```\").filter(item => !!item.trim())\n\n    if(result[result.length-1]) {\n        return {\n            result: result[result.length-1].trim() \n        }\n    }\n\n    return {\n        result: '未截取到翻译内容'\n    }\n}"
           },
@@ -1008,12 +1014,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({source_lang, target_lang}){\n    \n    return {\n        result: source_lang === target_lang\n    }\n}"
           },
@@ -1225,12 +1233,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({text}){\n  const lines = text.split('\\n');\n  const timePattern = /\\d{2}:\\d{2}:\\d{2},\\d{3} --> \\d{2}:\\d{2}:\\d{2},\\d{3}/;\n  const numberInfo = [];\n  const timeInfo = [];\n  const textInfo = [];\n  let currentText = [];\n\n  // 提取序号、时间戳和文本信息\n  lines.forEach(line => {\n    if (/^\\d+$/.test(line.trim())) {\n      numberInfo.push(line.trim());\n    } else if (timePattern.test(line)) {\n      timeInfo.push(line);\n      if (currentText.length > 0) {\n        textInfo.push(currentText.join(' '));\n        currentText = [];\n      }\n    } else if (line.trim() === '') {\n      // Skip empty lines\n    } else {\n      currentText.push(line.trim());\n    }\n  });\n\n  if (currentText.length > 0) {\n    textInfo.push(currentText.join(' '));\n  }\n\n  return { numberInfo, timeInfo, textInfo };\n}"
           },
@@ -1375,12 +1385,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({combinedText, transedText, timeInfo, currentIndex=0,numberInfo}){\n  const textLines = combinedText.split('<T>');\n  const resultLines = transedText.split('<T>');\n  const combinedLines = [];\n\n  resultLines.forEach((line, index) => {\n    combinedLines.push(numberInfo[currentIndex+index]);\n    combinedLines.push(timeInfo[currentIndex+index]);\n    combinedLines.push(line)\n    combinedLines.push(textLines[index]);\n    combinedLines.push('');\n  });\n\n  const srtContent = combinedLines.join('\\n');\n  \n\n    return {\n        srtContent,\n        currentIndex: currentIndex+textLines.length\n    }\n}"
           },
@@ -1634,12 +1646,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({textArray}){\n const groupSize = 40\n const delimiter = '<T>'\n\n  const result = [];\n\n  for (let i = 0; i < textArray.length; i += groupSize) {\n    result.push(textArray.slice(i, i + groupSize).join(delimiter));\n  }\n\n  return {result};\n}"
           },
