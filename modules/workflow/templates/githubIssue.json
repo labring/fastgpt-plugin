@@ -170,7 +170,7 @@
             "renderTypeList": ["custom"],
             "valueType": "string",
             "label": "",
-            "value": "function main() {\n  const date = new Date();\n  date.setDate(date.getDate() - 3);\n  const day = date.getDate();\n  const month = date.getMonth() + 1;\n  const year = date.getFullYear();\n  const hours = date.getHours();\n  const minutes = date.getMinutes();\n\n  return {\n    date: `${year}-${month}-${day}T${hours}:${minutes}:000Z`,\n  }\n }",
+            "value": "function main() {\n  const date = new Date();\n  date.setDate(date.getDate() - 1);\n  const day = date.getDate();\n  const month = date.getMonth() + 1;\n  const year = date.getFullYear();\n  const hours = date.getHours();\n  const minutes = date.getMinutes();\n\n  return {\n    date: `${year}-${month}-${day}T${hours}:${minutes}:000Z`,\n  }\n }",
             "valueDesc": "",
             "description": "",
             "debugLabel": "",
