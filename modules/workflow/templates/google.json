@@ -35,7 +35,7 @@
           },
           {
             "key": "questionGuide",
-            "valueType": "any",
+            "valueType": "object",
             "renderTypeList": ["hidden"],
             "label": "core.app.Question Guide",
             "value": {
@@ -371,12 +371,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({data}){\n    const result = data.items.map((item) => ({\n      title: item.title,\n      link: item.link,\n      snippet: item.snippet\n    }))\n    return { prompt: JSON.stringify(result) }\n}"
           }

@@ -35,7 +35,7 @@
           },
           {
             "key": "questionGuide",
-            "valueType": "any",
+            "valueType": "object",
             "renderTypeList": ["hidden"],
             "label": "core.app.Question Guide",
             "value": {
@@ -270,12 +270,14 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
+            "valueType": "string",
             "label": "",
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
+            "valueType": "string",
             "label": "",
             "value": "function main({data1}) {\n    const codeBlocks = data1.match(/```[\\s\\S]*?```/g);\n\n    if (codeBlocks && codeBlocks.length > 0) {\n        const lastCodeBlock = codeBlocks[codeBlocks.length - 1];\n        const cleanedCodeBlock = lastCodeBlock.replace(/```[a-zA-Z]*|```/g, '').trim();\n        \n        return {\n            result: cleanedCodeBlock\n        };\n    }\n\n    return {\n        result: '未截取到代码块内容'\n    };\n}\n"
           },
