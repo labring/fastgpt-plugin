@@ -157,6 +157,31 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'gpt-5.2-pro',
+      maxContext: 400000,
+      maxTokens: 128000,
+      quoteMaxToken: 350000,
+      maxTemperature: null,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5.2-chat-latest',
+      maxContext: 128000,
+      maxTokens: 16384,
+      quoteMaxToken: 128000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5.1',
       maxContext: 400000,
       maxTokens: 128000,
@@ -199,6 +224,31 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'gpt-5-pro',
+      maxContext: 400000,
+      maxTokens: 272000,
+      quoteMaxToken: 350000,
+      maxTemperature: null,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5-chat-latest',
+      maxContext: 128000,
+      maxTokens: 16384,
+      quoteMaxToken: 128000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5-mini',
       maxContext: 400000,
       maxTokens: 128000,
@@ -224,21 +274,6 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
-      fieldMap: {
-        max_tokens: 'max_completion_tokens'
-      }
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'gpt-5-chat',
-      maxContext: 128000,
-      maxTokens: 16000,
-      quoteMaxToken: 128000,
-      maxTemperature: 1.2,
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
