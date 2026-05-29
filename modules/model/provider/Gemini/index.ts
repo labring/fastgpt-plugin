@@ -124,34 +124,10 @@ const models: ProviderConfigType = {
       toolChoice: true
     },
     {
-      type: ModelTypeEnum.llm,
-      model: 'gemini-2.0-flash',
-      maxContext: 1000000,
-      maxTokens: 8000,
-      quoteMaxToken: 60000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    },
-    {
       type: ModelTypeEnum.embedding,
       model: 'gemini-embedding-2',
       defaultToken: 512,
       maxToken: 8192
-    },
-    {
-      type: ModelTypeEnum.embedding,
-      model: 'gemini-embedding-001',
-      defaultToken: 512,
-      maxToken: 2048
-    },
-    {
-      type: ModelTypeEnum.embedding,
-      model: 'gemini-embedding-2-preview',
-      defaultToken: 512,
-      maxToken: 2000
     }
   ]
 };
