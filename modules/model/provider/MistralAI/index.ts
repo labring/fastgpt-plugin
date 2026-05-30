@@ -29,24 +29,24 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'mistral-medium-3-5',
+      maxContext: 256000,
+      maxTokens: 32000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'mistral-medium-2508',
       maxContext: 128000,
       maxTokens: 8000,
       quoteMaxToken: 120000,
       maxTemperature: 1.2,
       vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'devstral-2512',
-      maxContext: 131000,
-      maxTokens: 8000,
-      quoteMaxToken: 120000,
-      maxTemperature: 1.2,
-      vision: false,
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
