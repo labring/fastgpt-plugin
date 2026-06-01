@@ -54,6 +54,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'MiniMax-M3',
+      maxContext: 1000000,
+      maxTokens: 100000,
+      quoteMaxToken: 900000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'MiniMax-M2.7',
       maxContext: 204000,
       maxTokens: 100000,
@@ -162,22 +174,22 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
-      model: 'speech-2.8-turbo',
-      voices: minimaxTtsVoices
-    },
-    {
-      type: ModelTypeEnum.tts,
       model: 'speech-2.8-hd',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
-      model: 'speech-02-turbo',
+      model: 'speech-2.8-turbo',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
       model: 'speech-02-hd',
+      voices: minimaxTtsVoices
+    },
+    {
+      type: ModelTypeEnum.tts,
+      model: 'speech-02-turbo',
       voices: minimaxTtsVoices
     },
     {

@@ -5,6 +5,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'step-3.7-flash',
+      maxContext: 256000,
+      maxTokens: 8000,
+      quoteMaxToken: 240000,
+      maxTemperature: 2,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'step-3.5-flash-2603',
       maxContext: 64000,
       maxTokens: 8000,

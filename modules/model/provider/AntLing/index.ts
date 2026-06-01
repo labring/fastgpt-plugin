@@ -6,6 +6,32 @@ const models: ProviderConfigType = {
     // Ling series - general language models
     {
       type: ModelTypeEnum.llm,
+      model: 'Ling-2.6-1T',
+      maxContext: 256000,
+      maxTokens: 16000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'Ling-2.6-flash',
+      maxContext: 256000,
+      maxTokens: 16000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'Ling-1T',
       maxContext: 128000,
       maxTokens: 16000,
@@ -45,6 +71,20 @@ const models: ProviderConfigType = {
     },
 
     // Ring series - reasoning models
+    {
+      type: ModelTypeEnum.llm,
+      model: 'Ring-2.6-1T',
+      maxContext: 256000,
+      maxTokens: 16000,
+      quoteMaxToken: 240000,
+      maxTemperature: null,
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      showTopP: false,
+      showStopSign: false
+    },
     {
       type: ModelTypeEnum.llm,
       model: 'Ring-1T',
