@@ -1,5 +1,10 @@
 import { ModelTypeEnum, type ProviderConfigType } from '../../type';
 
+const doubaoTtsVoices = [
+  { label: 'zh_female_kailangjiejie_moon_bigtts', value: 'zh_female_kailangjiejie_moon_bigtts' },
+  { label: 'zh_female_tianmeitaozi_mars_bigtts', value: 'zh_female_tianmeitaozi_mars_bigtts' }
+];
+
 const models: ProviderConfigType = {
   provider: 'Doubao',
   list: [
@@ -64,6 +69,21 @@ const models: ProviderConfigType = {
       defaultToken: 512,
       maxToken: 4096,
       normalization: true
+    },
+    {
+      type: ModelTypeEnum.tts,
+      model: 'doubao-tts',
+      voices: doubaoTtsVoices
+    },
+    {
+      type: ModelTypeEnum.tts,
+      model: 'seed-tts-2.0-standard',
+      voices: doubaoTtsVoices
+    },
+    {
+      type: ModelTypeEnum.tts,
+      model: 'seed-tts-2.0-expressive',
+      voices: doubaoTtsVoices
     }
   ]
 };
