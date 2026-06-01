@@ -6,7 +6,8 @@ import {
   type InvokeUploadFileInputType,
   InvokeUploadFileOutputSchema,
   type InvokeUploadFileOutputType,
-  type InvokeUserInfoOutputType
+  type InvokeUserInfoOutputType,
+  type InvokeWecomCorpTokenOutputType
 } from '@domain/ports/invoke.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { PluginChannelClientMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
@@ -21,6 +22,34 @@ export class InvokeClient implements InvokePort {
     private channel: PluginRuntimeChannel,
     private readonly options: { invocationId?: string } = {}
   ) {}
+
+  async getWecomCorpToken(): Promise<Result<InvokeWecomCorpTokenOutputType>> {
+    try {
+      const response = await this.channel.request(
+        PluginChannelClientMethod.request,
+        {
+          method: InvokeMethodEnum.wecomCorpToken,
+          args: {}
+        },
+        {
+          traceId: this.options.invocationId
+        }
+      );
+
+      const [result, responseErr] = response.result as [InvokeWecomCorpTokenOutputType, unknown];
+      if (responseErr)
+        return failureResult(
+          { en: 'Failed to get wecom corp token', 'zh-CN': '获取企业微信企业令牌失败' },
+          responseErr
+        );
+      return successResult(result);
+    } catch (error) {
+      return failureResult(
+        { en: 'Failed to get wecom corp token', 'zh-CN': '获取企业微信企业令牌失败' },
+        error
+      );
+    }
+  }
 
   async userInfo(): Promise<Result<InvokeUserInfoOutputType>> {
     try {
