@@ -13,5 +13,7 @@ export const LOCAL_POOL_GLOBAL_SERVICE_CONFIG: LocalPoolGlobalServiceConfigType 
   idleTimeout: env.POOL_SERVICE_IDLE_TIMEOUT,
   maxRequestsPerPod: env.POOL_SERVICE_MAX_REQUESTS_PER_POD,
   maxQueueSize: env.POOL_SERVICE_MAX_QUEUE_SIZE,
-  queueTimeout: env.POOL_SERVICE_QUEUE_TIMEOUT
+  queueTimeout: env.POOL_SERVICE_QUEUE_TIMEOUT,
+  startupRetryBaseDelay: env.POOL_SERVICE_STARTUP_RETRY_BASE_DELAY,
+  startupRetryMaxDelay: env.POOL_SERVICE_STARTUP_RETRY_MAX_DELAY
 } as const;

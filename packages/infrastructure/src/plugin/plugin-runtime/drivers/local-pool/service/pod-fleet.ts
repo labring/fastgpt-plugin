@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { PluginPod } from '../pod';
+import { isPodStartupTimeoutError, PluginPod } from '../pod';
 import type { PodStats } from '../types';
 
 import type { ServiceRuntimeOptions } from './types';
@@ -12,7 +12,9 @@ export class PodFleet {
   private retiringPods = new Set<string>();
   private pendingPods = 0;
   private consecutivePodStartupFailures = 0;
+  private consecutivePodStartupTimeouts = 0;
   private podStartupDisabledError: Error | null = null;
+  private podStartupRetryAfter = 0;
 
   constructor(private readonly options: ServiceRuntimeOptions) {}
 
@@ -56,7 +58,11 @@ export class PodFleet {
 
   canScaleUp(): boolean {
     const config = this.options.getConfig();
-    return !this.podStartupDisabledError && this.totalIncludingPending < config.maxPods;
+    return (
+      !this.podStartupDisabledError &&
+      Date.now() >= this.podStartupRetryAfter &&
+      this.totalIncludingPending < config.maxPods
+    );
   }
 
   async createPod(): Promise<PluginPod> {
@@ -105,7 +111,7 @@ export class PodFleet {
       return pod;
     } catch (error) {
       const startupError = toError(error);
-      this.recordPodStartupFailure(startupError);
+      this.recordPodStartupError(startupError);
       throw this.podStartupDisabledError ?? startupError;
     } finally {
       this.pendingPods--;
@@ -347,11 +353,41 @@ export class PodFleet {
 
   private recordPodStartupSuccess(): void {
     this.consecutivePodStartupFailures = 0;
+    this.consecutivePodStartupTimeouts = 0;
     this.podStartupDisabledError = null;
+    this.podStartupRetryAfter = 0;
+  }
+
+  private recordPodStartupError(error: Error): void {
+    if (isPodStartupTimeoutError(error)) {
+      this.recordPodStartupTimeout(error);
+      return;
+    }
+
+    this.recordPodStartupFailure(error);
+  }
+
+  private recordPodStartupTimeout(error: Error): void {
+    this.consecutivePodStartupTimeouts++;
+    this.consecutivePodStartupFailures = 0;
+    const delayMs = getStartupRetryDelayMs({
+      consecutiveTimeouts: this.consecutivePodStartupTimeouts,
+      baseDelayMs: this.options.getConfig().startupRetryBaseDelay,
+      maxDelayMs: this.options.getConfig().startupRetryMaxDelay
+    });
+    this.podStartupRetryAfter = Date.now() + delayMs;
+
+    console.error(
+      `[${this.options.serviceName}] Pod startup timed out; retrying after ${delayMs}ms`,
+      error
+    );
+    this.options.onPodStartupRetryable(delayMs);
   }
 
   private recordPodStartupFailure(error: Error): void {
     this.consecutivePodStartupFailures++;
+    this.consecutivePodStartupTimeouts = 0;
+    this.podStartupRetryAfter = 0;
     console.error(
       `[${this.options.serviceName}] Pod startup failed (${this.consecutivePodStartupFailures}/${MAX_CONSECUTIVE_POD_STARTUP_FAILURES})`,
       error
@@ -367,6 +403,19 @@ export class PodFleet {
     );
     console.error(this.podStartupDisabledError);
   }
+}
+
+function getStartupRetryDelayMs({
+  consecutiveTimeouts,
+  baseDelayMs,
+  maxDelayMs
+}: {
+  consecutiveTimeouts: number;
+  baseDelayMs: number;
+  maxDelayMs: number;
+}): number {
+  const exponentialDelayMs = baseDelayMs * 2 ** Math.max(0, consecutiveTimeouts - 1);
+  return Math.min(maxDelayMs, exponentialDelayMs);
 }
 
 function comparePodLoad(a: PluginPod, b: PluginPod): number {

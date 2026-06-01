@@ -138,6 +138,8 @@ interface GlobalConfig {
   maxRequestsPerPod: number;   // 全局单个 Pod 最大请求数
   maxQueueSize: number;        // 全局最大队列长度
   queueTimeout: number;        // 全局队列等待超时（毫秒）
+  startupRetryBaseDelay: number; // 启动超时退避基础时间（毫秒，默认 1000）
+  startupRetryMaxDelay: number;  // 启动超时退避最大时间（毫秒，默认 10000）
 }
 ```
 

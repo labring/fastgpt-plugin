@@ -10,7 +10,9 @@ describe('PluginRuntimeConfigSchema', () => {
         maxPods: 2,
         podTimeout: 120000,
         maxConcurrentRequestsPerPod: 10,
-        idleTimeout: 60000
+        idleTimeout: 60000,
+        startupRetryBaseDelay: 1000,
+        startupRetryMaxDelay: 10000
       })
     ).toThrow();
   });

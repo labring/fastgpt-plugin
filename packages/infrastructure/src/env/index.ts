@@ -77,6 +77,8 @@ export const env = createEnv({
     POOL_SERVICE_MAX_REQUESTS_PER_POD: PositiveIntSchema.default(100), // 全局单个进程最大请求数，超出后自动轮换
     POOL_SERVICE_MAX_QUEUE_SIZE: PositiveIntSchema.default(500), // 全局进程队列最大长度
     POOL_SERVICE_QUEUE_TIMEOUT: PositiveIntSchema.default(60_000), // 全局进程队列超时时间 (ms)
+    POOL_SERVICE_STARTUP_RETRY_BASE_DELAY: PositiveIntSchema.default(1_000), // 启动超时退避基础时间 (ms)
+    POOL_SERVICE_STARTUP_RETRY_MAX_DELAY: PositiveIntSchema.default(10_000), // 启动超时退避最大时间 (ms)
 
     // 基础设施配置
     // 文件存储配置

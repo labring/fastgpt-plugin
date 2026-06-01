@@ -138,6 +138,8 @@ interface PluginMessage {
 - **maxRequestsPerPod**：防泄漏/碎片化
 - **maxQueueSize**：按 QPS 与可接受延迟
 - **queueTimeout**：队列等待超时
+- **startupRetryBaseDelay**：启动超时退避基础时间，对应 `POOL_SERVICE_STARTUP_RETRY_BASE_DELAY`
+- **startupRetryMaxDelay**：启动超时退避最大时间，对应 `POOL_SERVICE_STARTUP_RETRY_MAX_DELAY`
 
 ---
 

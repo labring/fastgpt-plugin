@@ -21,6 +21,7 @@ export interface ServiceRuntimeOptions {
   onPodCrashed: () => void;
   onPodChanged: () => void;
   onPodStartupBlocked: () => void;
+  onPodStartupRetryable: (delayMs: number) => void;
 }
 
 export interface ServiceRequestInput {

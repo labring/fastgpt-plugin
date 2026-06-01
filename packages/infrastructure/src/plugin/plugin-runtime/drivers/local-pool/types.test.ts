@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { LocalPoolPluginConfigSchema, LocalPoolServiceConfigSchema } from './types';
+import {
+  LocalPoolGlobalServiceConfigSchema,
+  LocalPoolPluginConfigSchema,
+  LocalPoolServiceConfigSchema
+} from './types';
 
 const pluginConfig = {
   minPods: 1,
@@ -16,7 +20,9 @@ describe('local-pool config schemas', () => {
       idleTimeout: 60000,
       maxRequestsPerPod: 100,
       maxQueueSize: 500,
-      queueTimeout: 60000
+      queueTimeout: 60000,
+      startupRetryBaseDelay: 1000,
+      startupRetryMaxDelay: 10000
     });
 
     expect(parsed).toEqual(pluginConfig);
@@ -28,7 +34,9 @@ describe('local-pool config schemas', () => {
       idleTimeout: 60000,
       maxRequestsPerPod: 100,
       maxQueueSize: 500,
-      queueTimeout: 60000
+      queueTimeout: 60000,
+      startupRetryBaseDelay: 1000,
+      startupRetryMaxDelay: 10000
     });
 
     expect(parsed).toMatchObject({
@@ -36,7 +44,22 @@ describe('local-pool config schemas', () => {
       idleTimeout: 60000,
       maxRequestsPerPod: 100,
       maxQueueSize: 500,
-      queueTimeout: 60000
+      queueTimeout: 60000,
+      startupRetryBaseDelay: 1000,
+      startupRetryMaxDelay: 10000
     });
+  });
+
+  it('rejects inverted startup retry delays', () => {
+    expect(() =>
+      LocalPoolGlobalServiceConfigSchema.parse({
+        idleTimeout: 60000,
+        maxRequestsPerPod: 100,
+        maxQueueSize: 500,
+        queueTimeout: 60000,
+        startupRetryBaseDelay: 10000,
+        startupRetryMaxDelay: 1000
+      })
+    ).toThrow();
   });
 });

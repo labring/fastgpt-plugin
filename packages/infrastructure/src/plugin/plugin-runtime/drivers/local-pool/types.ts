@@ -32,21 +32,33 @@ export const LocalPoolPluginConfigSchema = LocalPoolPluginConfigBaseSchema.refin
 
 export type LocalPoolPluginConfigType = z.infer<typeof LocalPoolPluginConfigSchema>;
 
-export const LocalPoolGlobalServiceConfigSchema = z.object({
-  idleTimeout: z.number().positive(),
-  maxRequestsPerPod: z.number().nonnegative(),
-  maxQueueSize: z.number().positive(),
-  queueTimeout: z.number().nonnegative()
-});
+export const LocalPoolGlobalServiceConfigSchema = z
+  .object({
+    idleTimeout: z.number().positive(),
+    maxRequestsPerPod: z.number().nonnegative(),
+    maxQueueSize: z.number().positive(),
+    queueTimeout: z.number().nonnegative(),
+    startupRetryBaseDelay: z.number().positive(),
+    startupRetryMaxDelay: z.number().positive()
+  })
+  .refine((config) => config.startupRetryBaseDelay <= config.startupRetryMaxDelay, {
+    message: 'startupRetryBaseDelay cannot be greater than startupRetryMaxDelay',
+    path: ['startupRetryBaseDelay']
+  });
 
 export type LocalPoolGlobalServiceConfigType = z.infer<typeof LocalPoolGlobalServiceConfigSchema>;
 
 export const LocalPoolServiceConfigSchema = LocalPoolPluginConfigBaseSchema.merge(
   LocalPoolGlobalServiceConfigSchema
-).refine((config) => config.minPods <= config.maxPods, {
-  message: 'minPods cannot be greater than maxPods',
-  path: ['minPods']
-});
+)
+  .refine((config) => config.minPods <= config.maxPods, {
+    message: 'minPods cannot be greater than maxPods',
+    path: ['minPods']
+  })
+  .refine((config) => config.startupRetryBaseDelay <= config.startupRetryMaxDelay, {
+    message: 'startupRetryBaseDelay cannot be greater than startupRetryMaxDelay',
+    path: ['startupRetryBaseDelay']
+  });
 
 export type LocalPoolServiceConfigType = z.infer<typeof LocalPoolServiceConfigSchema>;
 

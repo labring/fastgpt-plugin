@@ -32,6 +32,20 @@ export type {
   PodStatus
 } from './type';
 
+export const POD_STARTUP_TIMEOUT_CODE = 'POD_STARTUP_TIMEOUT';
+
+export type PodStartupTimeoutError = Error & {
+  code: typeof POD_STARTUP_TIMEOUT_CODE;
+};
+
+export function isPodStartupTimeoutError(error: unknown): error is PodStartupTimeoutError {
+  return (
+    error instanceof Error &&
+    'code' in error &&
+    (error as Error & { code?: string }).code === POD_STARTUP_TIMEOUT_CODE
+  );
+}
+
 export class PluginPod {
   private process: ChildProcess | null = null;
   private channel: PluginRuntimeChannelPort<'host'> | null = null;
@@ -76,7 +90,7 @@ export class PluginPod {
 
         const readyTimeout = setTimeout(() => {
           settle(() => {
-            reject(new Error('Pod startup timeout'));
+            reject(createPodStartupTimeoutError());
             this.kill();
           });
         }, 10_000);
@@ -353,6 +367,12 @@ export class PluginPod {
       null
     );
   }
+}
+
+function createPodStartupTimeoutError(): PodStartupTimeoutError {
+  return Object.assign(new Error('Pod startup timeout'), {
+    code: POD_STARTUP_TIMEOUT_CODE as typeof POD_STARTUP_TIMEOUT_CODE
+  });
 }
 
 function isRequestTimeoutError(

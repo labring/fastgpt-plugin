@@ -33,6 +33,7 @@ export class PluginService {
   private destroyed = false;
   private drainingTo: PluginService | null = null;
   private idleCheckTimer: NodeJS.Timeout | null = null;
+  private startupRetryTimer: NodeJS.Timeout | null = null;
 
   constructor(
     public readonly serviceName: string,
@@ -59,6 +60,9 @@ export class PluginService {
       },
       onPodStartupBlocked: () => {
         this.rejectQueuedRequestsIfPodStartupDisabled();
+      },
+      onPodStartupRetryable: (delayMs) => {
+        this.scheduleStartupRetry(delayMs);
       }
     });
     this.queue = new RequestQueue({
@@ -197,6 +201,10 @@ export class PluginService {
       clearInterval(this.idleCheckTimer);
       this.idleCheckTimer = null;
     }
+    if (this.startupRetryTimer) {
+      clearTimeout(this.startupRetryTimer);
+      this.startupRetryTimer = null;
+    }
 
     this.queue.rejectAll(new Error('Service closed'), (request) => {
       this.cleanupInvokeSession(request.options?.invocationId);
@@ -274,6 +282,10 @@ export class PluginService {
     if (this.idleCheckTimer) {
       clearInterval(this.idleCheckTimer);
       this.idleCheckTimer = null;
+    }
+    if (this.startupRetryTimer) {
+      clearTimeout(this.startupRetryTimer);
+      this.startupRetryTimer = null;
     }
 
     this.queue.rejectAll(new Error('Service closed'), (request) => {
@@ -464,6 +476,27 @@ export class PluginService {
     this.idleCheckTimer = setInterval(() => {
       this.fleet.trimIdlePods();
     }, 5000);
+  }
+
+  private scheduleStartupRetry(delayMs: number): void {
+    if (this.destroyed) {
+      return;
+    }
+
+    if (this.startupRetryTimer) {
+      clearTimeout(this.startupRetryTimer);
+    }
+
+    this.startupRetryTimer = setTimeout(() => {
+      this.startupRetryTimer = null;
+      if (this.destroyed) {
+        return;
+      }
+
+      void this.fleet.ensureMinPods().finally(() => {
+        this.processQueue();
+      });
+    }, delayMs);
   }
 }
 

@@ -4,6 +4,7 @@ import { PluginService } from './service/index';
 import type { LocalPoolServiceConfigType } from './types';
 
 const podMock = vi.hoisted(() => ({
+  startupTimeoutCode: 'POD_STARTUP_TIMEOUT',
   pods: [] as any[],
   startErrors: [] as Error[],
   invokeHandlers: [] as Array<(args: any) => unknown>,
@@ -114,7 +115,14 @@ vi.mock('./pod', () => {
     }
   }
 
-  return { PluginPod };
+  return {
+    PluginPod,
+    POD_STARTUP_TIMEOUT_CODE: podMock.startupTimeoutCode,
+    isPodStartupTimeoutError: (error: unknown) =>
+      error instanceof Error &&
+      'code' in error &&
+      (error as Error & { code?: string }).code === podMock.startupTimeoutCode
+  };
 });
 
 const baseConfig: LocalPoolServiceConfigType = {
@@ -125,7 +133,9 @@ const baseConfig: LocalPoolServiceConfigType = {
   maxRequestsPerPod: 100,
   maxConcurrentRequestsPerPod: 1,
   maxQueueSize: 10,
-  queueTimeout: 1000
+  queueTimeout: 1000,
+  startupRetryBaseDelay: 1000,
+  startupRetryMaxDelay: 10000
 };
 
 function makeConfig(
@@ -145,6 +155,12 @@ function createDeferred<T>() {
     reject = innerReject;
   });
   return { promise, resolve, reject };
+}
+
+function createStartupTimeoutError(): Error {
+  return Object.assign(new Error('Pod startup timeout'), {
+    code: podMock.startupTimeoutCode
+  });
 }
 
 async function waitFor(assertion: () => void, timeoutMs = 1000): Promise<void> {
@@ -183,6 +199,7 @@ describe('PluginService', () => {
 
   afterEach(async () => {
     await Promise.allSettled(services.splice(0).map((service) => service.destroy({ force: true })));
+    vi.useRealTimers();
     podMock.reset();
   });
 
@@ -484,6 +501,103 @@ describe('PluginService', () => {
       queueLength: 0,
       totalRequests: 1,
       errorRate: 1
+    });
+  });
+
+  it('backs off startup timeouts without disabling pod creation', async () => {
+    vi.useFakeTimers();
+    const service = createService(
+      makeConfig({
+        minPods: 0,
+        maxPods: 1,
+        queueTimeout: 20_000,
+        startupRetryBaseDelay: 50,
+        startupRetryMaxDelay: 120
+      })
+    );
+    podMock.startErrors.push(
+      createStartupTimeoutError(),
+      createStartupTimeoutError(),
+      createStartupTimeoutError()
+    );
+
+    await service.initialize();
+
+    const request = service.invoke({
+      eventName: 'run',
+      payload: { name: 'cold-start' },
+      returnStream: false
+    });
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(service.getMetrics().queueLength).toBe(1);
+    expect(podMock.pods).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(service.getMetrics().queueLength).toBe(1);
+    expect(podMock.pods).toHaveLength(2);
+
+    await vi.advanceTimersByTimeAsync(100);
+    expect(service.getMetrics().queueLength).toBe(1);
+    expect(podMock.pods).toHaveLength(3);
+
+    await vi.advanceTimersByTimeAsync(120);
+
+    await expect(request).resolves.toEqual({ name: 'cold-start' });
+    expect(podMock.pods).toHaveLength(4);
+    expect(service.getMetrics()).toMatchObject({
+      pods: {
+        total: 1,
+        idle: 1,
+        pending: 0
+      },
+      queueLength: 0,
+      totalRequests: 1,
+      errorRate: 0
+    });
+  });
+
+  it('resets deterministic startup failure count after a startup timeout', async () => {
+    vi.useFakeTimers();
+    const service = createService(
+      makeConfig({
+        minPods: 0,
+        maxPods: 1,
+        maxRequestsPerPod: 1,
+        queueTimeout: 20_000,
+        startupRetryBaseDelay: 50,
+        startupRetryMaxDelay: 120
+      })
+    );
+
+    await service.initialize();
+
+    podMock.startErrors.push(new Error('startup failed 1'), createStartupTimeoutError());
+    const first = service.invoke({
+      eventName: 'run',
+      payload: { name: 'first' },
+      returnStream: false
+    });
+
+    await vi.advanceTimersByTimeAsync(50);
+    await expect(first).resolves.toEqual({ name: 'first' });
+
+    podMock.startErrors.push(new Error('startup failed 2'), new Error('startup failed 3'));
+    const second = service.invoke({
+      eventName: 'run',
+      payload: { name: 'second' },
+      returnStream: false
+    });
+
+    await expect(second).resolves.toEqual({ name: 'second' });
+    expect(podMock.pods).toHaveLength(6);
+    expect(service.getMetrics()).toMatchObject({
+      pods: {
+        total: 0,
+        idle: 0
+      },
+      totalRequests: 2,
+      errorRate: 0
     });
   });
 

@@ -128,11 +128,14 @@ flowchart LR
 
 `rollPods()` 采用先补后退策略，尽量保持容量稳定。若无法补充新 Pod，会标记启动熔断并保留现有 Pod 继续处理已有能力范围内的请求。
 
-## 启动熔断
+## 启动失败处理
 
 ```mermaid
 flowchart TD
-  fail["createPod() failed"] --> count["consecutivePodStartupFailures++"]
+  fail["createPod() failed"] --> classify{"failure type?"}
+  classify -- startup timeout --> backoff["set retry backoff"]
+  backoff --> retryLater["retry after backoff and keep queued requests waiting"]
+  classify -- startup error --> count["consecutivePodStartupFailures++"]
   count --> threshold{"failures >= 3?"}
   threshold -- no --> retry["allow later retry"]
   threshold -- yes --> blocked["podStartupDisabledError = Error"]
@@ -143,6 +146,8 @@ flowchart TD
 ```
 
 连续启动失败通常说明插件入口、依赖或运行环境已经损坏。熔断后停止继续拉起新 Pod，避免请求永久排队和反复刷启动错误。只要还有存量 Pod，服务会继续降级处理；完全无 Pod 时才把熔断错误暴露给调用方。
+
+启动超时按资源繁忙或调度延迟处理：不会计入连续启动失败熔断，只会触发指数退避后重试。退避时间由 `POOL_SERVICE_STARTUP_RETRY_BASE_DELAY` 和 `POOL_SERVICE_STARTUP_RETRY_MAX_DELAY` 控制，默认 `1000ms` 起步、`10000ms` 封顶。退避结束后 `PluginService` 会再次尝试补齐 `minPods` 并消费队列，CPU 压力缓解后请求可恢复执行。
 
 ## Invoke Session 生命周期
 
