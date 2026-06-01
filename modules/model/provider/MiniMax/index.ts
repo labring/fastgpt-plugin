@@ -174,22 +174,22 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
-      model: 'speech-2.8-turbo',
-      voices: minimaxTtsVoices
-    },
-    {
-      type: ModelTypeEnum.tts,
       model: 'speech-2.8-hd',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
-      model: 'speech-02-turbo',
+      model: 'speech-2.8-turbo',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
       model: 'speech-02-hd',
+      voices: minimaxTtsVoices
+    },
+    {
+      type: ModelTypeEnum.tts,
+      model: 'speech-02-turbo',
       voices: minimaxTtsVoices
     },
     {
