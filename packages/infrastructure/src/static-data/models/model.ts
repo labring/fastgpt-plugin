@@ -92,6 +92,11 @@ export const ModelProviderMap = {
     'zh-CN': '混元',
     'zh-Hant': '混元'
   },
+  AntLing: {
+    en: 'Ant Ling',
+    'zh-CN': '蚂蚁百灵',
+    'zh-Hant': '螞蟻百靈'
+  },
   Baichuan: {
     en: 'Baichuan',
     'zh-CN': '百川智能',

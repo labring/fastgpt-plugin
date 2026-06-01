@@ -16,9 +16,7 @@ const models: ProviderConfigType = {
       reasoningEffort: true,
       toolChoice: true,
       defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
+        thinking: { type: 'enabled' }
       }
     },
     {
@@ -34,9 +32,7 @@ const models: ProviderConfigType = {
       reasoningEffort: true,
       toolChoice: true,
       defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
+        thinking: { type: 'enabled' }
       }
     },
     {
@@ -49,8 +45,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true,
-      reasoningEffort: false
+      reasoningEffort: false,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -61,10 +57,10 @@ const models: ProviderConfigType = {
       maxTemperature: null,
       vision: false,
       reasoning: true,
+      reasoningEffort: false,
       toolChoice: false,
       showTopP: false,
-      showStopSign: false,
-      reasoningEffort: false
+      showStopSign: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -76,8 +72,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: true,
-      toolChoice: true,
-      reasoningEffort: true
+      reasoningEffort: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -89,34 +85,8 @@ const models: ProviderConfigType = {
       responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
-      toolChoice: true,
-      reasoningEffort: false
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'deepseek-v3.1-terminus',
-      maxContext: 125000,
-      maxTokens: 32000,
-      quoteMaxToken: 120000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: false,
-      reasoning: false,
-      toolChoice: true,
-      reasoningEffort: false
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'deepseek-v3.2-exp',
-      maxContext: 125000,
-      maxTokens: 32000,
-      quoteMaxToken: 120000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: false,
-      reasoning: false,
-      toolChoice: true,
-      reasoningEffort: false
+      reasoningEffort: false,
+      toolChoice: true
     }
   ]
 };

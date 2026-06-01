@@ -38,3 +38,4 @@ FastGPT 已有系统工具已经迁移到这个仓库，新工具也将在这个
 - [系统工具开发指南](https://doc.fastgpt.io/docs/introduction/guide/plugins/dev_system_tool)
 - [设计文档](https://doc.fastgpt.io/docs/introduction/development/design/design_plugin)
 - [开发规范](./dev_zh_CN.md)
+- [从 upstream/main 升级到 refactor/v1.0.0](./docs/upgrade/upstream-main-to-refactor-v1-plugin-migration.zh.md)

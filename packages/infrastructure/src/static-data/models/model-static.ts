@@ -14,7 +14,9 @@ import type { RedisClient } from '../../redis/redis-client';
 
 import {
   aiproxyChannels,
+  getSortedStaticAIProxyChannels,
   getSortedStaticModelProviders,
+  staticModelChannelAvatarDir,
   staticModelDataDir,
   staticModelList,
   staticModelProviderDir
@@ -24,6 +26,7 @@ const logger = getLogger(mod.model);
 
 const MODEL_STATIC_DATA_DIGEST_KEY = 'model:static-data:digest';
 const MODEL_LOGO_BASE_PATH = path.posix.join(env.S3_FILE_BASE_PATH, 'models');
+const MODEL_CHANNEL_AVATAR_PATH = path.posix.join('models', 'channel-avatar');
 const MODEL_LOGO_EXTENSIONS = ['svg', 'png', 'jpeg', 'webp', 'jpg'] as const;
 
 type ModelStaticAssetS3Clients = {
@@ -34,8 +37,9 @@ type ModelStaticAssetS3Clients = {
 type ModelAvatarUrlResolver = Pick<RemoteFileStoragePort, 'getAccessUrl'>;
 
 type ModelLogoItem = {
-  providerName: string;
+  name: string;
   logoPath: string;
+  objectPath: string;
 };
 
 export { aiproxyChannels, staticModelList as modelList };
@@ -43,10 +47,17 @@ export { aiproxyChannels, staticModelList as modelList };
 export const getSortedModelProviders = (priority = env.MODEL_PROVIDER_PRIORITY) =>
   getSortedStaticModelProviders(priority);
 
+export const getSortedAIProxyChannels = (priority = env.MODEL_CHANNEL_PRIORITY) =>
+  getSortedStaticAIProxyChannels(priority);
+
 const getModelLogoFileKey = (providerName: string) =>
   path.posix.join('models', providerName, 'logo');
 const getModelLogoObjectKey = (providerName: string) =>
   path.posix.join(MODEL_LOGO_BASE_PATH, providerName, 'logo');
+const getChannelAvatarFileKey = (slug: string) =>
+  path.posix.join(MODEL_CHANNEL_AVATAR_PATH, slug, 'logo');
+const getChannelAvatarObjectKey = (slug: string) =>
+  path.posix.join(env.S3_FILE_BASE_PATH, getChannelAvatarFileKey(slug));
 
 export const getModelAvatarUrl = async (
   providerName: string,
@@ -55,6 +66,18 @@ export const getModelAvatarUrl = async (
   const [url, err] = await publicRemoteFileStorageRepo.getAccessUrl(
     getModelLogoFileKey(providerName)
   );
+  if (err) {
+    return Promise.reject(err.error ?? err);
+  }
+
+  return url;
+};
+
+export const getChannelAvatarUrl = async (
+  slug: string,
+  publicRemoteFileStorageRepo: ModelAvatarUrlResolver
+) => {
+  const [url, err] = await publicRemoteFileStorageRepo.getAccessUrl(getChannelAvatarFileKey(slug));
   if (err) {
     return Promise.reject(err.error ?? err);
   }
@@ -115,24 +138,52 @@ async function listModelLogoItems(): Promise<ModelLogoItem[]> {
       }
 
       return {
-        providerName: entry.name,
-        logoPath
+        name: entry.name,
+        logoPath,
+        objectPath: getModelLogoObjectKey(entry.name)
       } satisfies ModelLogoItem;
     })
     .filter((item): item is ModelLogoItem => item !== null);
 }
 
-async function uploadModelLogo(
-  { providerName, logoPath }: ModelLogoItem,
+async function listChannelAvatarItems(): Promise<ModelLogoItem[]> {
+  const entries = await readdir(staticModelChannelAvatarDir, { withFileTypes: true });
+
+  return entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => {
+      const extension = path.extname(entry.name).slice(1).toLowerCase();
+      if (!MODEL_LOGO_EXTENSIONS.includes(extension as (typeof MODEL_LOGO_EXTENSIONS)[number])) {
+        return null;
+      }
+
+      const name = path.basename(entry.name, path.extname(entry.name));
+
+      return {
+        name,
+        logoPath: path.join(staticModelChannelAvatarDir, entry.name),
+        objectPath: getChannelAvatarObjectKey(name)
+      } satisfies ModelLogoItem;
+    })
+    .filter((item): item is ModelLogoItem => item !== null);
+}
+
+async function uploadModelStaticAsset(
+  { name, logoPath, objectPath }: ModelLogoItem,
   s3Clients: ModelStaticAssetS3Clients
 ) {
   const contentType = getMimeTypeFromFilename(logoPath) ?? 'application/octet-stream';
 
   await s3Clients.internalClient.uploadObject({
-    key: getModelLogoObjectKey(providerName),
+    key: objectPath,
     body: await readFile(logoPath),
     contentType,
     contentDisposition: `inline; filename="logo${path.extname(logoPath)}"`
+  });
+
+  logger.debug('Model static asset uploaded', {
+    name,
+    objectPath
   });
 }
 
@@ -148,20 +199,20 @@ export async function initStaticModelAssets({
   const currentDigest = await redisClient.getClient.get(MODEL_STATIC_DATA_DIGEST_KEY);
 
   if (currentDigest === digest) {
-    logger.info('Model static data digest unchanged, skip re-uploading model logos');
+    logger.info('Model static data digest unchanged, skip re-uploading model assets');
     return;
   }
 
-  const logoItems = await listModelLogoItems();
-  logger.info('Model static data changed, uploading model logos', {
-    count: logoItems.length
+  const assetItems = [...(await listModelLogoItems()), ...(await listChannelAvatarItems())];
+  logger.info('Model static data changed, uploading model assets', {
+    count: assetItems.length
   });
 
-  await Promise.all(logoItems.map((item) => uploadModelLogo(item, s3Clients)));
+  await Promise.all(assetItems.map((item) => uploadModelStaticAsset(item, s3Clients)));
   await redisClient.getClient.set(MODEL_STATIC_DATA_DIGEST_KEY, digest);
 
-  logger.info('Model logos uploaded and digest refreshed', {
-    count: logoItems.length,
+  logger.info('Model assets uploaded and digest refreshed', {
+    count: assetItems.length,
     digest
   });
 }

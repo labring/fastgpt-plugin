@@ -1,5 +1,10 @@
 import { ModelTypeEnum, type ProviderConfigType } from '../../type';
 
+const doubaoTtsVoices = [
+  { label: 'zh_female_kailangjiejie_moon_bigtts', value: 'zh_female_kailangjiejie_moon_bigtts' },
+  { label: 'zh_female_tianmeitaozi_mars_bigtts', value: 'zh_female_tianmeitaozi_mars_bigtts' }
+];
+
 const models: ProviderConfigType = {
   provider: 'Doubao',
   list: [
@@ -12,8 +17,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      toolChoice: true,
-      reasoningEffort: true
+      reasoningEffort: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -24,8 +29,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      toolChoice: true,
-      reasoningEffort: true
+      reasoningEffort: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -36,8 +41,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      toolChoice: true,
-      reasoningEffort: true
+      reasoningEffort: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -48,8 +53,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      toolChoice: true,
-      reasoningEffort: true
+      reasoningEffort: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.embedding,
@@ -66,64 +71,19 @@ const models: ProviderConfigType = {
       normalization: true
     },
     {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-251015',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true,
-      reasoningEffort: false
+      type: ModelTypeEnum.tts,
+      model: 'doubao-tts',
+      voices: doubaoTtsVoices
     },
     {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-250615',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true,
-      reasoningEffort: false
+      type: ModelTypeEnum.tts,
+      model: 'seed-tts-2.0-standard',
+      voices: doubaoTtsVoices
     },
     {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-flash-250828',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true,
-      reasoningEffort: false
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-flash-250615',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true,
-      reasoningEffort: false
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'doubao-seed-1-6-thinking-250615',
-      maxContext: 220000,
-      maxTokens: 16000,
-      quoteMaxToken: 220000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      toolChoice: true,
-      reasoningEffort: false
+      type: ModelTypeEnum.tts,
+      model: 'seed-tts-2.0-expressive',
+      voices: doubaoTtsVoices
     }
   ]
 };

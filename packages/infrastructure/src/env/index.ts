@@ -92,6 +92,7 @@ export const env = createEnv({
     SERVICE_REQUEST_MAX_CONTENT_LENGTH: PositiveIntSchema.default(10),
     DISABLE_CACHE: BoolStringSchema.default(false),
     MODEL_PROVIDER_PRIORITY: z.string().default(''),
+    MODEL_CHANNEL_PRIORITY: z.string().default(''),
     MAX_FILE_SIZE: PositiveIntSchema.default(20 * 1024 * 1024),
 
     // 代理

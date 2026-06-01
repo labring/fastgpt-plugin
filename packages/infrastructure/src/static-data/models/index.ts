@@ -5,6 +5,7 @@ import type { I18nStringStrictType } from '@domain/value-objects/i18n-string.vo'
 
 import ai360 from './provider/ai360';
 import alicloud from './provider/AliCloud';
+import antling from './provider/AntLing';
 import baai from './provider/BAAI';
 import baichuan from './provider/Baichuan';
 import chatglm from './provider/ChatGLM';
@@ -41,10 +42,14 @@ import type { ProviderConfigType } from './type';
 
 export const staticModelDataDir = fileURLToPath(new URL('./', import.meta.url));
 export const staticModelProviderDir = fileURLToPath(new URL('./provider/', import.meta.url));
+export const staticModelChannelAvatarDir = fileURLToPath(
+  new URL('./channel-avatar/', import.meta.url)
+);
 
 export const staticModelProviderConfigs: ProviderConfigType[] = [
   ai360,
   alicloud,
+  antling,
   baai,
   baichuan,
   chatglm,
@@ -84,6 +89,32 @@ const fallbackProviderName = (provider: string): I18nStringStrictType => ({
   'zh-Hant': provider
 });
 
+const parsePriority = (priority: string) =>
+  priority
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const sortByPriority = <T>(items: T[], priority: string, getKey: (item: T) => string): T[] => {
+  const priorityItems = parsePriority(priority);
+  if (priorityItems.length === 0) return items.slice();
+
+  const rank = new Map(priorityItems.map((key, index) => [key, index]));
+
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const rankA = rank.get(getKey(a.item));
+      const rankB = rank.get(getKey(b.item));
+
+      if (rankA !== undefined && rankB !== undefined) return rankA - rankB || a.index - b.index;
+      if (rankA !== undefined) return -1;
+      if (rankB !== undefined) return 1;
+      return a.index - b.index;
+    })
+    .map(({ item }) => item);
+};
+
 export const getSortedStaticModelProviders = (priority = '') => {
   const providers = new Map(ModelProviders.map((item) => [item.provider, item] as const));
 
@@ -98,17 +129,11 @@ export const getSortedStaticModelProviders = (priority = '') => {
     }
   }
 
-  return [...providers.values()].sort(({ provider: a }, { provider: b }) => {
-    if (!priority) return 0;
-
-    const aPrioritized = priority.includes(a);
-    const bPrioritized = priority.includes(b);
-
-    if (aPrioritized && !bPrioritized) return -1;
-    if (!aPrioritized && bPrioritized) return 1;
-    return 0;
-  });
+  return sortByPriority([...providers.values()], priority, ({ provider }) => provider);
 };
+
+export const getSortedStaticAIProxyChannels = (priority = '') =>
+  sortByPriority(aiproxyChannels, priority, ({ channelId }) => String(channelId));
 
 export const staticModelList: ModelItemType[] = staticModelProviderConfigs.flatMap((item) =>
   item.list.map((model) =>

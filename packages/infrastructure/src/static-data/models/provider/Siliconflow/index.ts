@@ -12,8 +12,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: false,
       reasoning: false,
-      toolChoice: true,
-      reasoningEffort: false
+      reasoningEffort: false,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -25,12 +25,12 @@ const models: ProviderConfigType = {
       censor: false,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
       toolChoice: false,
       datasetProcess: false,
       usedInClassify: false,
       usedInExtractFields: false,
-      usedInToolCall: false,
-      reasoningEffort: false
+      usedInToolCall: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -41,8 +41,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: false,
-      toolChoice: true,
-      reasoningEffort: false
+      reasoningEffort: false,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.embedding,
@@ -54,114 +54,42 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.tts,
       model: 'FunAudioLLM/CosyVoice2-0.5B',
       voices: [
-        {
-          label: 'alex',
-          value: 'FunAudioLLM/CosyVoice2-0.5B:alex'
-        },
-        {
-          label: 'anna',
-          value: 'FunAudioLLM/CosyVoice2-0.5B:anna'
-        },
-        {
-          label: 'bella',
-          value: 'FunAudioLLM/CosyVoice2-0.5B:bella'
-        },
-        {
-          label: 'benjamin',
-          value: 'FunAudioLLM/CosyVoice2-0.5B:benjamin'
-        },
-        {
-          label: 'charles',
-          value: 'FunAudioLLM/CosyVoice2-0.5B:charles'
-        },
-        {
-          label: 'claire',
-          value: 'FunAudioLLM/CosyVoice2-0.5B:claire'
-        },
-        {
-          label: 'david',
-          value: 'FunAudioLLM/CosyVoice2-0.5B:david'
-        },
-        {
-          label: 'diana',
-          value: 'FunAudioLLM/CosyVoice2-0.5B:diana'
-        }
+        { label: 'alex', value: 'FunAudioLLM/CosyVoice2-0.5B:alex' },
+        { label: 'anna', value: 'FunAudioLLM/CosyVoice2-0.5B:anna' },
+        { label: 'bella', value: 'FunAudioLLM/CosyVoice2-0.5B:bella' },
+        { label: 'benjamin', value: 'FunAudioLLM/CosyVoice2-0.5B:benjamin' },
+        { label: 'charles', value: 'FunAudioLLM/CosyVoice2-0.5B:charles' },
+        { label: 'claire', value: 'FunAudioLLM/CosyVoice2-0.5B:claire' },
+        { label: 'david', value: 'FunAudioLLM/CosyVoice2-0.5B:david' },
+        { label: 'diana', value: 'FunAudioLLM/CosyVoice2-0.5B:diana' }
       ]
     },
     {
       type: ModelTypeEnum.tts,
       model: 'RVC-Boss/GPT-SoVITS',
       voices: [
-        {
-          label: 'alex',
-          value: 'RVC-Boss/GPT-SoVITS:alex'
-        },
-        {
-          label: 'anna',
-          value: 'RVC-Boss/GPT-SoVITS:anna'
-        },
-        {
-          label: 'bella',
-          value: 'RVC-Boss/GPT-SoVITS:bella'
-        },
-        {
-          label: 'benjamin',
-          value: 'RVC-Boss/GPT-SoVITS:benjamin'
-        },
-        {
-          label: 'charles',
-          value: 'RVC-Boss/GPT-SoVITS:charles'
-        },
-        {
-          label: 'claire',
-          value: 'RVC-Boss/GPT-SoVITS:claire'
-        },
-        {
-          label: 'david',
-          value: 'RVC-Boss/GPT-SoVITS:david'
-        },
-        {
-          label: 'diana',
-          value: 'RVC-Boss/GPT-SoVITS:diana'
-        }
+        { label: 'alex', value: 'RVC-Boss/GPT-SoVITS:alex' },
+        { label: 'anna', value: 'RVC-Boss/GPT-SoVITS:anna' },
+        { label: 'bella', value: 'RVC-Boss/GPT-SoVITS:bella' },
+        { label: 'benjamin', value: 'RVC-Boss/GPT-SoVITS:benjamin' },
+        { label: 'charles', value: 'RVC-Boss/GPT-SoVITS:charles' },
+        { label: 'claire', value: 'RVC-Boss/GPT-SoVITS:claire' },
+        { label: 'david', value: 'RVC-Boss/GPT-SoVITS:david' },
+        { label: 'diana', value: 'RVC-Boss/GPT-SoVITS:diana' }
       ]
     },
     {
       type: ModelTypeEnum.tts,
       model: 'fishaudio/fish-speech-1.5',
       voices: [
-        {
-          label: 'alex',
-          value: 'fishaudio/fish-speech-1.5:alex'
-        },
-        {
-          label: 'anna',
-          value: 'fishaudio/fish-speech-1.5:anna'
-        },
-        {
-          label: 'bella',
-          value: 'fishaudio/fish-speech-1.5:bella'
-        },
-        {
-          label: 'benjamin',
-          value: 'fishaudio/fish-speech-1.5:benjamin'
-        },
-        {
-          label: 'charles',
-          value: 'fishaudio/fish-speech-1.5:charles'
-        },
-        {
-          label: 'claire',
-          value: 'fishaudio/fish-speech-1.5:claire'
-        },
-        {
-          label: 'david',
-          value: 'fishaudio/fish-speech-1.5:david'
-        },
-        {
-          label: 'diana',
-          value: 'fishaudio/fish-speech-1.5:diana'
-        }
+        { label: 'alex', value: 'fishaudio/fish-speech-1.5:alex' },
+        { label: 'anna', value: 'fishaudio/fish-speech-1.5:anna' },
+        { label: 'bella', value: 'fishaudio/fish-speech-1.5:bella' },
+        { label: 'benjamin', value: 'fishaudio/fish-speech-1.5:benjamin' },
+        { label: 'charles', value: 'fishaudio/fish-speech-1.5:charles' },
+        { label: 'claire', value: 'fishaudio/fish-speech-1.5:claire' },
+        { label: 'david', value: 'fishaudio/fish-speech-1.5:david' },
+        { label: 'diana', value: 'fishaudio/fish-speech-1.5:diana' }
       ]
     },
     {
@@ -170,7 +98,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
-      model: 'BAAI/bge-reranker-v2-m3'
+      model: 'BAAI/bge-reranker-v2-m3',
+      maxToken: 8192
     }
   ]
 };

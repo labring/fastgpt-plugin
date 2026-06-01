@@ -4,8 +4,9 @@ import { ModelContract } from '@interface-adapter/contracts/route/model.contract
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import {
-  aiproxyChannels,
+  getChannelAvatarUrl,
   getModelAvatarUrl,
+  getSortedAIProxyChannels,
   getSortedModelProviders,
   modelList
 } from '@infrastructure/static-data/models/model-static';
@@ -69,6 +70,12 @@ export const makeModelRoute = (deps: ModelRouteDeps) => {
         getSortedModelProviders().map(async (provider) => ({
           ...provider,
           avatar: await getModelAvatarUrl(provider.provider, deps.publicRemoteFileStorageRepo)
+        }))
+      );
+      const aiproxyChannels = await Promise.all(
+        getSortedAIProxyChannels().map(async (channel) => ({
+          ...channel,
+          avatar: await getChannelAvatarUrl(channel.avatar, deps.publicRemoteFileStorageRepo)
         }))
       );
 
