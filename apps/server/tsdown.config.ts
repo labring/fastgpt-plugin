@@ -9,6 +9,10 @@ const modelProviderDir = join(
   configDir,
   '../../packages/infrastructure/src/static-data/models/provider'
 );
+const modelChannelAvatarDir = join(
+  configDir,
+  '../../packages/infrastructure/src/static-data/models/channel-avatar'
+);
 const sdkFactoryDir = join(configDir, '../../sdk/factory');
 const modelLogoExtensions = ['svg', 'png', 'jpeg', 'webp', 'jpg'];
 
@@ -42,6 +46,10 @@ export default defineConfig({
   clean: true,
   copy: [
     ...modelLogoCopyEntries,
+    {
+      from: modelChannelAvatarDir,
+      to: 'dist'
+    },
     {
       from: '../../packages/infrastructure/src/static-data/workflow/templates',
       to: 'dist'
