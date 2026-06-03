@@ -3,7 +3,6 @@ import z from 'zod';
 import { PluginPermissionEnumSchema } from '@domain/value-objects/permission.vo';
 
 import { I18nStringSchema } from '../value-objects/i18n-string.vo';
-import { PluginSourceSchema } from '../value-objects/plugin.vo';
 
 export const PluginTagSchema = z.enum([
   'tools',

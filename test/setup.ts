@@ -17,8 +17,8 @@ function loadEnvFile(filePath: string) {
         }
       }
     }
-  } catch (error) {
-    console.warn(`Warning: Could not load ${filePath}`);
+  } catch (err) {
+    console.warn(`Warning: Could not load ${filePath}`, err);
   }
 }
 

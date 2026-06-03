@@ -1,7 +1,5 @@
 import z from 'zod';
 
-import type { BaseFileStoragePort } from '../../ports/file-storage/base-file-storage.port';
-
 import { FileMetaSchema } from './file.vo';
 import type { FileObject } from './file-object.vo';
 import type { MIMEType } from './MIME.vo';

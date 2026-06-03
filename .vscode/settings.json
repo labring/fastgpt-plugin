@@ -2,15 +2,10 @@
     "search.exclude": {
       "bun.lock": true,
     },
-    "editor.formatOnSave": true,
-    "editor.mouseWheelZoom": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "prettier.prettierPath": "node_modules/prettier",
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "always"
     },
-    "[typescriptreact]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }
+    "editor.mouseWheelZoom": true,
+    "typescript.tsdk": "node_modules/typescript/lib"
 }

@@ -8,7 +8,6 @@
     "prepare": "husky install",
     "lint": "eslint --fix",
     "typecheck": "tsc --noEmit",
-    "prettier": "prettier --write \"./**/*.{ts,js,json}\"",
     "build:pkg": "pnpm tsc && pnpm --filter modules/tool build",
     "build:sdk-client": "pnpm --filter @fastgpt-plugin/sdk-client build",
     "build:sdk-factory": "pnpm --filter @fastgpt-plugin/sdk-factory build",
@@ -33,7 +32,6 @@
     "husky": "^8.0.3",
     "json5": "^2.2.3",
     "lint-staged": "^13.3.0",
-    "prettier": "3.2.4",
     "tsx": "^4.19.2",
     "typescript-eslint": "^8.29.1",
     "vitest": "3.1.2"
@@ -44,9 +42,6 @@
   },
   "packageManager": "pnpm@10.33.2",
   "lint-staged": {
-    "**/*.ts": [
-      "pnpm run lint",
-      "pnpm run prettier"
-    ]
+    "**/*.{ts,js,mjs,cjs}": "eslint --fix"
   }
 }

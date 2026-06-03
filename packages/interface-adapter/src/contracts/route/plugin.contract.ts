@@ -9,12 +9,11 @@ import {
   jsonResponse
 } from '../contract.type';
 import {
-  PluginBaseDTOSchema,
   PluginConfirmParamsSchema,
+  PluginDeleteParamsSchema,
   PluginInstallDTOSchema,
   PluginListDTOSchema,
   PluginListParamsSchema,
-  PluginDeleteParamsSchema,
   PluginPruneDisabledResponseDTOSchema,
   PluginRuntimeConfigGetParamsSchema,
   PluginRuntimeConfigResetParamsSchema,

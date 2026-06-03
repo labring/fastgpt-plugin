@@ -1,4 +1,4 @@
-import { ModelTypeEnum, type ProviderConfigType } from '../../type';
+import { type ProviderConfigType } from '../../type';
 
 const models: ProviderConfigType = {
   provider: 'FishAudio',

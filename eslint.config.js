@@ -1,73 +1,79 @@
-import js from '@eslint/js';
-import json from '@eslint/json';
-import { defineConfig } from 'eslint/config';
-import simpleImportSort from 'eslint-plugin-simple-import-sort';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
+import js from "@eslint/js";
+import json from "@eslint/json";
+import { defineConfig } from "eslint/config";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 export default defineConfig([
   {
-    files: ['**/*.{js,mjs,cjs,ts}'],
+    files: ["**/*.{js,mjs,cjs,ts}"],
     plugins: { js },
-    extends: ['js/recommended']
+    extends: ["js/recommended"],
   },
   {
-    files: ['**/*.{js,mjs,cjs,ts}'],
-    languageOptions: { globals: globals.node }
+    files: ["**/*.{js,mjs,cjs,ts}"],
+    languageOptions: { globals: globals.node },
   },
   tseslint.configs.recommended,
   {
-    files: ['**/*.json5'],
+    files: ["**/*.json5"],
     plugins: { json },
-    language: 'json/json5',
-    extends: ['json/recommended']
+    language: "json/json5",
+    extends: ["json/recommended"],
   },
   {
-    name: 'ignore dist',
-    ignores: ['**/dist/*']
+    name: "ignore generated files",
+    ignores: [
+      "**/dist/*",
+      "**/coverage/*",
+      "**/node_modules/*",
+      "test/fixtures/**",
+      "packages/infrastructure/src/plugin/plugin-runtime/drivers/local-pool/test/fixtures/**",
+    ],
   },
   {
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/ban-ts-comment': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      'no-var': 'off',
-      'no-console': 'off',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "no-var": "off",
+      "no-console": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
         {
-          argsIgnorePattern: '^_'
-        }
-      ]
-    }
+          argsIgnorePattern: "^_",
+        },
+      ],
+    },
   },
   {
     plugins: {
-      'simple-import-sort': simpleImportSort
+      "simple-import-sort": simpleImportSort,
     },
     rules: {
-      'simple-import-sort/imports': [
-        'error',
+      "simple-import-sort/imports": [
+        "error",
         {
           groups: [
             // side effect
-            ['^\\u0000'],
+            ["^\\u0000"],
             // node builtin
-            ['^node:'],
+            ["^node:"],
             // external packages
-            ['^@?\\w'],
+            ["^@?\\w"],
             // aliases
-            ['^@domain', '^@usecase', '^@infra', '^@shared', '^@/', '^~'],
+            ["^@domain", "^@usecase", "^@infra", "^@shared", "^@/", "^~"],
             // parent imports
-            ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
+            ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
             // same-folder imports
-            ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+            ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
             // type imports
-            ['^.+\\.?(css)$']
-          ]
-        }
+            ["^.+\\.?(css)$"],
+          ],
+        },
       ],
-      'simple-import-sort/exports': 'error'
-    }
-  }
+      "simple-import-sort/exports": "error",
+    },
+  },
 ]);

@@ -4,7 +4,7 @@ import type { InvokePort } from '@domain/ports/invoke.port';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 
 import type { PluginRuntimeConfigType } from '../../entities/plugin.entity';
-import type { PluginRuntimeModeType, PluginUniqueIdType } from '../../value-objects/plugin.vo';
+import type { PluginUniqueIdType } from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
 
 export const PluginInvokeEventnameSchema = z.enum(['run']);

@@ -1,7 +1,8 @@
 import { Readable } from 'node:stream';
 
-import type { InvokeUploadFileInputType } from '@domain/ports/invoke.port';
 import { describe, expect, it } from 'vitest';
+
+import type { InvokeUploadFileInputType } from '@domain/ports/invoke.port';
 
 import { InvokeManager } from './plugin/invoke/invoke.impl';
 

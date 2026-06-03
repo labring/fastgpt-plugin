@@ -38,7 +38,7 @@ const handler = createToolHandler({
   }
 });
 
-const toolset = defineToolSet({
+export const toolset = defineToolSet({
   secretSchema: toolSetSecretSchema,
   manifest: {
     pluginId: 'test',

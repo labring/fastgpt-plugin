@@ -1,5 +1,5 @@
 import { makePluginRegisterActiveUC } from '@usecase/plugin/plugin-register-active.uc';
-import { configureLogger, getLogger, root } from '@infrastructure/logger';
+import { getLogger, root } from '@infrastructure/logger';
 import { initStaticModelAssets } from '@infrastructure/static-data/models/model-static';
 import { initWorkflowTemplates } from '@infrastructure/static-data/workflow/init';
 
