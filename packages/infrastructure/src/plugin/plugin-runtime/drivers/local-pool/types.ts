@@ -3,6 +3,7 @@ import z from 'zod';
 
 import type { PluginType } from '@domain/entities/plugin.entity';
 import type { InvokePort } from '@domain/ports/invoke.port';
+import type { RuntimeFailureKind } from '@infrastructure/metrics';
 
 import type { PluginService } from './service/index';
 export type { PodInfo, PodStatus } from './pod/type';
@@ -134,6 +135,12 @@ export interface LocalPoolRuntimeCallbacks {
 export interface PluginServiceCallbacks {
   onPodCreated?: () => void;
   onRequestCompleted?: (payload: { requestId: string; duration: number }) => void;
-  onRequestFailed?: (payload: { requestId: string; error: unknown }) => void;
+  onRequestFailed?: (payload: {
+    requestId: string;
+    error: unknown;
+    failureKind: RuntimeFailureKind;
+  }) => void;
   onPodLog?: (event: { podId: string; level: 'debug' | 'error'; message: string }) => void;
+  onPodCrashed?: () => void;
+  onPodStartup?: (payload: { outcome: 'success' | 'failure' | 'timeout' }) => void;
 }

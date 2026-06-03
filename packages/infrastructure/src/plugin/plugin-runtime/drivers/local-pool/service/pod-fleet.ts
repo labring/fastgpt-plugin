@@ -108,6 +108,7 @@ export class PodFleet {
       this.recordPodStartupSuccess();
       this.pods.set(podId, pod);
       this.options.callbacks.onPodCreated?.();
+      this.options.callbacks.onPodStartup?.({ outcome: 'success' });
       return pod;
     } catch (error) {
       const startupError = toError(error);
@@ -336,6 +337,7 @@ export class PodFleet {
 
     if (wasRunning) {
       this.options.onPodCrashed();
+      this.options.callbacks.onPodCrashed?.();
     }
 
     if (!this.options.isDestroyed()) {
@@ -381,6 +383,7 @@ export class PodFleet {
       `[${this.options.serviceName}] Pod startup timed out; retrying after ${delayMs}ms`,
       error
     );
+    this.options.callbacks.onPodStartup?.({ outcome: 'timeout' });
     this.options.onPodStartupRetryable(delayMs);
   }
 
@@ -392,6 +395,7 @@ export class PodFleet {
       `[${this.options.serviceName}] Pod startup failed (${this.consecutivePodStartupFailures}/${MAX_CONSECUTIVE_POD_STARTUP_FAILURES})`,
       error
     );
+    this.options.callbacks.onPodStartup?.({ outcome: 'failure' });
 
     if (this.consecutivePodStartupFailures < MAX_CONSECUTIVE_POD_STARTUP_FAILURES) {
       return;

@@ -7,6 +7,10 @@ const resetEnv = () => {
   delete process.env.AUTH_TOKEN;
   delete process.env.NODE_ENV;
   delete process.env.DISABLE_SSRF_CHECK;
+  delete process.env.METRICS_ENABLE_OTEL;
+  delete process.env.METRICS_OTEL_URL;
+  delete process.env.METRICS_EXPORT_INTERVAL_MS;
+  delete process.env.METRICS_EXPORT_TIMEOUT_MS;
 };
 
 describe('env AUTH_TOKEN', () => {
@@ -52,5 +56,26 @@ describe('env AUTH_TOKEN', () => {
     const { env } = await import('./index');
 
     expect(env.AUTH_TOKEN).toBe('a'.repeat(32));
+  });
+
+  it('keeps metrics disabled by default', async () => {
+    const { env } = await import('./index');
+
+    expect(env.METRICS_ENABLE_OTEL).toBe(false);
+    expect(env.METRICS_OTEL_URL).toBe('http://localhost:4318/v1/metrics');
+    expect(env.METRICS_EXPORT_INTERVAL_MS).toBe(30_000);
+    expect(env.METRICS_EXPORT_TIMEOUT_MS).toBe(10_000);
+  });
+
+  it('rejects invalid metrics OTLP URLs', async () => {
+    process.env.METRICS_OTEL_URL = 'not-a-url';
+
+    await expect(import('./index')).rejects.toThrow('METRICS_OTEL_URL');
+  });
+
+  it('rejects non-positive metrics export timings', async () => {
+    process.env.METRICS_EXPORT_INTERVAL_MS = '0';
+
+    await expect(import('./index')).rejects.toThrow('METRICS_EXPORT_INTERVAL_MS');
   });
 });

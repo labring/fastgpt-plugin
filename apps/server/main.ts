@@ -5,6 +5,7 @@ import { serve, type ServerType } from '@hono/node-server';
 import { env } from '@infrastructure/env';
 import { app } from '@infrastructure/hono/app';
 import { configureLogger, destroyLogger, getLogger, mod, root } from '@infrastructure/logger';
+import { configureMetrics, destroyMetrics } from '@infrastructure/metrics';
 import { configureProxy } from '@infrastructure/utils/proxy';
 import { getErrText } from '@shared/utils/err';
 
@@ -17,6 +18,7 @@ import { makeToolRoute } from './src/routes/tool.route';
 import { makeWorkflowRoute } from './src/routes/workflow.route';
 
 await configureLogger(); // setup logger
+await configureMetrics(); // setup metrics
 const logger = getLogger(root);
 logger.debug(env);
 
@@ -48,13 +50,46 @@ async function prepare() {
   await init();
 }
 
-function shutdown() {
-  server?.close(async () => {
-    logger.info('HTTP server closed');
-    await destroyLogger();
-  });
+let shuttingDown = false;
 
-  process.exit(0);
+async function closeServer(): Promise<void> {
+  if (!server) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    server?.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      logger.info('HTTP server closed');
+      resolve();
+    });
+  });
+}
+
+function shutdown() {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+
+  void (async () => {
+    let exitCode = 0;
+
+    try {
+      await closeServer();
+      await destroyMetrics();
+    } catch (error) {
+      exitCode = 1;
+      logger.error('Failed to shutdown server cleanly', { error });
+    } finally {
+      await destroyLogger();
+      process.exit(exitCode);
+    }
+  })();
 }
 
 async function main() {

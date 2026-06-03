@@ -20,6 +20,7 @@ import type { RedisClient } from '@infrastructure/redis/redis-client';
 
 import { env } from '../../../../env';
 import { getLogger, mod } from '../../../../logger';
+import { getRuntimeMetrics, registerRuntimeGaugeSource } from '../../../../metrics';
 import { VersionKeyStore } from '../../../../redis/version-key';
 import type { MongoClient } from '../../../../storage/mongo';
 import { PluginRuntimeConfigRepo } from '../../plugin-runtime-config.repo';
@@ -63,6 +64,7 @@ export class LocalPoolPluginRuntimeManager
   /** 插件运行时配置仓储 */
   private readonly configRepo: PluginRuntimeConfigRepo<LocalPoolPluginConfigType>;
   private logger = getLogger(mod.tool);
+  private unregisterMetricsGaugeSource: (() => void) | null = null;
 
   /** manager 是否销毁（销毁则不再接收请求） */
   private destroyed = false;
@@ -95,22 +97,15 @@ export class LocalPoolPluginRuntimeManager
       },
       LOCAL_POOL_DEFAULT_PLUGIN_CONFIG
     );
+    this.unregisterMetricsGaugeSource = registerRuntimeGaugeSource({
+      runtimeMode: 'localPool',
+      getGlobalMetrics: () => this.getGlobalMetricsSnapshot()
+    });
     this.startHealthCheck();
   }
 
   async globalStatus(): Promise<Result<GlobalMetrics>> {
-    const totalPods = this.getTotalPods();
-    const services = Object.fromEntries(
-      [...this.plugins.entries()].map(([id, { service }]) => [id, service.getMetrics()])
-    );
-
-    const metrics = {
-      services,
-      totalPods,
-      totalRequests: Object.values(services).reduce((sum, m) => sum + m.totalRequests, 0),
-      totalServices: Object.keys(services).length
-    } satisfies GlobalMetrics;
-    return successResult(metrics);
+    return successResult(this.getGlobalMetricsSnapshot());
   }
 
   /** uniqueId 转为一个字符串，可以直接从 map 中拿到 */
@@ -342,6 +337,12 @@ export class LocalPoolPluginRuntimeManager
             });
           }
         },
+        onPodStartup: ({ outcome }: { outcome: 'success' | 'failure' | 'timeout' }) => {
+          getRuntimeMetrics().recordPodStartup({
+            ...toRuntimeMetricAttributes(id),
+            outcome
+          });
+        },
         onRequestCompleted: ({ duration }: { requestId: string; duration: number }) => {
           this.logger.debug(`Plugin request completed`, { pluginId: id, duration });
           // this.globalMetrics.globalTotalRequests++;
@@ -496,6 +497,8 @@ export class LocalPoolPluginRuntimeManager
       clearInterval(this.healthCheckTimer);
       this.healthCheckTimer = null;
     }
+    this.unregisterMetricsGaugeSource?.();
+    this.unregisterMetricsGaugeSource = null;
 
     await Promise.all([...this.plugins.values()].map(({ service }) => service.destroy(options)));
     this.plugins.clear();
@@ -509,6 +512,20 @@ export class LocalPoolPluginRuntimeManager
       total += service.getMetrics().pods.total;
     }
     return total;
+  }
+
+  private getGlobalMetricsSnapshot(): GlobalMetrics {
+    const totalPods = this.getTotalPods();
+    const services = Object.fromEntries(
+      [...this.plugins.entries()].map(([id, { service }]) => [id, service.getMetrics()])
+    );
+
+    return {
+      services,
+      totalPods,
+      totalRequests: Object.values(services).reduce((sum, m) => sum + m.totalRequests, 0),
+      totalServices: Object.keys(services).length
+    } satisfies GlobalMetrics;
   }
 
   private toServiceConfig(config: LocalPoolPluginConfigType): LocalPoolServiceConfigType {
@@ -605,4 +622,15 @@ function getErrorMessage(error: unknown): string | undefined {
     return error;
   }
   return undefined;
+}
+
+function toRuntimeMetricAttributes(runtimeId: string) {
+  const [, pluginId, pluginVersion, pluginEtag] = runtimeId.split('@');
+
+  return {
+    runtimeMode: 'localPool' as const,
+    pluginId,
+    pluginVersion,
+    pluginEtag
+  };
 }

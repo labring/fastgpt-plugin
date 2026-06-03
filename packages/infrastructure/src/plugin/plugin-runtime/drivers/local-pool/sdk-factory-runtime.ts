@@ -166,7 +166,13 @@ function findBundledSdkFactoryPackageRoot(startDir: string): string | undefined 
   let currentDir = path.resolve(startDir);
 
   while (true) {
-    const candidate = path.join(currentDir, 'dist', 'runtime-sdk', '@fastgpt-plugin', 'sdk-factory');
+    const candidate = path.join(
+      currentDir,
+      'dist',
+      'runtime-sdk',
+      '@fastgpt-plugin',
+      'sdk-factory'
+    );
     if (isPackageRoot(candidate, SDK_FACTORY_PACKAGE)) {
       return candidate;
     }

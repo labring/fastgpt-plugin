@@ -4,6 +4,7 @@ import type { InvokePort } from '@domain/ports/invoke.port';
 import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginPermissionEnumType } from '@domain/value-objects/permission.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
+import { getRuntimeMetrics, type RuntimeFailureKind } from '@infrastructure/metrics';
 
 import type { PluginPod } from '../pod';
 import { ensureSdkFactoryRuntimeDependency } from '../sdk-factory-runtime';
@@ -54,6 +55,7 @@ export class PluginService {
       isDestroyed: () => this.destroyed,
       onPodCrashed: () => {
         this.stats.recordCrash();
+        getRuntimeMetrics().recordPodCrash(this.getRuntimeMetricAttributes());
       },
       onPodChanged: () => {
         this.processQueue();
@@ -68,8 +70,9 @@ export class PluginService {
     this.queue = new RequestQueue({
       maxSize: () => this.config.maxQueueSize,
       timeoutMs: () => this.config.queueTimeout,
-      onTimeout: (request) => {
+      onTimeout: (request, error) => {
         this.stats.recordFailed();
+        this.recordRequestFailed(request, error, 'queue_timeout');
         this.cleanupInvokeSession(request.options?.invocationId);
       }
     });
@@ -116,6 +119,7 @@ export class PluginService {
 
     const startedAt = Date.now();
     const resolvedOptions = this.resolveInvokeOptions(options);
+    getRuntimeMetrics().recordInvocationStarted(this.getRuntimeMetricAttributes());
     const availablePod = this.fleet.selectAvailablePod();
 
     // 快路径：已有可用 Pod 时立即派发，并同步把 Pod 标记为忙碌。
@@ -149,6 +153,10 @@ export class PluginService {
     const startupBlockedError = this.fleet.getStartupBlockedError();
     if (startupBlockedError) {
       this.stats.recordFailed();
+      getRuntimeMetrics().recordInvocationFailed({
+        ...this.getRuntimeMetricAttributes(),
+        failureKind: 'startup_blocked'
+      });
       this.cleanupInvokeSession(resolvedOptions?.invocationId);
       throw startupBlockedError;
     }
@@ -252,6 +260,7 @@ export class PluginService {
         this.queue.append(request);
       } catch (error) {
         this.stats.recordFailed();
+        this.recordRequestFailed(request, error, 'queue_overflow');
         this.cleanupInvokeSession(request.options?.invocationId);
         request.reject(toError(error));
       }
@@ -317,6 +326,10 @@ export class PluginService {
       return promise;
     } catch (error) {
       this.stats.recordFailed();
+      getRuntimeMetrics().recordInvocationFailed({
+        ...this.getRuntimeMetricAttributes(),
+        failureKind: 'queue_overflow'
+      });
       this.cleanupInvokeSession(input.options?.invocationId);
       return Promise.reject(error);
     }
@@ -367,6 +380,8 @@ export class PluginService {
   }
 
   private async runRequest(request: ServiceRequest, pod: PluginPod): Promise<void> {
+    const executionStartedAt = Date.now();
+
     try {
       const result = await pod.invoke({
         eventName: request.eventName,
@@ -375,24 +390,52 @@ export class PluginService {
         options: request.options
       });
 
-      const duration = Date.now() - request.startedAt;
-      this.stats.recordCompleted(duration);
-      this.callbacks.onRequestCompleted?.({ requestId: request.requestId, duration });
       // 普通结果可立即释放资源；流式结果需要等 stream end/error 后再释放。
-      this.bindResultLifecycle({
-        invocationId: request.options?.invocationId,
-        pod,
-        result
-      });
+      if (result instanceof StreamData) {
+        this.bindStreamLifecycle({
+          request,
+          pod,
+          result,
+          executionStartedAt
+        });
+        request.resolve(result);
+        return;
+      }
+
+      this.recordRequestCompleted(request);
+      this.cleanupInvokeSession(request.options?.invocationId);
+      this.releasePod(pod);
       request.resolve(result);
     } catch (error) {
       const normalizedError = toError(error);
       this.stats.recordFailed();
-      this.callbacks.onRequestFailed?.({ requestId: request.requestId, error });
+      this.recordRequestFailed(request, normalizedError, getRuntimeFailureKind(normalizedError));
       this.releasePod(pod);
       this.cleanupInvokeSession(request.options?.invocationId);
       request.reject(normalizedError);
     }
+  }
+
+  private recordRequestCompleted(request: ServiceRequest): void {
+    const duration = Date.now() - request.startedAt;
+    this.stats.recordCompleted(duration);
+    getRuntimeMetrics().recordInvocationCompleted({
+      ...this.getRuntimeMetricAttributes(),
+      durationMs: duration
+    });
+    this.callbacks.onRequestCompleted?.({ requestId: request.requestId, duration });
+  }
+
+  private recordRequestFailed(
+    request: ServiceRequest,
+    error: unknown,
+    failureKind: RuntimeFailureKind
+  ): void {
+    getRuntimeMetrics().recordInvocationFailed({
+      ...this.getRuntimeMetricAttributes(),
+      failureKind
+    });
+    this.callbacks.onRequestFailed?.({ requestId: request.requestId, error, failureKind });
   }
 
   private releasePod(pod: PluginPod): void {
@@ -419,8 +462,20 @@ export class PluginService {
 
     this.queue.rejectAll(error, (request) => {
       this.stats.recordFailed();
+      this.recordRequestFailed(request, error, 'startup_blocked');
       this.cleanupInvokeSession(request.options?.invocationId);
     });
+  }
+
+  private getRuntimeMetricAttributes() {
+    const [, pluginId, pluginVersion, pluginEtag] = this.serviceName.split('@');
+
+    return {
+      runtimeMode: 'localPool' as const,
+      pluginId,
+      pluginVersion,
+      pluginEtag
+    };
   }
 
   private resolveInvokeOptions(options?: InvokeOptions): InvokeOptions | undefined {
@@ -437,32 +492,70 @@ export class PluginService {
     };
   }
 
-  private bindResultLifecycle({
-    invocationId,
+  private bindStreamLifecycle({
+    request,
     pod,
-    result
+    result,
+    executionStartedAt
   }: {
-    invocationId: string | undefined;
+    request: ServiceRequest;
     pod: PluginPod;
-    result: unknown;
+    result: StreamData<unknown>;
+    executionStartedAt: number;
   }): void {
-    if (result instanceof StreamData) {
-      let released = false;
-      const cleanup = () => {
-        if (released) {
+    let released = false;
+    let timeout: NodeJS.Timeout | undefined;
+
+    const cleanup = () => {
+      if (released) {
+        return false;
+      }
+
+      released = true;
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = undefined;
+      }
+      this.cleanupInvokeSession(request.options?.invocationId);
+      pod.completeStreamRequest();
+      this.releasePod(pod);
+      return true;
+    };
+
+    result
+      .onEnd(() => {
+        if (!cleanup()) {
           return;
         }
-        released = true;
-        this.cleanupInvokeSession(invocationId);
-        pod.completeStreamRequest();
-        this.releasePod(pod);
-      };
-      result.onEnd(cleanup).onError(cleanup);
+        this.recordRequestCompleted(request);
+      })
+      .onError((error) => {
+        if (!cleanup()) {
+          return;
+        }
+        this.stats.recordFailed();
+        this.recordRequestFailed(request, error, getRuntimeFailureKind(error));
+      });
+
+    if (released) {
       return;
     }
 
-    this.cleanupInvokeSession(invocationId);
-    this.releasePod(pod);
+    const timeoutMs = request.options?.timeout ?? this.config.podTimeout;
+    const elapsedMs = Date.now() - executionStartedAt;
+    const remainingMs = Math.max(1, timeoutMs - elapsedMs);
+
+    timeout = setTimeout(() => {
+      const error = Object.assign(new Error(`Request timeout: ${request.eventName}`), {
+        code: 'REQUEST_TIMEOUT',
+        requestId: request.requestId,
+        method: request.eventName
+      });
+
+      pod.kill();
+      result.fail(error);
+    }, remainingMs);
+    timeout.unref?.();
   }
 
   private cleanupInvokeSession(invocationId?: string): void {
@@ -511,4 +604,21 @@ function toError(error: unknown): Error {
     return error;
   }
   return new Error(String(error));
+}
+
+function getRuntimeFailureKind(error: unknown): RuntimeFailureKind {
+  if (!(error instanceof Error)) {
+    return 'unknown';
+  }
+
+  const code = (error as { code?: unknown }).code;
+  if (code === 'REQUEST_TIMEOUT') {
+    return 'pod_invoke_error';
+  }
+
+  if (error.message === 'Queue is full') {
+    return 'queue_overflow';
+  }
+
+  return 'pod_invoke_error';
 }

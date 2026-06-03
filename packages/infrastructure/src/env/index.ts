@@ -122,6 +122,18 @@ export const env = createEnv({
     LOG_OTEL_SERVICE_NAME: z.string().default('fastgpt-plugin'),
     LOG_OTEL_URL: z.url().default('http://localhost:4318/v1/logs'),
 
+    // 指标
+    METRICS_ENABLE_OTEL: BoolStringSchema.default(false),
+    METRICS_OTEL_SERVICE_NAME: z.string().default('fastgpt-plugin'),
+    METRICS_OTEL_URL: z.url().default('http://localhost:4318/v1/metrics'),
+    METRICS_EXPORT_INTERVAL_MS: PositiveIntSchema.default(30_000),
+    METRICS_EXPORT_TIMEOUT_MS: PositiveIntSchema.default(10_000),
+    METRICS_INCLUDE_PLUGIN_VERSION: BoolStringSchema.default(true),
+    METRICS_INCLUDE_PLUGIN_ETAG: BoolStringSchema.default(false),
+    METRICS_INCLUDE_HOSTNAME: BoolStringSchema.default(true),
+    SERVICE_INSTANCE_ID: z.string().optional(),
+    DEPLOYMENT_ENVIRONMENT: z.string().optional(),
+
     // 对象存储
     STORAGE_VENDOR: z.enum(['minio', 'aws-s3', 'cos', 'oss']).default('minio'),
     STORAGE_REGION: z.string().default('us-east-1'),

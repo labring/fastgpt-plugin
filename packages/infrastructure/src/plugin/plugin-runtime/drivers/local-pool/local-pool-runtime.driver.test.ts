@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { PluginTypeEnum } from '@domain/entities/plugin-base.entity';
+import { __getRuntimeGaugeSourcesForTest } from '@infrastructure/metrics';
 
 import { LocalPoolPluginRuntimeManager } from './local-pool-runtime.driver';
 import type { LocalPoolPluginConfigType } from './types';
@@ -54,6 +55,20 @@ function createManager() {
 }
 
 describe('LocalPoolPluginRuntimeManager config', () => {
+  it('registers and unregisters a local-pool runtime gauge source', async () => {
+    const manager = createManager();
+
+    expect(__getRuntimeGaugeSourcesForTest()).toEqual([
+      expect.objectContaining({
+        runtimeMode: 'localPool'
+      })
+    ]);
+
+    await manager.shutdown();
+
+    expect(__getRuntimeGaugeSourcesForTest()).toEqual([]);
+  });
+
   it('returns only plugin-scoped config fields', async () => {
     pluginRuntimeConfigModel.storedConfig = {
       minPods: 1,

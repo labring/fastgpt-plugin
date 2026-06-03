@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { StreamData } from '@domain/value-objects/stream.vo';
+
 import { PluginService } from './service/index';
 import type { LocalPoolServiceConfigType } from './types';
 
@@ -19,7 +21,20 @@ const sdkFactoryRuntimeMock = vi.hoisted(() => ({
   ensureSdkFactoryRuntimeDependency: vi.fn()
 }));
 
+const runtimeMetricsMock = vi.hoisted(() => ({
+  recorder: {
+    recordInvocationStarted: vi.fn(),
+    recordInvocationCompleted: vi.fn(),
+    recordInvocationFailed: vi.fn(),
+    recordPodCrash: vi.fn(),
+    recordPodStartup: vi.fn()
+  }
+}));
+
 vi.mock('./sdk-factory-runtime', () => sdkFactoryRuntimeMock);
+vi.mock('@infrastructure/metrics', () => ({
+  getRuntimeMetrics: () => runtimeMetricsMock.recorder
+}));
 
 vi.mock('./pod', () => {
   class PluginPod {
@@ -77,6 +92,14 @@ vi.mock('./pod', () => {
     kill(signal: NodeJS.Signals = 'SIGTERM'): void {
       this.killedWith = signal;
       this.status = 'terminating';
+    }
+
+    completeStreamRequest(): void {
+      this.activeRequests = Math.max(0, this.activeRequests - 1);
+      this.lastActiveAt = Date.now();
+      if (this.status === 'running') {
+        this.status = this.activeRequests > 0 ? 'running' : 'idle';
+      }
     }
 
     getInfo() {
@@ -184,8 +207,11 @@ async function waitFor(assertion: () => void, timeoutMs = 1000): Promise<void> {
 
 const services: PluginService[] = [];
 
-function createService(config: LocalPoolServiceConfigType) {
-  const service = new PluginService('test-service', '/virtual/plugin.js', config);
+function createService(
+  config: LocalPoolServiceConfigType,
+  callbacks?: ConstructorParameters<typeof PluginService>[3]
+) {
+  const service = new PluginService('test-service', '/virtual/plugin.js', config, callbacks);
   services.push(service);
   return service;
 }
@@ -193,6 +219,7 @@ function createService(config: LocalPoolServiceConfigType) {
 describe('PluginService', () => {
   beforeEach(() => {
     podMock.reset();
+    vi.clearAllMocks();
     sdkFactoryRuntimeMock.ensureSdkFactoryRuntimeDependency.mockReset();
     sdkFactoryRuntimeMock.ensureSdkFactoryRuntimeDependency.mockResolvedValue(undefined);
   });
@@ -228,6 +255,19 @@ describe('PluginService', () => {
       totalRequests: 1,
       errorRate: 0
     });
+    expect(runtimeMetricsMock.recorder.recordInvocationStarted).toHaveBeenCalledWith({
+      runtimeMode: 'localPool',
+      pluginId: undefined,
+      pluginVersion: undefined,
+      pluginEtag: undefined
+    });
+    expect(runtimeMetricsMock.recorder.recordInvocationCompleted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        runtimeMode: 'localPool',
+        pluginId: undefined,
+        durationMs: expect.any(Number)
+      })
+    );
   });
 
   it('queues requests and drains higher priority work first', async () => {
@@ -459,12 +499,110 @@ describe('PluginService', () => {
         returnStream: false
       })
     ).rejects.toThrow('Queue is full');
+    expect(runtimeMetricsMock.recorder.recordInvocationFailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        failureKind: 'queue_overflow'
+      })
+    );
 
     releaseBusy.resolve('busy-result');
 
     await expect(busy).resolves.toBe('busy-result');
     await expect(queued).resolves.toBe('queued');
     expect(service.getMetrics().errorRate).toBe(1 / 3);
+  });
+
+  it('records a queue timeout failure without leaking request identity', async () => {
+    vi.useFakeTimers();
+    const onRequestFailed = vi.fn();
+    const service = createService(
+      makeConfig({ minPods: 1, maxPods: 1, maxQueueSize: 1, queueTimeout: 20 }),
+      {
+        onRequestFailed
+      }
+    );
+    const releaseBusy = createDeferred<string>();
+
+    podMock.invokeHandlers.push(() => releaseBusy.promise);
+
+    await service.initialize();
+    void service.invoke({
+      eventName: 'run',
+      payload: { name: 'busy' },
+      returnStream: false
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    await waitFor(() => expect(service.getMetrics().pods.busy).toBe(1));
+
+    const queued = service.invoke({
+      eventName: 'run',
+      payload: { name: 'queued' },
+      returnStream: false
+    });
+    const queuedError = expect(queued).rejects.toThrow('Queue wait timeout');
+    await vi.advanceTimersByTimeAsync(20);
+
+    await queuedError;
+    expect(runtimeMetricsMock.recorder.recordInvocationFailed).toHaveBeenCalledWith({
+      runtimeMode: 'localPool',
+      pluginId: undefined,
+      pluginVersion: undefined,
+      pluginEtag: undefined,
+      failureKind: 'queue_timeout'
+    });
+    expect(onRequestFailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        failureKind: 'queue_timeout'
+      })
+    );
+
+    releaseBusy.resolve('busy-result');
+  });
+
+  it('times out a streaming request that does not finish before podTimeout', async () => {
+    const onRequestFailed = vi.fn();
+    const service = createService(makeConfig({ minPods: 0, maxPods: 1, podTimeout: 20 }), {
+      onRequestFailed
+    });
+    const stream = StreamData.create<string>();
+
+    podMock.invokeHandlers.push(() => stream);
+
+    await service.initialize();
+
+    const result = await service.invoke({
+      eventName: 'run',
+      payload: { name: 'stream' },
+      returnStream: true
+    });
+    const errorPromise = new Promise<Error>((resolve) => result.onError(resolve));
+
+    await expect(errorPromise).resolves.toMatchObject({
+      code: 'REQUEST_TIMEOUT',
+      method: 'run'
+    });
+    expect(podMock.pods[0].killedWith).toBe('SIGTERM');
+    expect(onRequestFailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          code: 'REQUEST_TIMEOUT',
+          method: 'run'
+        }),
+        failureKind: 'pod_invoke_error'
+      })
+    );
+    expect(runtimeMetricsMock.recorder.recordInvocationFailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        failureKind: 'pod_invoke_error'
+      })
+    );
+    expect(service.getMetrics()).toMatchObject({
+      pods: {
+        total: 0
+      },
+      totalRequests: 1,
+      errorRate: 1
+    });
   });
 
   it('rejects an invoke-triggered startup after pod startup retries are exhausted', async () => {
@@ -502,6 +640,11 @@ describe('PluginService', () => {
       totalRequests: 1,
       errorRate: 1
     });
+    expect(runtimeMetricsMock.recorder.recordInvocationFailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        failureKind: 'startup_blocked'
+      })
+    );
   });
 
   it('backs off startup timeouts without disabling pod creation', async () => {
