@@ -1,6 +1,6 @@
 import z from 'zod';
 
-import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
+import type { ErrorResponseType } from '@domain/value-objects/error.vo';
 
 export const HTTPMethodSchema = z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
 export const HTTPMethodEnum = HTTPMethodSchema.enum;
@@ -13,6 +13,6 @@ export const QuerySchema = z.record(z.string(), z.string());
 export const BodySchema = z.unknown();
 
 export type BasicResponseType = {
-  error?: I18nStringType;
+  error?: ErrorResponseType;
   data?: unknown;
 };

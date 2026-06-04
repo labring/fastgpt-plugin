@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { PluginTypeEnum } from '@domain/entities/plugin-base.entity';
+import { RegisteredError } from '@domain/value-objects/error.vo';
+import { ErrorCode } from '@infrastructure/errors/error.registry';
 import { __getRuntimeGaugeSourcesForTest } from '@infrastructure/metrics';
 
 import { LocalPoolPluginRuntimeManager } from './local-pool-runtime.driver';
@@ -270,7 +272,9 @@ describe('LocalPoolPluginRuntimeManager invoke', () => {
       'zh-CN':
         '调用失败：[test-service] Pod startup failed 3 times consecutively; pod creation has been disabled'
     });
-    expect(err?.error).toBe(startupError);
+    expect(err?.error).toBeInstanceOf(RegisteredError);
+    expect((err?.error as RegisteredError).code).toBe(ErrorCode.pluginInvokeFailed);
+    expect(err?.error.cause).toBe(startupError);
 
     await manager.shutdown();
   });
@@ -330,7 +334,9 @@ describe('LocalPoolPluginRuntimeManager invoke', () => {
       en: 'Plugin invocation timed out after 30000ms while handling event "run"',
       'zh-CN': '插件调用超时（30000ms），事件：run'
     });
-    expect(err?.error).toBe(timeoutError);
+    expect(err?.error).toBeInstanceOf(RegisteredError);
+    expect((err?.error as RegisteredError).code).toBe(ErrorCode.pluginInvokeTimeout);
+    expect(err?.error.cause).toBe(timeoutError);
 
     await manager.shutdown();
   });
@@ -390,7 +396,9 @@ describe('LocalPoolPluginRuntimeManager invoke', () => {
       en: 'Plugin invocation waited too long for an available local-pool pod after 20000ms while handling event "run"',
       'zh-CN': '插件调用等待空闲本地运行实例超时（20000ms），事件：run'
     });
-    expect(err?.error).toBe(queueError);
+    expect(err?.error).toBeInstanceOf(RegisteredError);
+    expect((err?.error as RegisteredError).code).toBe(ErrorCode.pluginInvokeQueueTimeout);
+    expect(err?.error.cause).toBe(queueError);
 
     await manager.shutdown();
   });

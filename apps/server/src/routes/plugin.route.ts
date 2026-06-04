@@ -65,7 +65,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
     });
 
     if (err) {
-      return R.fail(c, 400, err.reason);
+      return R.fail(c, 400, err.error);
     }
 
     return R.success(c, result);
@@ -105,7 +105,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [, err] = await pluginConfirmUC({ uniqueIds });
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return c.json({ ok: true }, 200);
@@ -139,7 +139,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [result, err] = await pluginPruneDisabledUC();
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.success(c, result);
@@ -178,7 +178,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [, err] = await pluginDeleteUC(body);
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.empty(c);
@@ -225,7 +225,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.success(c, result);
@@ -263,7 +263,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [result, err] = await pluginListUC(query);
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.success(c, result);
@@ -301,7 +301,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [result, err] = await pluginVersionsUC(query);
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.success(c, result);
@@ -335,7 +335,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const [result, err] = await pluginTagListUC({});
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.success(c, result);
@@ -381,7 +381,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.success(c, result);
@@ -423,7 +423,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.empty(c);
@@ -464,7 +464,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.empty(c);

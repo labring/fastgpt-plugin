@@ -1,6 +1,5 @@
-import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
-
 import { defineContract, jsonResponse } from '../contract.type';
+import { ErrorResponseDTOSchema } from '../dto/common.dto';
 import { WorkflowListDTOSchema } from '../dto/workflow.dto';
 
 import { authToken } from './auth';
@@ -18,7 +17,7 @@ export const WorkflowContract = {
     },
     response: {
       200: jsonResponse({ data: WorkflowListDTOSchema }),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   })
 } as const;

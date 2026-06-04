@@ -45,7 +45,7 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
       const [result, err] = await toolDetailUC(query);
 
       if (err) {
-        return R.fail(c, 404, err.reason);
+        return R.fail(c, 404, err.error);
       }
 
       return R.success(c, result);
@@ -83,7 +83,7 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
       const [result, err] = await toolListUC(query);
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.success(c, result);
@@ -127,7 +127,7 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
       const uc = makeToolRunUC(deps);
       const [result, err] = await uc(body);
       if (err) {
-        return c.json({ error: err }, 400);
+        return R.fail(c, 400, err.error);
       }
 
       const stream = new ReadableStream<Uint8Array>({

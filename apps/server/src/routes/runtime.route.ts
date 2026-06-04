@@ -1,9 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
+import { ErrorResponseDTOSchema } from '@interface-adapter/contracts/dto/common.dto';
 
-import {
-  makeRuntimeMetricsUC,
-  type RuntimeMetricsUCDeps
-} from '@usecase/runtime/runtime-metrics.uc';
+import { makeRuntimeMetricsUC, type RuntimeMetricsUCDeps } from '@usecase/runtime/runtime-metrics.uc';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import { getLogger, root } from '@infrastructure/logger';
 
@@ -34,11 +32,7 @@ export const makeRuntimeRoute = (deps: RuntimeRouteDeps) => {
           content: {
             'application/json': {
               schema: z.object({
-                error: z.object({
-                  en: z.string(),
-                  'zh-CN': z.string().optional(),
-                  'zh-Hant': z.string().optional()
-                })
+                error: ErrorResponseDTOSchema
               })
             }
           }
@@ -50,7 +44,7 @@ export const makeRuntimeRoute = (deps: RuntimeRouteDeps) => {
       const [result, err] = await runtimeMetricsUC({});
 
       if (err) {
-        return R.fail(c, 500, err.reason);
+        return R.fail(c, 500, err.error);
       }
 
       return R.success(c, result);

@@ -13,10 +13,12 @@ import type {
   PluginRuntimeInvokeOptions,
   PluginRuntimeManagerPort
 } from '@domain/ports/plugin/plugin-runtime-manager.port';
+import { createError, type RegisteredError } from '@domain/value-objects/error.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
+import { ErrorCode } from '@infrastructure/errors/error.registry';
 import type { RedisClient } from '@infrastructure/redis/redis-client';
 
 import { env } from '../../../../env';
@@ -140,13 +142,7 @@ export class LocalPoolPluginRuntimeManager
   async getConfig(pluginId: string): Promise<Result<LocalPoolPluginConfigType>> {
     const [config, err] = await this.configRepo.getPluginRuntimeConfig(pluginId);
     if (err) {
-      return failureResult(
-        {
-          en: 'Failed to get plugin runtime config',
-          'zh-CN': '获取插件运行时配置失败'
-        },
-        err
-      );
+      return failureResult(createError(ErrorCode.pluginRuntimeConfigLoadFailed, { cause: err }));
     }
     const [pluginConfig, parseErr] = this.parsePluginConfig(config);
     if (parseErr) {
@@ -164,13 +160,7 @@ export class LocalPoolPluginRuntimeManager
 
     const [, err] = await this.configRepo.savePluginRuntimeConfig(pluginId, pluginConfig);
     if (err) {
-      return failureResult(
-        {
-          en: 'Failed to update plugin runtime config',
-          'zh-CN': '更新插件运行时配置失败'
-        },
-        err
-      );
+      return failureResult(createError(ErrorCode.pluginRuntimeConfigUpdateFailed, { cause: err }));
     }
 
     const pluginRuntimeIds = this.pluginIdMap.get(pluginId);
@@ -200,13 +190,7 @@ export class LocalPoolPluginRuntimeManager
   async resetConfig(pluginId: string): Promise<Result> {
     const [config, err] = await this.configRepo.resetPluginRuntimeConfig(pluginId);
     if (err) {
-      return failureResult(
-        {
-          en: 'Failed to reset plugin runtime config',
-          'zh-CN': '重置插件运行时配置失败'
-        },
-        err
-      );
+      return failureResult(createError(ErrorCode.pluginRuntimeConfigResetFailed, { cause: err }));
     }
 
     const [pluginConfig, parseErr] = this.parsePluginConfig(config);
@@ -250,13 +234,7 @@ export class LocalPoolPluginRuntimeManager
         force: false
       });
     } catch (err) {
-      return failureResult(
-        {
-          en: 'Error during shutdown',
-          'zh-CN': '关闭过程中发生错误'
-        },
-        err
-      );
+      return failureResult(createError(ErrorCode.pluginRuntimeShutdownFailed, { cause: err }));
     }
     return successResult({});
   }
@@ -270,24 +248,17 @@ export class LocalPoolPluginRuntimeManager
   async register(uniqueId: PluginUniqueIdType): Promise<Result> {
     const id = this.getRuntimeId(uniqueId);
     if (this.destroyed)
-      return failureResult({
-        en: 'PluginManager already destroyed',
-        'zh-CN': '插件管理器已销毁'
-      });
+      return failureResult(createError(ErrorCode.pluginRuntimeManagerDestroyed));
 
     if (this.plugins.has(id))
-      return failureResult({
-        en: 'Plugin already registered',
-        'zh-CN': '插件已注册'
-      });
+      return failureResult(createError(ErrorCode.pluginRuntimeAlreadyRegistered));
 
     const [config, configErr] = await this.configRepo.getPluginRuntimeConfig(uniqueId.pluginId);
 
     if (configErr) {
-      return failureResult({
-        en: 'Failed to get plugin runtime config',
-        'zh-CN': '获取插件运行时配置失败'
-      });
+      return failureResult(
+        createError(ErrorCode.pluginRuntimeConfigLoadFailed, { cause: configErr })
+      );
     }
 
     const [pluginConfig, parseErr] = this.parsePluginConfig(config);
@@ -307,20 +278,27 @@ export class LocalPoolPluginRuntimeManager
         pluginId: id
       });
 
-      return failureResult({
-        en: `Pod quota exceeded: current=${currentPods}, required=${svcConfig.minPods}, max=${this.managerConfig.maxTotalPods}`,
-        'zh-CN': `Pod 配额超出：当前=${currentPods}, 需要=${svcConfig.minPods}, 最大=${this.managerConfig.maxTotalPods}`
-      });
+      return failureResult(
+        createError(ErrorCode.pluginRuntimePodQuotaExceeded, {
+          message: `Pod quota exceeded: current=${currentPods}, required=${svcConfig.minPods}, max=${this.managerConfig.maxTotalPods}`,
+          reason: {
+            en: `Pod quota exceeded: current=${currentPods}, required=${svcConfig.minPods}, max=${this.managerConfig.maxTotalPods}`,
+            'zh-CN': `Pod 配额超出：当前=${currentPods}, 需要=${svcConfig.minPods}, 最大=${this.managerConfig.maxTotalPods}`
+          },
+          data: {
+            currentPods,
+            requestedPods: svcConfig.minPods,
+            maxTotalPods: this.managerConfig.maxTotalPods,
+            pluginId: id
+          }
+        })
+      );
     }
 
     const [info, err] = await this.deps.pluginRepo.getPluginById(uniqueId);
     if (err) {
       return failureResult(
-        {
-          en: 'Register plugin error, can not get plugin info',
-          'zh-CN': '注册插件失败，无法获取插件信息'
-        },
-        err
+        createError(ErrorCode.pluginRuntimePluginInfoLoadFailed, { cause: err })
       );
     }
     const service = new PluginService(
@@ -377,7 +355,18 @@ export class LocalPoolPluginRuntimeManager
       info.info.permission ?? []
     );
 
-    await service.initialize();
+    try {
+      await service.initialize();
+    } catch (error) {
+      return failureResult(
+        createError(ErrorCode.pluginRuntimeInitializeFailed, {
+          cause: error,
+          data: {
+            pluginId: id
+          }
+        })
+      );
+    }
 
     this.plugins.set(id, {
       config: pluginConfig,
@@ -402,20 +391,14 @@ export class LocalPoolPluginRuntimeManager
 
     const record = this.plugins.get(id);
     if (!record) {
-      return failureResult({
-        en: 'Plugin not found',
-        'zh-CN': '插件未找到'
-      });
+      return failureResult(createError(ErrorCode.pluginRuntimePluginNotFound));
     }
 
     if (options?.replacementUniqueId) {
       const replacementId = this.getRuntimeId(options.replacementUniqueId);
       const replacement = this.plugins.get(replacementId);
       if (!replacement) {
-        return failureResult({
-          en: 'Replacement plugin not found',
-          'zh-CN': '替换插件未找到'
-        });
+        return failureResult(createError(ErrorCode.pluginRuntimeReplacementPluginNotFound));
       }
 
       await record.service.drainTo(replacement.service);
@@ -447,13 +430,10 @@ export class LocalPoolPluginRuntimeManager
     options?: PluginRuntimeInvokeOptions;
   }): Promise<Result<S extends true ? StreamData<R> : R>> {
     if (this.destroyed)
-      return failureResult({
-        en: 'PluginManager already destoryed',
-        'zh-CN': '插件管理器已销毁'
-      });
+      return failureResult(createError(ErrorCode.pluginRuntimeManagerDestroyed));
 
     const plugin = await this.getPlugin(uniqueId);
-    if (!plugin) return failureResult({ en: 'Plugin not found', 'zh-CN': '插件未找到' });
+    if (!plugin) return failureResult(createError(ErrorCode.pluginRuntimePluginNotFound));
 
     // 判断插件是否能调用这个方法
     // TODO: 这个逻辑应该抽出去
@@ -474,10 +454,10 @@ export class LocalPoolPluginRuntimeManager
         });
         return successResult(result);
       } catch (error) {
-        return failureResult(toInvokeFailureReason(error), error);
+        return failureResult(toInvokeFailureError(error));
       }
     }
-    return failureResult({ en: 'Event not supported', 'zh-CN': '不支持的事件' });
+    return failureResult(createError(ErrorCode.pluginRuntimeEventNotSupported));
   }
 
   // ============ 指标 ============
@@ -540,13 +520,7 @@ export class LocalPoolPluginRuntimeManager
     const result = LocalPoolPluginConfigSchema.safeParse(config);
 
     if (!result.success) {
-      return failureResult(
-        {
-          en: 'Invalid plugin runtime config',
-          'zh-CN': '插件运行时配置无效'
-        },
-        result.error
-      );
+      return failureResult(createError(ErrorCode.pluginRuntimeConfigInvalid, { cause: result.error }));
     }
 
     return successResult(result.data);
@@ -599,14 +573,19 @@ export class LocalPoolPluginRuntimeManager
   }
 }
 
-function toInvokeFailureReason(error: unknown): I18nStringType {
-  const localPoolReason = getLocalPoolInvokeErrorReason(error);
-  if (localPoolReason) {
-    return localPoolReason;
+function toInvokeFailureError(error: unknown): RegisteredError {
+  const localPoolError = getLocalPoolInvokeError(error);
+  if (localPoolError) {
+    return localPoolError;
   }
 
   const errorMessage = getErrorMessage(error);
-  return formatInvokeFailureReason(errorMessage);
+  const reason = formatInvokeFailureReason(errorMessage);
+  return createError(ErrorCode.pluginInvokeFailed, {
+    message: reason.en,
+    reason,
+    cause: error
+  });
 }
 
 function getErrorMessage(error: unknown): string | undefined {
@@ -619,7 +598,7 @@ function getErrorMessage(error: unknown): string | undefined {
   return undefined;
 }
 
-function getLocalPoolInvokeErrorReason(error: unknown): I18nStringType | undefined {
+function getLocalPoolInvokeError(error: unknown): RegisteredError | undefined {
   if (!(error instanceof Error)) {
     return undefined;
   }
@@ -628,19 +607,37 @@ function getLocalPoolInvokeErrorReason(error: unknown): I18nStringType | undefin
   if (code === 'REQUEST_TIMEOUT') {
     const method = getStringErrorField(error, 'method');
     const timeoutMs = getNumberErrorField(error, 'timeoutMs');
-    return {
+    const reason = {
       en: `Plugin invocation timed out${formatDurationEn(timeoutMs)}${formatEventNameEn(method)}`,
       'zh-CN': `插件调用超时${formatDurationZh(timeoutMs)}${formatEventNameZh(method)}`
     };
+    return createError(ErrorCode.pluginInvokeTimeout, {
+      message: reason.en,
+      reason,
+      cause: error,
+      data: {
+        ...(method !== undefined ? { method } : {}),
+        ...(timeoutMs !== undefined ? { timeoutMs } : {})
+      }
+    });
   }
 
   if (code === 'QUEUE_TIMEOUT') {
     const method = getStringErrorField(error, 'method');
     const timeoutMs = getNumberErrorField(error, 'timeoutMs');
-    return {
+    const reason = {
       en: `Plugin invocation waited too long for an available local-pool pod${formatDurationEn(timeoutMs)}${formatEventNameEn(method)}`,
       'zh-CN': `插件调用等待空闲本地运行实例超时${formatDurationZh(timeoutMs)}${formatEventNameZh(method)}`
     };
+    return createError(ErrorCode.pluginInvokeQueueTimeout, {
+      message: reason.en,
+      reason,
+      cause: error,
+      data: {
+        ...(method !== undefined ? { method } : {}),
+        ...(timeoutMs !== undefined ? { timeoutMs } : {})
+      }
+    });
   }
 
   return undefined;
