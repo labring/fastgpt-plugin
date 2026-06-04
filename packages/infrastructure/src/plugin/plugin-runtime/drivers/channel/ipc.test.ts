@@ -100,4 +100,42 @@ describe('PluginIpcRuntimeChannel errors', () => {
     await host.close();
     await client.close();
   });
+
+  it('round-trips nested errors inside successful request results', async () => {
+    const { host, client } = createChannelPair();
+    const reason = {
+      en: 'Host user info failed',
+      'zh-CN': '宿主用户信息失败'
+    };
+
+    client.setRequestHandler(() => [
+      null,
+      {
+        reason,
+        error: createReasonError(reason, {
+          cause: new Error('upstream user info unavailable')
+        })
+      }
+    ]);
+
+    const response = await host.request(PluginChannelHostMethod.request, {
+      eventName: 'run',
+      payload: {}
+    });
+    const result = response.result as [null, { reason: typeof reason; error: Error }];
+    const [, failure] = result;
+
+    expect(failure.reason).toEqual(reason);
+    expect(failure.error).toBeInstanceOf(Error);
+    expect(failure.error).toMatchObject({
+      message: reason.en,
+      reason,
+      cause: expect.objectContaining({
+        message: 'upstream user info unavailable'
+      })
+    });
+
+    await host.close();
+    await client.close();
+  });
 });
