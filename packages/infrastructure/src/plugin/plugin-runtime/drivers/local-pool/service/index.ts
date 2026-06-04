@@ -546,10 +546,9 @@ export class PluginService {
     const remainingMs = Math.max(1, timeoutMs - elapsedMs);
 
     timeout = setTimeout(() => {
-      const error = Object.assign(new Error(`Request timeout: ${request.eventName}`), {
-        code: 'REQUEST_TIMEOUT',
-        requestId: request.requestId,
-        method: request.eventName
+      const error = createPluginInvokeTimeoutError({
+        request,
+        timeoutMs
       });
 
       pod.kill();
@@ -621,4 +620,24 @@ function getRuntimeFailureKind(error: unknown): RuntimeFailureKind {
   }
 
   return 'pod_invoke_error';
+}
+
+function createPluginInvokeTimeoutError({
+  request,
+  timeoutMs
+}: {
+  request: ServiceRequest;
+  timeoutMs: number;
+}): Error & { code: 'REQUEST_TIMEOUT'; requestId: string; method: string; timeoutMs: number } {
+  return Object.assign(
+    new Error(
+      `Plugin invocation timed out after ${timeoutMs}ms while handling event "${request.eventName}"`
+    ),
+    {
+      code: 'REQUEST_TIMEOUT' as const,
+      requestId: request.requestId,
+      method: request.eventName,
+      timeoutMs
+    }
+  );
 }

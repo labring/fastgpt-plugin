@@ -58,7 +58,7 @@ export class PluginPod {
   constructor(
     public readonly podId: string,
     private options: PluginPodOptions
-  ) {}
+  ) { }
 
   async start(): Promise<void> {
     if (this.process) throw new Error('Pod already started');
@@ -123,7 +123,7 @@ export class PluginPod {
           }
         });
 
-        const unsubReady = () => {};
+        const unsubReady = () => { };
 
         this.process.on('error', (err) => this.handleError(err));
         this.process.on('exit', (code, signal) => {
@@ -175,40 +175,40 @@ export class PluginPod {
 
       const result = returnStream
         ? await this.channel
-            .request(
-              PluginChannelHostMethod.request,
-              {
-                eventName,
-                payload,
-                returnStream
-              },
-              {
-                id: requestId,
-                timeoutMs: options?.timeout ?? this.options.podTimeout,
-                traceId: options?.invocationId
-              }
-            )
-            .then(({ output }) => {
-              if (!output) {
-                throw new Error(`Request did not return an output stream: ${eventName}`);
-              }
-              return output.stream;
-            })
+          .request(
+            PluginChannelHostMethod.request,
+            {
+              eventName,
+              payload,
+              returnStream
+            },
+            {
+              id: requestId,
+              timeoutMs: options?.timeout ?? this.options.podTimeout,
+              traceId: options?.invocationId
+            }
+          )
+          .then(({ output }) => {
+            if (!output) {
+              throw new Error(`Request did not return an output stream: ${eventName}`);
+            }
+            return output.stream;
+          })
         : await this.channel
-            .request(
-              PluginChannelHostMethod.request,
-              {
-                eventName,
-                payload,
-                returnStream
-              },
-              {
-                timeoutMs: options?.timeout ?? this.options.podTimeout,
-                id: requestId,
-                traceId: options?.invocationId
-              }
-            )
-            .then(({ result }) => result as R);
+          .request(
+            PluginChannelHostMethod.request,
+            {
+              eventName,
+              payload,
+              returnStream
+            },
+            {
+              timeoutMs: options?.timeout ?? this.options.podTimeout,
+              id: requestId,
+              traceId: options?.invocationId
+            }
+          )
+          .then(({ result }) => result as R);
 
       this.requestsExecuted++;
       const finishedAt = Date.now();
@@ -224,13 +224,16 @@ export class PluginPod {
 
       return result as S extends true ? StreamData<R> : R;
     } catch (error) {
-      if (isRequestTimeoutError(error)) {
-        error.method = eventName;
-        this.options.callbacks?.onTimeout?.({ requestId, method: eventName });
-      }
+      const err = isRequestTimeoutError(error) ? createPluginInvokeTimeoutError({
+        source: error,
+        requestId,
+        eventName,
+        timeoutMs: options?.timeout ?? this.options.podTimeout
+      }) : error
+      this.options.callbacks?.onTimeout?.({ requestId, method: eventName });
       this.status = 'failed';
       this.kill();
-      throw error;
+      throw err;
     } finally {
       if (!streamTransferred) {
         this.completeRequest();
@@ -382,5 +385,28 @@ function isRequestTimeoutError(
     error instanceof Error &&
     'code' in error &&
     (error as Error & { code?: string }).code === 'REQUEST_TIMEOUT'
+  );
+}
+
+function createPluginInvokeTimeoutError({
+  source,
+  requestId,
+  eventName,
+  timeoutMs
+}: {
+  source: Error;
+  requestId: string;
+  eventName: string;
+  timeoutMs: number;
+}): Error & { code: 'REQUEST_TIMEOUT'; requestId: string; method: string; timeoutMs: number } {
+  return Object.assign(
+    new Error(`Plugin invocation timed out after ${timeoutMs}ms while handling event "${eventName}"`),
+    source,
+    {
+      code: 'REQUEST_TIMEOUT' as const,
+      requestId,
+      method: eventName,
+      timeoutMs
+    }
   );
 }

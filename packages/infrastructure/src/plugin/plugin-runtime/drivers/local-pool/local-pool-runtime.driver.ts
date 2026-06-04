@@ -13,6 +13,7 @@ import type {
   PluginRuntimeInvokeOptions,
   PluginRuntimeManagerPort
 } from '@domain/ports/plugin/plugin-runtime-manager.port';
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
@@ -598,9 +599,54 @@ export class LocalPoolPluginRuntimeManager
   }
 }
 
-function toInvokeFailureReason(error: unknown) {
-  const errorMessage = getErrorMessage(error);
+function toInvokeFailureReason(error: unknown): I18nStringType {
+  const localPoolReason = getLocalPoolInvokeErrorReason(error);
+  if (localPoolReason) {
+    return localPoolReason;
+  }
 
+  const errorMessage = getErrorMessage(error);
+  return formatInvokeFailureReason(errorMessage);
+}
+
+function getErrorMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return undefined;
+}
+
+function getLocalPoolInvokeErrorReason(error: unknown): I18nStringType | undefined {
+  if (!(error instanceof Error)) {
+    return undefined;
+  }
+
+  const code = (error as { code?: unknown }).code;
+  if (code === 'REQUEST_TIMEOUT') {
+    const method = getStringErrorField(error, 'method');
+    const timeoutMs = getNumberErrorField(error, 'timeoutMs');
+    return {
+      en: `Plugin invocation timed out${formatDurationEn(timeoutMs)}${formatEventNameEn(method)}`,
+      'zh-CN': `插件调用超时${formatDurationZh(timeoutMs)}${formatEventNameZh(method)}`
+    };
+  }
+
+  if (code === 'QUEUE_TIMEOUT') {
+    const method = getStringErrorField(error, 'method');
+    const timeoutMs = getNumberErrorField(error, 'timeoutMs');
+    return {
+      en: `Plugin invocation waited too long for an available local-pool pod${formatDurationEn(timeoutMs)}${formatEventNameEn(method)}`,
+      'zh-CN': `插件调用等待空闲本地运行实例超时${formatDurationZh(timeoutMs)}${formatEventNameZh(method)}`
+    };
+  }
+
+  return undefined;
+}
+
+function formatInvokeFailureReason(errorMessage?: string): I18nStringType {
   if (!errorMessage) {
     return {
       en: 'Invoke failed',
@@ -614,14 +660,30 @@ function toInvokeFailureReason(error: unknown) {
   };
 }
 
-function getErrorMessage(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
-  return undefined;
+function getStringErrorField(error: Error, field: string): string | undefined {
+  const value = (error as unknown as Record<string, unknown>)[field];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getNumberErrorField(error: Error, field: string): number | undefined {
+  const value = (error as unknown as Record<string, unknown>)[field];
+  return typeof value === 'number' ? value : undefined;
+}
+
+function formatDurationEn(timeoutMs?: number): string {
+  return timeoutMs === undefined ? '' : ` after ${timeoutMs}ms`;
+}
+
+function formatDurationZh(timeoutMs?: number): string {
+  return timeoutMs === undefined ? '' : `（${timeoutMs}ms）`;
+}
+
+function formatEventNameEn(method?: string): string {
+  return method ? ` while handling event "${method}"` : '';
+}
+
+function formatEventNameZh(method?: string): string {
+  return method ? `，事件：${method}` : '';
 }
 
 function toRuntimeMetricAttributes(runtimeId: string) {

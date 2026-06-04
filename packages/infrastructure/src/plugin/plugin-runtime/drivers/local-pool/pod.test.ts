@@ -91,7 +91,9 @@ describe('PluginPod', () => {
       })
     ).rejects.toMatchObject({
       code: 'REQUEST_TIMEOUT',
-      method: 'run'
+      method: 'run',
+      message: 'Plugin invocation timed out after 30ms while handling event "run"',
+      timeoutMs: 30
     });
 
     expect(onTimeout).toHaveBeenCalledWith(

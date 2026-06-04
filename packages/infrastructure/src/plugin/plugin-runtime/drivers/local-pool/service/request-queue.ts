@@ -116,7 +116,11 @@ export class RequestQueue {
         return;
       }
 
-      const error = new Error('Queue wait timeout');
+      const error = createQueueTimeoutError({
+        request,
+        timeoutMs,
+        queuedMs: Date.now() - queuedAt
+      });
       this.options.onTimeout(request, error);
       request.reject(error);
     }, remainingMs);
@@ -130,4 +134,33 @@ export class RequestQueue {
 
 function getPriority(options?: InvokeOptions): number {
   return options?.priority ?? 0;
+}
+
+function createQueueTimeoutError({
+  request,
+  timeoutMs,
+  queuedMs
+}: {
+  request: ServiceRequest;
+  timeoutMs: number;
+  queuedMs: number;
+}): Error & {
+  code: 'QUEUE_TIMEOUT';
+  requestId: string;
+  method: string;
+  timeoutMs: number;
+  queuedMs: number;
+} {
+  return Object.assign(
+    new Error(
+      `Plugin invocation waited more than ${timeoutMs}ms for an available local-pool pod while handling event "${request.eventName}"`
+    ),
+    {
+      code: 'QUEUE_TIMEOUT' as const,
+      requestId: request.requestId,
+      method: request.eventName,
+      timeoutMs,
+      queuedMs
+    }
+  );
 }

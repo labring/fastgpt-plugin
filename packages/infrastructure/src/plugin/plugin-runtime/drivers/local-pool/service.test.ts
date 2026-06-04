@@ -539,10 +539,18 @@ describe('PluginService', () => {
       payload: { name: 'queued' },
       returnStream: false
     });
-    const queuedError = expect(queued).rejects.toThrow('Queue wait timeout');
+    const queuedError = expect(queued).rejects.toThrow(
+      'waited more than 20ms for an available local-pool pod'
+    );
+    const queuedErrorMetadata = expect(queued).rejects.toMatchObject({
+      code: 'QUEUE_TIMEOUT',
+      method: 'run',
+      timeoutMs: 20
+    });
     await vi.advanceTimersByTimeAsync(20);
 
     await queuedError;
+    await queuedErrorMetadata;
     expect(runtimeMetricsMock.recorder.recordInvocationFailed).toHaveBeenCalledWith({
       runtimeMode: 'localPool',
       pluginId: undefined,
@@ -579,7 +587,9 @@ describe('PluginService', () => {
 
     await expect(errorPromise).resolves.toMatchObject({
       code: 'REQUEST_TIMEOUT',
-      method: 'run'
+      method: 'run',
+      message: 'Plugin invocation timed out after 20ms while handling event "run"',
+      timeoutMs: 20
     });
     expect(podMock.pods[0].killedWith).toBe('SIGTERM');
     expect(onRequestFailed).toHaveBeenCalledWith(

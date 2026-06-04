@@ -274,4 +274,124 @@ describe('LocalPoolPluginRuntimeManager invoke', () => {
 
     await manager.shutdown();
   });
+
+  it('returns a readable timeout reason for local-pool invoke timeouts', async () => {
+    const manager = createManager();
+    const timeoutError = Object.assign(new Error('Request timeout: request'), {
+      code: 'REQUEST_TIMEOUT',
+      method: 'run',
+      timeoutMs: 30_000
+    });
+    const runtimeId = 'localPool@weather@1.0.0@etag-weather';
+
+    (manager as any).plugins.set(runtimeId, {
+      config: {
+        minPods: 0,
+        maxPods: 1,
+        podTimeout: 120000,
+        maxConcurrentRequestsPerPod: 1
+      },
+      filePath: '/virtual/weather.js',
+      service: {
+        invoke: vi.fn(async () => {
+          throw timeoutError;
+        }),
+        getMetrics: vi.fn()
+      },
+      meta: {
+        pluginId: 'weather',
+        version: '1.0.0',
+        etag: 'etag-weather',
+        type: PluginTypeEnum.tool,
+        name: { en: 'Weather' },
+        icon: 'https://example.com/icon.svg',
+        description: { en: 'Weather' },
+        toolDescription: 'Weather'
+      },
+      mutex: {
+        acquire: vi.fn(),
+        release: vi.fn()
+      }
+    });
+
+    const [result, err] = await manager.invoke({
+      uniqueId: {
+        pluginId: 'weather',
+        version: '1.0.0',
+        etag: 'etag-weather'
+      },
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+
+    expect(result).toBeNull();
+    expect(err?.reason).toEqual({
+      en: 'Plugin invocation timed out after 30000ms while handling event "run"',
+      'zh-CN': '插件调用超时（30000ms），事件：run'
+    });
+    expect(err?.error).toBe(timeoutError);
+
+    await manager.shutdown();
+  });
+
+  it('returns a readable timeout reason for local-pool queue timeouts', async () => {
+    const manager = createManager();
+    const queueError = Object.assign(new Error('Queue wait timeout'), {
+      code: 'QUEUE_TIMEOUT',
+      method: 'run',
+      timeoutMs: 20_000
+    });
+    const runtimeId = 'localPool@weather@1.0.0@etag-weather';
+
+    (manager as any).plugins.set(runtimeId, {
+      config: {
+        minPods: 0,
+        maxPods: 1,
+        podTimeout: 120000,
+        maxConcurrentRequestsPerPod: 1
+      },
+      filePath: '/virtual/weather.js',
+      service: {
+        invoke: vi.fn(async () => {
+          throw queueError;
+        }),
+        getMetrics: vi.fn()
+      },
+      meta: {
+        pluginId: 'weather',
+        version: '1.0.0',
+        etag: 'etag-weather',
+        type: PluginTypeEnum.tool,
+        name: { en: 'Weather' },
+        icon: 'https://example.com/icon.svg',
+        description: { en: 'Weather' },
+        toolDescription: 'Weather'
+      },
+      mutex: {
+        acquire: vi.fn(),
+        release: vi.fn()
+      }
+    });
+
+    const [result, err] = await manager.invoke({
+      uniqueId: {
+        pluginId: 'weather',
+        version: '1.0.0',
+        etag: 'etag-weather'
+      },
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+
+    expect(result).toBeNull();
+    expect(err?.reason).toEqual({
+      en: 'Plugin invocation waited too long for an available local-pool pod after 20000ms while handling event "run"',
+      'zh-CN': '插件调用等待空闲本地运行实例超时（20000ms），事件：run'
+    });
+    expect(err?.error).toBe(queueError);
+
+    await manager.shutdown();
+  });
 });
