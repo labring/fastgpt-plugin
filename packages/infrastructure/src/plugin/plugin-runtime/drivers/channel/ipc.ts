@@ -1,13 +1,14 @@
+import '@infrastructure/errors/error.registry';
+
 import type { ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
 import {
   deserializeError,
-  serializeError,
-  type SerializedError
+  type SerializedError,
+  serializeError
 } from '@domain/value-objects/error.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
-import '@infrastructure/errors/error.registry';
 
 import {
   PluginChannelCommonMethod,
@@ -754,6 +755,7 @@ function toPluginChannelError(error: SerializedError): PluginChannelError {
   return {
     code: error.code ?? PluginChannelErrorCode.internalError,
     message: error.message,
+    ...(error.reason !== undefined ? { reason: error.reason } : {}),
     ...(error.data !== undefined ? { data: error.data } : {}),
     ...(error.cause !== undefined ? { cause: toPluginChannelError(error.cause) } : {})
   };
@@ -764,6 +766,7 @@ function toSerializedError(error: PluginChannelError): SerializedError {
     name: 'Error',
     code: error.code,
     message: error.message,
+    reason: error.reason,
     data: error.data,
     ...(error.cause !== undefined ? { cause: toSerializedError(error.cause) } : {})
   };

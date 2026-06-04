@@ -34,17 +34,17 @@ describe('failureResult', () => {
 
     expect(failure?.error).toBeInstanceOf(Error);
     expect(failure?.error.message).toBe(reason.en);
-    expect(failure?.error.cause).toBe(reason);
+    expect(failure?.error.cause).toBeUndefined();
     expect(failure?.reason).toBe(reason);
   });
 
-  it('keeps legacy failure cause details in the native Error message', () => {
+  it('keeps legacy failure cause details as the native Error cause', () => {
     const reason = { en: 'legacy failure', 'zh-CN': '旧失败' };
     const cause = new Error('database offline');
     const [, failure] = failureResult(reason, cause);
 
     expect(failure?.error).toBeInstanceOf(Error);
-    expect(failure?.error.message).toBe('旧失败: database offline');
+    expect(failure?.error.message).toBe(reason.en);
     expect(failure?.error.cause).toBe(cause);
     expect(failure?.reason).toBe(reason);
   });

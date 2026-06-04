@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 
 import { describe, expect, it } from 'vitest';
 
-import { createError, RegisteredError } from '@domain/value-objects/error.vo';
+import { createError, createReasonError, RegisteredError } from '@domain/value-objects/error.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 import { PluginChannelHostMethod } from '../../ports/channel';
@@ -71,6 +71,31 @@ describe('PluginIpcRuntimeChannel errors', () => {
       expect(error).toBeInstanceOf(RegisteredError);
       expect((error as Error).cause).toBeInstanceOf(Error);
     }
+
+    await host.close();
+    await client.close();
+  });
+
+  it('round-trips legacy reason errors through request failures', async () => {
+    const { host, client } = createChannelPair();
+    const reason = {
+      en: 'Plugin not found',
+      'zh-CN': '插件未找到'
+    };
+
+    client.setRequestHandler(() => {
+      throw createReasonError(reason);
+    });
+
+    await expect(
+      host.request(PluginChannelHostMethod.request, {
+        eventName: 'run',
+        payload: {}
+      })
+    ).rejects.toMatchObject({
+      message: reason.en,
+      reason
+    });
 
     await host.close();
     await client.close();

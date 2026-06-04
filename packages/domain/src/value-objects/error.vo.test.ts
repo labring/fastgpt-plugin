@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createError,
+  createReasonError,
   deserializeError,
   getErrorDefinition,
-  registerErrors,
   RegisteredError,
+  registerErrors,
   serializeError,
   toErrorResponse
 } from './error.vo';
@@ -89,5 +90,52 @@ describe('RegisteredError', () => {
       }
     });
     expect(response.cause?.message).toBe('Mongo connection string leaked here');
+  });
+
+  it('serializes legacy reason errors without duplicating reason causes', () => {
+    const pluginNotFound = createReasonError({
+      en: 'Plugin not found',
+      'zh-CN': '插件未找到'
+    });
+    const getPluginFailed = createReasonError(
+      {
+        en: 'Failed to get plugin by plugin id',
+        'zh-CN': '获取插件失败'
+      },
+      { cause: pluginNotFound }
+    );
+
+    expect(toErrorResponse(getPluginFailed)).toEqual({
+      code: 'INTERNAL_ERROR',
+      message: 'Failed to get plugin by plugin id',
+      reason: {
+        en: 'Failed to get plugin by plugin id',
+        'zh-CN': '获取插件失败'
+      },
+      cause: {
+        code: 'INTERNAL_ERROR',
+        message: 'Plugin not found',
+        reason: {
+          en: 'Plugin not found',
+          'zh-CN': '插件未找到'
+        }
+      }
+    });
+  });
+
+  it('deserializes legacy reason errors without losing reason metadata', () => {
+    const reason = {
+      en: 'Plugin not found',
+      'zh-CN': '插件未找到'
+    };
+
+    const restored = deserializeError(serializeError(createReasonError(reason)));
+
+    expect(restored.message).toBe(reason.en);
+    expect((restored as Error & { reason?: unknown }).reason).toEqual(reason);
+    expect(toErrorResponse(restored)).toMatchObject({
+      message: reason.en,
+      reason
+    });
   });
 });

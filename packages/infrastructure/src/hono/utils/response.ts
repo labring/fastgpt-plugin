@@ -5,11 +5,7 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import z, { type ZodType } from 'zod';
 
 import type { ErrorResponseType } from '@domain/value-objects/error.vo';
-import {
-  createError,
-  normalizeToError,
-  toErrorResponse
-} from '@domain/value-objects/error.vo';
+import { createError, toErrorResponse } from '@domain/value-objects/error.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
@@ -140,8 +136,7 @@ function normalizeError(
   return toErrorResponse(
     createError(getHttpErrorCode(status), {
       message: error.en,
-      reason: error,
-      cause: normalizeToError(error, error.en)
+      reason: error
     })
   );
 }
