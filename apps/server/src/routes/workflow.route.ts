@@ -1,6 +1,6 @@
-import { createRoute } from '@hono/zod-openapi';
 import { WorkflowContract } from '@interface-adapter/contracts/route/workflow.contract';
 
+import { createRoute } from '@infrastructure/hono/utils/response';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import { workflows } from '@infrastructure/static-data/workflow/init';
 

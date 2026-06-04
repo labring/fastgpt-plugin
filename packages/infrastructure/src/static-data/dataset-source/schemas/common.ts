@@ -5,33 +5,21 @@ import {
   FileContentResponseSchema as BaseFileContentResponseSchema,
   FileItemSchema as BaseFileItemSchema
 } from '@fastgpt-plugin/helpers/datasets/schemas';
-import { z } from '@hono/zod-openapi';
+import { z } from 'zod';
 
-// Convert base schemas to OpenAPI schemas
-export const DatasetSourceIdEnum = z
-  .enum(BaseDatasetSourceIdEnum.options)
-  .openapi('DatasetSourceId');
+export const DatasetSourceIdEnum = z.enum(BaseDatasetSourceIdEnum.options);
 
-export const DatasetSourceInfoSchema = z
-  .object(BaseDatasetSourceInfoSchema.shape)
-  .openapi('DatasetSourceInfo');
+export const DatasetSourceInfoSchema = z.object(BaseDatasetSourceInfoSchema.shape);
 
-export const DatasetSourceConfigSchema = z
-  .object(BaseDatasetSourceConfigSchema.shape)
-  .openapi('DatasetSourceConfig');
+export const DatasetSourceConfigSchema = z.object(BaseDatasetSourceConfigSchema.shape);
 
-export const FileItemSchema = z.object(BaseFileItemSchema.shape).openapi('FileItem');
+export const FileItemSchema = z.object(BaseFileItemSchema.shape);
 
-export const FileContentResponseSchema = z
-  .object(BaseFileContentResponseSchema.shape)
-  .openapi('FileContentResponse');
+export const FileContentResponseSchema = z.object(BaseFileContentResponseSchema.shape);
 
 // Query schemas
 export const SourceIdQuerySchema = z.object({
-  sourceId: DatasetSourceIdEnum.openapi({
-    param: { name: 'sourceId', in: 'query' },
-    example: 'feishu'
-  })
+  sourceId: DatasetSourceIdEnum
 });
 
 // Body schemas

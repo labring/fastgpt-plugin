@@ -1,8 +1,5 @@
-import { z } from '@hono/zod-openapi';
+import { z } from 'zod';
 
 export const AuthTokenHeader = z.object({
-  Authorization: z.string().openapi({
-    description: 'JWK based authentication token',
-    example: 'Bearer xxxxxx'
-  })
+  Authorization: z.string()
 });

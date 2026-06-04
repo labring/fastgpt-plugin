@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 
 import { I18nStringSchema, I18nStringStrictSchema } from '@domain/value-objects/i18n-string.vo';
 
@@ -10,7 +10,7 @@ export type ErrorResponseDTOType = {
   message: string;
   reason: z.infer<typeof I18nStringDTOSchema>;
   data?: unknown;
-  cause?: unknown
+  cause?: unknown;
 };
 
 export const ErrorResponseDTOSchema: z.ZodType<ErrorResponseDTOType> = z.object({

@@ -1,4 +1,4 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { z } from 'zod';
 
 import { createResponseSchema, ErrorResponseSchema } from '@/utils/http';
 
@@ -11,6 +11,8 @@ import {
   ListFilesBodySchema,
   SourceIdQuerySchema
 } from './common';
+
+import { createRoute } from '/hono/utils/response';
 
 // GET /source/list - List all dataset sources
 export const listSourcesRoute = createRoute({

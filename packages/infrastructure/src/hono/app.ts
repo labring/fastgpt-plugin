@@ -1,13 +1,13 @@
-import { createRoute, z } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { requestId } from 'hono/request-id';
+import z from 'zod';
 
 import { onError } from './hooks/onError';
 import { onNotFound } from './hooks/onNotFound';
 import { bearerHonoAuthMiddleware } from './middleware/auth';
 import { loggerHonoMiddleware } from './middleware/logger';
-import { createOpenAPIHono, R } from './utils/response';
+import { createOpenAPIHono, createRoute, R } from './utils/response';
 
 export const app = createOpenAPIHono<Env>();
 
@@ -78,18 +78,10 @@ app.openapi(
         content: {
           'application/json': {
             schema: z.object({
-              data: z
-                .object({
-                  status: z.string(),
-                  timestamp: z.string()
-                })
-                .openapi({
-                  description: 'Health status data',
-                  example: {
-                    status: 'ok',
-                    timestamp: '2024-01-01T00:00:00.000Z'
-                  }
-                })
+              data: z.object({
+                status: z.string(),
+                timestamp: z.string()
+              })
             })
           }
         }

@@ -1,10 +1,10 @@
-import { createRoute } from '@hono/zod-openapi';
 import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 
 import { type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 import { makeToolDetailUC, type ToolDetailUCDeps } from '@usecase/tool/tool-detail.uc';
 import { makeToolListUC, type ToolListUCDeps } from '@usecase/tool/tool-list.uc';
 import { makeToolRunUC, type ToolRunUCDeps } from '@usecase/tool/tool-run.uc';
+import { createRoute } from '@infrastructure/hono/utils/response';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import { getErrText } from '@shared/utils/err';
 
