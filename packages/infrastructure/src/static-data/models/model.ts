@@ -172,7 +172,7 @@ export const ModelProviderMap = {
     'zh-CN': 'PPIO',
     'zh-Hant': 'PPIO'
   },
-  Sangfor: {
+  SangforAICP: {
     en: 'Sangfor',
     'zh-CN': '深信服',
     'zh-Hant': '深信服'
@@ -330,8 +330,8 @@ export const aiproxyChannels: AIProxyChannelsType = [
     avatar: 'ollama'
   },
   {
-    channelId: 48,
-    name: { en: 'Sangfor', 'zh-CN': 'Sangfor', 'zh-Hant': 'Sangfor' },
+    channelId: 50,
+    name: { en: 'Sangfor AICP', 'zh-CN': 'Sangfor AICP', 'zh-Hant': 'Sangfor AICP' },
     avatar: 'sangfor'
   },
 
