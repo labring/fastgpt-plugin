@@ -1,0 +1,138 @@
+{
+  "OpenAI": {
+    "docs": ["https://platform.openai.com/docs/models"],
+    "notes": "Use official OpenAI model docs or authenticated model-list API if credentials are explicitly available."
+  },
+  "Claude": {
+    "docs": ["https://docs.anthropic.com/en/docs/about-claude/models"],
+    "notes": "Anthropic documents current model IDs and aliases on the models page."
+  },
+  "Gemini": {
+    "docs": ["https://ai.google.dev/gemini-api/docs/models"],
+    "notes": "Use Gemini API model docs or official list models API."
+  },
+  "Grok": {
+    "docs": ["https://docs.x.ai/docs/models"],
+    "notes": "Use xAI model docs."
+  },
+  "MistralAI": {
+    "docs": ["https://docs.mistral.ai/getting-started/models/models_overview/"],
+    "notes": "Use Mistral model overview and API docs."
+  },
+  "Qwen": {
+    "docs": ["https://help.aliyun.com/zh/model-studio/getting-started/models"],
+    "notes": "Use Alibaba Cloud Model Studio model docs."
+  },
+  "Doubao": {
+    "docs": ["https://www.volcengine.com/docs/82379/1330310"],
+    "notes": "Use Volcengine Ark/Doubao model docs."
+  },
+  "DeepSeek": {
+    "docs": ["https://api-docs.deepseek.com/quick_start/pricing"],
+    "notes": "Use DeepSeek API docs and pricing/model page."
+  },
+  "ChatGLM": {
+    "docs": ["https://docs.bigmodel.cn/cn/guide/models"],
+    "notes": "Use Zhipu BigModel model docs."
+  },
+  "MiniMax": {
+    "docs": ["https://platform.minimaxi.com/document/Models"],
+    "notes": "Use MiniMax platform model docs."
+  },
+  "Moonshot": {
+    "docs": ["https://platform.moonshot.ai/docs/overview", "https://platform.kimi.ai/docs/models"],
+    "notes": "Use Kimi/Moonshot official API docs, models page, or authenticated list-models API."
+  },
+  "Ernie": {
+    "docs": ["https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu"],
+    "notes": "Use Baidu Qianfan/Wenxin model docs."
+  },
+  "SparkDesk": {
+    "docs": ["https://www.xfyun.cn/doc/spark/"],
+    "notes": "Use iFlytek Spark official docs."
+  },
+  "Hunyuan": {
+    "docs": ["https://cloud.tencent.com/document/product/1729"],
+    "notes": "Use Tencent Hunyuan official docs."
+  },
+  "Baichuan": {
+    "docs": ["https://platform.baichuan-ai.com/docs"],
+    "notes": "Use Baichuan official docs."
+  },
+  "StepFun": {
+    "docs": ["https://platform.stepfun.com/docs/zh/guides/models/overview"],
+    "notes": "Use StepFun model overview."
+  },
+  "ai360": {
+    "docs": ["https://ai.360.com/platform/docs/overview/model"],
+    "notes": "Use 360 AI platform model docs."
+  },
+  "Yi": {
+    "docs": ["https://platform.lingyiwanwu.com/docs"],
+    "notes": "Use Lingyi Wanwu official docs."
+  },
+  "OpenRouter": {
+    "docs": ["https://openrouter.ai/models", "https://openrouter.ai/api/v1/models"],
+    "notes": "OpenRouter is itself the provider/catalog; prefer its API for additions/removals."
+  },
+  "Groq": {
+    "docs": ["https://console.groq.com/docs/models"],
+    "notes": "Use Groq model docs."
+  },
+  "Jina": {
+    "docs": ["https://jina.ai/embeddings/"],
+    "notes": "Use Jina official model/API docs."
+  },
+  "Siliconflow": {
+    "docs": ["https://docs.siliconflow.com/en/api-reference/models/get-model-list"],
+    "notes": "Use SiliconFlow official model-list API docs."
+  },
+  "FishAudio": {
+    "docs": ["https://docs.fish.audio/api-reference/endpoint/model/list-models"],
+    "notes": "Use Fish Audio model-list docs."
+  },
+  "novita": {
+    "docs": ["https://novita.ai/docs/api-reference/model-apis-llm-list-models"],
+    "notes": "Use Novita official model/API docs."
+  },
+  "Ollama": {
+    "docs": ["https://ollama.com/search"],
+    "notes": "Ollama catalogs are user-extensible; avoid removals unless an exact official preset is confirmed retired."
+  },
+  "HuggingFace": {
+    "docs": ["https://huggingface.co/models"],
+    "notes": "Hugging Face is an open catalog; avoid removals without exact official evidence."
+  },
+  "Meta": {
+    "docs": ["https://www.llama.com/docs/model-cards-and-prompt-formats/"],
+    "notes": "Use Meta Llama model docs for direct Meta presets."
+  },
+  "BAAI": {
+    "docs": ["https://huggingface.co/BAAI"],
+    "notes": "Use BAAI official organization pages or model docs."
+  },
+  "InternLM": {
+    "docs": ["https://internlm.readthedocs.io/"],
+    "notes": "Use InternLM official docs."
+  },
+  "AliCloud": {
+    "docs": ["https://help.aliyun.com/zh/model-studio/getting-started/models"],
+    "notes": "Use Alibaba Cloud official model docs."
+  },
+  "PPIO": {
+    "docs": ["https://ppinfra.com/docs/"],
+    "notes": "Use PPIO official docs; verify the exact model page during each run."
+  },
+  "AntLing": {
+    "docs": ["https://developer.ant-ling.com/zh-CN/docs", "https://www.ant-ling.com/en/"],
+    "notes": "Use Ant Ling developer docs and official model-family pages."
+  },
+  "Moka": {
+    "docs": [],
+    "notes": "Registered provider has no local models yet; keep empty unless official provider docs are found for a concrete addition."
+  },
+  "Other": {
+    "docs": [],
+    "notes": "Generic provider bucket; do not remove models from this provider based on external catalogs."
+  }
+}
