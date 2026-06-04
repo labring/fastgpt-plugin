@@ -48,17 +48,18 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
   const [, disableErr] = await deps.pluginRepo.disablePlugins(replacedPluginIds);
 
   if (disableErr) {
-    deps.logger.error('Plugin Replace Active Disable Error', {
-      replacedPluginIds,
-      error: disableErr
-    });
-    return failureResult(
+    const failure = failureResult(
       {
         en: 'Failed to disable replaced plugins',
         'zh-CN': '禁用被替换插件失败'
       },
       disableErr
-    );
+    )[1]!;
+    deps.logger.error('Plugin Replace Active Disable Error', {
+      replacedPluginIds,
+      error: failure.error
+    });
+    return [null, failure];
   }
 
   await Promise.all(

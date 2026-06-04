@@ -1,0 +1,73 @@
+name: Preview Plugin Image Build
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ['**']
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'apps/server/**'
+      - 'packages/**'
+      - 'sdk/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/preview-image-build.yml'
+      - '.github/workflows/preview-image-push.yml'
+
+concurrency:
+  group: preview-plugin-image-build-${{ github.event.pull_request.number || github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build preview Server image
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image artifact
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: runner
+          platforms: linux/amd64
+          push: false
+          tags: fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.description=FastGPT Plugin PR preview image
+            org.opencontainers.image.revision=${{ github.event.pull_request.head.sha }}
+          outputs: type=docker,dest=/tmp/fastgpt-plugin-image.tar
+          cache-from: type=gha,scope=preview-plugin-server
+          cache-to: type=gha,mode=max,scope=preview-plugin-server
+
+      - name: Save PR metadata
+        run: |
+          echo "${{ github.event.pull_request.number }}" > /tmp/pr-number.txt
+          echo "${{ github.event.pull_request.head.sha }}" > /tmp/pr-sha.txt
+          echo "server" > /tmp/image-type.txt
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-plugin-server-image
+          path: |
+            /tmp/fastgpt-plugin-image.tar
+            /tmp/pr-number.txt
+            /tmp/pr-sha.txt
+            /tmp/image-type.txt
+          retention-days: 1

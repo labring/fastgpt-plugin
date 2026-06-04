@@ -1,7 +1,13 @@
 import type { ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
+import {
+  deserializeError,
+  serializeError,
+  type SerializedError
+} from '@domain/value-objects/error.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
+import '@infrastructure/errors/error.registry';
 
 import {
   PluginChannelCommonMethod,
@@ -733,21 +739,34 @@ function normalizeChannelError(error: PluginChannelError | Error | string): Plug
   }
 
   if (error instanceof Error) {
-    return {
-      code: (error as Error & { code?: string }).code ?? PluginChannelErrorCode.internalError,
-      message: error.message,
-      ...(error.stack !== undefined ? { data: { stack: error.stack } } : {})
-    };
+    const serialized = serializeError(error);
+    return toPluginChannelError(serialized);
   }
 
   return error;
 }
 
 function toError(error: PluginChannelError): Error {
-  return Object.assign(new Error(error.message), {
+  return deserializeError(toSerializedError(error));
+}
+
+function toPluginChannelError(error: SerializedError): PluginChannelError {
+  return {
+    code: error.code ?? PluginChannelErrorCode.internalError,
+    message: error.message,
+    ...(error.data !== undefined ? { data: error.data } : {}),
+    ...(error.cause !== undefined ? { cause: toPluginChannelError(error.cause) } : {})
+  };
+}
+
+function toSerializedError(error: PluginChannelError): SerializedError {
+  return {
+    name: 'Error',
     code: error.code,
-    data: error.data
-  });
+    message: error.message,
+    data: error.data,
+    ...(error.cause !== undefined ? { cause: toSerializedError(error.cause) } : {})
+  };
 }
 
 function toAsyncIterable<T>(source: PluginChannelStreamSource<T>): AsyncIterable<T> {

@@ -1,13 +1,12 @@
 import { z } from '@hono/zod-openapi';
 
-import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
-
 import {
   type ContractMetaType,
   defineContract,
   emptyResponse,
   jsonResponse
 } from '../contract.type';
+import { ErrorResponseDTOSchema } from '../dto/common.dto';
 import {
   PluginConfirmParamsSchema,
   PluginDeleteParamsSchema,
@@ -41,7 +40,7 @@ const uploadMeta = {
 
 const uploadResponse = {
   200: jsonResponse({ data: PluginUploadResponseDTOSchema }),
-  400: jsonResponse({ error: I18nStringSchema })
+  400: jsonResponse({ error: ErrorResponseDTOSchema })
 };
 
 export const PluginContract = {
@@ -95,7 +94,7 @@ export const PluginContract = {
     request: PluginConfirmParamsSchema,
     response: {
       200: emptyResponse(),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   PruneDisabled: defineContract({
@@ -110,7 +109,7 @@ export const PluginContract = {
     },
     response: {
       200: jsonResponse({ data: PluginPruneDisabledResponseDTOSchema }),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   Delete: defineContract({
@@ -126,7 +125,7 @@ export const PluginContract = {
     request: PluginDeleteParamsSchema,
     response: {
       200: emptyResponse(),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   Install: defineContract({
@@ -142,7 +141,7 @@ export const PluginContract = {
     request: PluginInstallDTOSchema.request,
     response: {
       200: jsonResponse({ data: PluginInstallDTOSchema.response }),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   List: defineContract({
@@ -158,7 +157,7 @@ export const PluginContract = {
     request: PluginListParamsSchema,
     response: {
       200: jsonResponse({ data: PluginListDTOSchema }),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   Versions: defineContract({
@@ -174,7 +173,7 @@ export const PluginContract = {
     request: PluginVersionListParamsSchema,
     response: {
       200: jsonResponse({ data: PluginVersionListDTOSchema }),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   TagList: defineContract({
@@ -189,7 +188,7 @@ export const PluginContract = {
     },
     response: {
       200: jsonResponse({ data: PluginTagListDTOSchema }),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   RuntimeConfigGet: defineContract({
@@ -205,7 +204,7 @@ export const PluginContract = {
     request: PluginRuntimeConfigGetParamsSchema,
     response: {
       200: jsonResponse({ data: PluginRuntimeConfigSchema }),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   RuntimeConfigSet: defineContract({
@@ -221,7 +220,7 @@ export const PluginContract = {
     request: PluginRuntimeConfigSetParamsSchema,
     response: {
       200: emptyResponse(),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   RuntimeConfigReset: defineContract({
@@ -237,7 +236,7 @@ export const PluginContract = {
     request: PluginRuntimeConfigResetParamsSchema,
     response: {
       200: emptyResponse(),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   })
 } as const;

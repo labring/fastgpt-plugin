@@ -1,8 +1,7 @@
 import z from 'zod';
 
-import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
-
 import { defineContract, jsonResponse } from '../contract.type';
+import { ErrorResponseDTOSchema } from '../dto/common.dto';
 import {
   ToolDetailDTOSchema,
   ToolGetParamsDTOSchema,
@@ -27,7 +26,7 @@ export const ToolContract = {
     request: ToolGetParamsDTOSchema,
     response: {
       200: jsonResponse({ data: ToolDetailDTOSchema }),
-      404: jsonResponse({ error: I18nStringSchema })
+      404: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   List: defineContract({
@@ -43,7 +42,7 @@ export const ToolContract = {
     request: ToolListParamsDTOSchema,
     response: {
       200: jsonResponse({ data: ToolListDTOSchema }),
-      500: jsonResponse({ error: I18nStringSchema })
+      500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   RunStream: defineContract({
@@ -62,7 +61,7 @@ export const ToolContract = {
         type: z.string()
       }),
       400: jsonResponse({
-        error: I18nStringSchema
+        error: ErrorResponseDTOSchema
       })
     }
   })

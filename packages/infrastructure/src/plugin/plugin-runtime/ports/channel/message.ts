@@ -14,12 +14,19 @@ export type PluginChannelProtocolVersion = z.infer<typeof PluginChannelProtocolV
 export const PluginChannelMessageIdSchema = z.union([z.string(), z.number()]);
 export type PluginChannelMessageId = z.infer<typeof PluginChannelMessageIdSchema>;
 
-export const PluginChannelErrorSchema = z.object({
+export type PluginChannelError = {
+  code: string;
+  message: string;
+  data?: unknown;
+  cause?: PluginChannelError;
+};
+
+export const PluginChannelErrorSchema: z.ZodType<PluginChannelError> = z.object({
   code: z.string(),
   message: z.string(),
-  data: z.unknown().optional()
+  data: z.unknown().optional(),
+  cause: z.lazy(() => PluginChannelErrorSchema).optional()
 });
-export type PluginChannelError = z.infer<typeof PluginChannelErrorSchema>;
 
 export const PluginChannelErrorCode = {
   parseError: 'PARSE_ERROR',
