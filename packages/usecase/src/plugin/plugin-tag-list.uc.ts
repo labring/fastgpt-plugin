@@ -8,7 +8,7 @@
 // import type { PluginManagerPort } from '@domain/ports/plugin/plugin.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginTagListType } from '@domain/value-objects/plugin.vo';
-import type { Result } from '@domain/value-objects/result.vo';
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 /** Dependencies */
 type Deps = {
@@ -27,5 +27,10 @@ export const makePluginTagListUC =
   ({ logger, pluginRepo }: Deps) =>
   async (_input: Input): Output => {
     logger.debug('Plugin Tag List');
-    return pluginRepo.listTags();
+    const [result, error] = await pluginRepo.listTags();
+    if (error) {
+      logger.error('Plugin Tag List Error', error);
+      return failureResult(error);
+    }
+    return successResult(result);
   };

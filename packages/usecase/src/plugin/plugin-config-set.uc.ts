@@ -6,7 +6,7 @@
  */
 import type { PluginRuntimeConfigType } from '@domain/entities/plugin.entity';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
-import type { Result } from '@domain/value-objects/result.vo';
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
@@ -28,5 +28,10 @@ export const makeSetPluginConfigUC =
   <T extends PluginRuntimeConfigType>({ logger, pluginRuntimeManager }: PluginConfigSetUCDeps) =>
   async (input: Input<T>): Output => {
     logger.debug('Plugin Config Set', { input });
-    return pluginRuntimeManager.updateConfig(input.pluginId, input.config);
+    const [result, error] = await pluginRuntimeManager.updateConfig(input.pluginId, input.config);
+    if (error) {
+      logger.error('Plugin Config Set Error', error);
+      return failureResult(error);
+    }
+    return successResult(result);
   };

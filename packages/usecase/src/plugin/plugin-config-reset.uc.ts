@@ -5,7 +5,7 @@
  * Author：FinleyGe
  */
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
-import type { Result } from '@domain/value-objects/result.vo';
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
@@ -26,5 +26,10 @@ export const makeResetPluginConfigUC =
   ({ logger, pluginRuntimeManager }: PluginConfigResetUCDeps) =>
   async ({ pluginId }: Input): Output => {
     logger.debug('Plugin Config Reset', { pluginId });
-    return pluginRuntimeManager.resetConfig(pluginId);
+    const [result, error] = await pluginRuntimeManager.resetConfig(pluginId);
+    if (error) {
+      logger.error('Plugin Config Reset Error', error);
+      return failureResult(error);
+    }
+    return successResult(result);
   };

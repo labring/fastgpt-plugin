@@ -139,6 +139,19 @@ const baseRuntimeManager = (overrides: Record<string, unknown> = {}) => ({
   ...overrides
 });
 
+const baseModelManager = (overrides: Record<string, unknown> = {}) => ({
+  models: vi.fn(),
+  providers: vi.fn(),
+  ...overrides
+});
+
+const baseToolManager = (overrides: Record<string, unknown> = {}) => ({
+  list: vi.fn(),
+  detail: vi.fn(),
+  run: vi.fn(),
+  ...overrides
+});
+
 describe('simple usecases', () => {
   it('delegates read and write operations to the injected ports', async () => {
     const result = successResult({ ok: true });
@@ -159,61 +172,61 @@ describe('simple usecases', () => {
       models: vi.fn().mockResolvedValue(result),
       providers: vi.fn().mockResolvedValue(result)
     };
-    const toolManager = {
+    const toolManager = baseToolManager({
       list: vi.fn().mockResolvedValue(result),
       detail: vi.fn().mockResolvedValue(result),
       run: vi.fn().mockResolvedValue(result)
-    };
+    });
 
     await expect(
       makeRuntimeMetricsUC({ pluginRuntimeManager: runtimeManager, logger: usecaseLogger })({})
-    ).resolves.toBe(result);
+    ).resolves.toEqual(result);
     await expect(
       makePluginConfigGetUC({ pluginRuntimeManager: runtimeManager, logger: usecaseLogger })({
         pluginId: 'plugin-a'
       })
-    ).resolves.toBe(result);
+    ).resolves.toEqual(result);
     await expect(
       makeSetPluginConfigUC({ pluginRuntimeManager: runtimeManager, logger: usecaseLogger })({
         pluginId: 'plugin-a',
         config: { mode: 'local' }
       })
-    ).resolves.toBe(result);
+    ).resolves.toEqual(result);
     await expect(
       makeResetPluginConfigUC({ pluginRuntimeManager: runtimeManager, logger: usecaseLogger })({
         pluginId: 'plugin-a'
       })
-    ).resolves.toBe(result);
+    ).resolves.toEqual(result);
     await expect(
       makePluginListUC({ pluginRepo, logger: usecaseLogger })({ tags: ['tools'] })
-    ).resolves.toBe(result);
+    ).resolves.toEqual(result);
     await expect(
       makePluginVersionsUC({ pluginRepo, logger: usecaseLogger })({
         pluginId: 'plugin-a',
         source: 'system'
       })
-    ).resolves.toBe(result);
-    await expect(makePluginTagListUC({ pluginRepo, logger: usecaseLogger })({})).resolves.toBe(
+    ).resolves.toEqual(result);
+    await expect(makePluginTagListUC({ pluginRepo, logger: usecaseLogger })({})).resolves.toEqual(
       result
     );
-    await expect(makePluginPruneDisabledUC({ pluginRepo, logger: usecaseLogger })()).resolves.toBe(
+    await expect(
+      makePluginPruneDisabledUC({ pluginRepo, logger: usecaseLogger })()
+    ).resolves.toEqual(result);
+    await expect(makeModelListUC({ modelManager, logger: usecaseLogger })({})).resolves.toEqual(
       result
     );
-    await expect(makeModelListUC({ modelManager, logger: usecaseLogger })({})).resolves.toBe(
-      result
-    );
-    await expect(makeProviderListUC({ modelManager, logger: usecaseLogger })({})).resolves.toBe(
+    await expect(makeProviderListUC({ modelManager, logger: usecaseLogger })({})).resolves.toEqual(
       result
     );
     await expect(
       makeToolListUC({ toolManager, logger: usecaseLogger })({ tags: ['tools'] })
-    ).resolves.toBe(result);
+    ).resolves.toEqual(result);
     await expect(
       makeToolDetailUC({ toolManager, logger: usecaseLogger })({
         pluginId: 'plugin-a',
         source: 'system'
       })
-    ).resolves.toBe(result);
+    ).resolves.toEqual(result);
     await expect(
       makeToolRunUC({ toolManager, logger: usecaseLogger })({
         pluginId: 'plugin-a',
@@ -225,7 +238,7 @@ describe('simple usecases', () => {
           time: '2026-01-01T00:00:00Z'
         }
       })
-    ).resolves.toBe(result);
+    ).resolves.toEqual(result);
 
     expect(runtimeManager.getConfig).toHaveBeenCalledWith('plugin-a');
     expect(runtimeManager.updateConfig).toHaveBeenCalledWith('plugin-a', { mode: 'local' });
@@ -235,6 +248,171 @@ describe('simple usecases', () => {
       source: 'system'
     });
     expect(usecaseLogger.debug).toHaveBeenCalled();
+  });
+
+  it('records usecase error logs before returning port failures', async () => {
+    const result = failureResult(reason('list failed'));
+    const usecaseLogger = logger();
+    const toolManager = baseToolManager({
+      list: vi.fn().mockResolvedValue(result)
+    });
+
+    await expect(
+      makeToolListUC({ toolManager, logger: usecaseLogger })({ tags: ['tools'] })
+    ).resolves.toEqual(result);
+
+    expect(usecaseLogger.error).toHaveBeenCalledWith('Tool List Error', result[1]);
+  });
+
+  it.each([
+    {
+      name: 'runtime metrics',
+      message: 'Runtime Metrics Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeRuntimeMetricsUC({
+          pluginRuntimeManager: baseRuntimeManager({
+            globalStatus: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({})
+    },
+    {
+      name: 'plugin config get',
+      message: 'Plugin Config Get Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makePluginConfigGetUC({
+          pluginRuntimeManager: baseRuntimeManager({
+            getConfig: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({ pluginId: 'plugin-a' })
+    },
+    {
+      name: 'plugin config set',
+      message: 'Plugin Config Set Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeSetPluginConfigUC({
+          pluginRuntimeManager: baseRuntimeManager({
+            updateConfig: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({ pluginId: 'plugin-a', config: { mode: 'local' } })
+    },
+    {
+      name: 'plugin config reset',
+      message: 'Plugin Config Reset Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeResetPluginConfigUC({
+          pluginRuntimeManager: baseRuntimeManager({
+            resetConfig: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({ pluginId: 'plugin-a' })
+    },
+    {
+      name: 'plugin list',
+      message: 'Plugin List Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makePluginListUC({
+          pluginRepo: basePluginRepo({
+            list: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({ tags: ['tools'] })
+    },
+    {
+      name: 'plugin versions',
+      message: 'Plugin Versions Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makePluginVersionsUC({
+          pluginRepo: basePluginRepo({
+            listVersions: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({ pluginId: 'plugin-a', source: 'system' })
+    },
+    {
+      name: 'plugin tag list',
+      message: 'Plugin Tag List Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makePluginTagListUC({
+          pluginRepo: basePluginRepo({
+            listTags: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({})
+    },
+    {
+      name: 'plugin prune disabled',
+      message: 'Plugin Prune Disabled Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makePluginPruneDisabledUC({
+          pluginRepo: basePluginRepo({
+            pruneDisabled: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })()
+    },
+    {
+      name: 'model list',
+      message: 'Model List Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeModelListUC({
+          modelManager: baseModelManager({
+            models: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({})
+    },
+    {
+      name: 'provider list',
+      message: 'Provider List Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeProviderListUC({
+          modelManager: baseModelManager({
+            providers: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({})
+    },
+    {
+      name: 'tool detail',
+      message: 'Tool Detail Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeToolDetailUC({
+          toolManager: baseToolManager({
+            detail: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({ pluginId: 'plugin-a', source: 'system' })
+    },
+    {
+      name: 'tool run',
+      message: 'Tool Run Error',
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeToolRunUC({
+          toolManager: baseToolManager({
+            run: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({
+          pluginId: 'plugin-a',
+          input: {},
+          systemVar: {
+            app: { id: 'app', name: 'app' },
+            chat: { chatId: 'chat' },
+            invokeToken: 'invoke-token',
+            time: '2026-01-01T00:00:00Z'
+          }
+        })
+    }
+  ])('records usecase error logs for $name failures', async ({ message, run }) => {
+    const result = failureResult(reason(`${message} failed`));
+    const usecaseLogger = logger();
+
+    await expect(run(result, usecaseLogger)).resolves.toEqual(result);
+
+    expect(usecaseLogger.error).toHaveBeenCalledWith(message, result[1]);
   });
 });
 
@@ -1430,21 +1608,27 @@ describe('plugin replacement helpers', () => {
   });
 
   it('returns failure when replaced plugins cannot be disabled', async () => {
+    const appLogger = logger();
     const deps = {
       pluginRepo: basePluginRepo({
         disablePlugins: vi.fn().mockResolvedValue(failureResult(reason('disable failed')))
       }),
       pluginRuntimeManager: baseRuntimeManager(),
+      logger: appLogger,
       replacedPlugins: [plugin({ etag: 'old' })]
     };
 
     const [, err] = await disableAndUnregisterReplacedPlugins(deps);
 
     expect(err?.reason.en).toBe('Failed to disable replaced plugins');
+    expect(appLogger.error).toHaveBeenCalledWith('Plugin Replace Active Disable Error', {
+      replacedPluginIds: [{ ...uniqueId, etag: 'old' }],
+      error: err?.error
+    });
   });
 
   it('logs unregister failures and still completes replacement cleanup', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const appLogger = logger();
     const deps = {
       pluginRepo: basePluginRepo({
         disablePlugins: vi.fn().mockResolvedValue(successResult({}))
@@ -1456,6 +1640,7 @@ describe('plugin replacement helpers', () => {
           .mockRejectedValueOnce(new Error('boom'))
           .mockResolvedValueOnce(successResult({}))
       }),
+      logger: appLogger,
       replacedPlugins: [
         plugin({ etag: 'old-a' }),
         plugin({ etag: 'old-b' }),
@@ -1469,6 +1654,6 @@ describe('plugin replacement helpers', () => {
     expect(err).toBeNull();
     expect(result).toEqual({});
     expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledTimes(3);
-    expect(consoleError).toHaveBeenCalledTimes(2);
+    expect(appLogger.error).toHaveBeenCalledTimes(2);
   });
 });

@@ -179,6 +179,7 @@ export const makePluginInstallUC =
         const [, replaceErr] = await disableAndUnregisterReplacedPlugins({
           pluginRepo,
           pluginRuntimeManager,
+          logger,
           replacementUniqueId: uniqueId,
           replacedPlugins
         });

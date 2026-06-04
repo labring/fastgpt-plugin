@@ -119,6 +119,7 @@ export const makePluginUploadUC =
     const [existingPendingPlugins, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
 
     if (pendingErr) {
+      logger.error('Plugin Upload Pending List Error', pendingErr);
       return failureResult(
         {
           en: 'Failed to get pending plugin ids',

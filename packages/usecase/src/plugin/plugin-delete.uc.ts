@@ -20,6 +20,7 @@ export const makePluginDeleteUC =
     const [plugin, pluginErr] = await pluginRepo.getPluginByUserPluginId(input);
 
     if (pluginErr) {
+      logger.error('Plugin Delete Detail Error', pluginErr);
       return failureResult(
         {
           en: 'Plugin not found',
@@ -33,6 +34,10 @@ export const makePluginDeleteUC =
     const [, disableErr] = await pluginRepo.disablePlugins([uniqueId]);
 
     if (disableErr) {
+      logger.error('Plugin Delete Disable Error', {
+        uniqueId,
+        error: disableErr
+      });
       return failureResult(
         {
           en: 'Failed to delete plugin',

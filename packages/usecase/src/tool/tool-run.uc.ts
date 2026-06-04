@@ -6,7 +6,9 @@
  */
 
 import type { ToolManagerPort } from '@domain/ports/plugin/tool.port';
-import type { ToolRunInputType } from '@domain/value-objects/tool.vo';
+import { failureResult, type Result,successResult } from '@domain/value-objects/result.vo';
+import type { StreamData } from '@domain/value-objects/stream.vo';
+import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
@@ -15,9 +17,16 @@ export type ToolRunUCDeps = {
   logger: UsecaseLogger;
 };
 
+type Output = Promise<Result<StreamData<ToolStreamMessageType>>>;
+
 export const makeToolRunUC =
   ({ toolManager, logger }: ToolRunUCDeps) =>
-  async (input: ToolRunInputType) => {
+  async (input: ToolRunInputType): Output => {
     logger.debug('Tool Run', { input });
-    return await toolManager.run(input);
+    const [result, error] = await toolManager.run(input);
+    if (error) {
+      logger.error('Tool Run Error', error);
+      return failureResult(error);
+    }
+    return successResult(result);
   };

@@ -47,6 +47,10 @@ export const makePluginConfirmUC =
       );
 
       if (replacedErr) {
+        deps.logger.error('Plugin Confirm Replaced Active List Error', {
+          uniqueId,
+          error: replacedErr
+        });
         return failureResult(
           {
             en: 'Failed to get active plugins',
@@ -60,6 +64,10 @@ export const makePluginConfirmUC =
       const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
 
       if (pendingErr) {
+        deps.logger.error('Plugin Confirm Pending List Error', {
+          uniqueId,
+          error: pendingErr
+        });
         return failureResult(
           {
             en: 'Failed to get pending plugins',
@@ -81,6 +89,10 @@ export const makePluginConfirmUC =
       const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId);
 
       if (err) {
+        deps.logger.error('Plugin Confirm One Error', {
+          uniqueId,
+          error: err
+        });
         return failureResult(
           {
             en: 'Failed to confirm plugin',
@@ -94,6 +106,10 @@ export const makePluginConfirmUC =
       if (plugin.type === 'tool') {
         const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
         if (registerErr) {
+          deps.logger.error('Plugin Confirm Register Runtime Error', {
+            uniqueId,
+            error: registerErr
+          });
           return failureResult(
             {
               en: 'Failed to register confirmed plugin',
@@ -110,6 +126,10 @@ export const makePluginConfirmUC =
         });
 
         if (replaceErr) {
+          deps.logger.error('Plugin Confirm Replace Active Error', {
+            uniqueId,
+            error: replaceErr
+          });
           return failureResult(replaceErr);
         }
 
@@ -125,7 +145,13 @@ export const makePluginConfirmUC =
 
     for (const uniqueId of uniqueIds) {
       const [, err] = await confirmOne(uniqueId);
-      if (err) return failureResult(err);
+      if (err) {
+        deps.logger.error('Plugin Confirm Error', {
+          uniqueId,
+          error: err
+        });
+        return failureResult(err);
+      }
     }
 
     return successResult({});

@@ -3,6 +3,7 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginUniqueIdSchema, type PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import type { UsecaseLogger } from '@usecase/logger.port';
 
 export const listReplacedActivePlugins = async (
   pluginRepo: PluginRepoPort,
@@ -33,6 +34,7 @@ export const listReplacedActivePlugins = async (
 export const disableAndUnregisterReplacedPlugins = async (deps: {
   pluginRepo: PluginRepoPort;
   pluginRuntimeManager: PluginRuntimeManagerPort;
+  logger: UsecaseLogger;
   replacementUniqueId?: PluginUniqueIdType;
   replacedPlugins: PluginType[];
 }): Promise<Result> => {
@@ -46,6 +48,10 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
   const [, disableErr] = await deps.pluginRepo.disablePlugins(replacedPluginIds);
 
   if (disableErr) {
+    deps.logger.error('Plugin Replace Active Disable Error', {
+      replacedPluginIds,
+      error: disableErr
+    });
     return failureResult(
       {
         en: 'Failed to disable replaced plugins',
@@ -62,7 +68,7 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
           replacementUniqueId: deps.replacementUniqueId
         });
         if (unregisterErr) {
-          console.error('Failed to unregister replaced plugin runtime', {
+          deps.logger.error('Failed to unregister replaced plugin runtime', {
             pluginId: uniqueId.pluginId,
             version: uniqueId.version,
             etag: uniqueId.etag,
@@ -70,7 +76,7 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
           });
         }
       } catch (error) {
-        console.error('Failed to unregister replaced plugin runtime', {
+        deps.logger.error('Failed to unregister replaced plugin runtime', {
           pluginId: uniqueId.pluginId,
           version: uniqueId.version,
           etag: uniqueId.etag,

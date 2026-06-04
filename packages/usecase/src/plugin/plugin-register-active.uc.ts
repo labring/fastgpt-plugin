@@ -22,6 +22,7 @@ export const makePluginRegisterActiveUC =
     const [plugins, listErr] = await deps.pluginRepo.listActive();
 
     if (listErr) {
+      deps.logger.error('Plugin Register Active List Error', listErr);
       return failureResult(
         {
           en: 'Failed to get active plugins',
@@ -43,6 +44,10 @@ export const makePluginRegisterActiveUC =
 
       const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
       if (registerErr) {
+        deps.logger.error('Plugin Register Active One Error', {
+          uniqueId,
+          error: registerErr
+        });
         return failureResult(
           {
             en: 'Failed to register active plugin',

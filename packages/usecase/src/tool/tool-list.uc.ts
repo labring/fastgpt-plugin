@@ -10,7 +10,7 @@ import type {
   ToolListOutputType,
   ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
-import type { Result } from '@domain/value-objects/result.vo';
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type ToolListUCDeps = {
@@ -25,5 +25,10 @@ export const makeToolListUC =
   ({ logger, toolManager }: ToolListUCDeps) =>
   async (input: Input): Output => {
     logger.debug('Tool List', { input });
-    return toolManager.list(input);
+    const [result, error] = await toolManager.list(input);
+    if (error) {
+      logger.error('Tool List Error', error);
+      return failureResult(error);
+    }
+    return successResult(result);
   };

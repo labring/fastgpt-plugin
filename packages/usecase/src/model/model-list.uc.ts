@@ -7,7 +7,7 @@
 
 import type { ModelItemType } from '@domain/entities/model.entity';
 import type { ModelManagerPort } from '@domain/ports/plugin/model.port';
-import type { Result } from '@domain/value-objects/result.vo';
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 /** Dependencies */
 export type ModelListDeps = {
@@ -25,5 +25,10 @@ export const makeModelListUC =
   ({ logger, modelManager }: ModelListDeps) =>
   async (_input: Input): Output => {
     logger.debug('Model List');
-    return modelManager.models();
+    const [result, error] = await modelManager.models();
+    if (error) {
+      logger.error('Model List Error', error);
+      return failureResult(error);
+    }
+    return successResult(result);
   };
