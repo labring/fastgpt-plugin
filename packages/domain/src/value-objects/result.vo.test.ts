@@ -26,6 +26,27 @@ describe('failureResult', () => {
     expect(failure?.error).toBe(error);
     expect(failure?.error.cause).toBe(cause);
     expect(failure?.reason).toEqual(error.reason);
+    expect(failure?.code).toBe(ErrorCode.pluginInvokeFailed);
+    expect(failure?.message).toBe('Invoke failed');
+  });
+
+  it('lifts registered error data into the failure for logging', () => {
+    const error = createError(ErrorCode.pluginInvokeFailed, {
+      data: {
+        pluginId: 'getTime',
+        input: { timezone: 'Asia/Shanghai' }
+      }
+    });
+    const [, failure] = failureResult(error);
+
+    expect(failure).toMatchObject({
+      code: ErrorCode.pluginInvokeFailed,
+      message: 'Invoke failed',
+      data: {
+        pluginId: 'getTime',
+        input: { timezone: 'Asia/Shanghai' }
+      }
+    });
   });
 
   it('wraps legacy i18n failures in native Error', () => {

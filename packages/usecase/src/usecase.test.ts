@@ -389,6 +389,23 @@ describe('simple usecases', () => {
     {
       name: 'tool run',
       message: 'Tool Run Error',
+      expectedErrorLog: (result: ReturnType<typeof failureResult>) => [
+        'Tool Run Error',
+        {
+          ...result[1],
+          input: {
+            pluginId: 'plugin-a',
+            source: 'system',
+            input: {},
+            hasSecrets: false,
+            systemVar: {
+              app: { id: 'app', name: 'app' },
+              chat: { chatId: 'chat' },
+              time: '2026-01-01T00:00:00Z'
+            }
+          }
+        }
+      ],
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makeToolRunUC({
           toolManager: baseToolManager({
@@ -406,13 +423,66 @@ describe('simple usecases', () => {
           }
         })
     }
-  ])('records usecase error logs for $name failures', async ({ message, run }) => {
+  ])('records usecase error logs for $name failures', async ({ message, run, expectedErrorLog }) => {
     const result = failureResult(reason(`${message} failed`));
     const usecaseLogger = logger();
 
     await expect(run(result, usecaseLogger)).resolves.toEqual(result);
 
-    expect(usecaseLogger.error).toHaveBeenCalledWith(message, result[1]);
+    expect(usecaseLogger.error).toHaveBeenCalledWith(
+      ...(expectedErrorLog?.(result) ?? [message, result[1]])
+    );
+  });
+
+  it('records tool run error code and diagnostic context without secret fields', async () => {
+    const result = failureResult({
+      reason: reason('Plugin invocation timed out'),
+      error: new Error('Plugin invocation timed out'),
+      code: 'plugin.invoke.timeout',
+      message: 'Plugin invocation timed out',
+      data: {
+        pluginId: 'plugin-a',
+        version: '1.0.0',
+        input: { timezone: 'Asia/Shanghai' }
+      }
+    });
+    const usecaseLogger = logger();
+
+    await expect(
+      makeToolRunUC({
+        toolManager: baseToolManager({
+          run: vi.fn().mockResolvedValue(result)
+        }),
+        logger: usecaseLogger
+      })({
+        pluginId: 'plugin-a',
+        version: '1.0.0',
+        input: { timezone: 'Asia/Shanghai' },
+        secrets: { apiKey: 'secret-key' },
+        systemVar: {
+          app: { id: 'app', name: 'app' },
+          chat: { chatId: 'chat', uid: 'user' },
+          invokeToken: 'invoke-token',
+          time: '2026-01-01T00:00:00Z'
+        }
+      })
+    ).resolves.toEqual(result);
+
+    expect(usecaseLogger.error).toHaveBeenCalledWith('Tool Run Error', {
+      ...result[1],
+      input: {
+        pluginId: 'plugin-a',
+        source: 'system',
+        version: '1.0.0',
+        input: { timezone: 'Asia/Shanghai' },
+        hasSecrets: true,
+        systemVar: {
+          app: { id: 'app', name: 'app' },
+          chat: { chatId: 'chat', uid: 'user' },
+          time: '2026-01-01T00:00:00Z'
+        }
+      }
+    });
   });
 });
 

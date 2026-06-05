@@ -47,6 +47,10 @@ export type LocalPoolPluginRuntimeManagerDeps = {
   pluginRepo: PluginRepoPort;
 };
 
+type RegisterOptions = Partial<LocalPoolPluginConfigType> & {
+  publishVersionKey?: boolean;
+};
+
 // ============ PluginManager ============
 
 /**
@@ -54,7 +58,7 @@ export type LocalPoolPluginRuntimeManagerDeps = {
  * 底层是 IPC 通信，只允许 Node.js 环境使用。
  */
 export class LocalPoolPluginRuntimeManager
-  implements PluginRuntimeManagerPort<LocalPoolPluginConfigType>
+  implements PluginRuntimeManagerPort<LocalPoolPluginConfigType, ServiceMetrics>
 {
   /** manager 级别的配置 */
   private readonly managerConfig: LocalPoolGlobalConfigType;
@@ -116,18 +120,40 @@ export class LocalPoolPluginRuntimeManager
     return `localPool@${pluginId}@${version}@${etag}`;
   }
 
+  private getConfigVersionKey(pluginId: string) {
+    return `localPoolConfig@${pluginId}`;
+  }
+
   /**
    * 获得一个插件实例，检查该插件的 VersionKey，如果已经过期，则需要立即触发更新
    */
   private async getPlugin(uniqueId: PluginUniqueIdType) {
     const runtimeId = this.getRuntimeId(uniqueId);
-    if (await this.versionKeyStore.isVersionKeyExpired(runtimeId)) {
+    const configVersionKey = this.getConfigVersionKey(uniqueId.pluginId);
+    const [runtimeVersionExpired, configVersionExpired] = await Promise.all([
+      this.versionKeyStore.isVersionKeyExpired(runtimeId),
+      this.versionKeyStore.isVersionKeyExpired(configVersionKey)
+    ]);
+
+    if (runtimeVersionExpired || configVersionExpired) {
       // 缓存过期，获取新数据
 
       // 1. 获取旧 service, 停机
-      await this.unregister(uniqueId);
+      if (this.plugins.has(runtimeId)) {
+        await this.unregister(uniqueId);
+      }
 
-      await this.register(uniqueId);
+      const [, registerErr] = await this.register(uniqueId, {
+        publishVersionKey: false
+      });
+      if (registerErr) {
+        return undefined;
+      }
+
+      await Promise.all([
+        this.versionKeyStore.syncVersionKey(runtimeId),
+        this.versionKeyStore.syncVersionKey(configVersionKey)
+      ]);
     }
     // 缓存 key 命中，未过期
     // 或该插件不存在
@@ -163,26 +189,10 @@ export class LocalPoolPluginRuntimeManager
       return failureResult(createError(ErrorCode.pluginRuntimeConfigUpdateFailed, { cause: err }));
     }
 
-    const pluginRuntimeIds = this.pluginIdMap.get(pluginId);
-    if (!pluginRuntimeIds) {
-      return successResult({});
-    }
-
-    await Promise.all(
-      pluginRuntimeIds.map(async (runtimeId) => {
-        const item = this.plugins.get(runtimeId);
-        if (!item) {
-          return;
-        }
-        try {
-          await item.mutex.acquire();
-          item.config = pluginConfig;
-          await item.service.updateConfig(this.toServiceConfig(pluginConfig));
-        } finally {
-          item.mutex.release();
-        }
-      })
-    );
+    const updatedLocalRuntime = await this.updateLoadedPluginConfigs(pluginId, pluginConfig);
+    await this.versionKeyStore.refreshVersionKey(this.getConfigVersionKey(pluginId), {
+      syncLocal: updatedLocalRuntime
+    });
 
     return successResult({});
   }
@@ -198,26 +208,10 @@ export class LocalPoolPluginRuntimeManager
       return failureResult(parseErr);
     }
 
-    const pluginRuntimeIds = this.pluginIdMap.get(pluginId);
-    if (!pluginRuntimeIds) {
-      return successResult({});
-    }
-
-    await Promise.all(
-      pluginRuntimeIds.map(async (runtimeId) => {
-        const item = this.plugins.get(runtimeId);
-        if (!item) {
-          return;
-        }
-        try {
-          await item.mutex.acquire();
-          item.config = pluginConfig;
-          await item.service.updateConfig(this.toServiceConfig(pluginConfig));
-        } finally {
-          item.mutex.release();
-        }
-      })
-    );
+    const updatedLocalRuntime = await this.updateLoadedPluginConfigs(pluginId, pluginConfig);
+    await this.versionKeyStore.refreshVersionKey(this.getConfigVersionKey(pluginId), {
+      syncLocal: updatedLocalRuntime
+    });
 
     return successResult({});
   }
@@ -245,7 +239,7 @@ export class LocalPoolPluginRuntimeManager
    * 注册一个插件。
    * IPC 模式下会初始化进程池（minPods 个 Pod 立即启动）。
    */
-  async register(uniqueId: PluginUniqueIdType): Promise<Result> {
+  async register(uniqueId: PluginUniqueIdType, options: RegisterOptions = {}): Promise<Result> {
     const id = this.getRuntimeId(uniqueId);
     if (this.destroyed)
       return failureResult(createError(ErrorCode.pluginRuntimeManagerDestroyed));
@@ -376,6 +370,12 @@ export class LocalPoolPluginRuntimeManager
       mutex: new Mutex()
     });
     this.addPluginRuntimeId(uniqueId.pluginId, id);
+    await Promise.all([
+      options.publishVersionKey ?? true
+        ? this.versionKeyStore.ensureVersionKey(id)
+        : this.versionKeyStore.syncVersionKey(id),
+      this.versionKeyStore.syncVersionKey(this.getConfigVersionKey(uniqueId.pluginId))
+    ]);
 
     return successResult({});
   }
@@ -524,6 +524,33 @@ export class LocalPoolPluginRuntimeManager
     }
 
     return successResult(result.data);
+  }
+
+  private async updateLoadedPluginConfigs(
+    pluginId: string,
+    pluginConfig: LocalPoolPluginConfigType
+  ): Promise<boolean> {
+    const pluginRuntimeIds = this.pluginIdMap.get(pluginId) ?? [];
+    let updatedLocalRuntime = false;
+
+    await Promise.all(
+      pluginRuntimeIds.map(async (runtimeId) => {
+        const item = this.plugins.get(runtimeId);
+        if (!item) {
+          return;
+        }
+        try {
+          await item.mutex.acquire();
+          item.config = pluginConfig;
+          await item.service.updateConfig(this.toServiceConfig(pluginConfig));
+          updatedLocalRuntime = true;
+        } finally {
+          item.mutex.release();
+        }
+      })
+    );
+
+    return updatedLocalRuntime;
   }
 
   private addPluginRuntimeId(pluginId: string, runtimeId: string): void {
