@@ -13,11 +13,13 @@ import {
   type ToolListOutputType,
   type ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
+import { createError, getErrorDefinition, type RegisteredError } from '@domain/value-objects/error.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 import { InvokeManager } from './invoke/invoke.impl';
 import { Semver } from './utils/semver';
@@ -176,11 +178,21 @@ export class ToolManager implements ToolManagerPort {
 
     if (err) {
       return failureResult(
-        {
-          en: 'Failed to get plugin by plugin id',
-          'zh-CN': '获取插件失败'
-        },
-        err
+        createError(ErrorCode.pluginRuntimePluginNotFound, {
+          message: 'Failed to get plugin by plugin id',
+          reason: {
+            en: 'Failed to get plugin by plugin id',
+            'zh-CN': '获取插件失败'
+          },
+          cause: err.error,
+          data: {
+            childId,
+            input,
+            pluginId,
+            source: source ?? 'system',
+            ...(version ? { version } : {})
+          }
+        })
       );
     }
 
@@ -218,14 +230,64 @@ export class ToolManager implements ToolManagerPort {
 
     if (invokeErr) {
       return failureResult(
-        {
-          en: 'Failed to invoke plugin',
-          'zh-CN': '调用插件失败'
-        },
-        invokeErr
+        toPluginInvokeError(invokeErr.error, {
+          childId,
+          input,
+          pluginId: plugin.pluginId,
+          source: source ?? 'system',
+          version: plugin.version
+        })
       );
     }
 
     return successResult(invokeRes);
   }
+}
+
+type ToolRunErrorContext = {
+  pluginId: string;
+  source: PluginSourceType;
+  version: string;
+  childId?: string;
+  input: Record<string, unknown>;
+};
+
+function toPluginInvokeError(error: Error, context: ToolRunErrorContext): RegisteredError {
+  if (isRegisteredError(error)) {
+    return createError(error.code, {
+      message: error.message,
+      reason: error.reason,
+      cause: error.cause ?? error,
+      data: mergeErrorData(error.data, context)
+    });
+  }
+
+  return createError(ErrorCode.pluginInvokeFailed, {
+    message: error.message,
+    reason: {
+      en: `Invoke failed: ${error.message}`,
+      'zh-CN': `调用失败：${error.message}`
+    },
+    cause: error,
+    data: context
+  });
+}
+
+function isRegisteredError(error: Error): error is RegisteredError {
+  const code = (error as Partial<RegisteredError>).code;
+  return (
+    typeof code === 'string' &&
+    getErrorDefinition(code) !== undefined &&
+    typeof (error as Partial<RegisteredError>).reason === 'object'
+  );
+}
+
+function mergeErrorData(
+  data: Record<string, unknown> | undefined,
+  context: ToolRunErrorContext
+): Record<string, unknown> {
+  return {
+    ...(data ?? {}),
+    ...context
+  };
 }

@@ -31,11 +31,39 @@ export class VersionKeyStore {
     return versionKey !== localVersionKey;
   }
 
-  public async refreshVersionKey(key: string): Promise<string> {
+  public async syncVersionKey(key: string): Promise<string | null> {
+    const versionKey = await this.deps.redisClient.getClient.get(this.getRedisKey(key));
+
+    if (versionKey) {
+      this.versionKeyMap.set(key, versionKey);
+    } else {
+      this.versionKeyMap.delete(key);
+    }
+
+    return versionKey;
+  }
+
+  public async ensureVersionKey(key: string): Promise<string> {
+    const redisKey = this.getRedisKey(key);
+    const versionKey = this.generateVersionKey();
+    const result = await this.deps.redisClient.getClient.set(redisKey, versionKey, 'NX');
+
+    if (result === 'OK') {
+      this.versionKeyMap.set(key, versionKey);
+      return versionKey;
+    }
+
+    return (await this.syncVersionKey(key)) ?? this.refreshVersionKey(key);
+  }
+
+  public async refreshVersionKey(
+    key: string,
+    options: { syncLocal?: boolean } = {}
+  ): Promise<string> {
     const versionKey = this.generateVersionKey();
     const result = await this.deps.redisClient.getClient.set(this.getRedisKey(key), versionKey);
 
-    if (result === 'OK') {
+    if (result === 'OK' && (options.syncLocal ?? true)) {
       this.versionKeyMap.set(key, versionKey);
     }
     return versionKey;

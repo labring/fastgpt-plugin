@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@hono/zod-openapi": "^1.2.1",
     "zod": "catalog:"
   },
   "devDependencies": {

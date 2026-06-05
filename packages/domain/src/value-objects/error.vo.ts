@@ -43,6 +43,10 @@ export type ErrorResponseType = {
   cause?: ErrorResponseType;
 };
 
+export type ReasonError = Error & {
+  reason: I18nStringType;
+};
+
 const DEFAULT_INTERNAL_REASON: I18nStringType = {
   en: 'Internal Server Error',
   'zh-CN': '服务器内部错误'
@@ -97,6 +101,16 @@ export function createError(code: string, options: CreateErrorOptions = {}): Reg
   return new RegisteredError(definition, options);
 }
 
+export function createReasonError(
+  reason: I18nStringType,
+  options: { cause?: unknown } = {}
+): ReasonError {
+  const cause = normalizeErrorCause(options.cause);
+  const error = cause === undefined ? new Error(reason.en) : new Error(reason.en, { cause });
+
+  return Object.assign(error, { reason });
+}
+
 export function normalizeToError(error: unknown, fallbackMessage = 'Unknown error'): Error {
   if (error instanceof Error) {
     return error;
@@ -106,10 +120,17 @@ export function normalizeToError(error: unknown, fallbackMessage = 'Unknown erro
     return new Error(error);
   }
 
+  if (isI18nString(error)) {
+    return createReasonError(error);
+  }
+
   if (isResultFailureLike(error)) {
-    const reasonText = getI18nReasonText(error.reason);
-    const cause = normalizeToError(error.error, reasonText ?? fallbackMessage);
-    return new Error(joinErrorMessages(reasonText, cause.message) ?? fallbackMessage, { cause });
+    const reason = isI18nString(error.reason) ? error.reason : undefined;
+    const cause = normalizeToError(error.error, reason?.en ?? fallbackMessage);
+    if (reason && isSameI18nString(reason, getErrorReason(cause))) {
+      return cause;
+    }
+    return reason ? createReasonError(reason, { cause }) : new Error(fallbackMessage, { cause });
   }
 
   return new Error(getUnknownErrorMessage(error, fallbackMessage), { cause: error });
@@ -219,6 +240,7 @@ export function deserializeError(error: SerializedError): Error {
 
   return Object.assign(result, {
     ...(error.code !== undefined ? { code: error.code } : {}),
+    ...(error.reason !== undefined ? { reason: error.reason } : {}),
     ...(error.data !== undefined ? { data: error.data } : {})
   });
 }
@@ -230,6 +252,14 @@ function normalizeErrorCause(cause: unknown): unknown {
 
   if (typeof cause === 'string') {
     return new Error(cause);
+  }
+
+  if (isI18nString(cause)) {
+    return createReasonError(cause);
+  }
+
+  if (isResultFailureLike(cause)) {
+    return normalizeToError(cause);
   }
 
   return cause;
@@ -268,10 +298,13 @@ function serializeErrorInner(
   }
 
   if (error instanceof Error) {
+    const reason = getI18nStringField(error, 'reason');
+
     return {
       name: error.name,
       code: getStringField(error, 'code'),
       message: error.message,
+      ...(reason !== undefined ? { reason } : {}),
       data: getUnknownField(error, 'data'),
       ...(state.includeStack && error.stack !== undefined ? { stack: error.stack } : {}),
       ...(error.cause !== undefined
@@ -335,6 +368,11 @@ function getStringField(error: Error, field: string): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
+function getI18nStringField(error: Error, field: string): I18nStringType | undefined {
+  const value = (error as unknown as Record<string, unknown>)[field];
+  return isI18nString(value) ? value : undefined;
+}
+
 function getUnknownField(error: Error, field: string): unknown {
   return (error as unknown as Record<string, unknown>)[field];
 }
@@ -348,6 +386,14 @@ function isI18nString(value: unknown): value is I18nStringType {
   );
 }
 
+function isSameI18nString(left: I18nStringType, right: I18nStringType): boolean {
+  return (
+    left.en === right.en &&
+    left['zh-CN'] === right['zh-CN'] &&
+    left['zh-Hant'] === right['zh-Hant']
+  );
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object');
 }
@@ -356,26 +402,4 @@ function isResultFailureLike(
   value: unknown
 ): value is { reason?: unknown; error: unknown } {
   return isRecord(value) && 'error' in value && ('reason' in value || isRecord(value.error));
-}
-
-function getI18nReasonText(reason: unknown): string | undefined {
-  if (!isI18nString(reason)) {
-    return undefined;
-  }
-
-  return reason['zh-CN'] ?? reason.en ?? reason['zh-Hant'];
-}
-
-function joinErrorMessages(...messages: (string | undefined)[]): string | undefined {
-  const uniqueMessages = messages
-    .filter((message, index): message is string => {
-      return Boolean(message) && messages.indexOf(message) === index;
-    })
-    .filter((message, index, values) => {
-      return !values.some(
-        (value, valueIndex) => valueIndex > index && value.startsWith(`${message}:`)
-      );
-    });
-
-  return uniqueMessages.length > 0 ? uniqueMessages.join(': ') : undefined;
 }

@@ -1,19 +1,83 @@
-import { OpenAPIHono, type OpenAPIHonoOptions } from '@hono/zod-openapi';
 import { isNotNil } from 'es-toolkit';
-import type { Context, Env } from 'hono';
+import type { Context, Env, Handler } from 'hono';
+import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import z from 'zod';
+import z, { type ZodType } from 'zod';
 
-import {
-  createError,
-  normalizeToError,
-  toErrorResponse,
-  type ErrorResponseType
-} from '@domain/value-objects/error.vo';
+import type { ErrorResponseType } from '@domain/value-objects/error.vo';
+import { createError, toErrorResponse } from '@domain/value-objects/error.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 type ResponseContextLike = Pick<Context, 'json' | 'body'>;
+type OpenAPIMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
+type OpenAPIContent = Record<string, { schema: ZodType }>;
+
+type OpenAPIRouteDefinition = {
+  path: string;
+  method: OpenAPIMethod;
+  operationId?: string;
+  summary?: string;
+  description?: string;
+  tags?: string[];
+  security?: readonly Record<string, readonly string[]>[];
+  request?: {
+    query?: ZodType;
+    body?: {
+      content: OpenAPIContent;
+    };
+  };
+  responses: Record<
+    string | number,
+    {
+      description: string;
+      content?: OpenAPIContent;
+    }
+  >;
+};
+
+type OpenAPIComponentType = 'securitySchemes' | 'schemas' | 'parameters' | 'responses';
+type OpenAPIComponents = Partial<Record<OpenAPIComponentType, Record<string, unknown>>>;
+type OpenAPIDocConfig = {
+  openapi: '3.1.0';
+  info: Record<string, unknown>;
+  security?: readonly Record<string, readonly string[]>[];
+};
+type OpenAPIState = {
+  routes: OpenAPIRouteDefinition[];
+  components: OpenAPIComponents;
+};
+type EmptyValidatedData = Record<never, never>;
+type ValidatedData<T extends OpenAPIRouteDefinition> = (T extends {
+  request: { query: infer Q extends ZodType };
+}
+  ? { query: z.output<Q> }
+  : EmptyValidatedData) &
+  (T extends {
+    request: { body: { content: { 'application/json': { schema: infer B extends ZodType } } } };
+  }
+    ? { json: z.output<B> }
+    : EmptyValidatedData);
+type OpenAPIHandler<T extends OpenAPIRouteDefinition> = Handler<
+  Env,
+  string,
+  { out: ValidatedData<T> }
+>;
+type OpenAPIHonoOptions<T extends Env> = ConstructorParameters<typeof Hono<T>>[0];
+export type NativeOpenAPIHono<T extends Env = Env> = Hono<T> & {
+  openapi: <const Route extends OpenAPIRouteDefinition>(
+    route: Route,
+    handler: OpenAPIHandler<Route>
+  ) => NativeOpenAPIHono<T>;
+  doc31: (path: string, config: OpenAPIDocConfig) => NativeOpenAPIHono<T>;
+  openAPIRegistry: {
+    registerComponent: (type: OpenAPIComponentType, name: string, component: unknown) => void;
+  };
+};
+
+const openAPIState = new WeakMap<object, OpenAPIState>();
+
+export const createRoute = <const Route extends OpenAPIRouteDefinition>(route: Route) => route;
 
 export function appendHeaders(headers: Headers, appendHeaders?: HeadersInit) {
   const h = new Headers(headers);
@@ -72,8 +136,7 @@ function normalizeError(
   return toErrorResponse(
     createError(getHttpErrorCode(status), {
       message: error.en,
-      reason: error,
-      cause: normalizeToError(error, error.en)
+      reason: error
     })
   );
 }
@@ -101,38 +164,261 @@ export const R = {
   error: fail
 };
 
-/**
- * Create OpenAPIHono instance with default validation hook
- */
-export function createOpenAPIHono<T extends Env = Env>(options?: OpenAPIHonoOptions<T>) {
-  return new OpenAPIHono<T>({
-    defaultHook: (result, c) => {
-      if (!result.success) {
-        const issues = result.error.issues;
-        if (issues.length === 0) {
-          throw new Error('Unknown Zod error');
-        }
-
-        const paths = [];
-        for (const issue of issues) {
-          if (issue.path) {
-            paths.push(...issue.path.flat());
-          }
-        }
-        const fields = Array.from(new Set(paths)).filter(isNotNil).join(', ');
-        return R.fail(c, 400, {
-          en: fields
-        });
-      }
-    },
-    ...options
-  });
-}
-
 function getHttpErrorCode(status: ContentfulStatusCode): string {
   if (status === 400) return ErrorCode.badRequest;
   if (status === 401) return ErrorCode.unauthorized;
   if (status === 404) return ErrorCode.notFound;
   if (status >= 400 && status < 500) return ErrorCode.badRequest;
   return ErrorCode.internalServerError;
+}
+
+function getState(app: object): OpenAPIState {
+  const existing = openAPIState.get(app);
+  if (existing) {
+    return existing;
+  }
+
+  const state: OpenAPIState = {
+    routes: [],
+    components: {}
+  };
+  openAPIState.set(app, state);
+  return state;
+}
+
+function getFirstJSONBodySchema(route: OpenAPIRouteDefinition): ZodType | undefined {
+  return route.request?.body?.content['application/json']?.schema;
+}
+
+function buildQueryTarget(c: Context) {
+  const query = c.req.query();
+  const multiValueQuery = c.req.queries();
+
+  return {
+    ...query,
+    ...Object.fromEntries(
+      Object.entries(multiValueQuery).map(([key, value]) => [
+        key,
+        value.length === 1 ? value[0] : value
+      ])
+    )
+  };
+}
+
+function validationErrorResponse(c: Context, error: z.ZodError) {
+  const issues = error.issues;
+  if (issues.length === 0) {
+    return R.fail(c, 400, {
+      en: 'Unknown validation error',
+      'zh-CN': '未知数据校验错误'
+    });
+  }
+
+  const paths = [];
+  for (const issue of issues) {
+    if (issue.path) {
+      paths.push(...issue.path.flat());
+    }
+  }
+  const fields = Array.from(new Set(paths)).filter(isNotNil).join(', ');
+
+  return R.fail(c, 400, {
+    en: fields || 'Validation failed',
+    'zh-CN': fields || '数据校验失败'
+  });
+}
+
+async function validateRequest(c: Context, route: OpenAPIRouteDefinition) {
+  const querySchema = route.request?.query;
+  if (querySchema) {
+    const result = await querySchema.safeParseAsync(buildQueryTarget(c));
+    if (!result.success) {
+      return validationErrorResponse(c, result.error);
+    }
+    c.req.addValidatedData('query', result.data as object);
+  }
+
+  const jsonSchema = getFirstJSONBodySchema(route);
+  if (jsonSchema) {
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      body = undefined;
+    }
+
+    const result = await jsonSchema.safeParseAsync(body);
+    if (!result.success) {
+      return validationErrorResponse(c, result.error);
+    }
+    c.req.addValidatedData('json', result.data as object);
+  }
+
+  return undefined;
+}
+
+function toOpenAPIPath(path: string) {
+  return path.replace(/:([A-Za-z0-9_]+)/g, '{$1}');
+}
+
+function joinRoutePath(prefix: string, path: string) {
+  const cleanPrefix = prefix === '/' ? '' : prefix.replace(/\/+$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${cleanPrefix}${cleanPath}` || '/';
+}
+
+function stripJSONSchemaMarker(schema: unknown): unknown {
+  if (!schema || typeof schema !== 'object') {
+    return schema;
+  }
+
+  if (Array.isArray(schema)) {
+    return schema.map(stripJSONSchemaMarker);
+  }
+
+  const entries = Object.entries(schema)
+    .filter(([key]) => key !== '$schema')
+    .map(([key, value]) => [key, stripJSONSchemaMarker(value)]);
+  return Object.fromEntries(entries);
+}
+
+function toSchemaObject(schema: ZodType) {
+  return stripJSONSchemaMarker(z.toJSONSchema(schema));
+}
+
+function toContent(content: OpenAPIContent) {
+  return Object.fromEntries(
+    Object.entries(content).map(([contentType, item]) => [
+      contentType,
+      {
+        schema: toSchemaObject(item.schema)
+      }
+    ])
+  );
+}
+
+function toOpenAPIRequest(route: OpenAPIRouteDefinition) {
+  const request: Record<string, unknown> = {};
+
+  if (route.request?.query instanceof z.ZodObject) {
+    const jsonSchema = toSchemaObject(route.request.query);
+    const properties =
+      jsonSchema && typeof jsonSchema === 'object' && 'properties' in jsonSchema
+        ? (jsonSchema.properties as Record<string, unknown> | undefined)
+        : undefined;
+    const required =
+      jsonSchema && typeof jsonSchema === 'object' && 'required' in jsonSchema
+        ? new Set(jsonSchema.required as string[])
+        : new Set<string>();
+
+    request.parameters = Object.entries(properties ?? {}).map(([name, schema]) => ({
+      name,
+      in: 'query',
+      required: required.has(name),
+      schema
+    }));
+  }
+
+  if (route.request?.body) {
+    request.requestBody = {
+      content: toContent(route.request.body.content)
+    };
+  }
+
+  return request;
+}
+
+function buildOpenAPIDocument(state: OpenAPIState, config: OpenAPIDocConfig) {
+  const paths: Record<string, Record<string, unknown>> = {};
+
+  for (const route of state.routes) {
+    const path = toOpenAPIPath(route.path);
+    const pathItem = (paths[path] ??= {});
+    pathItem[route.method] = {
+      operationId: route.operationId,
+      summary: route.summary,
+      description: route.description,
+      tags: route.tags,
+      security: route.security,
+      ...toOpenAPIRequest(route),
+      responses: Object.fromEntries(
+        Object.entries(route.responses).map(([status, response]) => [
+          status,
+          {
+            description: response.description,
+            ...(response.content ? { content: toContent(response.content) } : {})
+          }
+        ])
+      )
+    };
+  }
+
+  return {
+    ...config,
+    components: state.components,
+    paths
+  };
+}
+
+/**
+ * Create Hono instance with native Zod validation and local OpenAPI registry.
+ */
+export function createOpenAPIHono<T extends Env = Env>(
+  options?: OpenAPIHonoOptions<T>
+): NativeOpenAPIHono<T> {
+  const app = new Hono<T>(options) as NativeOpenAPIHono<T>;
+  const state = getState(app);
+  const baseRoute = app.route.bind(app);
+
+  app.openapi = (route, handler) => {
+    state.routes.push(route);
+
+    const method = route.method;
+    app[method](route.path, async (c, next) => {
+      const response = await validateRequest(c, route);
+      if (response) {
+        return response;
+      }
+
+      return handler(c as unknown as Parameters<typeof handler>[0], next);
+    });
+
+    return app;
+  };
+
+  app.doc31 = (path, config) => {
+    app.get(path, (c) => c.json(buildOpenAPIDocument(state, config), 200));
+    return app;
+  };
+
+  app.route = ((path: string, subApp: Hono) => {
+    const routedApp = baseRoute(path, subApp);
+    const childState = openAPIState.get(subApp);
+
+    if (childState) {
+      state.routes.push(
+        ...childState.routes.map((route) => ({
+          ...route,
+          path: joinRoutePath(path, route.path)
+        }))
+      );
+
+      for (const [type, components] of Object.entries(childState.components)) {
+        const componentType = type as OpenAPIComponentType;
+        state.components[componentType] ??= {};
+        Object.assign(state.components[componentType], components);
+      }
+    }
+
+    return routedApp;
+  }) as NativeOpenAPIHono<T>['route'];
+
+  app.openAPIRegistry = {
+    registerComponent(type, name, component) {
+      state.components[type] ??= {};
+      state.components[type][name] = component;
+    }
+  };
+
+  return app;
 }

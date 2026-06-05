@@ -1,10 +1,11 @@
-import { createRoute } from '@hono/zod-openapi';
 import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 
 import { type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 import { makeToolDetailUC, type ToolDetailUCDeps } from '@usecase/tool/tool-detail.uc';
 import { makeToolListUC, type ToolListUCDeps } from '@usecase/tool/tool-list.uc';
 import { makeToolRunUC, type ToolRunUCDeps } from '@usecase/tool/tool-run.uc';
+import { ErrorCode } from '@infrastructure/errors/error.registry';
+import { createRoute } from '@infrastructure/hono/utils/response';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import { getErrText } from '@shared/utils/err';
 
@@ -134,6 +135,19 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
         start: async (controller) => {
           try {
             await result.consume(async (message) => {
+              if (message.type === 'error') {
+                deps.logger.error('Tool Stream Error', {
+                  code: ErrorCode.pluginInvokeFailed,
+                  message: message.data,
+                  data: {
+                    pluginId: body.pluginId,
+                    source: body.source ?? 'system',
+                    ...(body.version ? { version: body.version } : {}),
+                    ...(body.childId ? { childId: body.childId } : {}),
+                    input: body.input
+                  }
+                });
+              }
               controller.enqueue(encoder.encode(`${JSON.stringify(message)}\n\n`));
             });
           } catch (streamErr) {
@@ -141,6 +155,17 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
               type: 'error',
               data: getErrText(streamErr, 'Tool stream failed')
             };
+            deps.logger.error('Tool Stream Consume Error', {
+              code: ErrorCode.pluginInvokeFailed,
+              error: streamErr,
+              data: {
+                pluginId: body.pluginId,
+                source: body.source ?? 'system',
+                ...(body.version ? { version: body.version } : {}),
+                ...(body.childId ? { childId: body.childId } : {}),
+                input: body.input
+              }
+            });
             controller.enqueue(encoder.encode(`${JSON.stringify(errorMessage)}\n\n`));
           } finally {
             controller.close();

@@ -1,7 +1,6 @@
 import { Readable } from 'node:stream';
 import type { ReadableStream } from 'node:stream/web';
 
-import { createRoute } from '@hono/zod-openapi';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
 import type { Context } from 'hono';
 
@@ -21,6 +20,7 @@ import { makePluginPruneDisabledUC } from '@usecase/plugin/plugin-prune-disabled
 import { makePluginTagListUC } from '@usecase/plugin/plugin-tag-list.uc';
 import { makePluginUploadUC } from '@usecase/plugin/plugin-upload.uc';
 import { makePluginVersionsUC } from '@usecase/plugin/plugin-versions.uc';
+import { createRoute } from '@infrastructure/hono/utils/response';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import { getLogger, mod } from '@infrastructure/logger';
 

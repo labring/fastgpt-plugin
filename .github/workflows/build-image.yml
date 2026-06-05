@@ -1,11 +1,9 @@
-name: Server CI/CD
+name: Server Tests
 
 on:
   pull_request:
     branches: ['**']
     paths:
-      - 'Dockerfile'
-      - '.dockerignore'
       - 'apps/server/**'
       - 'packages/**'
       - 'sdk/**'
@@ -15,10 +13,7 @@ on:
       - '.github/workflows/build-image.yml'
   push:
     branches: ['**']
-    tags: ['v*']
     paths:
-      - 'Dockerfile'
-      - '.dockerignore'
       - 'apps/server/**'
       - 'packages/**'
       - 'sdk/**'
@@ -27,28 +22,17 @@ on:
       - 'pnpm-workspace.yaml'
       - '.github/workflows/build-image.yml'
   workflow_dispatch:
-    inputs:
-      push_image:
-        description: Push the Server image after CI passes
-        required: true
-        type: boolean
-        default: true
-      image_tag:
-        description: Optional extra image tag for manual publish
-        required: false
-        type: string
 
 permissions:
   contents: read
-  packages: write
 
 concurrency:
-  group: server-ci-cd-${{ github.ref }}
+  group: server-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  ci:
-    name: Test and build Server image
+  test:
+    name: Test Server
     runs-on: ubuntu-24.04
 
     steps:
@@ -68,129 +52,5 @@ jobs:
           HUSKY: 0
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck
-        run: pnpm run typecheck
-
       - name: Test
         run: pnpm run test
-
-      - name: Build Server
-        run: pnpm run build:server
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Server image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          target: runner
-          platforms: linux/amd64
-          push: false
-          tags: fastgpt-plugin-server:${{ github.sha }}
-          cache-from: type=gha,scope=server-docker
-
-  publish:
-    name: Publish Server image
-    runs-on: ubuntu-24.04
-    needs: ci
-    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.push_image)
-    env:
-      DOCKER_HUB_NAME: ${{ secrets.DOCKER_HUB_NAME }}
-      DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
-      DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
-      ALI_HUB_USERNAME: ${{ secrets.ALI_HUB_USERNAME }}
-      ALI_HUB_PASSWORD: ${{ secrets.ALI_HUB_PASSWORD }}
-      ALI_IMAGE_NAME: ${{ secrets.ALI_IMAGE_NAME }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Login to Docker Hub
-        if: env.DOCKER_HUB_NAME != '' && env.DOCKER_HUB_PASSWORD != '' && env.DOCKER_IMAGE_NAME != ''
-        uses: docker/login-action@v3
-        with:
-          username: ${{ env.DOCKER_HUB_NAME }}
-          password: ${{ env.DOCKER_HUB_PASSWORD }}
-
-      - name: Login to Aliyun Container Registry
-        if: env.ALI_HUB_USERNAME != '' && env.ALI_HUB_PASSWORD != '' && env.ALI_IMAGE_NAME != ''
-        uses: docker/login-action@v3
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: ${{ env.ALI_HUB_USERNAME }}
-          password: ${{ env.ALI_HUB_PASSWORD }}
-
-      - name: Resolve image tags
-        id: meta
-        env:
-          GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/fastgpt-plugin
-          IMAGE_TAG: ${{ inputs.image_tag || '' }}
-          IS_RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        run: |
-          set -euo pipefail
-
-          tags=()
-
-          add_image_tags() {
-            local image="$1"
-            tags+=("${image}:sha-${GITHUB_SHA}")
-
-            if [[ "${IS_RELEASE_TAG}" == "true" ]]; then
-              tags+=("${image}:${GITHUB_REF_NAME}")
-              tags+=("${image}:latest")
-            fi
-
-            if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${IMAGE_TAG}" ]]; then
-              tags+=("${image}:${IMAGE_TAG}")
-            fi
-          }
-
-          add_image_tags "${GHCR_IMAGE}"
-
-          if [[ -n "${DOCKER_IMAGE_NAME}" ]]; then
-            add_image_tags "${DOCKER_IMAGE_NAME}/fastgpt-plugin"
-          fi
-
-          if [[ -n "${ALI_IMAGE_NAME}" ]]; then
-            add_image_tags "${ALI_IMAGE_NAME}/fastgpt-plugin"
-          fi
-
-          {
-            echo 'tags<<EOF'
-            printf '%s\n' "${tags[@]}"
-            echo 'EOF'
-          } >> "${GITHUB_OUTPUT}"
-
-      - name: Build and push Server image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          target: runner
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.description=FastGPT Plugin Server
-          cache-from: type=gha,scope=server-docker
-          cache-to: type=gha,mode=max,scope=server-docker
-          provenance: true
-          sbom: true

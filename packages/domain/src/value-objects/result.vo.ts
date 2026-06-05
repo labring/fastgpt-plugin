@@ -1,10 +1,13 @@
-import { getErrorReason, normalizeToError } from './error.vo';
+import { createReasonError, getErrorReason, normalizeToError, serializeError } from './error.vo';
 import type { I18nStringType } from './i18n-string.vo';
 
 /** usecase, interface-adapter 都要使用这个类型， 手动处理错误，并且能从内到外把错误透出来*/
 export type ResultFailure<E extends Error = Error> = {
   reason: I18nStringType;
   error: E;
+  code?: string;
+  message?: string;
+  data?: unknown;
 };
 
 export type Result<T = unknown, E extends Error = Error> = [T, null] | [null, ResultFailure<E>];
@@ -20,37 +23,18 @@ export function failureResult<E extends Error = Error>(
   error?: unknown
 ): Result<never, E | Error> {
   if (isResultFailure(reasonOrFailure)) {
-    const normalizedError = normalizeToError(reasonOrFailure.error) as E;
-    return [
-      null,
-      {
-        reason: reasonOrFailure.reason,
-        error: normalizedError
-      }
-    ];
+    return [null, toResultFailure(reasonOrFailure.reason, reasonOrFailure.error, reasonOrFailure)];
   }
 
   if (reasonOrFailure instanceof Error) {
-    return [
-      null,
-      {
-        reason: getErrorReason(reasonOrFailure),
-        error: reasonOrFailure
-      }
-    ];
+    return [null, toResultFailure(getErrorReason(reasonOrFailure), reasonOrFailure)];
   }
 
   const normalizedError =
     error === undefined
-      ? new Error(reasonOrFailure.en, { cause: reasonOrFailure })
+      ? createReasonError(reasonOrFailure)
       : createLegacyFailureError(reasonOrFailure, error);
-  return [
-    null,
-    {
-      reason: reasonOrFailure,
-      error: normalizedError
-    }
-  ];
+  return [null, toResultFailure(reasonOrFailure, normalizedError)];
 }
 
 function isResultFailure<E extends Error>(value: unknown): value is ResultFailure<E> {
@@ -59,26 +43,24 @@ function isResultFailure<E extends Error>(value: unknown): value is ResultFailur
 
 function createLegacyFailureError(reason: I18nStringType, cause: unknown): Error {
   const normalizedCause = normalizeToError(cause, reason.en);
-  return new Error(
-    joinErrorMessages(getI18nReasonText(reason), normalizedCause.message) ?? reason.en,
-    { cause: normalizedCause }
-  );
+  return createReasonError(reason, { cause: normalizedCause });
 }
 
-function getI18nReasonText(reason: I18nStringType): string {
-  return reason['zh-CN'] ?? reason.en ?? reason['zh-Hant'];
-}
+function toResultFailure<E extends Error>(
+  reason: I18nStringType,
+  error: E,
+  existing?: Pick<ResultFailure<E>, 'code' | 'message' | 'data'>
+): ResultFailure<E> {
+  const serialized = serializeError(error);
+  const code = existing?.code ?? serialized.code;
+  const message = existing?.message ?? serialized.message;
+  const data = existing && 'data' in existing ? existing.data : serialized.data;
 
-function joinErrorMessages(...messages: (string | undefined)[]): string | undefined {
-  const uniqueMessages = messages
-    .filter((message, index): message is string => {
-      return Boolean(message) && messages.indexOf(message) === index;
-    })
-    .filter((message, index, values) => {
-      return !values.some(
-        (value, valueIndex) => valueIndex > index && value.startsWith(`${message}:`)
-      );
-    });
-
-  return uniqueMessages.length > 0 ? uniqueMessages.join(': ') : undefined;
+  return {
+    reason,
+    error,
+    ...(code !== undefined ? { code } : {}),
+    ...(message !== undefined ? { message } : {}),
+    ...(data !== undefined ? { data } : {})
+  };
 }

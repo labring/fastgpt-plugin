@@ -1,13 +1,14 @@
+import '@infrastructure/errors/error.registry';
+
 import type { ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
 import {
   deserializeError,
-  serializeError,
-  type SerializedError
+  type SerializedError,
+  serializeError
 } from '@domain/value-objects/error.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
-import '@infrastructure/errors/error.registry';
 
 import {
   PluginChannelCommonMethod,
@@ -76,12 +77,17 @@ const PROTOCOL_VERSION = '1.0';
 const REQUEST_INPUT_STREAM_PREFIX = 'request.input';
 const REQUEST_OUTPUT_STREAM_PREFIX = 'request.output';
 const CHANNEL_REPLY_MARK = '__fastgptChannelReply__';
+const CHANNEL_ERROR_MARK = '__fastgptChannelError__';
 
 type ChannelReplyDescriptor<TResult = unknown, TOutput = unknown> = {
   [CHANNEL_REPLY_MARK]: true;
   result?: TResult;
   output?: PluginChannelStreamSource<TOutput>;
   outputStream?: PluginChannelStreamOptions;
+};
+type ChannelEncodedError = {
+  [CHANNEL_ERROR_MARK]: true;
+  error: SerializedError;
 };
 
 type PluginChannelResponseMessage = Extract<
@@ -451,7 +457,7 @@ export class PluginIpcRuntimeChannel<TSide extends PluginChannelSide>
       return;
     }
 
-    pending.resolve(message.result);
+    pending.resolve(decodeChannelResult(message.result));
   }
 
   private async handleRequest(message: PluginChannelRequestMessage): Promise<void> {
@@ -525,7 +531,7 @@ export class PluginIpcRuntimeChannel<TSide extends PluginChannelSide>
     await this.send({
       protocol: PROTOCOL_VERSION,
       id: message.id,
-      ...(result !== undefined ? { result } : {}),
+      ...(result !== undefined ? { result: encodeChannelResult(result) } : {}),
       ...(message.traceId !== undefined ? { traceId: message.traceId } : {}),
       timestamp: Date.now()
     });
@@ -754,6 +760,7 @@ function toPluginChannelError(error: SerializedError): PluginChannelError {
   return {
     code: error.code ?? PluginChannelErrorCode.internalError,
     message: error.message,
+    ...(error.reason !== undefined ? { reason: error.reason } : {}),
     ...(error.data !== undefined ? { data: error.data } : {}),
     ...(error.cause !== undefined ? { cause: toPluginChannelError(error.cause) } : {})
   };
@@ -764,9 +771,92 @@ function toSerializedError(error: PluginChannelError): SerializedError {
     name: 'Error',
     code: error.code,
     message: error.message,
+    reason: error.reason,
     data: error.data,
     ...(error.cause !== undefined ? { cause: toSerializedError(error.cause) } : {})
   };
+}
+
+function encodeChannelResult(value: unknown, seen = new WeakSet<object>()): unknown {
+  if (value instanceof Error) {
+    return {
+      [CHANNEL_ERROR_MARK]: true,
+      error: serializeError(value)
+    } satisfies ChannelEncodedError;
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  if (seen.has(value)) {
+    return value;
+  }
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.map((item) => encodeChannelResult(item, seen));
+  }
+
+  if (!isPlainRecord(value)) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, encodeChannelResult(item, seen)])
+  );
+}
+
+function decodeChannelResult(value: unknown, seen = new WeakMap<object, unknown>()): unknown {
+  if (isChannelEncodedError(value)) {
+    return deserializeError(value.error);
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  const existing = seen.get(value);
+  if (existing) {
+    return existing;
+  }
+
+  if (Array.isArray(value)) {
+    const decoded: unknown[] = [];
+    seen.set(value, decoded);
+    decoded.push(...value.map((item) => decodeChannelResult(item, seen)));
+    return decoded;
+  }
+
+  if (!isPlainRecord(value)) {
+    return value;
+  }
+
+  const decoded: Record<string, unknown> = {};
+  seen.set(value, decoded);
+  for (const [key, item] of Object.entries(value)) {
+    decoded[key] = decodeChannelResult(item, seen);
+  }
+  return decoded;
+}
+
+function isChannelEncodedError(value: unknown): value is ChannelEncodedError {
+  return (
+    isPlainRecord(value) &&
+    value[CHANNEL_ERROR_MARK] === true &&
+    isPlainRecord(value.error) &&
+    typeof value.error.name === 'string' &&
+    typeof value.error.message === 'string'
+  );
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function toAsyncIterable<T>(source: PluginChannelStreamSource<T>): AsyncIterable<T> {

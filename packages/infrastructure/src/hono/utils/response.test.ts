@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createError } from '@domain/value-objects/error.vo';
+import { failureResult } from '@domain/value-objects/result.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 import { R } from './response';
@@ -50,7 +51,7 @@ describe('R.fail', () => {
       'zh-CN': '没有上传文件'
     });
 
-    expect(response).toMatchObject({
+    expect(response).toEqual({
       status: 400,
       body: {
         error: {
@@ -59,6 +60,48 @@ describe('R.fail', () => {
           reason: {
             en: 'file is required',
             'zh-CN': '没有上传文件'
+          }
+        }
+      }
+    });
+  });
+
+  it('keeps legacy nested failures readable without duplicate object causes', () => {
+    const [, pluginNotFound] = failureResult({
+      en: 'Plugin not found',
+      'zh-CN': '插件未找到'
+    });
+    const [, getPluginFailed] = failureResult(
+      {
+        en: 'Failed to get plugin by plugin id',
+        'zh-CN': '获取插件失败'
+      },
+      pluginNotFound
+    );
+
+    if (!getPluginFailed) {
+      throw new Error('Expected get plugin failure');
+    }
+
+    const response = R.fail(createContext(), 400, getPluginFailed.error);
+
+    expect(response).toEqual({
+      status: 400,
+      body: {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get plugin by plugin id',
+          reason: {
+            en: 'Failed to get plugin by plugin id',
+            'zh-CN': '获取插件失败'
+          },
+          cause: {
+            code: 'INTERNAL_ERROR',
+            message: 'Plugin not found',
+            reason: {
+              en: 'Plugin not found',
+              'zh-CN': '插件未找到'
+            }
           }
         }
       }

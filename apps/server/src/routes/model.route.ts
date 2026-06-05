@@ -1,7 +1,7 @@
-import { createRoute } from '@hono/zod-openapi';
 import { ModelContract } from '@interface-adapter/contracts/route/model.contract';
 
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
+import { createRoute } from '@infrastructure/hono/utils/response';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import {
   getChannelAvatarUrl,

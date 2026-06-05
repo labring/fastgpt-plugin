@@ -11,7 +11,6 @@
   "dependencies": {
     "@fastgpt-sdk/otel": "^0.2.0",
     "@fastgpt-sdk/storage": "^0.7.0",
-    "@hono/zod-openapi": "^1.2.1",
     "@scalar/hono-api-reference": "^0.9.40",
     "@t3-oss/env-core": "^0.13.10",
     "@zip.js/zip.js": "^2.8.26",

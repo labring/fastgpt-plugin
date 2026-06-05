@@ -1,12 +1,59 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PluginTypeEnum } from '@domain/entities/plugin-base.entity';
 import { RegisteredError } from '@domain/value-objects/error.vo';
+import { successResult } from '@domain/value-objects/result.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 import { __getRuntimeGaugeSourcesForTest } from '@infrastructure/metrics';
 
 import { LocalPoolPluginRuntimeManager } from './local-pool-runtime.driver';
 import type { LocalPoolPluginConfigType } from './types';
+
+const serviceMockState = vi.hoisted(() => {
+  const instances: Array<{
+    serviceName: string;
+    config: unknown;
+    initialize: ReturnType<typeof vi.fn>;
+    updateConfig: ReturnType<typeof vi.fn>;
+    destroy: ReturnType<typeof vi.fn>;
+    drainTo: ReturnType<typeof vi.fn>;
+    invoke: ReturnType<typeof vi.fn>;
+    getMetrics: ReturnType<typeof vi.fn>;
+  }> = [];
+
+  const PluginService = vi.fn(function (
+    serviceName: string,
+    _pluginPath: string,
+    config: unknown
+  ) {
+    const instance = {
+      serviceName,
+      config,
+      initialize: vi.fn(async () => {}),
+      updateConfig: vi.fn(async () => {}),
+      destroy: vi.fn(async () => {}),
+      drainTo: vi.fn(async () => {}),
+      invoke: vi.fn(async () => ({ serviceName })),
+      getMetrics: vi.fn(() => ({
+        pods: { total: 0, running: 0, busy: 0, idle: 0, pending: 0 },
+        queueLength: 0,
+        responseTime: { avg: 0, p95: 0 },
+        rps: 0,
+        errorRate: 0,
+        crashCount: 0,
+        totalRequests: 0
+      }))
+    };
+    instances.push(instance);
+    return instance;
+  });
+
+  return { instances, PluginService };
+});
+
+vi.mock('./service/index', () => ({
+  PluginService: serviceMockState.PluginService
+}));
 
 const savedConfigs: Array<{ pluginId: string; config: LocalPoolPluginConfigType }> = [];
 
@@ -23,6 +70,7 @@ const pluginRuntimeConfigModel = {
   })),
   updateOne: vi.fn(
     async ({ pluginId }: { pluginId: string }, update: { $set: { config: any } }) => {
+      pluginRuntimeConfigModel.storedConfig = update.$set.config;
       savedConfigs.push({
         pluginId,
         config: update.$set.config
@@ -36,6 +84,7 @@ const mongoClient = {
   getModel: vi.fn(() => pluginRuntimeConfigModel)
 };
 
+const redisStore = new Map<string, string>();
 const redisClient = {
   getClient: {
     get: vi.fn(),
@@ -47,6 +96,36 @@ const pluginRepo = {
   getPluginById: vi.fn()
 };
 
+const weatherPluginInfo = (overrides: Record<string, unknown> = {}) => ({
+  pluginId: 'weather',
+  version: '1.0.0',
+  etag: 'etag-weather',
+  type: PluginTypeEnum.tool,
+  name: { en: 'Weather' },
+  icon: 'https://example.com/icon.svg',
+  description: { en: 'Weather' },
+  toolDescription: 'Weather',
+  ...overrides
+});
+
+const weatherUniqueId = {
+  pluginId: 'weather',
+  version: '1.0.0',
+  etag: 'etag-weather'
+};
+
+const runtimeId = 'localPool@weather@1.0.0@etag-weather';
+const runtimeRedisKey = `plugin-runtime:${runtimeId}`;
+const configRedisKey = 'plugin-runtime:localPoolConfig@weather';
+
+const pluginConfig = (overrides: Partial<LocalPoolPluginConfigType> = {}) => ({
+  minPods: 0,
+  maxPods: 2,
+  podTimeout: 120000,
+  maxConcurrentRequestsPerPod: 10,
+  ...overrides
+});
+
 function createManager() {
   (LocalPoolPluginRuntimeManager as any).instance = undefined;
   return LocalPoolPluginRuntimeManager.getInstance({
@@ -55,6 +134,31 @@ function createManager() {
     pluginRepo: pluginRepo as any
   });
 }
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  savedConfigs.length = 0;
+  redisStore.clear();
+  serviceMockState.instances.length = 0;
+  pluginRuntimeConfigModel.storedConfig = undefined;
+  redisClient.getClient.get.mockImplementation(async (key: string) => redisStore.get(key) ?? null);
+  redisClient.getClient.set.mockImplementation(
+    async (key: string, value: string, mode?: string) => {
+      if (mode === 'NX' && redisStore.has(key)) {
+        return null;
+      }
+      redisStore.set(key, value);
+      return 'OK';
+    }
+  );
+  pluginRepo.getPluginById.mockResolvedValue(
+    successResult({
+      info: weatherPluginInfo(),
+      indexFile: {},
+      entryFilePath: '/virtual/weather.js'
+    })
+  );
+});
 
 describe('LocalPoolPluginRuntimeManager config', () => {
   it('registers and unregisters a local-pool runtime gauge source', async () => {
@@ -125,6 +229,162 @@ describe('LocalPoolPluginRuntimeManager config', () => {
         }
       }
     ]);
+
+    await manager.shutdown();
+  });
+});
+
+describe('LocalPoolPluginRuntimeManager version keys', () => {
+  it('publishes a runtime version key when a runtime is registered', async () => {
+    const manager = createManager();
+
+    const [, err] = await manager.register(weatherUniqueId);
+
+    expect(err).toBeNull();
+    expect(redisStore.get(runtimeRedisKey)).toBeDefined();
+    expect(redisClient.getClient.set).toHaveBeenCalledWith(
+      runtimeRedisKey,
+      expect.any(String),
+      'NX'
+    );
+
+    await manager.shutdown();
+  });
+
+  it('keeps an existing runtime key stable and syncs it locally during startup', async () => {
+    redisStore.set(runtimeRedisKey, 'remote-runtime-version');
+    const manager = createManager();
+
+    const [, registerErr] = await manager.register(weatherUniqueId);
+    const [, invokeErr] = await manager.invoke({
+      uniqueId: weatherUniqueId,
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+
+    expect(registerErr).toBeNull();
+    expect(invokeErr).toBeNull();
+    expect(redisStore.get(runtimeRedisKey)).toBe('remote-runtime-version');
+    expect(serviceMockState.PluginService).toHaveBeenCalledTimes(1);
+    expect(serviceMockState.instances[0].invoke).toHaveBeenCalledTimes(1);
+
+    await manager.shutdown();
+  });
+
+  it('lazily registers a runtime on another node when Redis has a newer runtime key', async () => {
+    redisStore.set(runtimeRedisKey, 'remote-runtime-version');
+    const manager = createManager();
+
+    const [firstResult, firstErr] = await manager.invoke({
+      uniqueId: weatherUniqueId,
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+    const [secondResult, secondErr] = await manager.invoke({
+      uniqueId: weatherUniqueId,
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+
+    expect(firstErr).toBeNull();
+    expect(secondErr).toBeNull();
+    expect(firstResult).toEqual({ serviceName: runtimeId });
+    expect(secondResult).toEqual({ serviceName: runtimeId });
+    expect(serviceMockState.PluginService).toHaveBeenCalledTimes(1);
+    expect(pluginRepo.getPluginById).toHaveBeenCalledTimes(1);
+
+    await manager.shutdown();
+  });
+
+  it('reloads a cached runtime once after another node refreshes the config key', async () => {
+    const manager = createManager();
+    await manager.register(weatherUniqueId);
+    expect(serviceMockState.PluginService).toHaveBeenCalledTimes(1);
+
+    redisStore.set(configRedisKey, 'remote-config-version');
+    const [, firstErr] = await manager.invoke({
+      uniqueId: weatherUniqueId,
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+    const [, secondErr] = await manager.invoke({
+      uniqueId: weatherUniqueId,
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+
+    expect(firstErr).toBeNull();
+    expect(secondErr).toBeNull();
+    expect(serviceMockState.instances[0].destroy).toHaveBeenCalledTimes(1);
+    expect(serviceMockState.PluginService).toHaveBeenCalledTimes(2);
+    expect(pluginRepo.getPluginById).toHaveBeenCalledTimes(2);
+
+    await manager.shutdown();
+  });
+
+  it('refreshes the config key for unloaded runtimes without marking the local node synced', async () => {
+    const manager = createManager();
+
+    const [, configErr] = await manager.updateConfig(
+      'weather',
+      pluginConfig({
+        minPods: 1,
+        maxPods: 3
+      })
+    );
+    const [, invokeErr] = await manager.invoke({
+      uniqueId: weatherUniqueId,
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+
+    expect(configErr).toBeNull();
+    expect(invokeErr).toBeNull();
+    expect(redisStore.get(configRedisKey)).toBeDefined();
+    expect(serviceMockState.PluginService).toHaveBeenCalledTimes(1);
+    expect(serviceMockState.instances[0].config).toEqual(
+      expect.objectContaining({
+        minPods: 1,
+        maxPods: 3
+      })
+    );
+
+    await manager.shutdown();
+  });
+
+  it('updates loaded services locally and syncs the config key after config changes', async () => {
+    const manager = createManager();
+    await manager.register(weatherUniqueId);
+
+    const [, configErr] = await manager.updateConfig(
+      'weather',
+      pluginConfig({
+        minPods: 1,
+        maxPods: 3
+      })
+    );
+    const [, invokeErr] = await manager.invoke({
+      uniqueId: weatherUniqueId,
+      eventName: 'run',
+      payload: {},
+      returnStream: false
+    });
+
+    expect(configErr).toBeNull();
+    expect(invokeErr).toBeNull();
+    expect(serviceMockState.instances[0].updateConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        minPods: 1,
+        maxPods: 3
+      })
+    );
+    expect(serviceMockState.PluginService).toHaveBeenCalledTimes(1);
 
     await manager.shutdown();
   });

@@ -1,5 +1,6 @@
 import z from 'zod';
 
+import { I18nStringSchema, type I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 
 /**
@@ -17,6 +18,7 @@ export type PluginChannelMessageId = z.infer<typeof PluginChannelMessageIdSchema
 export type PluginChannelError = {
   code: string;
   message: string;
+  reason?: I18nStringType;
   data?: unknown;
   cause?: PluginChannelError;
 };
@@ -24,6 +26,7 @@ export type PluginChannelError = {
 export const PluginChannelErrorSchema: z.ZodType<PluginChannelError> = z.object({
   code: z.string(),
   message: z.string(),
+  reason: I18nStringSchema.optional(),
   data: z.unknown().optional(),
   cause: z.lazy(() => PluginChannelErrorSchema).optional()
 });

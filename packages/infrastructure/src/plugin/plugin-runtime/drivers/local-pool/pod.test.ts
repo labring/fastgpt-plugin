@@ -174,7 +174,11 @@ describe('PluginPod', () => {
     });
     expect(err?.error).toBeInstanceOf(Error);
     expect(err?.error).toMatchObject({
-      message: '宿主用户信息失败: upstream user info unavailable',
+      message: 'Host user info failed',
+      reason: {
+        en: 'Host user info failed',
+        'zh-CN': '宿主用户信息失败'
+      },
       cause: expect.objectContaining({
         message: 'upstream user info unavailable'
       })

@@ -23,12 +23,13 @@ export type PluginRuntimeInvokeOptions = {
  */
 export interface PluginRuntimeManagerPort<
   Config extends PluginRuntimeConfigType = PluginRuntimeConfigType,
-  PluginStatus = unknown
+  PluginStatus = unknown,
+  RegisterOptions = unknown
 > {
   /**
    * 注册 Plugin
    */
-  register(uniqueId: PluginUniqueIdType, config?: Config): Promise<Result>;
+  register(uniqueId: PluginUniqueIdType, options?: RegisterOptions): Promise<Result>;
 
   /**
    * 注销 Plugin,

@@ -1,7 +1,8 @@
-import { createRoute, z } from '@hono/zod-openapi';
 import { ErrorResponseDTOSchema } from '@interface-adapter/contracts/dto/common.dto';
+import z from 'zod';
 
 import { makeRuntimeMetricsUC, type RuntimeMetricsUCDeps } from '@usecase/runtime/runtime-metrics.uc';
+import { createRoute } from '@infrastructure/hono/utils/response';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
 import { getLogger, root } from '@infrastructure/logger';
 
