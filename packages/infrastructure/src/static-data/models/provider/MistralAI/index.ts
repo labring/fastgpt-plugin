@@ -29,6 +29,19 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'magistral-small-2509',
+      maxContext: 128000,
+      maxTokens: 32000,
+      quoteMaxToken: 120000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true,
+      responseFormatList: ['text']
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'mistral-medium-3-5',
       maxContext: 256000,
       maxTokens: 32000,
@@ -38,6 +51,19 @@ const models: ProviderConfigType = {
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'magistral-medium-2509',
+      maxContext: 128000,
+      maxTokens: 32000,
+      quoteMaxToken: 120000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true,
+      responseFormatList: ['text']
     },
     {
       type: ModelTypeEnum.llm,
