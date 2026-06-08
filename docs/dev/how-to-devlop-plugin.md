@@ -1,5 +1,7 @@
 # 如何开发 FastGPT 系统插件
 
+语言：[简体中文](./how-to-devlop-plugin.md) | [English](./how-to-devlop-plugin.en.md)
+
 ## 引言
 
 本文面向 FastGPT v4.15.0 之后的系统插件开发。新版 FastGPT Plugin 服务把系统工具、模型预设等能力统一抽象为可安装、可更新、可运行隔离的插件包，插件最终以 `.pkg` 文件交付给 FastGPT Plugin 服务。

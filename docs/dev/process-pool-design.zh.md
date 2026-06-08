@@ -1,5 +1,7 @@
 # FastGPT-Plugin 进程池设计文档
 
+语言：[简体中文](./process-pool-design.zh.md) | [English](./process-pool-design.md)
+
 进程池是插件的默认运行时，参考了 k8s 的 service - pod 设计，实现了进程的生命周期管理的自动调度。
 
 当前实现位于 `packages/infrastructure/src/plugin/plugin-runtime/drivers/local-pool`，对外以 `LocalPoolPluginRuntimeManager` 实现 `PluginRuntimeManagerPort`。Server 通过 `apps/server/src/deps.ts` 装配该 runtime manager，再由 tool/plugin usecase 间接调用。

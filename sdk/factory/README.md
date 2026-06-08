@@ -1,5 +1,7 @@
 # FastGPT Plugin SDK Factory
 
+语言：[简体中文](./README.md) | [English](./README.en.md)
+
 用于构建 FastGPT Tool Plugin 的 TypeScript SDK。它把插件声明、输入输出校验、密钥配置、运行时通信和流式响应封装成少量 API，让工具开发者专注于业务逻辑。
 
 TypeScript SDK for building FastGPT Tool Plugins. It wraps plugin metadata, input/output validation, secret configuration, runtime communication, and streaming responses behind a small API surface so tool authors can focus on business logic.

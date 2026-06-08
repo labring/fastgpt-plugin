@@ -1,5 +1,7 @@
 # FastGPT Plugin Development Document
 
+Language: [简体中文](./dev_zh_CN.md) | [English](./dev.md)
+
 ## Common Commands
 
 ### Install Dependencies
@@ -52,7 +54,7 @@ This repository is a pnpm workspace monorepo.
 | `sdk/factory` | SDK for authoring tool plugins. |
 | `test` | Shared fixtures and cross-package test utilities. |
 
-See [Architecture](./docs/dev/architecture.zh.md) for the full layering model.
+See [Architecture](./docs/dev/architecture.md) for the full layering model.
 
 ## Plugin Development
 
@@ -74,9 +76,9 @@ pnpm run pack
 
 Useful references:
 
-- [System Plugin Development Guide](./docs/dev/how-to-devlop-plugin.md)
-- [SDK Factory Guide](./sdk/factory/README.md)
-- [CLI Guide](./apps/cli/README.md)
+- [System Plugin Development Guide](./docs/dev/how-to-devlop-plugin.en.md)
+- [SDK Factory Guide](./sdk/factory/README.en.md)
+- [CLI Guide](./apps/cli/README.en.md)
 
 ## Development Practices
 
@@ -129,6 +131,6 @@ To add or update a model provider:
 
 ## Runtime And Operations
 
-- Local-pool runtime design: [process-pool-design.zh.md](./docs/dev/process-pool-design.zh.md)
-- Runtime metrics and OpenTelemetry: [runtime-metrics-otel.zh.md](./docs/dev/runtime-metrics-otel.zh.md)
-- Upgrade guide: [v1.0.0.zh.md](./docs/upgrade/v1.0.0.zh.md)
+- Local-pool runtime design: [process-pool-design.md](./docs/dev/process-pool-design.md)
+- Runtime metrics and OpenTelemetry: [runtime-metrics-otel.md](./docs/dev/runtime-metrics-otel.md)
+- Upgrade guide: [v1.0.0.md](./docs/upgrade/v1.0.0.md)

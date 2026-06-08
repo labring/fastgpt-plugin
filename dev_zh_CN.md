@@ -1,5 +1,7 @@
 # FastGPT Plugin 开发文档
 
+语言：[简体中文](./dev_zh_CN.md) | [English](./dev.md)
+
 ## 常用命令
 
 ### 安装依赖

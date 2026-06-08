@@ -1,5 +1,7 @@
 # FastGPT-plugin SDK client
 
+语言：[简体中文](./README.md) | [English](./README.en.md)
+
 提供接口供 FastGPT 调用。
 
 `listPlugins()` 现在返回分页结构：

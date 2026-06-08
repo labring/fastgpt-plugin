@@ -1,5 +1,7 @@
 # Runtime Metrics OpenTelemetry
 
+语言：[简体中文](./runtime-metrics-otel.zh.md) | [English](./runtime-metrics-otel.md)
+
 Runtime metrics 用于生产环境主动推送插件运行时指标。`/api/runtime/metrics` 仍然是单节点调试快照；多节点聚合以 OpenTelemetry backend 为准。
 
 ## 启用方式

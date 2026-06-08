@@ -1,5 +1,7 @@
 # FastGPT Plugin Pool
 
+语言：[简体中文](./README.md) | [English](./README.en.md)
+
 一个可嵌入现有服务的插件进程池库，设计参考 K8s 的命名与抽象。
 
 ## 快速开始

@@ -1,5 +1,7 @@
 ## @fastgpt-plugin/cli
 
+语言：[简体中文](./README.md) | [English](./README.en.md)
+
 FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 工具 / 工具集。
 
 ### Features
