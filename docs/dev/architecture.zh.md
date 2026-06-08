@@ -1,5 +1,7 @@
 # 项目架构
 
+语言：[简体中文](./architecture.zh.md) | [English](./architecture.md)
+
 本项目架构参考 Clean Architecture （整洁架构）和 DDD（Domain-Driven Design, 领域驱动设计）进行设计。
 
 项目整体遵循 DIP（Dependency Inversion Principle, 依赖反转原则）：领域层定义端口，外层模块提供实现，并通过组合根完成依赖注入。

@@ -1,35 +1,33 @@
 # Plugin Runtime Channel
 
-语言：[简体中文](./README.md) | [English](./README.en.md)
+Language: [简体中文](./README.md) | [English](./README.en.md)
 
-Channel 是插件 runtime 和宿主之间的通信端口。业务层只依赖
-`PluginRuntimeChannelPort<TSide>`，底层可以替换成 IPC、TCP、HTTP 或其他传输。
+Channel is the communication port between the plugin runtime and the host. Business layers depend only on `PluginRuntimeChannelPort<TSide>`, while the underlying transport can be replaced with IPC, TCP, HTTP, or another mechanism.
 
-## 文件分层
+## File Layers
 
-- `message.ts`：底层协议消息结构，包含 request、notification、success、error、stream frame。
-- `event/client.ts`：client -> host 的事件。client 是插件运行侧。
-- `event/host.ts`：host -> client 的事件。host 是插件宿主侧。
-- `event/common.ts`：双向通用事件，目前只有 `channel.stream`。
-- `event/index.ts`：按 side 组合发送/接收类型，限制 host 和 client 只能发送各自允许的事件。
-- `index.ts`：稳定 port 接口，业务代码应该依赖这个入口。
+- `message.ts`: low-level protocol message structures, including request, notification, success, error, and stream frame.
+- `event/client.ts`: client -> host events. The client is the plugin runtime side.
+- `event/host.ts`: host -> client events. The host is the plugin host side.
+- `event/common.ts`: bidirectional common events. Currently only `channel.stream`.
+- `event/index.ts`: composes send/receive types by side and limits host/client to events each side is allowed to send.
+- `index.ts`: stable port interface. Business code should depend on this entry.
 
-## 方向规则
+## Direction Rules
 
-`PluginRuntimeChannelPort<'host'>`：
+`PluginRuntimeChannelPort<'host'>`:
 
-- 可以发送 `host.request`、`host.ping`、`host.shutdown`。
-- 可以接收 `client.ready`、`client.stdio`、`client.fail`、`client.request`。
+- Can send `host.request`, `host.ping`, and `host.shutdown`.
+- Can receive `client.ready`, `client.stdio`, `client.fail`, and `client.request`.
 
-`PluginRuntimeChannelPort<'client'>`：
+`PluginRuntimeChannelPort<'client'>`:
 
-- 可以发送 `client.ready`、`client.stdio`、`client.fail`、`client.request`。
-- 可以接收 `host.request`、`host.ping`、`host.shutdown`。
+- Can send `client.ready`, `client.stdio`, `client.fail`, and `client.request`.
+- Can receive `host.request`, `host.ping`, and `host.shutdown`.
 
-`channel.stream` 是底层流 frame，双向可发送。业务代码优先使用 `request({ input })`、
-`waitForInputStream()`、`createReply({ output })`，无需直接拼 stream frame。
+`channel.stream` is the low-level stream frame and can be sent in both directions. Business code should prefer `request({ input })`, `waitForInputStream()`, and `createReply({ output })` instead of composing stream frames directly.
 
-## Host 侧调用插件
+## Host-Side Plugin Invocation
 
 ```ts
 import {
@@ -58,7 +56,7 @@ async function invokeRun(channel: PluginRuntimeChannelPort<'host'>) {
 }
 ```
 
-## Client 侧处理插件调用
+## Client-Side Plugin Invocation Handling
 
 ```ts
 import {
@@ -89,9 +87,9 @@ function registerPlugin(channel: PluginRuntimeChannelPort<'client'>) {
 }
 ```
 
-## Client 反向调用 Host
+## Client Reverse Invocation To Host
 
-插件侧需要调用宿主能力时，发送 `client.request`。
+When the plugin side needs host capabilities, it sends `client.request`.
 
 ```ts
 import {
@@ -109,7 +107,7 @@ async function getUserInfo(channel: PluginRuntimeChannelPort<'client'>) {
 }
 ```
 
-宿主侧注册 request handler 接收：
+The host side registers a request handler:
 
 ```ts
 import {
@@ -128,9 +126,9 @@ function registerHostBridge(channel: PluginRuntimeChannelPort<'host'>) {
 }
 ```
 
-## Request 输入流
+## Request Input Streams
 
-调用方可以给 request 附带输入流：
+Callers can attach an input stream to a request:
 
 ```ts
 await channel.request(
@@ -143,7 +141,7 @@ await channel.request(
 );
 ```
 
-接收方在 handler 中读取：
+The receiver reads it in the handler:
 
 ```ts
 const input = await request.waitForInputStream({ timeoutMs: 5_000 });
@@ -153,11 +151,11 @@ for await (const chunk of input.stream.values()) {
 }
 ```
 
-## 新增传输实现
+## Adding A Transport Implementation
 
-新增 TCP 或 HTTP channel 时，实现 `PluginRuntimeChannelPort<TSide>` 即可。adapter 需要负责：
+To add a TCP or HTTP channel, implement `PluginRuntimeChannelPort<TSide>`. The adapter needs to:
 
-1. 发送和接收 `message.ts` 定义的协议消息。
-2. 维护 pending request，并把 success/error 关联回 request id。
-3. 将 `channel.stream` frame 转换成 `PluginChannelIncomingStream`。
-4. 在 `close()` 时拒绝 pending request 和未完成的 stream。
+1. Send and receive protocol messages defined in `message.ts`.
+2. Maintain pending requests and associate success/error responses with request ids.
+3. Convert `channel.stream` frames into `PluginChannelIncomingStream`.
+4. Reject pending requests and unfinished streams in `close()`.
