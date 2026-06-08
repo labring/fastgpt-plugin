@@ -19,6 +19,7 @@ Deeply **modularize** FastGPT to achieve maximum **extensibility**.
 
 - [x] System Tools
 - [x] App templates
+- [x] Model presets
 - [ ] RAG Algorithm
 - [ ] Agent Strategy
 - [ ] Third-party Integration
@@ -26,16 +27,22 @@ Deeply **modularize** FastGPT to achieve maximum **extensibility**.
 ## System Tool Features
 
 - [x] Independent tool execution
-- [ ] Hot-swappable plugins
-- [ ] Secure and elegant secret configuration
-- [ ] Visual debugging support
-- [ ] Reverse invocation of FastGPT
-- [ ] Plugin version management
-- [ ] SSE streaming response support
-- [ ] Enhanced security policies
+- [x] Hot-swappable plugins
+- [x] Plugin version management
+- [x] SSE streaming response support
+- [x] Local plugin debugging
+- [x] Reverse invocation of FastGPT host capabilities
+- [x] URL install SSRF protection
+- [ ] More plugin types beyond tools
 
 ## Documentation & Development Guides
 
-- [Plugin design document](https://doc.tryfastgpt.ai/docs/introduction/development/design/design_plugin)
-- [System tool development guide](https://doc.tryfastgpt.ai/docs/introduction/guide/plugins/dev_system_tool)
 - [Development Specifications](./dev.md)
+- [v1.0.0 Upgrade Guide](./docs/upgrade/v1.0.0.zh.md)
+- [Architecture](./docs/dev/architecture.zh.md)
+- [Plugin System Design](./docs/dev/design.zh.md)
+- [System Plugin Development Guide](./docs/dev/how-to-devlop-plugin.md)
+- [Local Pool Runtime Design](./docs/dev/process-pool-design.zh.md)
+- [Runtime Metrics OpenTelemetry](./docs/dev/runtime-metrics-otel.zh.md)
+- [CLI Guide](./apps/cli/README.md)
+- [SDK Factory Guide](./sdk/factory/README.md)

@@ -1,115 +1,134 @@
-# FastGPT-plugin Devlopment Document
-
+# FastGPT Plugin Development Document
 
 ## Common Commands
 
-### install dependencies
+### Install Dependencies
 
 ```bash
-bun install
+pnpm install
 ```
 
-### build
+### Build
 
 ```bash
-bun run build
+pnpm build:sdk-factory
+pnpm build:sdk-client
+pnpm build:cli
+pnpm build:server
+pnpm build:debug-runtime-monitor
 ```
 
-### run
+### Development
 
-- dev mode
 ```bash
-bun run dev
+pnpm dev:server
+pnpm dev:cli
+pnpm dev:debug-runtime-monitor
 ```
 
-In dev mode, the worker will be rebuilt every time you save the file (hot reload).
+### Quality Checks
 
-- prod mode (after build)
 ```bash
-bun run prod
+pnpm test
+pnpm typecheck
+pnpm lint
 ```
 
-## Development
+## Repository Structure
 
-Link the sdk to fastgpt:
+This repository is a pnpm workspace monorepo.
 
-under the FastGPT/packages/service directory:
+| Path | Purpose |
+| --- | --- |
+| `apps/server` | FastGPT Plugin HTTP service and route composition. |
+| `apps/cli` | Plugin create, build, check, debug, and pack CLI. |
+| `apps/debug-runtime-monitor` | Local runtime monitor UI. |
+| `packages/domain` | Entities, value objects, and port definitions. |
+| `packages/usecase` | Application use cases for plugins, tools, models, and runtime metrics. |
+| `packages/interface-adapter` | HTTP contracts, DTOs, and auth adapters. |
+| `packages/infrastructure` | Hono, Mongo, S3, Redis, static data, logging, metrics, and plugin runtime implementations. |
+| `packages/shared` | Cross-layer pure utilities. |
+| `sdk/client` | Client SDK for calling the FastGPT Plugin service. |
+| `sdk/factory` | SDK for authoring tool plugins. |
+| `test` | Shared fixtures and cross-package test utilities. |
 
-```
-pnpm link xxxx/fastgpt-plugin/sdk
-```
+See [Architecture](./docs/dev/architecture.zh.md) for the full layering model.
 
-This command will not update the package.json file.
+## Plugin Development
 
-### Development Practices
+Use `@fastgpt-plugin/cli` and `@fastgpt-plugin/sdk-factory` for tool plugins.
 
-#### 1. Use English comments
-In the code, use English comments to explain the purpose of the code.
-
-#### 2. Use English variable names
-In some plugins, the variable names are not English for compatibility.
-
-The new plugins should use English variable names.
-
-#### 3. Wrtie Test Cases
-
-Write test cases for the plugin.
-
-We use [vitest](https://vitest.dev) for testing.
-
-#### 4. Avoid Using Variables (let, var) as Much as Possible, Use const
-"Immutable" variables improve code readability, help avoid issues caused by incorrect assignments, and are beneficial for TypeScript hints.
-
-#### 5. Avoid Using any as Much as Possible
-
-#### 6. Variable Scope
-Try to use smaller variable scopes. Usually this can be done in two ways:
-
-1. Use "block scope" syntax
-
-```typescript
-const foo = () => {
-  {
-    const bar = 1;
-    console.log(bar); // 1
-  }
-  console.log(bar); // ReferenceError: bar is not defined
-};
+```bash
+pnpx @fastgpt-plugin/cli create my-tool --type tool --cwd packages/tools
+pnpx @fastgpt-plugin/cli create my-tool-suite --type tool-suite --cwd packages/tools
 ```
 
-2. Use IIFE (Immediately Invoked Function Expression)
-If a result needs to be exported to a larger scope, you can use IIFE syntax.
+Inside a plugin project:
 
-```typescript
-const foo = () => {
-  const bar = (()=>{
-    const a = 1;
-    const b = 2;
-    return a + b;
-  })();
-  console.log(bar); // 3
-  console.log(a); // ReferenceError: a is not defined
-};
+```bash
+pnpm run test
+pnpm run build
+pnpx @fastgpt-plugin/cli check --entry . --output ./dist
+pnpm run pack
 ```
 
-### System Built-in Utility Functions
+Useful references:
 
-The system has some built-in utility functions available under the directory `modules/tool/utils`.
-You can import them in code using `import { xxx } from '@/tool/utils'`.
+- [System Plugin Development Guide](./docs/dev/how-to-devlop-plugin.md)
+- [SDK Factory Guide](./sdk/factory/README.md)
+- [CLI Guide](./apps/cli/README.md)
 
-The list of utility functions includes:
+## Development Practices
 
-- delay: delay
-- getErrText: error handling
-- htmlTable2Md: convert html table to markdown
-- retryFn: retry function
-- replaceSensitiveText: replace sensitive text
-- request: request function
-- GET: GET request
-- POST: POST request
-- PUT: PUT request
-- DELETE: DELETE request
-- PATCH: PATCH request
-- createHttpClient: create custom http client
-- getNanoid: generate unique id
-- uploadFile: upload file to Minio
+### 1. Use English Identifiers
+
+Use English for variables, functions, files, and public API names. Keep legacy non-English identifiers only when required for compatibility.
+
+### 2. Keep Layer Boundaries Clear
+
+Follow the existing dependency direction:
+
+1. Define stable business types and ports in `packages/domain`.
+2. Implement orchestration in `packages/usecase`.
+3. Put DTOs and OpenAPI contracts in `packages/interface-adapter`.
+4. Implement framework, storage, runtime, and external-service details in `packages/infrastructure`.
+5. Wire concrete dependencies in `apps/server/src/deps.ts` and route files.
+
+### 3. Write Tests
+
+Use [Vitest](https://vitest.dev) for tests. Prefer focused tests near the code being changed:
+
+- Usecase tests should mock ports.
+- Infrastructure tests should isolate external IO and cover serialization, error mapping, and security constraints.
+- CLI changes should cover command behavior and generated artifacts.
+- SDK changes should cover TypeScript-facing API behavior and runtime channel behavior.
+
+### 4. Prefer `const`
+
+Use `const` by default. Use `let` only when a variable is intentionally reassigned.
+
+### 5. Avoid `any`
+
+Prefer explicit types, Zod schemas, and domain value objects. Use `unknown` at boundaries and parse before use.
+
+### 6. Keep Scope Small
+
+Keep variables and helper functions close to where they are used. Extract helpers when they clarify business intent or remove meaningful duplication.
+
+## Model Presets
+
+Model provider presets now live under `packages/infrastructure/src/static-data/models/provider`.
+
+To add or update a model provider:
+
+1. Update or add the provider config in `packages/infrastructure/src/static-data/models/provider/<Provider>/index.ts`.
+2. Add or update the provider logo in the same directory when needed.
+3. Add channel avatars under `packages/infrastructure/src/static-data/models/channel-avatar` when needed.
+4. Register new providers in `packages/infrastructure/src/static-data/models/index.ts`.
+5. Run tests or typecheck for the affected package.
+
+## Runtime And Operations
+
+- Local-pool runtime design: [process-pool-design.zh.md](./docs/dev/process-pool-design.zh.md)
+- Runtime metrics and OpenTelemetry: [runtime-metrics-otel.zh.md](./docs/dev/runtime-metrics-otel.zh.md)
+- Upgrade guide: [v1.0.0.zh.md](./docs/upgrade/v1.0.0.zh.md)

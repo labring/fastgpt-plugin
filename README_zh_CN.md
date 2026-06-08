@@ -18,6 +18,8 @@ FastGPT 已有系统工具已经迁移到这个仓库，新工具也将在这个
 ## 扩展模块
 
 - [x]  系统工具
+- [x]  App 模板
+- [x]  模型预设
 - [ ]  RAG 算法
 - [ ]  Agent 策略
 - [ ]  第三方接入
@@ -28,14 +30,19 @@ FastGPT 已有系统工具已经迁移到这个仓库，新工具也将在这个
 - [x]  热插拔
 - [x]  工具版本管理
 - [x]  SSE 流响应
-- [ ]  更优雅的 Secret 配置
-- [ ]  可视化调试
-- [ ]  反向调用 FastGPT
-- [ ]  更多安全策略
+- [x]  本地插件调试
+- [x]  反向调用 FastGPT 宿主能力
+- [x]  URL 安装 SSRF 防护
+- [ ]  工具以外的更多插件类型
 
 ## 文档
 
-- [系统工具开发指南](https://doc.fastgpt.io/docs/introduction/guide/plugins/dev_system_tool)
-- [设计文档](https://doc.fastgpt.io/docs/introduction/development/design/design_plugin)
 - [开发规范](./dev_zh_CN.md)
 - [v1.0.0 更新文档](./docs/upgrade/v1.0.0.zh.md)
+- [项目架构](./docs/dev/architecture.zh.md)
+- [插件系统设计](./docs/dev/design.zh.md)
+- [系统插件开发指南](./docs/dev/how-to-devlop-plugin.md)
+- [进程池运行时设计](./docs/dev/process-pool-design.zh.md)
+- [Runtime Metrics OpenTelemetry](./docs/dev/runtime-metrics-otel.zh.md)
+- [CLI 使用指南](./apps/cli/README.md)
+- [SDK Factory 使用指南](./sdk/factory/README.md)

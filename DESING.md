@@ -1,5 +1,12 @@
 # FastGPT 插件系统设计
 
+> 当前文档保留为历史入口。v1.0.0 的详细设计、架构和运行时说明见：
+>
+> - [插件系统设计文档](./docs/dev/design.zh.md)
+> - [项目架构](./docs/dev/architecture.zh.md)
+> - [进程池设计文档](./docs/dev/process-pool-design.zh.md)
+> - [v1.0.0 更新文档](./docs/upgrade/v1.0.0.zh.md)
+
 | 项目     | 内容               |
 |----------|-------------------|
 | 版本     | v1.0.0             |
@@ -8,20 +15,20 @@
 
 ## 插件系统架构图
 
-FastGPT主服务调用 FastGPT Plugin Daemon 服务
+FastGPT 主服务调用 FastGPT Plugin 服务。
 
 ```
 
                                 ┌──────────────────────────┐
                                 │                          │
 ┌──────────────────────┐        │                          │
-│ FastGPT main service ├───────►│  FastGPT Plugin Daemon   │
+│ FastGPT main service ├───────►│   FastGPT Plugin Server  │
 └──────────────────────┘        │                          │
                                 │                          │
                                 └──────────────────────────┘
 ```
 
-FastGPT Plugin Daemon 服务提供如下功能：
+FastGPT Plugin 服务提供如下功能：
 1. 插件生命周期管理：插件文件(`.pkg`文件)的 CRUD
 2. 与插件进行通信 IO
 3. 管理在本地运行模式下的插件
@@ -30,9 +37,9 @@ FastGPT Plugin Daemon 服务提供如下功能：
 
 ### 运行模式
 
-1. Local Mode: 插件在本地运行。维护一个高性能的进程池。
-2. Serverless Mode: 插件在云上运行，依赖 Serverless 平台。
-3. Remote Mode: 通过 TCP 连接远端的插件，实时调试。
+1. local-pool：当前默认运行时，插件在本地子进程池中运行。
+2. serverless：预留运行时，插件运行在 Serverless 平台。
+3. tcp：预留调试运行时，通过 TCP 连接远端插件。
 
 ## 插件设计
 
@@ -52,10 +59,10 @@ FastGPT Plugin Daemon 服务提供如下功能：
 - Serverless 下的通信
 - Remote 下的 TCP 通信。
 
-### 2. manifest.yaml 手动描述
+### 2. manifest 描述
 
-使用 `manifest.yaml` 定义描述文件。
+插件 manifest 由 `@fastgpt-plugin/sdk-factory` 的 `defineTool()` 或 `defineToolSet()` 生成，构建后写入 `dist/manifest.json`。
 
 ## TODO
 - [x] 进程池
-- [ ] Plugin SDK
+- [x] Plugin SDK
