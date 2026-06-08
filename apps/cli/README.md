@@ -17,6 +17,14 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
 - **测试友好**
   - 内置 Vitest 配置，支持对构建逻辑进行单元测试
   - 在测试环境下跳过对部分依赖的打包，构建更快更稳定
+- **插件脚手架**
+  - 提供 `create` 命令生成单工具或工具集项目
+  - 模板包含 `index.ts`、`package.json`、`tsconfig.json`、`vitest.config.ts`、`README.md` 和 `logo.svg`
+- **本地调试**
+  - 提供 `debug` 命令查看插件和子工具信息
+  - 支持直接运行工具、传入 input/secrets/systemVar 文件，并用本地目录模拟 `uploadFile`
+- **打包**
+  - 提供 `pack` 命令把 `dist` 产物打成可上传的 `.pkg`
 
 ### 待实现 / TODO
 
@@ -26,9 +34,6 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
   - 集成变更日志（changelog）生成和打 tag 流程
   - 可选的 dry-run 模式（仅输出将要执行的操作，不真正发布）
   - 支持自定义 npm registry / token 配置（环境变量或配置文件）
-- **项目脚手架**
-  - 新建单工具模板（含 `config.ts`、`src/index.ts`、测试和示例）
-  - 新建工具集模板（含 children 目录、共享配置示例）
 - **更多开发体验优化**
   - `watch` 模式：监听源码变化自动重新构建
   - 输出更友好的构建日志和错误提示
