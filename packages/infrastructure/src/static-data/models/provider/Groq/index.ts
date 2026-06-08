@@ -70,6 +70,19 @@ const models: ProviderConfigType = {
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      maxContext: 131072,
+      maxTokens: 8192,
+      quoteMaxToken: 120000,
+      maxTemperature: 1.2,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
     }
   ]
 };
