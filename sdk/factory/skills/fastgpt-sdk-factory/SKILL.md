@@ -64,6 +64,7 @@ export default defineTool({
 - Use `z.object(...)` for `inputSchema` and `outputSchema` so TypeScript can infer `input` and return types.
 - Import `InputSchemaMetaType`, `OutputSchemaMetaType`, and `SecretSchemaMetaType` from `@fastgpt-plugin/sdk-factory` when schema metadata is used.
 - Add `.meta({ ... } satisfies InputSchemaMetaType)` to input fields and `.meta({ ... } satisfies OutputSchemaMetaType)` to output fields that need UI/manifest metadata.
+- Set `toolDescription` in an input field's `.meta()` when that field should be available as an automatically filled tool-call parameter; without `toolDescription`, users must specify the field manually.
 - Add `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)` to every `secretSchema` field; set `isSecret: true` for values that must be encrypted at rest.
 - Return an object that matches `outputSchema`; throw errors for failed operations.
 - Add `secretSchema` when plugin configuration needs secrets such as API keys.
@@ -82,7 +83,8 @@ const secretSchema = z.object({
 const handler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
-      title: 'Query'
+      title: 'Query',
+      toolDescription: 'Search query'
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -123,6 +125,16 @@ Common optional fields:
 - `permission`
 - `icon`
 - `toolDescription`
+
+Use `permission` to declare host capabilities required by the plugin. It is an array of permission strings. Declare only the minimum permissions that the plugin actually uses. When using `ctx.invoke` to call host capabilities, declare the matching permission.
+
+Supported permissions:
+
+- `userInfo:read`: read user information, for example through `ctx.invoke.userInfo()`.
+- `teamInfo:read`: read team information.
+- `model:read`: read model information.
+- `dataset:read`: read dataset information.
+- `file-upload:allow`: upload files, for example through `ctx.invoke.uploadFile()`.
 
 Keep `pluginId`, child tool `id`, input field names, and output field names stable for compatibility.
 
@@ -196,7 +208,7 @@ export default defineToolSet({
 
 ## Host Invocation
 
-Use `ctx.invoke` for host capabilities. The SDK exposes `userInfo()` and `uploadFile()`. These methods return a `Result` tuple shaped as `[result, err]`; check `err` before using `result`. When `err` is present, throw or return that original `err` so host-side error details are preserved.
+Use `ctx.invoke` for host capabilities. The SDK exposes `userInfo()` and `uploadFile()`. Declare the corresponding `manifest.permission` item before using a host capability; for example, `ctx.invoke.uploadFile()` requires `file-upload:allow`. These methods return a `Result` tuple shaped as `[result, err]`; check `err` before using `result`. When `err` is present, throw or return that original `err` so host-side error details are preserved.
 
 ```ts
 const uploadHandler = createToolHandler({
