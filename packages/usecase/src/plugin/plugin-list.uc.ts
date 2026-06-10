@@ -11,6 +11,7 @@ import type {
   PluginRepoPort
 } from '@domain/ports/plugin/plugin-repo.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 /** Dependencies */
 type Deps = {
@@ -30,7 +31,7 @@ export const makePluginListUC =
     logger.debug('Plugin List', { input });
     const [result, error] = await pluginRepo.list(input);
     if (error) {
-      logger.error('Plugin List Error', error);
+      logger.error('Plugin List Error', toUsecaseErrorLog(error, { input }));
       return failureResult(error);
     }
     return successResult(result);

@@ -2,6 +2,7 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginUniqueIdSchema, type UserPluginIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { isResultFailure, toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type PluginDeleteUCDeps = {
@@ -20,7 +21,7 @@ export const makePluginDeleteUC =
     const [plugin, pluginErr] = await pluginRepo.getPluginByUserPluginId(input);
 
     if (pluginErr) {
-      logger.error('Plugin Delete Detail Error', pluginErr);
+      logger.error('Plugin Delete Detail Error', toUsecaseErrorLog(pluginErr, { input }));
       return failureResult(
         {
           en: 'Plugin not found',
@@ -36,7 +37,7 @@ export const makePluginDeleteUC =
     if (disableErr) {
       logger.error('Plugin Delete Disable Error', {
         uniqueId,
-        error: disableErr
+        error: toUsecaseErrorLog(disableErr)
       });
       return failureResult(
         {
@@ -62,7 +63,7 @@ export const makePluginDeleteUC =
           source: input.source,
           version: uniqueId.version,
           etag: uniqueId.etag,
-          error: unregisterErr
+          error: isResultFailure(unregisterErr) ? toUsecaseErrorLog(unregisterErr) : unregisterErr
         });
       }
     }

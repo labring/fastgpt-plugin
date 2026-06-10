@@ -6,6 +6,7 @@
  */
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
@@ -28,7 +29,7 @@ export const makeResetPluginConfigUC =
     logger.debug('Plugin Config Reset', { pluginId });
     const [result, error] = await pluginRuntimeManager.resetConfig(pluginId);
     if (error) {
-      logger.error('Plugin Config Reset Error', error);
+      logger.error('Plugin Config Reset Error', toUsecaseErrorLog(error, { pluginId }));
       return failureResult(error);
     }
     return successResult(result);

@@ -9,6 +9,7 @@ import type { ToolManagerPort } from '@domain/ports/plugin/tool.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
@@ -25,10 +26,7 @@ export const makeToolRunUC =
     logger.debug('Tool Run', { input: toToolRunLogInput(input) });
     const [result, error] = await toolManager.run(input);
     if (error) {
-      logger.error('Tool Run Error', {
-        ...error,
-        input: toToolRunLogInput(input)
-      });
+      logger.error('Tool Run Error', toUsecaseErrorLog(error, { input: toToolRunLogInput(input) }));
       return failureResult(error);
     }
     return successResult(result);

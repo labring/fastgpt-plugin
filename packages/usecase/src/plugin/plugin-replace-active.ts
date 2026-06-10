@@ -3,6 +3,7 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginUniqueIdSchema, type PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 export const listReplacedActivePlugins = async (
@@ -57,7 +58,7 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
     )[1]!;
     deps.logger.error('Plugin Replace Active Disable Error', {
       replacedPluginIds,
-      error: failure.error
+      error: toUsecaseErrorLog(failure)
     });
     return [null, failure];
   }
@@ -73,7 +74,7 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
             pluginId: uniqueId.pluginId,
             version: uniqueId.version,
             etag: uniqueId.etag,
-            error: unregisterErr
+            error: toUsecaseErrorLog(unregisterErr)
           });
         }
       } catch (error) {

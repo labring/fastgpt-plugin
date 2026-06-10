@@ -11,6 +11,7 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 import {
@@ -49,7 +50,7 @@ export const makePluginConfirmUC =
       if (replacedErr) {
         deps.logger.error('Plugin Confirm Replaced Active List Error', {
           uniqueId,
-          error: replacedErr
+          error: toUsecaseErrorLog(replacedErr)
         });
         return failureResult(
           {
@@ -66,7 +67,7 @@ export const makePluginConfirmUC =
       if (pendingErr) {
         deps.logger.error('Plugin Confirm Pending List Error', {
           uniqueId,
-          error: pendingErr
+          error: toUsecaseErrorLog(pendingErr)
         });
         return failureResult(
           {
@@ -91,7 +92,7 @@ export const makePluginConfirmUC =
       if (err) {
         deps.logger.error('Plugin Confirm One Error', {
           uniqueId,
-          error: err
+          error: toUsecaseErrorLog(err)
         });
         return failureResult(
           {
@@ -108,7 +109,7 @@ export const makePluginConfirmUC =
         if (registerErr) {
           deps.logger.error('Plugin Confirm Register Runtime Error', {
             uniqueId,
-            error: registerErr
+            error: toUsecaseErrorLog(registerErr)
           });
           return failureResult(
             {
@@ -128,7 +129,7 @@ export const makePluginConfirmUC =
         if (replaceErr) {
           deps.logger.error('Plugin Confirm Replace Active Error', {
             uniqueId,
-            error: replaceErr
+            error: toUsecaseErrorLog(replaceErr)
           });
           return failureResult(replaceErr);
         }
@@ -148,7 +149,7 @@ export const makePluginConfirmUC =
       if (err) {
         deps.logger.error('Plugin Confirm Error', {
           uniqueId,
-          error: err
+          error: toUsecaseErrorLog(err)
         });
         return failureResult(err);
       }

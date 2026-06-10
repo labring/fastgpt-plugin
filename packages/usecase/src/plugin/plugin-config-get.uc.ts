@@ -8,6 +8,7 @@
 import type { PluginRuntimeConfigType } from '@domain/entities/plugin.entity';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 /** Dependencies */
@@ -30,7 +31,7 @@ export const makePluginConfigGetUC =
     logger.debug('Plugin Config Get', { pluginId });
     const [result, error] = await pluginRuntimeManager.getConfig(pluginId);
     if (error) {
-      logger.error('Plugin Config Get Error', error);
+      logger.error('Plugin Config Get Error', toUsecaseErrorLog(error, { pluginId }));
       return failureResult(error);
     }
     return successResult(result);

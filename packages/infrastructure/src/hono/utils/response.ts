@@ -89,16 +89,12 @@ export function appendHeaders(headers: Headers, appendHeaders?: HeadersInit) {
 }
 
 function zodErrorToI18nString(error: z.ZodError): I18nStringType {
-  const details = error.issues
-    .map((issue) => {
-      const path = issue.path.length > 0 ? issue.path.join('.') : '(root)';
-      return `${path}: ${issue.message}`;
-    })
-    .join('; ');
+  const englishDetails = error.issues.map(formatValidationIssueEn).join('; ');
+  const chineseDetails = error.issues.map(formatValidationIssueZh).join('; ');
 
   return {
-    en: details ? `Validation failed: ${details}` : 'Validation failed',
-    'zh-CN': details ? `数据校验失败: ${details}` : '数据校验失败'
+    en: englishDetails ? `Validation failed: ${englishDetails}` : 'Validation failed',
+    'zh-CN': chineseDetails ? `请求参数校验失败: ${chineseDetails}` : '请求参数校验失败'
   };
 }
 
@@ -107,14 +103,7 @@ function normalizeError(
   error: I18nStringType | z.ZodError | string | Error
 ): ErrorResponseType {
   if (error instanceof z.ZodError) {
-    const reason = zodErrorToI18nString(error);
-    return toErrorResponse(
-      createError(ErrorCode.validationFailed, {
-        message: reason.en,
-        reason,
-        cause: error
-      })
-    );
+    return toErrorResponse(createValidationError(error));
   }
 
   if (error instanceof Error) {
@@ -206,26 +195,60 @@ function buildQueryTarget(c: Context) {
 }
 
 function validationErrorResponse(c: Context, error: z.ZodError) {
-  const issues = error.issues;
-  if (issues.length === 0) {
-    return R.fail(c, 400, {
-      en: 'Unknown validation error',
-      'zh-CN': '未知数据校验错误'
-    });
-  }
+  return R.fail(c, 400, createValidationError(error));
+}
 
-  const paths = [];
-  for (const issue of issues) {
-    if (issue.path) {
-      paths.push(...issue.path.flat());
+function createValidationError(error: z.ZodError): Error {
+  const reason = zodErrorToI18nString(error);
+
+  return createError(ErrorCode.validationFailed, {
+    message: reason.en,
+    reason,
+    data: {
+      issues: error.issues.map(toValidationIssue)
+    }
+  });
+}
+
+function toValidationIssue(issue: z.core.$ZodIssue): Record<string, unknown> {
+  const issueRecord = issue as z.core.$ZodIssue & Record<string, unknown>;
+  const path = issue.path.length > 0 ? issue.path.join('.') : '(root)';
+
+  return {
+    path,
+    message: issue.message,
+    code: issue.code,
+    ...(issueRecord.expected !== undefined ? { expected: issueRecord.expected } : {}),
+    ...(issueRecord.received !== undefined ? { received: issueRecord.received } : {}),
+    ...(issueRecord.options !== undefined ? { options: issueRecord.options } : {}),
+    ...(issueRecord.minimum !== undefined ? { minimum: issueRecord.minimum } : {}),
+    ...(issueRecord.maximum !== undefined ? { maximum: issueRecord.maximum } : {})
+  };
+}
+
+function formatValidationIssueEn(issue: z.core.$ZodIssue): string {
+  return `${getIssuePath(issue)}: ${issue.message}`;
+}
+
+function formatValidationIssueZh(issue: z.core.$ZodIssue): string {
+  const issueRecord = issue as z.core.$ZodIssue & Record<string, unknown>;
+  const path = getIssuePath(issue);
+
+  if (issue.code === 'invalid_type') {
+    const expected = issueRecord.expected;
+    if (issue.message.includes('received undefined')) {
+      return `${path}: 缺少必填字段`;
+    }
+    if (typeof expected === 'string') {
+      return `${path}: 类型错误，应为 ${expected}`;
     }
   }
-  const fields = Array.from(new Set(paths)).filter(isNotNil).join(', ');
 
-  return R.fail(c, 400, {
-    en: fields || 'Validation failed',
-    'zh-CN': fields || '数据校验失败'
-  });
+  return `${path}: ${issue.message}`;
+}
+
+function getIssuePath(issue: z.core.$ZodIssue): string {
+  return issue.path.length > 0 ? issue.path.join('.') : '(root)';
 }
 
 async function validateRequest(c: Context, route: OpenAPIRouteDefinition) {

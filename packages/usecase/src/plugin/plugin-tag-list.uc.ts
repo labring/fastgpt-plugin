@@ -9,6 +9,7 @@
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginTagListType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 /** Dependencies */
 type Deps = {
@@ -29,7 +30,7 @@ export const makePluginTagListUC =
     logger.debug('Plugin Tag List');
     const [result, error] = await pluginRepo.listTags();
     if (error) {
-      logger.error('Plugin Tag List Error', error);
+      logger.error('Plugin Tag List Error', toUsecaseErrorLog(error));
       return failureResult(error);
     }
     return successResult(result);

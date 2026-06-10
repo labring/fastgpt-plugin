@@ -11,6 +11,7 @@ import type {
   PluginVersionListOutputType
 } from '@domain/ports/plugin/plugin-repo.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 type PluginVersionsDeps = {
@@ -28,7 +29,7 @@ export const makePluginVersionsUC =
     logger.debug('Plugin Versions', { input });
     const [result, error] = await pluginRepo.listVersions(input);
     if (error) {
-      logger.error('Plugin Versions Error', error);
+      logger.error('Plugin Versions Error', toUsecaseErrorLog(error, { input }));
       return failureResult(error);
     }
     return successResult(result);
