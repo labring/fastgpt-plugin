@@ -62,6 +62,7 @@ npx @fastgpt-plugin/cli pack --entry <plugin-directory> --dist <plugin-directory
 - 每个 handler 用 `createToolHandler()` 定义。
 - `inputSchema` 和 `outputSchema` 使用 `z.object(...)`。
 - `inputSchema` 字段使用 `.meta({ ... } satisfies InputSchemaMetaType)`。
+- `inputSchema` 字段需要被工具调用自动填参时，必须在 `.meta()` 中设置 `toolDescription`；未设置时该字段只能由用户手动指定。
 - `outputSchema` 字段使用 `.meta({ ... } satisfies OutputSchemaMetaType)`。
 - `secretSchema` 字段使用 `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)`；需要加密存储的字段标记为 `isSecret: true`。
 - handler 返回值必须匹配 `outputSchema`。
@@ -84,13 +85,23 @@ manifest 至少包含：
 - `icon`
 - `toolDescription`
 
+`permission` 用于声明插件运行时需要的宿主能力，类型为权限字符串数组。只声明当前插件实际使用的最小权限；没有使用对应能力时不要添加。使用 `ctx.invoke` 反向调用宿主能力时，必须声明对应权限。
+
+当前可用权限：
+
+- `userInfo:read`: 读取用户信息，例如调用 `ctx.invoke.userInfo()`。
+- `teamInfo:read`: 读取团队信息。
+- `model:read`: 读取模型信息。
+- `dataset:read`: 读取知识库信息。
+- `file-upload:allow`: 上传文件，例如调用 `ctx.invoke.uploadFile()`。
+
 兼容性要求：
 
 - `pluginId`、工具 `id`、输入字段名、输出字段名对外使用后保持稳定。
 - 用户配置的密钥、API Key、Base URL 等使用 `secretSchema` 描述，通过 `ctx.secrets` 读取。
 - 错误信息应能帮助定位问题，同时避免暴露密钥、令牌和完整上游敏感响应。
 - 需要向用户展示执行进度时使用 `ctx.streamResponse()`。
-- 需要生成文件时使用 `ctx.invoke.uploadFile()`；收到 `[result, err]` 的 `err` 时保留原始 `err`，避免覆盖反向调用的宿主错误信息。
+- 需要生成文件时使用 `ctx.invoke.uploadFile()`，并在 `manifest.permission` 中声明 `file-upload:allow`；收到 `[result, err]` 的 `err` 时保留原始 `err`，避免覆盖反向调用的宿主错误信息。
 
 ## 头像规范
 
@@ -125,7 +136,8 @@ import z from 'zod';
 const handler = createToolHandler({
   inputSchema: z.object({
     text: z.string().min(1).meta({
-      title: 'Text'
+      title: 'Text',
+      toolDescription: 'Text to normalize'
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -155,7 +167,8 @@ export default defineTool({
     versionDescription: {
       en: 'Initial version',
       'zh-CN': '初始版本'
-    }
+    },
+    permission: []
   },
   handler
 });
@@ -183,7 +196,8 @@ const secretSchema = z.object({
 const searchHandler = createToolHandler({
   inputSchema: z.object({
     query: z.string().min(1).meta({
-      title: 'Query'
+      title: 'Query',
+      toolDescription: 'Search query'
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -216,7 +230,8 @@ export default defineToolSet({
     description: {
       en: 'Search public example data',
       'zh-CN': '搜索公开示例数据'
-    }
+    },
+    permission: []
   },
   children: [
     {
@@ -240,7 +255,9 @@ export default defineToolSet({
 
 - `index.ts` 默认导出正确。
 - `manifest` 字段完整，国际化字段包含 `en` 和 `zh-CN`。
-- Zod schema 覆盖全部用户可见输入和输出。
+- `permission` 只包含插件实际使用的权限，且权限值来自当前支持的枚举。
+- 使用 `ctx.invoke` 时已在 `manifest.permission` 声明对应权限，例如上传文件声明 `file-upload:allow`。
+- Zod schema 覆盖全部用户可见输入和输出；需要工具调用自动填参的输入字段包含 `toolDescription`。
 - handler 成功路径返回值与 `outputSchema` 一致。
 - 外部调用失败、空响应、超时、鉴权失败都有明确错误。
 - 密钥配置只通过 `secretSchema` 和 `ctx.secrets` 处理。
