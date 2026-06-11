@@ -18,9 +18,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'step-3.5-flash-2603',
-      maxContext: 64000,
+      maxContext: 256000,
       maxTokens: 8000,
-      quoteMaxToken: 60000,
+      quoteMaxToken: 240000,
       maxTemperature: 2,
       vision: false,
       reasoning: true,
@@ -30,9 +30,9 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'step-3.5-flash',
-      maxContext: 64000,
+      maxContext: 256000,
       maxTokens: 8000,
-      quoteMaxToken: 60000,
+      quoteMaxToken: 240000,
       maxTemperature: 2,
       vision: false,
       reasoning: true,
