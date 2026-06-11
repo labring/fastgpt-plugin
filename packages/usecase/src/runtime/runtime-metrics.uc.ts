@@ -7,6 +7,7 @@
 
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 /** Dependencies */
 export type RuntimeMetricsUCDeps = {
@@ -26,7 +27,7 @@ export const makeRuntimeMetricsUC =
     logger.debug('Runtime Metrics');
     const [result, error] = await pluginRuntimeManager.globalStatus();
     if (error) {
-      logger.error('Runtime Metrics Error', error);
+      logger.error('Runtime Metrics Error', toUsecaseErrorLog(error));
       return failureResult(error);
     }
     return successResult(result);

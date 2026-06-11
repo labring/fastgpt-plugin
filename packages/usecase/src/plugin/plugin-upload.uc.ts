@@ -10,6 +10,7 @@ import type { PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import { PluginUniqueIdSchema, type PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type PluginUploadUCDeps = {
@@ -83,7 +84,7 @@ const rollbackPendingPlugins = async (
     if (err) {
       deps.logger.warn('Failed to rollback pending plugin', {
         uniqueId,
-        reason: err.reason
+        error: toUsecaseErrorLog(err)
       });
     }
   }
@@ -119,7 +120,7 @@ export const makePluginUploadUC =
     const [existingPendingPlugins, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
 
     if (pendingErr) {
-      logger.error('Plugin Upload Pending List Error', pendingErr);
+      logger.error('Plugin Upload Pending List Error', toUsecaseErrorLog(pendingErr));
       return failureResult(
         {
           en: 'Failed to get pending plugin ids',

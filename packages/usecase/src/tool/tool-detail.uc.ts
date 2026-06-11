@@ -11,6 +11,7 @@ import type {
   ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type ToolDetailUCDeps = {
@@ -27,7 +28,7 @@ export const makeToolDetailUC =
     logger.debug('Tool Detail', { input });
     const [result, error] = await toolManager.detail(input);
     if (error) {
-      logger.error('Tool Detail Error', error);
+      logger.error('Tool Detail Error', toUsecaseErrorLog(error, { input }));
       return failureResult(error);
     }
     return successResult(result);

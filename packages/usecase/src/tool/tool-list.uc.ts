@@ -11,6 +11,7 @@ import type {
   ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type ToolListUCDeps = {
@@ -27,7 +28,7 @@ export const makeToolListUC =
     logger.debug('Tool List', { input });
     const [result, error] = await toolManager.list(input);
     if (error) {
-      logger.error('Tool List Error', error);
+      logger.error('Tool List Error', toUsecaseErrorLog(error, { input }));
       return failureResult(error);
     }
     return successResult(result);
