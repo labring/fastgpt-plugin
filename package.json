@@ -12,9 +12,11 @@
     "build:sdk-client": "pnpm --filter @fastgpt-plugin/sdk-client build",
     "build:sdk-factory": "pnpm --filter @fastgpt-plugin/sdk-factory build",
     "build:server": "pnpm --filter @fastgpt-plugin/server build",
+    "build:connection-gateway": "pnpm --filter @fastgpt-plugin/connection-gateway build",
     "build:cli": "pnpm --filter @fastgpt-plugin/cli build",
     "build:debug-runtime-monitor": "pnpm --filter @fastgpt-plugin/debug-runtime-monitor build",
     "dev:cli": "pnpm --filter @fastgpt-plugin/cli dev",
+    "dev:connection-gateway": "pnpm --filter @fastgpt-plugin/connection-gateway dev",
     "dev:server": "pnpm --filter @fastgpt-plugin/server dev",
     "dev:debug-runtime-monitor": "pnpm --filter @fastgpt-plugin/debug-runtime-monitor dev"
   },
