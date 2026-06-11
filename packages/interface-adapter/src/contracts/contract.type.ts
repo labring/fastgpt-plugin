@@ -6,7 +6,8 @@ export const OpenAPITagsEnum = {
   plugin: 'plugin',
   tool: 'tool',
   model: 'model',
-  workflow: 'workflow'
+  workflow: 'workflow',
+  connectionGateway: 'connection-gateway'
 } as const;
 
 export type OpenAPITagsType = (typeof OpenAPITagsEnum)[keyof typeof OpenAPITagsEnum];

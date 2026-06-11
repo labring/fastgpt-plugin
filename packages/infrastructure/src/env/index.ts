@@ -57,6 +57,20 @@ export const env = createEnv({
     AUTH_TOKEN: AuthTokenSchema,
     JWT_SECRET: z.string().default('fastgpt-plugin-secret'),
 
+    // Connection Gateway 配置
+    CONNECTION_GATEWAY_PORT: PositiveIntSchema.min(1024).max(65535).default(3010),
+    CONNECTION_GATEWAY_TCP_PORT: PositiveIntSchema.min(1024).max(65535).default(3011),
+    CONNECTION_GATEWAY_NODE_ID: z.string().optional(),
+    CONNECTION_GATEWAY_SESSION_TTL_MS: PositiveIntSchema.default(60_000),
+    CONNECTION_GATEWAY_OWNER_LEASE_TTL_MS: PositiveIntSchema.default(15_000),
+    CONNECTION_GATEWAY_MAILBOX_MAXLEN: PositiveIntSchema.default(1_000),
+    CONNECTION_GATEWAY_MAILBOX_BLOCK_MS: PositiveIntSchema.default(5_000),
+    CONNECTION_GATEWAY_MAX_CONNECTIONS: PositiveIntSchema.default(5_000),
+    CONNECTION_GATEWAY_MAX_SESSIONS_PER_SUBJECT: PositiveIntSchema.default(5),
+    CONNECTION_GATEWAY_MAX_IN_FLIGHT_PER_SESSION: PositiveIntSchema.default(50),
+    CONNECTION_GATEWAY_MAX_ENVELOPE_BYTES: PositiveIntSchema.default(1024 * 1024),
+    CONNECTION_GATEWAY_SLOW_CONSUMER_BUFFER_BYTES: PositiveIntSchema.default(8 * 1024 * 1024),
+
     // 安全配置
     ALLOWED_INSTALL_HOSTS: z.string().optional(),
     DISABLE_SSRF_CHECK: BoolStringSchema.default(false),

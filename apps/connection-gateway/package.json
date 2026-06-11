@@ -1,0 +1,22 @@
+{
+  "name": "@fastgpt-plugin/connection-gateway",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env.local main.ts",
+    "build": "tsdown main.ts"
+  },
+  "dependencies": {
+    "@fastgpt-plugin/domain": "workspace:*",
+    "@fastgpt-plugin/infrastructure": "workspace:*",
+    "@fastgpt-plugin/interface-adapter": "workspace:*",
+    "@fastgpt-plugin/shared": "workspace:*",
+    "@hono/node-server": "^1.19.9",
+    "hono": "^4.12.21",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:",
+    "tsx": "^4.19.2",
+    "typescript": "catalog:"
+  }
+}
