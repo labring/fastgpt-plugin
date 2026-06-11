@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
-# --------- base -----------
-FROM node:22-alpine AS base
+# --------- build base -----------
+FROM --platform=$BUILDPLATFORM node:22-alpine AS base
 WORKDIR /app
 
 ENV CI=true
@@ -37,7 +37,15 @@ COPY . .
 RUN pnpm --filter @fastgpt-plugin/connection-gateway build
 
 # --------- production dependencies -----------
-FROM base AS prod-deps
+FROM --platform=$TARGETPLATFORM node:22-alpine AS prod-deps
+WORKDIR /app
+
+ENV CI=true
+ENV HUSKY=0
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+
+RUN corepack enable pnpm
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 COPY apps/connection-gateway/package.json apps/connection-gateway/package.json
@@ -55,7 +63,7 @@ RUN --mount=type=cache,target=/pnpm/store \
       --filter @fastgpt-plugin/connection-gateway...
 
 # --------- runner -----------
-FROM node:22-alpine AS runner
+FROM --platform=$TARGETPLATFORM node:22-alpine AS runner
 WORKDIR /app/apps/connection-gateway
 
 RUN apk add --no-cache \
