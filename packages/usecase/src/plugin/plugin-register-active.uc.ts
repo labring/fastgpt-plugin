@@ -3,6 +3,7 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 export type PluginRegisterActiveUCDeps = {
@@ -22,7 +23,7 @@ export const makePluginRegisterActiveUC =
     const [plugins, listErr] = await deps.pluginRepo.listActive();
 
     if (listErr) {
-      deps.logger.error('Plugin Register Active List Error', listErr);
+      deps.logger.error('Plugin Register Active List Error', toUsecaseErrorLog(listErr));
       return failureResult(
         {
           en: 'Failed to get active plugins',
@@ -46,7 +47,7 @@ export const makePluginRegisterActiveUC =
       if (registerErr) {
         deps.logger.error('Plugin Register Active One Error', {
           uniqueId,
-          error: registerErr
+          error: toUsecaseErrorLog(registerErr)
         });
         return failureResult(
           {

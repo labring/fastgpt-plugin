@@ -261,13 +261,25 @@ describe('simple usecases', () => {
       makeToolListUC({ toolManager, logger: usecaseLogger })({ tags: ['tools'] })
     ).resolves.toEqual(result);
 
-    expect(usecaseLogger.error).toHaveBeenCalledWith('Tool List Error', result[1]);
+    expect(usecaseLogger.error).toHaveBeenCalledWith(
+      'Tool List Error',
+      expect.objectContaining({
+        input: { tags: ['tools'] },
+        reason: result[1]?.reason,
+        message: 'list failed',
+        error: expect.objectContaining({
+          name: 'Error',
+          message: 'list failed'
+        })
+      })
+    );
   });
 
   it.each([
     {
       name: 'runtime metrics',
       message: 'Runtime Metrics Error',
+      expectedErrorContext: {},
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makeRuntimeMetricsUC({
           pluginRuntimeManager: baseRuntimeManager({
@@ -279,6 +291,7 @@ describe('simple usecases', () => {
     {
       name: 'plugin config get',
       message: 'Plugin Config Get Error',
+      expectedErrorContext: { pluginId: 'plugin-a' },
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makePluginConfigGetUC({
           pluginRuntimeManager: baseRuntimeManager({
@@ -290,6 +303,7 @@ describe('simple usecases', () => {
     {
       name: 'plugin config set',
       message: 'Plugin Config Set Error',
+      expectedErrorContext: { input: { pluginId: 'plugin-a', config: { mode: 'local' } } },
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makeSetPluginConfigUC({
           pluginRuntimeManager: baseRuntimeManager({
@@ -301,6 +315,7 @@ describe('simple usecases', () => {
     {
       name: 'plugin config reset',
       message: 'Plugin Config Reset Error',
+      expectedErrorContext: { pluginId: 'plugin-a' },
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makeResetPluginConfigUC({
           pluginRuntimeManager: baseRuntimeManager({
@@ -312,6 +327,7 @@ describe('simple usecases', () => {
     {
       name: 'plugin list',
       message: 'Plugin List Error',
+      expectedErrorContext: { input: { tags: ['tools'] } },
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makePluginListUC({
           pluginRepo: basePluginRepo({
@@ -323,6 +339,7 @@ describe('simple usecases', () => {
     {
       name: 'plugin versions',
       message: 'Plugin Versions Error',
+      expectedErrorContext: { input: { pluginId: 'plugin-a', source: 'system' } },
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makePluginVersionsUC({
           pluginRepo: basePluginRepo({
@@ -334,6 +351,7 @@ describe('simple usecases', () => {
     {
       name: 'plugin tag list',
       message: 'Plugin Tag List Error',
+      expectedErrorContext: {},
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makePluginTagListUC({
           pluginRepo: basePluginRepo({
@@ -345,6 +363,7 @@ describe('simple usecases', () => {
     {
       name: 'plugin prune disabled',
       message: 'Plugin Prune Disabled Error',
+      expectedErrorContext: {},
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makePluginPruneDisabledUC({
           pluginRepo: basePluginRepo({
@@ -356,6 +375,7 @@ describe('simple usecases', () => {
     {
       name: 'model list',
       message: 'Model List Error',
+      expectedErrorContext: {},
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makeModelListUC({
           modelManager: baseModelManager({
@@ -367,6 +387,7 @@ describe('simple usecases', () => {
     {
       name: 'provider list',
       message: 'Provider List Error',
+      expectedErrorContext: { input: {} },
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makeProviderListUC({
           modelManager: baseModelManager({
@@ -378,6 +399,7 @@ describe('simple usecases', () => {
     {
       name: 'tool detail',
       message: 'Tool Detail Error',
+      expectedErrorContext: { input: { pluginId: 'plugin-a', source: 'system' } },
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makeToolDetailUC({
           toolManager: baseToolManager({
@@ -389,23 +411,19 @@ describe('simple usecases', () => {
     {
       name: 'tool run',
       message: 'Tool Run Error',
-      expectedErrorLog: (result: ReturnType<typeof failureResult>) => [
-        'Tool Run Error',
-        {
-          ...result[1],
-          input: {
-            pluginId: 'plugin-a',
-            source: 'system',
-            input: {},
-            hasSecrets: false,
-            systemVar: {
-              app: { id: 'app', name: 'app' },
-              chat: { chatId: 'chat' },
-              time: '2026-01-01T00:00:00Z'
-            }
+      expectedErrorContext: {
+        input: {
+          pluginId: 'plugin-a',
+          source: 'system',
+          input: {},
+          hasSecrets: false,
+          systemVar: {
+            app: { id: 'app', name: 'app' },
+            chat: { chatId: 'chat' },
+            time: '2026-01-01T00:00:00Z'
           }
         }
-      ],
+      },
       run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
         makeToolRunUC({
           toolManager: baseToolManager({
@@ -423,14 +441,65 @@ describe('simple usecases', () => {
           }
         })
     }
-  ])('records usecase error logs for $name failures', async ({ message, run, expectedErrorLog }) => {
+  ])(
+    'records usecase error logs for $name failures',
+    async ({ message, run, expectedErrorContext }) => {
     const result = failureResult(reason(`${message} failed`));
     const usecaseLogger = logger();
 
     await expect(run(result, usecaseLogger)).resolves.toEqual(result);
 
+      expect(usecaseLogger.error).toHaveBeenCalledWith(
+        message,
+        expect.objectContaining({
+          ...expectedErrorContext,
+          reason: reason(`${message} failed`),
+          message: `${message} failed`,
+          error: expect.objectContaining({
+            name: 'Error',
+            message: `${message} failed`
+          })
+        })
+      );
+    }
+  );
+
+  it('records tool detail input and nested error cause details', async () => {
+    const cause = new Error('database timeout while reading getTime');
+    const result = failureResult(reason('Failed to get tool detail'), cause);
+    const usecaseLogger = logger();
+
+    await expect(
+      makeToolDetailUC({
+        toolManager: baseToolManager({
+          detail: vi.fn().mockResolvedValue(result)
+        }),
+        logger: usecaseLogger
+      })({
+        pluginId: 'getTime',
+        source: 'system',
+        version: '9.9.9',
+        fallbackLatestVersion: true
+      })
+    ).resolves.toEqual(result);
+
     expect(usecaseLogger.error).toHaveBeenCalledWith(
-      ...(expectedErrorLog?.(result) ?? [message, result[1]])
+      'Tool Detail Error',
+      expect.objectContaining({
+        input: {
+          pluginId: 'getTime',
+          source: 'system',
+          version: '9.9.9',
+          fallbackLatestVersion: true
+        },
+        reason: reason('Failed to get tool detail'),
+        error: expect.objectContaining({
+          message: 'Failed to get tool detail',
+          cause: expect.objectContaining({
+            message: 'database timeout while reading getTime'
+          })
+        })
+      })
     );
   });
 
@@ -468,9 +537,22 @@ describe('simple usecases', () => {
       })
     ).resolves.toEqual(result);
 
-    expect(usecaseLogger.error).toHaveBeenCalledWith('Tool Run Error', {
-      ...result[1],
-      input: {
+    expect(usecaseLogger.error).toHaveBeenCalledWith(
+      'Tool Run Error',
+      expect.objectContaining({
+        reason: result[1]?.reason,
+        code: 'plugin.invoke.timeout',
+        message: 'Plugin invocation timed out',
+        data: {
+          pluginId: 'plugin-a',
+          version: '1.0.0',
+          input: { timezone: 'Asia/Shanghai' }
+        },
+        error: expect.objectContaining({
+          name: 'Error',
+          message: 'Plugin invocation timed out'
+        }),
+        input: {
         pluginId: 'plugin-a',
         source: 'system',
         version: '1.0.0',
@@ -482,7 +564,8 @@ describe('simple usecases', () => {
           time: '2026-01-01T00:00:00Z'
         }
       }
-    });
+      })
+    );
   });
 });
 
@@ -841,10 +924,19 @@ describe('makePluginUploadUC', () => {
 
     expect(err).toBeNull();
     expect(uploaded?.failed?.[0]?.reason.en).toBe('create failed');
-    expect(appLogger.warn).toHaveBeenCalledWith('Failed to rollback pending plugin', {
-      uniqueId,
-      reason: reason('rollback failed')
-    });
+    expect(appLogger.warn).toHaveBeenCalledWith(
+      'Failed to rollback pending plugin',
+      expect.objectContaining({
+        uniqueId,
+        error: expect.objectContaining({
+          reason: reason('rollback failed'),
+          message: 'rollback failed',
+          error: expect.objectContaining({
+            message: 'rollback failed'
+          })
+        })
+      })
+    );
   });
 
   it('does not delete pending plugins that existed before the upload batch', async () => {
@@ -1691,10 +1783,25 @@ describe('plugin replacement helpers', () => {
     const [, err] = await disableAndUnregisterReplacedPlugins(deps);
 
     expect(err?.reason.en).toBe('Failed to disable replaced plugins');
-    expect(appLogger.error).toHaveBeenCalledWith('Plugin Replace Active Disable Error', {
-      replacedPluginIds: [{ ...uniqueId, etag: 'old' }],
-      error: err?.error
-    });
+    expect(appLogger.error).toHaveBeenCalledWith(
+      'Plugin Replace Active Disable Error',
+      expect.objectContaining({
+        replacedPluginIds: [{ ...uniqueId, etag: 'old' }],
+        error: expect.objectContaining({
+          reason: {
+            en: 'Failed to disable replaced plugins',
+            'zh-CN': '禁用被替换插件失败'
+          },
+          message: 'Failed to disable replaced plugins',
+          error: expect.objectContaining({
+            message: 'Failed to disable replaced plugins',
+            cause: expect.objectContaining({
+              message: 'disable failed'
+            })
+          })
+        })
+      })
+    );
   });
 
   it('logs unregister failures and still completes replacement cleanup', async () => {
