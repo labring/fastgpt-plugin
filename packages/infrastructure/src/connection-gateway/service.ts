@@ -69,6 +69,7 @@ export class ConnectionGatewayService {
       transport: claims.transport,
       capabilities: claims.capabilities,
       ownerNodeId: this.deps.options.nodeId,
+      status: 'connecting',
       expiresAt,
       metadata: input.metadata,
       now
@@ -76,7 +77,7 @@ export class ConnectionGatewayService {
 
     await this.deps.mailbox.expire(session.id, this.deps.options.sessionTtlMs);
     this.deps.metrics.recordSessionOpened();
-    this.pushLog(session.id, 'info', 'Gateway session connected', {
+    this.pushLog(session.id, 'info', 'Gateway session created', {
       consumerType: session.consumerType,
       subject: session.subject,
       transport: session.transport,
@@ -93,7 +94,9 @@ export class ConnectionGatewayService {
 
     return {
       session,
-      ownerAlive: Boolean(session && session.expiresAt > Date.now()),
+      ownerAlive: Boolean(
+        session && session.status === 'connected' && session.expiresAt > Date.now()
+      ),
       mailboxLag,
       logs: this.logs.get(sessionId) ?? []
     };
@@ -101,7 +104,12 @@ export class ConnectionGatewayService {
 
   async getLatestStatusBySource(source: string): Promise<ConnectionGatewaySessionStatusView> {
     const sessions = await this.deps.sessionRegistry.listBySource(source);
-    const session = sessions.sort((a, b) => b.lastSeenAt - a.lastSeenAt)[0] ?? null;
+    const session =
+      sessions
+        .filter((item) => item.status === 'connected')
+        .sort((a, b) => b.lastSeenAt - a.lastSeenAt)[0] ??
+      sessions.sort((a, b) => b.lastSeenAt - a.lastSeenAt)[0] ??
+      null;
 
     if (!session) {
       return {
@@ -209,7 +217,8 @@ export class ConnectionGatewayService {
   }): Promise<ConnectionGatewaySession> {
     const envelope = ConnectionGatewayEnvelopeSchema.parse(input.envelope);
     const session = await this.assertEnvelopeSession(input.sessionId, envelope, {
-      requireCapability: false
+      requireCapability: false,
+      requireConnected: false
     });
 
     if (envelope.type !== 'event' || envelope.capability !== 'gateway.bind') {
@@ -218,6 +227,11 @@ export class ConnectionGatewayService {
       });
     }
 
+    await this.deps.sessionRegistry.updateStatus({
+      sessionId: session.id,
+      ownerNodeId: this.deps.options.nodeId,
+      status: 'connected'
+    });
     await this.renewOwnerLease(session.id);
     this.pushLog(session.id, 'info', 'Gateway TCP session bound', {
       consumerType: session.consumerType,
@@ -227,6 +241,26 @@ export class ConnectionGatewayService {
     });
 
     return session;
+  }
+
+  async closeSession(sessionId: string, reason?: string): Promise<boolean> {
+    const session = await this.deps.sessionRegistry.get(sessionId);
+    const closed = await this.deps.sessionRegistry.updateStatus({
+      sessionId,
+      ownerNodeId: this.deps.options.nodeId,
+      status: 'closed'
+    });
+
+    if (closed) {
+      if (session?.status !== 'closed') {
+        this.deps.metrics.recordSessionClosed();
+      }
+      this.pushLog(sessionId, 'warn', 'Gateway session closed', {
+        ...(reason ? { reason } : {})
+      });
+    }
+
+    return closed;
   }
 
   async readSessionRequests(input: {
@@ -251,7 +285,9 @@ export class ConnectionGatewayService {
     const session = await this.deps.sessionRegistry.get(sessionId);
     await this.deps.sessionRegistry.remove(sessionId);
     if (session) {
-      this.deps.metrics.recordSessionClosed();
+      if (session.status !== 'closed') {
+        this.deps.metrics.recordSessionClosed();
+      }
       this.pushLog(sessionId, 'info', 'Gateway session deleted');
     }
   }
@@ -274,7 +310,7 @@ export class ConnectionGatewayService {
   private async assertEnvelopeSession(
     sessionId: string,
     envelope: ConnectionGatewayEnvelope,
-    options: { requireCapability?: boolean } = {}
+    options: { requireCapability?: boolean; requireConnected?: boolean } = {}
   ): Promise<ConnectionGatewaySession> {
     const session = await this.deps.sessionRegistry.get(sessionId);
     if (!session) {
@@ -284,6 +320,15 @@ export class ConnectionGatewayService {
     if (session.expiresAt <= Date.now()) {
       this.deps.metrics.recordOwnerLeaseExpiry();
       throw createError(ErrorCode.connectionGatewaySessionOwnerExpired);
+    }
+
+    if (options.requireConnected !== false && session.status !== 'connected') {
+      throw createError(ErrorCode.connectionGatewaySessionOwnerExpired, {
+        message: `Gateway session is ${session.status}`,
+        data: {
+          status: session.status
+        }
+      });
     }
 
     if (envelope.sessionId !== session.id) {

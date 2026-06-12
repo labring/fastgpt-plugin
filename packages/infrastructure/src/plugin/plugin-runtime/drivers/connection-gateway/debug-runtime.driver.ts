@@ -137,9 +137,18 @@ export class ConnectionGatewayDebugRuntimeManager
     );
     const session = status.data.session;
 
-    if (!session || session.consumerType !== CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE) {
+    if (
+      !session ||
+      session.consumerType !== CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE ||
+      session.status !== 'connected' ||
+      status.data.ownerAlive === false
+    ) {
       throw createError(ErrorCode.connectionGatewaySessionNotFound, {
-        data: { source }
+        data: {
+          source,
+          status: session?.status,
+          ownerAlive: status.data.ownerAlive
+        }
       });
     }
 
@@ -232,11 +241,13 @@ type GatewayDebugSession = {
   id: string;
   consumerType: string;
   generation: number;
+  status: string;
 };
 
 type GatewayStatusResponse = {
   data: {
     session: GatewayDebugSession | null;
+    ownerAlive?: boolean;
   };
 };
 

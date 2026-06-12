@@ -19,9 +19,11 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
             session: {
               id: 'session-a',
               consumerType: 'plugin-debug',
-              generation: 0
+              generation: 0,
+              status: 'connected'
             }
-          }
+          },
+          ownerAlive: true
         })
       )
       .mockResolvedValueOnce(

@@ -34,6 +34,7 @@ export type DebugGatewayClientOptions = {
   subject?: string;
   tokenTtlMs: number;
   reconnect?: boolean;
+  reconnectIntervalMs?: number;
 };
 
 export type DebugGatewayTarget = {
@@ -60,18 +61,99 @@ export async function connectDebugGateway({
     throw new Error('Gateway debug targets cannot be empty');
   }
 
+  if (options.reconnect) {
+    return connectReconnectingDebugGateway({ targets, options, onLog });
+  }
+
+  return connectSingleDebugGateway({ targets, options, onLog });
+}
+
+async function connectReconnectingDebugGateway({
+  targets,
+  options,
+  onLog
+}: {
+  targets: DebugGatewayTarget[];
+  options: DebugGatewayClientOptions;
+  onLog?: (message: string) => void;
+}): Promise<DebugGatewayClient> {
+  let closed = false;
+  let current: DebugGatewayClient | null = null;
+  let currentSession: ConnectionGatewaySession | null = null;
+  const intervalMs = Math.max(100, options.reconnectIntervalMs ?? 2_000);
+
+  const closedPromise = (async () => {
+    while (!closed) {
+      try {
+        current = await connectSingleDebugGateway({ targets, options, onLog });
+        currentSession = current.session;
+        await current.closed;
+      } catch (error) {
+        if (closed) {
+          return;
+        }
+
+        onLog?.(`Connection Gateway 调试通道断开: ${formatErrorMessage(error)}`);
+      } finally {
+        current = null;
+      }
+
+      if (!closed) {
+        onLog?.(`将在 ${intervalMs}ms 后重连 Connection Gateway。`);
+        await delay(intervalMs);
+      }
+    }
+  })();
+
+  while (!currentSession && !closed) {
+    await delay(10);
+  }
+
+  if (!currentSession) {
+    throw new Error('Connection Gateway debug session was closed before connecting');
+  }
+
+  return {
+    session: currentSession,
+    close() {
+      closed = true;
+      current?.close();
+    },
+    closed: closedPromise
+  };
+}
+
+async function connectSingleDebugGateway({
+  targets,
+  options,
+  onLog
+}: {
+  targets: DebugGatewayTarget[];
+  options: DebugGatewayClientOptions;
+  onLog?: (message: string) => void;
+}): Promise<DebugGatewayClient> {
   const session = await createGatewaySession(targets, options);
-  const socket = await connectTcp(options.tcpHost, options.tcpPort);
+  const socket = await connectTcp(options.tcpHost, options.tcpPort).catch(async (error) => {
+    await deleteGatewaySession(session, options).catch((cleanupError) => {
+      onLog?.(`Connection Gateway session 清理失败: ${formatErrorMessage(cleanupError)}`);
+    });
+    throw error;
+  });
   const decoder = new ContentLengthJsonFrameDecoder(1024 * 1024 * 16);
   const targetsByPluginId = new Map(targets.map((target) => [target.snapshot.pluginId, target]));
   let closed = false;
 
-  const closedPromise = new Promise<void>((resolve, reject) => {
-    socket.once('close', () => {
+  const closedPromise = new Promise<void>((resolve) => {
+    socket.once('close', async () => {
       closed = true;
+      await deleteGatewaySession(session, options).catch((error) => {
+        onLog?.(`Connection Gateway session 清理失败: ${formatErrorMessage(error)}`);
+      });
       resolve();
     });
-    socket.once('error', reject);
+    socket.once('error', (error) => {
+      onLog?.(`Connection Gateway TCP 错误: ${error.message}`);
+    });
   });
 
   socket.on('data', (chunk) => {
@@ -106,6 +188,12 @@ export async function connectDebugGateway({
         version: target.snapshot.version
       }))
     }
+  }).catch(async (error) => {
+    socket.destroy(error instanceof Error ? error : new Error(String(error)));
+    await deleteGatewaySession(session, options).catch((cleanupError) => {
+      onLog?.(`Connection Gateway session 清理失败: ${formatErrorMessage(cleanupError)}`);
+    });
+    throw error;
   });
   onLog?.(`已连接 Connection Gateway session: ${session.id}`);
 
@@ -118,6 +206,26 @@ export async function connectDebugGateway({
     },
     closed: closedPromise
   };
+}
+
+async function deleteGatewaySession(
+  session: ConnectionGatewaySession,
+  options: DebugGatewayClientOptions
+): Promise<void> {
+  const response = await fetch(
+    `${normalizeBaseUrl(options.baseUrl)}/internal/sessions/${encodeURIComponent(session.id)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${options.authToken}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Gateway session delete failed: ${response.status} ${text}`);
+  }
 }
 
 async function handleGatewayEnvelope({
@@ -410,4 +518,14 @@ function requiredRequestId(envelope: ConnectionGatewayEnvelope): string {
   }
 
   return envelope.requestId;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function formatErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

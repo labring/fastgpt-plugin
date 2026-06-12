@@ -198,6 +198,44 @@ describe('debug command', () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
+  it('默认开启 Connection Gateway 自动重连', async () => {
+    await run([
+      process.execPath,
+      'cli',
+      'debug',
+      GETTIME_TOOL_DIR,
+      '--gateway',
+      '--gateway-user-id',
+      'u1'
+    ]);
+
+    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
+      reconnect: true,
+      reconnectIntervalMs: 2000
+    });
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('应能关闭 Connection Gateway 自动重连', async () => {
+    await run([
+      process.execPath,
+      'cli',
+      'debug',
+      GETTIME_TOOL_DIR,
+      '--gateway',
+      '--gateway-user-id',
+      'u1',
+      '--gateway-no-reconnect'
+    ]);
+
+    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
+      reconnect: false
+    });
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
   it('应能在一个 CLI 进程内为多个插件建立远程调试通道', async () => {
     await run([
       process.execPath,

@@ -88,6 +88,20 @@ function makeEnvelope(sessionId: string, generation: number): ConnectionGatewayE
   };
 }
 
+function makeBindEnvelope(sessionId: string, generation: number): ConnectionGatewayEnvelope {
+  return {
+    protocol: 'connection-gateway.v1',
+    sessionId,
+    generation,
+    requestId: 'bind-a',
+    type: 'event',
+    consumerType: 'plugin-debug',
+    capability: 'gateway.bind',
+    createdAt: now,
+    payload: { kind: 'plugin-debug.bind' }
+  };
+}
+
 describe('ConnectionGatewayService', () => {
   it('creates scoped sessions and publishes opaque envelopes to the mailbox', async () => {
     const { service, token, metrics } = makeService();
@@ -95,6 +109,10 @@ describe('ConnectionGatewayService', () => {
       token: await signDebugToken(token),
       transport: 'tcp',
       now
+    });
+    await service.bindSession({
+      sessionId: session.id,
+      envelope: makeBindEnvelope(session.id, session.generation)
     });
 
     const result = await service.publishRequest({
@@ -106,6 +124,7 @@ describe('ConnectionGatewayService', () => {
       session: expect.objectContaining({
         id: session.id,
         subject: 'user:u1',
+        status: 'connected',
         generation: 0
       }),
       ownerAlive: true,
@@ -125,6 +144,10 @@ describe('ConnectionGatewayService', () => {
       token: signed,
       transport: 'tcp',
       now
+    });
+    await service.bindSession({
+      sessionId: session.id,
+      envelope: makeBindEnvelope(session.id, session.generation)
     });
 
     await expect(
@@ -165,6 +188,10 @@ describe('ConnectionGatewayService', () => {
       token: await signDebugToken(token),
       transport: 'tcp',
       now
+    });
+    await service.bindSession({
+      sessionId: session.id,
+      envelope: makeBindEnvelope(session.id, session.generation)
     });
     const request = makeEnvelope(session.id, session.generation);
     const { responses } = await service.publishRequestAndWait({
@@ -247,12 +274,75 @@ describe('ConnectionGatewayService', () => {
     });
   });
 
+  it('keeps connecting and closed sessions visible but fails requests closed', async () => {
+    const { service, token } = makeService();
+    const session = await service.createSession({
+      token: await signDebugToken(token),
+      transport: 'tcp',
+      now
+    });
+
+    await expect(service.getStatus(session.id)).resolves.toMatchObject({
+      session: expect.objectContaining({
+        status: 'connecting'
+      }),
+      ownerAlive: false
+    });
+    await expect(
+      service.publishRequest({
+        sessionId: session.id,
+        envelope: makeEnvelope(session.id, session.generation)
+      })
+    ).rejects.toMatchObject({
+      code: 'connection_gateway.session_owner_expired',
+      data: {
+        status: 'connecting'
+      }
+    });
+
+    await service.bindSession({
+      sessionId: session.id,
+      envelope: makeBindEnvelope(session.id, session.generation)
+    });
+    await service.closeSession(session.id, 'unit_test_closed');
+
+    await expect(service.getStatus(session.id)).resolves.toMatchObject({
+      session: expect.objectContaining({
+        status: 'closed'
+      }),
+      ownerAlive: false,
+      logs: expect.arrayContaining([
+        expect.objectContaining({
+          message: 'Gateway session closed',
+          data: {
+            reason: 'unit_test_closed'
+          }
+        })
+      ])
+    });
+    await expect(
+      service.publishRequest({
+        sessionId: session.id,
+        envelope: makeEnvelope(session.id, session.generation)
+      })
+    ).rejects.toMatchObject({
+      code: 'connection_gateway.session_owner_expired',
+      data: {
+        status: 'closed'
+      }
+    });
+  });
+
   it('denies response envelopes without the session capability', async () => {
     const { service, token } = makeService();
     const session = await service.createSession({
       token: await signDebugToken(token),
       transport: 'tcp',
       now
+    });
+    await service.bindSession({
+      sessionId: session.id,
+      envelope: makeBindEnvelope(session.id, session.generation)
     });
 
     await expect(
