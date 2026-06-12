@@ -170,4 +170,56 @@ describe('runtime metrics recorder', () => {
       'runtime.mode': 'localPool'
     });
   });
+
+  it('observes connection gateway gauges from lazy sources', () => {
+    const meterMock = createMeterMock();
+    createRuntimeMetricsRecorder({
+      meter: meterMock.meter as any,
+      includePluginVersion: true,
+      includePluginEtag: false,
+      gaugeSources: () => [],
+      connectionGatewayGaugeSources: () => [
+        {
+          getConnectionGatewayMetrics: () => ({
+            nodeId: 'gateway-node-a',
+            activeConnections: 3,
+            activeSessions: 2,
+            inFlightRequests: 1,
+            streamBufferBytes: 4096,
+            slowConsumers: 1,
+            ownerLeaseExpiries: 4,
+            mailbox: {
+              lag: 7,
+              redisRoundTripMs: 12.3
+            },
+            limits: {
+              maxConnections: 100,
+              maxSessionsPerSubject: 5,
+              maxInFlightPerSession: 50,
+              maxEnvelopeBytes: 1024 * 1024
+            }
+          })
+        }
+      ]
+    });
+
+    const observe = vi.fn();
+    meterMock.gauges['fastgpt.plugin.connection_gateway.connections.active']({ observe });
+    meterMock.gauges['fastgpt.plugin.connection_gateway.mailbox.lag']({ observe });
+    meterMock.gauges['fastgpt.plugin.connection_gateway.mailbox.redis_round_trip']({ observe });
+    meterMock.gauges['fastgpt.plugin.connection_gateway.limit.envelope.bytes']({ observe });
+
+    expect(observe).toHaveBeenCalledWith(3, {
+      'gateway.node_id': 'gateway-node-a'
+    });
+    expect(observe).toHaveBeenCalledWith(7, {
+      'gateway.node_id': 'gateway-node-a'
+    });
+    expect(observe).toHaveBeenCalledWith(12.3, {
+      'gateway.node_id': 'gateway-node-a'
+    });
+    expect(observe).toHaveBeenCalledWith(1024 * 1024, {
+      'gateway.node_id': 'gateway-node-a'
+    });
+  });
 });

@@ -11,7 +11,11 @@ import { env } from '../env';
 import { getLogger, infra } from '../logger';
 
 import { createNoopRuntimeMetricsRecorder, createRuntimeMetricsRecorder } from './runtime-recorder';
-import type { RuntimeGaugeSource, RuntimeMetricsRecorder } from './runtime-types';
+import type {
+  ConnectionGatewayGaugeSource,
+  RuntimeGaugeSource,
+  RuntimeMetricsRecorder
+} from './runtime-types';
 
 type ResourceLike = {
   attributes: Record<string, string>;
@@ -25,6 +29,7 @@ const INSTANCE_ID_PREFIX = 'fastgpt-plugin-';
 
 const generatedServiceInstanceId = `${INSTANCE_ID_PREFIX}${randomUUID()}`;
 const gaugeSources: RuntimeGaugeSource[] = [];
+const connectionGatewayGaugeSources: ConnectionGatewayGaugeSource[] = [];
 
 type MetricsEnv = {
   NODE_ENV: 'development' | 'production' | 'test';
@@ -83,6 +88,7 @@ export async function configureMetrics(runtimeEnv: MetricsEnv = env): Promise<vo
     includePluginVersion: runtimeEnv.METRICS_INCLUDE_PLUGIN_VERSION,
     includePluginEtag: runtimeEnv.METRICS_INCLUDE_PLUGIN_ETAG,
     gaugeSources: () => [...gaugeSources],
+    connectionGatewayGaugeSources: () => [...connectionGatewayGaugeSources],
     onError: (message, error) => {
       logger.warn(message, { error });
     }
@@ -101,6 +107,7 @@ export async function destroyMetrics(): Promise<void> {
     configured = false;
     runtimeMetricsRecorder = createNoopRuntimeMetricsRecorder();
     gaugeSources.splice(0);
+    connectionGatewayGaugeSources.splice(0);
   }
 }
 
@@ -111,12 +118,13 @@ export function getRuntimeMetrics(): RuntimeMetricsRecorder {
 export function registerRuntimeGaugeSource(source: RuntimeGaugeSource): () => void {
   gaugeSources.push(source);
 
-  return () => {
-    const index = gaugeSources.indexOf(source);
-    if (index >= 0) {
-      gaugeSources.splice(index, 1);
-    }
-  };
+  return unregisterFrom(gaugeSources, source);
+}
+
+export function registerConnectionGatewayGaugeSource(source: ConnectionGatewayGaugeSource): () => void {
+  connectionGatewayGaugeSources.push(source);
+
+  return unregisterFrom(connectionGatewayGaugeSources, source);
 }
 
 export function getServiceInstanceId(): string {
@@ -125,6 +133,10 @@ export function getServiceInstanceId(): string {
 
 export function __getRuntimeGaugeSourcesForTest(): RuntimeGaugeSource[] {
   return [...gaugeSources];
+}
+
+export function __getConnectionGatewayGaugeSourcesForTest(): ConnectionGatewayGaugeSource[] {
+  return [...connectionGatewayGaugeSources];
 }
 
 export function __setRuntimeMetricsRecorderForTest(recorder: RuntimeMetricsRecorder): () => void {
@@ -182,7 +194,17 @@ function getOptionalEnvText(value: string | undefined): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
+function unregisterFrom<T>(items: T[], item: T): () => void {
+  return () => {
+    const index = items.indexOf(item);
+    if (index >= 0) {
+      items.splice(index, 1);
+    }
+  };
+}
+
 export type {
+  ConnectionGatewayGaugeSource,
   RuntimeFailureKind,
   RuntimeGaugeSource,
   RuntimeMetricAttributes,
