@@ -44,7 +44,7 @@ This repository is a pnpm workspace monorepo.
 | --- | --- |
 | `apps/server` | FastGPT Plugin HTTP service and route composition. |
 | `apps/cli` | Plugin create, build, check, debug, and pack CLI. |
-| `apps/debug-runtime-monitor` | Local runtime and Connection Gateway metrics monitor UI. |
+| `apps/debug-runtime-monitor` | Local runtime monitor UI. |
 | `packages/domain` | Entities, value objects, and port definitions. |
 | `packages/usecase` | Application use cases for plugins, tools, models, and runtime metrics. |
 | `packages/interface-adapter` | HTTP contracts, DTOs, and auth adapters. |

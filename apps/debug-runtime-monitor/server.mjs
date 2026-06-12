@@ -19,14 +19,10 @@ const contentTypes = {
 };
 
 function readRuntimeConfig() {
-  const runtimeBaseUrl = process.env.RUNTIME_BASE_URL || process.env.RUNTIME_BASEURL || '';
-  const gatewayBaseUrl = process.env.CONNECTION_GATEWAY_BASE_URL || '';
-  const runtimeMetricsPath = process.env.RUNTIME_METRICS_PATH || '';
-
   return {
-    baseUrl: runtimeBaseUrl || gatewayBaseUrl,
-    token: process.env.RUNTIME_TOKEN || process.env.CONNECTION_GATEWAY_AUTH_TOKEN || '',
-    metricsPath: runtimeMetricsPath || (gatewayBaseUrl && !runtimeBaseUrl ? '/metrics' : '/api/runtime/metrics'),
+    baseUrl: process.env.RUNTIME_BASE_URL ?? process.env.RUNTIME_BASEURL ?? '',
+    token: process.env.RUNTIME_TOKEN ?? '',
+    metricsPath: process.env.RUNTIME_METRICS_PATH ?? '/api/runtime/metrics',
     pollIntervalMs: process.env.RUNTIME_POLL_INTERVAL_MS ?? '3000'
   };
 }

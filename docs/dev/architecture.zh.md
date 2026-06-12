@@ -166,7 +166,7 @@ Server 路由基于这些合约注册 OpenAPI，并在 handler 内调用 usecase
 
 ### Debug Runtime Monitor
 
-`apps/debug-runtime-monitor` 是 Vite 应用，用于本地观察插件运行时状态和 Connection Gateway 指标。它可以读取 `apps/server` 的 runtime service metrics，也可以读取 `apps/connection-gateway` 的 gateway metrics，不承载核心业务逻辑。
+`apps/debug-runtime-monitor` 是 Vite 应用，用于本地观察插件运行时状态。它依赖 server 暴露的 runtime API，不承载核心业务逻辑。
 
 ## SDK
 

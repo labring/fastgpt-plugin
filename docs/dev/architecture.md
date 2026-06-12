@@ -166,7 +166,7 @@ Server routes register OpenAPI contracts from these definitions and call use cas
 
 ### Debug Runtime Monitor
 
-`apps/debug-runtime-monitor` is a Vite app for observing plugin runtime state and Connection Gateway metrics locally. It can read runtime service metrics from `apps/server` or gateway metrics from `apps/connection-gateway` and does not carry core business logic.
+`apps/debug-runtime-monitor` is a Vite app for observing plugin runtime state locally. It depends on runtime APIs exposed by the server and does not carry core business logic.
 
 ## SDK
 

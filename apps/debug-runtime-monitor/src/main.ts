@@ -13,15 +13,13 @@ type RuntimeConfigSource = Partial<Omit<RuntimeConfig, 'pollIntervalMs'>> & {
 };
 
 type RuntimeMetricsResponse = {
-  data?: MetricsPayload;
+  data?: GlobalMetrics;
   error?: {
     en?: string;
     'zh-CN'?: string;
     'zh-Hant'?: string;
   };
 };
-
-type MetricsPayload = GlobalMetrics | ConnectionGatewayMetrics;
 
 type GlobalMetrics = {
   totalServices?: number;
@@ -56,30 +54,9 @@ type ResponseTimeStats = {
   p99?: number;
 };
 
-type ConnectionGatewayMetrics = {
-  nodeId?: string;
-  activeConnections?: number;
-  activeSessions?: number;
-  inFlightRequests?: number;
-  streamBufferBytes?: number;
-  slowConsumers?: number;
-  ownerLeaseExpiries?: number;
-  mailbox?: {
-    lag?: number;
-    redisRoundTripMs?: number;
-  };
-  limits?: {
-    maxConnections?: number;
-    maxSessionsPerSubject?: number;
-    maxInFlightPerSession?: number;
-    maxEnvelopeBytes?: number;
-  };
-};
-
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error' | 'missing-config';
 type SortMode = 'risk' | 'requests' | 'latency' | 'name';
 type ServiceLevel = 'critical' | 'warning' | 'active' | 'idle';
-type MetricsKind = 'runtime' | 'gateway';
 
 type ServiceView = {
   id: string;
@@ -110,7 +87,7 @@ type RuntimeState = {
   filter: string;
   lastLatencyMs: number | null;
   lastUpdatedAt: Date | null;
-  metrics: MetricsPayload | null;
+  metrics: GlobalMetrics | null;
   sortMode: SortMode;
   status: LoadStatus;
 };
@@ -167,36 +144,18 @@ async function readRuntimeConfig(): Promise<RuntimeConfig> {
 }
 
 function readLocalRuntimeConfig(): RuntimeConfigSource {
-  const configuredRuntimeBaseUrl = pickValue(
-    window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.baseUrl ??
-      window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.baseurl,
-    readEnv('RUNTIME_BASE_URL', 'RUNTIME_BASEURL', 'VITE_RUNTIME_BASE_URL', 'VITE_RUNTIME_BASEURL')
-  );
-  const gatewayBaseUrl = readEnv(
-    'CONNECTION_GATEWAY_BASE_URL',
-    'VITE_CONNECTION_GATEWAY_BASE_URL'
-  );
-  const configuredMetricsPath = pickValue(
-    window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.metricsPath ??
-      readEnv('RUNTIME_METRICS_PATH', 'VITE_RUNTIME_METRICS_PATH')
-  );
-
   return {
     ...window.__DEBUG_RUNTIME_MONITOR_CONFIG__,
-    baseUrl: pickValue(configuredRuntimeBaseUrl, gatewayBaseUrl),
-    token: pickValue(
-      window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.token,
-      readEnv(
-        'RUNTIME_TOKEN',
-        'VITE_RUNTIME_TOKEN',
-        'CONNECTION_GATEWAY_AUTH_TOKEN',
-        'VITE_CONNECTION_GATEWAY_AUTH_TOKEN'
-      )
-    ),
-    metricsPath: pickValue(
-      configuredMetricsPath,
-      gatewayBaseUrl && !configuredRuntimeBaseUrl ? '/metrics' : undefined
-    ),
+    baseUrl:
+      window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.baseUrl ??
+      window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.baseurl ??
+      readEnv('RUNTIME_BASE_URL', 'RUNTIME_BASEURL', 'VITE_RUNTIME_BASE_URL'),
+    token:
+      window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.token ??
+      readEnv('RUNTIME_TOKEN', 'VITE_RUNTIME_TOKEN'),
+    metricsPath:
+      window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.metricsPath ??
+      readEnv('RUNTIME_METRICS_PATH', 'VITE_RUNTIME_METRICS_PATH'),
     pollIntervalMs:
       window.__DEBUG_RUNTIME_MONITOR_CONFIG__?.pollIntervalMs ??
       readEnv('RUNTIME_POLL_INTERVAL_MS', 'VITE_RUNTIME_POLL_INTERVAL_MS')
@@ -369,10 +328,8 @@ function configureAutoRefresh(): void {
 }
 
 function render(): void {
-  const metricsKind = getMetricsKind(state.metrics, config);
-  const services = metricsKind === 'runtime' ? getVisibleServices() : [];
-  const runtimeSummary = metricsKind === 'runtime' ? getRuntimeSummary(services) : null;
-  const gatewayMetrics = metricsKind === 'gateway' ? normalizeGatewayMetrics(state.metrics) : null;
+  const services = getVisibleServices();
+  const summary = getSummary(services);
 
   rootElement.innerHTML = `
     <main class="shell">
@@ -384,7 +341,6 @@ function render(): void {
             <span>${escapeHtml(config.baseUrl || 'baseurl 未配置')}</span>
             <span>${config.token ? 'token 已配置' : 'token 未配置'}</span>
             <span>${escapeHtml(config.metricsPath)}</span>
-            <span>${metricsKind === 'gateway' ? 'gateway' : 'runtime'}</span>
           </div>
         </div>
         <div class="statusGroup">
@@ -395,8 +351,40 @@ function render(): void {
 
       ${renderNotice()}
 
-      ${renderToolbar(metricsKind)}
-      ${metricsKind === 'gateway' && gatewayMetrics ? renderGatewayDashboard(gatewayMetrics) : renderRuntimeDashboard(services, runtimeSummary)}
+      <section class="toolbar" aria-label="服务筛选">
+        <input id="serviceFilter" class="searchInput" type="search" placeholder="筛选服务" value="${escapeAttribute(
+          state.filter
+        )}" />
+        <select id="sortMode" class="selectInput" aria-label="排序">
+          ${renderSortOption('risk', '风险优先')}
+          ${renderSortOption('requests', '请求数')}
+          ${renderSortOption('latency', '响应耗时')}
+          ${renderSortOption('name', '名称')}
+        </select>
+        <label class="toggle">
+          <input id="autoRefresh" type="checkbox" ${state.autoRefresh ? 'checked' : ''} />
+          <span>自动刷新</span>
+        </label>
+      </section>
+
+      <section class="summaryGrid" aria-label="运行总览">
+        ${renderSummaryCard('服务', summary.totalServices)}
+        ${renderSummaryCard('Pods', summary.totalPods)}
+        ${renderSummaryCard('Busy Pods', summary.busyPods)}
+        ${renderSummaryCard('请求', summary.totalRequests)}
+        ${renderSummaryCard('RPS', formatDecimal(summary.rps))}
+        ${renderSummaryCard('队列', summary.queueLength)}
+        ${renderSummaryCard('错误服务', summary.errorServices)}
+        ${renderSummaryCard('崩溃', summary.crashCount)}
+      </section>
+
+      <section class="serviceSection">
+        <div class="sectionHeader">
+          <h2>Services</h2>
+          <span>${services.length} / ${summary.totalServices}</span>
+        </div>
+        ${renderServices(services)}
+      </section>
     </main>
   `;
 
@@ -425,37 +413,6 @@ function bindEvents(): void {
   });
 }
 
-function renderToolbar(metricsKind: MetricsKind): string {
-  if (metricsKind === 'gateway') {
-    return `
-      <section class="toolbar toolbarGateway" aria-label="Gateway 刷新">
-        <label class="toggle">
-          <input id="autoRefresh" type="checkbox" ${state.autoRefresh ? 'checked' : ''} />
-          <span>自动刷新</span>
-        </label>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="toolbar" aria-label="服务筛选">
-      <input id="serviceFilter" class="searchInput" type="search" placeholder="筛选服务" value="${escapeAttribute(
-        state.filter
-      )}" />
-      <select id="sortMode" class="selectInput" aria-label="排序">
-        ${renderSortOption('risk', '风险优先')}
-        ${renderSortOption('requests', '请求数')}
-        ${renderSortOption('latency', '响应耗时')}
-        ${renderSortOption('name', '名称')}
-      </select>
-      <label class="toggle">
-        <input id="autoRefresh" type="checkbox" ${state.autoRefresh ? 'checked' : ''} />
-        <span>自动刷新</span>
-      </label>
-    </section>
-  `;
-}
-
 function isRefreshDisabled(): boolean {
   return !config.baseUrl || state.status === 'loading';
 }
@@ -481,7 +438,7 @@ function renderNotice(): string {
     return `
       <section class="notice notice-warning">
         <strong>缺少 baseurl</strong>
-        <span>设置 RUNTIME_BASE_URL 或 CONNECTION_GATEWAY_BASE_URL 后启动。</span>
+        <span>设置 RUNTIME_BASE_URL 和 RUNTIME_TOKEN 后启动。</span>
       </section>
     `;
   }
@@ -505,113 +462,6 @@ function renderNotice(): string {
       <span>${latency}</span>
       <span>${formatInterval(config.pollIntervalMs)}</span>
     </section>
-  `;
-}
-
-function renderRuntimeDashboard(
-  services: ServiceView[],
-  summary: ReturnType<typeof getRuntimeSummary> | null
-): string {
-  const viewSummary =
-    summary ??
-    ({
-      totalServices: 0,
-      totalPods: 0,
-      totalRequests: 0,
-      busyPods: 0,
-      rps: 0,
-      queueLength: 0,
-      crashCount: 0,
-      errorServices: 0
-    } satisfies ReturnType<typeof getRuntimeSummary>);
-
-  return `
-    <section class="summaryGrid" aria-label="运行总览">
-      ${renderSummaryCard('服务', viewSummary.totalServices)}
-      ${renderSummaryCard('Pods', viewSummary.totalPods)}
-      ${renderSummaryCard('Busy Pods', viewSummary.busyPods)}
-      ${renderSummaryCard('请求', viewSummary.totalRequests)}
-      ${renderSummaryCard('RPS', formatDecimal(viewSummary.rps))}
-      ${renderSummaryCard('队列', viewSummary.queueLength)}
-      ${renderSummaryCard('错误服务', viewSummary.errorServices)}
-      ${renderSummaryCard('崩溃', viewSummary.crashCount)}
-    </section>
-
-    <section class="serviceSection">
-      <div class="sectionHeader">
-        <h2>Services</h2>
-        <span>${services.length} / ${viewSummary.totalServices}</span>
-      </div>
-      ${renderServices(services)}
-    </section>
-  `;
-}
-
-function renderGatewayDashboard(metrics: RequiredConnectionGatewayMetrics): string {
-  return `
-    <section class="summaryGrid" aria-label="Gateway 总览">
-      ${renderSummaryCard('Connections', metrics.activeConnections)}
-      ${renderSummaryCard('Sessions', metrics.activeSessions)}
-      ${renderSummaryCard('In-flight', metrics.inFlightRequests)}
-      ${renderSummaryCard('Mailbox Lag', metrics.mailbox.lag)}
-      ${renderSummaryCard('Redis RTT', formatMs(metrics.mailbox.redisRoundTripMs))}
-      ${renderSummaryCard('Slow Consumers', metrics.slowConsumers)}
-      ${renderSummaryCard('Lease Expiries', metrics.ownerLeaseExpiries)}
-      ${renderSummaryCard('Buffer', formatBytes(metrics.streamBufferBytes))}
-    </section>
-
-    <section class="gatewaySection">
-      <div class="sectionHeader">
-        <h2>Connection Gateway</h2>
-        <span>${escapeHtml(metrics.nodeId || '-')}</span>
-      </div>
-      <div class="gatewayGrid">
-        ${renderGatewayLimit('Connection Capacity', metrics.activeConnections, metrics.limits.maxConnections)}
-        ${renderGatewayMetric('Max Sessions / Subject', metrics.limits.maxSessionsPerSubject)}
-        ${renderGatewayMetric('Max In-flight / Session', metrics.limits.maxInFlightPerSession)}
-        ${renderGatewayMetric('Max Envelope', formatBytes(metrics.limits.maxEnvelopeBytes))}
-        ${renderGatewayMetric('Mailbox Lag', metrics.mailbox.lag)}
-        ${renderGatewayMetric('Redis RTT', formatMs(metrics.mailbox.redisRoundTripMs))}
-        ${renderGatewayMetric('Slow Consumers', metrics.slowConsumers)}
-        ${renderGatewayMetric('Owner Lease Expiries', metrics.ownerLeaseExpiries)}
-      </div>
-    </section>
-  `;
-}
-
-function renderGatewayLimit(
-  label: string,
-  value: number,
-  limit: number,
-  bytes = false
-): string {
-  const capacity = Math.max(limit, 1);
-  const width = toBarWidth(value, capacity);
-  const displayValue = bytes ? formatBytes(value) : value;
-  const displayLimit = bytes ? formatBytes(limit) : limit;
-
-  return `
-    <article class="gatewayMetric">
-      <div class="gatewayMetricHead">
-        <span>${label}</span>
-        <strong>${escapeHtml(String(displayValue))}</strong>
-      </div>
-      <div class="capacityBar" aria-label="${escapeAttribute(label)} capacity">
-        <span style="width: ${width}%"></span>
-      </div>
-      <p>${escapeHtml(String(displayLimit))}</p>
-    </article>
-  `;
-}
-
-function renderGatewayMetric(label: string, value: string | number): string {
-  return `
-    <article class="gatewayMetric">
-      <div class="gatewayMetricHead">
-        <span>${label}</span>
-        <strong>${escapeHtml(String(value))}</strong>
-      </div>
-    </article>
   `;
 }
 
@@ -699,7 +549,7 @@ function renderServiceNumber(label: string, value: string | number): string {
 }
 
 function getVisibleServices(): ServiceView[] {
-  const source = getRuntimeMetrics(state.metrics)?.services ?? {};
+  const source = state.metrics?.services ?? {};
   const filter = state.filter.trim().toLowerCase();
   const services = Object.entries(source).map(([id, metrics]) => makeServiceView(id, metrics));
   const filtered = filter
@@ -809,8 +659,8 @@ function compareServices(a: ServiceView, b: ServiceView): number {
   );
 }
 
-function getRuntimeSummary(services: ServiceView[]) {
-  const metrics = getRuntimeMetrics(state.metrics);
+function getSummary(services: ServiceView[]) {
+  const metrics = state.metrics;
   const sourceServices = Object.values(metrics?.services ?? {}).map(normalizeServiceMetrics);
   const visibleMetrics = services.map((service) => service.metrics);
   const totalServices = metrics?.totalServices ?? sourceServices.length;
@@ -826,76 +676,6 @@ function getRuntimeSummary(services: ServiceView[]) {
     queueLength: sum(sourceServices, (item) => item.queueLength),
     crashCount: sum(sourceServices, (item) => item.crashCount),
     errorServices: visibleMetrics.filter((item) => item.errorRate > 0 || item.crashCount > 0).length
-  };
-}
-
-type RequiredConnectionGatewayMetrics = {
-  nodeId: string;
-  activeConnections: number;
-  activeSessions: number;
-  inFlightRequests: number;
-  streamBufferBytes: number;
-  slowConsumers: number;
-  ownerLeaseExpiries: number;
-  mailbox: {
-    lag: number;
-    redisRoundTripMs: number;
-  };
-  limits: {
-    maxConnections: number;
-    maxSessionsPerSubject: number;
-    maxInFlightPerSession: number;
-    maxEnvelopeBytes: number;
-  };
-};
-
-function getMetricsKind(metrics: MetricsPayload | null, runtimeConfig: RuntimeConfig): MetricsKind {
-  if (isConnectionGatewayMetrics(metrics)) {
-    return 'gateway';
-  }
-
-  if (metrics) {
-    return 'runtime';
-  }
-
-  return runtimeConfig.metricsPath.replace(/\/+$/, '') === '/metrics' ? 'gateway' : 'runtime';
-}
-
-function getRuntimeMetrics(metrics: MetricsPayload | null): GlobalMetrics | null {
-  return isConnectionGatewayMetrics(metrics) ? null : metrics;
-}
-
-function isConnectionGatewayMetrics(metrics: MetricsPayload | null): metrics is ConnectionGatewayMetrics {
-  return Boolean(
-    metrics &&
-      typeof metrics === 'object' &&
-      ('activeConnections' in metrics ||
-        'activeSessions' in metrics ||
-        ('nodeId' in metrics && 'mailbox' in metrics))
-  );
-}
-
-function normalizeGatewayMetrics(metrics: MetricsPayload | null): RequiredConnectionGatewayMetrics {
-  const source = isConnectionGatewayMetrics(metrics) ? metrics : {};
-
-  return {
-    nodeId: trimValue(source.nodeId),
-    activeConnections: toNumber(source.activeConnections),
-    activeSessions: toNumber(source.activeSessions),
-    inFlightRequests: toNumber(source.inFlightRequests),
-    streamBufferBytes: toNumber(source.streamBufferBytes),
-    slowConsumers: toNumber(source.slowConsumers),
-    ownerLeaseExpiries: toNumber(source.ownerLeaseExpiries),
-    mailbox: {
-      lag: toNumber(source.mailbox?.lag),
-      redisRoundTripMs: toNumber(source.mailbox?.redisRoundTripMs)
-    },
-    limits: {
-      maxConnections: Math.max(1, toNumber(source.limits?.maxConnections)),
-      maxSessionsPerSubject: Math.max(1, toNumber(source.limits?.maxSessionsPerSubject)),
-      maxInFlightPerSession: Math.max(1, toNumber(source.limits?.maxInFlightPerSession)),
-      maxEnvelopeBytes: Math.max(1, toNumber(source.limits?.maxEnvelopeBytes))
-    }
   };
 }
 
@@ -941,18 +721,6 @@ function formatPercent(value: number): string {
 
 function formatMs(value: number): string {
   return `${Math.round(value)} ms`;
-}
-
-function formatBytes(value: number): string {
-  if (value >= 1024 * 1024) {
-    return `${formatDecimal(value / (1024 * 1024))} MiB`;
-  }
-
-  if (value >= 1024) {
-    return `${formatDecimal(value / 1024)} KiB`;
-  }
-
-  return `${Math.round(value)} B`;
 }
 
 function formatTime(value: Date): string {
