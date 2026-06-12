@@ -23,6 +23,7 @@ export interface ConnectionGatewaySessionRegistryPort {
   create(input: CreateConnectionGatewaySessionInput): Promise<ConnectionGatewaySession>;
   get(sessionId: string): Promise<ConnectionGatewaySession | null>;
   listBySubject(subject: string): Promise<ConnectionGatewaySession[]>;
+  listBySource(source: string): Promise<ConnectionGatewaySession[]>;
   renewOwnerLease(input: RenewConnectionGatewayOwnerLeaseInput): Promise<boolean>;
   updateStatus(input: {
     sessionId: string;

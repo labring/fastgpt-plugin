@@ -26,15 +26,33 @@ const INSTANCE_ID_PREFIX = 'fastgpt-plugin-';
 const generatedServiceInstanceId = `${INSTANCE_ID_PREFIX}${randomUUID()}`;
 const gaugeSources: RuntimeGaugeSource[] = [];
 
+type MetricsEnv = {
+  NODE_ENV: 'development' | 'production' | 'test';
+  METRICS_ENABLE_OTEL: boolean;
+  METRICS_OTEL_SERVICE_NAME: string;
+  METRICS_OTEL_URL: string;
+  METRICS_EXPORT_INTERVAL_MS: number;
+  METRICS_EXPORT_TIMEOUT_MS: number;
+  METRICS_INCLUDE_PLUGIN_VERSION: boolean;
+  METRICS_INCLUDE_PLUGIN_ETAG: boolean;
+  METRICS_INCLUDE_HOSTNAME: boolean;
+  SERVICE_INSTANCE_ID?: string;
+  DEPLOYMENT_ENVIRONMENT?: string;
+  HOSTNAME?: string;
+};
+
 let configured = false;
+let configuredEnv: MetricsEnv = env;
 let runtimeMetricsRecorder: RuntimeMetricsRecorder = createNoopRuntimeMetricsRecorder();
 
-export async function configureMetrics(): Promise<void> {
+export async function configureMetrics(runtimeEnv: MetricsEnv = env): Promise<void> {
   if (configured) {
     return;
   }
 
-  if (!env.METRICS_ENABLE_OTEL) {
+  configuredEnv = runtimeEnv;
+
+  if (!runtimeEnv.METRICS_ENABLE_OTEL) {
     runtimeMetricsRecorder = createNoopRuntimeMetricsRecorder();
     configured = true;
     return;
@@ -43,26 +61,27 @@ export async function configureMetrics(): Promise<void> {
   const logger = getLogger(infra.otel);
 
   await configureOtelMetrics({
-    defaultMeterName: env.METRICS_OTEL_SERVICE_NAME,
+    defaultMeterName: runtimeEnv.METRICS_OTEL_SERVICE_NAME,
     metrics: {
       enabled: true,
-      serviceName: env.METRICS_OTEL_SERVICE_NAME,
-      url: env.METRICS_OTEL_URL,
-      exportIntervalMillis: env.METRICS_EXPORT_INTERVAL_MS,
+      serviceName: runtimeEnv.METRICS_OTEL_SERVICE_NAME,
+      url: runtimeEnv.METRICS_OTEL_URL,
+      exportIntervalMillis: runtimeEnv.METRICS_EXPORT_INTERVAL_MS,
       additionalResource: createResource({
         'service.instance.id': getServiceInstanceId(),
-        'deployment.environment': getOptionalEnvText(env.DEPLOYMENT_ENVIRONMENT) ?? env.NODE_ENV,
-        ...(env.METRICS_INCLUDE_HOSTNAME
-          ? { 'host.name': getOptionalEnvText(env.HOSTNAME) ?? os.hostname() }
+        'deployment.environment':
+          getOptionalEnvText(runtimeEnv.DEPLOYMENT_ENVIRONMENT) ?? runtimeEnv.NODE_ENV,
+        ...(runtimeEnv.METRICS_INCLUDE_HOSTNAME
+          ? { 'host.name': getOptionalEnvText(runtimeEnv.HOSTNAME) ?? os.hostname() }
           : {})
       })
     }
   });
 
   runtimeMetricsRecorder = createRuntimeMetricsRecorder({
-    meter: getMeter(env.METRICS_OTEL_SERVICE_NAME),
-    includePluginVersion: env.METRICS_INCLUDE_PLUGIN_VERSION,
-    includePluginEtag: env.METRICS_INCLUDE_PLUGIN_ETAG,
+    meter: getMeter(runtimeEnv.METRICS_OTEL_SERVICE_NAME),
+    includePluginVersion: runtimeEnv.METRICS_INCLUDE_PLUGIN_VERSION,
+    includePluginEtag: runtimeEnv.METRICS_INCLUDE_PLUGIN_ETAG,
     gaugeSources: () => [...gaugeSources],
     onError: (message, error) => {
       logger.warn(message, { error });
@@ -77,7 +96,7 @@ export async function destroyMetrics(): Promise<void> {
   }
 
   try {
-    await withTimeout(disposeMetrics(), env.METRICS_EXPORT_TIMEOUT_MS);
+    await withTimeout(disposeMetrics(), configuredEnv.METRICS_EXPORT_TIMEOUT_MS);
   } finally {
     configured = false;
     runtimeMetricsRecorder = createNoopRuntimeMetricsRecorder();
@@ -101,7 +120,7 @@ export function registerRuntimeGaugeSource(source: RuntimeGaugeSource): () => vo
 }
 
 export function getServiceInstanceId(): string {
-  return getOptionalEnvText(env.SERVICE_INSTANCE_ID) ?? generatedServiceInstanceId;
+  return getOptionalEnvText(configuredEnv.SERVICE_INSTANCE_ID) ?? generatedServiceInstanceId;
 }
 
 export function __getRuntimeGaugeSourcesForTest(): RuntimeGaugeSource[] {

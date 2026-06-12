@@ -19,4 +19,5 @@ export interface ConnectionGatewayMailboxPort {
   trim(sessionId: string, maxLen: number): Promise<void>;
   expire(sessionId: string, ttlMs: number): Promise<void>;
   lag(sessionId: string): Promise<number>;
+  disconnect?(): Promise<void>;
 }

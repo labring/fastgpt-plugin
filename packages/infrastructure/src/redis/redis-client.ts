@@ -42,12 +42,12 @@ export const FASTGPT_REDIS_PREFIX = 'fastgpt-plugin:';
 
 /** Redis 底层连接类，单例模式 */
 export class RedisClient {
-  private static readonly instance = new RedisClient();
+  private static instance: RedisClient | undefined;
   private client: Redis;
   private readonly logger = getLogger(infra.redis);
 
-  private constructor() {
-    this.client = new Redis(env.REDIS_URL, {
+  private constructor(redisUrl: string) {
+    this.client = new Redis(redisUrl, {
       ...REDIS_BASE_OPTION,
       keyPrefix: FASTGPT_REDIS_PREFIX
     });
@@ -65,7 +65,12 @@ export class RedisClient {
   }
 
   static getInstance(): RedisClient {
+    RedisClient.instance ??= new RedisClient(env.REDIS_URL);
     return RedisClient.instance;
+  }
+
+  static create({ redisUrl }: { redisUrl: string }): RedisClient {
+    return new RedisClient(redisUrl);
   }
 
   async getAllKeysByPrefix(key: string): Promise<string[]> {

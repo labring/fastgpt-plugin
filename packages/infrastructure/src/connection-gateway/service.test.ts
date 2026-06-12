@@ -36,6 +36,7 @@ function makeService(overrides: { maxSessionsPerSubject?: number } = {}) {
         nodeId: 'node-a',
         sessionTtlMs: 60_000,
         ownerLeaseTtlMs: 15_000,
+        mailboxBlockMs: 10,
         mailboxMaxLen: 100
       }
     }),
@@ -44,6 +45,21 @@ function makeService(overrides: { maxSessionsPerSubject?: number } = {}) {
 }
 
 async function signDebugToken(token: HmacConnectionGatewayToken) {
+  return token.sign({
+    consumerType: 'plugin-debug',
+    subject: 'user:u1',
+    sessionScope: {
+      userId: 'u1',
+      source: 'debug:user:u1'
+    },
+    transport: 'tcp',
+    capabilities: ['invoke'],
+    issuedAt: now,
+    expiresAt: now + 60_000
+  });
+}
+
+async function signMultiSourceDebugToken(token: HmacConnectionGatewayToken) {
   return token.sign({
     consumerType: 'plugin-debug',
     subject: 'user:u1',
@@ -140,6 +156,120 @@ describe('ConnectionGatewayService', () => {
       })
     ).rejects.toMatchObject({
       code: 'connection_gateway.resource_limit_exceeded'
+    });
+  });
+
+  it('streams reply envelopes for a published request', async () => {
+    const { service, token } = makeService();
+    const session = await service.createSession({
+      token: await signDebugToken(token),
+      transport: 'tcp',
+      now
+    });
+    const request = makeEnvelope(session.id, session.generation);
+    const { responses } = await service.publishRequestAndWait({
+      sessionId: session.id,
+      envelope: request,
+      timeoutMs: 1_000
+    });
+    const iterator = responses[Symbol.asyncIterator]();
+
+    await service.publishResponse({
+      sessionId: session.id,
+      envelope: {
+        ...request,
+        type: 'response',
+        payload: {
+          kind: 'plugin-debug.accepted'
+        }
+      }
+    });
+    await service.publishResponse({
+      sessionId: session.id,
+      envelope: {
+        ...request,
+        type: 'stream',
+        payload: {
+          kind: 'plugin-debug.stream',
+          event: 'chunk',
+          data: { type: 'stream', data: { type: 'answer', content: 'hello' } }
+        }
+      }
+    });
+    await service.publishResponse({
+      sessionId: session.id,
+      envelope: {
+        ...request,
+        type: 'stream',
+        payload: {
+          kind: 'plugin-debug.stream',
+          event: 'end'
+        }
+      }
+    });
+
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: expect.objectContaining({
+        type: 'response',
+        payload: expect.objectContaining({ kind: 'plugin-debug.accepted' })
+      })
+    });
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: expect.objectContaining({
+        type: 'stream',
+        payload: expect.objectContaining({ event: 'chunk' })
+      })
+    });
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: expect.objectContaining({
+        type: 'stream',
+        payload: expect.objectContaining({ event: 'end' })
+      })
+    });
+    await expect(iterator.next()).resolves.toMatchObject({ done: true });
+  });
+
+  it('finds a debug session through its channel source', async () => {
+    const { service, token } = makeService();
+    const session = await service.createSession({
+      token: await signMultiSourceDebugToken(token),
+      transport: 'tcp',
+      now
+    });
+
+    await expect(service.getLatestStatusBySource('debug:user:u1')).resolves.toMatchObject({
+      session: expect.objectContaining({
+        id: session.id
+      })
+    });
+  });
+
+  it('denies response envelopes without the session capability', async () => {
+    const { service, token } = makeService();
+    const session = await service.createSession({
+      token: await signDebugToken(token),
+      transport: 'tcp',
+      now
+    });
+
+    await expect(
+      service.publishResponse({
+        sessionId: session.id,
+        envelope: {
+          ...makeEnvelope(session.id, session.generation),
+          type: 'response',
+          capability: 'admin',
+          payload: {
+            kind: 'plugin-debug.error',
+            message: 'forbidden'
+          }
+        }
+      })
+    ).rejects.toMatchObject({
+      code: 'connection_gateway.capability_denied'
     });
   });
 });
