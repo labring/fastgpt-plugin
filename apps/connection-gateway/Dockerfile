@@ -78,10 +78,10 @@ COPY --from=prod-deps --chown=fastgpt:fastgpt /app/apps/connection-gateway/packa
 COPY --from=builder --chown=fastgpt:fastgpt /app/apps/connection-gateway/dist ./dist
 
 ENV NODE_ENV=production
-ENV CONNECTION_GATEWAY_PORT=3010
-ENV CONNECTION_GATEWAY_TCP_PORT=3011
+ENV CONNECTION_GATEWAY_PORT=3000
+ENV CONNECTION_GATEWAY_TCP_PORT=3001
 
-EXPOSE 3010 3011
+EXPOSE 3000 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -fsS "http://127.0.0.1:${CONNECTION_GATEWAY_PORT}/health" >/dev/null || exit 1

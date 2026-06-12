@@ -12,7 +12,8 @@ export type ConnectionGatewayCapability = z.infer<typeof ConnectionGatewayCapabi
 export const ConnectionGatewaySessionScopeSchema = z.object({
   userId: z.string().min(1),
   teamId: z.string().min(1).optional(),
-  source: z.string().min(1).optional()
+  source: z.string().min(1).optional(),
+  sources: z.array(z.string().min(1)).optional()
 });
 export type ConnectionGatewaySessionScope = z.infer<typeof ConnectionGatewaySessionScopeSchema>;
 
@@ -62,7 +63,8 @@ export const ConnectionGatewaySessionSchema = z.object({
   status: ConnectionGatewaySessionStatusSchema,
   connectedAt: z.number().int().positive(),
   lastSeenAt: z.number().int().positive(),
-  expiresAt: z.number().int().positive()
+  expiresAt: z.number().int().positive(),
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 export type ConnectionGatewaySession = z.infer<typeof ConnectionGatewaySessionSchema>;
 

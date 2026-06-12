@@ -43,6 +43,13 @@ export class InMemoryConnectionGatewaySessionRegistry
     return [...this.sessions.values()].filter((session) => session.subject === subject);
   }
 
+  async listBySource(source: string): Promise<ConnectionGatewaySession[]> {
+    this.dropExpired(Date.now());
+    return [...this.sessions.values()].filter((session) =>
+      getSessionSources(session).includes(source)
+    );
+  }
+
   async renewOwnerLease(input: RenewConnectionGatewayOwnerLeaseInput): Promise<boolean> {
     const session = await this.get(input.sessionId);
     if (!session || session.ownerNodeId !== input.ownerNodeId) {
@@ -111,12 +118,7 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
       lastSeenAt: now
     };
 
-    await this.redis
-      .multi()
-      .set(this.sessionKey(session.id), JSON.stringify(session), 'PX', this.ttlMs)
-      .sadd(this.subjectKey(session.subject), session.id)
-      .pexpire(this.subjectKey(session.subject), this.ttlMs)
-      .exec();
+    await this.saveSessionAndIndexes(session);
 
     return session;
   }
@@ -134,6 +136,7 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
         .del(this.sessionKey(sessionId))
         .srem(this.subjectKey(parsed.subject), sessionId)
         .exec();
+      await this.removeSourceIndexes(parsed, sessionId);
       return null;
     }
 
@@ -142,6 +145,13 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
 
   async listBySubject(subject: string): Promise<ConnectionGatewaySession[]> {
     const sessionIds = await this.redis.smembers(this.subjectKey(subject));
+    const sessions = await Promise.all(sessionIds.map((sessionId) => this.get(sessionId)));
+
+    return sessions.filter((session): session is ConnectionGatewaySession => session !== null);
+  }
+
+  async listBySource(source: string): Promise<ConnectionGatewaySession[]> {
+    const sessionIds = await this.redis.smembers(this.sourceKey(source));
     const sessions = await Promise.all(sessionIds.map((sessionId) => this.get(sessionId)));
 
     return sessions.filter((session): session is ConnectionGatewaySession => session !== null);
@@ -158,7 +168,7 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
       expiresAt: input.expiresAt,
       lastSeenAt: input.now ?? Date.now()
     };
-    await this.redis.set(this.sessionKey(session.id), JSON.stringify(next), 'PX', this.ttlMs);
+    await this.saveSessionAndIndexes(next);
     return true;
   }
 
@@ -178,7 +188,7 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
       status: input.status,
       lastSeenAt: input.now ?? Date.now()
     };
-    await this.redis.set(this.sessionKey(session.id), JSON.stringify(next), 'PX', this.ttlMs);
+    await this.saveSessionAndIndexes(next);
     return true;
   }
 
@@ -188,6 +198,9 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
 
     if (session) {
       multi.srem(this.subjectKey(session.subject), sessionId);
+      for (const source of getSessionSources(session)) {
+        multi.srem(this.sourceKey(source), sessionId);
+      }
     }
 
     await multi.exec();
@@ -205,4 +218,46 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
   private subjectKey(subject: string): string {
     return `${SESSION_KEY_PREFIX}:by-subject:${subject}`;
   }
+
+  private sourceKey(source: string): string {
+    return `${SESSION_KEY_PREFIX}:by-source:${source}`;
+  }
+
+  private async saveSessionAndIndexes(session: ConnectionGatewaySession): Promise<void> {
+    const multi = this.redis
+      .multi()
+      .set(this.sessionKey(session.id), JSON.stringify(session), 'PX', this.ttlMs)
+      .sadd(this.subjectKey(session.subject), session.id)
+      .pexpire(this.subjectKey(session.subject), this.ttlMs);
+
+    for (const source of getSessionSources(session)) {
+      multi.sadd(this.sourceKey(source), session.id);
+      multi.pexpire(this.sourceKey(source), this.ttlMs);
+    }
+
+    await multi.exec();
+  }
+
+  private async removeSourceIndexes(
+    session: ConnectionGatewaySession,
+    sessionId: string
+  ): Promise<void> {
+    const sources = getSessionSources(session);
+    if (sources.length === 0) {
+      return;
+    }
+
+    const multi = this.redis.multi();
+    for (const source of sources) {
+      multi.srem(this.sourceKey(source), sessionId);
+    }
+    await multi.exec();
+  }
+}
+
+function getSessionSources(session: ConnectionGatewaySession): string[] {
+  return [
+    ...(session.sessionScope.source ? [session.sessionScope.source] : []),
+    ...(session.sessionScope.sources ?? [])
+  ].filter((source, index, sources) => sources.indexOf(source) === index);
 }

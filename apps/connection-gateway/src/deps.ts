@@ -1,36 +1,38 @@
 import { ConnectionGatewayResourceLimitsSchema } from '@domain/value-objects/connection-gateway.vo';
-import { HmacConnectionGatewayToken } from '@infrastructure/connection-gateway/token';
+import { CONNECTION_GATEWAY_BIND_CAPABILITY } from '@domain/value-objects/connection-gateway-debug.vo';
 import { RedisConnectionGatewayMailbox } from '@infrastructure/connection-gateway/mailbox';
 import { InMemoryConnectionGatewayMetrics } from '@infrastructure/connection-gateway/metrics';
 import { ConnectionGatewayResourceLimiter } from '@infrastructure/connection-gateway/resource-limiter';
 import { ConnectionGatewayService } from '@infrastructure/connection-gateway/service';
 import { RedisConnectionGatewaySessionRegistry } from '@infrastructure/connection-gateway/session-registry';
+import { HmacConnectionGatewayToken } from '@infrastructure/connection-gateway/token';
 import { TcpConnectionGatewayTransport } from '@infrastructure/connection-gateway/transports/tcp-transport';
-import { env } from '@infrastructure/env';
+import type { ConnectionGatewayTransportConnection } from '@infrastructure/connection-gateway/transports/transport';
+import { gatewayEnv } from '@infrastructure/env';
 import { getLogger, root } from '@infrastructure/logger';
 import { getServiceInstanceId } from '@infrastructure/metrics';
 import { RedisClient } from '@infrastructure/redis/redis-client';
 
 export function makeConnectionGatewayDeps() {
   const logger = getLogger(root);
-  const redisClient = RedisClient.getInstance();
-  const nodeId = env.CONNECTION_GATEWAY_NODE_ID ?? getServiceInstanceId();
+  const redisClient = RedisClient.create({ redisUrl: gatewayEnv.REDIS_URL });
+  const nodeId = gatewayEnv.CONNECTION_GATEWAY_NODE_ID ?? getServiceInstanceId();
   const limits = ConnectionGatewayResourceLimitsSchema.parse({
-    maxConnections: env.CONNECTION_GATEWAY_MAX_CONNECTIONS,
-    maxSessionsPerSubject: env.CONNECTION_GATEWAY_MAX_SESSIONS_PER_SUBJECT,
-    maxInFlightPerSession: env.CONNECTION_GATEWAY_MAX_IN_FLIGHT_PER_SESSION,
-    maxEnvelopeBytes: env.CONNECTION_GATEWAY_MAX_ENVELOPE_BYTES,
-    slowConsumerBufferBytes: env.CONNECTION_GATEWAY_SLOW_CONSUMER_BUFFER_BYTES
+    maxConnections: gatewayEnv.CONNECTION_GATEWAY_MAX_CONNECTIONS,
+    maxSessionsPerSubject: gatewayEnv.CONNECTION_GATEWAY_MAX_SESSIONS_PER_SUBJECT,
+    maxInFlightPerSession: gatewayEnv.CONNECTION_GATEWAY_MAX_IN_FLIGHT_PER_SESSION,
+    maxEnvelopeBytes: gatewayEnv.CONNECTION_GATEWAY_MAX_ENVELOPE_BYTES,
+    slowConsumerBufferBytes: gatewayEnv.CONNECTION_GATEWAY_SLOW_CONSUMER_BUFFER_BYTES
   });
   const metrics = new InMemoryConnectionGatewayMetrics(nodeId, limits);
   const limiter = new ConnectionGatewayResourceLimiter(limits);
-  const tokenVerifier = new HmacConnectionGatewayToken(env.JWT_SECRET);
+  const tokenVerifier = new HmacConnectionGatewayToken(gatewayEnv.JWT_SECRET);
   const sessionRegistry = new RedisConnectionGatewaySessionRegistry(
     redisClient.getClient,
-    env.CONNECTION_GATEWAY_SESSION_TTL_MS
+    gatewayEnv.CONNECTION_GATEWAY_SESSION_TTL_MS
   );
   const mailbox = new RedisConnectionGatewayMailbox(redisClient.getClient, {
-    maxLen: env.CONNECTION_GATEWAY_MAILBOX_MAXLEN,
+    maxLen: gatewayEnv.CONNECTION_GATEWAY_MAILBOX_MAXLEN,
     metrics
   });
   const service = new ConnectionGatewayService({
@@ -41,20 +43,53 @@ export function makeConnectionGatewayDeps() {
     limiter,
     options: {
       nodeId,
-      sessionTtlMs: env.CONNECTION_GATEWAY_SESSION_TTL_MS,
-      ownerLeaseTtlMs: env.CONNECTION_GATEWAY_OWNER_LEASE_TTL_MS,
-      mailboxMaxLen: env.CONNECTION_GATEWAY_MAILBOX_MAXLEN
+      sessionTtlMs: gatewayEnv.CONNECTION_GATEWAY_SESSION_TTL_MS,
+      ownerLeaseTtlMs: gatewayEnv.CONNECTION_GATEWAY_OWNER_LEASE_TTL_MS,
+      mailboxBlockMs: gatewayEnv.CONNECTION_GATEWAY_MAILBOX_BLOCK_MS,
+      mailboxMaxLen: gatewayEnv.CONNECTION_GATEWAY_MAILBOX_MAXLEN
     }
   });
+  const boundConnections = new Map<string, { sessionId: string; closed: boolean }>();
   const tcpTransport = new TcpConnectionGatewayTransport({
-    port: env.CONNECTION_GATEWAY_TCP_PORT,
-    maxFrameBytes: env.CONNECTION_GATEWAY_MAX_ENVELOPE_BYTES,
+    port: gatewayEnv.CONNECTION_GATEWAY_TCP_PORT,
+    maxFrameBytes: gatewayEnv.CONNECTION_GATEWAY_MAX_ENVELOPE_BYTES,
     limiter,
     handlers: {
       onConnection: () => metrics.recordConnectionOpened(),
-      onClose: () => metrics.recordConnectionClosed(),
-      onEnvelope: async (_connection, envelope) => {
-        await service.publishRequest({
+      onClose: (connection) => {
+        metrics.recordConnectionClosed();
+        const binding = boundConnections.get(connection.id);
+        if (binding) {
+          binding.closed = true;
+          boundConnections.delete(connection.id);
+        }
+      },
+      onEnvelope: async (connection, envelope) => {
+        if (envelope.type === 'event' && envelope.capability === CONNECTION_GATEWAY_BIND_CAPABILITY) {
+          const session = await service.bindSession({
+            sessionId: envelope.sessionId,
+            envelope
+          });
+          const binding = { sessionId: session.id, closed: false };
+          boundConnections.set(connection.id, binding);
+          void pumpSessionMailbox({
+            service,
+            connection,
+            binding,
+            logger
+          });
+          return;
+        }
+
+        if (envelope.type === 'request') {
+          await service.publishRequest({
+            sessionId: envelope.sessionId,
+            envelope
+          });
+          return;
+        }
+
+        await service.publishResponse({
           sessionId: envelope.sessionId,
           envelope
         });
@@ -71,6 +106,7 @@ export function makeConnectionGatewayDeps() {
 
   return {
     redisClient,
+    mailbox,
     service,
     tcpTransport,
     metrics,
@@ -79,3 +115,51 @@ export function makeConnectionGatewayDeps() {
 }
 
 export type ConnectionGatewayDeps = ReturnType<typeof makeConnectionGatewayDeps>;
+
+async function pumpSessionMailbox({
+  service,
+  connection,
+  binding,
+  logger
+}: {
+  service: ConnectionGatewayService;
+  connection: ConnectionGatewayTransportConnection;
+  binding: { sessionId: string; closed: boolean };
+  logger: ReturnType<typeof getLogger>;
+}) {
+  let afterId: string | undefined = '0-0';
+
+  while (!binding.closed) {
+    try {
+      await service.renewOwnerLease(binding.sessionId);
+      const messages = await service.readSessionRequests({
+        sessionId: binding.sessionId,
+        afterId,
+        count: 10
+      });
+
+      if (messages.length === 0) {
+        continue;
+      }
+
+      afterId = messages[messages.length - 1].id;
+
+      for (const message of messages) {
+        await connection.send(message.envelope);
+      }
+
+      await service.ackSessionRequests(
+        binding.sessionId,
+        messages.map((message) => message.id)
+      );
+    } catch (error) {
+      logger.warn('Connection Gateway TCP mailbox pump failed', {
+        connectionId: connection.id,
+        sessionId: binding.sessionId,
+        error
+      });
+      connection.close(error instanceof Error ? error : new Error(String(error)));
+      return;
+    }
+  }
+}
