@@ -2,7 +2,7 @@ import { inspect } from 'node:util';
 
 import { serve, type ServerType } from '@hono/node-server';
 
-import { env } from '@infrastructure/env';
+import { gatewayEnv } from '@infrastructure/env';
 import { configureLogger, destroyLogger, getLogger, root } from '@infrastructure/logger';
 import { configureMetrics, destroyMetrics } from '@infrastructure/metrics';
 import { configureProxy } from '@infrastructure/utils/proxy';
@@ -11,19 +11,15 @@ import { getErrText } from '@shared/utils/err';
 import { makeConnectionGatewayDeps } from './src/deps';
 import { createConnectionGatewayApp } from './src/routes';
 
-await configureLogger();
-await configureMetrics();
-
 const logger = getLogger(root);
-const deps = makeConnectionGatewayDeps();
-const app = createConnectionGatewayApp(deps);
 
 let server: ServerType | null = null;
 let shuttingDown = false;
+let deps: ReturnType<typeof makeConnectionGatewayDeps> | null = null;
 
-async function prepare() {
-  configureProxy();
-  await deps.tcpTransport.start();
+async function prepare(activeDeps: ReturnType<typeof makeConnectionGatewayDeps>) {
+  configureProxy(gatewayEnv);
+  await activeDeps.tcpTransport.start();
 }
 
 async function closeServer(): Promise<void> {
@@ -52,9 +48,10 @@ function shutdown() {
     let exitCode = 0;
 
     try {
-      await deps.tcpTransport.stop();
+      await deps?.tcpTransport.stop();
+      await deps?.mailbox.disconnect?.();
       await closeServer();
-      await deps.redisClient.disconnect();
+      await deps?.redisClient.disconnect();
       await destroyMetrics();
     } catch (error) {
       exitCode = 1;
@@ -67,8 +64,13 @@ function shutdown() {
 }
 
 async function main() {
+  await configureLogger(gatewayEnv);
+  await configureMetrics(gatewayEnv);
+  deps = makeConnectionGatewayDeps();
+  const app = createConnectionGatewayApp(deps);
+
   try {
-    await prepare();
+    await prepare(deps);
   } catch (error) {
     const errorMessage = getErrText(error, 'Unknown connection gateway startup error');
 
@@ -84,11 +86,11 @@ async function main() {
   server = serve(
     {
       fetch: app.fetch,
-      port: env.CONNECTION_GATEWAY_PORT
+      port: gatewayEnv.CONNECTION_GATEWAY_PORT
     },
     (info) => {
       logger.info(`Connection Gateway HTTP server is listening at http://0.0.0.0:${info.port}`);
-      logger.info(`Connection Gateway TCP server is listening at tcp://0.0.0.0:${env.CONNECTION_GATEWAY_TCP_PORT}`);
+      logger.info(`Connection Gateway TCP server is listening at tcp://0.0.0.0:${gatewayEnv.CONNECTION_GATEWAY_TCP_PORT}`);
     }
   );
 }

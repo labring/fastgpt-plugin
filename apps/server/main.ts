@@ -2,7 +2,7 @@ import { inspect } from 'node:util';
 
 import { serve, type ServerType } from '@hono/node-server';
 
-import { env } from '@infrastructure/env';
+import { serverEnv } from '@infrastructure/env';
 import { app } from '@infrastructure/hono/app';
 import { configureLogger, destroyLogger, getLogger, mod, root } from '@infrastructure/logger';
 import { configureMetrics, destroyMetrics } from '@infrastructure/metrics';
@@ -20,7 +20,7 @@ import { makeWorkflowRoute } from './src/routes/workflow.route';
 await configureLogger(); // setup logger
 await configureMetrics(); // setup metrics
 const logger = getLogger(root);
-logger.debug(env);
+logger.debug(serverEnv);
 
 const modelRoute = makeModelRoute(deps);
 const pluginRoute = makePluginRoute(deps);
@@ -109,7 +109,7 @@ async function main() {
   server = serve(
     {
       fetch: app.fetch,
-      port: env.PORT
+      port: serverEnv.PORT
     },
     (info) => {
       logger.info(`Server is listening at http://0.0.0.0:${info.port}`);

@@ -10,7 +10,8 @@ import {
 
 export const ConnectionGatewayCreateSessionRequestDTOSchema = z.object({
   token: z.string().min(1),
-  transport: z.enum(['tcp', 'websocket'])
+  transport: z.enum(['tcp', 'websocket']),
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 export type ConnectionGatewayCreateSessionRequestDTO = z.infer<
   typeof ConnectionGatewayCreateSessionRequestDTOSchema
@@ -28,6 +29,14 @@ export const ConnectionGatewayRequestDTOSchema = z.object({
   stream: z.boolean().default(false)
 });
 export type ConnectionGatewayRequestDTO = z.infer<typeof ConnectionGatewayRequestDTOSchema>;
+
+export const ConnectionGatewayStreamRequestDTOSchema = z.object({
+  envelope: ConnectionGatewayEnvelopeSchema,
+  timeoutMs: z.number().int().positive().optional()
+});
+export type ConnectionGatewayStreamRequestDTO = z.infer<
+  typeof ConnectionGatewayStreamRequestDTOSchema
+>;
 
 export const ConnectionGatewayRequestAcceptedDTOSchema = z.object({
   messageId: z.string(),

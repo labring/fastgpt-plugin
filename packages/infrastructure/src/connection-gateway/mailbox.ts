@@ -76,6 +76,8 @@ export class InMemoryConnectionGatewayMailbox implements ConnectionGatewayMailbo
 }
 
 export class RedisConnectionGatewayMailbox implements ConnectionGatewayMailboxPort {
+  private readonly blockingReaders = new Set<Redis>();
+
   constructor(
     private readonly redis: Redis,
     private readonly options: {
@@ -160,12 +162,23 @@ export class RedisConnectionGatewayMailbox implements ConnectionGatewayMailboxPo
     return this.recordRedisRoundTrip(async () => this.redis.xlen(this.key(sessionId)));
   }
 
+  async disconnect(): Promise<void> {
+    await Promise.all([...this.blockingReaders].map((reader) => reader.quit()));
+  }
+
   private key(sessionId: string): string {
     return `${MAILBOX_KEY_PREFIX}:${sessionId}`;
   }
 
   private async xread(...args: Array<string | number>): Promise<RedisStreamResponse> {
-    return this.redis.call('XREAD', ...args) as Promise<RedisStreamResponse>;
+    const reader = this.redis.duplicate();
+    this.blockingReaders.add(reader);
+    try {
+      return (await reader.call('XREAD', ...args)) as RedisStreamResponse;
+    } finally {
+      this.blockingReaders.delete(reader);
+      await reader.quit();
+    }
   }
 
   private async recordRedisRoundTrip<T>(fn: () => Promise<T>): Promise<T> {

@@ -14,22 +14,30 @@ import { env } from '../env';
 import type { LogCategory } from './categories';
 
 type LogLevel = 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'fatal';
+type LoggerEnv = {
+  LOG_ENABLE_CONSOLE: boolean;
+  LOG_CONSOLE_LEVEL: LogLevel;
+  LOG_ENABLE_OTEL: boolean;
+  LOG_OTEL_SERVICE_NAME: string;
+  LOG_OTEL_URL: string;
+  LOG_OTEL_LEVEL: LogLevel;
+};
 export type Logger = ReturnType<typeof getOtelLogger>;
 
 const contextLocalStorage = new AsyncLocalStorage<Record<string, unknown>>();
 
 let configured = false;
-export async function configureLogger() {
+export async function configureLogger(runtimeEnv: LoggerEnv = env) {
   if (configured) {
     return;
   }
 
-  const enableConsole = env.LOG_ENABLE_CONSOLE;
-  const consoleLevel = env.LOG_CONSOLE_LEVEL;
-  const enableOtel = env.LOG_ENABLE_OTEL;
-  const otelServiceName = env.LOG_OTEL_SERVICE_NAME;
-  const otelUrl = env.LOG_OTEL_URL;
-  const otelLevel = env.LOG_OTEL_LEVEL;
+  const enableConsole = runtimeEnv.LOG_ENABLE_CONSOLE;
+  const consoleLevel = runtimeEnv.LOG_CONSOLE_LEVEL;
+  const enableOtel = runtimeEnv.LOG_ENABLE_OTEL;
+  const otelServiceName = runtimeEnv.LOG_OTEL_SERVICE_NAME;
+  const otelUrl = runtimeEnv.LOG_OTEL_URL;
+  const otelLevel = runtimeEnv.LOG_OTEL_LEVEL;
 
   let otelSinkEnabled = false;
 

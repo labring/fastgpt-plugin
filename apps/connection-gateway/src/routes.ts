@@ -5,7 +5,8 @@ import {
   ConnectionGatewayMetricsDTOSchema,
   ConnectionGatewayRequestAcceptedDTOSchema,
   ConnectionGatewayRequestDTOSchema,
-  ConnectionGatewaySessionStatusViewDTOSchema
+  ConnectionGatewaySessionStatusViewDTOSchema,
+  ConnectionGatewayStreamRequestDTOSchema
 } from '@interface-adapter/contracts/dto/connection-gateway.dto';
 import { cors } from 'hono/cors';
 import { requestId } from 'hono/request-id';
@@ -13,7 +14,8 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import z from 'zod';
 
 import { RegisteredError } from '@domain/value-objects/error.vo';
-import { bearerHonoAuthMiddleware } from '@infrastructure/hono/middleware/auth';
+import { gatewayEnv } from '@infrastructure/env';
+import { createBearerHonoAuthMiddleware } from '@infrastructure/hono/middleware/auth';
 import { loggerHonoMiddleware } from '@infrastructure/hono/middleware/logger';
 import { createOpenAPIHono, createRoute, R } from '@infrastructure/hono/utils/response';
 
@@ -33,8 +35,9 @@ export function createConnectionGatewayApp(deps: Pick<ConnectionGatewayDeps, 'se
   );
   app.use('*', requestId());
   app.use('*', loggerHonoMiddleware);
-  app.use('/metrics', bearerHonoAuthMiddleware);
-  app.use('/internal/*', bearerHonoAuthMiddleware);
+  const gatewayAuthMiddleware = createBearerHonoAuthMiddleware(gatewayEnv.AUTH_TOKEN);
+  app.use('/metrics', gatewayAuthMiddleware);
+  app.use('/internal/*', gatewayAuthMiddleware);
 
   app.doc31('/openapi.json', {
     openapi: '3.1.0',
@@ -78,6 +81,29 @@ export function createConnectionGatewayApp(deps: Pick<ConnectionGatewayDeps, 'se
   app.openapi(
     createRoute({
       method: 'get',
+      path: '/internal/sessions/by-source/:source/status',
+      summary: 'Get latest gateway session status by source',
+      tags: ['connection-gateway'],
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: jsonResponse(ConnectionGatewaySessionStatusViewDTOSchema),
+        404: errorResponse()
+      }
+    }),
+    async (c) => {
+      const source = decodeURIComponent(requiredParam(c.req.param('source')));
+      const status = await deps.service.getLatestStatusBySource(source);
+      if (!status.session) {
+        return R.fail(c, 404, 'Gateway session not found');
+      }
+
+      return R.success(c, status);
+    }
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
       path: '/metrics',
       summary: 'Gateway metrics',
       tags: ['connection-gateway'],
@@ -87,6 +113,70 @@ export function createConnectionGatewayApp(deps: Pick<ConnectionGatewayDeps, 'se
       }
     }),
     (c) => R.success(c, deps.service.metrics())
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'post',
+      path: '/internal/sessions/:sessionId/requests:stream',
+      summary: 'Publish a request envelope and stream response envelopes',
+      tags: ['connection-gateway'],
+      security: [{ bearerAuth: [] }],
+      request: jsonRequest(ConnectionGatewayStreamRequestDTOSchema),
+      responses: {
+        200: {
+          description: 'NDJSON response envelope stream',
+          content: {
+            'application/x-ndjson': {
+              schema: z.string()
+            }
+          }
+        },
+        400: errorResponse(),
+        403: errorResponse(),
+        404: errorResponse(),
+        409: errorResponse(),
+        413: errorResponse(),
+        429: errorResponse()
+      }
+    }),
+    async (c) => {
+      try {
+        const body = ConnectionGatewayStreamRequestDTOSchema.parse(c.req.valid('json'));
+        const { responses } = await deps.service.publishRequestAndWait({
+          sessionId: requiredParam(c.req.param('sessionId')),
+          envelope: body.envelope,
+          timeoutMs: body.timeoutMs
+        });
+        const encoder = new TextEncoder();
+
+        return new Response(
+          new ReadableStream<Uint8Array>({
+            start: async (controller) => {
+              try {
+                for await (const envelope of responses) {
+                  controller.enqueue(encoder.encode(`${JSON.stringify(envelope)}\n`));
+                }
+              } catch (error) {
+                controller.error(error);
+              } finally {
+                controller.close();
+              }
+            }
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/x-ndjson; charset=utf-8',
+              'Cache-Control': 'no-cache, no-transform',
+              Connection: 'keep-alive'
+            }
+          }
+        );
+      } catch (error) {
+        return R.fail(c, statusFromError(error), normalizeError(error));
+      }
+    }
   );
 
   app.openapi(

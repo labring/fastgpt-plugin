@@ -1,8 +1,11 @@
-import { env } from '@infrastructure/env';
+import { serverEnv } from '@infrastructure/env';
 import { LocalFileStorageRepo } from '@infrastructure/file-storage/local-file-storage.repo';
 import { RemoteFileStorageRepo } from '@infrastructure/file-storage/remote-file-storage.repo';
 import { FileTTLManager } from '@infrastructure/file-ttl/file-ttl.impl';
+import { DebugPluginRepoOverlay } from '@infrastructure/plugin/debug-plugin.repo';
 import { PluginRepo } from '@infrastructure/plugin/plugin.repo';
+import { CompositePluginRuntimeManager } from '@infrastructure/plugin/plugin-runtime/composite-runtime.manager';
+import { ConnectionGatewayDebugRuntimeManager } from '@infrastructure/plugin/plugin-runtime/drivers/connection-gateway/debug-runtime.driver';
 import { LocalPoolPluginRuntimeManager } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/local-pool-runtime.driver';
 import { ToolManager } from '@infrastructure/plugin/tool.impl';
 import { PluginPKFFileResolver } from '@infrastructure/plugin/utils/plugin-pkg-file-resolver.impl';
@@ -33,12 +36,18 @@ export const fileTTLManager = new FileTTLManager({
   publicRemoteFileStorageRepo
 });
 
-export const pluginRepo = PluginRepo.getInstance({
+const mongoPluginRepo = PluginRepo.getInstance({
   localFileStorageRepo,
   mongoClient,
   privateRemoteFileStorageRepo,
   publicRemoteFileStorageRepo,
   fileTTLManager
+});
+
+export const pluginRepo = new DebugPluginRepoOverlay({
+  fallback: mongoPluginRepo,
+  gatewayBaseUrl: serverEnv.CONNECTION_GATEWAY_BASE_URL,
+  authToken: serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN
 });
 
 export const pluginPKGFileResolver = new PluginPKFFileResolver({
@@ -54,13 +63,22 @@ const localPoolPluginRuntimeManager = LocalPoolPluginRuntimeManager.getInstance(
   mongoClient,
   redisClient
 });
+const connectionGatewayDebugRuntimeManager = new ConnectionGatewayDebugRuntimeManager({
+  baseUrl: serverEnv.CONNECTION_GATEWAY_BASE_URL,
+  authToken: serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN,
+  requestTimeoutMs: serverEnv.CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS,
+  sourceForUser: ({ userId }) => `debug:user:${userId}`
+});
 
-export const pluginRuntimeManager = localPoolPluginRuntimeManager;
+export const pluginRuntimeManager = new CompositePluginRuntimeManager({
+  primary: localPoolPluginRuntimeManager,
+  debug: connectionGatewayDebugRuntimeManager
+});
 
 export const toolManager = ToolManager.getInstance({
   pluginRepo,
   pluginRuntimeManager,
-  fastgptBaseUrl: env.FASTGPT_BASE_URL
+  fastgptBaseUrl: serverEnv.FASTGPT_BASE_URL
 });
 
 const deps = {

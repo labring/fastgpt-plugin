@@ -210,7 +210,15 @@ export class ToolManager implements ToolManagerPort {
       invoke: new InvokeManager({
         token: this.getInvokeToken(systemVar),
         fastgptBaseUrl: this.deps.fastgptBaseUrl
-      })
+      }),
+      ...(isDebugPluginSource(source)
+        ? {
+            debug: {
+              userId: getDebugUserIdFromSource(source),
+              source
+            }
+          }
+        : {})
     };
 
     const [invokeRes, invokeErr] = await this.deps.pluginRuntimeManager.invoke<
@@ -242,6 +250,25 @@ export class ToolManager implements ToolManagerPort {
 
     return successResult(invokeRes);
   }
+}
+
+function isDebugPluginSource(source: PluginSourceType | undefined): source is string {
+  return typeof source === 'string' && source.startsWith('debug:');
+}
+
+function getDebugUserIdFromSource(source: string): string {
+  const parts = source.split(':');
+  const userIndex = parts.indexOf('user');
+  const userId = userIndex >= 0 ? parts[userIndex + 1] : undefined;
+
+  if (!userId) {
+    throw createError(ErrorCode.pluginRuntimePluginNotFound, {
+      message: 'Debug source must include user id',
+      data: { source }
+    });
+  }
+
+  return userId;
 }
 
 type ToolRunErrorContext = {
