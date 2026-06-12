@@ -44,7 +44,7 @@ pnpm lint
 | --- | --- |
 | `apps/server` | FastGPT Plugin HTTP 服务和路由组装。 |
 | `apps/cli` | 插件创建、构建、检查、调试和打包 CLI。 |
-| `apps/debug-runtime-monitor` | 本地运行时监控 UI。 |
+| `apps/debug-runtime-monitor` | 本地运行时和 Connection Gateway 指标监控 UI。 |
 | `packages/domain` | 实体、值对象和端口定义。 |
 | `packages/usecase` | 插件、工具、模型和运行时指标用例。 |
 | `packages/interface-adapter` | HTTP contract、DTO 和鉴权适配。 |
