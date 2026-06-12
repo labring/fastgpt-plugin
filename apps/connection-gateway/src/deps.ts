@@ -62,6 +62,13 @@ export function makeConnectionGatewayDeps() {
         if (binding) {
           binding.closed = true;
           boundConnections.delete(connection.id);
+          void service.closeSession(binding.sessionId, 'tcp_connection_closed').catch((error) => {
+            logger.warn('Connection Gateway TCP session close status update failed', {
+              connectionId: connection.id,
+              sessionId: binding.sessionId,
+              error
+            });
+          });
         }
       },
       onEnvelope: async (connection, envelope) => {

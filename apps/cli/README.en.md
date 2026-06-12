@@ -25,8 +25,25 @@ Command-line tool for FastGPT plugin development. It is used to create, build, t
 - **Local debugging**
   - Provides the `debug` command to inspect plugin and child-tool information.
   - Supports running tools directly, passing input/secrets/systemVar files, and simulating `uploadFile` with a local directory.
+  - Supports a Connection Gateway TCP remote-debug channel, including multiple local plugins mounted on one channel.
 - **Packaging**
   - Provides the `pack` command to package `dist` artifacts into an uploadable `.pkg`.
+
+### Remote Debugging
+
+Local plugins can connect to a test-environment plugin-server through Connection Gateway. The CLI needs the gateway TCP endpoint for the long-lived channel; the HTTP endpoint is used to create and clean up the session.
+
+```bash
+fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \
+  --gateway \
+  --gateway-base-url https://connection-gateway.example.com \
+  --gateway-tcp-url tcp://connection-gateway-tcp.example.com:3012 \
+  --gateway-auth-token "$CONNECTION_GATEWAY_AUTH_TOKEN" \
+  --gateway-jwt-secret "$JWT_SECRET" \
+  --gateway-user-id u1
+```
+
+The default source is `debug:user:{userId}`. One CLI process creates one TCP channel and mounts all plugin entries passed to the command. Reconnect is enabled by default, and a normal shutdown deletes the gateway session. Use `--gateway-no-reconnect` to disable reconnect.
 
 ### TODO
 

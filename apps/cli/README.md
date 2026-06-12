@@ -25,8 +25,25 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
 - **本地调试**
   - 提供 `debug` 命令查看插件和子工具信息
   - 支持直接运行工具、传入 input/secrets/systemVar 文件，并用本地目录模拟 `uploadFile`
+  - 支持通过 Connection Gateway 建立一个 TCP 远程调试通道，并在一个通道内挂载多个本地插件
 - **打包**
   - 提供 `pack` 命令把 `dist` 产物打成可上传的 `.pkg`
+
+### 远程调试
+
+本地插件可以通过 Connection Gateway 接入测试环境的 plugin-server。CLI 只需要能访问 gateway 的 TCP 地址；HTTP 地址用于创建/清理 session。
+
+```bash
+fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \
+  --gateway \
+  --gateway-base-url https://connection-gateway.example.com \
+  --gateway-tcp-url tcp://connection-gateway-tcp.example.com:3012 \
+  --gateway-auth-token "$CONNECTION_GATEWAY_AUTH_TOKEN" \
+  --gateway-jwt-secret "$JWT_SECRET" \
+  --gateway-user-id u1
+```
+
+默认 source 为 `debug:user:{userId}`，同一个 CLI 进程会建立 1 个 TCP 通道并挂载所有传入的插件。断线后默认自动重连，正常退出时会清理 gateway session；如需关闭自动重连，可加 `--gateway-no-reconnect`。
 
 ### 待实现 / TODO
 
