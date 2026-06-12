@@ -59,6 +59,27 @@ describe('DebugPluginRepoOverlay', () => {
       }
     });
   });
+
+  it('does not expose debug metadata from a disconnected session', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse(makeGatewayStatus({ status: 'closed', ownerAlive: false }))
+    );
+    const repo = createRepo();
+
+    const [, err] = await repo.getPluginByUserPluginId({
+      pluginId: 'getTime',
+      source: 'debug:user:u1'
+    });
+
+    expect(err).toMatchObject({
+      code: 'connection_gateway.session_not_found',
+      data: {
+        source: 'debug:user:u1',
+        status: 'closed',
+        ownerAlive: false
+      }
+    });
+  });
 });
 
 function createRepo(): DebugPluginRepoOverlay {
@@ -98,11 +119,15 @@ function jsonResponse(payload: unknown): Response {
   });
 }
 
-function makeGatewayStatus() {
+function makeGatewayStatus({
+  status = 'connected',
+  ownerAlive = true
+}: { status?: string; ownerAlive?: boolean } = {}) {
   return {
     data: {
       session: {
         id: 'session-a',
+        status,
         sessionScope: {
           source: 'debug:user:u1'
         },
@@ -114,7 +139,8 @@ function makeGatewayStatus() {
             ]
           }
         }
-      }
+      },
+      ownerAlive
     }
   };
 }

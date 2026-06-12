@@ -31,6 +31,7 @@ type GatewayStatusResponse = {
   data: {
     session: {
       id: string;
+      status?: string;
       sessionScope: {
         source?: string;
       };
@@ -38,6 +39,7 @@ type GatewayStatusResponse = {
         pluginDebug?: DebugPluginMetadata | DebugPluginMetadataBundle;
       };
     } | null;
+    ownerAlive?: boolean;
   };
 };
 
@@ -309,6 +311,23 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
       }
 
       const payload = JSON.parse(text) as GatewayStatusResponse;
+      if (!payload.data.session || payload.data.session.status !== 'connected' || payload.data.ownerAlive === false) {
+        return failureResult(
+          createError(ErrorCode.connectionGatewaySessionNotFound, {
+            message: `Debug plugin session is not connected: ${source}`,
+            reason: {
+              en: `Debug plugin session is not connected: ${source}`,
+              'zh-CN': `调试插件会话未连接: ${source}`
+            },
+            data: {
+              source,
+              status: payload.data.session?.status,
+              ownerAlive: payload.data.ownerAlive
+            }
+          })
+        );
+      }
+
       return successResult(payload.data.session?.metadata?.pluginDebug);
     } catch (error) {
       return failureResult(

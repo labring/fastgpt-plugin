@@ -41,6 +41,9 @@ type DebugCommandOptions = {
   gatewaySource?: string;
   gatewaySubject?: string;
   gatewayTokenTtlMs?: string;
+  gatewayReconnect?: boolean;
+  gatewayNoReconnect?: boolean;
+  gatewayReconnectIntervalMs?: string;
 };
 
 export class DebugCommand extends BaseCommand {
@@ -69,6 +72,9 @@ export class DebugCommand extends BaseCommand {
       .option('--gateway-source <source>', 'debug source，建议包含 user 维度')
       .option('--gateway-subject <subject>', 'debug session subject')
       .option('--gateway-token-ttl-ms <ms>', 'connection token TTL')
+      .option('--gateway-reconnect', 'Connection Gateway 断线后自动重连', true)
+      .option('--gateway-no-reconnect', '关闭 Connection Gateway 自动重连')
+      .option('--gateway-reconnect-interval-ms <ms>', 'Connection Gateway 重连间隔')
       .action(async (entries: string[], opts: DebugCommandOptions) => {
         await this.run(entries, opts);
       });
@@ -258,6 +264,13 @@ export class DebugCommand extends BaseCommand {
       tokenTtlMs: toPositiveInt(
         options.gatewayTokenTtlMs ?? process.env.CONNECTION_GATEWAY_TOKEN_TTL_MS ?? '300000',
         'gateway-token-ttl-ms'
+      ),
+      reconnect: options.gatewayNoReconnect ? false : options.gatewayReconnect ?? true,
+      reconnectIntervalMs: toPositiveInt(
+        options.gatewayReconnectIntervalMs ??
+          process.env.CONNECTION_GATEWAY_RECONNECT_INTERVAL_MS ??
+          '2000',
+        'gateway-reconnect-interval-ms'
       )
     };
   }
