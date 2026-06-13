@@ -14,10 +14,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
-      defaultConfig: {
-        thinking: { type: 'enabled' }
-      }
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
@@ -30,10 +27,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
-      defaultConfig: {
-        thinking: { type: 'enabled' }
-      }
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,

@@ -5,6 +5,20 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'kimi-k2.7-code',
+      maxContext: 262144,
+      maxTokens: 32768,
+      quoteMaxToken: 256000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      showTopP: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'kimi-k2.6',
       maxContext: 262144,
       maxTokens: 32000,
@@ -15,12 +29,7 @@ const models: ProviderConfigType = {
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true,
-      showTopP: false,
-      defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
-      }
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -34,12 +43,7 @@ const models: ProviderConfigType = {
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true,
-      showTopP: false,
-      defaultConfig: {
-        thinking: {
-          type: 'enabled'
-        }
-      }
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
