@@ -10,7 +10,7 @@ import { TcpConnectionGatewayTransport } from '@infrastructure/connection-gatewa
 import type { ConnectionGatewayTransportConnection } from '@infrastructure/connection-gateway/transports/transport';
 import { gatewayEnv } from '@infrastructure/env';
 import { getLogger, root } from '@infrastructure/logger';
-import { getServiceInstanceId } from '@infrastructure/metrics';
+import { getServiceInstanceId, registerConnectionGatewayGaugeSource } from '@infrastructure/metrics';
 import { RedisClient } from '@infrastructure/redis/redis-client';
 
 export function makeConnectionGatewayDeps() {
@@ -25,6 +25,9 @@ export function makeConnectionGatewayDeps() {
     slowConsumerBufferBytes: gatewayEnv.CONNECTION_GATEWAY_SLOW_CONSUMER_BUFFER_BYTES
   });
   const metrics = new InMemoryConnectionGatewayMetrics(nodeId, limits);
+  const unregisterMetrics = registerConnectionGatewayGaugeSource({
+    getConnectionGatewayMetrics: () => metrics.snapshot()
+  });
   const limiter = new ConnectionGatewayResourceLimiter(limits);
   const tokenVerifier = new HmacConnectionGatewayToken(gatewayEnv.JWT_SECRET);
   const sessionRegistry = new RedisConnectionGatewaySessionRegistry(
@@ -117,7 +120,8 @@ export function makeConnectionGatewayDeps() {
     service,
     tcpTransport,
     metrics,
-    limiter
+    limiter,
+    unregisterMetrics
   };
 }
 

@@ -1,3 +1,4 @@
+import type { ConnectionGatewayMetrics } from '@domain/value-objects/connection-gateway.vo';
 import type { GlobalMetrics } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/types';
 
 export type RuntimeMode = 'localPool' | 'serverless';
@@ -21,6 +22,10 @@ export type RuntimeMetricAttributes = {
 export type RuntimeGaugeSource = {
   runtimeMode: RuntimeMode;
   getGlobalMetrics: () => GlobalMetrics;
+};
+
+export type ConnectionGatewayGaugeSource = {
+  getConnectionGatewayMetrics: () => ConnectionGatewayMetrics;
 };
 
 export type RuntimeMetricsRecorder = {

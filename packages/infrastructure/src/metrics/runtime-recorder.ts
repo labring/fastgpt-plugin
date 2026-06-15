@@ -1,6 +1,7 @@
 import type { getMeter } from '@fastgpt-sdk/otel/metrics';
 
 import type {
+  ConnectionGatewayGaugeSource,
   RuntimeGaugeSource,
   RuntimeMetricAttributes,
   RuntimeMetricsRecorder
@@ -16,6 +17,7 @@ export type RuntimeMetricsRecorderOptions = {
   includePluginVersion: boolean;
   includePluginEtag: boolean;
   gaugeSources: () => RuntimeGaugeSource[];
+  connectionGatewayGaugeSources?: () => ConnectionGatewayGaugeSource[];
   onError?: (message: string, error: unknown) => void;
 };
 
@@ -24,6 +26,7 @@ export function createRuntimeMetricsRecorder({
   includePluginVersion,
   includePluginEtag,
   gaugeSources,
+  connectionGatewayGaugeSources = () => [],
   onError
 }: RuntimeMetricsRecorderOptions): RuntimeMetricsRecorder {
   const invocationsStarted = meter.createCounter('fastgpt.plugin.runtime.invocations.started', {
@@ -113,6 +116,7 @@ export function createRuntimeMetricsRecorder({
         stateMetric: 'totalPods'
       });
     });
+  registerConnectionGatewayGauges({ meter, gaugeSources: connectionGatewayGaugeSources, onError });
 
   return {
     recordInvocationStarted(attributes) {
@@ -153,6 +157,115 @@ export function createRuntimeMetricsRecorder({
       });
     }
   };
+}
+
+function registerConnectionGatewayGauges({
+  meter,
+  gaugeSources,
+  onError
+}: {
+  meter: Meter;
+  gaugeSources: () => ConnectionGatewayGaugeSource[];
+  onError?: (message: string, error: unknown) => void;
+}): void {
+  const gauges: Array<{
+    name: string;
+    unit: string;
+    read: (source: ReturnType<ConnectionGatewayGaugeSource['getConnectionGatewayMetrics']>) => number;
+  }> = [
+    {
+      name: 'fastgpt.plugin.connection_gateway.connections.active',
+      unit: '{connection}',
+      read: (metrics) => metrics.activeConnections
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.sessions.active',
+      unit: '{session}',
+      read: (metrics) => metrics.activeSessions
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.requests.in_flight',
+      unit: '{request}',
+      read: (metrics) => metrics.inFlightRequests
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.stream.buffer.bytes',
+      unit: 'By',
+      read: (metrics) => metrics.streamBufferBytes
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.consumers.slow',
+      unit: '{consumer}',
+      read: (metrics) => metrics.slowConsumers
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.owner_lease.expiries',
+      unit: '{expiry}',
+      read: (metrics) => metrics.ownerLeaseExpiries
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.mailbox.lag',
+      unit: '{message}',
+      read: (metrics) => metrics.mailbox.lag
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.mailbox.redis_round_trip',
+      unit: 'ms',
+      read: (metrics) => metrics.mailbox.redisRoundTripMs
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.limit.connections.max',
+      unit: '{connection}',
+      read: (metrics) => metrics.limits.maxConnections
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.limit.sessions_per_subject.max',
+      unit: '{session}',
+      read: (metrics) => metrics.limits.maxSessionsPerSubject
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.limit.in_flight_per_session.max',
+      unit: '{request}',
+      read: (metrics) => metrics.limits.maxInFlightPerSession
+    },
+    {
+      name: 'fastgpt.plugin.connection_gateway.limit.envelope.bytes',
+      unit: 'By',
+      read: (metrics) => metrics.limits.maxEnvelopeBytes
+    }
+  ];
+
+  for (const gauge of gauges) {
+    meter.createObservableGauge(gauge.name, { unit: gauge.unit }).addCallback((result) => {
+      observeConnectionGatewayMetric({ result, gaugeSources, gauge, onError });
+    });
+  }
+}
+
+function observeConnectionGatewayMetric({
+  result,
+  gaugeSources,
+  gauge,
+  onError
+}: {
+  result: ObservableResult;
+  gaugeSources: () => ConnectionGatewayGaugeSource[];
+  gauge: {
+    name: string;
+    read: (source: ReturnType<ConnectionGatewayGaugeSource['getConnectionGatewayMetrics']>) => number;
+  };
+  onError?: (message: string, error: unknown) => void;
+}): void {
+  for (const source of gaugeSources()) {
+    try {
+      const metrics = source.getConnectionGatewayMetrics();
+      result.observe(gauge.read(metrics), {
+        'gateway.node_id': metrics.nodeId
+      });
+    } catch (error) {
+      onError?.(`Failed to observe ${gauge.name}`, error);
+    }
+  }
 }
 
 export function createNoopRuntimeMetricsRecorder(): RuntimeMetricsRecorder {
