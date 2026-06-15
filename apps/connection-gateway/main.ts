@@ -49,6 +49,7 @@ function shutdown() {
 
     try {
       await deps?.tcpTransport.stop();
+      deps?.unregisterMetrics();
       await deps?.mailbox.disconnect?.();
       await closeServer();
       await deps?.redisClient.disconnect();
