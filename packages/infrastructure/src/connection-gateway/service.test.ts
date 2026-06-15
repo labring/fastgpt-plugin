@@ -274,6 +274,67 @@ describe('ConnectionGatewayService', () => {
     });
   });
 
+  it('updates metadata from a token-bound bind envelope', async () => {
+    const { service, token } = makeService();
+    const signed = await token.sign({
+      consumerType: 'plugin-debug',
+      subject: 'tmb-1',
+      sessionScope: {
+        userId: 'tmb-1',
+        source: 'debug:tmbId:tmb-1:session:debug-1'
+      },
+      transport: 'tcp',
+      capabilities: ['gateway.bind', 'invoke'],
+      issuedAt: now,
+      expiresAt: now + 60_000
+    });
+    const session = await service.createSession({
+      token: signed,
+      transport: 'tcp',
+      now
+    });
+
+    await service.bindSession({
+      sessionId: session.id,
+      envelope: {
+        ...makeBindEnvelope(session.id, session.generation),
+        payload: {
+          kind: 'plugin-debug.bind',
+          token: signed,
+          metadata: {
+            pluginDebug: {
+              targets: [
+                {
+                  source: 'debug:tmbId:tmb-1:session:debug-1',
+                  pluginId: 'getTime',
+                  version: '1.0.0'
+                }
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    await expect(
+      service.getLatestStatusBySource('debug:tmbId:tmb-1:session:debug-1')
+    ).resolves.toMatchObject({
+      session: expect.objectContaining({
+        id: session.id,
+        metadata: {
+          pluginDebug: {
+            targets: [
+              expect.objectContaining({
+                pluginId: 'getTime'
+              })
+            ]
+          }
+        }
+      }),
+      ownerAlive: true
+    });
+  });
+
   it('keeps connecting and closed sessions visible but fails requests closed', async () => {
     const { service, token } = makeService();
     const session = await service.createSession({

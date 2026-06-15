@@ -216,6 +216,23 @@ export class ConnectionGatewayService {
     envelope: ConnectionGatewayEnvelope;
   }): Promise<ConnectionGatewaySession> {
     const envelope = ConnectionGatewayEnvelopeSchema.parse(input.envelope);
+    const bindToken = getBindToken(envelope.payload);
+    if (bindToken) {
+      const claims = await this.deps.tokenVerifier.verify({
+        token: bindToken,
+        expectedTransport: 'tcp',
+        requiredCapability: 'gateway.bind'
+      });
+      const existing = await this.deps.sessionRegistry.get(input.sessionId);
+      if (!existing || existing.subject !== claims.subject) {
+        throw createError(ErrorCode.connectionGatewayInvalidToken);
+      }
+      const expectedSource = existing.sessionScope.source;
+      if (expectedSource && claims.sessionScope.source !== expectedSource) {
+        throw createError(ErrorCode.connectionGatewayInvalidToken);
+      }
+    }
+
     const session = await this.assertEnvelopeSession(input.sessionId, envelope, {
       requireCapability: false,
       requireConnected: false
@@ -232,6 +249,13 @@ export class ConnectionGatewayService {
       ownerNodeId: this.deps.options.nodeId,
       status: 'connected'
     });
+    const metadata = getBindMetadata(envelope.payload);
+    if (metadata) {
+      await this.deps.sessionRegistry.updateMetadata({
+        sessionId: session.id,
+        metadata
+      });
+    }
     await this.renewOwnerLease(session.id);
     this.pushLog(session.id, 'info', 'Gateway TCP session bound', {
       consumerType: session.consumerType,
@@ -290,6 +314,23 @@ export class ConnectionGatewayService {
       }
       this.pushLog(sessionId, 'info', 'Gateway session deleted');
     }
+  }
+
+  async updateSessionMetadata(input: {
+    sessionId: string;
+    metadata: Record<string, unknown>;
+  }): Promise<ConnectionGatewaySession> {
+    const session = await this.deps.sessionRegistry.updateMetadata({
+      sessionId: input.sessionId,
+      metadata: input.metadata
+    });
+
+    if (!session) {
+      throw createError(ErrorCode.connectionGatewaySessionNotFound);
+    }
+
+    this.pushLog(session.id, 'info', 'Gateway session metadata updated');
+    return session;
   }
 
   async renewOwnerLease(sessionId: string, now = Date.now()): Promise<boolean> {
@@ -450,4 +491,26 @@ function isTerminalReplyEnvelope(envelope: ConnectionGatewayEnvelope): boolean {
 
   const payload = envelope.payload as { event?: unknown };
   return payload.event === 'end' || payload.event === 'error';
+}
+
+function getBindMetadata(payload: unknown): Record<string, unknown> | undefined {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return undefined;
+  }
+
+  const metadata = (payload as { metadata?: unknown }).metadata;
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return undefined;
+  }
+
+  return metadata as Record<string, unknown>;
+}
+
+function getBindToken(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return undefined;
+  }
+
+  const token = (payload as { token?: unknown }).token;
+  return typeof token === 'string' && token.length > 0 ? token : undefined;
 }

@@ -214,7 +214,7 @@ export class ToolManager implements ToolManagerPort {
       ...(isDebugPluginSource(source)
         ? {
             debug: {
-              userId: getDebugUserIdFromSource(source),
+              ...getDebugIdentityFromSource(source),
               source
             }
           }
@@ -256,19 +256,24 @@ function isDebugPluginSource(source: PluginSourceType | undefined): source is st
   return typeof source === 'string' && source.startsWith('debug:');
 }
 
-function getDebugUserIdFromSource(source: string): string {
+function getDebugIdentityFromSource(source: string): { tmbId?: string; userId?: string } {
   const parts = source.split(':');
-  const userIndex = parts.indexOf('user');
-  const userId = userIndex >= 0 ? parts[userIndex + 1] : undefined;
-
-  if (!userId) {
-    throw createError(ErrorCode.pluginRuntimePluginNotFound, {
-      message: 'Debug source must include user id',
-      data: { source }
-    });
+  const tmbIndex = parts.indexOf('tmbId');
+  const tmbId = tmbIndex >= 0 ? parts[tmbIndex + 1] : undefined;
+  if (tmbId) {
+    return { tmbId };
   }
 
-  return userId;
+  const userIndex = parts.indexOf('user');
+  const userId = userIndex >= 0 ? parts[userIndex + 1] : undefined;
+  if (userId) {
+    return { userId };
+  }
+
+  throw createError(ErrorCode.pluginRuntimePluginNotFound, {
+    message: 'Debug source must include tmbId or user id',
+    data: { source }
+  });
 }
 
 type ToolRunErrorContext = {

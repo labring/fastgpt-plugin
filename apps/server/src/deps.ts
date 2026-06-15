@@ -3,6 +3,7 @@ import { LocalFileStorageRepo } from '@infrastructure/file-storage/local-file-st
 import { RemoteFileStorageRepo } from '@infrastructure/file-storage/remote-file-storage.repo';
 import { FileTTLManager } from '@infrastructure/file-ttl/file-ttl.impl';
 import { DebugPluginRepoOverlay } from '@infrastructure/plugin/debug-plugin.repo';
+import { RedisPluginDebugSessionRepo } from '@infrastructure/plugin/debug-session.repo';
 import { PluginRepo } from '@infrastructure/plugin/plugin.repo';
 import { CompositePluginRuntimeManager } from '@infrastructure/plugin/plugin-runtime/composite-runtime.manager';
 import { ConnectionGatewayDebugRuntimeManager } from '@infrastructure/plugin/plugin-runtime/drivers/connection-gateway/debug-runtime.driver';
@@ -67,7 +68,7 @@ const connectionGatewayDebugRuntimeManager = new ConnectionGatewayDebugRuntimeMa
   baseUrl: serverEnv.CONNECTION_GATEWAY_BASE_URL,
   authToken: serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN,
   requestTimeoutMs: serverEnv.CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS,
-  sourceForUser: ({ userId }) => `debug:user:${userId}`
+  sourceForTmbId: ({ tmbId }) => `debug:tmbId:${tmbId}`
 });
 
 export const pluginRuntimeManager = new CompositePluginRuntimeManager({
@@ -81,6 +82,11 @@ export const toolManager = ToolManager.getInstance({
   fastgptBaseUrl: serverEnv.FASTGPT_BASE_URL
 });
 
+export const pluginDebugSessionRepo = new RedisPluginDebugSessionRepo(
+  redisClient.getClient,
+  serverEnv.JWT_SECRET
+);
+
 const deps = {
   localFileStorageRepo,
   pluginPKGFileResolver,
@@ -91,7 +97,8 @@ const deps = {
   mongoClient,
   fileTTLManager,
   toolManager,
-  pluginRuntimeManager
+  pluginRuntimeManager,
+  pluginDebugSessionRepo
 };
 
 export default deps;
