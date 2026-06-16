@@ -19,6 +19,20 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'kimi-k2.7-code-highspeed',
+      maxContext: 262144,
+      maxTokens: 32768,
+      quoteMaxToken: 256000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      showTopP: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'kimi-k2.6',
       maxContext: 262144,
       maxTokens: 32000,
