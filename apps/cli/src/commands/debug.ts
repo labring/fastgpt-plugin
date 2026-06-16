@@ -3,10 +3,9 @@ import path from 'node:path';
 
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
 import {
-  connectDebugGateway,
-  type DebugGatewayClientOptions,
-  type DebugGatewayTarget
-} from '@fastgpt-plugin/cli/debug/gateway';
+  type RemoteDebugCommandOptions,
+  runRemoteDebugSession
+} from '@fastgpt-plugin/cli/debug/remote-session';
 import {
   type DebugPluginSnapshot,
   type DebugToolSnapshot,
@@ -15,13 +14,11 @@ import {
 } from '@fastgpt-plugin/cli/debug/session';
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import type { Command } from 'commander';
-import z from 'zod';
 
-import { ConnectionGatewaySessionSchema } from '@domain/value-objects/connection-gateway.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
-type DebugCommandOptions = {
+type DebugCommandOptions = RemoteDebugCommandOptions & {
   tool?: string;
   run?: boolean;
   input?: string;
@@ -30,23 +27,6 @@ type DebugCommandOptions = {
   secretsFile?: string;
   systemVar?: string;
   systemVarFile?: string;
-  uploadDir?: string;
-  gateway?: boolean;
-  connect?: string;
-  gatewayBaseUrl?: string;
-  gatewayAuthToken?: string;
-  gatewayJwtSecret?: string;
-  gatewayTcpUrl?: string;
-  gatewayTcpHost?: string;
-  gatewayTcpPort?: string;
-  gatewayUserId?: string;
-  gatewayTeamId?: string;
-  gatewaySource?: string;
-  gatewaySubject?: string;
-  gatewayTokenTtlMs?: string;
-  gatewayReconnect?: boolean;
-  gatewayNoReconnect?: boolean;
-  gatewayReconnectIntervalMs?: string;
 };
 
 export class DebugCommand extends BaseCommand {
@@ -63,22 +43,10 @@ export class DebugCommand extends BaseCommand {
       .option('--system-var <json>', 'systemVar JSON 字符串')
       .option('--system-var-file <path>', 'systemVar JSON 文件路径')
       .option('--upload-dir <path>', '虚拟 uploadFile 的输出目录')
-      .option('--gateway', '连接 Connection Gateway，等待远程调试请求', false)
-      .option('--connect <url>', 'FastGPT debug connect link，通过 ticket 换取远程调试连接信息')
-      .option('--gateway-base-url <url>', 'Connection Gateway HTTP 地址')
-      .option('--gateway-auth-token <token>', 'Connection Gateway AUTH_TOKEN')
-      .option('--gateway-jwt-secret <secret>', 'Connection Gateway JWT_SECRET')
-      .option('--gateway-tcp-url <url>', 'Connection Gateway TCP 地址，如 tcp://host:port')
-      .option('--gateway-tcp-host <host>', 'Connection Gateway TCP host')
-      .option('--gateway-tcp-port <port>', 'Connection Gateway TCP port')
-      .option('--gateway-user-id <id>', 'debug session userId')
-      .option('--gateway-team-id <id>', 'debug session teamId')
-      .option('--gateway-source <source>', 'debug source，建议包含 user 维度')
-      .option('--gateway-subject <subject>', 'debug session subject')
-      .option('--gateway-token-ttl-ms <ms>', 'connection token TTL')
-      .option('--gateway-reconnect', 'Connection Gateway 断线后自动重连', true)
-      .option('--gateway-no-reconnect', '关闭 Connection Gateway 自动重连')
-      .option('--gateway-reconnect-interval-ms <ms>', 'Connection Gateway 重连间隔')
+      .option('--connect <url>', '兼容入口：FastGPT debug connect link，建议改用 dev 命令')
+      .option('--reconnect', '兼容入口：断线后自动重连', true)
+      .option('--no-reconnect', '兼容入口：关闭自动重连')
+      .option('--reconnect-interval-ms <ms>', '兼容入口：重连间隔')
       .action(async (entries: string[], opts: DebugCommandOptions) => {
         await this.run(entries, opts);
       });
@@ -91,11 +59,17 @@ export class DebugCommand extends BaseCommand {
     const isMultiEntry = entries.length > 1;
 
     if (options.connect) {
-      options.gateway = true;
+      await runRemoteDebugSession({
+        entriesInput,
+        options,
+        commandName: 'dev',
+        migrationHint: 'debug --connect 是兼容入口，远程集成调试建议改用 fastgpt-plugin dev。'
+      });
+      return;
     }
 
-    if (isMultiEntry && !options.gateway && !options.connect) {
-      throw new Error('多个插件同时调试需要使用 --gateway 或 --connect。');
+    if (isMultiEntry && !options.connect) {
+      throw new Error('debug 是轻量本地调试入口，一次只支持一个插件；多插件远程调试请使用 dev。');
     }
 
     if (isMultiEntry && options.run) {
@@ -126,14 +100,6 @@ export class DebugCommand extends BaseCommand {
     );
     if (duplicatePluginIds.length > 0) {
       throw new Error(`gateway pluginId 重复: ${duplicatePluginIds.join(', ')}`);
-    }
-
-    if (options.gateway) {
-      await this.runGatewaySession({
-        sessions,
-        options
-      });
-      return;
     }
 
     const [session] = sessions;
@@ -243,122 +209,6 @@ export class DebugCommand extends BaseCommand {
     ];
 
     return args.map(quoteShellArg).join(' ');
-  }
-
-  private resolveGatewayOptions(
-    options: DebugCommandOptions,
-    snapshot: DebugPluginSnapshot
-  ): Promise<DebugGatewayClientOptions> | DebugGatewayClientOptions {
-    if (options.connect) {
-      return this.resolveConnectGatewayOptions(options);
-    }
-
-    const userId = options.gatewayUserId ?? process.env.CONNECTION_GATEWAY_USER_ID ?? 'debug-user';
-    const tcpEndpoint = resolveGatewayTcpEndpoint(options);
-
-    return {
-      baseUrl:
-        options.gatewayBaseUrl ??
-        process.env.CONNECTION_GATEWAY_BASE_URL ??
-        'http://127.0.0.1:3010',
-      authToken:
-        options.gatewayAuthToken ??
-        process.env.CONNECTION_GATEWAY_AUTH_TOKEN ??
-        process.env.AUTH_TOKEN ??
-        'token',
-      jwtSecret: options.gatewayJwtSecret ?? process.env.JWT_SECRET ?? 'fastgpt-plugin-secret',
-      tcpHost: tcpEndpoint.host,
-      tcpPort: tcpEndpoint.port,
-      userId,
-      teamId: options.gatewayTeamId ?? process.env.CONNECTION_GATEWAY_TEAM_ID,
-      source: this.resolveGatewaySource(options, snapshot),
-      subject: options.gatewaySubject ?? process.env.CONNECTION_GATEWAY_SUBJECT,
-      tokenTtlMs: toPositiveInt(
-        options.gatewayTokenTtlMs ?? process.env.CONNECTION_GATEWAY_TOKEN_TTL_MS ?? '300000',
-        'gateway-token-ttl-ms'
-      ),
-      reconnect: options.gatewayNoReconnect ? false : options.gatewayReconnect ?? true,
-      reconnectIntervalMs: toPositiveInt(
-        options.gatewayReconnectIntervalMs ??
-          process.env.CONNECTION_GATEWAY_RECONNECT_INTERVAL_MS ??
-          '2000',
-        'gateway-reconnect-interval-ms'
-      )
-    };
-  }
-
-  private async resolveConnectGatewayOptions(
-    options: DebugCommandOptions
-  ): Promise<DebugGatewayClientOptions> {
-    const info = await exchangeConnectLink(options.connect as string);
-    const tcpEndpoint = parseGatewayTcpUrl(info.tcpUrl);
-
-    return {
-      baseUrl: '',
-      tcpHost: tcpEndpoint.host,
-      tcpPort: tcpEndpoint.port,
-      userId: info.tmbId,
-      source: info.source,
-      tokenTtlMs: Math.max(1, info.expiresAt - Date.now()),
-      reconnect: options.gatewayNoReconnect ? false : options.gatewayReconnect ?? true,
-      reconnectIntervalMs: toPositiveInt(
-        options.gatewayReconnectIntervalMs ??
-          process.env.CONNECTION_GATEWAY_RECONNECT_INTERVAL_MS ??
-          '2000',
-        'gateway-reconnect-interval-ms'
-      ),
-      precreatedSession: {
-        session: info.session,
-        connectToken: info.connectToken
-      }
-    };
-  }
-
-  private resolveGatewaySource(
-    options: DebugCommandOptions,
-    _snapshot: DebugPluginSnapshot
-  ): string {
-    const userId = options.gatewayUserId ?? process.env.CONNECTION_GATEWAY_USER_ID ?? 'debug-user';
-    const explicitSource = this.getExplicitGatewaySource(options);
-
-    if (explicitSource) {
-      return explicitSource;
-    }
-
-    return makeDefaultGatewaySource(userId);
-  }
-
-  private getExplicitGatewaySource(options: DebugCommandOptions): string | undefined {
-    return options.gatewaySource ?? process.env.CONNECTION_GATEWAY_SOURCE;
-  }
-
-  private async runGatewaySession({
-    sessions,
-    options
-  }: {
-    sessions: Array<{
-      runtime: Awaited<ReturnType<typeof loadDebugSession>>['runtime'];
-      snapshot: DebugPluginSnapshot;
-    }>;
-    options: DebugCommandOptions;
-  }): Promise<void> {
-    const targets: DebugGatewayTarget[] = sessions.map((session) => ({
-      runtime: session.runtime,
-      snapshot: session.snapshot
-    }));
-    const gatewayOptions = await this.resolveGatewayOptions(options, sessions[0].snapshot);
-    const gateway = await connectDebugGateway({
-      targets,
-      options: gatewayOptions,
-      onLog: (message) => logger.info(message)
-    });
-    const source = gateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
-
-    targets.forEach((target) => {
-      logger.success(`远程调试已就绪: ${source} ${target.snapshot.pluginId}`);
-    });
-    logger.info(`已建立 1 个远程调试通道，挂载 ${targets.length} 个插件，按 Ctrl+C 停止。`);
-    await gateway.closed;
   }
 
   private resolveUploadDir({
@@ -472,109 +322,6 @@ function quoteShellArg(value: string): string {
   }
 
   return `'${value.replace(/'/g, `'"'"'`)}'`;
-}
-
-function toPositiveInt(value: string, label: string): number {
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    throw new Error(`${label} 必须是正整数。`);
-  }
-
-  return parsed;
-}
-
-function makeDefaultGatewaySource(userId: string): string {
-  return `debug:user:${userId}`;
-}
-
-function resolveGatewayTcpEndpoint(options: DebugCommandOptions): { host: string; port: number } {
-  const tcpUrl = options.gatewayTcpUrl ?? process.env.CONNECTION_GATEWAY_TCP_URL;
-
-  if (tcpUrl) {
-    return parseGatewayTcpUrl(tcpUrl);
-  }
-
-  return {
-    host: options.gatewayTcpHost ?? process.env.CONNECTION_GATEWAY_TCP_HOST ?? '127.0.0.1',
-    port: toPositiveInt(
-      options.gatewayTcpPort ?? process.env.CONNECTION_GATEWAY_TCP_PORT ?? '3011',
-      'gateway-tcp-port'
-    )
-  };
-}
-
-const ConnectInfoSchema = z.object({
-  tcpUrl: z.string().min(1),
-  source: z.string().min(1),
-  sessionId: z.string().min(1),
-  connectToken: z.string().min(1),
-  expiresAt: z.number().int().positive(),
-  session: ConnectionGatewaySessionSchema.optional()
-});
-
-async function exchangeConnectLink(connectUrl: string) {
-  const response = await fetch(connectUrl);
-  const text = await response.text();
-  const payload = text ? JSON.parse(text) : {};
-
-  if (!response.ok) {
-    throw new Error(`connect link 请求失败: ${response.status} ${text}`);
-  }
-
-  const info = ConnectInfoSchema.parse(payload.data ?? payload);
-  const session =
-    info.session ??
-    ConnectionGatewaySessionSchema.parse({
-      id: info.sessionId,
-      consumerType: 'plugin-debug',
-      subject: parseTmbIdFromDebugSource(info.source),
-      sessionScope: {
-        userId: parseTmbIdFromDebugSource(info.source),
-        source: info.source
-      },
-      transport: 'tcp',
-      capabilities: ['gateway.bind', 'invoke'],
-      generation: 0,
-      ownerNodeId: 'remote',
-      status: 'connecting',
-      connectedAt: Date.now(),
-      lastSeenAt: Date.now(),
-      expiresAt: info.expiresAt,
-      metadata: {
-        connectToken: info.connectToken
-      }
-    });
-
-  return {
-    ...info,
-    tmbId: parseTmbIdFromDebugSource(info.source),
-    session
-  };
-}
-
-function parseTmbIdFromDebugSource(source: string): string {
-  const parts = source.split(':');
-  const index = parts.indexOf('tmbId');
-  const tmbId = index >= 0 ? parts[index + 1] : undefined;
-  if (!tmbId) {
-    throw new Error(`debug source 缺少 tmbId: ${source}`);
-  }
-  return tmbId;
-}
-
-function parseGatewayTcpUrl(tcpUrl: string): { host: string; port: number } {
-  const parsed = new URL(tcpUrl);
-  if (parsed.protocol !== 'tcp:') {
-    throw new Error('gateway-tcp-url 必须使用 tcp:// 协议。');
-  }
-  if (!parsed.hostname || !parsed.port) {
-    throw new Error('gateway-tcp-url 必须包含 host 和 port。');
-  }
-
-  return {
-    host: parsed.hostname,
-    port: toPositiveInt(parsed.port, 'gateway-tcp-url port')
-  };
 }
 
 function findDuplicateValues(values: string[]): string[] {

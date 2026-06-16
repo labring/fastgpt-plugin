@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,12 +9,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { run } from '../cmd';
 import { logger } from '../helpers';
 
-const { connectDebugGatewayMock } = vi.hoisted(() => ({
-  connectDebugGatewayMock: vi.fn()
+const { connectDebugGatewayMock, inputMock, selectMock } = vi.hoisted(() => ({
+  connectDebugGatewayMock: vi.fn(),
+  inputMock: vi.fn(),
+  selectMock: vi.fn()
 }));
 
 vi.mock('@fastgpt-plugin/cli/debug/gateway', () => ({
   connectDebugGateway: connectDebugGatewayMock
+}));
+
+vi.mock('@inquirer/prompts', () => ({
+  input: inputMock,
+  select: selectMock
 }));
 
 const FIXTURE_ROOT = fileURLToPath(new URL('../../../../test/fixtures/', import.meta.url));
@@ -26,7 +33,8 @@ describe('debug command', () => {
   const loggerSpy = {
     success: vi.fn(),
     info: vi.fn(),
-    error: vi.fn()
+    error: vi.fn(),
+    warn: vi.fn()
   };
   let exitSpy: ReturnType<typeof vi.spyOn>;
   let tempUploadDir: string;
@@ -35,6 +43,7 @@ describe('debug command', () => {
     vi.spyOn(logger, 'success').mockImplementation(loggerSpy.success);
     vi.spyOn(logger, 'info').mockImplementation(loggerSpy.info);
     vi.spyOn(logger, 'error').mockImplementation(loggerSpy.error);
+    vi.spyOn(logger, 'warn').mockImplementation(loggerSpy.warn);
     exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
       session: {
@@ -66,7 +75,9 @@ describe('debug command', () => {
     loggerSpy.success.mockReset();
     loggerSpy.info.mockReset();
     loggerSpy.error.mockReset();
+    loggerSpy.warn.mockReset();
     vi.unstubAllGlobals();
+    inputMock.mockReset();
     delete process.env.CONNECTION_GATEWAY_AUTH_TOKEN;
     await rm(tempUploadDir, { recursive: true, force: true });
   });
@@ -138,47 +149,6 @@ describe('debug command', () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
-  it('应能连接 Connection Gateway 等待远程调试请求', async () => {
-    await run([
-      process.execPath,
-      'cli',
-      'debug',
-      GETTIME_TOOL_DIR,
-      '--gateway',
-      '--gateway-user-id',
-      'u1',
-      '--gateway-source',
-      'debug:user:u1'
-    ]);
-
-    const successOutput = getLoggerOutput(loggerSpy.success);
-
-    expect(successOutput).toContain('远程调试已就绪: debug:user:u1 getTime');
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-    expect(exitSpy).not.toHaveBeenCalled();
-  });
-
-  it('应能通过 tcp URL 连接 Connection Gateway', async () => {
-    await run([
-      process.execPath,
-      'cli',
-      'debug',
-      GETTIME_TOOL_DIR,
-      '--gateway',
-      '--gateway-user-id',
-      'u1',
-      '--gateway-tcp-url',
-      'tcp://tcp.example.com:39430'
-    ]);
-
-    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
-      tcpHost: 'tcp.example.com',
-      tcpPort: 39430
-    });
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-    expect(exitSpy).not.toHaveBeenCalled();
-  });
-
   it('应能通过 connect link 换取预创建远程调试连接信息', async () => {
     vi.stubGlobal(
       'fetch',
@@ -246,88 +216,219 @@ describe('debug command', () => {
     expect(getLoggerOutput(loggerSpy.success)).toContain(
       '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 getTime'
     );
+    expect(getLoggerOutput(loggerSpy.warn)).toContain('debug --connect 是兼容入口');
+  });
+});
+
+describe('dev command', () => {
+  const loggerSpy = {
+    success: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn()
+  };
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(async () => {
+    vi.spyOn(logger, 'success').mockImplementation(loggerSpy.success);
+    vi.spyOn(logger, 'info').mockImplementation(loggerSpy.info);
+    vi.spyOn(logger, 'error').mockImplementation(loggerSpy.error);
+    vi.spyOn(logger, 'warn').mockImplementation(loggerSpy.warn);
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
+      session: {
+        id: 'session-debug',
+        consumerType: 'plugin-debug',
+        subject: `user:${options.userId}`,
+        sessionScope: {
+          userId: options.userId,
+          source: options.source
+        },
+        transport: 'tcp',
+        capabilities: ['invoke'],
+        generation: 0,
+        ownerNodeId: 'node-a',
+        status: 'connected',
+        connectedAt: Date.now(),
+        lastSeenAt: Date.now(),
+        expiresAt: Date.now() + 60_000
+      },
+      close: vi.fn(),
+      closed: Promise.resolve()
+    }));
+    connectDebugGatewayMock.mockClear();
   });
 
-  it('应能通过 CONNECTION_GATEWAY_AUTH_TOKEN 配置 gateway token', async () => {
-    process.env.CONNECTION_GATEWAY_AUTH_TOKEN = 'gateway-token-from-env';
+  afterEach(() => {
+    vi.restoreAllMocks();
+    loggerSpy.success.mockReset();
+    loggerSpy.info.mockReset();
+    loggerSpy.error.mockReset();
+    loggerSpy.warn.mockReset();
+    vi.unstubAllGlobals();
+    inputMock.mockReset();
+    delete process.env.CONNECTION_GATEWAY_AUTH_TOKEN;
+  });
+
+  it('应能通过 dev --connect 启动集成开发会话', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              tcpUrl: 'tcp://tcp.example.com:39430',
+              source: 'debug:tmbId:tmb-1:session:debug-1',
+              sessionId: 'session-debug',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
 
     await run([
       process.execPath,
       'cli',
-      'debug',
-      GETTIME_TOOL_DIR,
-      '--gateway',
-      '--gateway-user-id',
-      'u1'
-    ]);
-
-    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
-      authToken: 'gateway-token-from-env'
-    });
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-    expect(exitSpy).not.toHaveBeenCalled();
-  });
-
-  it('默认开启 Connection Gateway 自动重连', async () => {
-    await run([
-      process.execPath,
-      'cli',
-      'debug',
-      GETTIME_TOOL_DIR,
-      '--gateway',
-      '--gateway-user-id',
-      'u1'
-    ]);
-
-    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
-      reconnect: true,
-      reconnectIntervalMs: 2000
-    });
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-    expect(exitSpy).not.toHaveBeenCalled();
-  });
-
-  it('应能关闭 Connection Gateway 自动重连', async () => {
-    await run([
-      process.execPath,
-      'cli',
-      'debug',
-      GETTIME_TOOL_DIR,
-      '--gateway',
-      '--gateway-user-id',
-      'u1',
-      '--gateway-no-reconnect'
-    ]);
-
-    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
-      reconnect: false
-    });
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-    expect(exitSpy).not.toHaveBeenCalled();
-  });
-
-  it('应能在一个 CLI 进程内为多个插件建立远程调试通道', async () => {
-    await run([
-      process.execPath,
-      'cli',
-      'debug',
+      'dev',
       GETTIME_TOOL_DIR,
       DBOPS_SUITE_DIR,
-      '--gateway',
-      '--gateway-user-id',
-      'u1'
+      '--connect',
+      'https://fastgpt.example.com/debug/connect?ticket=t1',
+      '--no-interactive'
     ]);
 
-    const successOutput = getLoggerOutput(loggerSpy.success);
     const infoOutput = getLoggerOutput(loggerSpy.info);
 
-    expect(vi.mocked(connectDebugGateway)).toHaveBeenCalledTimes(1);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'https://fastgpt.example.com/debug/connect?ticket=t1'
+    );
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].targets).toHaveLength(2);
-    expect(successOutput).toContain('远程调试已就绪: debug:user:u1 getTime');
-    expect(successOutput).toContain('远程调试已就绪: debug:user:u1 dbops');
-    expect(infoOutput).toContain('已建立 1 个远程调试通道，挂载 2 个插件');
+    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
+      tcpHost: 'tcp.example.com',
+      tcpPort: 39430,
+      source: 'debug:tmbId:tmb-1:session:debug-1'
+    });
+    expect(infoOutput).toContain('FastGPT 插件开发会话');
+    expect(infoOutput).toContain('command: fastgpt-plugin dev');
+    expect(infoOutput).toContain('ui: plain');
+    expect(getLoggerOutput(loggerSpy.success)).toContain(
+      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 getTime'
+    );
+    expect(getLoggerOutput(loggerSpy.success)).toContain(
+      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 dbops'
+    );
+    expect(loggerSpy.warn).not.toHaveBeenCalled();
     expect(loggerSpy.error).not.toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('dev 未指定插件目录时应自动发现当前目录下的插件', async () => {
+    const workspaceDir = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-dev-discover-'));
+    await cp(GETTIME_TOOL_DIR, path.join(workspaceDir, 'getTime'), {
+      recursive: true
+    });
+    await cp(DBOPS_SUITE_DIR, path.join(workspaceDir, 'dbops'), {
+      recursive: true
+    });
+    const previousCwd = process.cwd();
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              tcpUrl: 'tcp://tcp.example.com:39430',
+              source: 'debug:tmbId:tmb-1:session:debug-1',
+              sessionId: 'session-debug',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
+
+    try {
+      process.chdir(workspaceDir);
+      await run([
+        process.execPath,
+        'cli',
+        'dev',
+        '--connect',
+        'https://fastgpt.example.com/debug/connect?ticket=t1',
+        '--no-interactive'
+      ]);
+    } finally {
+      process.chdir(previousCwd);
+      await rm(workspaceDir, { recursive: true, force: true });
+    }
+
+    const infoOutput = getLoggerOutput(loggerSpy.info);
+
+    expect(infoOutput).toContain('自动发现 2 个可调试插件');
+    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].targets).toHaveLength(2);
+    expect(getLoggerOutput(loggerSpy.success)).toContain(
+      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 getTime'
+    );
+    expect(getLoggerOutput(loggerSpy.success)).toContain(
+      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 dbops'
+    );
+  });
+
+  it('dev 未传 --connect 时应在交互式终端提示输入 connect link', async () => {
+    inputMock.mockResolvedValue('https://fastgpt.example.com/debug/connect?ticket=t1');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              tcpUrl: 'tcp://tcp.example.com:39430',
+              source: 'debug:tmbId:tmb-1:session:debug-1',
+              sessionId: 'session-debug',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
+    const stdinIsTTY = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+    const stdoutIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdin, 'isTTY', {
+      configurable: true,
+      get: () => true
+    });
+    Object.defineProperty(process.stdout, 'isTTY', {
+      configurable: true,
+      get: () => true
+    });
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    try {
+      await run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR]);
+    } finally {
+      restorePropertyDescriptor(process.stdin, 'isTTY', stdinIsTTY);
+      restorePropertyDescriptor(process.stdout, 'isTTY', stdoutIsTTY);
+    }
+
+    expect(inputMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'FastGPT connect link'
+      })
+    );
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'https://fastgpt.example.com/debug/connect?ticket=t1'
+    );
+  });
+
+  it('非交互模式缺少 connect link 时应提示传入 --connect', async () => {
+    await expect(
+      run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR, '--no-interactive'])
+    ).rejects.toThrow('dev 需要 --connect');
   });
 });
 
@@ -335,4 +436,17 @@ function getLoggerOutput(mockFn: ReturnType<typeof vi.fn>): string {
   return mockFn.mock.calls
     .map(([message]) => (typeof message === 'string' ? message : JSON.stringify(message)))
     .join('\n');
+}
+
+function restorePropertyDescriptor(
+  target: object,
+  property: string,
+  descriptor: PropertyDescriptor | undefined
+): void {
+  if (descriptor) {
+    Object.defineProperty(target, property, descriptor);
+    return;
+  }
+
+  Reflect.deleteProperty(target, property);
 }
