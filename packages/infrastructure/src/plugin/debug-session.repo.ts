@@ -5,7 +5,7 @@ import type Redis from 'ioredis';
 import type {
   CreatePluginDebugSessionInput,
   CreatePluginDebugSessionOutput,
-  ExchangePluginDebugSessionTicketOutput,
+  ExchangePluginDebugSessionConnectKeyOutput,
   PluginDebugSessionPort
 } from '@domain/ports/plugin/plugin-debug-session.port';
 import {
@@ -18,7 +18,7 @@ const KEY_PREFIX = 'plugin-debug:sessions';
 
 export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
   private readonly sessions = new Map<string, PluginDebugSession>();
-  private readonly tickets = new Map<string, string>();
+  private readonly connectKeys = new Map<string, string>();
   private readonly activeByTmbId = new Map<string, string>();
 
   constructor(private readonly hashSecret = 'test-secret') {}
@@ -26,13 +26,13 @@ export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
   async create(input: CreatePluginDebugSessionInput): Promise<CreatePluginDebugSessionOutput> {
     const now = input.now ?? Date.now();
     const debugSessionId = randomUUID();
-    const ticket = createOpaqueTicket();
+    const connectKey = createOpaqueConnectKey();
     const session: PluginDebugSession = {
       debugSessionId,
       tmbId: input.tmbId,
       source: makePluginDebugSessionSource({ tmbId: input.tmbId, debugSessionId }),
       status: 'pending',
-      ticketHash: hashTicket(ticket, this.hashSecret),
+      connectKeyHash: hashConnectKey(connectKey, this.hashSecret),
       createdAt: now,
       expiresAt: now + input.ttlMs
     };
@@ -46,30 +46,29 @@ export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
       : null;
 
     this.sessions.set(this.sessionKey(session), session);
-    this.tickets.set(session.ticketHash, this.sessionKey(session));
+    this.connectKeys.set(session.connectKeyHash, this.sessionKey(session));
     this.activeByTmbId.set(session.tmbId, session.debugSessionId);
 
     return {
       session,
-      ticket,
+      connectKey,
       ...(revokedSession ? { revokedSession } : {})
     };
   }
 
-  async exchangeTicket(
-    ticket: string,
+  async exchangeConnectKey(
+    connectKey: string,
     now = Date.now()
-  ): Promise<ExchangePluginDebugSessionTicketOutput> {
-    const ticketHash = hashTicket(ticket, this.hashSecret);
-    const sessionKey = this.tickets.get(ticketHash);
+  ): Promise<ExchangePluginDebugSessionConnectKeyOutput> {
+    const connectKeyHash = hashConnectKey(connectKey, this.hashSecret);
+    const sessionKey = this.connectKeys.get(connectKeyHash);
     if (!sessionKey) {
-      throw new Error('Debug session ticket not found');
+      throw new Error('Debug session connect key not found');
     }
 
-    this.tickets.delete(ticketHash);
     const session = this.sessions.get(sessionKey);
     if (!session || session.expiresAt <= now || session.status === 'revoked') {
-      throw new Error('Debug session ticket expired');
+      throw new Error('Debug session connect key expired');
     }
 
     return { session };
@@ -105,7 +104,7 @@ export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
       revokedAt: session.revokedAt ?? now
     };
     this.sessions.set(this.sessionKey(next), next);
-    this.tickets.delete(next.ticketHash);
+    this.connectKeys.delete(next.connectKeyHash);
     if (this.activeByTmbId.get(next.tmbId) === next.debugSessionId) {
       this.activeByTmbId.delete(next.tmbId);
     }
@@ -154,13 +153,13 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
   async create(input: CreatePluginDebugSessionInput): Promise<CreatePluginDebugSessionOutput> {
     const now = input.now ?? Date.now();
     const debugSessionId = randomUUID();
-    const ticket = createOpaqueTicket();
+    const connectKey = createOpaqueConnectKey();
     const session: PluginDebugSession = {
       debugSessionId,
       tmbId: input.tmbId,
       source: makePluginDebugSessionSource({ tmbId: input.tmbId, debugSessionId }),
       status: 'pending',
-      ticketHash: hashTicket(ticket, this.hashSecret),
+      connectKeyHash: hashConnectKey(connectKey, this.hashSecret),
       createdAt: now,
       expiresAt: now + input.ttlMs
     };
@@ -176,31 +175,36 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
     await this.saveSession(session);
     await this.redis
       .multi()
-      .set(this.ticketKey(session.ticketHash), this.sessionKey(session), 'PX', input.ticketTtlMs)
+      .set(
+        this.connectKeyRedisKey(session.connectKeyHash),
+        this.sessionKey(session),
+        'PX',
+        input.connectKeyTtlMs
+      )
       .set(this.activeKey(session.tmbId), session.debugSessionId, 'PX', input.ttlMs)
       .exec();
 
     return {
       session,
-      ticket,
+      connectKey,
       ...(revokedSession ? { revokedSession } : {})
     };
   }
 
-  async exchangeTicket(
-    ticket: string,
+  async exchangeConnectKey(
+    connectKey: string,
     now = Date.now()
-  ): Promise<ExchangePluginDebugSessionTicketOutput> {
-    const ticketHash = hashTicket(ticket, this.hashSecret);
-    const ticketKey = this.ticketKey(ticketHash);
-    const sessionKey = await this.redis.call('GETDEL', ticketKey);
+  ): Promise<ExchangePluginDebugSessionConnectKeyOutput> {
+    const connectKeyHash = hashConnectKey(connectKey, this.hashSecret);
+    const connectKeyRedisKey = this.connectKeyRedisKey(connectKeyHash);
+    const sessionKey = await this.redis.get(connectKeyRedisKey);
     if (!sessionKey) {
-      throw new Error('Debug session ticket not found');
+      throw new Error('Debug session connect key not found');
     }
 
     const session = await this.getByKey(String(sessionKey), now);
     if (!session || session.status === 'revoked') {
-      throw new Error('Debug session ticket expired');
+      throw new Error('Debug session connect key expired');
     }
 
     return { session };
@@ -232,7 +236,7 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
     };
     await this.saveSession(next);
 
-    const multi = this.redis.multi().del(this.ticketKey(next.ticketHash));
+    const multi = this.redis.multi().del(this.connectKeyRedisKey(next.connectKeyHash));
     if ((await this.redis.get(this.activeKey(next.tmbId))) === next.debugSessionId) {
       multi.del(this.activeKey(next.tmbId));
     }
@@ -292,8 +296,8 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
     return `${KEY_PREFIX}:by-id:${input.tmbId}:${input.debugSessionId}`;
   }
 
-  private ticketKey(ticketHash: string): string {
-    return `${KEY_PREFIX}:by-ticket:${ticketHash}`;
+  private connectKeyRedisKey(connectKeyHash: string): string {
+    return `${KEY_PREFIX}:by-connect-key:${connectKeyHash}`;
   }
 
   private activeKey(tmbId: string): string {
@@ -315,10 +319,10 @@ function normalizeSessionExpiry(
   };
 }
 
-function createOpaqueTicket(): string {
+function createOpaqueConnectKey(): string {
   return randomBytes(32).toString('base64url');
 }
 
-function hashTicket(ticket: string, secret: string): string {
-  return createHmac('sha256', secret).update(ticket).digest('base64url');
+function hashConnectKey(connectKey: string, secret: string): string {
+  return createHmac('sha256', secret).update(connectKey).digest('base64url');
 }

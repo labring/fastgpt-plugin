@@ -7,23 +7,26 @@ import type {
 export type CreatePluginDebugSessionInput = {
   tmbId: PluginDebugSessionTmbId;
   ttlMs: number;
-  ticketTtlMs: number;
+  connectKeyTtlMs: number;
   now?: number;
 };
 
 export type CreatePluginDebugSessionOutput = {
   session: PluginDebugSession;
-  ticket: string;
+  connectKey: string;
   revokedSession?: PluginDebugSession;
 };
 
-export type ExchangePluginDebugSessionTicketOutput = {
+export type ExchangePluginDebugSessionConnectKeyOutput = {
   session: PluginDebugSession;
 };
 
 export interface PluginDebugSessionPort {
   create(input: CreatePluginDebugSessionInput): Promise<CreatePluginDebugSessionOutput>;
-  exchangeTicket(ticket: string, now?: number): Promise<ExchangePluginDebugSessionTicketOutput>;
+  exchangeConnectKey(
+    connectKey: string,
+    now?: number
+  ): Promise<ExchangePluginDebugSessionConnectKeyOutput>;
   get(input: {
     tmbId: PluginDebugSessionTmbId;
     debugSessionId: PluginDebugSessionId;

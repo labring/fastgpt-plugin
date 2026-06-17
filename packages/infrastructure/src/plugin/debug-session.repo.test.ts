@@ -3,35 +3,33 @@ import { describe, expect, it } from 'vitest';
 import { InMemoryPluginDebugSessionRepo } from './debug-session.repo';
 
 describe('InMemoryPluginDebugSessionRepo', () => {
-  it('creates a tmbId scoped session and consumes tickets once', async () => {
+  it('creates a tmbId scoped session and reuses its connect key', async () => {
     const repo = new InMemoryPluginDebugSessionRepo('secret');
     const now = Date.now();
-    const { session, ticket } = await repo.create({
+    const { session, connectKey } = await repo.create({
       tmbId: 'tmb-1',
       ttlMs: 60_000,
-      ticketTtlMs: 10_000,
+      connectKeyTtlMs: 10_000,
       now
     });
 
     expect(session.source).toBe(`debug:tmbId:tmb-1:session:${session.debugSessionId}`);
-    await expect(repo.exchangeTicket(ticket, now + 1)).resolves.toEqual({ session });
-    await expect(repo.exchangeTicket(ticket, now + 2)).rejects.toThrow(
-      'Debug session ticket not found'
-    );
+    await expect(repo.exchangeConnectKey(connectKey, now + 1)).resolves.toEqual({ session });
+    await expect(repo.exchangeConnectKey(connectKey, now + 2)).resolves.toEqual({ session });
   });
 
-  it('revokes the previous active session for the same tmbId', async () => {
+  it('keeps only one active connect key per tmbId', async () => {
     const repo = new InMemoryPluginDebugSessionRepo('secret');
     const first = await repo.create({
       tmbId: 'tmb-1',
       ttlMs: 60_000,
-      ticketTtlMs: 10_000,
+      connectKeyTtlMs: 10_000,
       now: 1_000
     });
     const second = await repo.create({
       tmbId: 'tmb-1',
       ttlMs: 60_000,
-      ticketTtlMs: 10_000,
+      connectKeyTtlMs: 10_000,
       now: 2_000
     });
 
@@ -39,10 +37,10 @@ describe('InMemoryPluginDebugSessionRepo', () => {
       debugSessionId: first.session.debugSessionId,
       status: 'revoked'
     });
-    await expect(repo.exchangeTicket(first.ticket, 2_001)).rejects.toThrow(
-      'Debug session ticket not found'
+    await expect(repo.exchangeConnectKey(first.connectKey, 2_001)).rejects.toThrow(
+      'Debug session connect key not found'
     );
-    await expect(repo.exchangeTicket(second.ticket, 2_001)).resolves.toMatchObject({
+    await expect(repo.exchangeConnectKey(second.connectKey, 2_001)).resolves.toMatchObject({
       session: {
         debugSessionId: second.session.debugSessionId
       }

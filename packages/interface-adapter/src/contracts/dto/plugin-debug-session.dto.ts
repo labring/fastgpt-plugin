@@ -21,19 +21,24 @@ export const PluginDebugSessionCreateResponseDTOSchema = z.object({
   debugSessionId: z.string().min(1),
   tmbId: z.string().min(1),
   source: z.string().min(1),
-  ticket: z.string().min(1),
-  ticketExpiresAt: z.number().int().positive(),
+  connectKey: z.string().min(1),
+  connectKeyExpiresAt: z.number().int().positive(),
+  ticket: z.string().min(1).optional(),
+  ticketExpiresAt: z.number().int().positive().optional(),
   expiresAt: z.number().int().positive()
 });
 
 export const PluginDebugSessionTicketExchangeRequestDTOSchema = z.object({
-  ticket: z.string().min(1)
+  connectKey: z.string().min(1).optional(),
+  ticket: z.string().min(1).optional()
+}).refine((value) => value.connectKey || value.ticket, {
+  message: 'connectKey is required'
 });
 
 export const PluginDebugSessionTicketExchangeResponseDTOSchema = z.object({
   tcpUrl: z.string().min(1),
   source: z.string().min(1),
-  sessionId: z.string().min(1),
+  sessionId: z.string().min(1).optional(),
   session: ConnectionGatewaySessionSchema,
   connectToken: z.string().min(1),
   expiresAt: z.number().int().positive()

@@ -28,7 +28,7 @@ export const PluginDebugSessionSchema = z.object({
   tmbId: PluginDebugSessionTmbIdSchema,
   source: z.string().min(1),
   status: PluginDebugSessionStatusSchema,
-  ticketHash: z.string().min(1),
+  connectKeyHash: z.string().min(1),
   gatewaySessionId: z.string().min(1).optional(),
   createdAt: z.number().int().positive(),
   expiresAt: z.number().int().positive(),

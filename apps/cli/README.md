@@ -33,7 +33,7 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
 
 ### 远程调试
 
-本地插件可以通过 FastGPT 生成的 connect link 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并创建 debug session，CLI 只使用一次性 ticket 换取短期连接信息。
+本地插件可以通过 FastGPT 生成的 connect link 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并创建 debug session，CLI 只使用可重复使用的 connect key 换取连接信息。
 
 ```bash
 fastgpt-plugin dev
@@ -43,10 +43,10 @@ fastgpt-plugin dev
 
 ```bash
 fastgpt-plugin dev --no-interactive \
-  --connect "https://fastgpt.example.com/debug-plugin/connect?ticket=..."
+  --connect "https://fastgpt.example.com/debug-plugin/connect?connectKey=..."
 ```
 
-connect link 会返回 gateway TCP 地址、`debug:tmbId:{tmbId}:session:{debugSessionId}` source、预创建 session 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
+connect link 会返回 gateway TCP 地址、`debug:tmbId:{tmbId}:session:{debugSessionId}` source、当前 gateway session 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
 
 `dev` 未传插件目录时会自动探测当前目录：如果当前目录有 `index.ts`，则把当前目录作为插件；否则扫描当前目录下一层子目录中的 `index.ts`。也可以手动传入多个插件目录。
 

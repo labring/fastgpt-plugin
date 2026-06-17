@@ -190,11 +190,11 @@ describe('debug command', () => {
       'debug',
       GETTIME_TOOL_DIR,
       '--connect',
-      'https://fastgpt.example.com/debug/connect?ticket=t1'
+      'https://fastgpt.example.com/debug/connect?connectKey=t1'
     ]);
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://fastgpt.example.com/debug/connect?ticket=t1'
+      'https://fastgpt.example.com/debug/connect?connectKey=t1'
     );
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
       tcpHost: 'tcp.example.com',
@@ -295,14 +295,14 @@ describe('dev command', () => {
       GETTIME_TOOL_DIR,
       DBOPS_SUITE_DIR,
       '--connect',
-      'https://fastgpt.example.com/debug/connect?ticket=t1',
+      'https://fastgpt.example.com/debug/connect?connectKey=t1',
       '--no-interactive'
     ]);
 
     const infoOutput = getLoggerOutput(loggerSpy.info);
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://fastgpt.example.com/debug/connect?ticket=t1'
+      'https://fastgpt.example.com/debug/connect?connectKey=t1'
     );
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].targets).toHaveLength(2);
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
@@ -358,7 +358,7 @@ describe('dev command', () => {
         'cli',
         'dev',
         '--connect',
-        'https://fastgpt.example.com/debug/connect?ticket=t1',
+        'https://fastgpt.example.com/debug/connect?connectKey=t1',
         '--no-interactive'
       ]);
     } finally {
@@ -379,7 +379,7 @@ describe('dev command', () => {
   });
 
   it('dev 未传 --connect 时应在交互式终端提示输入 connect link', async () => {
-    inputMock.mockResolvedValue('https://fastgpt.example.com/debug/connect?ticket=t1');
+    inputMock.mockResolvedValue('https://fastgpt.example.com/debug/connect?connectKey=t1');
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
@@ -421,7 +421,7 @@ describe('dev command', () => {
       })
     );
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://fastgpt.example.com/debug/connect?ticket=t1'
+      'https://fastgpt.example.com/debug/connect?connectKey=t1'
     );
   });
 

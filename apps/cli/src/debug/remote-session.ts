@@ -567,7 +567,7 @@ function resolveUploadDir({
 const ConnectInfoSchema = z.object({
   tcpUrl: z.string().min(1),
   source: z.string().min(1),
-  sessionId: z.string().min(1),
+  sessionId: z.string().min(1).optional(),
   connectToken: z.string().min(1),
   expiresAt: z.number().int().positive(),
   session: ConnectionGatewaySessionSchema.optional()
@@ -583,10 +583,14 @@ async function exchangeConnectLink(connectUrl: string) {
   }
 
   const info = ConnectInfoSchema.parse(payload.data ?? payload);
+  const sessionId = info.sessionId ?? info.session?.id;
+  if (!sessionId) {
+    throw new Error('connect link 响应缺少 gateway session');
+  }
   const session =
     info.session ??
     ConnectionGatewaySessionSchema.parse({
-      id: info.sessionId,
+      id: sessionId,
       consumerType: 'plugin-debug',
       subject: parseTmbIdFromDebugSource(info.source),
       sessionScope: {

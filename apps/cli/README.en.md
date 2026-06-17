@@ -33,7 +33,7 @@ Command-line tool for FastGPT plugin development. It is used to create, build, t
 
 ### Remote Debugging
 
-Local plugins can connect to a test-environment plugin-server through a FastGPT connect link. The recommended path is for FastGPT to authenticate the user and create the debug session, while the CLI only exchanges a one-time ticket for short-lived connection info.
+Local plugins can connect to a test-environment plugin-server through a FastGPT connect link. The recommended path is for FastGPT to authenticate the user and create the debug session, while the CLI exchanges a reusable connect key for connection info.
 
 ```bash
 fastgpt-plugin dev
@@ -43,10 +43,10 @@ After startup, paste the FastGPT-generated connect link into the TUI. Scripts an
 
 ```bash
 fastgpt-plugin dev --no-interactive \
-  --connect "https://fastgpt.example.com/debug-plugin/connect?ticket=..."
+  --connect "https://fastgpt.example.com/debug-plugin/connect?connectKey=..."
 ```
 
-The connect link returns the gateway TCP endpoint, `debug:tmbId:{tmbId}:session:{debugSessionId}` source, precreated session, and scoped connect token. The CLI does not need `CONNECTION_GATEWAY_AUTH_TOKEN` or `JWT_SECRET`.
+The connect link returns the gateway TCP endpoint, `debug:tmbId:{tmbId}:session:{debugSessionId}` source, current gateway session, and scoped connect token. The CLI does not need `CONNECTION_GATEWAY_AUTH_TOKEN` or `JWT_SECRET`.
 
 When no plugin directories are passed, `dev` auto-discovers plugins from the current directory. If the current directory has `index.ts`, it is used as the plugin entry; otherwise, the CLI scans one level of child directories for `index.ts`. You can still pass multiple plugin directories explicitly.
 

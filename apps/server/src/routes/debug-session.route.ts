@@ -64,19 +64,21 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
       try {
         const body = c.req.valid('json');
         const ttlMs = body.ttlMs ?? serverEnv.CONNECTION_GATEWAY_DEBUG_SESSION_TTL_MS;
-        const ticketTtlMs = Math.min(ttlMs, serverEnv.CONNECTION_GATEWAY_DEBUG_TICKET_TTL_MS);
-        const { session, ticket } = await deps.pluginDebugSessionRepo.create({
+        const connectKeyTtlMs = ttlMs;
+        const { session, connectKey } = await deps.pluginDebugSessionRepo.create({
           tmbId: body.tmbId,
           ttlMs,
-          ticketTtlMs
+          connectKeyTtlMs
         });
 
         return R.success(c, {
           debugSessionId: session.debugSessionId,
           tmbId: session.tmbId,
           source: session.source,
-          ticket,
-          ticketExpiresAt: Date.now() + ticketTtlMs,
+          connectKey,
+          connectKeyExpiresAt: Date.now() + connectKeyTtlMs,
+          ticket: connectKey,
+          ticketExpiresAt: Date.now() + connectKeyTtlMs,
           expiresAt: session.expiresAt
         });
       } catch (error) {
@@ -128,7 +130,9 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
     async (c) => {
       try {
         const body = c.req.valid('json');
-        const { session } = await deps.pluginDebugSessionRepo.exchangeTicket(body.ticket);
+        const { session } = await deps.pluginDebugSessionRepo.exchangeConnectKey(
+          body.connectKey ?? body.ticket ?? ''
+        );
         const connectToken = await gatewayTokenSigner.sign({
           consumerType: 'plugin-debug',
           subject: session.tmbId,
@@ -141,6 +145,15 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
           issuedAt: Date.now(),
           expiresAt: session.expiresAt
         });
+        if (session.gatewaySessionId) {
+          await deleteGatewaySession(session.gatewaySessionId).catch((error) => {
+            logger.warn('Delete stale gateway session before connect failed', {
+              debugSessionId: session.debugSessionId,
+              gatewaySessionId: session.gatewaySessionId,
+              error
+            });
+          });
+        }
         const gatewaySession = await createGatewaySession({
           token: connectToken,
           source: session.source
@@ -160,7 +173,7 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
           expiresAt: session.expiresAt
         });
       } catch (error) {
-        logger.error('Exchange debug session ticket failed', { error });
+        logger.error('Exchange debug session connect key failed', { error });
         return R.fail(c, 404, error instanceof Error ? error : String(error));
       }
     }

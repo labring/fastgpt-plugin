@@ -36,8 +36,8 @@ export const PluginDebugSessionContract = {
       method: 'post',
       path: '/plugin/debug-sessions/tickets:exchange',
       operationId: 'pluginDebugSession.exchangeTicket',
-      description: 'Exchange a one-time debug session ticket for scoped gateway connection info',
-      summary: 'Exchange debug ticket',
+      description: 'Exchange a reusable debug connect key for scoped gateway connection info',
+      summary: 'Exchange debug connect key',
       tags,
       security: authToken
     },
