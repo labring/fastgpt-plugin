@@ -2050,46 +2050,60 @@
           "label": "源语言",
           "type": "select",
           "required": true,
+          "description": "",
           "maxLen": 50,
           "enums": [
             {
-              "value": "简体中文"
+              "value": "简体中文",
+              "label": "简体中文"
             },
             {
-              "value": "繁體中文"
+              "value": "繁體中文",
+              "label": "繁體中文"
             },
             {
-              "value": "English"
+              "value": "English",
+              "label": "English"
             },
             {
-              "value": "Español"
+              "value": "Español",
+              "label": "Español"
             },
             {
-              "value": "Français"
+              "value": "Français",
+              "label": "Français"
             },
             {
-              "value": "Deutsch"
+              "value": "Deutsch",
+              "label": "Deutsch"
             },
             {
-              "value": "Italiano"
+              "value": "Italiano",
+              "label": "Italiano"
             },
             {
-              "value": "日本語"
+              "value": "日本語",
+              "label": "日本語"
             },
             {
-              "value": "한국어"
+              "value": "한국어",
+              "label": "한국어"
             },
             {
-              "value": "Русский"
+              "value": "Русский",
+              "label": "Русский"
             },
             {
-              "value": "العربية"
+              "value": "العربية",
+              "label": "العربية"
             },
             {
-              "value": "Bahasa Indonesia"
+              "value": "Bahasa Indonesia",
+              "label": "Bahasa Indonesia"
             },
             {
-              "value": "Polski"
+              "value": "Polski",
+              "label": "Polski"
             }
           ],
           "icon": "core/app/variable/select"
@@ -2100,46 +2114,60 @@
           "label": "目标语言",
           "type": "select",
           "required": true,
+          "description": "",
           "maxLen": 50,
           "enums": [
             {
-              "value": "简体中文"
+              "value": "简体中文",
+              "label": "简体中文"
             },
             {
-              "value": "繁體中文"
+              "value": "繁體中文",
+              "label": "繁體中文"
             },
             {
-              "value": "English"
+              "value": "English",
+              "label": "English"
             },
             {
-              "value": "Español"
+              "value": "Español",
+              "label": "Español"
             },
             {
-              "value": "Français"
+              "value": "Français",
+              "label": "Français"
             },
             {
-              "value": "Deutsch"
+              "value": "Deutsch",
+              "label": "Deutsch"
             },
             {
-              "value": "Italiano"
+              "value": "Italiano",
+              "label": "Italiano"
             },
             {
-              "value": "日本語"
+              "value": "日本語",
+              "label": "日本語"
             },
             {
-              "value": "한국어"
+              "value": "한국어",
+              "label": "한국어"
             },
             {
-              "value": "Русский"
+              "value": "Русский",
+              "label": "Русский"
             },
             {
-              "value": "العربية"
+              "value": "العربية",
+              "label": "العربية"
             },
             {
-              "value": "Bahasa Indonesia"
+              "value": "Bahasa Indonesia",
+              "label": "Bahasa Indonesia"
             },
             {
-              "value": "Polski"
+              "value": "Polski",
+              "label": "Polski"
             }
           ],
           "icon": "core/app/variable/select"

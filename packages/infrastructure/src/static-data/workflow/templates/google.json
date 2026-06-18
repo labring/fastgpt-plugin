@@ -176,12 +176,12 @@
         ],
         "outputs": [
           {
-            "id": "NodeOutputKeyEnum.answerText",
-            "key": "NodeOutputKeyEnum.answerText",
+            "id": "answerText",
+            "key": "answerText",
             "label": "core.module.output.label.Ai response content",
             "description": "core.module.output.description.Ai response content",
             "valueType": "string",
-            "type": "FlowNodeOutputTypeEnum.static"
+            "type": "static"
           }
         ]
       },
