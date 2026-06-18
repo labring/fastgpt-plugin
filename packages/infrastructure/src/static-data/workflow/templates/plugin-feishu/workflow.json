@@ -2,7 +2,6 @@
   "name": "飞书 webhook 插件",
   "intro": "通过 webhook 给飞书机器人发送一条消息",
   "author": "",
-  "avatar": "core/app/templates/plugin-feishu",
   "type": "plugin",
   "tags": ["recommendation", "office-services"],
   "workflow": {
