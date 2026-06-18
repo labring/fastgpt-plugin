@@ -48,7 +48,7 @@
             "key": "userChatInput",
             "label": "core.module.input.label.user question",
             "valueType": "string",
-            "type": "FlowNodeOutputTypeEnum.static"
+            "type": "static"
           }
         ]
       },
@@ -157,7 +157,7 @@
             "label": "core.module.output.label.New context",
             "description": "core.module.output.description.New context",
             "valueType": "chatHistory",
-            "type": "FlowNodeOutputTypeEnum.static"
+            "type": "static"
           },
           {
             "id": "answerText",
@@ -165,7 +165,7 @@
             "label": "core.module.output.label.Ai response content",
             "description": "core.module.output.description.Ai response content",
             "valueType": "string",
-            "type": "FlowNodeOutputTypeEnum.static"
+            "type": "static"
           }
         ]
       },
@@ -246,7 +246,7 @@
             "key": "cqResult",
             "label": "分类结果",
             "valueType": "string",
-            "type": "FlowNodeOutputTypeEnum.static"
+            "type": "static"
           }
         ]
       },
@@ -361,7 +361,7 @@
             "key": "quoteQA",
             "label": "core.module.Dataset quote.label",
             "description": "特殊数组格式，搜索结果为空时，返回空数组。",
-            "type": "FlowNodeOutputTypeEnum.static",
+            "type": "static",
             "valueType": "datasetQuote"
           }
         ]
