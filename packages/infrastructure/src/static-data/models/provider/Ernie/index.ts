@@ -5,6 +5,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'ernie-5.1',
+      maxContext: 128000,
+      maxTokens: 65536,
+      quoteMaxToken: 119000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'ERNIE-4.0-8K',
       maxContext: 8000,
       maxTokens: 2048,
