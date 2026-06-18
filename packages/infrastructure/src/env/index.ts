@@ -9,6 +9,7 @@ import { PluginRuntimeModeEnum, PluginRuntimeModeSchema } from '@domain/value-ob
 const DEV_AUTH_TOKEN = 'token';
 const MIN_PRODUCTION_AUTH_TOKEN_LENGTH = 32;
 const WEAK_AUTH_TOKENS = new Set(['token', 'changeme', 'password', 'secret', 'default']);
+const MIN_PRODUCTION_FC_SIGNING_SECRET_LENGTH = 32;
 
 const AuthTokenSchema = z
   .string()
@@ -46,6 +47,55 @@ const GatewayAuthTokenSchema = z
   .transform((value) => {
     if (process.env.NODE_ENV !== 'production') {
       return value || process.env.AUTH_TOKEN || DEV_AUTH_TOKEN;
+    }
+
+    return value;
+  });
+
+const OptionalServerlessStringSchema = z.string().trim().optional();
+
+const RequiredWhenServerlessSchema = (name: string) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .transform((value, ctx) => {
+      if (process.env.PLUGIN_RUNTIME_MODE === PluginRuntimeModeEnum.serverless && !value) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${name} is required when PLUGIN_RUNTIME_MODE=serverless`
+        });
+      }
+
+      return value;
+    });
+
+const FCInvokeSigningSecretSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value, ctx) => {
+    if (process.env.PLUGIN_RUNTIME_MODE === PluginRuntimeModeEnum.serverless && !value) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'FC_INVOKE_SIGNING_SECRET is required when PLUGIN_RUNTIME_MODE=serverless'
+      });
+    }
+
+    if (
+      process.env.NODE_ENV === 'production' &&
+      process.env.PLUGIN_RUNTIME_MODE === PluginRuntimeModeEnum.serverless
+    ) {
+      const secret = value ?? '';
+      if (
+        secret.length < MIN_PRODUCTION_FC_SIGNING_SECRET_LENGTH ||
+        WEAK_AUTH_TOKENS.has(secret.toLowerCase())
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `FC_INVOKE_SIGNING_SECRET must be at least ${MIN_PRODUCTION_FC_SIGNING_SECRET_LENGTH} characters and not use a default value in production`
+        });
+      }
     }
 
     return value;
@@ -156,6 +206,34 @@ const ServerEnvShape = {
   // 插件运行配置
   PLUGIN_RUNTIME_MODE: PluginRuntimeModeSchema.default(PluginRuntimeModeEnum['localPool']),
   PLUGIN_REGISTER_CONCURRENCY: PositiveIntSchema.default(4),
+
+  // 阿里云 FC Serverless 插件运行配置
+  FC_REGION: RequiredWhenServerlessSchema('FC_REGION'),
+  FC_ENDPOINT: OptionalServerlessStringSchema,
+  FC_ACCOUNT_ID: OptionalServerlessStringSchema,
+  FC_RUNTIME_IMAGE: RequiredWhenServerlessSchema('FC_RUNTIME_IMAGE'),
+  FC_FUNCTION_NAME_PREFIX: z.string().trim().default('fastgpt-plugin'),
+  FC_INVOCATION_MODE: z.enum(['http-stream', 'openapi-buffered']).default('http-stream'),
+  FC_HTTP_BASE_URL: OptionalServerlessStringSchema,
+  FC_ACCESS_KEY_ID: OptionalServerlessStringSchema,
+  FC_ACCESS_KEY_SECRET: OptionalServerlessStringSchema,
+  FC_ROLE_ARN: RequiredWhenServerlessSchema('FC_ROLE_ARN'),
+  FC_VPC_ID: OptionalServerlessStringSchema,
+  FC_VSWITCH_IDS: OptionalServerlessStringSchema,
+  FC_SECURITY_GROUP_ID: OptionalServerlessStringSchema,
+  FC_ARTIFACT_REGION: OptionalServerlessStringSchema,
+  FC_ARTIFACT_ENDPOINT: RequiredWhenServerlessSchema('FC_ARTIFACT_ENDPOINT'),
+  FC_ARTIFACT_BUCKET: RequiredWhenServerlessSchema('FC_ARTIFACT_BUCKET'),
+  FC_ARTIFACT_PREFIX: z.string().trim().default('plugin-runtime'),
+  FC_ARTIFACT_ACCESS_KEY_ID: OptionalServerlessStringSchema,
+  FC_ARTIFACT_ACCESS_KEY_SECRET: OptionalServerlessStringSchema,
+  FC_DEFAULT_TIMEOUT_MS: PositiveIntSchema.default(120_000),
+  FC_DEFAULT_INSTANCE_CONCURRENCY: PositiveIntSchema.default(10),
+  FC_DEFAULT_MEMORY_SIZE: PositiveIntSchema.default(1024),
+  FC_DEFAULT_CPU: z.coerce.number().positive().default(1),
+  FC_DEFAULT_MAX_QUEUE_SIZE: PositiveIntSchema.default(500),
+  FC_DEFAULT_QUEUE_TIMEOUT_MS: PositiveIntSchema.default(60_000),
+  FC_INVOKE_SIGNING_SECRET: FCInvokeSigningSecretSchema,
 
   // 进程池配置（插件级配置可被 MongoDB 中的 pluginConfig 覆盖）
   POOL_HEALTH_CHECK_INTERVAL: PositiveIntSchema.default(30_000),
@@ -306,6 +384,32 @@ export type ServerEnv = {
   DISABLE_SSRF_CHECK: boolean;
   PLUGIN_RUNTIME_MODE: 'localPool' | 'serverless';
   PLUGIN_REGISTER_CONCURRENCY: number;
+  FC_REGION?: string;
+  FC_ENDPOINT?: string;
+  FC_ACCOUNT_ID?: string;
+  FC_RUNTIME_IMAGE?: string;
+  FC_FUNCTION_NAME_PREFIX: string;
+  FC_INVOCATION_MODE: 'http-stream' | 'openapi-buffered';
+  FC_HTTP_BASE_URL?: string;
+  FC_ACCESS_KEY_ID?: string;
+  FC_ACCESS_KEY_SECRET?: string;
+  FC_ROLE_ARN?: string;
+  FC_VPC_ID?: string;
+  FC_VSWITCH_IDS?: string;
+  FC_SECURITY_GROUP_ID?: string;
+  FC_ARTIFACT_REGION?: string;
+  FC_ARTIFACT_ENDPOINT?: string;
+  FC_ARTIFACT_BUCKET?: string;
+  FC_ARTIFACT_PREFIX: string;
+  FC_ARTIFACT_ACCESS_KEY_ID?: string;
+  FC_ARTIFACT_ACCESS_KEY_SECRET?: string;
+  FC_DEFAULT_TIMEOUT_MS: number;
+  FC_DEFAULT_INSTANCE_CONCURRENCY: number;
+  FC_DEFAULT_MEMORY_SIZE: number;
+  FC_DEFAULT_CPU: number;
+  FC_DEFAULT_MAX_QUEUE_SIZE: number;
+  FC_DEFAULT_QUEUE_TIMEOUT_MS: number;
+  FC_INVOKE_SIGNING_SECRET?: string;
   POOL_HEALTH_CHECK_INTERVAL: number;
   POOL_MAX_TOTAL_PODS: number;
   POOL_SERVICE_MIN_PODS: number;

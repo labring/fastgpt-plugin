@@ -18,6 +18,13 @@ const resetEnv = () => {
   delete process.env.POOL_SERVICE_POD_ALLOW_NET;
   delete process.env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD;
   delete process.env.PLUGIN_REGISTER_CONCURRENCY;
+  delete process.env.PLUGIN_RUNTIME_MODE;
+  delete process.env.FC_REGION;
+  delete process.env.FC_RUNTIME_IMAGE;
+  delete process.env.FC_ROLE_ARN;
+  delete process.env.FC_ARTIFACT_ENDPOINT;
+  delete process.env.FC_ARTIFACT_BUCKET;
+  delete process.env.FC_INVOKE_SIGNING_SECRET;
 };
 
 describe('env AUTH_TOKEN', () => {
@@ -244,5 +251,36 @@ describe('env AUTH_TOKEN', () => {
     const { env } = await import('./index');
 
     expect(env.PLUGIN_REGISTER_CONCURRENCY).toBe(7);
+  });
+
+  it('keeps FC env optional in localPool mode', async () => {
+    const { env } = await import('./index');
+
+    expect(env.PLUGIN_RUNTIME_MODE).toBe('localPool');
+    expect(env.FC_FUNCTION_NAME_PREFIX).toBe('fastgpt-plugin');
+  });
+
+  it('requires FC env in serverless mode', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'serverless';
+
+    const { env } = await import('./index');
+
+    expect(() => env.FC_REGION).toThrow('FC_REGION');
+  });
+
+  it('rejects weak FC signing secrets in serverless production', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.AUTH_TOKEN = 'a'.repeat(32);
+    process.env.PLUGIN_RUNTIME_MODE = 'serverless';
+    process.env.FC_REGION = 'cn-hangzhou';
+    process.env.FC_RUNTIME_IMAGE = 'runtime:latest';
+    process.env.FC_ROLE_ARN = 'role';
+    process.env.FC_ARTIFACT_ENDPOINT = 'https://oss-cn-hangzhou.aliyuncs.com';
+    process.env.FC_ARTIFACT_BUCKET = 'bucket';
+    process.env.FC_INVOKE_SIGNING_SECRET = 'token';
+
+    const { env } = await import('./index');
+
+    expect(() => env.FC_INVOKE_SIGNING_SECRET).toThrow('FC_INVOKE_SIGNING_SECRET');
   });
 });

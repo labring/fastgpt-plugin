@@ -82,7 +82,7 @@ v0 必须包含：
 - `FCFunctionRegistry.ensureFunction()` 幂等 create/update。
 - `FCFunctionInvoker` 的首选 `http-stream` 与 `openapi-buffered` fallback 框架；真实生产默认值在 staging 结果后确定。
 - API server 调 FC runtime 的请求签名校验：包含 `invocationId`、timestamp、body hash、runtime id，FC runtime 拒绝过期、重放和签名不匹配请求。
-- `apps/fc-plugin-runtime` 的最小 HTTP bootstrap、artifact 下载、动态 import、handler context、NDJSON/SSE frame 输出。
+- `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime` 的最小 HTTP bootstrap、artifact 下载、动态 import、handler context、NDJSON/SSE frame 输出。
 - `PLUGIN_RUNTIME_MODE=serverless` 选择路径。
 - `getTime` staging 验收脚本或手册。
 
@@ -101,15 +101,50 @@ v0 明确延后：
 - v0 artifact 发布触发点只放在 `FCPluginRuntimeManager.register()` 的 `ensureArtifact()` 中，用 register-time lazy publication 覆盖历史插件和新插件。
 - 后续如果要在 `confirmPlugin()` 后主动发布 artifact，应通过应用层 orchestrator 或领域事件接入，避免把 FC 基础设施反向塞进 PluginRepo。
 
+## 当前实现状态（2026-05-22）
+
+当前工作区已完成 v0 FC vertical slice 的本地实现，并保留以下状态记录：
+
+- [x] `FCPluginRuntimeManager` 实现 `PluginRuntimeManagerPort` 的 `register / unregister / getConfig / updateConfig / resetConfig / status / globalStatus / shutdown / invoke`。
+- [x] `PLUGIN_RUNTIME_MODE=serverless` 接入 `apps/server/src/deps.ts`，保留 `localPool` 兼容路径。
+- [x] FC env schema、默认配置、生产 signing secret 强度校验已补齐。
+- [x] `FCRuntimeArtifactRepo` 已支持 active `index.js` 发布到 FC 专用 OSS artifact key。
+- [x] `FCFunctionProvider` 抽象已拆出，包含 in-memory 测试 provider、HTTP provider、Aliyun FC SDK provider。
+- [x] `FCFunctionRegistry` 已实现函数 create/update/no-op/delete 的 driver 侧编排。
+- [x] `FCFunctionInvoker` 已支持 NDJSON frame 解析、buffered frame 回放和基础错误映射。
+- [x] request signature 已支持 timestamp、runtime id、invocation id、body hash、HMAC 签名和 replay 防护。
+- [x] `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime` 已提供 HTTP bootstrap、artifact 下载/cache、动态 import、handler 执行和 NDJSON frame 输出。
+- [x] 已补齐 infrastructure 层 env、命名、签名、artifact、registry、invoker、manager 单元测试。
+- [ ] `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime` runtime app 单元测试仍待补齐。
+- [ ] 真实阿里云 FC + OSS staging smoke test 仍待执行。
+- [ ] runtime image 发布、RAM policy、FC/OSS 部署模板文档仍待补齐。
+- [ ] artifact 历史版本保留与自动清理策略仍待补齐。
+
+已通过验证命令：
+
+```bash
+pnpm exec tsc --noEmit
+pnpm exec vitest run packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC packages/infrastructure/src/env/index.test.ts
+pnpm exec vitest run packages/infrastructure/src/plugin/plugin-runtime/drivers/local-pool packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC packages/infrastructure/src/plugin/tool.impl.test.ts packages/infrastructure/src/env/index.test.ts
+```
+
+最后一次验证结果：
+
+- TypeScript 编译通过。
+- FC + env 单测：8 个测试文件，26 个用例通过。
+- local-pool 兼容回归 + FC + ToolFactory 相关测试：14 个测试文件，46 个用例通过。
+
+测试用例文档已拆到 `docs/dev/aliyun-fc-runtime-test-cases.zh.md`，后续 staging 和 runtime app 测试按该文档继续推进。
+
 ## 当前项目边界
 
 - 统一接口：`packages/domain/src/ports/plugin/plugin-runtime-manager.port.ts` 定义 `register / unregister / getConfig / updateConfig / resetConfig / status / globalStatus / shutdown / invoke`。
 - local-pool 实现：`packages/infrastructure/src/plugin/plugin-runtime/drivers/local-pool/local-pool-runtime.driver.ts` 管理插件 runtime item、配置仓储、版本失效、注册、调用和指标。
 - local-pool service：`packages/infrastructure/src/plugin/plugin-runtime/drivers/local-pool/service/index.ts` 管理单个插件的队列、pod fleet、并发、超时和指标。
 - local-pool pod：`packages/infrastructure/src/plugin/plugin-runtime/drivers/local-pool/pod/index.ts` 通过 `child_process.fork` 启动插件 `index.js`，以 IPC channel 调用 `host.request`。
-- 现有 serverless 占位：`packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/fc.plugin-runtime.driver.ts` 目前只有 TODO。
-- 运行时选择点：`apps/server/src/deps.ts` 当前固定导出 `LocalPoolPluginRuntimeManager`，后续需要按 `env.PLUGIN_RUNTIME_MODE` 分支。
-- SDK 现状：`sdk/factory/src/plugin-factory.ts` 只对 `localPool` 和 `dev` 初始化 channel；FC runtime 第一阶段不复用 IPC channel，直接 import 插件 factory 并执行 handler。
+- FC serverless 实现：`packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/fc.plugin-runtime.driver.ts` 已替换原 TODO，实现 FC manager 主流程。
+- 运行时选择点：`apps/server/src/deps.ts` 已按 `env.PLUGIN_RUNTIME_MODE` 分支导出 `localPool` 或 `serverless` runtime manager。
+- SDK 现状：`sdk/factory/src/plugin-factory.ts` 继续保持 `localPool` 和 `dev` channel；FC runtime 第一阶段直接 import 插件 factory 并执行 handler。
 
 ## What Already Exists
 
@@ -306,7 +341,7 @@ packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/
   function-name.ts
   metrics.ts
 
-apps/fc-plugin-runtime/
+packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime/
   src/bootstrap.ts
   src/plugin-loader.ts
   src/handler.ts
@@ -315,7 +350,7 @@ apps/fc-plugin-runtime/
   package.json
 ```
 
-`FCPluginRuntimeManager` 所属模块只做宿主侧管理；`apps/fc-plugin-runtime` 是运行在 FC 函数里的通用插件执行器。
+`FCPluginRuntimeManager` 所属模块只做宿主侧管理；`packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime` 是运行在 FC 函数里的通用插件执行器。
 
 ## 配置模型
 
@@ -668,7 +703,7 @@ runtime artifact 缓存策略：
    - config repo
    - version key
    - register/unregister/status/globalStatus/shutdown/invoke
-7. 新增 `apps/fc-plugin-runtime`：
+7. 新增 `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime`：
    - bootstrap HTTP server
    - plugin loader
    - SDK factory dependency bridge
@@ -743,7 +778,7 @@ CODE PATH COVERAGE TARGET
     ├── [GAP] invoke refreshes expired version key
     └── [GAP] shutdown rejects new invokes and waits for active invokes
 
-[+] apps/fc-plugin-runtime
+[+] packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime
     ├── [GAP] validates request signature before loading plugin
     ├── [GAP] downloads artifact once and reuses warm cache when etag matches
     ├── [GAP] reuses ensureSdkFactoryRuntimeDependency()
@@ -775,7 +810,7 @@ Required test files:
 - `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/fc-function-registry.test.ts`：create/update/no-op/error mapping。
 - `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/fc-function-invoker.test.ts`：stream frame parser、buffered fallback、超时和鉴权错误。
 - `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/fc.plugin-runtime.driver.test.ts`：register/invoke/unregister/shutdown 的 manager 行为。
-- `apps/fc-plugin-runtime/src/*.test.ts`：bootstrap、loader、signature middleware、handler frame、reverse invoke。
+- `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime/src/*.test.ts`：bootstrap、loader、signature middleware、handler frame、reverse invoke。
 
 Staging smoke test 可以先是手册或 `pnpm exec tsx scripts/fc/get-time-smoke.ts`，但必须记录命令、环境变量、预期输出和清理步骤。
 
