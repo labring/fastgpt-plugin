@@ -1,10 +1,18 @@
 import { WorkflowContract } from '@interface-adapter/contracts/route/workflow.contract';
 
+import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import { createRoute } from '@infrastructure/hono/utils/response';
 import { createOpenAPIHono, R } from '@infrastructure/hono/utils/response';
-import { workflows } from '@infrastructure/static-data/workflow/init';
+import {
+  attachWorkflowAvatarUrls,
+  workflows
+} from '@infrastructure/static-data/workflow/init';
 
-export const makeWorkflowRoute = () => {
+export type WorkflowRouteDeps = {
+  publicRemoteFileStorageRepo: Pick<RemoteFileStoragePort, 'getAccessUrl'>;
+};
+
+export const makeWorkflowRoute = (deps: WorkflowRouteDeps) => {
   const route = createOpenAPIHono();
 
   route.openapi(
@@ -29,7 +37,14 @@ export const makeWorkflowRoute = () => {
         }
       }
     }),
-    async (c) => R.success(c, workflows)
+    async (c) => {
+      const workflowTemplates = await attachWorkflowAvatarUrls(
+        workflows,
+        deps.publicRemoteFileStorageRepo
+      );
+
+      return R.success(c, workflowTemplates);
+    }
   );
 
   return route;

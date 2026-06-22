@@ -26,7 +26,7 @@ const modelRoute = makeModelRoute(deps);
 const pluginRoute = makePluginRoute(deps);
 const runtimeRoute = makeRuntimeRoute(deps);
 const toolRoute = makeToolRoute({ toolManager: deps.toolManager, logger: getLogger(mod.tool) });
-const workflowRoute = makeWorkflowRoute();
+const workflowRoute = makeWorkflowRoute(deps);
 
 app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
   type: 'http',

@@ -1,7 +1,10 @@
 import { makePluginRegisterActiveUC } from '@usecase/plugin/plugin-register-active.uc';
 import { getLogger, root } from '@infrastructure/logger';
 import { initStaticModelAssets } from '@infrastructure/static-data/models/model-static';
-import { initWorkflowTemplates } from '@infrastructure/static-data/workflow/init';
+import {
+  initStaticWorkflowAssets,
+  initWorkflowTemplates
+} from '@infrastructure/static-data/workflow/init';
 
 import {
   localFileStorageRepo,
@@ -26,6 +29,10 @@ export const init = async () => {
   try {
     await Promise.all([
       initStaticModelAssets({
+        redisClient,
+        s3Clients: s3PublicClients
+      }),
+      initStaticWorkflowAssets({
         redisClient,
         s3Clients: s3PublicClients
       }),

@@ -1,10 +1,9 @@
 {
-  "name": "Dalle3 绘图",
-  "intro": "通过请求 Dalle3 接口绘图，需要有 api key",
+  "name": "Flux 绘图",
+  "intro": "通过请求 Flux 接口绘图，需要有 api key",
   "author": "",
-  "avatar": "core/app/templates/plugin-dalle",
   "type": "plugin",
-  "tags": ["recommendation", "image-generation"],
+  "tags": ["image-generation"],
   "workflow": {
     "nodes": [
       {
@@ -15,8 +14,8 @@
         "flowNodeType": "pluginInput",
         "showStatus": false,
         "position": {
-          "x": 421.97302886868476,
-          "y": -89.7785530936485
+          "x": 503.3030871469042,
+          "y": -91.64434154072819
         },
         "version": "481",
         "inputs": [
@@ -50,8 +49,8 @@
         "flowNodeType": "pluginOutput",
         "showStatus": false,
         "position": {
-          "x": 1785.9300180845394,
-          "y": -108.2785530936485
+          "x": 1876.2082565873427,
+          "y": -110.14434154072819
         },
         "version": "481",
         "inputs": [
@@ -84,8 +83,8 @@
         "flowNodeType": "httpRequest468",
         "showStatus": true,
         "position": {
-          "x": 1044.8838211811253,
-          "y": -414.7785530936485
+          "x": 1138.1732435351091,
+          "y": -416.6443415407282
         },
         "version": "481",
         "inputs": [
@@ -150,7 +149,7 @@
             "description": "common:core.module.input.description.Http Request Url",
             "placeholder": "https://api.ai.com/getInventory",
             "required": false,
-            "value": "https://api.openai.com/v1/images/generations",
+            "value": "https://fal.run/fal-ai/flux-pro",
             "debugLabel": "",
             "toolDescription": ""
           },
@@ -162,7 +161,7 @@
               {
                 "key": "Authorization",
                 "type": "string",
-                "value": "Bearer {{authorization}}"
+                "value": "Key {{apikey}}"
               }
             ],
             "label": "",
@@ -186,7 +185,7 @@
             "key": "system_httpJsonBody",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "value": "{\n  \"model\": \"dall-e-3\",\n  \"prompt\": \"{{prompt}}\",\n  \"n\": 1,\n  \"size\": \"1024x1024\"\n}",
+            "value": "{\n  \"prompt\": \"{{prompt}}\",\n  \"image_size\": \"landscape_4_3\",\n  \"num_inference_steps\": 28,\n  \"guidance_scale\": 3.5\n}",
             "label": "",
             "required": false,
             "debugLabel": "",
@@ -292,20 +291,20 @@
             "id": "pJXgWoTpPoMy",
             "valueType": "string",
             "type": "dynamic",
-            "key": "data[0].url",
-            "label": "data[0].url"
+            "key": "images[0].url",
+            "label": "images[0].url"
           }
         ]
       },
       {
-        "nodeId": "c7tRU2qAQoAf",
+        "nodeId": "lSYsc889IXDr",
         "name": "系统配置",
         "intro": "",
         "avatar": "core/workflow/template/systemConfig",
         "flowNodeType": "pluginConfig",
         "position": {
-          "x": -46.476647046261974,
-          "y": -89.7785530936485
+          "x": 45.52914573588026,
+          "y": -110.14434154072819
         },
         "version": "4811",
         "inputs": [],

@@ -52,7 +52,7 @@ export default defineConfig({
     },
     {
       from: '../../packages/infrastructure/src/static-data/workflow/templates',
-      to: 'dist'
+      to: 'dist/workflows'
     },
     {
       from: join(sdkFactoryDir, 'package.json'),

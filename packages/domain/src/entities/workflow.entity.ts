@@ -9,7 +9,16 @@ export const TemplateItemSchema = z.object({
   type: z.string().describe('The type of the template'),
   author: z.string().optional().describe('The author of the template'),
   isActive: z.boolean().optional().describe('Whether it is active'),
-  userGuide: z.string().optional().describe('The user guide of the template'),
+  userGuide: z
+    .union([
+      z.string(),
+      z.object({
+        type: z.string(),
+        content: z.string()
+      })
+    ])
+    .optional()
+    .describe('The user guide of the template'),
   isQuickTemplate: z.boolean().optional().describe('Whether it is a quick template'),
   order: z.number().optional().describe('The order of the template'),
   weight: z.number().optional().describe('The weight of the template'),

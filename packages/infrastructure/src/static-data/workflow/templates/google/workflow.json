@@ -2,7 +2,6 @@
   "name": "谷歌搜索",
   "intro": "通过请求谷歌搜索，查询相关内容作为模型的参考。",
   "author": "",
-  "avatar": "core/app/templates/google",
   "tags": ["recommendation", "web-search"],
   "type": "advanced",
   "workflow": {
