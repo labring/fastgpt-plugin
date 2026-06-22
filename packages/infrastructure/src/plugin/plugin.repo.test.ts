@@ -10,6 +10,8 @@ import { successResult } from '@domain/value-objects/result.vo';
 
 import { PluginRepo, type PluginRepoDeps } from './plugin.repo';
 
+const MongoDollarKeyPrefix = '__fastgpt_mongo_dollar__';
+
 const plugin = (): PluginType =>
   ({
     pluginId: 'plugin-a',
@@ -38,6 +40,181 @@ const pluginRecord = () => {
 };
 
 describe('PluginRepo.createPlugin', () => {
+  it('encodes dollar-prefixed JSON Schema keys before storing plugin records', () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const repo = PluginRepo.getInstance({} as PluginRepoDeps);
+    const record = (repo as any).toPluginRecord({
+      ...plugin(),
+      inputSchema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        $defs: {
+          keyword: {
+            type: 'string'
+          }
+        },
+        properties: {
+          schema: {
+            type: 'string'
+          },
+          [`${MongoDollarKeyPrefix}custom`]: {
+            type: 'string'
+          },
+          query: {
+            $ref: '#/$defs/keyword'
+          }
+        }
+      },
+      outputSchema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object'
+      },
+      secretSchema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object'
+      },
+      children: [
+        {
+          id: 'search',
+          name: { en: 'Search', 'zh-CN': 'Search' },
+          description: { en: 'Search', 'zh-CN': 'Search' },
+          icon: 'https://example.com/search.svg',
+          toolDescription: 'Search',
+          inputSchema: {
+            $schema: 'https://json-schema.org/draft/2020-12/schema',
+            properties: {
+              query: {
+                $ref: '#/$defs/keyword'
+              }
+            }
+          },
+          outputSchema: {
+            $schema: 'https://json-schema.org/draft/2020-12/schema'
+          }
+        }
+      ]
+    });
+
+    expect(record.data.inputSchema).toMatchObject({
+      [`${MongoDollarKeyPrefix}schema`]: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      [`${MongoDollarKeyPrefix}defs`]: {
+        keyword: {
+          type: 'string'
+        }
+      },
+      properties: {
+        schema: {
+          type: 'string'
+        },
+        [`${MongoDollarKeyPrefix}${MongoDollarKeyPrefix}custom`]: {
+          type: 'string'
+        },
+        query: {
+          [`${MongoDollarKeyPrefix}ref`]: '#/$defs/keyword'
+        }
+      }
+    });
+    expect(record.data.inputSchema).not.toHaveProperty('$schema');
+    expect(record.data.inputSchema).not.toHaveProperty('$defs');
+    expect(record.data.inputSchema.properties.query).not.toHaveProperty('$ref');
+    expect(record.data.outputSchema).toHaveProperty(`${MongoDollarKeyPrefix}schema`);
+    expect(record.data.secretSchema).toHaveProperty(`${MongoDollarKeyPrefix}schema`);
+    expect(record.data.children[0].inputSchema).toHaveProperty(`${MongoDollarKeyPrefix}schema`);
+    expect(record.data.children[0].inputSchema.properties.query).toHaveProperty(
+      `${MongoDollarKeyPrefix}ref`
+    );
+    expect(record.data.children[0].outputSchema).toHaveProperty(`${MongoDollarKeyPrefix}schema`);
+  });
+
+  it('decodes stored JSON Schema keys when reading plugin records', () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const repo = PluginRepo.getInstance({} as PluginRepoDeps);
+    const domainPlugin = (repo as any).toDomainPlugin({
+      ...pluginRecord(),
+      data: {
+        ...pluginRecord().data,
+        inputSchema: {
+          [`${MongoDollarKeyPrefix}schema`]: 'https://json-schema.org/draft/2020-12/schema',
+          type: 'object',
+          [`${MongoDollarKeyPrefix}defs`]: {
+            keyword: {
+              type: 'string'
+            }
+          },
+          properties: {
+            schema: {
+              type: 'string'
+            },
+            [`${MongoDollarKeyPrefix}${MongoDollarKeyPrefix}custom`]: {
+              type: 'string'
+            },
+            ref: {
+              type: 'string'
+            },
+            query: {
+              [`${MongoDollarKeyPrefix}ref`]: '#/$defs/keyword'
+            }
+          }
+        },
+        outputSchema: {
+          [`${MongoDollarKeyPrefix}schema`]: 'https://json-schema.org/draft/2020-12/schema',
+          type: 'object'
+        },
+        secretSchema: {
+          [`${MongoDollarKeyPrefix}schema`]: 'https://json-schema.org/draft/2020-12/schema',
+          type: 'object'
+        },
+        children: [
+          {
+            id: 'search',
+            name: { en: 'Search', 'zh-CN': 'Search' },
+            description: { en: 'Search', 'zh-CN': 'Search' },
+            icon: 'https://example.com/search.svg',
+            toolDescription: 'Search',
+            inputSchema: {
+              [`${MongoDollarKeyPrefix}schema`]: 'https://json-schema.org/draft/2020-12/schema',
+              type: 'object'
+            },
+            outputSchema: {
+              [`${MongoDollarKeyPrefix}schema`]: 'https://json-schema.org/draft/2020-12/schema',
+              type: 'object'
+            }
+          }
+        ]
+      }
+    });
+
+    expect(domainPlugin.inputSchema).toMatchObject({
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      $defs: {
+        keyword: {
+          type: 'string'
+        }
+      },
+      properties: {
+        schema: {
+          type: 'string'
+        },
+        [`${MongoDollarKeyPrefix}custom`]: {
+          type: 'string'
+        },
+        ref: {
+          type: 'string'
+        },
+        query: {
+          $ref: '#/$defs/keyword'
+        }
+      }
+    });
+    expect(domainPlugin.outputSchema).toHaveProperty('$schema');
+    expect(domainPlugin.secretSchema).toHaveProperty('$schema');
+    expect(domainPlugin.children?.[0].inputSchema).toHaveProperty('$schema');
+    expect(domainPlugin.children?.[0].outputSchema).toHaveProperty('$schema');
+  });
+
   it('restores a disabled plugin with the same version and etag to pending without rewriting files', async () => {
     (PluginRepo as any)._instance = undefined;
 
@@ -266,6 +443,12 @@ describe('PluginRepo.listToolSummaries', () => {
         pluginId: 'missing-secret',
         version: '1.0.0',
         etag: 'etag-missing'
+      },
+      {
+        source: 'system',
+        pluginId: 'schema-only',
+        version: '1.0.0',
+        etag: 'etag-schema-only'
       }
     ];
     const makePluginRecord = (
@@ -300,7 +483,10 @@ describe('PluginRepo.listToolSummaries', () => {
         type: 'object',
         properties: {}
       }),
-      makePluginRecord('missing-secret', 'etag-missing')
+      makePluginRecord('missing-secret', 'etag-missing'),
+      makePluginRecord('schema-only', 'etag-schema-only', {
+        type: 'object'
+      })
     ];
     const pluginInstallationModel = {
       find: vi.fn().mockReturnValue({
@@ -336,6 +522,10 @@ describe('PluginRepo.listToolSummaries', () => {
       }),
       expect.objectContaining({
         pluginId: 'missing-secret',
+        hasSecret: false
+      }),
+      expect.objectContaining({
+        pluginId: 'schema-only',
         hasSecret: false
       }),
       expect.objectContaining({
