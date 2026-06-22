@@ -1,11 +1,10 @@
 /*
  * Usage:
- *   mongosh "mongodb://host:27017/dbname" scripts/migrate-plugin-jsonschema-dollar-keys.mongosh.js
+ *   mongosh "mongodb://host:27017/dbname" scripts/migrate-plugin-jsonschema-string-fields.mongosh.js
  */
 
 /* global db, printjson */
 
-const MONGO_DOLLAR_KEY_PREFIX = '__fastgpt_mongo_dollar__';
 const SCHEMA_FIELD_NAMES = ['inputSchema', 'outputSchema', 'secretSchema'];
 const CHILD_SCHEMA_FIELD_NAMES = ['inputSchema', 'outputSchema'];
 const BATCH_SIZE = 500;
@@ -22,66 +21,21 @@ function isRecord(value) {
   );
 }
 
-function encodeKey(key) {
-  if (key.startsWith(MONGO_DOLLAR_KEY_PREFIX)) {
-    return MONGO_DOLLAR_KEY_PREFIX + key;
-  }
-
-  return key.startsWith('$') ? MONGO_DOLLAR_KEY_PREFIX + key.slice(1) : key;
-}
-
-function encodeSchemaNode(value) {
-  if (Array.isArray(value)) {
-    let changed = false;
-    const nextValue = value.map((item) => {
-      const result = encodeSchemaNode(item);
-      changed = changed || result.changed;
-      return result.value;
-    });
-    return {
-      value: changed ? nextValue : value,
-      changed
-    };
-  }
-
-  if (!isRecord(value)) {
-    return {
-      value,
-      changed: false
-    };
-  }
-
-  let changed = false;
-  const nextValue = {};
-
-  for (const [key, nestedValue] of Object.entries(value)) {
-    const nextKey = encodeKey(key);
-    const result = encodeSchemaNode(nestedValue);
-    changed = changed || nextKey !== key || result.changed;
-    nextValue[nextKey] = result.value;
-  }
-
-  return {
-    value: changed ? nextValue : value,
-    changed
-  };
-}
-
-function encodeSchemaField(target, fieldName) {
-  if (!hasOwn(target, fieldName)) {
+function stringifySchemaField(target, fieldName) {
+  if (!hasOwn(target, fieldName) || typeof target[fieldName] === 'string') {
     return false;
   }
 
-  const result = encodeSchemaNode(target[fieldName]);
-  if (!result.changed) {
+  const stringifiedValue = JSON.stringify(target[fieldName]);
+  if (stringifiedValue === undefined) {
     return false;
   }
 
-  target[fieldName] = result.value;
+  target[fieldName] = stringifiedValue;
   return true;
 }
 
-function encodePluginDataMongoKeys(data) {
+function stringifyPluginDataSchemaFields(data) {
   if (!isRecord(data)) {
     return {
       value: data,
@@ -93,7 +47,7 @@ function encodePluginDataMongoKeys(data) {
   const nextData = Object.assign({}, data);
 
   for (const fieldName of SCHEMA_FIELD_NAMES) {
-    changed = encodeSchemaField(nextData, fieldName) || changed;
+    changed = stringifySchemaField(nextData, fieldName) || changed;
   }
 
   if (Array.isArray(nextData.children)) {
@@ -105,7 +59,7 @@ function encodePluginDataMongoKeys(data) {
 
       const nextChild = Object.assign({}, child);
       for (const fieldName of CHILD_SCHEMA_FIELD_NAMES) {
-        childrenChanged = encodeSchemaField(nextChild, fieldName) || childrenChanged;
+        childrenChanged = stringifySchemaField(nextChild, fieldName) || childrenChanged;
       }
       return nextChild;
     });
@@ -141,7 +95,7 @@ function flush() {
 collection.find({}, { projection: { data: 1 } }).forEach((doc) => {
   scannedCount += 1;
 
-  const result = encodePluginDataMongoKeys(doc.data);
+  const result = stringifyPluginDataSchemaFields(doc.data);
   if (!result.changed) {
     return;
   }
