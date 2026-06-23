@@ -165,7 +165,7 @@ importers:
         version: 0.6.15(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
       '@hono/node-server':
         specifier: ^1.19.9
-        version: 1.19.10(hono@4.12.21)
+        version: 1.19.10(hono@4.12.25)
       '@t3-oss/env-core':
         specifier: ^0.13.10
         version: 0.13.10(typescript@5.9.3)(zod@4.3.6)
@@ -179,8 +179,8 @@ importers:
         specifier: ^13.0.1
         version: 13.0.6
       hono:
-        specifier: ^4.12.21
-        version: 4.12.21
+        specifier: ^4.12.25
+        version: 4.12.25
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
@@ -224,7 +224,7 @@ importers:
         version: 0.7.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
       '@scalar/hono-api-reference':
         specifier: ^0.9.40
-        version: 0.9.48(hono@4.12.21)
+        version: 0.9.48(hono@4.12.25)
       '@t3-oss/env-core':
         specifier: ^0.13.10
         version: 0.13.10(typescript@5.9.3)(zod@4.3.6)
@@ -235,8 +235,8 @@ importers:
         specifier: ^1.44.0
         version: 1.45.0
       hono:
-        specifier: ^4.12.21
-        version: 4.12.21
+        specifier: ^4.12.25
+        version: 4.12.25
       ioredis:
         specifier: ^5.9.2
         version: 5.10.0
@@ -3421,8 +3421,8 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  hono@4.12.21:
-    resolution: {integrity: sha512-uV63apnb0kyPtAUwoWgaGh9HyIFcv8lgmzPZSiTBQAFOFGIzka5EZ1dZocmGnn0XdX0+XTqJ6Tqv7selMuGLRQ==}
+  hono@4.12.25:
+    resolution: {integrity: sha512-2NFaIyNVgJmBs/ecmtGzlmluTFs5cHEWGTdu0t1HBwYzoGXOL5nUQBRMXsXWla5i4KkG//QMzVP88m1+I3fdAQ==}
     engines: {node: '>=16.9.0'}
 
   hookable@6.1.1:
@@ -5807,9 +5807,9 @@ snapshots:
       - supports-color
       - vite
 
-  '@hono/node-server@1.19.10(hono@4.12.21)':
+  '@hono/node-server@1.19.10(hono@4.12.25)':
     dependencies:
-      hono: 4.12.21
+      hono: 4.12.25
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -6554,10 +6554,10 @@ snapshots:
 
   '@scalar/helpers@0.2.18': {}
 
-  '@scalar/hono-api-reference@0.9.48(hono@4.12.21)':
+  '@scalar/hono-api-reference@0.9.48(hono@4.12.25)':
     dependencies:
       '@scalar/core': 0.3.45
-      hono: 4.12.21
+      hono: 4.12.25
 
   '@scalar/types@0.6.10':
     dependencies:
@@ -7990,7 +7990,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.12.21: {}
+  hono@4.12.25: {}
 
   hookable@6.1.1: {}
 
