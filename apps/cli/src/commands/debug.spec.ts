@@ -66,6 +66,7 @@ describe('debug command', () => {
     loggerSpy.success.mockReset();
     loggerSpy.info.mockReset();
     loggerSpy.error.mockReset();
+    vi.unstubAllGlobals();
     delete process.env.CONNECTION_GATEWAY_AUTH_TOKEN;
     await rm(tempUploadDir, { recursive: true, force: true });
   });
@@ -176,6 +177,75 @@ describe('debug command', () => {
     });
     expect(loggerSpy.error).not.toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('应能通过 connect link 换取预创建远程调试连接信息', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              tcpUrl: 'tcp://tcp.example.com:39430',
+              source: 'debug:tmbId:tmb-1:session:debug-1',
+              sessionId: 'session-debug',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000,
+              session: {
+                id: 'session-debug',
+                consumerType: 'plugin-debug',
+                subject: 'tmb-1',
+                sessionScope: {
+                  userId: 'tmb-1',
+                  source: 'debug:tmbId:tmb-1:session:debug-1'
+                },
+                transport: 'tcp',
+                capabilities: ['gateway.bind', 'invoke'],
+                generation: 0,
+                ownerNodeId: 'node-a',
+                status: 'connecting',
+                connectedAt: Date.now(),
+                lastSeenAt: Date.now(),
+                expiresAt: Date.now() + 60_000
+              }
+            }
+          })
+        )
+      )
+    );
+
+    await run([
+      process.execPath,
+      'cli',
+      'debug',
+      GETTIME_TOOL_DIR,
+      '--connect',
+      'https://fastgpt.example.com/debug/connect?ticket=t1'
+    ]);
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'https://fastgpt.example.com/debug/connect?ticket=t1'
+    );
+    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
+      tcpHost: 'tcp.example.com',
+      tcpPort: 39430,
+      source: 'debug:tmbId:tmb-1:session:debug-1',
+      precreatedSession: {
+        connectToken: 'scoped-token',
+        session: expect.objectContaining({
+          id: 'session-debug'
+        })
+      }
+    });
+    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).not.toHaveProperty(
+      'authToken'
+    );
+    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).not.toHaveProperty(
+      'jwtSecret'
+    );
+    expect(getLoggerOutput(loggerSpy.success)).toContain(
+      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 getTime'
+    );
   });
 
   it('应能通过 CONNECTION_GATEWAY_AUTH_TOKEN 配置 gateway token', async () => {

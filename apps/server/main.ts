@@ -11,6 +11,7 @@ import { getErrText } from '@shared/utils/err';
 
 import deps from './src/deps';
 import { init } from './src/init';
+import { makeDebugSessionRoute } from './src/routes/debug-session.route';
 import { makeModelRoute } from './src/routes/model.route';
 import { makePluginRoute } from './src/routes/plugin.route';
 import { makeRuntimeRoute } from './src/routes/runtime.route';
@@ -23,6 +24,7 @@ const logger = getLogger(root);
 logger.debug(serverEnv);
 
 const modelRoute = makeModelRoute(deps);
+const debugSessionRoute = makeDebugSessionRoute(deps);
 const pluginRoute = makePluginRoute(deps);
 const runtimeRoute = makeRuntimeRoute(deps);
 const toolRoute = makeToolRoute({ toolManager: deps.toolManager, logger: getLogger(mod.tool) });
@@ -34,6 +36,7 @@ app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
 });
 
 app.route('/api', modelRoute);
+app.route('/api', debugSessionRoute);
 app.route('/api', pluginRoute);
 app.route('/api', runtimeRoute);
 app.route('/api', toolRoute);

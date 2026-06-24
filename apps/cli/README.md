@@ -31,7 +31,16 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
 
 ### 远程调试
 
-本地插件可以通过 Connection Gateway 接入测试环境的 plugin-server。CLI 只需要能访问 gateway 的 TCP 地址；HTTP 地址用于创建/清理 session。
+本地插件可以通过 FastGPT 生成的 connect link 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并创建 debug session，CLI 只使用一次性 ticket 换取短期连接信息。
+
+```bash
+fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \
+  --connect "https://fastgpt.example.com/debug-plugin/connect?ticket=..."
+```
+
+connect link 会返回 gateway TCP 地址、`debug:tmbId:{tmbId}:session:{debugSessionId}` source、预创建 session 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
+
+本地底层联调仍可直接连接 Connection Gateway：
 
 ```bash
 fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \

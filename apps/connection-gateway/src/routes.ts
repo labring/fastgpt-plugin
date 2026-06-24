@@ -6,7 +6,8 @@ import {
   ConnectionGatewayRequestAcceptedDTOSchema,
   ConnectionGatewayRequestDTOSchema,
   ConnectionGatewaySessionStatusViewDTOSchema,
-  ConnectionGatewayStreamRequestDTOSchema
+  ConnectionGatewayStreamRequestDTOSchema,
+  ConnectionGatewayUpdateSessionMetadataRequestDTOSchema
 } from '@interface-adapter/contracts/dto/connection-gateway.dto';
 import { cors } from 'hono/cors';
 import { requestId } from 'hono/request-id';
@@ -225,6 +226,36 @@ export function createConnectionGatewayApp(deps: Pick<ConnectionGatewayDeps, 'se
       }
 
       return R.success(c, status);
+    }
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'patch',
+      path: '/internal/sessions/:sessionId/metadata',
+      summary: 'Update gateway session metadata',
+      tags: ['connection-gateway'],
+      security: [{ bearerAuth: [] }],
+      request: jsonRequest(ConnectionGatewayUpdateSessionMetadataRequestDTOSchema),
+      responses: {
+        200: jsonResponse(ConnectionGatewayCreateSessionResponseDTOSchema),
+        404: errorResponse()
+      }
+    }),
+    async (c) => {
+      try {
+        const body = ConnectionGatewayUpdateSessionMetadataRequestDTOSchema.parse(
+          c.req.valid('json')
+        );
+        const session = await deps.service.updateSessionMetadata({
+          sessionId: requiredParam(c.req.param('sessionId')),
+          metadata: body.metadata
+        });
+
+        return R.success(c, { session });
+      } catch (error) {
+        return R.fail(c, statusFromError(error), normalizeError(error));
+      }
     }
   );
 

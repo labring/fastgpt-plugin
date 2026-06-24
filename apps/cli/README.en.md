@@ -31,7 +31,16 @@ Command-line tool for FastGPT plugin development. It is used to create, build, t
 
 ### Remote Debugging
 
-Local plugins can connect to a test-environment plugin-server through Connection Gateway. The CLI needs the gateway TCP endpoint for the long-lived channel; the HTTP endpoint is used to create and clean up the session.
+Local plugins can connect to a test-environment plugin-server through a FastGPT connect link. The recommended path is for FastGPT to authenticate the user and create the debug session, while the CLI only exchanges a one-time ticket for short-lived connection info.
+
+```bash
+fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \
+  --connect "https://fastgpt.example.com/debug-plugin/connect?ticket=..."
+```
+
+The connect link returns the gateway TCP endpoint, `debug:tmbId:{tmbId}:session:{debugSessionId}` source, precreated session, and scoped connect token. The CLI does not need `CONNECTION_GATEWAY_AUTH_TOKEN` or `JWT_SECRET`.
+
+For low-level local integration, the CLI can still connect to Connection Gateway directly:
 
 ```bash
 fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \

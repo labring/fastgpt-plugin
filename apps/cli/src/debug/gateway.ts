@@ -24,10 +24,14 @@ const TOKEN_HEADER = {
 
 export type DebugGatewayClientOptions = {
   baseUrl: string;
-  authToken: string;
-  jwtSecret: string;
+  authToken?: string;
+  jwtSecret?: string;
   tcpHost: string;
   tcpPort: number;
+  precreatedSession?: {
+    session: ConnectionGatewaySession;
+    connectToken: string;
+  };
   userId: string;
   teamId?: string;
   source?: string;
@@ -182,11 +186,13 @@ async function connectSingleDebugGateway({
     createdAt: Date.now(),
     payload: {
       kind: 'plugin-debug.bind',
+      token: options.precreatedSession?.connectToken ?? createConnectionToken(options),
       sources: targets.map((target) => ({
         source: session.sessionScope.source,
         pluginId: target.snapshot.pluginId,
         version: target.snapshot.version
-      }))
+      })),
+      metadata: makePluginDebugMetadata(targets, session.sessionScope.source)
     }
   }).catch(async (error) => {
     socket.destroy(error instanceof Error ? error : new Error(String(error)));
@@ -212,6 +218,10 @@ async function deleteGatewaySession(
   session: ConnectionGatewaySession,
   options: DebugGatewayClientOptions
 ): Promise<void> {
+  if (options.precreatedSession || !options.authToken) {
+    return;
+  }
+
   const response = await fetch(
     `${normalizeBaseUrl(options.baseUrl)}/internal/sessions/${encodeURIComponent(session.id)}`,
     {
@@ -356,6 +366,14 @@ async function createGatewaySession(
   targets: DebugGatewayTarget[],
   options: DebugGatewayClientOptions
 ): Promise<ConnectionGatewaySession> {
+  if (options.precreatedSession) {
+    return options.precreatedSession.session;
+  }
+
+  if (!options.jwtSecret || !options.authToken) {
+    throw new Error('Gateway auth token and JWT secret are required when creating a session');
+  }
+
   const now = Date.now();
   const source = options.source ?? makeDefaultDebugSource(options.userId);
   const claims = {
@@ -382,24 +400,7 @@ async function createGatewaySession(
     body: JSON.stringify({
       token,
       transport: 'tcp',
-      metadata: {
-        pluginDebug: {
-          targets: targets.map((target) => ({
-            source,
-            pluginId: target.snapshot.pluginId,
-            version: target.snapshot.version,
-            name: target.snapshot.name,
-            description: target.snapshot.description,
-            toolDescription: target.snapshot.toolDescription,
-            author: target.snapshot.author,
-            tags: target.snapshot.tags,
-            permissions: target.snapshot.permissions,
-            secretSchema: target.snapshot.secretSchema,
-            isToolSet: target.snapshot.isToolSet,
-            tools: target.snapshot.tools
-          }))
-        }
-      }
+      metadata: makePluginDebugMetadata(targets, source)
     })
   });
   const payload = await parseJsonResponse(response);
@@ -408,8 +409,65 @@ async function createGatewaySession(
   return ConnectionGatewaySessionSchema.parse(session);
 }
 
+function createConnectionToken(options: DebugGatewayClientOptions): string | undefined {
+  if (options.precreatedSession) {
+    return options.precreatedSession.connectToken;
+  }
+
+  if (!options.jwtSecret) {
+    return undefined;
+  }
+
+  const now = Date.now();
+  const source = options.source ?? makeDefaultDebugSource(options.userId);
+  return signConnectionToken(
+    {
+      consumerType: CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE,
+      subject: options.subject ?? `user:${options.userId}`,
+      sessionScope: {
+        userId: options.userId,
+        ...(options.teamId ? { teamId: options.teamId } : {}),
+        source
+      },
+      transport: 'tcp' as const,
+      capabilities: [
+        CONNECTION_GATEWAY_BIND_CAPABILITY,
+        CONNECTION_GATEWAY_PLUGIN_DEBUG_INVOKE_CAPABILITY
+      ],
+      issuedAt: now,
+      expiresAt: now + options.tokenTtlMs,
+      nonce: randomUUID()
+    },
+    options.jwtSecret
+  );
+}
+
 function makeDefaultDebugSource(userId: string): string {
   return `debug:user:${userId}`;
+}
+
+function makePluginDebugMetadata(
+  targets: DebugGatewayTarget[],
+  source?: string
+): Record<string, unknown> {
+  return {
+    pluginDebug: {
+      targets: targets.map((target) => ({
+        source,
+        pluginId: target.snapshot.pluginId,
+        version: target.snapshot.version,
+        name: target.snapshot.name,
+        description: target.snapshot.description,
+        toolDescription: target.snapshot.toolDescription,
+        author: target.snapshot.author,
+        tags: target.snapshot.tags,
+        permissions: target.snapshot.permissions,
+        secretSchema: target.snapshot.secretSchema,
+        isToolSet: target.snapshot.isToolSet,
+        tools: target.snapshot.tools
+      }))
+    }
+  };
 }
 
 function signConnectionToken(claims: unknown, secret: string): string {

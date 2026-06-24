@@ -24,6 +24,13 @@ export type ConnectionGatewayCreateSessionResponseDTO = z.infer<
   typeof ConnectionGatewayCreateSessionResponseDTOSchema
 >;
 
+export const ConnectionGatewayUpdateSessionMetadataRequestDTOSchema = z.object({
+  metadata: z.record(z.string(), z.unknown())
+});
+export type ConnectionGatewayUpdateSessionMetadataRequestDTO = z.infer<
+  typeof ConnectionGatewayUpdateSessionMetadataRequestDTOSchema
+>;
+
 export const ConnectionGatewayRequestDTOSchema = z.object({
   envelope: ConnectionGatewayEnvelopeSchema,
   stream: z.boolean().default(false)

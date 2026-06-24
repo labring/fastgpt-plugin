@@ -74,6 +74,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
       baseUrl: 'http://gateway.local',
       authToken: 'token',
       requestTimeoutMs: 1_000,
+      sourceForTmbId: ({ tmbId }) => `debug:tmbId:${tmbId}`,
       sourceForUser: ({ userId }) => `debug:user:${userId}`
     });
 

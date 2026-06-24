@@ -17,7 +17,8 @@ export type PluginRuntimeInvokeOptions = {
   timeout?: number;
   priority?: number;
   debug?: {
-    userId: string;
+    tmbId?: string;
+    userId?: string;
     source?: string;
   };
 };
