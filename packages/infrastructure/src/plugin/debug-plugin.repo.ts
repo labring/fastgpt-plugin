@@ -150,67 +150,39 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
   }
 
   async list(arg: PluginListInputType): Promise<Result<PluginListOutputType>> {
-    const debugSources = (arg.sources ?? []).filter(isDebugSource);
+    const { debugSources, fallbackSources } = splitSources(arg.sources);
     if (debugSources.length === 0) {
       return this.deps.fallback.list(arg);
     }
 
-    const items = await this.listDebugPlugins(debugSources);
-    return successResult(
-      items.map(({ source, metadata }) =>
-        PluginListItemSchema.parse({
-          pluginId: metadata.pluginId,
-          version: metadata.version,
-          etag: toDebugEtag(source, metadata),
-          type: PluginTypeEnum.tool,
-          author: metadata.author,
-          name: toI18n(metadata.name),
-          icon: '',
-          description: toI18n(metadata.description),
-          tags: metadata.tags,
-          source
-        })
-      )
-    );
+    const [fallbackItems, fallbackErr] =
+      fallbackSources.length > 0
+        ? await this.deps.fallback.list({ ...arg, sources: fallbackSources })
+        : successResult<PluginListOutputType>([]);
+    if (fallbackErr) {
+      return failureResult(fallbackErr);
+    }
+
+    const debugItems = await this.listDebugPlugins(debugSources);
+    return successResult([...fallbackItems, ...debugItems.map(toPluginListItem)]);
   }
 
   async listToolSummaries(arg: ToolListInputType): Promise<Result<ToolListOutputType>> {
-    const debugSources = (arg.sources ?? []).filter(isDebugSource);
+    const { debugSources, fallbackSources } = splitSources(arg.sources);
     if (debugSources.length === 0) {
       return this.deps.fallback.listToolSummaries(arg);
     }
 
-    const items = await this.listDebugPlugins(debugSources);
-    return successResult(
-      items.map(({ source, metadata }) =>
-        ToolListItemSchema.parse({
-          pluginId: metadata.pluginId,
-          version: metadata.version,
-          etag: toDebugEtag(source, metadata),
-          type: PluginTypeEnum.tool,
-          author: metadata.author,
-          name: toI18n(metadata.name),
-          icon: '',
-          description: toI18n(metadata.description),
-          tags: metadata.tags,
-          toolDescription: metadata.toolDescription,
-          source,
-          isToolset: metadata.isToolSet,
-          hasSecret: Boolean(
-            metadata.secretSchema?.properties &&
-              Object.keys(metadata.secretSchema.properties as Record<string, unknown>).length > 0
-          ),
-          children: metadata.isToolSet
-            ? metadata.tools.map((tool) => ({
-                id: tool.id,
-                name: toI18n(tool.name),
-                description: toI18n(tool.description),
-                toolDescription: tool.toolDescription
-              }))
-            : undefined
-        })
-      )
-    );
+    const [fallbackItems, fallbackErr] =
+      fallbackSources.length > 0
+        ? await this.deps.fallback.listToolSummaries({ ...arg, sources: fallbackSources })
+        : successResult<ToolListOutputType>([]);
+    if (fallbackErr) {
+      return failureResult(fallbackErr);
+    }
+
+    const debugItems = await this.listDebugPlugins(debugSources);
+    return successResult([...fallbackItems, ...debugItems.map(toToolListItem)]);
   }
 
   listActive(): Promise<Result<PluginType[]>> {
@@ -422,6 +394,60 @@ function toPlugin(metadata: DebugPluginMetadata, source: string): PluginType {
 
 function isDebugSource(source: PluginSourceType | undefined): source is string {
   return typeof source === 'string' && source.startsWith('debug:');
+}
+
+function splitSources(sources: PluginSourceType[] | undefined): {
+  debugSources: string[];
+  fallbackSources: PluginSourceType[];
+} {
+  return {
+    debugSources: (sources ?? []).filter(isDebugSource),
+    fallbackSources: (sources ?? []).filter((source) => !isDebugSource(source))
+  };
+}
+
+function toPluginListItem({ source, metadata }: { source: string; metadata: DebugPluginMetadata }) {
+  return PluginListItemSchema.parse({
+    pluginId: metadata.pluginId,
+    version: metadata.version,
+    etag: toDebugEtag(source, metadata),
+    type: PluginTypeEnum.tool,
+    author: metadata.author,
+    name: toI18n(metadata.name),
+    icon: '',
+    description: toI18n(metadata.description),
+    tags: metadata.tags,
+    source
+  });
+}
+
+function toToolListItem({ source, metadata }: { source: string; metadata: DebugPluginMetadata }) {
+  return ToolListItemSchema.parse({
+    pluginId: metadata.pluginId,
+    version: metadata.version,
+    etag: toDebugEtag(source, metadata),
+    type: PluginTypeEnum.tool,
+    author: metadata.author,
+    name: toI18n(metadata.name),
+    icon: '',
+    description: toI18n(metadata.description),
+    tags: metadata.tags,
+    toolDescription: metadata.toolDescription,
+    source,
+    isToolset: metadata.isToolSet,
+    hasSecret: Boolean(
+      metadata.secretSchema?.properties &&
+        Object.keys(metadata.secretSchema.properties as Record<string, unknown>).length > 0
+    ),
+    children: metadata.isToolSet
+      ? metadata.tools.map((tool) => ({
+          id: tool.id,
+          name: toI18n(tool.name),
+          description: toI18n(tool.description),
+          toolDescription: tool.toolDescription
+        }))
+      : undefined
+  });
 }
 
 function toI18n(value: string) {

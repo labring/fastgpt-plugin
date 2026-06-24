@@ -272,6 +272,55 @@ describe('ToolFactory streaming', () => {
       }
     ]);
   });
+
+  it('consumes StreamData-like output across duplicated package instances', async () => {
+    const runtime = createLocalDebugRuntime();
+    setCurrentLocalDebugRuntime(runtime);
+    process.env.RUNTIME_MODE = 'dev';
+
+    const streamLike = createStreamDataLike<ToolStreamMessageType>();
+
+    runtime.pluginChannel.setRequestHandler(() =>
+      runtime.pluginChannel.createReply(undefined, {
+        output: streamLike
+      })
+    );
+
+    const response = await runtime.invokePlugin<
+      {
+        input: Record<string, unknown>;
+        systemVar: Record<string, unknown>;
+      },
+      void,
+      never,
+      ToolStreamMessageType
+    >('run', {
+      input: {},
+      systemVar: {}
+    });
+
+    streamLike.write({
+      type: 'response',
+      data: {
+        ok: true
+      }
+    });
+    streamLike.end();
+
+    const messages: ToolStreamMessageType[] = [];
+    await response.output!.stream.consume((chunk) => {
+      messages.push(chunk);
+    });
+
+    expect(messages).toEqual([
+      {
+        type: 'response',
+        data: {
+          ok: true
+        }
+      }
+    ]);
+  });
 });
 
 describe('ToolFactory schema metadata', () => {
@@ -321,6 +370,45 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function createStreamDataLike<T>() {
+  const chunks: T[] = [];
+  let closed = false;
+  let notify: (() => void) | undefined;
+
+  return {
+    write(chunk: T): void {
+      chunks.push(chunk);
+      notify?.();
+    },
+    end(): void {
+      closed = true;
+      notify?.();
+    },
+    consume: async (consumer: (chunk: T) => void | Promise<void>): Promise<void> => {
+      for await (const chunk of streamLikeValues()) {
+        await consumer(chunk);
+      }
+    },
+    values: streamLikeValues
+  };
+
+  async function* streamLikeValues(): AsyncGenerator<T, void, void> {
+    let index = 0;
+    while (true) {
+      while (index < chunks.length) {
+        yield chunks[index++]!;
+      }
+      if (closed) {
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        notify = resolve;
+      });
+      notify = undefined;
+    }
+  }
 }
 
 type JsonSchemaObject = {

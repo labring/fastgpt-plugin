@@ -1,54 +1,52 @@
 import z from 'zod';
 
-import { ConnectionGatewaySessionSchema } from '@domain/value-objects/connection-gateway.vo';
-
 import { PluginListItemDTOSchema } from './plugin.dto';
 
 export const PluginDebugSessionStatusDTOSchema = z.enum([
-  'pending',
+  'enabled',
   'connected',
   'disconnected',
-  'revoked',
-  'expired'
+  'revoked'
 ]);
+export type PluginDebugSessionStatusDTO = z.infer<typeof PluginDebugSessionStatusDTOSchema>;
 
 export const PluginDebugSessionCreateRequestDTOSchema = z.object({
-  tmbId: z.string().min(1),
-  ttlMs: z.number().int().positive().optional()
+  tmbId: z.string().min(1)
 });
 
 export const PluginDebugSessionCreateResponseDTOSchema = z.object({
-  debugSessionId: z.string().min(1),
   tmbId: z.string().min(1),
   source: z.string().min(1),
-  ticket: z.string().min(1),
-  ticketExpiresAt: z.number().int().positive(),
-  expiresAt: z.number().int().positive()
+  status: PluginDebugSessionStatusDTOSchema,
+  enabled: z.boolean(),
+  keyId: z.string().min(1),
+  connectionKey: z.string().min(1).optional(),
+  createdAt: z.number().int().positive(),
+  updatedAt: z.number().int().positive()
 });
 
-export const PluginDebugSessionTicketExchangeRequestDTOSchema = z.object({
-  ticket: z.string().min(1)
+export const PluginDebugSessionConnectionKeyExchangeRequestDTOSchema = z.object({
+  connectionKey: z.string().min(1)
 });
 
-export const PluginDebugSessionTicketExchangeResponseDTOSchema = z.object({
-  tcpUrl: z.string().min(1),
+export const PluginDebugSessionConnectionKeyExchangeResponseDTOSchema = z.object({
+  gatewayUrl: z.string().min(1),
+  transport: z.literal('websocket'),
   source: z.string().min(1),
-  sessionId: z.string().min(1),
-  session: ConnectionGatewaySessionSchema,
   connectToken: z.string().min(1),
   expiresAt: z.number().int().positive()
 });
 
 export const PluginDebugSessionGetParamsDTOSchema = z.object({
-  debugSessionId: z.string().min(1),
   tmbId: z.string().min(1)
 });
 
 export const PluginDebugSessionStatusResponseDTOSchema = z.object({
-  debugSessionId: z.string().min(1),
   tmbId: z.string().min(1),
   source: z.string().min(1),
   status: PluginDebugSessionStatusDTOSchema,
+  enabled: z.boolean(),
+  keyId: z.string().min(1).optional(),
   plugins: z.array(PluginListItemDTOSchema),
   gateway: z
     .object({
@@ -57,11 +55,10 @@ export const PluginDebugSessionStatusResponseDTOSchema = z.object({
       mailboxLag: z.number().int().nonnegative()
     })
     .optional(),
-  expiresAt: z.number().int().positive()
-});
-
-export const PluginDebugSessionRevokeParamsDTOSchema = z.object({
-  debugSessionId: z.string().min(1)
+  createdAt: z.number().int().positive().optional(),
+  updatedAt: z.number().int().positive().optional(),
+  refreshedAt: z.number().int().positive().optional(),
+  revokedAt: z.number().int().positive().optional()
 });
 
 export const PluginDebugSessionRevokeRequestDTOSchema = z.object({
@@ -79,12 +76,19 @@ export type PluginDebugSessionCreateRequestDTO = z.infer<
 export type PluginDebugSessionCreateResponseDTO = z.infer<
   typeof PluginDebugSessionCreateResponseDTOSchema
 >;
-export type PluginDebugSessionTicketExchangeRequestDTO = z.infer<
-  typeof PluginDebugSessionTicketExchangeRequestDTOSchema
+export type PluginDebugSessionConnectionKeyExchangeRequestDTO = z.infer<
+  typeof PluginDebugSessionConnectionKeyExchangeRequestDTOSchema
 >;
-export type PluginDebugSessionTicketExchangeResponseDTO = z.infer<
-  typeof PluginDebugSessionTicketExchangeResponseDTOSchema
+export type PluginDebugSessionConnectionKeyExchangeResponseDTO = z.infer<
+  typeof PluginDebugSessionConnectionKeyExchangeResponseDTOSchema
 >;
+export type PluginDebugSessionGetParamsDTO = z.infer<typeof PluginDebugSessionGetParamsDTOSchema>;
 export type PluginDebugSessionStatusResponseDTO = z.infer<
   typeof PluginDebugSessionStatusResponseDTOSchema
+>;
+export type PluginDebugSessionRevokeRequestDTO = z.infer<
+  typeof PluginDebugSessionRevokeRequestDTOSchema
+>;
+export type PluginDebugSessionRevokeResponseDTO = z.infer<
+  typeof PluginDebugSessionRevokeResponseDTOSchema
 >;

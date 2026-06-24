@@ -375,12 +375,24 @@ async function readSourceToBuffer(
   }
 
   const chunks: Buffer[] = [];
-  const iterable = source instanceof StreamData ? source.values() : source;
+  const iterable = isStreamDataLike(source) ? source.values() : source;
 
   for await (const chunk of iterable) {
     chunks.push(toBuffer(chunk));
   }
   return Buffer.concat(chunks);
+}
+
+function isStreamDataLike<T>(
+  source: StreamData<T> | AsyncIterable<T>
+): source is StreamData<T> {
+  return (
+    source instanceof StreamData ||
+    (typeof source === 'object' &&
+      source !== null &&
+      typeof (source as { values?: unknown }).values === 'function' &&
+      typeof (source as { consume?: unknown }).consume === 'function')
+  );
 }
 
 function toBuffer(value: unknown): Buffer {

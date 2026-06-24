@@ -1,13 +1,14 @@
 import type {
   ConnectionGatewayEnvelope,
-  ConnectionGatewayTransport
+  ConnectionGatewayTransport,
+  ConnectionGatewayWsServerMessage
 } from '@domain/value-objects/connection-gateway.vo';
 
 export type ConnectionGatewayTransportConnection = {
   id: string;
   transport: ConnectionGatewayTransport;
   remoteAddress?: string;
-  send(envelope: ConnectionGatewayEnvelope): Promise<void>;
+  send(message: ConnectionGatewayWsServerMessage): Promise<void>;
   close(reason?: Error): void;
 };
 

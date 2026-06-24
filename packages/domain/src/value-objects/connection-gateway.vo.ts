@@ -3,7 +3,7 @@ import z from 'zod';
 export const ConnectionGatewayConsumerTypeSchema = z.string().min(1).max(64);
 export type ConnectionGatewayConsumerType = z.infer<typeof ConnectionGatewayConsumerTypeSchema>;
 
-export const ConnectionGatewayTransportSchema = z.enum(['tcp', 'websocket']);
+export const ConnectionGatewayTransportSchema = z.literal('websocket');
 export type ConnectionGatewayTransport = z.infer<typeof ConnectionGatewayTransportSchema>;
 
 export const ConnectionGatewayCapabilitySchema = z.string().min(1).max(64);
@@ -42,6 +42,75 @@ export const ConnectionGatewayEnvelopeSchema = z.object({
   createdAt: z.number().int().positive()
 });
 export type ConnectionGatewayEnvelope = z.infer<typeof ConnectionGatewayEnvelopeSchema>;
+
+const ConnectionGatewayWsProtocolSchema = z.literal('connection-gateway.ws.v1');
+
+export const ConnectionGatewayWsBindMessageSchema = z.object({
+  protocol: ConnectionGatewayWsProtocolSchema,
+  type: z.literal('bind'),
+  requestId: z.string().min(1),
+  token: z.string().min(1),
+  metadata: z.record(z.string(), z.unknown()).optional()
+});
+export type ConnectionGatewayWsBindMessage = z.infer<
+  typeof ConnectionGatewayWsBindMessageSchema
+>;
+
+export const ConnectionGatewayWsEnvelopeMessageSchema = z.object({
+  protocol: ConnectionGatewayWsProtocolSchema,
+  type: z.literal('envelope'),
+  envelope: ConnectionGatewayEnvelopeSchema
+});
+export type ConnectionGatewayWsEnvelopeMessage = z.infer<
+  typeof ConnectionGatewayWsEnvelopeMessageSchema
+>;
+
+export const ConnectionGatewayWsHeartbeatMessageSchema = z.object({
+  protocol: ConnectionGatewayWsProtocolSchema,
+  type: z.literal('heartbeat'),
+  ts: z.number().int().positive()
+});
+export type ConnectionGatewayWsHeartbeatMessage = z.infer<
+  typeof ConnectionGatewayWsHeartbeatMessageSchema
+>;
+
+export const ConnectionGatewayWsErrorMessageSchema = z.object({
+  protocol: ConnectionGatewayWsProtocolSchema,
+  type: z.literal('error'),
+  requestId: z.string().min(1).optional(),
+  code: z.string().min(1),
+  message: z.string().min(1)
+});
+export type ConnectionGatewayWsErrorMessage = z.infer<
+  typeof ConnectionGatewayWsErrorMessageSchema
+>;
+
+export const ConnectionGatewayWsBoundMessageSchema = z.object({
+  protocol: ConnectionGatewayWsProtocolSchema,
+  type: z.literal('bound'),
+  requestId: z.string().min(1),
+  session: z.lazy(() => ConnectionGatewaySessionSchema)
+});
+export type ConnectionGatewayWsBoundMessage = z.infer<typeof ConnectionGatewayWsBoundMessageSchema>;
+
+export const ConnectionGatewayWsClientMessageSchema = z.discriminatedUnion('type', [
+  ConnectionGatewayWsBindMessageSchema,
+  ConnectionGatewayWsEnvelopeMessageSchema,
+  ConnectionGatewayWsHeartbeatMessageSchema
+]);
+export type ConnectionGatewayWsClientMessage = z.infer<
+  typeof ConnectionGatewayWsClientMessageSchema
+>;
+
+export const ConnectionGatewayWsServerMessageSchema = z.discriminatedUnion('type', [
+  ConnectionGatewayWsBoundMessageSchema,
+  ConnectionGatewayWsEnvelopeMessageSchema,
+  ConnectionGatewayWsHeartbeatMessageSchema,
+  ConnectionGatewayWsErrorMessageSchema
+]);
+export type ConnectionGatewayWsServerMessage = z.infer<
+  typeof ConnectionGatewayWsServerMessageSchema
+>;
 
 export const ConnectionGatewaySessionStatusSchema = z.enum([
   'connecting',

@@ -15,45 +15,39 @@ export const PluginDebugSessionSourceSchema = z
 export type PluginDebugSessionSource = z.infer<typeof PluginDebugSessionSourceSchema>;
 
 export const PluginDebugSessionStatusSchema = z.enum([
-  'pending',
+  'enabled',
   'connected',
   'disconnected',
-  'revoked',
-  'expired'
+  'revoked'
 ]);
 export type PluginDebugSessionStatus = z.infer<typeof PluginDebugSessionStatusSchema>;
 
 export const PluginDebugSessionSchema = z.object({
-  debugSessionId: PluginDebugSessionIdSchema,
   tmbId: PluginDebugSessionTmbIdSchema,
   source: z.string().min(1),
   status: PluginDebugSessionStatusSchema,
-  ticketHash: z.string().min(1),
-  gatewaySessionId: z.string().min(1).optional(),
+  enabled: z.boolean(),
+  keyId: z.string().min(1),
+  connectionKeyHash: z.string().min(1),
   createdAt: z.number().int().positive(),
-  expiresAt: z.number().int().positive(),
+  updatedAt: z.number().int().positive(),
+  refreshedAt: z.number().int().positive().optional(),
   revokedAt: z.number().int().positive().optional()
 });
 export type PluginDebugSession = z.infer<typeof PluginDebugSessionSchema>;
 
-export function makePluginDebugSessionSource(input: {
-  tmbId: string;
-  debugSessionId: string;
-}): string {
-  return `debug:tmbId:${input.tmbId}:session:${input.debugSessionId}`;
+export function makePluginDebugSessionSource(input: { tmbId: string }): string {
+  return `debug:tmbId:${input.tmbId}`;
 }
 
-export function parsePluginDebugSessionSource(
-  source: string
-): { tmbId: string; debugSessionId: string } | null {
-  const match = /^debug:tmbId:([^:]+):session:([^:]+)$/.exec(source);
+export function parsePluginDebugSessionSource(source: string): { tmbId: string } | null {
+  const match = /^debug:tmbId:([^:]+)$/.exec(source);
   if (!match) {
     return null;
   }
 
   return {
-    tmbId: match[1],
-    debugSessionId: match[2]
+    tmbId: match[1]
   };
 }
 

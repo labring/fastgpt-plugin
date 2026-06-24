@@ -25,34 +25,38 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
 - **本地调试**
   - 提供 `debug` 命令查看插件和子工具信息
   - 支持直接运行工具、传入 input/secrets/systemVar 文件，并用本地目录模拟 `uploadFile`
-  - 支持通过 Connection Gateway 建立一个 TCP 远程调试通道，并在一个通道内挂载多个本地插件
+- **集成开发会话**
+  - 提供 `dev` 命令通过 Connection Gateway 建立 WSS 远程调试通道
+  - 支持在一个通道内挂载多个本地插件，适合接入 FastGPT 测试环境
 - **打包**
   - 提供 `pack` 命令把 `dist` 产物打成可上传的 `.pkg`
 
 ### 远程调试
 
-本地插件可以通过 FastGPT 生成的 connect link 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并创建 debug session，CLI 只使用一次性 ticket 换取短期连接信息。
+本地插件可以通过 FastGPT 生成的长期 connection key 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并开启 debug channel，CLI 使用 connection key 换取短期 WSS connect token。
 
 ```bash
-fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \
-  --connect "https://fastgpt.example.com/debug-plugin/connect?ticket=..."
+fastgpt-plugin dev
 ```
 
-connect link 会返回 gateway TCP 地址、`debug:tmbId:{tmbId}:session:{debugSessionId}` source、预创建 session 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
-
-本地底层联调仍可直接连接 Connection Gateway：
+启动后把 FastGPT 页面生成的 connection key 粘贴到 TUI 中即可。脚本或 Agent 场景可以显式传入：
 
 ```bash
-fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \
-  --gateway \
-  --gateway-base-url https://connection-gateway.example.com \
-  --gateway-tcp-url tcp://connection-gateway-tcp.example.com:3012 \
-  --gateway-auth-token "$CONNECTION_GATEWAY_AUTH_TOKEN" \
-  --gateway-jwt-secret "$JWT_SECRET" \
-  --gateway-user-id u1
+fastgpt-plugin dev --no-interactive \
+  --connect "fpg_dbg_..."
 ```
 
-默认 source 为 `debug:user:{userId}`，同一个 CLI 进程会建立 1 个 TCP 通道并挂载所有传入的插件。断线后默认自动重连，正常退出时会清理 gateway session；如需关闭自动重连，可加 `--gateway-no-reconnect`。
+使用裸 connection key 时，需要设置 `FASTGPT_PLUGIN_DEBUG_CONNECT_URL`，或设置 `FASTGPT_PLUGIN_SERVER_URL` 让 CLI 默认请求 `/api/plugin/debug-sessions/connection-key:exchange`。兼容场景仍可传入完整 connect link。exchange 结果会返回 gateway WSS 地址、`debug:tmbId:{tmbId}` source 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
+
+`dev` 未传插件目录时会自动探测当前目录：如果当前目录有 `index.ts`，则把当前目录作为插件；否则扫描当前目录下一层子目录中的 `index.ts`。也可以手动传入多个插件目录。
+
+```bash
+fastgpt-plugin dev ./plugins/getTime ./plugins/dbops --watch
+```
+
+同一个 CLI 进程会建立 1 个 WSS 通道并挂载所有发现或传入的插件。断线后默认自动重连；如需关闭自动重连，可加 `--no-reconnect`。开发时可加 `--watch`，文件变化后会自动重载本地插件并重新建立远程调试会话。
+
+`debug --connect` 仍作为兼容入口保留，但新的远程集成调试应使用 `dev`。`debug` 会继续聚焦单插件本地查看和一次性运行。
 
 ### 待实现 / TODO
 
@@ -63,5 +67,5 @@ fastgpt-plugin debug ./plugins/getTime ./plugins/dbops \
   - 可选的 dry-run 模式（仅输出将要执行的操作，不真正发布）
   - 支持自定义 npm registry / token 配置（环境变量或配置文件）
 - **更多开发体验优化**
-  - `watch` 模式：监听源码变化自动重新构建
+  - 构建 `watch` 模式：监听源码变化自动重新构建
   - 输出更友好的构建日志和错误提示

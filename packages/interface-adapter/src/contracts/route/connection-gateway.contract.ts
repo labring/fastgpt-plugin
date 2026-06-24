@@ -1,10 +1,8 @@
 import { z } from 'zod';
 
-import { defineContract, jsonResponse, type ContractMetaType } from '../contract.type';
+import { type ContractMetaType,defineContract, jsonResponse } from '../contract.type';
 import { ErrorResponseDTOSchema } from '../dto/common.dto';
 import {
-  ConnectionGatewayCreateSessionRequestDTOSchema,
-  ConnectionGatewayCreateSessionResponseDTOSchema,
   ConnectionGatewayMetricsDTOSchema,
   ConnectionGatewayRequestAcceptedDTOSchema,
   ConnectionGatewayRequestDTOSchema,
@@ -25,21 +23,6 @@ export const ConnectionGatewayContract = {
     response: {
       200: jsonResponse({ data: ConnectionGatewayMetricsDTOSchema }),
       500: jsonResponse({ error: ErrorResponseDTOSchema })
-    }
-  }),
-  CreateSession: defineContract({
-    meta: {
-      method: 'post',
-      path: '/internal/sessions',
-      operationId: 'connectionGateway.createSession',
-      summary: 'Create a gateway session',
-      tags
-    },
-    request: ConnectionGatewayCreateSessionRequestDTOSchema,
-    response: {
-      200: jsonResponse({ data: ConnectionGatewayCreateSessionResponseDTOSchema }),
-      400: jsonResponse({ error: ErrorResponseDTOSchema }),
-      429: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
   SessionStatus: defineContract({

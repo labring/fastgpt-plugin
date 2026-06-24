@@ -24,18 +24,21 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@oxc-parser/binding-wasm32-wasi": "^0.112.0",
     "@inquirer/prompts": "^8.2.0",
+    "@oxc-parser/binding-wasm32-wasi": "^0.112.0",
     "commander": "^14.0.3",
     "consola": "^3.4.2",
     "es-toolkit": "^1.44.0",
+    "ink": "^7.1.0",
     "oxc-parser": "^0.112.0",
+    "react": "^19.2.7",
     "tsdown": "catalog:",
-    "yazl": "^3.3.1",
     "yaml": "^2.6.1",
+    "yazl": "^3.3.1",
     "zod": "^4"
   },
   "devDependencies": {
+    "@types/react": "^19.2.17",
     "@types/yazl": "^3.3.0",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.0.5",

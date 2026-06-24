@@ -15,7 +15,7 @@ describe('RedisConnectionGatewaySessionRegistry', () => {
         userId: 'u1',
         source: 'debug:user:u1'
       },
-      transport: 'tcp',
+      transport: 'websocket',
       capabilities: ['invoke'],
       ownerNodeId: 'node-a',
       expiresAt: now + 15_000,
