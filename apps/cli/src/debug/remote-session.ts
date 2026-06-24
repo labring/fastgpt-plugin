@@ -1,13 +1,14 @@
 import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
-import readline from 'node:readline';
 import { setTimeout as delay } from 'node:timers/promises';
 
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import { input } from '@inquirer/prompts';
+import { Box, type Instance,render as renderInk, Text, useInput } from 'ink';
+import React from 'react';
 import z from 'zod';
-
-import { ConnectionGatewaySessionSchema } from '@domain/value-objects/connection-gateway.vo';
 
 import { discoverDebugEntries } from './discover';
 import {
@@ -82,18 +83,26 @@ async function runRemoteDebugSessionOnce({
   });
   reporter.start();
 
-  const gateway = await connectDebugGateway({
-    targets,
-    options: gatewayOptions,
-    onLog: (message) => reporter.log(`[gateway] ${message}`)
-  });
-  reporter.attachClose(() => gateway.close());
-  const source = gateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
+  try {
+    const gateway = await connectDebugGateway({
+      targets,
+      options: gatewayOptions,
+      onLog: (message) => reporter.log(`[gateway] ${message}`)
+    });
+    reporter.attachClose(({ force }) => {
+      gateway.close();
+      if (force) {
+        process.exit(130);
+      }
+    });
+    const source = gateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
 
-  reporter.ready(source);
+    reporter.ready(source);
 
-  await gateway.closed;
-  reporter.end();
+    await gateway.closed;
+  } finally {
+    await reporter.end();
+  }
 }
 
 async function runWatchRemoteDebugSession({
@@ -102,7 +111,7 @@ async function runWatchRemoteDebugSession({
   commandName
 }: Omit<RemoteDebugSessionRunOptions, 'migrationHint'>): Promise<void> {
   let closed = false;
-  let currentGatewayClose: (() => void) | undefined;
+  let currentGatewayClose: RemoteDebugCloseHandler | undefined;
   let restartResolve: (() => void) | undefined;
   const entries = await resolveDebugEntries(entriesInput);
   const initialTargets = await loadTargets(entries, options);
@@ -113,13 +122,13 @@ async function runWatchRemoteDebugSession({
   });
   const watcher = watchDebugEntries(entries, () => {
     restartResolve?.();
-    currentGatewayClose?.();
+    currentGatewayClose?.({ force: false });
   });
 
   process.once('SIGINT', () => {
     closed = true;
     restartResolve?.();
-    currentGatewayClose?.();
+    currentGatewayClose?.({ force: false });
     watcher.close();
   });
 
@@ -134,6 +143,14 @@ async function runWatchRemoteDebugSession({
         commandName,
         onCloseReady: (close) => {
           currentGatewayClose = close;
+        },
+        onUserClose: ({ force }) => {
+          closed = true;
+          restartResolve?.();
+          watcher.close();
+          if (force) {
+            process.exit(130);
+          }
         },
         restart
       }).catch((error) => {
@@ -160,12 +177,14 @@ async function runRemoteDebugSessionOnceWithCloseHook({
   options,
   commandName,
   onCloseReady,
+  onUserClose,
   restart
 }: {
   entries: string[];
   options: RemoteDebugCommandOptions;
   commandName: string;
-  onCloseReady(close: () => void): void;
+  onCloseReady(close: RemoteDebugCloseHandler): void;
+  onUserClose?(options: RemoteDebugCloseOptions): void;
   restart: Promise<void>;
 }): Promise<void> {
   const targets = await loadTargets(entries, options);
@@ -184,20 +203,34 @@ async function runRemoteDebugSessionOnceWithCloseHook({
   });
   reporter.start();
 
-  const gateway = await connectDebugGateway({
-    targets,
-    options: gatewayOptions,
-    onLog: (message) => reporter.log(`[gateway] ${message}`)
-  });
-  reporter.attachClose(() => gateway.close());
-  onCloseReady(() => gateway.close());
-  const source = gateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
-  reporter.ready(source);
+  try {
+    const gateway = await connectDebugGateway({
+      targets,
+      options: gatewayOptions,
+      onLog: (message) => reporter.log(`[gateway] ${message}`)
+    });
+    reporter.attachClose(({ force }) => {
+      onUserClose?.({ force });
+      gateway.close();
+      if (force) {
+        process.exit(130);
+      }
+    });
+    onCloseReady(({ force }) => {
+      gateway.close();
+      if (force) {
+        process.exit(130);
+      }
+    });
+    const source = gateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
+    reporter.ready(source);
 
-  await Promise.race([gateway.closed, restart]);
-  gateway.close();
-  await gateway.closed.catch(() => undefined);
-  reporter.end();
+    await Promise.race([gateway.closed, restart]);
+    gateway.close();
+    await gateway.closed.catch(() => undefined);
+  } finally {
+    await reporter.end();
+  }
 }
 
 async function resolveDebugEntries(entriesInput: string | string[]): Promise<string[]> {
@@ -301,8 +334,8 @@ function createRemoteDebugReporter({
 }): RemoteDebugReporter {
   const summary = {
     commandName,
-    mode: 'FastGPT connect link',
-    tcp: `${gatewayOptions.tcpHost}:${gatewayOptions.tcpPort}`,
+    mode: 'FastGPT connection key',
+    gateway: gatewayOptions.gatewayUrl,
     reconnect: gatewayOptions.reconnect === false ? 'off' : 'on',
     targets: targets.map((target) => target.snapshot)
   };
@@ -325,8 +358,15 @@ async function ensureConnectLink({
     return;
   }
 
+  const savedConnect = await readSavedConnectionKey();
+  if (savedConnect) {
+    options.connect = savedConnect;
+    logger.info(`已读取本地 FastGPT connection key 配置: ${getCliConfigPath()}`);
+    return;
+  }
+
   if (options.interactive === false || !process.stdin.isTTY || !process.stdout.isTTY) {
-    throw new Error('dev 需要 --connect，或在交互式终端中输入 FastGPT connect link。');
+    throw new Error('dev 需要 --connect，或在交互式终端中输入 FastGPT connection key。');
   }
 
   const connectUrl = await promptConnectLink({
@@ -334,6 +374,8 @@ async function ensureConnectLink({
     targets
   });
   options.connect = connectUrl;
+  await saveConnectionKey(connectUrl);
+  logger.info(`已保存 FastGPT connection key 到本地配置: ${getCliConfigPath()}`);
 }
 
 async function promptConnectLink({
@@ -348,25 +390,90 @@ async function promptConnectLink({
       '\x1b[?25h\x1b[2J\x1b[HFastGPT Plugin Dev',
       '',
       `Command   fastgpt-plugin ${commandName}`,
-      'Mode      waiting for FastGPT connect link',
+      'Mode      waiting for FastGPT connection key',
       'Status    pending',
       '',
       'Plugins',
       ...targets.map((target) => `  ${target.snapshot.pluginId}@${target.snapshot.version}`),
       '',
-      'Paste the FastGPT connect link to start the TCP debug session.',
+      'Paste the FastGPT connection key or connect link to start the WSS debug session.',
       ''
     ].join('\n')
   );
 
   const connectUrl = await input({
-    message: 'FastGPT connect link',
+    message: 'FastGPT connection key',
     validate(value) {
-      return value.trim().length > 0 || '请输入 FastGPT connect link';
+      return value.trim().length > 0 || '请输入 FastGPT connection key';
     }
   });
 
   return connectUrl.trim();
+}
+
+async function readSavedConnectionKey(): Promise<string | undefined> {
+  const config = await readCliConfig();
+  const connectionKey = config.debug?.connectionKey?.trim();
+  return connectionKey || undefined;
+}
+
+async function saveConnectionKey(connectionKey: string): Promise<void> {
+  const trimmed = connectionKey.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  const configPath = getCliConfigPath();
+  const config = await readCliConfig();
+  const nextConfig: CliConfig = {
+    ...config,
+    debug: {
+      ...config.debug,
+      connectionKey: trimmed
+    }
+  };
+
+  await fsp.mkdir(path.dirname(configPath), { recursive: true, mode: 0o700 });
+  await fsp.writeFile(configPath, `${JSON.stringify(nextConfig, null, 2)}\n`, {
+    encoding: 'utf-8',
+    mode: 0o600
+  });
+}
+
+async function readCliConfig(): Promise<CliConfig> {
+  const configPath = getCliConfigPath();
+  let raw: string;
+  try {
+    raw = await fsp.readFile(configPath, 'utf-8');
+  } catch (error) {
+    if (isNodeError(error) && error.code === 'ENOENT') {
+      return {};
+    }
+    throw error;
+  }
+
+  if (!raw.trim()) {
+    return {};
+  }
+
+  return CliConfigSchema.parse(JSON.parse(raw));
+}
+
+function getCliConfigPath(): string {
+  return path.join(getCliConfigDir(), CLI_CONFIG_FILE_NAME);
+}
+
+function getCliConfigDir(): string {
+  const xdgConfigHome = process.env.XDG_CONFIG_HOME?.trim();
+  if (xdgConfigHome) {
+    return path.join(xdgConfigHome, CLI_CONFIG_DIR_NAME);
+  }
+
+  return path.join(os.homedir(), '.config', CLI_CONFIG_DIR_NAME);
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error;
 }
 
 function formatTargetLine(snapshot: DebugPluginSnapshot): string {
@@ -377,7 +484,7 @@ function formatTargetLine(snapshot: DebugPluginSnapshot): string {
 type RemoteDebugReporterSummary = {
   commandName: string;
   mode: string;
-  tcp: string;
+  gateway: string;
   reconnect: string;
   targets: DebugPluginSnapshot[];
 };
@@ -386,9 +493,30 @@ type RemoteDebugReporter = {
   start(): void;
   log(message: string): void;
   ready(source: string): void;
-  attachClose(close: () => void): void;
-  end(): void;
+  attachClose(close: RemoteDebugCloseHandler): void;
+  end(): Promise<void> | void;
 };
+
+type RemoteDebugCloseOptions = {
+  force: boolean;
+};
+
+type RemoteDebugCloseHandler = (options: RemoteDebugCloseOptions) => void;
+
+const CLI_CONFIG_FILE_NAME = 'config.json';
+const CLI_CONFIG_DIR_NAME = 'fastgpt-plugin';
+
+const CliConfigSchema = z
+  .object({
+    debug: z
+      .object({
+        connectionKey: z.string().min(1).optional()
+      })
+      .optional()
+  })
+  .passthrough();
+
+type CliConfig = z.infer<typeof CliConfigSchema>;
 
 class PlainRemoteDebugReporter implements RemoteDebugReporter {
   constructor(private readonly summary: RemoteDebugReporterSummary) {}
@@ -400,7 +528,7 @@ class PlainRemoteDebugReporter implements RemoteDebugReporter {
         `  command: fastgpt-plugin ${this.summary.commandName}`,
         `  mode: ${this.summary.mode}`,
         '  ui: plain',
-        `  tcp: ${this.summary.tcp}`,
+        `  gateway: ${this.summary.gateway}`,
         `  reconnect: ${this.summary.reconnect}`,
         '  plugins:',
         ...this.summary.targets.map(formatTargetLine)
@@ -433,33 +561,50 @@ class PlainRemoteDebugReporter implements RemoteDebugReporter {
 class TuiRemoteDebugReporter implements RemoteDebugReporter {
   private status = 'connecting';
   private source = '-';
-  private logs: string[] = [];
-  private closeSession: (() => void) | undefined;
-  private readonly onKeypress = (_input: string, key: readline.Key) => {
-    if (key.ctrl && key.name === 'c') {
-      this.closeSession?.();
+  private logs: TuiLogEntry[] = [];
+  private instance: Instance | undefined;
+  private closeSession: RemoteDebugCloseHandler | undefined;
+  private interruptCount = 0;
+  private readonly onSigint = () => {
+    this.requestClose('ctrl-c');
+  };
+  private readonly requestClose = (reason: TuiQuitReason) => {
+    if (reason === 'q') {
+      this.log('收到退出指令，正在关闭远程调试会话。');
+      this.closeSession?.({ force: false });
       return;
     }
-    if (key.name === 'q') {
-      this.log('收到退出指令，正在关闭远程调试会话。');
-      this.closeSession?.();
+    this.interruptCount += 1;
+    const force = this.interruptCount >= 2;
+    this.status = force ? 'closed' : 'closing';
+    this.log(force ? '再次收到 Ctrl+C，正在强制退出。' : '收到 Ctrl+C，正在关闭远程调试会话。再次按 Ctrl+C 强制退出。');
+    this.closeSession?.({ force });
+    if (force && !this.closeSession) {
+      process.exit(130);
     }
   };
 
   constructor(private readonly summary: RemoteDebugReporterSummary) {}
 
   start(): void {
-    readline.emitKeypressEvents(process.stdin);
-    process.stdin.setRawMode?.(true);
-    process.stdin.resume();
-    process.stdin.on('keypress', this.onKeypress);
-    this.render();
+    process.on('SIGINT', this.onSigint);
+    this.instance = renderInk(this.createApp(), {
+      stdin: process.stdin,
+      stdout: process.stdout,
+      stderr: process.stderr,
+      exitOnCtrlC: false,
+      interactive: true,
+      patchConsole: false
+    });
   }
 
   log(message: string): void {
-    this.logs.push(message);
+    this.logs.push({
+      at: new Date(),
+      message
+    });
     this.logs = this.logs.slice(-6);
-    this.render();
+    this.rerender();
   }
 
   ready(source: string): void {
@@ -468,42 +613,300 @@ class TuiRemoteDebugReporter implements RemoteDebugReporter {
     this.log(`远程调试已就绪，挂载 ${this.summary.targets.length} 个插件。`);
   }
 
-  attachClose(close: () => void): void {
+  attachClose(close: RemoteDebugCloseHandler): void {
     this.closeSession = close;
   }
 
-  end(): void {
+  async end(): Promise<void> {
+    process.off('SIGINT', this.onSigint);
     this.status = 'closed';
-    this.render();
-    process.stdin.off('keypress', this.onKeypress);
-    process.stdin.setRawMode?.(false);
-    process.stdin.pause();
-    process.stdout.write('\x1b[?25h');
+    this.rerender();
+    const instance = this.instance;
+    this.instance = undefined;
+    if (instance) {
+      await Promise.race([instance.waitUntilRenderFlush(), delay(50)]).catch(() => undefined);
+      instance.unmount();
+      await Promise.race([instance.waitUntilExit(), delay(50)]).catch(() => undefined);
+    }
     logger.info('远程调试会话已结束。');
   }
 
-  private render(): void {
-    const lines = [
-      'FastGPT Plugin Dev',
-      '',
-      `Command   fastgpt-plugin ${this.summary.commandName}`,
-      `Mode      ${this.summary.mode}`,
-      `Status    ${this.status}`,
-      `Source    ${this.source}`,
-      `TCP       ${this.summary.tcp}`,
-      `Reconnect ${this.summary.reconnect}`,
-      '',
-      'Plugins',
-      ...this.summary.targets.map((target) => `  ${target.pluginId}@${target.version}`),
-      '',
-      'Logs',
-      ...(this.logs.length > 0 ? this.logs.map((line) => `  ${line}`) : ['  -']),
-      '',
-      'Press q to stop. Press Ctrl+C to exit.'
-    ];
-
-    process.stdout.write(`\x1b[?25l\x1b[2J\x1b[H${lines.join('\n')}\n`);
+  private rerender(): void {
+    this.instance?.rerender(this.createApp());
   }
+
+  private createApp(): React.ReactElement {
+    return React.createElement(RemoteDebugInkApp, {
+      summary: this.summary,
+      status: this.status,
+      source: this.source,
+      logs: this.logs,
+      onQuit: this.requestClose
+    });
+  }
+}
+
+type TuiQuitReason = 'ctrl-c' | 'q';
+
+type TuiLogEntry = {
+  at: Date;
+  message: string;
+};
+
+type RemoteDebugInkAppProps = {
+  summary: RemoteDebugReporterSummary;
+  status: string;
+  source: string;
+  logs: TuiLogEntry[];
+  onQuit(reason: TuiQuitReason): void;
+};
+
+function RemoteDebugInkApp({
+  summary,
+  status,
+  source,
+  logs,
+  onQuit
+}: RemoteDebugInkAppProps): React.ReactElement {
+  useInput((inputValue, key) => {
+    if (key.ctrl && inputValue === 'c') {
+      onQuit('ctrl-c');
+      return;
+    }
+    if (inputValue === 'q') {
+      onQuit('q');
+    }
+  });
+
+  const statusMeta = getTuiStatusMeta(status);
+  const sourceLabel = source === '-' ? 'waiting for bind' : source;
+  const command = `fastgpt-plugin ${summary.commandName}`;
+  const rows: Array<[string, string, string?]> = [
+    ['command', command],
+    ['gateway', summary.gateway],
+    ['source', sourceLabel],
+    ['reconnect', summary.reconnect === 'on' ? 'enabled' : 'disabled']
+  ];
+  const plugins = summary.targets.map((target) => {
+    const toolCount = target.tools.length;
+    return {
+      id: `${target.pluginId}:${target.version}`,
+      name: `${target.pluginId}@${target.version}`,
+      tools: toolCount === 1 ? '1 tool' : `${toolCount} tools`,
+      entry: target.entryDir
+    };
+  });
+  const activityItems =
+    logs.length > 0
+      ? logs.map((entry, index) =>
+          React.createElement(
+            Box,
+            { key: `${entry.at.getTime()}:${index}`, flexDirection: 'row' },
+            React.createElement(Text, { color: 'gray' }, formatTuiTime(entry.at)),
+            React.createElement(Text, { dimColor: true }, '  │  '),
+            React.createElement(Text, { wrap: 'truncate-end' }, entry.message)
+          )
+        )
+      : [
+          React.createElement(
+            Text,
+            { key: 'empty-log', dimColor: true },
+            'waiting for gateway events'
+          )
+        ];
+
+  return React.createElement(
+    Box,
+    { flexDirection: 'column', paddingX: 1, paddingY: 1 },
+    React.createElement(
+      Box,
+      {
+        borderStyle: 'round',
+        borderColor: statusMeta.borderColor,
+        paddingX: 2,
+        paddingY: 1,
+        flexDirection: 'column'
+      },
+      React.createElement(
+        Box,
+        { justifyContent: 'space-between' },
+        React.createElement(
+          Box,
+          null,
+          React.createElement(Text, { bold: true, color: 'cyanBright' }, 'FastGPT Plugin Dev'),
+          React.createElement(Text, { dimColor: true }, '  remote debug')
+        ),
+        React.createElement(
+          Box,
+          null,
+          React.createElement(Text, { color: statusMeta.color, bold: true }, statusMeta.label),
+          React.createElement(Text, { dimColor: true }, `  ${plugins.length} plugins`)
+        )
+      ),
+      React.createElement(
+        Box,
+        { marginTop: 1 },
+        React.createElement(Text, { color: statusMeta.color }, statusMeta.marker),
+        React.createElement(Text, { dimColor: true }, '  '),
+        React.createElement(Text, { wrap: 'truncate-end' }, statusMeta.description)
+      )
+    ),
+    React.createElement(
+      Box,
+      { marginTop: 1, columnGap: 1 },
+      React.createElement(
+        Box,
+        {
+          borderStyle: 'round',
+          borderColor: 'gray',
+          paddingX: 1,
+          paddingY: 1,
+          flexDirection: 'column',
+          width: '50%'
+        },
+        React.createElement(Text, { bold: true }, 'Session'),
+        React.createElement(
+          Box,
+          { flexDirection: 'column', marginTop: 1 },
+          ...rows.map(([label, value]) =>
+            React.createElement(SessionRow, {
+              key: label,
+              label,
+              value
+            })
+          )
+        )
+      ),
+      React.createElement(
+        Box,
+        {
+          borderStyle: 'round',
+          borderColor: 'gray',
+          paddingX: 1,
+          paddingY: 1,
+          flexDirection: 'column',
+          width: '50%'
+        },
+        React.createElement(
+          Box,
+          { justifyContent: 'space-between' },
+          React.createElement(Text, { bold: true }, 'Plugins'),
+          React.createElement(Text, { dimColor: true }, `${plugins.length} mounted`)
+        ),
+        React.createElement(
+          Box,
+          { flexDirection: 'column', marginTop: 1 },
+          ...plugins.map((plugin, index) =>
+            React.createElement(
+              Box,
+              { key: plugin.id, flexDirection: 'column', marginTop: index === 0 ? 0 : 1 },
+              React.createElement(
+                Box,
+                null,
+                React.createElement(Text, { color: 'greenBright' }, '● '),
+                React.createElement(Text, { bold: true, wrap: 'truncate-end' }, plugin.name),
+                React.createElement(Text, { dimColor: true }, `  ${plugin.tools}`)
+              ),
+              React.createElement(Text, { dimColor: true, wrap: 'truncate-end' }, `  ${plugin.entry}`)
+            )
+          )
+        )
+      )
+    ),
+    React.createElement(
+      Box,
+      {
+        borderStyle: 'round',
+        borderColor: 'gray',
+        paddingX: 1,
+        paddingY: 1,
+        flexDirection: 'column',
+        marginTop: 1
+      },
+      React.createElement(
+        Box,
+        { justifyContent: 'space-between' },
+        React.createElement(Text, { bold: true }, 'Activity'),
+        React.createElement(Text, { dimColor: true }, 'latest 6 events')
+      ),
+      React.createElement(
+        Box,
+        { flexDirection: 'column', marginTop: 1 },
+        ...activityItems
+      )
+    ),
+    React.createElement(
+      Box,
+      { marginTop: 1, justifyContent: 'space-between' },
+      React.createElement(Text, { dimColor: true }, 'q stop'),
+      React.createElement(Text, { dimColor: true }, 'Ctrl+C stop · second Ctrl+C force exit')
+    )
+  );
+}
+
+type TuiStatusMeta = {
+  label: string;
+  marker: string;
+  description: string;
+  color: string;
+  borderColor: string;
+};
+
+function getTuiStatusMeta(status: string): TuiStatusMeta {
+  if (status === 'connected') {
+    return {
+      label: 'CONNECTED',
+      marker: '●',
+      description: 'Gateway channel is live and ready to receive FastGPT invocations.',
+      color: 'greenBright',
+      borderColor: 'green'
+    };
+  }
+
+  if (status === 'closed') {
+    return {
+      label: 'CLOSED',
+      marker: '■',
+      description: 'Remote debug session has been closed.',
+      color: 'gray',
+      borderColor: 'gray'
+    };
+  }
+
+  if (status === 'closing') {
+    return {
+      label: 'CLOSING',
+      marker: '◆',
+      description: 'Closing gateway channel. Press Ctrl+C again to force exit.',
+      color: 'yellowBright',
+      borderColor: 'yellow'
+    };
+  }
+
+  return {
+    label: 'CONNECTING',
+    marker: '◆',
+    description: 'Binding local plugins to the FastGPT connection gateway.',
+    color: 'yellowBright',
+    borderColor: 'yellow'
+  };
+}
+
+function SessionRow({ label, value }: { label: string; value: string }): React.ReactElement {
+  return React.createElement(
+    Box,
+    null,
+    React.createElement(Text, { color: 'gray' }, label.padEnd(10)),
+    React.createElement(Text, { wrap: 'truncate-end' }, value)
+  );
+}
+
+function formatTuiTime(value: Date): string {
+  return [
+    value.getHours().toString().padStart(2, '0'),
+    value.getMinutes().toString().padStart(2, '0'),
+    value.getSeconds().toString().padStart(2, '0')
+  ].join(':');
 }
 
 async function resolveGatewayOptions(
@@ -521,12 +924,10 @@ async function resolveConnectGatewayOptions(
   options: RemoteDebugCommandOptions
 ): Promise<DebugGatewayClientOptions> {
   const info = await exchangeConnectLink(options.connect as string);
-  const tcpEndpoint = parseGatewayTcpUrl(info.tcpUrl);
 
   return {
-    baseUrl: '',
-    tcpHost: tcpEndpoint.host,
-    tcpPort: tcpEndpoint.port,
+    gatewayUrl: normalizeGatewayWsUrl(info.gatewayUrl),
+    connectToken: info.connectToken,
     userId: info.tmbId,
     source: info.source,
     tokenTtlMs: Math.max(1, info.expiresAt - Date.now()),
@@ -534,11 +935,7 @@ async function resolveConnectGatewayOptions(
     reconnectIntervalMs: toPositiveInt(
       options.reconnectIntervalMs ?? process.env.CONNECTION_GATEWAY_RECONNECT_INTERVAL_MS ?? '2000',
       'reconnect-interval-ms'
-    ),
-    precreatedSession: {
-      session: info.session,
-      connectToken: info.connectToken
-    }
+    )
   };
 }
 
@@ -565,56 +962,63 @@ function resolveUploadDir({
 }
 
 const ConnectInfoSchema = z.object({
-  tcpUrl: z.string().min(1),
+  gatewayUrl: z.string().min(1),
+  transport: z.literal('websocket'),
   source: z.string().min(1),
-  sessionId: z.string().min(1).optional(),
   connectToken: z.string().min(1),
-  expiresAt: z.number().int().positive(),
-  session: ConnectionGatewaySessionSchema.optional()
+  expiresAt: z.number().int().positive()
 });
 
-async function exchangeConnectLink(connectUrl: string) {
-  const response = await fetch(connectUrl);
+async function exchangeConnectLink(connectInput: string) {
+  const response = isHttpUrl(connectInput)
+    ? await fetch(connectInput)
+    : await fetch(resolveConnectionKeyExchangeUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          connectionKey: connectInput
+        })
+      });
   const text = await response.text();
   const payload = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
-    throw new Error(`connect link 请求失败: ${response.status} ${text}`);
+    throw new Error(`connection key 请求失败: ${response.status} ${text}`);
   }
 
   const info = ConnectInfoSchema.parse(payload.data ?? payload);
-  const sessionId = info.sessionId ?? info.session?.id;
-  if (!sessionId) {
-    throw new Error('connect link 响应缺少 gateway session');
-  }
-  const session =
-    info.session ??
-    ConnectionGatewaySessionSchema.parse({
-      id: sessionId,
-      consumerType: 'plugin-debug',
-      subject: parseTmbIdFromDebugSource(info.source),
-      sessionScope: {
-        userId: parseTmbIdFromDebugSource(info.source),
-        source: info.source
-      },
-      transport: 'tcp',
-      capabilities: ['gateway.bind', 'invoke'],
-      generation: 0,
-      ownerNodeId: 'remote',
-      status: 'connecting',
-      connectedAt: Date.now(),
-      lastSeenAt: Date.now(),
-      expiresAt: info.expiresAt,
-      metadata: {
-        connectToken: info.connectToken
-      }
-    });
 
   return {
     ...info,
-    tmbId: parseTmbIdFromDebugSource(info.source),
-    session
+    tmbId: parseTmbIdFromDebugSource(info.source)
   };
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function resolveConnectionKeyExchangeUrl(): string {
+  const explicit = process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL;
+  if (explicit) {
+    return explicit;
+  }
+
+  const baseUrl = process.env.FASTGPT_PLUGIN_SERVER_URL ?? process.env.PLUGIN_SERVER_URL;
+  if (!baseUrl) {
+    throw new Error(
+      '使用裸 connection key 时需要设置 FASTGPT_PLUGIN_DEBUG_CONNECT_URL 或 FASTGPT_PLUGIN_SERVER_URL。'
+    );
+  }
+
+  return new URL('/api/plugin/debug-sessions/connection-key:exchange', baseUrl).toString();
 }
 
 function parseTmbIdFromDebugSource(source: string): string {
@@ -627,19 +1031,16 @@ function parseTmbIdFromDebugSource(source: string): string {
   return tmbId;
 }
 
-function parseGatewayTcpUrl(tcpUrl: string): { host: string; port: number } {
-  const parsed = new URL(tcpUrl);
-  if (parsed.protocol !== 'tcp:') {
-    throw new Error('gateway-tcp-url 必须使用 tcp:// 协议。');
+function normalizeGatewayWsUrl(gatewayUrl: string): string {
+  const parsed = new URL(gatewayUrl);
+  if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') {
+    throw new Error('gatewayUrl 必须使用 ws:// 或 wss:// 协议。');
   }
-  if (!parsed.hostname || !parsed.port) {
-    throw new Error('gateway-tcp-url 必须包含 host 和 port。');
+  if (!parsed.hostname) {
+    throw new Error('gatewayUrl 必须包含 host。');
   }
 
-  return {
-    host: parsed.hostname,
-    port: toPositiveInt(parsed.port, 'gateway-tcp-url port')
-  };
+  return parsed.toString();
 }
 
 function toPositiveInt(value: string, label: string): number {

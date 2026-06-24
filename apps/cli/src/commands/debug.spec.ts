@@ -1,4 +1,4 @@
-import { cp, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,23 +46,7 @@ describe('debug command', () => {
     vi.spyOn(logger, 'warn').mockImplementation(loggerSpy.warn);
     exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
-      session: {
-        id: 'session-debug',
-        consumerType: 'plugin-debug',
-        subject: `user:${options.userId}`,
-        sessionScope: {
-          userId: options.userId,
-          source: options.source
-        },
-        transport: 'tcp',
-        capabilities: ['invoke'],
-        generation: 0,
-        ownerNodeId: 'node-a',
-        status: 'connected',
-        connectedAt: Date.now(),
-        lastSeenAt: Date.now(),
-        expiresAt: Date.now() + 60_000
-      },
+      session: makeConnectedSession(options),
       close: vi.fn(),
       closed: Promise.resolve()
     }));
@@ -79,6 +63,9 @@ describe('debug command', () => {
     vi.unstubAllGlobals();
     inputMock.mockReset();
     delete process.env.CONNECTION_GATEWAY_AUTH_TOKEN;
+    delete process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL;
+    delete process.env.FASTGPT_PLUGIN_SERVER_URL;
+    delete process.env.PLUGIN_SERVER_URL;
     await rm(tempUploadDir, { recursive: true, force: true });
   });
 
@@ -156,28 +143,11 @@ describe('debug command', () => {
         new Response(
           JSON.stringify({
             data: {
-              tcpUrl: 'tcp://tcp.example.com:39430',
-              source: 'debug:tmbId:tmb-1:session:debug-1',
-              sessionId: 'session-debug',
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
               connectToken: 'scoped-token',
-              expiresAt: Date.now() + 60_000,
-              session: {
-                id: 'session-debug',
-                consumerType: 'plugin-debug',
-                subject: 'tmb-1',
-                sessionScope: {
-                  userId: 'tmb-1',
-                  source: 'debug:tmbId:tmb-1:session:debug-1'
-                },
-                transport: 'tcp',
-                capabilities: ['gateway.bind', 'invoke'],
-                generation: 0,
-                ownerNodeId: 'node-a',
-                status: 'connecting',
-                connectedAt: Date.now(),
-                lastSeenAt: Date.now(),
-                expiresAt: Date.now() + 60_000
-              }
+              expiresAt: Date.now() + 60_000
             }
           })
         )
@@ -190,22 +160,17 @@ describe('debug command', () => {
       'debug',
       GETTIME_TOOL_DIR,
       '--connect',
-      'https://fastgpt.example.com/debug/connect?connectKey=t1'
+      'https://fastgpt.example.com/debug/connect?connectionKey=t1'
     ]);
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://fastgpt.example.com/debug/connect?connectKey=t1'
+      'https://fastgpt.example.com/debug/connect?connectionKey=t1'
     );
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
-      tcpHost: 'tcp.example.com',
-      tcpPort: 39430,
-      source: 'debug:tmbId:tmb-1:session:debug-1',
-      precreatedSession: {
-        connectToken: 'scoped-token',
-        session: expect.objectContaining({
-          id: 'session-debug'
-        })
-      }
+      gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+      connectToken: 'scoped-token',
+      source: 'debug:tmbId:tmb-1',
+      userId: 'tmb-1'
     });
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).not.toHaveProperty(
       'authToken'
@@ -214,9 +179,56 @@ describe('debug command', () => {
       'jwtSecret'
     );
     expect(getLoggerOutput(loggerSpy.success)).toContain(
-      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 getTime'
+      '远程调试已就绪: debug:tmbId:tmb-1 getTime'
     );
     expect(getLoggerOutput(loggerSpy.warn)).toContain('debug --connect 是兼容入口');
+  });
+
+  it('应能通过长期 connection key 换取远程调试连接信息', async () => {
+    process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL =
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
+
+    await run([
+      process.execPath,
+      'cli',
+      'dev',
+      GETTIME_TOOL_DIR,
+      '--connect',
+      'connection-key-1',
+      '--no-interactive'
+    ]);
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          connectionKey: 'connection-key-1'
+        })
+      })
+    );
+    expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
+      gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+      connectToken: 'scoped-token',
+      source: 'debug:tmbId:tmb-1',
+      userId: 'tmb-1'
+    });
   });
 });
 
@@ -236,23 +248,7 @@ describe('dev command', () => {
     vi.spyOn(logger, 'warn').mockImplementation(loggerSpy.warn);
     exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
-      session: {
-        id: 'session-debug',
-        consumerType: 'plugin-debug',
-        subject: `user:${options.userId}`,
-        sessionScope: {
-          userId: options.userId,
-          source: options.source
-        },
-        transport: 'tcp',
-        capabilities: ['invoke'],
-        generation: 0,
-        ownerNodeId: 'node-a',
-        status: 'connected',
-        connectedAt: Date.now(),
-        lastSeenAt: Date.now(),
-        expiresAt: Date.now() + 60_000
-      },
+      session: makeConnectedSession(options),
       close: vi.fn(),
       closed: Promise.resolve()
     }));
@@ -268,6 +264,10 @@ describe('dev command', () => {
     vi.unstubAllGlobals();
     inputMock.mockReset();
     delete process.env.CONNECTION_GATEWAY_AUTH_TOKEN;
+    delete process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL;
+    delete process.env.FASTGPT_PLUGIN_SERVER_URL;
+    delete process.env.PLUGIN_SERVER_URL;
+    delete process.env.XDG_CONFIG_HOME;
   });
 
   it('应能通过 dev --connect 启动集成开发会话', async () => {
@@ -277,9 +277,9 @@ describe('dev command', () => {
         new Response(
           JSON.stringify({
             data: {
-              tcpUrl: 'tcp://tcp.example.com:39430',
-              source: 'debug:tmbId:tmb-1:session:debug-1',
-              sessionId: 'session-debug',
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
               connectToken: 'scoped-token',
               expiresAt: Date.now() + 60_000
             }
@@ -295,29 +295,29 @@ describe('dev command', () => {
       GETTIME_TOOL_DIR,
       DBOPS_SUITE_DIR,
       '--connect',
-      'https://fastgpt.example.com/debug/connect?connectKey=t1',
+      'https://fastgpt.example.com/debug/connect?connectionKey=t1',
       '--no-interactive'
     ]);
 
     const infoOutput = getLoggerOutput(loggerSpy.info);
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://fastgpt.example.com/debug/connect?connectKey=t1'
+      'https://fastgpt.example.com/debug/connect?connectionKey=t1'
     );
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].targets).toHaveLength(2);
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).toMatchObject({
-      tcpHost: 'tcp.example.com',
-      tcpPort: 39430,
-      source: 'debug:tmbId:tmb-1:session:debug-1'
+      gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+      connectToken: 'scoped-token',
+      source: 'debug:tmbId:tmb-1'
     });
     expect(infoOutput).toContain('FastGPT 插件开发会话');
     expect(infoOutput).toContain('command: fastgpt-plugin dev');
     expect(infoOutput).toContain('ui: plain');
     expect(getLoggerOutput(loggerSpy.success)).toContain(
-      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 getTime'
+      '远程调试已就绪: debug:tmbId:tmb-1 getTime'
     );
     expect(getLoggerOutput(loggerSpy.success)).toContain(
-      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 dbops'
+      '远程调试已就绪: debug:tmbId:tmb-1 dbops'
     );
     expect(loggerSpy.warn).not.toHaveBeenCalled();
     expect(loggerSpy.error).not.toHaveBeenCalled();
@@ -340,9 +340,9 @@ describe('dev command', () => {
         new Response(
           JSON.stringify({
             data: {
-              tcpUrl: 'tcp://tcp.example.com:39430',
-              source: 'debug:tmbId:tmb-1:session:debug-1',
-              sessionId: 'session-debug',
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
               connectToken: 'scoped-token',
               expiresAt: Date.now() + 60_000
             }
@@ -358,7 +358,7 @@ describe('dev command', () => {
         'cli',
         'dev',
         '--connect',
-        'https://fastgpt.example.com/debug/connect?connectKey=t1',
+        'https://fastgpt.example.com/debug/connect?connectionKey=t1',
         '--no-interactive'
       ]);
     } finally {
@@ -371,24 +371,26 @@ describe('dev command', () => {
     expect(infoOutput).toContain('自动发现 2 个可调试插件');
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].targets).toHaveLength(2);
     expect(getLoggerOutput(loggerSpy.success)).toContain(
-      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 getTime'
+      '远程调试已就绪: debug:tmbId:tmb-1 getTime'
     );
     expect(getLoggerOutput(loggerSpy.success)).toContain(
-      '远程调试已就绪: debug:tmbId:tmb-1:session:debug-1 dbops'
+      '远程调试已就绪: debug:tmbId:tmb-1 dbops'
     );
   });
 
-  it('dev 未传 --connect 时应在交互式终端提示输入 connect link', async () => {
-    inputMock.mockResolvedValue('https://fastgpt.example.com/debug/connect?connectKey=t1');
+  it('dev 未传 --connect 时应在交互式终端提示输入 connection key', async () => {
+    const configHome = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-cli-config-'));
+    process.env.XDG_CONFIG_HOME = configHome;
+    inputMock.mockResolvedValue('https://fastgpt.example.com/debug/connect?connectionKey=t1');
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
         new Response(
           JSON.stringify({
             data: {
-              tcpUrl: 'tcp://tcp.example.com:39430',
-              source: 'debug:tmbId:tmb-1:session:debug-1',
-              sessionId: 'session-debug',
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
               connectToken: 'scoped-token',
               expiresAt: Date.now() + 60_000
             }
@@ -410,22 +412,150 @@ describe('dev command', () => {
 
     try {
       await run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR]);
+
+      expect(inputMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'FastGPT connection key'
+        })
+      );
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        'https://fastgpt.example.com/debug/connect?connectionKey=t1'
+      );
+      await expect(
+        readFile(path.join(configHome, 'fastgpt-plugin', 'config.json'), 'utf-8')
+      ).resolves.toContain('https://fastgpt.example.com/debug/connect?connectionKey=t1');
+    } finally {
+      restorePropertyDescriptor(process.stdin, 'isTTY', stdinIsTTY);
+      restorePropertyDescriptor(process.stdout, 'isTTY', stdoutIsTTY);
+      await rm(configHome, { recursive: true, force: true });
+    }
+  });
+
+  it('dev 未传 --connect 时应优先读取本地 connection key 配置', async () => {
+    const configHome = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-cli-config-'));
+    process.env.XDG_CONFIG_HOME = configHome;
+    const configDir = path.join(configHome, 'fastgpt-plugin');
+    await mkdir(configDir, { recursive: true });
+    await writeFile(
+      path.join(configDir, 'config.json'),
+      JSON.stringify({
+        debug: {
+          connectionKey: 'connection-key-from-config'
+        }
+      })
+    );
+    process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL =
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
+
+    try {
+      await run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR, '--no-interactive']);
+
+      expect(inputMock).not.toHaveBeenCalled();
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            connectionKey: 'connection-key-from-config'
+          })
+        })
+      );
+      expect(getLoggerOutput(loggerSpy.info)).toContain('已读取本地 FastGPT connection key 配置');
+    } finally {
+      await rm(configHome, { recursive: true, force: true });
+    }
+  });
+
+  it('交互式 dev 首次 Ctrl+C 应关闭会话，第二次应强制退出', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
+    const closeMock = vi.fn();
+    let resolveClosed: (() => void) | undefined;
+    const closed = new Promise<void>((resolve) => {
+      resolveClosed = resolve;
+    });
+    vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
+      session: makeConnectedSession(options),
+      close: closeMock,
+      closed
+    }));
+    const stdinIsTTY = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+    const stdoutIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdin, 'isTTY', {
+      configurable: true,
+      get: () => true
+    });
+    Object.defineProperty(process.stdout, 'isTTY', {
+      configurable: true,
+      get: () => true
+    });
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    try {
+      const runPromise = run([
+        process.execPath,
+        'cli',
+        'dev',
+        GETTIME_TOOL_DIR,
+        '--connect',
+        'https://fastgpt.example.com/debug/connect?connectionKey=t1'
+      ]);
+
+      await vi.waitFor(() => {
+        expect(vi.mocked(connectDebugGateway)).toHaveBeenCalled();
+      });
+
+      process.emit('SIGINT');
+      await vi.waitFor(() => {
+        expect(closeMock).toHaveBeenCalledTimes(1);
+      });
+      expect(exitSpy).not.toHaveBeenCalled();
+
+      process.emit('SIGINT');
+      await vi.waitFor(() => {
+        expect(closeMock).toHaveBeenCalledTimes(2);
+        expect(exitSpy).toHaveBeenCalledWith(130);
+      });
+
+      resolveClosed?.();
+      await runPromise;
     } finally {
       restorePropertyDescriptor(process.stdin, 'isTTY', stdinIsTTY);
       restorePropertyDescriptor(process.stdout, 'isTTY', stdoutIsTTY);
     }
-
-    expect(inputMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: 'FastGPT connect link'
-      })
-    );
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://fastgpt.example.com/debug/connect?connectKey=t1'
-    );
   });
 
-  it('非交互模式缺少 connect link 时应提示传入 --connect', async () => {
+  it('非交互模式缺少 connection key 时应提示传入 --connect', async () => {
     await expect(
       run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR, '--no-interactive'])
     ).rejects.toThrow('dev 需要 --connect');
@@ -449,4 +579,27 @@ function restorePropertyDescriptor(
   }
 
   Reflect.deleteProperty(target, property);
+}
+
+function makeConnectedSession(options: {
+  userId: string;
+  source?: string;
+}) {
+  return {
+    id: 'session-debug',
+    consumerType: 'plugin-debug',
+    subject: `user:${options.userId}`,
+    sessionScope: {
+      userId: options.userId,
+      source: options.source
+    },
+    transport: 'websocket' as const,
+    capabilities: ['gateway.bind', 'invoke'],
+    generation: 0,
+    ownerNodeId: 'node-a',
+    status: 'connected' as const,
+    connectedAt: Date.now(),
+    lastSeenAt: Date.now(),
+    expiresAt: Date.now() + 60_000
+  };
 }

@@ -5,17 +5,10 @@ import {
   ConnectionGatewayMetricsSchema,
   ConnectionGatewaySessionSchema,
   ConnectionGatewaySessionStatusViewSchema,
-  ConnectionGatewayTokenClaimsSchema
+  ConnectionGatewayTokenClaimsSchema,
+  ConnectionGatewayWsClientMessageSchema,
+  ConnectionGatewayWsServerMessageSchema
 } from '@domain/value-objects/connection-gateway.vo';
-
-export const ConnectionGatewayCreateSessionRequestDTOSchema = z.object({
-  token: z.string().min(1),
-  transport: z.enum(['tcp', 'websocket']),
-  metadata: z.record(z.string(), z.unknown()).optional()
-});
-export type ConnectionGatewayCreateSessionRequestDTO = z.infer<
-  typeof ConnectionGatewayCreateSessionRequestDTOSchema
->;
 
 export const ConnectionGatewayCreateSessionResponseDTOSchema = z.object({
   session: ConnectionGatewaySessionSchema
@@ -57,3 +50,5 @@ export const ConnectionGatewayTokenClaimsDTOSchema = ConnectionGatewayTokenClaim
 export const ConnectionGatewayMetricsDTOSchema = ConnectionGatewayMetricsSchema;
 export const ConnectionGatewaySessionStatusViewDTOSchema =
   ConnectionGatewaySessionStatusViewSchema;
+export const ConnectionGatewayWsClientMessageDTOSchema = ConnectionGatewayWsClientMessageSchema;
+export const ConnectionGatewayWsServerMessageDTOSchema = ConnectionGatewayWsServerMessageSchema;

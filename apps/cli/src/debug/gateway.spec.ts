@@ -1,199 +1,186 @@
-import { EventEmitter } from 'node:events';
-import net from 'node:net';
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ConnectionGatewaySessionSchema } from '@domain/value-objects/connection-gateway.vo';
+import type { ConnectionGatewayWsServerMessage } from '@domain/value-objects/connection-gateway.vo';
 
 import { connectDebugGateway } from './gateway';
 
 describe('connectDebugGateway', () => {
-  const fetchMock = vi.fn<typeof fetch>();
-
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    fetchMock.mockReset();
   });
 
-  it('cleans up the gateway session when the client closes', async () => {
-    const receivedFrames: unknown[] = [];
-    const connectSpy = vi.spyOn(net, 'connect');
-    connectSpy.mockImplementation(
-      ((_port: number, _host: string, connectListener?: () => void) => {
-        const socket = new FakeSocket((chunk) => {
-          receivedFrames.push(...decodeFrames(chunk));
-        });
-        queueMicrotask(() => {
-          connectListener?.();
-        });
-        return socket as unknown as net.Socket;
-      }) as typeof net.connect
-    );
+  it('binds a WSS connection with the scoped connect token', async () => {
+    const socket = new FakeWebSocket();
+    vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
 
-    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ data: { session: makeSession() } }))
-      .mockResolvedValueOnce(jsonResponse({ data: { deleted: true } }));
-
-    const client = await connectDebugGateway({
+    const clientPromise = connectDebugGateway({
       targets: [makeTarget()],
       options: makeOptions()
     });
 
-    client.close();
-    await client.closed;
-
-    expect(receivedFrames).toEqual([
-      expect.objectContaining({
-        type: 'event',
-        capability: 'gateway.bind',
-        sessionId: 'session-a'
-      })
-    ]);
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'http://gateway.local/internal/sessions/session-a',
-      expect.objectContaining({
-        method: 'DELETE',
-        headers: {
-          Authorization: 'Bearer gateway-token'
-        }
-      })
-    );
-  });
-
-  it('cleans up the gateway session when tcp connect fails', async () => {
-    const connectError = new Error('tcp unavailable');
-    const connectSpy = vi.spyOn(net, 'connect');
-    connectSpy.mockImplementation(
-      ((_port: number, _host: string, _connectListener?: () => void) => {
-        const socket = new FakeSocket(() => undefined);
-        queueMicrotask(() => {
-          socket.emit('error', connectError);
-        });
-        return socket as unknown as net.Socket;
-      }) as typeof net.connect
-    );
-
-    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ data: { session: makeSession() } }))
-      .mockResolvedValueOnce(jsonResponse({ data: { deleted: true } }));
-
-    await expect(
-      connectDebugGateway({
-        targets: [makeTarget()],
-        options: makeOptions()
-      })
-    ).rejects.toThrow('tcp unavailable');
-
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'http://gateway.local/internal/sessions/session-a',
-      expect.objectContaining({
-        method: 'DELETE'
-      })
-    );
-  });
-
-  it('binds a precreated session without gateway internal HTTP calls', async () => {
-    const receivedFrames: unknown[] = [];
-    const connectSpy = vi.spyOn(net, 'connect');
-    connectSpy.mockImplementation(
-      ((_port: number, _host: string, connectListener?: () => void) => {
-        const socket = new FakeSocket((chunk) => {
-          receivedFrames.push(...decodeFrames(chunk));
-        });
-        queueMicrotask(() => {
-          connectListener?.();
-        });
-        return socket as unknown as net.Socket;
-      }) as typeof net.connect
-    );
-    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
-
-    const client = await connectDebugGateway({
-      targets: [makeTarget()],
-      options: {
-        ...makeOptions(),
-        authToken: undefined,
-        jwtSecret: undefined,
-        source: 'debug:tmbId:tmb-1:session:debug-1',
-        precreatedSession: {
-          session: {
-            ...makeSession(),
-            subject: 'tmb-1',
-            sessionScope: {
-              userId: 'tmb-1',
-              source: 'debug:tmbId:tmb-1:session:debug-1'
-            },
-            capabilities: ['gateway.bind', 'invoke']
-          },
-          connectToken: 'scoped-token'
+    socket.open();
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(1);
+    });
+    const bind = socket.sent[0] as Record<string, unknown>;
+    expect(bind).toMatchObject({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bind',
+      token: 'scoped-token',
+      metadata: {
+        pluginDebug: {
+          targets: [
+            expect.objectContaining({
+              source: 'debug:tmbId:tmb-1',
+              pluginId: 'getTime'
+            })
+          ]
         }
       }
     });
 
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: bind.requestId as string,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    expect(client.session.id).toBe('session-a');
     client.close();
     await client.closed;
+    expect(socket.closed).toBe(true);
+  });
 
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(receivedFrames).toEqual([
-      expect.objectContaining({
-        type: 'event',
-        capability: 'gateway.bind',
-        payload: expect.objectContaining({
-          token: 'scoped-token',
-          metadata: {
-            pluginDebug: {
-              targets: [
-                expect.objectContaining({
-                  source: 'debug:tmbId:tmb-1:session:debug-1',
-                  pluginId: 'getTime'
-                })
-              ]
-            }
+  it('handles gateway request envelopes over WSS', async () => {
+    const socket = new FakeWebSocket();
+    vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget()],
+      options: makeOptions()
+    });
+
+    socket.open();
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(1);
+    });
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (socket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'envelope',
+      envelope: {
+        protocol: 'connection-gateway.v1',
+        sessionId: 'session-a',
+        generation: 0,
+        requestId: 'request-a',
+        type: 'request',
+        consumerType: 'plugin-debug',
+        capability: 'invoke',
+        createdAt: Date.now(),
+        payload: {
+          kind: 'plugin-debug.run',
+          eventName: 'run',
+          payload: {
+            pluginId: 'getTime',
+            childId: '',
+            input: {},
+            systemVar: makeSystemVar()
           }
-        })
-      })
-    ]);
+        }
+      }
+    });
+
+    await vi.waitFor(() => {
+      expect(socket.sent).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'envelope',
+            envelope: expect.objectContaining({
+              type: 'response',
+              requestId: 'request-a',
+              payload: {
+                kind: 'plugin-debug.accepted'
+              }
+            })
+          }),
+          expect.objectContaining({
+            type: 'envelope',
+            envelope: expect.objectContaining({
+              type: 'stream',
+              requestId: 'request-a',
+              payload: {
+                kind: 'plugin-debug.stream',
+                event: 'end'
+              }
+            })
+          })
+        ])
+      );
+    });
+
+    client.close();
+    await client.closed;
   });
 });
 
-class FakeSocket extends EventEmitter {
-  constructor(private readonly onWrite: (chunk: Buffer) => void) {
+class FakeWebSocket extends EventTarget {
+  static OPEN = 1;
+  readonly sent: unknown[] = [];
+  readyState = 0;
+  closed = false;
+  private static readonly OPEN_STATE = 1;
+  private static readonly CLOSED_STATE = 3;
+
+  constructor(readonly url = 'wss://gateway.example.com/connection-gateway/v1') {
     super();
   }
 
-  write(chunk: Buffer, callback?: (error?: Error) => void): boolean {
-    this.onWrite(chunk);
-    callback?.();
-    return true;
+  send(data: string): void {
+    this.sent.push(JSON.parse(data));
   }
 
-  end(): this {
-    this.emit('close');
-    return this;
+  close(): void {
+    this.closed = true;
+    this.readyState = FakeWebSocket.CLOSED_STATE;
+    this.dispatchEvent(new Event('close'));
+  }
+
+  open(): void {
+    this.readyState = FakeWebSocket.OPEN_STATE;
+    this.dispatchEvent(new Event('open'));
+  }
+
+  receive(message: ConnectionGatewayWsServerMessage): void {
+    this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(message) }));
   }
 }
 
-function jsonResponse(payload: unknown): Response {
-  return new Response(JSON.stringify(payload), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json'
+function makeWebSocketConstructor(socket: FakeWebSocket) {
+  return class {
+    static OPEN = FakeWebSocket.OPEN;
+
+    constructor(readonly url: string) {
+      return socket;
     }
-  });
+  } as unknown as typeof WebSocket;
 }
 
 function makeOptions() {
   return {
-    baseUrl: 'http://gateway.local',
-    authToken: 'gateway-token',
-    jwtSecret: 'jwt-secret',
-    tcpHost: '127.0.0.1',
-    tcpPort: 3011,
-    userId: 'u1',
+    gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+    connectToken: 'scoped-token',
+    userId: 'tmb-1',
+    source: 'debug:tmbId:tmb-1',
     tokenTtlMs: 30_000,
     reconnect: false
   };
@@ -201,7 +188,22 @@ function makeOptions() {
 
 function makeTarget() {
   return {
-    runtime: {} as never,
+    runtime: {
+      invokePlugin: async () => ({
+        output: {
+          stream: {
+            consume: async (callback: (chunk: unknown) => Promise<void> | void) => {
+              await callback({
+                type: 'response',
+                data: {
+                  ok: true
+                }
+              });
+            }
+          }
+        }
+      })
+    } as never,
     snapshot: {
       entryDir: '/tmp/plugin',
       indexPath: '/tmp/plugin/index.ts',
@@ -214,54 +216,51 @@ function makeTarget() {
       permissions: [],
       secretSchema: {},
       isToolSet: false,
-      tools: []
+      tools: [
+        {
+          id: 'tool',
+          name: 'getTime',
+          description: 'Get time',
+          toolDescription: 'Get time',
+          inputSchema: {},
+          outputSchema: {}
+        }
+      ]
     }
   };
 }
 
 function makeSession() {
-  return ConnectionGatewaySessionSchema.parse({
+  return {
     id: 'session-a',
     consumerType: 'plugin-debug',
-    subject: 'user:u1',
+    subject: 'tmb-1',
     sessionScope: {
-      userId: 'u1',
-      source: 'debug:user:u1'
+      userId: 'tmb-1',
+      source: 'debug:tmbId:tmb-1'
     },
-    transport: 'tcp',
-    capabilities: ['invoke'],
+    transport: 'websocket' as const,
+    capabilities: ['gateway.bind', 'invoke'],
     generation: 0,
     ownerNodeId: 'node-a',
-    status: 'connecting',
+    status: 'connected' as const,
     connectedAt: Date.now(),
     lastSeenAt: Date.now(),
     expiresAt: Date.now() + 30_000
-  });
+  };
 }
 
-function decodeFrames(chunk: Buffer): unknown[] {
-  const frames: unknown[] = [];
-  let buffer = chunk;
-
-  while (buffer.length > 0) {
-    const headerEnd = buffer.indexOf('\r\n\r\n');
-    if (headerEnd < 0) {
-      return frames;
-    }
-
-    const header = buffer.subarray(0, headerEnd).toString('utf8');
-    const contentLength = Number(
-      header
-        .split(/\r?\n/)
-        .find((line) => line.toLowerCase().startsWith('content-length:'))
-        ?.split(':')[1]
-        ?.trim()
-    );
-    const bodyStart = headerEnd + 4;
-    const bodyEnd = bodyStart + contentLength;
-    frames.push(JSON.parse(buffer.subarray(bodyStart, bodyEnd).toString('utf8')));
-    buffer = buffer.subarray(bodyEnd);
-  }
-
-  return frames;
+function makeSystemVar() {
+  return {
+    app: {
+      id: 'debug-app',
+      name: 'FastGPT Local Debug'
+    },
+    chat: {
+      chatId: 'debug-chat',
+      uid: 'debugger'
+    },
+    invokeToken: 'debug-invoke-token',
+    time: new Date().toISOString()
+  };
 }

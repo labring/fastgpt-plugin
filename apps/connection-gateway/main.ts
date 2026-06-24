@@ -13,22 +13,22 @@ import { createConnectionGatewayApp } from './src/routes';
 
 const logger = getLogger(root);
 
-let server: ServerType | null = null;
+let httpServer: ServerType | null = null;
+let wsServer: ServerType | null = null;
 let shuttingDown = false;
 let deps: ReturnType<typeof makeConnectionGatewayDeps> | null = null;
 
 async function prepare(activeDeps: ReturnType<typeof makeConnectionGatewayDeps>) {
   configureProxy(gatewayEnv);
-  await activeDeps.tcpTransport.start();
 }
 
-async function closeServer(): Promise<void> {
+async function closeServer(server: ServerType | null): Promise<void> {
   if (!server) {
     return;
   }
 
   await new Promise<void>((resolve, reject) => {
-    server?.close((error) => {
+    server.close((error) => {
       if (error) {
         reject(error);
         return;
@@ -48,10 +48,11 @@ function shutdown() {
     let exitCode = 0;
 
     try {
-      await deps?.tcpTransport.stop();
+      await deps?.websocketTransport.stop();
       deps?.unregisterMetrics();
       await deps?.mailbox.disconnect?.();
-      await closeServer();
+      await closeServer(wsServer);
+      await closeServer(httpServer);
       await deps?.redisClient.disconnect();
       await destroyMetrics();
     } catch (error) {
@@ -84,16 +85,30 @@ async function main() {
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 
-  server = serve(
+  httpServer = serve(
     {
       fetch: app.fetch,
       port: gatewayEnv.CONNECTION_GATEWAY_PORT
     },
     (info) => {
       logger.info(`Connection Gateway HTTP server is listening at http://0.0.0.0:${info.port}`);
-      logger.info(`Connection Gateway TCP server is listening at tcp://0.0.0.0:${gatewayEnv.CONNECTION_GATEWAY_TCP_PORT}`);
     }
   );
+
+  wsServer = serve(
+    {
+      fetch: () => new Response('Not Found', { status: 404 }),
+      port: gatewayEnv.CONNECTION_GATEWAY_WS_PORT
+    },
+    (info) => {
+      logger.info(
+        `Connection Gateway WebSocket server is listening at ws://0.0.0.0:${info.port}${gatewayEnv.CONNECTION_GATEWAY_WS_PATH}`
+      );
+    }
+  );
+  wsServer.on('upgrade', (request, socket, head) => {
+    deps?.websocketTransport.handleUpgrade(request, socket, head);
+  });
 }
 
 if (import.meta.main) {

@@ -43,7 +43,7 @@ export class DebugCommand extends BaseCommand {
       .option('--system-var <json>', 'systemVar JSON 字符串')
       .option('--system-var-file <path>', 'systemVar JSON 文件路径')
       .option('--upload-dir <path>', '虚拟 uploadFile 的输出目录')
-      .option('--connect <url>', '兼容入口：FastGPT debug connect link，建议改用 dev 命令')
+      .option('--connect <keyOrUrl>', '兼容入口：FastGPT debug connection key 或 connect link，建议改用 dev 命令')
       .option('--reconnect', '兼容入口：断线后自动重连', true)
       .option('--no-reconnect', '兼容入口：关闭自动重连')
       .option('--reconnect-interval-ms <ms>', '兼容入口：重连间隔')

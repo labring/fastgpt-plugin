@@ -26,27 +26,27 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
   - 提供 `debug` 命令查看插件和子工具信息
   - 支持直接运行工具、传入 input/secrets/systemVar 文件，并用本地目录模拟 `uploadFile`
 - **集成开发会话**
-  - 提供 `dev` 命令通过 Connection Gateway 建立 TCP 远程调试通道
+  - 提供 `dev` 命令通过 Connection Gateway 建立 WSS 远程调试通道
   - 支持在一个通道内挂载多个本地插件，适合接入 FastGPT 测试环境
 - **打包**
   - 提供 `pack` 命令把 `dist` 产物打成可上传的 `.pkg`
 
 ### 远程调试
 
-本地插件可以通过 FastGPT 生成的 connect link 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并创建 debug session，CLI 只使用可重复使用的 connect key 换取连接信息。
+本地插件可以通过 FastGPT 生成的长期 connection key 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并开启 debug channel，CLI 使用 connection key 换取短期 WSS connect token。
 
 ```bash
 fastgpt-plugin dev
 ```
 
-启动后把 FastGPT 页面生成的 connect link 粘贴到 TUI 中即可。脚本或 Agent 场景可以显式传入：
+启动后把 FastGPT 页面生成的 connection key 粘贴到 TUI 中即可。脚本或 Agent 场景可以显式传入：
 
 ```bash
 fastgpt-plugin dev --no-interactive \
-  --connect "https://fastgpt.example.com/debug-plugin/connect?connectKey=..."
+  --connect "fpg_dbg_..."
 ```
 
-connect link 会返回 gateway TCP 地址、`debug:tmbId:{tmbId}:session:{debugSessionId}` source、当前 gateway session 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
+使用裸 connection key 时，需要设置 `FASTGPT_PLUGIN_DEBUG_CONNECT_URL`，或设置 `FASTGPT_PLUGIN_SERVER_URL` 让 CLI 默认请求 `/api/plugin/debug-sessions/connection-key:exchange`。兼容场景仍可传入完整 connect link。exchange 结果会返回 gateway WSS 地址、`debug:tmbId:{tmbId}` source 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
 
 `dev` 未传插件目录时会自动探测当前目录：如果当前目录有 `index.ts`，则把当前目录作为插件；否则扫描当前目录下一层子目录中的 `index.ts`。也可以手动传入多个插件目录。
 
@@ -54,7 +54,7 @@ connect link 会返回 gateway TCP 地址、`debug:tmbId:{tmbId}:session:{debugS
 fastgpt-plugin dev ./plugins/getTime ./plugins/dbops --watch
 ```
 
-同一个 CLI 进程会建立 1 个 TCP 通道并挂载所有发现或传入的插件。断线后默认自动重连；如需关闭自动重连，可加 `--no-reconnect`。开发时可加 `--watch`，文件变化后会自动重载本地插件并重新建立远程调试会话。
+同一个 CLI 进程会建立 1 个 WSS 通道并挂载所有发现或传入的插件。断线后默认自动重连；如需关闭自动重连，可加 `--no-reconnect`。开发时可加 `--watch`，文件变化后会自动重载本地插件并重新建立远程调试会话。
 
 `debug --connect` 仍作为兼容入口保留，但新的远程集成调试应使用 `dev`。`debug` 会继续聚焦单插件本地查看和一次性运行。
 

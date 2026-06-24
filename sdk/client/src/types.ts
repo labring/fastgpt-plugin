@@ -20,6 +20,17 @@ import type {
   PluginVersionListParamsDTOType
 } from '@interface-adapter/contracts/dto/plugin.dto';
 import type {
+  PluginDebugSessionConnectionKeyExchangeRequestDTO,
+  PluginDebugSessionConnectionKeyExchangeResponseDTO,
+  PluginDebugSessionCreateRequestDTO,
+  PluginDebugSessionCreateResponseDTO,
+  PluginDebugSessionGetParamsDTO,
+  PluginDebugSessionRevokeRequestDTO,
+  PluginDebugSessionRevokeResponseDTO,
+  PluginDebugSessionStatusDTO,
+  PluginDebugSessionStatusResponseDTO
+} from '@interface-adapter/contracts/dto/plugin-debug-session.dto';
+import type {
   ToolDetailDTOType,
   ToolGetParamsDTOType,
   ToolListDTOType,
@@ -98,6 +109,17 @@ export type PluginRuntimeConfigType = PluginRuntimeConfigDTOType;
 export type PluginVersionItemType = PluginVersionItemDTOType;
 export type PluginVersionListType = PluginVersionListDTOType;
 export type PluginVersionListParamsType = PluginVersionListParamsDTOType;
+export type PluginDebugSessionStatusType = PluginDebugSessionStatusDTO;
+export type PluginDebugSessionCreateParamsType = PluginDebugSessionCreateRequestDTO;
+export type PluginDebugSessionCreateResultType = PluginDebugSessionCreateResponseDTO;
+export type PluginDebugSessionConnectionKeyExchangeParamsType =
+  PluginDebugSessionConnectionKeyExchangeRequestDTO;
+export type PluginDebugSessionConnectionKeyExchangeResultType =
+  PluginDebugSessionConnectionKeyExchangeResponseDTO;
+export type PluginDebugSessionStatusParamsType = PluginDebugSessionGetParamsDTO;
+export type PluginDebugSessionStatusResultType = PluginDebugSessionStatusResponseDTO;
+export type PluginDebugSessionRevokeParamsType = PluginDebugSessionRevokeRequestDTO;
+export type PluginDebugSessionRevokeResultType = PluginDebugSessionRevokeResponseDTO;
 
 export const pluginTagList: PluginTagListType = Object.entries(PluginTagsNameMap).map(
   ([id, name]) => ({

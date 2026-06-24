@@ -5,7 +5,7 @@
 - [x] 反向调用上传文件实现
 - [x] 插件无缝更新，rollout 更新，用户不感知更新过程
 - [x] 系统工具 pkg
-- [ ] TCP 基础的远程调试
+- [ ] WSS 基础的远程调试
 
 # P1
 
@@ -28,7 +28,7 @@
 
 **Why:** Gateway 会暴露 active connections、sessions、in-flight、mailbox lag、slow consumers、Redis latency；接入 UI 后多节点长连接状态更容易排查。
 
-**Context:** PR1 只需要提供稳定 `/metrics` 和 structured logs。UI 接入可以复用现有 runtime monitor 的 requests、latency、queue、crash 展示模式，避免当前 TCP debug 闭环被前端范围拖大。
+**Context:** PR1 只需要提供稳定 `/metrics` 和 structured logs。UI 接入可以复用现有 runtime monitor 的 requests、latency、queue、crash 展示模式，避免当前 WSS debug 闭环被前端范围拖大。
 
 **Effort:** M
 **Priority:** P2
@@ -54,7 +54,7 @@
 
 **Why:** 本次计划会通过 `MAX_FILE_SIZE` 和 byte counter 保护内存；true streaming multipart 可以进一步降低大文件上传内存峰值。
 
-**Context:** 现有实现会 `Buffer.concat()`。TCP debug v0 可以先靠 20MB 上限安全运行；后续需要确认 FastGPT upload endpoint、Node fetch/FormData、multipart streaming 的兼容性。
+**Context:** 现有实现会 `Buffer.concat()`。WSS debug v0 可以先靠 20MB 上限安全运行；后续需要确认 FastGPT upload endpoint、Node fetch/FormData、multipart streaming 的兼容性。
 
 **Effort:** M
 **Priority:** P3

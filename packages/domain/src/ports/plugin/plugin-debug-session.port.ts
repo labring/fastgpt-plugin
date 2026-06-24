@@ -1,46 +1,30 @@
 import type {
   PluginDebugSession,
-  PluginDebugSessionId,
   PluginDebugSessionTmbId
 } from '@domain/value-objects/plugin-debug-session.vo';
 
 export type CreatePluginDebugSessionInput = {
   tmbId: PluginDebugSessionTmbId;
-  ttlMs: number;
-  connectKeyTtlMs: number;
   now?: number;
 };
 
 export type CreatePluginDebugSessionOutput = {
   session: PluginDebugSession;
-  connectKey: string;
+  connectionKey?: string;
   revokedSession?: PluginDebugSession;
 };
 
-export type ExchangePluginDebugSessionConnectKeyOutput = {
+export type ExchangePluginDebugSessionConnectionKeyOutput = {
   session: PluginDebugSession;
 };
 
 export interface PluginDebugSessionPort {
   create(input: CreatePluginDebugSessionInput): Promise<CreatePluginDebugSessionOutput>;
-  exchangeConnectKey(
-    connectKey: string,
+  refresh(input: CreatePluginDebugSessionInput): Promise<CreatePluginDebugSessionOutput>;
+  exchangeConnectionKey(
+    connectionKey: string,
     now?: number
-  ): Promise<ExchangePluginDebugSessionConnectKeyOutput>;
-  get(input: {
-    tmbId: PluginDebugSessionTmbId;
-    debugSessionId: PluginDebugSessionId;
-    now?: number;
-  }): Promise<PluginDebugSession | null>;
-  revoke(input: {
-    tmbId: PluginDebugSessionTmbId;
-    debugSessionId: PluginDebugSessionId;
-    now?: number;
-  }): Promise<PluginDebugSession | null>;
-  setGatewaySession(input: {
-    tmbId: PluginDebugSessionTmbId;
-    debugSessionId: PluginDebugSessionId;
-    gatewaySessionId: string;
-    now?: number;
-  }): Promise<PluginDebugSession | null>;
+  ): Promise<ExchangePluginDebugSessionConnectionKeyOutput>;
+  get(input: { tmbId: PluginDebugSessionTmbId; now?: number }): Promise<PluginDebugSession | null>;
+  revoke(input: { tmbId: PluginDebugSessionTmbId; now?: number }): Promise<PluginDebugSession | null>;
 }

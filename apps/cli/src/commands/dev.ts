@@ -12,7 +12,7 @@ export class DevCommand extends BaseCommand {
     parent
       .command('dev [entries...]')
       .description('启动 FastGPT 插件集成开发会话')
-      .option('--connect <url>', '可选：FastGPT debug connect link，适合脚本和 Agent')
+      .option('--connect <keyOrUrl>', '可选：FastGPT debug connection key 或 connect link，适合脚本和 Agent')
       .option('--reconnect', '断线后自动重连', true)
       .option('--no-reconnect', '关闭自动重连')
       .option('--reconnect-interval-ms <ms>', '重连间隔')

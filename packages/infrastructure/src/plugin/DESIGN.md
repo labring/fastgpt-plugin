@@ -5,7 +5,7 @@
 1. 支持不同环境下的插件运行:
   1. IPC-based 本地进程池
   2. Serverless 服务
-  3. TCP 远程长连接
+  3. WSS 调试长连接
 2. 支持不同类型的插件，包括 tool, model, dataset, workflow 等
 
 ## 设计
@@ -26,7 +26,7 @@
 对于不同的运行时的实现，implement 同一个 Port
 
 1. LocalPoolDriver 本地进程池驱动
-2. TCPDriver TCP 驱动
+2. ConnectionGatewayDebugDriver WSS 调试驱动
 3. FCDriver 阿里云 FC 驱动 (TODO)
 4. LambdaDriver AWS Lambda 驱动 (TODO)
 

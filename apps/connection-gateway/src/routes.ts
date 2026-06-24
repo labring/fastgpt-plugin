@@ -1,6 +1,5 @@
 import { ErrorResponseDTOSchema } from '@interface-adapter/contracts/dto/common.dto';
 import {
-  ConnectionGatewayCreateSessionRequestDTOSchema,
   ConnectionGatewayCreateSessionResponseDTOSchema,
   ConnectionGatewayMetricsDTOSchema,
   ConnectionGatewayRequestAcceptedDTOSchema,
@@ -174,33 +173,6 @@ export function createConnectionGatewayApp(deps: Pick<ConnectionGatewayDeps, 'se
             }
           }
         );
-      } catch (error) {
-        return R.fail(c, statusFromError(error), normalizeError(error));
-      }
-    }
-  );
-
-  app.openapi(
-    createRoute({
-      method: 'post',
-      path: '/internal/sessions',
-      summary: 'Create a gateway session',
-      tags: ['connection-gateway'],
-      security: [{ bearerAuth: [] }],
-      request: jsonRequest(ConnectionGatewayCreateSessionRequestDTOSchema),
-      responses: {
-        200: jsonResponse(ConnectionGatewayCreateSessionResponseDTOSchema),
-        400: errorResponse(),
-        401: errorResponse(),
-        429: errorResponse()
-      }
-    }),
-    async (c) => {
-      try {
-        const body = ConnectionGatewayCreateSessionRequestDTOSchema.parse(c.req.valid('json'));
-        const session = await deps.service.createSession(body);
-
-        return R.success(c, { session });
       } catch (error) {
         return R.fail(c, statusFromError(error), normalizeError(error));
       }

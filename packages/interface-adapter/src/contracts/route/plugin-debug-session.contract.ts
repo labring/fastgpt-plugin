@@ -1,13 +1,13 @@
 import { type ContractMetaType,defineContract, jsonResponse } from '../contract.type';
 import { ErrorResponseDTOSchema } from '../dto/common.dto';
 import {
+  PluginDebugSessionConnectionKeyExchangeRequestDTOSchema,
+  PluginDebugSessionConnectionKeyExchangeResponseDTOSchema,
   PluginDebugSessionCreateRequestDTOSchema,
   PluginDebugSessionCreateResponseDTOSchema,
   PluginDebugSessionRevokeRequestDTOSchema,
   PluginDebugSessionRevokeResponseDTOSchema,
-  PluginDebugSessionStatusResponseDTOSchema,
-  PluginDebugSessionTicketExchangeRequestDTOSchema,
-  PluginDebugSessionTicketExchangeResponseDTOSchema
+  PluginDebugSessionStatusResponseDTOSchema
 } from '../dto/plugin-debug-session.dto';
 
 import { authToken } from './auth';
@@ -20,8 +20,8 @@ export const PluginDebugSessionContract = {
       method: 'post',
       path: '/plugin/debug-sessions',
       operationId: 'pluginDebugSession.create',
-      description: 'Create a plugin debug session for a FastGPT tmbId',
-      summary: 'Create debug session',
+      description: 'Enable a tmbId-scoped plugin debug channel',
+      summary: 'Enable debug channel',
       tags,
       security: authToken
     },
@@ -31,19 +31,35 @@ export const PluginDebugSessionContract = {
       400: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
-  ExchangeTicket: defineContract({
+  RefreshKey: defineContract({
     meta: {
       method: 'post',
-      path: '/plugin/debug-sessions/tickets:exchange',
-      operationId: 'pluginDebugSession.exchangeTicket',
-      description: 'Exchange a reusable debug connect key for scoped gateway connection info',
-      summary: 'Exchange debug connect key',
+      path: '/plugin/debug-sessions/key:refresh',
+      operationId: 'pluginDebugSession.refreshKey',
+      description: 'Refresh a tmbId-scoped plugin debug channel connection key',
+      summary: 'Refresh debug connection key',
       tags,
       security: authToken
     },
-    request: PluginDebugSessionTicketExchangeRequestDTOSchema,
+    request: PluginDebugSessionCreateRequestDTOSchema,
     response: {
-      200: jsonResponse({ data: PluginDebugSessionTicketExchangeResponseDTOSchema }),
+      200: jsonResponse({ data: PluginDebugSessionCreateResponseDTOSchema }),
+      400: jsonResponse({ error: ErrorResponseDTOSchema })
+    }
+  }),
+  ExchangeConnectionKey: defineContract({
+    meta: {
+      method: 'post',
+      path: '/plugin/debug-sessions/connection-key:exchange',
+      operationId: 'pluginDebugSession.exchangeConnectionKey',
+      description: 'Exchange a reusable debug connection key for scoped gateway connection info',
+      summary: 'Exchange debug connection key',
+      tags,
+      security: authToken
+    },
+    request: PluginDebugSessionConnectionKeyExchangeRequestDTOSchema,
+    response: {
+      200: jsonResponse({ data: PluginDebugSessionConnectionKeyExchangeResponseDTOSchema }),
       400: jsonResponse({ error: ErrorResponseDTOSchema }),
       404: jsonResponse({ error: ErrorResponseDTOSchema })
     }
@@ -51,10 +67,10 @@ export const PluginDebugSessionContract = {
   Status: defineContract({
     meta: {
       method: 'get',
-      path: '/plugin/debug-sessions/:debugSessionId',
+      path: '/plugin/debug-sessions/:tmbId',
       operationId: 'pluginDebugSession.status',
-      description: 'Get a plugin debug session status and mounted debug plugins',
-      summary: 'Get debug session status',
+      description: 'Get a plugin debug channel status and mounted debug plugins',
+      summary: 'Get debug channel status',
       tags,
       security: authToken
     },
@@ -66,16 +82,17 @@ export const PluginDebugSessionContract = {
   Revoke: defineContract({
     meta: {
       method: 'post',
-      path: '/plugin/debug-sessions/:debugSessionId/revoke',
+      path: '/plugin/debug-sessions/:tmbId/revoke',
       operationId: 'pluginDebugSession.revoke',
-      description: 'Revoke a plugin debug session and close its gateway session',
-      summary: 'Revoke debug session',
+      description: 'Disable a plugin debug channel and close its gateway sessions',
+      summary: 'Disable debug channel',
       tags,
       security: authToken
     },
     request: PluginDebugSessionRevokeRequestDTOSchema,
     response: {
       200: jsonResponse({ data: PluginDebugSessionRevokeResponseDTOSchema }),
+      400: jsonResponse({ error: ErrorResponseDTOSchema }),
       404: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   })

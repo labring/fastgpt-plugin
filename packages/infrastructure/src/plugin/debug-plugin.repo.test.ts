@@ -39,6 +39,69 @@ describe('DebugPluginRepoOverlay', () => {
     expect(new Set(plugins?.map((plugin) => plugin.etag)).size).toBe(2);
   });
 
+  it('keeps fallback plugins when listing mixed normal and debug sources', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(makeGatewayStatus()));
+    const fallback = makeFallbackRepo({
+      plugins: [
+        {
+          pluginId: 'systemSearch',
+          version: '1.0.0',
+          etag: 'system-etag',
+          type: 'tool',
+          name: { en: 'System Search', 'zh-CN': 'System Search' },
+          icon: '',
+          source: 'system'
+        }
+      ]
+    });
+    const repo = createRepo({ fallback });
+
+    const [plugins, err] = await repo.list({
+      sources: ['system', 'debug:user:u1']
+    });
+
+    expect(err).toBeNull();
+    expect(fallback.list).toHaveBeenCalledWith({ sources: ['system'] });
+    expect(plugins?.map((plugin) => `${plugin.source}:${plugin.pluginId}`)).toEqual([
+      'system:systemSearch',
+      'debug:user:u1:getTime',
+      'debug:user:u1:dbops'
+    ]);
+  });
+
+  it('keeps fallback tool summaries when listing mixed normal and debug sources', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(makeGatewayStatus()));
+    const fallback = makeFallbackRepo({
+      tools: [
+        {
+          pluginId: 'systemTool',
+          version: '1.0.0',
+          etag: 'system-tool-etag',
+          type: 'tool',
+          name: { en: 'System Tool', 'zh-CN': 'System Tool' },
+          icon: '',
+          toolDescription: 'system tool',
+          source: 'system',
+          isToolset: false,
+          hasSecret: false
+        }
+      ]
+    });
+    const repo = createRepo({ fallback });
+
+    const [tools, err] = await repo.listToolSummaries({
+      sources: ['system', 'debug:user:u1']
+    });
+
+    expect(err).toBeNull();
+    expect(fallback.listToolSummaries).toHaveBeenCalledWith({ sources: ['system'] });
+    expect(tools?.map((tool) => `${tool.source}:${tool.pluginId}`)).toEqual([
+      'system:systemTool',
+      'debug:user:u1:getTime',
+      'debug:user:u1:dbops'
+    ]);
+  });
+
   it('keeps gateway lookup diagnostics when session lookup fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('{"error":"missing"}', { status: 404 })
@@ -82,15 +145,21 @@ describe('DebugPluginRepoOverlay', () => {
   });
 });
 
-function createRepo(): DebugPluginRepoOverlay {
+function createRepo(input: { fallback?: PluginRepoPort } = {}): DebugPluginRepoOverlay {
   return new DebugPluginRepoOverlay({
-    fallback: makeFallbackRepo(),
+    fallback: input.fallback ?? makeFallbackRepo(),
     gatewayBaseUrl: 'http://gateway.local',
     authToken: 'token'
   });
 }
 
-function makeFallbackRepo(): PluginRepoPort {
+function makeFallbackRepo({
+  plugins = [],
+  tools = []
+}: {
+  plugins?: unknown[];
+  tools?: unknown[];
+} = {}): PluginRepoPort {
   return {
     getPendingPluginIds: vi.fn().mockResolvedValue(successResult([])),
     createPlugin: vi.fn().mockResolvedValue(successResult({})),
@@ -100,8 +169,8 @@ function makeFallbackRepo(): PluginRepoPort {
     getPluginsByPluginId: vi.fn().mockResolvedValue(successResult([])),
     getPluginByUserPluginId: vi.fn(),
     listVersions: vi.fn().mockResolvedValue(successResult([])),
-    list: vi.fn().mockResolvedValue(successResult([])),
-    listToolSummaries: vi.fn().mockResolvedValue(successResult([])),
+    list: vi.fn().mockResolvedValue(successResult(plugins)),
+    listToolSummaries: vi.fn().mockResolvedValue(successResult(tools)),
     listActive: vi.fn().mockResolvedValue(successResult([])),
     disablePlugins: vi.fn().mockResolvedValue(successResult({})),
     pruneDisabled: vi.fn().mockResolvedValue(successResult({ count: 0, plugins: [] })),

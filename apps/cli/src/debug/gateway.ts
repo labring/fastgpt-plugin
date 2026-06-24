@@ -1,14 +1,12 @@
-import { createHmac, randomUUID } from 'node:crypto';
-import net from 'node:net';
+import { randomUUID } from 'node:crypto';
 
 import {
   type ConnectionGatewayEnvelope,
   type ConnectionGatewaySession,
-  ConnectionGatewaySessionSchema
+  type ConnectionGatewayWsServerMessage,
+  ConnectionGatewayWsServerMessageSchema
 } from '@domain/value-objects/connection-gateway.vo';
 import {
-  CONNECTION_GATEWAY_BIND_CAPABILITY,
-  CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE,
   CONNECTION_GATEWAY_PLUGIN_DEBUG_INVOKE_CAPABILITY,
   ConnectionGatewayPluginDebugRequestPayloadSchema
 } from '@domain/value-objects/connection-gateway-debug.vo';
@@ -17,25 +15,12 @@ import { ToolStreamMessageSchema, type ToolStreamMessageType } from '@domain/val
 import type { LocalDebugRuntime } from './runtime';
 import { type DebugPluginSnapshot, runDebugTool } from './session';
 
-const TOKEN_HEADER = {
-  alg: 'HS256',
-  typ: 'CGT'
-};
-
 export type DebugGatewayClientOptions = {
-  baseUrl: string;
-  authToken?: string;
-  jwtSecret?: string;
-  tcpHost: string;
-  tcpPort: number;
-  precreatedSession?: {
-    session: ConnectionGatewaySession;
-    connectToken: string;
-  };
+  gatewayUrl: string;
+  connectToken: string;
   userId: string;
   teamId?: string;
   source?: string;
-  subject?: string;
   tokenTtlMs: number;
   reconnect?: boolean;
   reconnectIntervalMs?: number;
@@ -136,33 +121,54 @@ async function connectSingleDebugGateway({
   options: DebugGatewayClientOptions;
   onLog?: (message: string) => void;
 }): Promise<DebugGatewayClient> {
-  const session = await createGatewaySession(targets, options);
-  const socket = await connectTcp(options.tcpHost, options.tcpPort).catch(async (error) => {
-    await deleteGatewaySession(session, options).catch((cleanupError) => {
-      onLog?.(`Connection Gateway session 清理失败: ${formatErrorMessage(cleanupError)}`);
-    });
-    throw error;
-  });
-  const decoder = new ContentLengthJsonFrameDecoder(1024 * 1024 * 16);
+  const socket = await openWebSocket(options.gatewayUrl);
   const targetsByPluginId = new Map(targets.map((target) => [target.snapshot.pluginId, target]));
   let closed = false;
+  let session: ConnectionGatewaySession | null = null;
+  let boundResolve: (session: ConnectionGatewaySession) => void;
+  let boundReject: (error: Error) => void;
+  const bound = new Promise<ConnectionGatewaySession>((resolve, reject) => {
+    boundResolve = resolve;
+    boundReject = reject;
+  });
 
   const closedPromise = new Promise<void>((resolve) => {
-    socket.once('close', async () => {
+    socket.addEventListener('close', () => {
       closed = true;
-      await deleteGatewaySession(session, options).catch((error) => {
-        onLog?.(`Connection Gateway session 清理失败: ${formatErrorMessage(error)}`);
-      });
       resolve();
     });
-    socket.once('error', (error) => {
-      onLog?.(`Connection Gateway TCP 错误: ${error.message}`);
+    socket.addEventListener('error', () => {
+      onLog?.('Connection Gateway WebSocket 错误');
     });
   });
 
-  socket.on('data', (chunk) => {
-    const frames = decoder.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    frames.forEach((envelope) => {
+  socket.addEventListener('message', (event) => {
+    const message = parseWsServerMessage(event.data);
+    if (message.type === 'bound') {
+      session = message.session;
+      boundResolve(message.session);
+      return;
+    }
+
+    if (message.type === 'heartbeat') {
+      return;
+    }
+
+    if (message.type === 'error') {
+      const error = new Error(message.message);
+      if (!session) {
+        boundReject(error);
+      }
+      onLog?.(`Connection Gateway 错误: ${message.code} ${message.message}`);
+      return;
+    }
+
+    if (message.type === 'envelope') {
+      const envelope = message.envelope;
+      if (!session) {
+        boundReject(new Error('Gateway envelope received before session bound'));
+        return;
+      }
       void handleGatewayEnvelope({
         socket,
         session,
@@ -170,72 +176,36 @@ async function connectSingleDebugGateway({
         envelope,
         onLog
       }).catch(async (error) => {
-        await sendEnvelope(socket, makeErrorEnvelope(session, envelope, error));
+        if (session) {
+          await sendEnvelope(socket, makeErrorEnvelope(session, envelope, error));
+        }
       });
-    });
+    }
   });
 
-  await sendEnvelope(socket, {
-    protocol: 'connection-gateway.v1',
-    sessionId: session.id,
-    generation: session.generation,
+  await sendMessage(socket, {
+    protocol: 'connection-gateway.ws.v1',
+    type: 'bind',
     requestId: randomUUID(),
-    type: 'event',
-    consumerType: session.consumerType,
-    capability: CONNECTION_GATEWAY_BIND_CAPABILITY,
-    createdAt: Date.now(),
-    payload: {
-      kind: 'plugin-debug.bind',
-      token: options.precreatedSession?.connectToken ?? createConnectionToken(options),
-      sources: targets.map((target) => ({
-        source: session.sessionScope.source,
-        pluginId: target.snapshot.pluginId,
-        version: target.snapshot.version
-      })),
-      metadata: makePluginDebugMetadata(targets, session.sessionScope.source)
-    }
+    token: options.connectToken,
+    metadata: makePluginDebugMetadata(targets, options.source)
   }).catch(async (error) => {
-    socket.destroy(error instanceof Error ? error : new Error(String(error)));
-    await deleteGatewaySession(session, options).catch((cleanupError) => {
-      onLog?.(`Connection Gateway session 清理失败: ${formatErrorMessage(cleanupError)}`);
-    });
+    socket.close();
     throw error;
   });
-  onLog?.(`已连接 Connection Gateway session: ${session.id}`);
+
+  const boundSession = await bound;
+  onLog?.(`已连接 Connection Gateway session: ${boundSession.id}`);
 
   return {
-    session,
+    session: boundSession,
     close() {
       if (!closed) {
-        socket.end();
+        socket.close();
       }
     },
     closed: closedPromise
   };
-}
-
-async function deleteGatewaySession(
-  session: ConnectionGatewaySession,
-  options: DebugGatewayClientOptions
-): Promise<void> {
-  if (options.precreatedSession || !options.authToken) {
-    return;
-  }
-
-  const response = await fetch(
-    `${normalizeBaseUrl(options.baseUrl)}/internal/sessions/${encodeURIComponent(session.id)}`,
-    {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${options.authToken}`
-      }
-    }
-  );
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Gateway session delete failed: ${response.status} ${text}`);
-  }
 }
 
 async function handleGatewayEnvelope({
@@ -245,7 +215,7 @@ async function handleGatewayEnvelope({
   envelope,
   onLog
 }: {
-  socket: net.Socket;
+  socket: WebSocket;
   session: ConnectionGatewaySession;
   targetsByPluginId: Map<string, DebugGatewayTarget>;
   envelope: ConnectionGatewayEnvelope;
@@ -316,7 +286,7 @@ async function handleGatewayEnvelope({
 }
 
 async function sendStreamChunk(
-  socket: net.Socket,
+  socket: WebSocket,
   session: ConnectionGatewaySession,
   request: ConnectionGatewayEnvelope,
   message: ToolStreamMessageType
@@ -362,90 +332,6 @@ function makeErrorEnvelope(
   };
 }
 
-async function createGatewaySession(
-  targets: DebugGatewayTarget[],
-  options: DebugGatewayClientOptions
-): Promise<ConnectionGatewaySession> {
-  if (options.precreatedSession) {
-    return options.precreatedSession.session;
-  }
-
-  if (!options.jwtSecret || !options.authToken) {
-    throw new Error('Gateway auth token and JWT secret are required when creating a session');
-  }
-
-  const now = Date.now();
-  const source = options.source ?? makeDefaultDebugSource(options.userId);
-  const claims = {
-    consumerType: CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE,
-    subject: options.subject ?? `user:${options.userId}`,
-    sessionScope: {
-      userId: options.userId,
-      ...(options.teamId ? { teamId: options.teamId } : {}),
-      source
-    },
-    transport: 'tcp' as const,
-    capabilities: [CONNECTION_GATEWAY_PLUGIN_DEBUG_INVOKE_CAPABILITY],
-    issuedAt: now,
-    expiresAt: now + options.tokenTtlMs,
-    nonce: randomUUID()
-  };
-  const token = signConnectionToken(claims, options.jwtSecret);
-  const response = await fetch(`${normalizeBaseUrl(options.baseUrl)}/internal/sessions`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${options.authToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      token,
-      transport: 'tcp',
-      metadata: makePluginDebugMetadata(targets, source)
-    })
-  });
-  const payload = await parseJsonResponse(response);
-  const session = payload.data?.session;
-
-  return ConnectionGatewaySessionSchema.parse(session);
-}
-
-function createConnectionToken(options: DebugGatewayClientOptions): string | undefined {
-  if (options.precreatedSession) {
-    return options.precreatedSession.connectToken;
-  }
-
-  if (!options.jwtSecret) {
-    return undefined;
-  }
-
-  const now = Date.now();
-  const source = options.source ?? makeDefaultDebugSource(options.userId);
-  return signConnectionToken(
-    {
-      consumerType: CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE,
-      subject: options.subject ?? `user:${options.userId}`,
-      sessionScope: {
-        userId: options.userId,
-        ...(options.teamId ? { teamId: options.teamId } : {}),
-        source
-      },
-      transport: 'tcp' as const,
-      capabilities: [
-        CONNECTION_GATEWAY_BIND_CAPABILITY,
-        CONNECTION_GATEWAY_PLUGIN_DEBUG_INVOKE_CAPABILITY
-      ],
-      issuedAt: now,
-      expiresAt: now + options.tokenTtlMs,
-      nonce: randomUUID()
-    },
-    options.jwtSecret
-  );
-}
-
-function makeDefaultDebugSource(userId: string): string {
-  return `debug:user:${userId}`;
-}
-
 function makePluginDebugMetadata(
   targets: DebugGatewayTarget[],
   source?: string
@@ -470,104 +356,40 @@ function makePluginDebugMetadata(
   };
 }
 
-function signConnectionToken(claims: unknown, secret: string): string {
-  const header = encodeBase64Url(JSON.stringify(TOKEN_HEADER));
-  const payload = encodeBase64Url(JSON.stringify(claims));
-  const signature = encodeBase64Url(createHmac('sha256', secret).update(`${header}.${payload}`).digest());
-
-  return `${header}.${payload}.${signature}`;
-}
-
-function encodeBase64Url(value: string | Buffer): string {
-  return Buffer.from(value).toString('base64url');
-}
-
-async function parseJsonResponse(response: Response): Promise<Record<string, any>> {
-  const text = await response.text();
-  const payload = text ? JSON.parse(text) : {};
-
-  if (!response.ok) {
-    throw new Error(`Gateway request failed: ${response.status} ${response.statusText}\n${text}`);
-  }
-
-  return payload;
-}
-
-async function connectTcp(host: string, port: number): Promise<net.Socket> {
+async function openWebSocket(url: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
-    const socket = net.connect(port, host, () => {
-      socket.off('error', reject);
-      resolve(socket);
-    });
-    socket.once('error', reject);
+    const socket = new WebSocket(url);
+    socket.addEventListener(
+      'open',
+      () => {
+        resolve(socket);
+      },
+      { once: true }
+    );
+    socket.addEventListener(
+      'error',
+      () => {
+        reject(new Error(`Connection Gateway WebSocket connect failed: ${url}`));
+      },
+      { once: true }
+    );
   });
 }
 
-async function sendEnvelope(socket: net.Socket, envelope: ConnectionGatewayEnvelope): Promise<void> {
-  const frame = encodeContentLengthJsonFrame(envelope);
-  await new Promise<void>((resolve, reject) => {
-    socket.write(frame, (error) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve();
-    });
+async function sendEnvelope(socket: WebSocket, envelope: ConnectionGatewayEnvelope): Promise<void> {
+  await sendMessage(socket, {
+    protocol: 'connection-gateway.ws.v1',
+    type: 'envelope',
+    envelope
   });
 }
 
-function encodeContentLengthJsonFrame(envelope: ConnectionGatewayEnvelope): Buffer {
-  const body = Buffer.from(JSON.stringify(envelope), 'utf8');
-  return Buffer.concat([
-    Buffer.from(`Content-Length: ${body.byteLength}\r\n\r\n`, 'utf8'),
-    body
-  ]);
-}
-
-class ContentLengthJsonFrameDecoder {
-  private buffer = Buffer.alloc(0);
-
-  constructor(private readonly maxFrameBytes: number) {}
-
-  push(chunk: Buffer): ConnectionGatewayEnvelope[] {
-    this.buffer = Buffer.concat([this.buffer, chunk]);
-    const frames: ConnectionGatewayEnvelope[] = [];
-
-    while (true) {
-      const headerEnd = this.buffer.indexOf('\r\n\r\n');
-      if (headerEnd < 0) {
-        return frames;
-      }
-
-      const header = this.buffer.subarray(0, headerEnd).toString('utf8');
-      const contentLength = Number(
-        header
-          .split(/\r?\n/)
-          .find((line) => line.toLowerCase().startsWith('content-length:'))
-          ?.split(':')[1]
-          ?.trim()
-      );
-      if (!Number.isSafeInteger(contentLength) || contentLength < 0) {
-        throw new Error('Invalid Content-Length frame');
-      }
-      if (contentLength > this.maxFrameBytes) {
-        throw new Error(`Gateway frame is too large: ${contentLength}`);
-      }
-
-      const bodyStart = headerEnd + 4;
-      const bodyEnd = bodyStart + contentLength;
-      if (this.buffer.byteLength < bodyEnd) {
-        return frames;
-      }
-
-      frames.push(JSON.parse(this.buffer.subarray(bodyStart, bodyEnd).toString('utf8')));
-      this.buffer = this.buffer.subarray(bodyEnd);
-    }
+async function sendMessage(socket: WebSocket, message: unknown): Promise<void> {
+  if (socket.readyState !== WebSocket.OPEN) {
+    throw new Error('Connection Gateway WebSocket is not open');
   }
-}
 
-function normalizeBaseUrl(value: string): string {
-  return value.replace(/\/+$/, '');
+  socket.send(JSON.stringify(message));
 }
 
 function requiredRequestId(envelope: ConnectionGatewayEnvelope): string {
@@ -586,4 +408,17 @@ function delay(ms: number): Promise<void> {
 
 function formatErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function parseWsServerMessage(data: unknown): ConnectionGatewayWsServerMessage {
+  const text =
+    typeof data === 'string'
+      ? data
+      : data instanceof ArrayBuffer
+        ? Buffer.from(data).toString('utf8')
+        : ArrayBuffer.isView(data)
+          ? Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString('utf8')
+          : String(data);
+
+  return ConnectionGatewayWsServerMessageSchema.parse(JSON.parse(text));
 }

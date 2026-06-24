@@ -79,7 +79,7 @@ COPY --from=builder --chown=fastgpt:fastgpt /app/apps/connection-gateway/dist ./
 
 ENV NODE_ENV=production
 ENV CONNECTION_GATEWAY_PORT=3000
-ENV CONNECTION_GATEWAY_TCP_PORT=3001
+ENV CONNECTION_GATEWAY_WS_PORT=3001
 
 EXPOSE 3000 3001
 

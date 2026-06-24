@@ -39,7 +39,7 @@ FastGPT Plugin 服务提供如下功能：
 
 1. local-pool：当前默认运行时，插件在本地子进程池中运行。
 2. serverless：预留运行时，插件运行在 Serverless 平台。
-3. tcp：预留调试运行时，通过 TCP 连接远端插件。
+3. wss-debug：调试通道，通过 Connection Gateway WSS 长连接接入本地开发插件。
 
 ## 插件设计
 
@@ -57,7 +57,7 @@ FastGPT Plugin 服务提供如下功能：
 封装一套通用的 IO 逻辑（适配器模式）:
 - 适配 Local 模式下的 IPC 通信
 - Serverless 下的通信
-- Remote 下的 TCP 通信。
+- Debug Remote 下的 WSS 通信。
 
 ### 2. manifest 描述
 
