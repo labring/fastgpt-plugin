@@ -83,6 +83,25 @@ export class InMemoryConnectionGatewaySessionRegistry
     return true;
   }
 
+  async updateMetadata(input: {
+    sessionId: string;
+    metadata: Record<string, unknown>;
+    now?: number;
+  }): Promise<ConnectionGatewaySession | null> {
+    const session = await this.get(input.sessionId);
+    if (!session) {
+      return null;
+    }
+
+    const next: ConnectionGatewaySession = {
+      ...session,
+      metadata: input.metadata,
+      lastSeenAt: input.now ?? Date.now()
+    };
+    this.sessions.set(session.id, next);
+    return next;
+  }
+
   async remove(sessionId: string): Promise<void> {
     this.sessions.delete(sessionId);
   }
@@ -190,6 +209,25 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
     };
     await this.saveSessionAndIndexes(next);
     return true;
+  }
+
+  async updateMetadata(input: {
+    sessionId: string;
+    metadata: Record<string, unknown>;
+    now?: number;
+  }): Promise<ConnectionGatewaySession | null> {
+    const session = await this.get(input.sessionId);
+    if (!session) {
+      return null;
+    }
+
+    const next: ConnectionGatewaySession = {
+      ...session,
+      metadata: input.metadata,
+      lastSeenAt: input.now ?? Date.now()
+    };
+    await this.saveSessionAndIndexes(next);
+    return next;
   }
 
   async remove(sessionId: string): Promise<void> {

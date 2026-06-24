@@ -31,6 +31,11 @@ export interface ConnectionGatewaySessionRegistryPort {
     status: ConnectionGatewaySessionStatus;
     now?: number;
   }): Promise<boolean>;
+  updateMetadata(input: {
+    sessionId: string;
+    metadata: Record<string, unknown>;
+    now?: number;
+  }): Promise<ConnectionGatewaySession | null>;
   remove(sessionId: string): Promise<void>;
   countActive(): Promise<number>;
 }

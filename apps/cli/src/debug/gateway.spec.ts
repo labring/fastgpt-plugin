@@ -3,6 +3,8 @@ import net from 'node:net';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { ConnectionGatewaySessionSchema } from '@domain/value-objects/connection-gateway.vo';
+
 import { connectDebugGateway } from './gateway';
 
 describe('connectDebugGateway', () => {
@@ -93,6 +95,69 @@ describe('connectDebugGateway', () => {
       })
     );
   });
+
+  it('binds a precreated session without gateway internal HTTP calls', async () => {
+    const receivedFrames: unknown[] = [];
+    const connectSpy = vi.spyOn(net, 'connect');
+    connectSpy.mockImplementation(
+      ((_port: number, _host: string, connectListener?: () => void) => {
+        const socket = new FakeSocket((chunk) => {
+          receivedFrames.push(...decodeFrames(chunk));
+        });
+        queueMicrotask(() => {
+          connectListener?.();
+        });
+        return socket as unknown as net.Socket;
+      }) as typeof net.connect
+    );
+    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
+
+    const client = await connectDebugGateway({
+      targets: [makeTarget()],
+      options: {
+        ...makeOptions(),
+        authToken: undefined,
+        jwtSecret: undefined,
+        source: 'debug:tmbId:tmb-1:session:debug-1',
+        precreatedSession: {
+          session: {
+            ...makeSession(),
+            subject: 'tmb-1',
+            sessionScope: {
+              userId: 'tmb-1',
+              source: 'debug:tmbId:tmb-1:session:debug-1'
+            },
+            capabilities: ['gateway.bind', 'invoke']
+          },
+          connectToken: 'scoped-token'
+        }
+      }
+    });
+
+    client.close();
+    await client.closed;
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(receivedFrames).toEqual([
+      expect.objectContaining({
+        type: 'event',
+        capability: 'gateway.bind',
+        payload: expect.objectContaining({
+          token: 'scoped-token',
+          metadata: {
+            pluginDebug: {
+              targets: [
+                expect.objectContaining({
+                  source: 'debug:tmbId:tmb-1:session:debug-1',
+                  pluginId: 'getTime'
+                })
+              ]
+            }
+          }
+        })
+      })
+    ]);
+  });
 });
 
 class FakeSocket extends EventEmitter {
@@ -155,7 +220,7 @@ function makeTarget() {
 }
 
 function makeSession() {
-  return {
+  return ConnectionGatewaySessionSchema.parse({
     id: 'session-a',
     consumerType: 'plugin-debug',
     subject: 'user:u1',
@@ -171,7 +236,7 @@ function makeSession() {
     connectedAt: Date.now(),
     lastSeenAt: Date.now(),
     expiresAt: Date.now() + 30_000
-  };
+  });
 }
 
 function decodeFrames(chunk: Buffer): unknown[] {

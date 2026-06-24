@@ -21,12 +21,14 @@ export type ConnectionGatewayDebugRuntimeManagerOptions = {
   baseUrl: string;
   authToken: string;
   requestTimeoutMs: number;
-  sourceForUser(input: { userId: string }): string;
+  sourceForTmbId(input: { tmbId: string }): string;
+  sourceForUser?: (input: { userId: string }) => string;
 };
 
 export type ConnectionGatewayDebugRuntimeInvokeOptions = PluginRuntimeInvokeOptions & {
   debug?: {
-    userId: string;
+    tmbId?: string;
+    userId?: string;
     source?: string;
   };
 };
@@ -90,21 +92,16 @@ export class ConnectionGatewayDebugRuntimeManager
       return failureResult(createError(ErrorCode.pluginRuntimeEventNotSupported));
     }
 
-    const debugUserId = options?.debug?.userId;
-    if (!debugUserId) {
+    const source = this.resolveSource(options?.debug);
+    if (!source) {
       return failureResult(
         createError(ErrorCode.pluginRuntimePluginNotFound, {
-          message: 'Missing debug user id for connection-gateway runtime'
+          message: 'Missing debug source for connection-gateway runtime'
         })
       );
     }
 
     try {
-      const source =
-        options.debug?.source ??
-        this.options.sourceForUser({
-          userId: debugUserId
-        });
       const session = await this.findSessionBySource(source);
       const responses = this.publishRequestAndReadStream({
         session,
@@ -228,6 +225,22 @@ export class ConnectionGatewayDebugRuntimeManager
 
   private get baseUrl(): string {
     return this.options.baseUrl.replace(/\/+$/, '');
+  }
+
+  private resolveSource(debug: ConnectionGatewayDebugRuntimeInvokeOptions['debug']): string | null {
+    if (debug?.source) {
+      return debug.source;
+    }
+
+    if (debug?.tmbId) {
+      return this.options.sourceForTmbId({ tmbId: debug.tmbId });
+    }
+
+    if (debug?.userId && this.options.sourceForUser) {
+      return this.options.sourceForUser({ userId: debug.userId });
+    }
+
+    return null;
   }
 }
 
