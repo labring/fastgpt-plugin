@@ -21,6 +21,7 @@ import { type DebugPluginSnapshot, loadDebugSession } from './session';
 export type RemoteDebugCommandOptions = {
   uploadDir?: string;
   connect?: string;
+  connectPersistOnSuccess?: boolean;
   reconnect?: boolean;
   noReconnect?: boolean;
   reconnectIntervalMs?: string;
@@ -74,7 +75,11 @@ async function runRemoteDebugSessionOnce({
     targets
   });
 
-  const gatewayOptions = await resolveGatewayOptions(options, targets[0].snapshot);
+  const gatewayOptions = await resolveGatewayOptions({
+    options,
+    commandName,
+    targets
+  });
   const reporter = createRemoteDebugReporter({
     commandName,
     options,
@@ -110,9 +115,6 @@ async function runWatchRemoteDebugSession({
   options,
   commandName
 }: Omit<RemoteDebugSessionRunOptions, 'migrationHint'>): Promise<void> {
-  let closed = false;
-  let currentGatewayClose: RemoteDebugCloseHandler | undefined;
-  let restartResolve: (() => void) | undefined;
   const entries = await resolveDebugEntries(entriesInput);
   const initialTargets = await loadTargets(entries, options);
   await ensureConnectLink({
@@ -120,115 +122,74 @@ async function runWatchRemoteDebugSession({
     commandName,
     targets: initialTargets
   });
-  const watcher = watchDebugEntries(entries, () => {
-    restartResolve?.();
-    currentGatewayClose?.({ force: false });
-  });
 
-  process.once('SIGINT', () => {
-    closed = true;
-    restartResolve?.();
-    currentGatewayClose?.({ force: false });
-    watcher.close();
-  });
-
-  try {
-    while (!closed) {
-      const restart = new Promise<void>((resolve) => {
-        restartResolve = resolve;
-      });
-      await runRemoteDebugSessionOnceWithCloseHook({
-        entries,
-        options,
-        commandName,
-        onCloseReady: (close) => {
-          currentGatewayClose = close;
-        },
-        onUserClose: ({ force }) => {
-          closed = true;
-          restartResolve?.();
-          watcher.close();
-          if (force) {
-            process.exit(130);
-          }
-        },
-        restart
-      }).catch((error) => {
-        if (!closed) {
-          logger.error(error);
-        }
-      });
-
-      currentGatewayClose = undefined;
-      restartResolve = undefined;
-
-      if (!closed) {
-        logger.info('检测到插件文件变化，正在重载远程调试会话。');
-        await delay(300);
-      }
-    }
-  } finally {
-    watcher.close();
-  }
-}
-
-async function runRemoteDebugSessionOnceWithCloseHook({
-  entries,
-  options,
-  commandName,
-  onCloseReady,
-  onUserClose,
-  restart
-}: {
-  entries: string[];
-  options: RemoteDebugCommandOptions;
-  commandName: string;
-  onCloseReady(close: RemoteDebugCloseHandler): void;
-  onUserClose?(options: RemoteDebugCloseOptions): void;
-  restart: Promise<void>;
-}): Promise<void> {
-  const targets = await loadTargets(entries, options);
-  await ensureConnectLink({
+  const gatewayOptions = await resolveGatewayOptions({
     options,
     commandName,
-    targets
+    targets: initialTargets
   });
-
-  const gatewayOptions = await resolveGatewayOptions(options, targets[0].snapshot);
   const reporter = createRemoteDebugReporter({
     commandName,
     options,
     gatewayOptions,
-    targets
+    targets: initialTargets
   });
+  let reloadRunning = false;
+  let reloadPending = false;
+  let closed = false;
+  let gateway:
+    | Awaited<ReturnType<typeof connectDebugGateway>>
+    | undefined;
+  const reloadTargets = async () => {
+    if (reloadRunning) {
+      reloadPending = true;
+      return;
+    }
+
+    reloadRunning = true;
+    try {
+      do {
+        reloadPending = false;
+        try {
+          const nextTargets = await loadTargets(entries, options);
+          gateway?.updateTargets(nextTargets);
+          reporter.log(`检测到插件文件变化，已热更新 ${nextTargets.length} 个本地插件。`);
+        } catch (error) {
+          reporter.log(`插件热更新失败: ${formatConnectionKeyExchangeError(error)}`);
+        }
+      } while (reloadPending && !closed);
+    } finally {
+      reloadRunning = false;
+    }
+  };
+  const watcher = watchDebugEntries(entries, () => {
+    void reloadTargets();
+  });
+
   reporter.start();
 
   try {
-    const gateway = await connectDebugGateway({
-      targets,
+    const connectedGateway = await connectDebugGateway({
+      targets: initialTargets,
       options: gatewayOptions,
       onLog: (message) => reporter.log(`[gateway] ${message}`)
     });
+    gateway = connectedGateway;
     reporter.attachClose(({ force }) => {
-      onUserClose?.({ force });
-      gateway.close();
+      closed = true;
+      watcher.close();
+      connectedGateway.close();
       if (force) {
         process.exit(130);
       }
     });
-    onCloseReady(({ force }) => {
-      gateway.close();
-      if (force) {
-        process.exit(130);
-      }
-    });
-    const source = gateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
+    const source = connectedGateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
     reporter.ready(source);
 
-    await Promise.race([gateway.closed, restart]);
-    gateway.close();
-    await gateway.closed.catch(() => undefined);
+    await connectedGateway.closed;
   } finally {
+    closed = true;
+    watcher.close();
     await reporter.end();
   }
 }
@@ -361,6 +322,7 @@ async function ensureConnectLink({
   const savedConnect = await readSavedConnectionKey();
   if (savedConnect) {
     options.connect = savedConnect;
+    options.connectPersistOnSuccess = true;
     logger.info(`已读取本地 FastGPT connection key 配置: ${getCliConfigPath()}`);
     return;
   }
@@ -374,16 +336,19 @@ async function ensureConnectLink({
     targets
   });
   options.connect = connectUrl;
-  await saveConnectionKey(connectUrl);
-  logger.info(`已保存 FastGPT connection key 到本地配置: ${getCliConfigPath()}`);
+  options.connectPersistOnSuccess = true;
 }
 
 async function promptConnectLink({
   commandName,
-  targets
+  targets,
+  defaultValue,
+  errorMessage
 }: {
   commandName: string;
   targets: DebugGatewayTarget[];
+  defaultValue?: string;
+  errorMessage?: string;
 }): Promise<string> {
   process.stdout.write(
     [
@@ -396,6 +361,7 @@ async function promptConnectLink({
       'Plugins',
       ...targets.map((target) => `  ${target.snapshot.pluginId}@${target.snapshot.version}`),
       '',
+      ...(errorMessage ? [`Last error ${errorMessage}`, ''] : []),
       'Paste the FastGPT connection key or connect link to start the WSS debug session.',
       ''
     ].join('\n')
@@ -403,6 +369,8 @@ async function promptConnectLink({
 
   const connectUrl = await input({
     message: 'FastGPT connection key',
+    default: defaultValue,
+    prefill: defaultValue ? 'editable' : undefined,
     validate(value) {
       return value.trim().length > 0 || '请输入 FastGPT connection key';
     }
@@ -909,15 +877,55 @@ function formatTuiTime(value: Date): string {
   ].join(':');
 }
 
-async function resolveGatewayOptions(
-  options: RemoteDebugCommandOptions,
-  _snapshot: DebugPluginSnapshot
-): Promise<DebugGatewayClientOptions> {
+async function resolveGatewayOptions({
+  options,
+  commandName,
+  targets
+}: {
+  options: RemoteDebugCommandOptions;
+  commandName: string;
+  targets: DebugGatewayTarget[];
+}): Promise<DebugGatewayClientOptions> {
   if (!options.connect) {
     throw new Error('dev 需要 --connect 来建立远程调试通道。');
   }
 
-  return resolveConnectGatewayOptions(options);
+  while (true) {
+    try {
+      const gatewayOptions = await resolveConnectGatewayOptions(options);
+      if (options.connectPersistOnSuccess === true) {
+        await saveConnectionKey(options.connect);
+        logger.info(`已保存 FastGPT connection key 到本地配置: ${getCliConfigPath()}`);
+        options.connectPersistOnSuccess = false;
+      }
+      return gatewayOptions;
+    } catch (error) {
+      const errorMessage = formatConnectionKeyExchangeError(error);
+      if (!canPromptForConnectInput(options)) {
+        throw error;
+      }
+
+      logger.error(errorMessage);
+      const nextConnect = await promptConnectLink({
+        commandName,
+        targets,
+        defaultValue: options.connect,
+        errorMessage
+      });
+      options.connect = nextConnect;
+      options.connectPersistOnSuccess = true;
+    }
+  }
+}
+
+function canPromptForConnectInput(options: RemoteDebugCommandOptions): boolean {
+  return (
+    options.interactive !== false && Boolean(process.stdin.isTTY) && Boolean(process.stdout.isTTY)
+  );
+}
+
+function formatConnectionKeyExchangeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 async function resolveConnectGatewayOptions(
@@ -982,12 +990,12 @@ async function exchangeConnectLink(connectInput: string) {
         })
       });
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
     throw new Error(`connection key 请求失败: ${response.status} ${text}`);
   }
 
+  const payload = text ? JSON.parse(text) : {};
   const info = ConnectInfoSchema.parse(payload.data ?? payload);
 
   return {

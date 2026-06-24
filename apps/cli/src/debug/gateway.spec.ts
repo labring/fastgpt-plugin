@@ -131,6 +131,61 @@ describe('connectDebugGateway', () => {
     client.close();
     await client.closed;
   });
+
+  it('updates local debug targets without rebinding the WSS session', async () => {
+    const socket = new FakeWebSocket();
+    vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget({ response: 'old' })],
+      options: makeOptions()
+    });
+
+    socket.open();
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(1);
+    });
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (socket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    client.updateTargets([makeTarget({ response: 'new' })]);
+    socket.receive(makeRunEnvelope('request-after-update'));
+
+    await vi.waitFor(() => {
+      expect(socket.sent).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'envelope',
+            envelope: expect.objectContaining({
+              type: 'stream',
+              requestId: 'request-after-update',
+              payload: {
+                kind: 'plugin-debug.stream',
+                event: 'chunk',
+                data: {
+                  type: 'response',
+                  data: {
+                    value: 'new'
+                  }
+                }
+              }
+            })
+          })
+        ])
+      );
+    });
+    expect(
+      socket.sent.filter((message) => (message as { type?: string }).type === 'bind')
+    ).toHaveLength(1);
+
+    client.close();
+    await client.closed;
+  });
 });
 
 class FakeWebSocket extends EventTarget {
@@ -186,7 +241,7 @@ function makeOptions() {
   };
 }
 
-function makeTarget() {
+function makeTarget({ response = true }: { response?: unknown } = {}) {
   return {
     runtime: {
       invokePlugin: async () => ({
@@ -196,7 +251,7 @@ function makeTarget() {
               await callback({
                 type: 'response',
                 data: {
-                  ok: true
+                  value: response
                 }
               });
             }
@@ -226,6 +281,33 @@ function makeTarget() {
           outputSchema: {}
         }
       ]
+    }
+  };
+}
+
+function makeRunEnvelope(requestId: string): ConnectionGatewayWsServerMessage {
+  return {
+    protocol: 'connection-gateway.ws.v1',
+    type: 'envelope',
+    envelope: {
+      protocol: 'connection-gateway.v1',
+      sessionId: 'session-a',
+      generation: 0,
+      requestId,
+      type: 'request',
+      consumerType: 'plugin-debug',
+      capability: 'invoke',
+      createdAt: Date.now(),
+      payload: {
+        kind: 'plugin-debug.run',
+        eventName: 'run',
+        payload: {
+          pluginId: 'getTime',
+          childId: '',
+          input: {},
+          systemVar: makeSystemVar()
+        }
+      }
     }
   };
 }

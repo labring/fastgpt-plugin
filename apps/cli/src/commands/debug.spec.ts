@@ -48,7 +48,7 @@ describe('debug command', () => {
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
       session: makeConnectedSession(options),
       close: vi.fn(),
-      closed: Promise.resolve()
+      closed: Promise.resolve().then(() => undefined)
     }));
     connectDebugGatewayMock.mockClear();
     tempUploadDir = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-debug-'));
@@ -240,8 +240,11 @@ describe('dev command', () => {
     warn: vi.fn()
   };
   let exitSpy: ReturnType<typeof vi.spyOn>;
+  let configHome: string;
 
   beforeEach(async () => {
+    configHome = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-cli-config-'));
+    process.env.XDG_CONFIG_HOME = configHome;
     vi.spyOn(logger, 'success').mockImplementation(loggerSpy.success);
     vi.spyOn(logger, 'info').mockImplementation(loggerSpy.info);
     vi.spyOn(logger, 'error').mockImplementation(loggerSpy.error);
@@ -255,7 +258,7 @@ describe('dev command', () => {
     connectDebugGatewayMock.mockClear();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.restoreAllMocks();
     loggerSpy.success.mockReset();
     loggerSpy.info.mockReset();
@@ -268,6 +271,7 @@ describe('dev command', () => {
     delete process.env.FASTGPT_PLUGIN_SERVER_URL;
     delete process.env.PLUGIN_SERVER_URL;
     delete process.env.XDG_CONFIG_HOME;
+    await rm(configHome, { recursive: true, force: true });
   });
 
   it('应能通过 dev --connect 启动集成开发会话', async () => {
@@ -326,12 +330,8 @@ describe('dev command', () => {
 
   it('dev 未指定插件目录时应自动发现当前目录下的插件', async () => {
     const workspaceDir = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-dev-discover-'));
-    await cp(GETTIME_TOOL_DIR, path.join(workspaceDir, 'getTime'), {
-      recursive: true
-    });
-    await cp(DBOPS_SUITE_DIR, path.join(workspaceDir, 'dbops'), {
-      recursive: true
-    });
+    await copyDebugFixture(GETTIME_TOOL_DIR, path.join(workspaceDir, 'getTime'));
+    await copyDebugFixture(DBOPS_SUITE_DIR, path.join(workspaceDir, 'dbops'));
     const previousCwd = process.cwd();
 
     vi.stubGlobal(
@@ -379,8 +379,6 @@ describe('dev command', () => {
   });
 
   it('dev 未传 --connect 时应在交互式终端提示输入 connection key', async () => {
-    const configHome = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-cli-config-'));
-    process.env.XDG_CONFIG_HOME = configHome;
     inputMock.mockResolvedValue('https://fastgpt.example.com/debug/connect?connectionKey=t1');
     vi.stubGlobal(
       'fetch',
@@ -427,13 +425,10 @@ describe('dev command', () => {
     } finally {
       restorePropertyDescriptor(process.stdin, 'isTTY', stdinIsTTY);
       restorePropertyDescriptor(process.stdout, 'isTTY', stdoutIsTTY);
-      await rm(configHome, { recursive: true, force: true });
     }
   });
 
   it('dev 未传 --connect 时应优先读取本地 connection key 配置', async () => {
-    const configHome = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-cli-config-'));
-    process.env.XDG_CONFIG_HOME = configHome;
     const configDir = path.join(configHome, 'fastgpt-plugin');
     await mkdir(configDir, { recursive: true });
     await writeFile(
@@ -463,23 +458,133 @@ describe('dev command', () => {
       )
     );
 
-    try {
-      await run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR, '--no-interactive']);
+    await run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR, '--no-interactive']);
 
-      expect(inputMock).not.toHaveBeenCalled();
-      expect(globalThis.fetch).toHaveBeenCalledWith(
+    expect(inputMock).not.toHaveBeenCalled();
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          connectionKey: 'connection-key-from-config'
+        })
+      })
+    );
+    expect(getLoggerOutput(loggerSpy.info)).toContain('已读取本地 FastGPT connection key 配置');
+  });
+
+  it('交互式 dev 读取本地 connection key 失败时应允许重新输入并保存新 key', async () => {
+    const configDir = path.join(configHome, 'fastgpt-plugin');
+    await mkdir(configDir, { recursive: true });
+    await writeFile(
+      path.join(configDir, 'config.json'),
+      JSON.stringify({
+        debug: {
+          connectionKey: 'bad-key'
+        }
+      })
+    );
+    process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL =
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('connection key expired', { status: 500 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: {
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    inputMock.mockResolvedValue('good-key');
+    const stdinIsTTY = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+    const stdoutIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdin, 'isTTY', {
+      configurable: true,
+      get: () => true
+    });
+    Object.defineProperty(process.stdout, 'isTTY', {
+      configurable: true,
+      get: () => true
+    });
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    try {
+      await run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR]);
+
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        1,
         'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({
-            connectionKey: 'connection-key-from-config'
+            connectionKey: 'bad-key'
           })
         })
       );
-      expect(getLoggerOutput(loggerSpy.info)).toContain('已读取本地 FastGPT connection key 配置');
+      expect(inputMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'FastGPT connection key',
+          default: 'bad-key',
+          prefill: 'editable'
+        })
+      );
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        2,
+        'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            connectionKey: 'good-key'
+          })
+        })
+      );
+      expect(getLoggerOutput(loggerSpy.error)).toContain(
+        'connection key 请求失败: 500 connection key expired'
+      );
+      const savedConfig = JSON.parse(
+        await readFile(path.join(configHome, 'fastgpt-plugin', 'config.json'), 'utf-8')
+      );
+      expect(savedConfig.debug.connectionKey).toBe('good-key');
     } finally {
-      await rm(configHome, { recursive: true, force: true });
+      restorePropertyDescriptor(process.stdin, 'isTTY', stdinIsTTY);
+      restorePropertyDescriptor(process.stdout, 'isTTY', stdoutIsTTY);
     }
+  });
+
+  it('非交互 dev 读取本地 connection key 失败时应直接抛错', async () => {
+    const configDir = path.join(configHome, 'fastgpt-plugin');
+    await mkdir(configDir, { recursive: true });
+    await writeFile(
+      path.join(configDir, 'config.json'),
+      JSON.stringify({
+        debug: {
+          connectionKey: 'bad-key'
+        }
+      })
+    );
+    process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL =
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('connection key expired', { status: 500 }))
+    );
+
+    await expect(
+      run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR, '--no-interactive'])
+    ).rejects.toThrow('connection key 请求失败: 500 connection key expired');
+    expect(inputMock).not.toHaveBeenCalled();
+    const savedConfig = JSON.parse(
+      await readFile(path.join(configHome, 'fastgpt-plugin', 'config.json'), 'utf-8')
+    );
+    expect(savedConfig.debug.connectionKey).toBe('bad-key');
   });
 
   it('交互式 dev 首次 Ctrl+C 应关闭会话，第二次应强制退出', async () => {
@@ -602,4 +707,18 @@ function makeConnectedSession(options: {
     lastSeenAt: Date.now(),
     expiresAt: Date.now() + 60_000
   };
+}
+
+async function copyDebugFixture(sourceDir: string, targetDir: string): Promise<void> {
+  await mkdir(targetDir, { recursive: true });
+  const entries = await readdir(sourceDir, { withFileTypes: true });
+  await Promise.all(
+    entries
+      .filter((entry) => entry.name !== '__pack_output__')
+      .map((entry) =>
+        cp(path.join(sourceDir, entry.name), path.join(targetDir, entry.name), {
+          recursive: true
+        })
+      )
+  );
 }

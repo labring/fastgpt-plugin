@@ -33,6 +33,7 @@ export type DebugGatewayTarget = {
 
 export type DebugGatewayClient = {
   session: ConnectionGatewaySession;
+  updateTargets(targets: DebugGatewayTarget[]): void;
   close(): void;
   closed: Promise<void>;
 };
@@ -69,12 +70,13 @@ async function connectReconnectingDebugGateway({
   let closed = false;
   let current: DebugGatewayClient | null = null;
   let currentSession: ConnectionGatewaySession | null = null;
+  let latestTargets = targets;
   const intervalMs = Math.max(100, options.reconnectIntervalMs ?? 2_000);
 
   const closedPromise = (async () => {
     while (!closed) {
       try {
-        current = await connectSingleDebugGateway({ targets, options, onLog });
+        current = await connectSingleDebugGateway({ targets: latestTargets, options, onLog });
         currentSession = current.session;
         await current.closed;
       } catch (error) {
@@ -104,6 +106,10 @@ async function connectReconnectingDebugGateway({
 
   return {
     session: currentSession,
+    updateTargets(targets) {
+      latestTargets = targets;
+      current?.updateTargets(targets);
+    },
     close() {
       closed = true;
       current?.close();
@@ -122,7 +128,7 @@ async function connectSingleDebugGateway({
   onLog?: (message: string) => void;
 }): Promise<DebugGatewayClient> {
   const socket = await openWebSocket(options.gatewayUrl);
-  const targetsByPluginId = new Map(targets.map((target) => [target.snapshot.pluginId, target]));
+  let targetsByPluginId = createTargetsByPluginId(targets);
   let closed = false;
   let session: ConnectionGatewaySession | null = null;
   let boundResolve: (session: ConnectionGatewaySession) => void;
@@ -199,6 +205,12 @@ async function connectSingleDebugGateway({
 
   return {
     session: boundSession,
+    updateTargets(targets) {
+      targetsByPluginId = createTargetsByPluginId(targets);
+      onLog?.(
+        `已热更新本地调试插件: ${targets.map((target) => target.snapshot.pluginId).join(', ')}`
+      );
+    },
     close() {
       if (!closed) {
         socket.close();
@@ -206,6 +218,10 @@ async function connectSingleDebugGateway({
     },
     closed: closedPromise
   };
+}
+
+function createTargetsByPluginId(targets: DebugGatewayTarget[]): Map<string, DebugGatewayTarget> {
+  return new Map(targets.map((target) => [target.snapshot.pluginId, target]));
 }
 
 async function handleGatewayEnvelope({
