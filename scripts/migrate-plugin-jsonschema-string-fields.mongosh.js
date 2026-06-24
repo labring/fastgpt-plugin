@@ -22,32 +22,59 @@ function isRecord(value) {
 }
 
 function stringifySchemaField(target, fieldName) {
-  if (!hasOwn(target, fieldName) || typeof target[fieldName] === 'string') {
-    return false;
+  if (!hasOwn(target, fieldName)) {
+    return {
+      changed: false,
+      candidateCount: 0,
+      alreadyStringCount: 0
+    };
+  }
+
+  if (typeof target[fieldName] === 'string') {
+    return {
+      changed: false,
+      candidateCount: 1,
+      alreadyStringCount: 1
+    };
   }
 
   const stringifiedValue = JSON.stringify(target[fieldName]);
   if (stringifiedValue === undefined) {
-    return false;
+    return {
+      changed: false,
+      candidateCount: 1,
+      alreadyStringCount: 0
+    };
   }
 
   target[fieldName] = stringifiedValue;
-  return true;
+  return {
+    changed: true,
+    candidateCount: 1,
+    alreadyStringCount: 0
+  };
 }
 
 function stringifyPluginDataSchemaFields(data) {
   if (!isRecord(data)) {
     return {
       value: data,
-      changed: false
+      changed: false,
+      candidateCount: 0,
+      alreadyStringCount: 0
     };
   }
 
   let changed = false;
+  let candidateCount = 0;
+  let alreadyStringCount = 0;
   const nextData = Object.assign({}, data);
 
   for (const fieldName of SCHEMA_FIELD_NAMES) {
-    changed = stringifySchemaField(nextData, fieldName) || changed;
+    const result = stringifySchemaField(nextData, fieldName);
+    candidateCount += result.candidateCount;
+    alreadyStringCount += result.alreadyStringCount;
+    changed = result.changed || changed;
   }
 
   if (Array.isArray(nextData.children)) {
@@ -59,7 +86,10 @@ function stringifyPluginDataSchemaFields(data) {
 
       const nextChild = Object.assign({}, child);
       for (const fieldName of CHILD_SCHEMA_FIELD_NAMES) {
-        childrenChanged = stringifySchemaField(nextChild, fieldName) || childrenChanged;
+        const result = stringifySchemaField(nextChild, fieldName);
+        candidateCount += result.candidateCount;
+        alreadyStringCount += result.alreadyStringCount;
+        childrenChanged = result.changed || childrenChanged;
       }
       return nextChild;
     });
@@ -72,11 +102,15 @@ function stringifyPluginDataSchemaFields(data) {
 
   return {
     value: changed ? nextData : data,
-    changed
+    changed,
+    candidateCount,
+    alreadyStringCount
   };
 }
 
 let scannedCount = 0;
+let candidateCount = 0;
+let alreadyStringCount = 0;
 let matchedCount = 0;
 let modifiedCount = 0;
 let operations = [];
@@ -92,10 +126,12 @@ function flush() {
   operations = [];
 }
 
-collection.find({}, { projection: { data: 1 } }).forEach((doc) => {
+collection.find({}, { data: 1 }).forEach((doc) => {
   scannedCount += 1;
 
   const result = stringifyPluginDataSchemaFields(doc.data);
+  candidateCount += result.candidateCount;
+  alreadyStringCount += result.alreadyStringCount;
   if (!result.changed) {
     return;
   }
@@ -121,6 +157,8 @@ flush();
 printjson({
   collection: collection.getName(),
   scannedCount,
+  candidateCount,
+  alreadyStringCount,
   matchedCount,
   modifiedCount
 });
