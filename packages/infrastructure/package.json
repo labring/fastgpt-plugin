@@ -15,11 +15,11 @@
     "@t3-oss/env-core": "^0.13.10",
     "@zip.js/zip.js": "^2.8.26",
     "es-toolkit": "^1.44.0",
-    "hono": "^4.12.21",
+    "hono": "^4.12.25",
     "ioredis": "^5.9.2",
     "json5": "^2.2.3",
     "mongoose": "8",
-    "undici": "^7.20.0",
+    "undici": "^7.28.0",
     "zod": "catalog:"
   },
   "devDependencies": {
