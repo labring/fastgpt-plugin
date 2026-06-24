@@ -41,6 +41,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'mistral-medium-latest',
+      maxContext: 256000,
+      maxTokens: 32000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'magistral-medium-2509',
       maxContext: 128000,
       maxTokens: 32000,
