@@ -8,12 +8,19 @@ import {
   PluginVersionListParamsSchema
 } from '@interface-adapter/contracts/dto/plugin.dto';
 import {
+  PluginDebugSessionConnectionKeyExchangeRequestDTOSchema,
+  PluginDebugSessionCreateRequestDTOSchema,
+  PluginDebugSessionGetParamsDTOSchema,
+  PluginDebugSessionRevokeRequestDTOSchema
+} from '@interface-adapter/contracts/dto/plugin-debug-session.dto';
+import {
   ToolGetParamsDTOSchema,
   ToolListParamsDTOSchema,
   ToolRunInputDTOSchema
 } from '@interface-adapter/contracts/dto/tool.dto';
 import { ModelContract } from '@interface-adapter/contracts/route/model.contract';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
+import { PluginDebugSessionContract } from '@interface-adapter/contracts/route/plugin-debug-session.contract';
 import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 import { WorkflowContract } from '@interface-adapter/contracts/route/workflow.contract';
 
@@ -24,6 +31,14 @@ import type {
   FastGPTPluginClientOptions,
   ModelListType,
   ModelProviderListType,
+  PluginDebugSessionConnectionKeyExchangeParamsType,
+  PluginDebugSessionConnectionKeyExchangeResultType,
+  PluginDebugSessionCreateParamsType,
+  PluginDebugSessionCreateResultType,
+  PluginDebugSessionRevokeParamsType,
+  PluginDebugSessionRevokeResultType,
+  PluginDebugSessionStatusParamsType,
+  PluginDebugSessionStatusResultType,
   PluginInstallResultType,
   PluginListParamsType,
   PluginListType,
@@ -241,6 +256,78 @@ export class FastGPTPluginClient {
     });
   }
 
+  async createDebugSession(
+    params: PluginDebugSessionCreateParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<PluginDebugSessionCreateResultType> {
+    const payload = PluginDebugSessionCreateRequestDTOSchema.parse(params);
+
+    return this.transport.requestData<PluginDebugSessionCreateResultType>({
+      path: this.withApiPath(PluginDebugSessionContract.Create.meta.path),
+      method: PluginDebugSessionContract.Create.meta.method,
+      body: payload,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async refreshDebugSessionKey(
+    params: PluginDebugSessionCreateParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<PluginDebugSessionCreateResultType> {
+    const payload = PluginDebugSessionCreateRequestDTOSchema.parse(params);
+
+    return this.transport.requestData<PluginDebugSessionCreateResultType>({
+      path: this.withApiPath(PluginDebugSessionContract.RefreshKey.meta.path),
+      method: PluginDebugSessionContract.RefreshKey.meta.method,
+      body: payload,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async exchangeDebugSessionConnectionKey(
+    params: PluginDebugSessionConnectionKeyExchangeParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<PluginDebugSessionConnectionKeyExchangeResultType> {
+    const payload = PluginDebugSessionConnectionKeyExchangeRequestDTOSchema.parse(params);
+
+    return this.transport.requestData<PluginDebugSessionConnectionKeyExchangeResultType>({
+      path: this.withApiPath(PluginDebugSessionContract.ExchangeConnectionKey.meta.path),
+      method: PluginDebugSessionContract.ExchangeConnectionKey.meta.method,
+      body: payload,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async getDebugSessionStatus(
+    params: PluginDebugSessionStatusParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<PluginDebugSessionStatusResultType> {
+    const query = PluginDebugSessionGetParamsDTOSchema.parse(params);
+
+    return this.transport.requestData<PluginDebugSessionStatusResultType>({
+      path: this.withApiPath(this.withTmbId(PluginDebugSessionContract.Status.meta.path, query.tmbId)),
+      method: PluginDebugSessionContract.Status.meta.method,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async revokeDebugSession(
+    params: PluginDebugSessionRevokeParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<PluginDebugSessionRevokeResultType> {
+    const payload = PluginDebugSessionRevokeRequestDTOSchema.parse({
+      tmbId: params.tmbId,
+      reason: params.reason
+    });
+
+    return this.transport.requestData<PluginDebugSessionRevokeResultType>({
+      path: this.withApiPath(this.withTmbId(PluginDebugSessionContract.Revoke.meta.path, payload.tmbId)),
+      method: PluginDebugSessionContract.Revoke.meta.method,
+      body: payload,
+      signal: requestOptions?.signal
+    });
+  }
+
   async runToolStream(
     params: RunToolStreamParams,
     requestOptions?: ClientRequestOptions
@@ -251,5 +338,9 @@ export class FastGPTPluginClient {
 
   private withApiPath(path: string): string {
     return `/api${path}`;
+  }
+
+  private withTmbId(path: string, tmbId: string): string {
+    return path.replace(':tmbId', encodeURIComponent(tmbId));
   }
 }

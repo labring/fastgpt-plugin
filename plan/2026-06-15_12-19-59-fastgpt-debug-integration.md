@@ -10,6 +10,11 @@ created_at: 2026-06-15T12:19:59+08:00
 
 # FastGPT Debug Channel Integration
 
+> Superseded: 本计划保留早期 TCP/ticket 设计记录。当前实现以
+> `plan/2026-06-17_16-06-50-connection-gateway-wss-migration.md` 为准：
+> debug channel 使用长期 `connectionKey` 兑换短期 WSS `connectToken`，
+> public API 不保留 `connectKey` 或 `ticket` 兼容字段。
+
 ## 任务概述
 
 本阶段把 TCP debug 从“手动传 gateway 参数的本地工具”升级为 FastGPT 可集成的调试通道控制面。

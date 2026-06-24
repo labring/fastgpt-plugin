@@ -16,7 +16,7 @@ describe('HmacConnectionGatewayToken', () => {
         userId: 'u1',
         source: 'debug:user:u1'
       },
-      transport: 'tcp',
+      transport: 'websocket',
       capabilities: ['invoke'],
       issuedAt: now,
       expiresAt: now + 60_000
@@ -25,19 +25,19 @@ describe('HmacConnectionGatewayToken', () => {
     await expect(
       token.verify({
         token: signed,
-        expectedTransport: 'tcp',
+        expectedTransport: 'websocket',
         requiredCapability: 'invoke',
         now
       })
     ).resolves.toMatchObject({
       consumerType: 'plugin-debug',
       subject: 'user:u1',
-      transport: 'tcp',
+      transport: 'websocket',
       capabilities: ['invoke']
     });
   });
 
-  it('rejects expired, mismatched, and tampered tokens', async () => {
+  it('rejects expired, missing capability, and tampered tokens', async () => {
     const token = new HmacConnectionGatewayToken('secret');
     const signed = await token.sign({
       consumerType: 'plugin-debug',
@@ -45,7 +45,7 @@ describe('HmacConnectionGatewayToken', () => {
       sessionScope: {
         userId: 'u1'
       },
-      transport: 'tcp',
+      transport: 'websocket',
       capabilities: [],
       expiresAt: now - 1
     });
@@ -60,15 +60,15 @@ describe('HmacConnectionGatewayToken', () => {
       sessionScope: {
         userId: 'u1'
       },
-      transport: 'tcp',
+      transport: 'websocket',
       capabilities: [],
       expiresAt: now + 60_000
     });
 
     await expect(
-      token.verify({ token: fresh, expectedTransport: 'websocket', now })
+      token.verify({ token: fresh, requiredCapability: 'gateway.bind', now })
     ).rejects.toMatchObject({
-      code: 'connection_gateway.transport_mismatch'
+      code: 'connection_gateway.capability_denied'
     });
 
     await expect(token.verify({ token: `${fresh}x`, now })).rejects.toMatchObject({

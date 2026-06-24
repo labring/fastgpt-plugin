@@ -159,8 +159,8 @@ const ServerEnvSchema = {
 
   // Connection Gateway client 配置
   CONNECTION_GATEWAY_BASE_URL: z.url().default('http://localhost:3010'),
+  CONNECTION_GATEWAY_PUBLIC_URL: z.string().default('ws://localhost:3011/connection-gateway/v1'),
   CONNECTION_GATEWAY_AUTH_TOKEN: GatewayAuthTokenSchema,
-  CONNECTION_GATEWAY_TCP_URL: z.string().default('tcp://localhost:3011'),
   CONNECTION_GATEWAY_DEBUG_SESSION_TTL_MS: PositiveIntSchema.default(30 * 60_000),
   CONNECTION_GATEWAY_DEBUG_TICKET_TTL_MS: PositiveIntSchema.default(5 * 60_000),
   CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS: PositiveIntSchema.default(120_000),
@@ -230,7 +230,8 @@ const GatewayEnvSchema = {
 
   // Connection Gateway 服务配置
   CONNECTION_GATEWAY_PORT: PositiveIntSchema.min(1024).max(65535).default(3010),
-  CONNECTION_GATEWAY_TCP_PORT: PositiveIntSchema.min(1024).max(65535).default(3011),
+  CONNECTION_GATEWAY_WS_PORT: PositiveIntSchema.min(1024).max(65535).default(3011),
+  CONNECTION_GATEWAY_WS_PATH: z.string().min(1).default('/connection-gateway/v1'),
   CONNECTION_GATEWAY_NODE_ID: z.string().optional(),
   CONNECTION_GATEWAY_SESSION_TTL_MS: PositiveIntSchema.default(60_000),
   CONNECTION_GATEWAY_OWNER_LEASE_TTL_MS: PositiveIntSchema.default(15_000),
@@ -253,8 +254,8 @@ export type ServerEnv = {
   AUTH_TOKEN: string;
   JWT_SECRET: string;
   CONNECTION_GATEWAY_BASE_URL: string;
+  CONNECTION_GATEWAY_PUBLIC_URL: string;
   CONNECTION_GATEWAY_AUTH_TOKEN: string;
-  CONNECTION_GATEWAY_TCP_URL: string;
   CONNECTION_GATEWAY_DEBUG_SESSION_TTL_MS: number;
   CONNECTION_GATEWAY_DEBUG_TICKET_TTL_MS: number;
   CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS: number;
@@ -360,7 +361,8 @@ export type GatewayEnv = Pick<
   | 'JWT_SECRET'
 > & {
   CONNECTION_GATEWAY_PORT: number;
-  CONNECTION_GATEWAY_TCP_PORT: number;
+  CONNECTION_GATEWAY_WS_PORT: number;
+  CONNECTION_GATEWAY_WS_PATH: string;
   CONNECTION_GATEWAY_NODE_ID?: string;
   CONNECTION_GATEWAY_SESSION_TTL_MS: number;
   CONNECTION_GATEWAY_OWNER_LEASE_TTL_MS: number;

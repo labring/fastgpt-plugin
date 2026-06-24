@@ -1,13 +1,12 @@
 import { ConnectionGatewayResourceLimitsSchema } from '@domain/value-objects/connection-gateway.vo';
-import { CONNECTION_GATEWAY_BIND_CAPABILITY } from '@domain/value-objects/connection-gateway-debug.vo';
 import { RedisConnectionGatewayMailbox } from '@infrastructure/connection-gateway/mailbox';
 import { InMemoryConnectionGatewayMetrics } from '@infrastructure/connection-gateway/metrics';
 import { ConnectionGatewayResourceLimiter } from '@infrastructure/connection-gateway/resource-limiter';
 import { ConnectionGatewayService } from '@infrastructure/connection-gateway/service';
 import { RedisConnectionGatewaySessionRegistry } from '@infrastructure/connection-gateway/session-registry';
 import { HmacConnectionGatewayToken } from '@infrastructure/connection-gateway/token';
-import { TcpConnectionGatewayTransport } from '@infrastructure/connection-gateway/transports/tcp-transport';
 import type { ConnectionGatewayTransportConnection } from '@infrastructure/connection-gateway/transports/transport';
+import { WebSocketConnectionGatewayTransport } from '@infrastructure/connection-gateway/transports/websocket-transport';
 import { gatewayEnv } from '@infrastructure/env';
 import { getLogger, root } from '@infrastructure/logger';
 import { getServiceInstanceId, registerConnectionGatewayGaugeSource } from '@infrastructure/metrics';
@@ -53,8 +52,8 @@ export function makeConnectionGatewayDeps() {
     }
   });
   const boundConnections = new Map<string, { sessionId: string; closed: boolean }>();
-  const tcpTransport = new TcpConnectionGatewayTransport({
-    port: gatewayEnv.CONNECTION_GATEWAY_TCP_PORT,
+  const websocketTransport = new WebSocketConnectionGatewayTransport({
+    path: gatewayEnv.CONNECTION_GATEWAY_WS_PATH,
     maxFrameBytes: gatewayEnv.CONNECTION_GATEWAY_MAX_ENVELOPE_BYTES,
     limiter,
     handlers: {
@@ -65,8 +64,8 @@ export function makeConnectionGatewayDeps() {
         if (binding) {
           binding.closed = true;
           boundConnections.delete(connection.id);
-          void service.closeSession(binding.sessionId, 'tcp_connection_closed').catch((error) => {
-            logger.warn('Connection Gateway TCP session close status update failed', {
+          void service.closeSession(binding.sessionId, 'websocket_connection_closed').catch((error) => {
+            logger.warn('Connection Gateway WebSocket session close status update failed', {
               connectionId: connection.id,
               sessionId: binding.sessionId,
               error
@@ -74,19 +73,58 @@ export function makeConnectionGatewayDeps() {
           });
         }
       },
-      onEnvelope: async (connection, envelope) => {
-        if (envelope.type === 'event' && envelope.capability === CONNECTION_GATEWAY_BIND_CAPABILITY) {
-          const session = await service.bindSession({
-            sessionId: envelope.sessionId,
-            envelope
+      onMessage: async (connection, message) => {
+        if (message.type === 'bind') {
+          const session = await service.bindConnection({
+            token: message.token,
+            metadata: message.metadata
           });
           const binding = { sessionId: session.id, closed: false };
           boundConnections.set(connection.id, binding);
+          await connection.send({
+            protocol: 'connection-gateway.ws.v1',
+            type: 'bound',
+            requestId: message.requestId,
+            session
+          });
           void pumpSessionMailbox({
             service,
             connection,
             binding,
             logger
+          });
+          return;
+        }
+
+        if (message.type === 'heartbeat') {
+          await connection.send({
+            protocol: 'connection-gateway.ws.v1',
+            type: 'heartbeat',
+            ts: Date.now()
+          });
+          return;
+        }
+
+        const binding = boundConnections.get(connection.id);
+        if (!binding || binding.closed) {
+          await connection.send({
+            protocol: 'connection-gateway.ws.v1',
+            type: 'error',
+            requestId: message.envelope.requestId,
+            code: 'connection_gateway.unbound',
+            message: 'Gateway WebSocket connection is not bound'
+          });
+          return;
+        }
+
+        const envelope = message.envelope;
+        if (envelope.sessionId !== binding.sessionId) {
+          await connection.send({
+            protocol: 'connection-gateway.ws.v1',
+            type: 'error',
+            requestId: envelope.requestId,
+            code: 'connection_gateway.session_mismatch',
+            message: 'Gateway envelope session does not match bound connection'
           });
           return;
         }
@@ -105,7 +143,7 @@ export function makeConnectionGatewayDeps() {
         });
       },
       onError: (connection, error) => {
-        logger.warn('Connection Gateway TCP transport error', {
+        logger.warn('Connection Gateway WebSocket transport error', {
           connectionId: connection?.id,
           remoteAddress: connection?.remoteAddress,
           error
@@ -118,7 +156,7 @@ export function makeConnectionGatewayDeps() {
     redisClient,
     mailbox,
     service,
-    tcpTransport,
+    websocketTransport,
     metrics,
     limiter,
     unregisterMetrics
@@ -156,7 +194,11 @@ async function pumpSessionMailbox({
       afterId = messages[messages.length - 1].id;
 
       for (const message of messages) {
-        await connection.send(message.envelope);
+        await connection.send({
+          protocol: 'connection-gateway.ws.v1',
+          type: 'envelope',
+          envelope: message.envelope
+        });
       }
 
       await service.ackSessionRequests(
@@ -164,7 +206,7 @@ async function pumpSessionMailbox({
         messages.map((message) => message.id)
       );
     } catch (error) {
-      logger.warn('Connection Gateway TCP mailbox pump failed', {
+      logger.warn('Connection Gateway WebSocket mailbox pump failed', {
         connectionId: connection.id,
         sessionId: binding.sessionId,
         error

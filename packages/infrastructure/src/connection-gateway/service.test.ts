@@ -52,8 +52,8 @@ async function signDebugToken(token: HmacConnectionGatewayToken) {
       userId: 'u1',
       source: 'debug:user:u1'
     },
-    transport: 'tcp',
-    capabilities: ['invoke'],
+    transport: 'websocket',
+    capabilities: ['gateway.bind', 'invoke'],
     issuedAt: now,
     expiresAt: now + 60_000
   });
@@ -67,8 +67,8 @@ async function signMultiSourceDebugToken(token: HmacConnectionGatewayToken) {
       userId: 'u1',
       source: 'debug:user:u1'
     },
-    transport: 'tcp',
-    capabilities: ['invoke'],
+    transport: 'websocket',
+    capabilities: ['gateway.bind', 'invoke'],
     issuedAt: now,
     expiresAt: now + 60_000
   });
@@ -88,31 +88,12 @@ function makeEnvelope(sessionId: string, generation: number): ConnectionGatewayE
   };
 }
 
-function makeBindEnvelope(sessionId: string, generation: number): ConnectionGatewayEnvelope {
-  return {
-    protocol: 'connection-gateway.v1',
-    sessionId,
-    generation,
-    requestId: 'bind-a',
-    type: 'event',
-    consumerType: 'plugin-debug',
-    capability: 'gateway.bind',
-    createdAt: now,
-    payload: { kind: 'plugin-debug.bind' }
-  };
-}
-
 describe('ConnectionGatewayService', () => {
   it('creates scoped sessions and publishes opaque envelopes to the mailbox', async () => {
     const { service, token, metrics } = makeService();
-    const session = await service.createSession({
+    const session = await service.bindConnection({
       token: await signDebugToken(token),
-      transport: 'tcp',
       now
-    });
-    await service.bindSession({
-      sessionId: session.id,
-      envelope: makeBindEnvelope(session.id, session.generation)
     });
 
     const result = await service.publishRequest({
@@ -140,14 +121,9 @@ describe('ConnectionGatewayService', () => {
   it('fails closed for stale generation, missing capability, and subject session limits', async () => {
     const { service, token } = makeService({ maxSessionsPerSubject: 1 });
     const signed = await signDebugToken(token);
-    const session = await service.createSession({
+    const session = await service.bindConnection({
       token: signed,
-      transport: 'tcp',
       now
-    });
-    await service.bindSession({
-      sessionId: session.id,
-      envelope: makeBindEnvelope(session.id, session.generation)
     });
 
     await expect(
@@ -172,9 +148,8 @@ describe('ConnectionGatewayService', () => {
     });
 
     await expect(
-      service.createSession({
+      service.bindConnection({
         token: signed,
-        transport: 'tcp',
         now
       })
     ).rejects.toMatchObject({
@@ -184,14 +159,9 @@ describe('ConnectionGatewayService', () => {
 
   it('streams reply envelopes for a published request', async () => {
     const { service, token } = makeService();
-    const session = await service.createSession({
+    const session = await service.bindConnection({
       token: await signDebugToken(token),
-      transport: 'tcp',
       now
-    });
-    await service.bindSession({
-      sessionId: session.id,
-      envelope: makeBindEnvelope(session.id, session.generation)
     });
     const request = makeEnvelope(session.id, session.generation);
     const { responses } = await service.publishRequestAndWait({
@@ -261,9 +231,8 @@ describe('ConnectionGatewayService', () => {
 
   it('finds a debug session through its channel source', async () => {
     const { service, token } = makeService();
-    const session = await service.createSession({
+    const session = await service.bindConnection({
       token: await signMultiSourceDebugToken(token),
-      transport: 'tcp',
       now
     });
 
@@ -274,50 +243,38 @@ describe('ConnectionGatewayService', () => {
     });
   });
 
-  it('updates metadata from a token-bound bind envelope', async () => {
+  it('binds a WSS connection with debug metadata', async () => {
     const { service, token } = makeService();
     const signed = await token.sign({
       consumerType: 'plugin-debug',
       subject: 'tmb-1',
       sessionScope: {
         userId: 'tmb-1',
-        source: 'debug:tmbId:tmb-1:session:debug-1'
+        source: 'debug:tmbId:tmb-1'
       },
-      transport: 'tcp',
+      transport: 'websocket',
       capabilities: ['gateway.bind', 'invoke'],
       issuedAt: now,
       expiresAt: now + 60_000
     });
-    const session = await service.createSession({
+    const session = await service.bindConnection({
       token: signed,
-      transport: 'tcp',
-      now
-    });
-
-    await service.bindSession({
-      sessionId: session.id,
-      envelope: {
-        ...makeBindEnvelope(session.id, session.generation),
-        payload: {
-          kind: 'plugin-debug.bind',
-          token: signed,
-          metadata: {
-            pluginDebug: {
-              targets: [
-                {
-                  source: 'debug:tmbId:tmb-1:session:debug-1',
-                  pluginId: 'getTime',
-                  version: '1.0.0'
-                }
-              ]
+      now,
+      metadata: {
+        pluginDebug: {
+          targets: [
+            {
+              source: 'debug:tmbId:tmb-1',
+              pluginId: 'getTime',
+              version: '1.0.0'
             }
-          }
+          ]
         }
       }
     });
 
     await expect(
-      service.getLatestStatusBySource('debug:tmbId:tmb-1:session:debug-1')
+      service.getLatestStatusBySource('debug:tmbId:tmb-1')
     ).resolves.toMatchObject({
       session: expect.objectContaining({
         id: session.id,
@@ -335,36 +292,20 @@ describe('ConnectionGatewayService', () => {
     });
   });
 
-  it('keeps connecting and closed sessions visible but fails requests closed', async () => {
+  it('keeps closed sessions visible but fails requests closed', async () => {
     const { service, token } = makeService();
-    const session = await service.createSession({
+    const session = await service.bindConnection({
       token: await signDebugToken(token),
-      transport: 'tcp',
       now
     });
 
     await expect(service.getStatus(session.id)).resolves.toMatchObject({
       session: expect.objectContaining({
-        status: 'connecting'
+        status: 'connected'
       }),
-      ownerAlive: false
-    });
-    await expect(
-      service.publishRequest({
-        sessionId: session.id,
-        envelope: makeEnvelope(session.id, session.generation)
-      })
-    ).rejects.toMatchObject({
-      code: 'connection_gateway.session_owner_expired',
-      data: {
-        status: 'connecting'
-      }
+      ownerAlive: true
     });
 
-    await service.bindSession({
-      sessionId: session.id,
-      envelope: makeBindEnvelope(session.id, session.generation)
-    });
     await service.closeSession(session.id, 'unit_test_closed');
 
     await expect(service.getStatus(session.id)).resolves.toMatchObject({
@@ -396,14 +337,9 @@ describe('ConnectionGatewayService', () => {
 
   it('denies response envelopes without the session capability', async () => {
     const { service, token } = makeService();
-    const session = await service.createSession({
+    const session = await service.bindConnection({
       token: await signDebugToken(token),
-      transport: 'tcp',
       now
-    });
-    await service.bindSession({
-      sessionId: session.id,
-      envelope: makeBindEnvelope(session.id, session.generation)
     });
 
     await expect(
