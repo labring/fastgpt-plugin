@@ -38,6 +38,139 @@ const pluginRecord = () => {
 };
 
 describe('PluginRepo.createPlugin', () => {
+  it('serializes JSON Schema fields before storing plugin records', () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const inputSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      $defs: {
+        keyword: {
+          type: 'string'
+        }
+      },
+      properties: {
+        schema: {
+          type: 'string'
+        },
+        query: {
+          $ref: '#/$defs/keyword'
+        }
+      }
+    };
+    const outputSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object'
+    };
+    const secretSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object'
+    };
+    const childInputSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      properties: {
+        query: {
+          $ref: '#/$defs/keyword'
+        }
+      }
+    };
+    const childOutputSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema'
+    };
+    const repo = PluginRepo.getInstance({} as PluginRepoDeps);
+    const record = (repo as any).toPluginRecord({
+      ...plugin(),
+      inputSchema,
+      outputSchema,
+      secretSchema,
+      children: [
+        {
+          id: 'search',
+          name: { en: 'Search', 'zh-CN': 'Search' },
+          description: { en: 'Search', 'zh-CN': 'Search' },
+          icon: 'https://example.com/search.svg',
+          toolDescription: 'Search',
+          inputSchema: childInputSchema,
+          outputSchema: childOutputSchema
+        }
+      ]
+    });
+
+    expect(record.data.inputSchema).toBe(JSON.stringify(inputSchema));
+    expect(record.data.outputSchema).toBe(JSON.stringify(outputSchema));
+    expect(record.data.secretSchema).toBe(JSON.stringify(secretSchema));
+    expect(record.data.children[0].inputSchema).toBe(JSON.stringify(childInputSchema));
+    expect(record.data.children[0].outputSchema).toBe(JSON.stringify(childOutputSchema));
+  });
+
+  it('deserializes stored JSON Schema fields when reading plugin records', () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const inputSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      $defs: {
+        keyword: {
+          type: 'string'
+        }
+      },
+      properties: {
+        schema: {
+          type: 'string'
+        },
+        ref: {
+          type: 'string'
+        },
+        query: {
+          $ref: '#/$defs/keyword'
+        }
+      }
+    };
+    const outputSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object'
+    };
+    const secretSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object'
+    };
+    const childInputSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object'
+    };
+    const childOutputSchema = {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object'
+    };
+    const repo = PluginRepo.getInstance({} as PluginRepoDeps);
+    const domainPlugin = (repo as any).toDomainPlugin({
+      ...pluginRecord(),
+      data: {
+        ...pluginRecord().data,
+        inputSchema: JSON.stringify(inputSchema),
+        outputSchema: JSON.stringify(outputSchema),
+        secretSchema: JSON.stringify(secretSchema),
+        children: [
+          {
+            id: 'search',
+            name: { en: 'Search', 'zh-CN': 'Search' },
+            description: { en: 'Search', 'zh-CN': 'Search' },
+            icon: 'https://example.com/search.svg',
+            toolDescription: 'Search',
+            inputSchema: JSON.stringify(childInputSchema),
+            outputSchema: JSON.stringify(childOutputSchema)
+          }
+        ]
+      }
+    });
+
+    expect(domainPlugin.inputSchema).toEqual(inputSchema);
+    expect(domainPlugin.outputSchema).toEqual(outputSchema);
+    expect(domainPlugin.secretSchema).toEqual(secretSchema);
+    expect(domainPlugin.children?.[0].inputSchema).toEqual(childInputSchema);
+    expect(domainPlugin.children?.[0].outputSchema).toEqual(childOutputSchema);
+  });
+
   it('restores a disabled plugin with the same version and etag to pending without rewriting files', async () => {
     (PluginRepo as any)._instance = undefined;
 
@@ -266,13 +399,15 @@ describe('PluginRepo.listToolSummaries', () => {
         pluginId: 'missing-secret',
         version: '1.0.0',
         etag: 'etag-missing'
+      },
+      {
+        source: 'system',
+        pluginId: 'schema-only',
+        version: '1.0.0',
+        etag: 'etag-schema-only'
       }
     ];
-    const makePluginRecord = (
-      pluginId: string,
-      etag: string,
-      secretSchema?: Record<string, unknown>
-    ) => ({
+    const makePluginRecord = (pluginId: string, etag: string, secretSchema?: unknown) => ({
       pluginId,
       version: '1.0.0',
       etag,
@@ -284,7 +419,7 @@ describe('PluginRepo.listToolSummaries', () => {
       status: PluginStatusEnum.active,
       data: {
         toolDescription: pluginId,
-        ...(secretSchema !== undefined ? { secretSchema } : {})
+        ...(secretSchema !== undefined ? { secretSchema: JSON.stringify(secretSchema) } : {})
       }
     });
     const pluginRecords = [
@@ -300,7 +435,10 @@ describe('PluginRepo.listToolSummaries', () => {
         type: 'object',
         properties: {}
       }),
-      makePluginRecord('missing-secret', 'etag-missing')
+      makePluginRecord('missing-secret', 'etag-missing'),
+      makePluginRecord('schema-only', 'etag-schema-only', {
+        type: 'object'
+      })
     ];
     const pluginInstallationModel = {
       find: vi.fn().mockReturnValue({
@@ -336,6 +474,10 @@ describe('PluginRepo.listToolSummaries', () => {
       }),
       expect.objectContaining({
         pluginId: 'missing-secret',
+        hasSecret: false
+      }),
+      expect.objectContaining({
+        pluginId: 'schema-only',
         hasSecret: false
       }),
       expect.objectContaining({

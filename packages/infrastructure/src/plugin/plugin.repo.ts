@@ -36,6 +36,11 @@ import type { MongoPluginSchemaType } from '@infrastructure/storage/mongo/models
 
 import { MongoClient } from '../storage/mongo';
 
+import {
+  deserializePluginDataJsonSchemaFields,
+  deserializePluginRecordJsonSchemaFields,
+  serializePluginRecordJsonSchemaFields
+} from './utils/json-schema-storage-codec';
 import { Semver } from './utils/semver';
 import { pluginCodecRegistry, PluginRecordSchema } from './codec';
 
@@ -118,11 +123,13 @@ export class PluginRepo implements PluginRepoPort {
   }
 
   private toPluginRecord(plugin: PluginType) {
-    return pluginCodecRegistry.toRecord(plugin);
+    return serializePluginRecordJsonSchemaFields(pluginCodecRegistry.toRecord(plugin));
   }
 
   private toDomainPlugin(plugin: MongoPluginSchemaType): PluginType {
-    return pluginCodecRegistry.fromRecord(PluginRecordSchema.parse(plugin));
+    return pluginCodecRegistry.fromRecord(
+      PluginRecordSchema.parse(deserializePluginRecordJsonSchemaFields(plugin))
+    );
   }
 
   private getInstalledPluginKey({ pluginId, version, etag }: InstalledPluginIdentity) {
@@ -657,7 +664,7 @@ export class PluginRepo implements PluginRepoPort {
         'toolSummary'
       );
       const tools = installedPlugins.map(({ source, plugin }) => {
-        const data = plugin.data as
+        const data = deserializePluginDataJsonSchemaFields(plugin.data) as
           | {
               toolDescription?: unknown;
               secretSchema?: unknown;
