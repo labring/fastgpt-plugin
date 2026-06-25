@@ -48,7 +48,8 @@ describe('debug command', () => {
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
       session: makeConnectedSession(options),
       close: vi.fn(),
-      closed: Promise.resolve().then(() => undefined)
+      closed: Promise.resolve().then(() => undefined),
+      updateTargets: vi.fn()
     }));
     connectDebugGatewayMock.mockClear();
     tempUploadDir = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-debug-'));
@@ -253,7 +254,8 @@ describe('dev command', () => {
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
       session: makeConnectedSession(options),
       close: vi.fn(),
-      closed: Promise.resolve()
+      closed: Promise.resolve(),
+      updateTargets: vi.fn()
     }));
     connectDebugGatewayMock.mockClear();
   });
@@ -612,7 +614,8 @@ describe('dev command', () => {
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
       session: makeConnectedSession(options),
       close: closeMock,
-      closed
+      closed,
+      updateTargets: vi.fn()
     }));
     const stdinIsTTY = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
     const stdoutIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');

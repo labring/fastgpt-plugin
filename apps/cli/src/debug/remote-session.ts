@@ -10,6 +10,8 @@ import { Box, type Instance,render as renderInk, Text, useInput } from 'ink';
 import React from 'react';
 import z from 'zod';
 
+import { parsePluginDebugSessionSource } from '@domain/value-objects/plugin-debug-session.vo';
+
 import { discoverDebugEntries } from './discover';
 import {
   connectDebugGateway,
@@ -1030,13 +1032,12 @@ function resolveConnectionKeyExchangeUrl(): string {
 }
 
 function parseTmbIdFromDebugSource(source: string): string {
-  const parts = source.split(':');
-  const index = parts.indexOf('tmbId');
-  const tmbId = index >= 0 ? parts[index + 1] : undefined;
-  if (!tmbId) {
+  const parsed = parsePluginDebugSessionSource(source);
+  if (!parsed) {
     throw new Error(`debug source 缺少 tmbId: ${source}`);
   }
-  return tmbId;
+
+  return parsed.tmbId;
 }
 
 function normalizeGatewayWsUrl(gatewayUrl: string): string {

@@ -74,7 +74,6 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
       baseUrl: 'http://gateway.local',
       authToken: 'token',
       requestTimeoutMs: 1_000,
-      sourceForTmbId: ({ tmbId }) => `debug:tmbId:${tmbId}`,
       sourceForUser: ({ userId }) => `debug:user:${userId}`
     });
 
@@ -98,7 +97,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
       options: {
         invocationId: 'invoke-a',
         debug: {
-          userId: 'u1'
+          tmbId: 'tmb-1'
         }
       }
     });
@@ -106,7 +105,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
     expect(err).toBeNull();
     expect(fetch).toHaveBeenNthCalledWith(
       1,
-      'http://gateway.local/internal/sessions/by-source/debug%3Auser%3Au1/status',
+      'http://gateway.local/internal/sessions/by-source/debug%3AtmbId%3Atmb-1/status',
       expect.any(Object)
     );
     expect(JSON.parse(vi.mocked(fetch).mock.calls[1]?.[1]?.body as string)).toMatchObject({
@@ -114,7 +113,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
         payload: {
           payload: {
             pluginId: 'getTime',
-            source: 'debug:user:u1'
+            source: 'debug:tmbId:tmb-1'
           }
         }
       }

@@ -186,6 +186,32 @@ describe('connectDebugGateway', () => {
     client.close();
     await client.closed;
   });
+
+  it('fails bind with a clear gateway error when another client already owns the debug source', async () => {
+    const socket = new FakeWebSocket();
+    vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget()],
+      options: makeOptions()
+    });
+
+    socket.open();
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(1);
+    });
+    const bind = socket.sent[0] as { requestId: string };
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'error',
+      requestId: bind.requestId,
+      code: 'connection_gateway.session_already_bound',
+      message: 'Gateway session already bound'
+    });
+    socket.close();
+
+    await expect(clientPromise).rejects.toThrow('Gateway session already bound');
+  });
 });
 
 class FakeWebSocket extends EventTarget {

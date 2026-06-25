@@ -24,6 +24,7 @@ import type {
   PluginUniqueIdType,
   UserPluginIdType
 } from '@domain/value-objects/plugin.vo';
+import { isPluginDebugSource } from '@domain/value-objects/plugin-debug-session.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
@@ -108,7 +109,7 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
   }
 
   async getPluginByUserPluginId(userPluginId: UserPluginIdType): Promise<Result<PluginType>> {
-    if (!isDebugSource(userPluginId.source)) {
+    if (!isPluginDebugSource(userPluginId.source)) {
       return this.deps.fallback.getPluginByUserPluginId(userPluginId);
     }
 
@@ -130,7 +131,7 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
     pluginId,
     source
   }: PluginVersionListInputType): Promise<Result<PluginVersionListOutputType>> {
-    if (!isDebugSource(source)) {
+    if (!isPluginDebugSource(source)) {
       return this.deps.fallback.listVersions({ pluginId, source });
     }
 
@@ -392,17 +393,13 @@ function toPlugin(metadata: DebugPluginMetadata, source: string): PluginType {
   });
 }
 
-function isDebugSource(source: PluginSourceType | undefined): source is string {
-  return typeof source === 'string' && source.startsWith('debug:');
-}
-
 function splitSources(sources: PluginSourceType[] | undefined): {
   debugSources: string[];
   fallbackSources: PluginSourceType[];
 } {
   return {
-    debugSources: (sources ?? []).filter(isDebugSource),
-    fallbackSources: (sources ?? []).filter((source) => !isDebugSource(source))
+    debugSources: (sources ?? []).filter(isPluginDebugSource),
+    fallbackSources: (sources ?? []).filter((source) => !isPluginDebugSource(source))
   };
 }
 

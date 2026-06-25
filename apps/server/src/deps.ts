@@ -67,8 +67,7 @@ const localPoolPluginRuntimeManager = LocalPoolPluginRuntimeManager.getInstance(
 const connectionGatewayDebugRuntimeManager = new ConnectionGatewayDebugRuntimeManager({
   baseUrl: serverEnv.CONNECTION_GATEWAY_BASE_URL,
   authToken: serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN,
-  requestTimeoutMs: serverEnv.CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS,
-  sourceForTmbId: ({ tmbId }) => `debug:tmbId:${tmbId}`
+  requestTimeoutMs: serverEnv.CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS
 });
 
 export const pluginRuntimeManager = new CompositePluginRuntimeManager({

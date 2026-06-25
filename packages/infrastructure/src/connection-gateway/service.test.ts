@@ -44,13 +44,20 @@ function makeService(overrides: { maxSessionsPerSubject?: number } = {}) {
   };
 }
 
-async function signDebugToken(token: HmacConnectionGatewayToken) {
+async function signDebugToken(
+  token: HmacConnectionGatewayToken,
+  overrides: {
+    subject?: string;
+    userId?: string;
+    source?: string;
+  } = {}
+) {
   return token.sign({
     consumerType: 'plugin-debug',
-    subject: 'user:u1',
+    subject: overrides.subject ?? 'user:u1',
     sessionScope: {
-      userId: 'u1',
-      source: 'debug:user:u1'
+      userId: overrides.userId ?? 'u1',
+      source: overrides.source ?? 'debug:user:u1'
     },
     transport: 'websocket',
     capabilities: ['gateway.bind', 'invoke'],
@@ -149,7 +156,11 @@ describe('ConnectionGatewayService', () => {
 
     await expect(
       service.bindConnection({
-        token: signed,
+        token: await signDebugToken(token, {
+          subject: 'user:u1',
+          userId: 'u1',
+          source: 'debug:user:u1:secondary'
+        }),
         now
       })
     ).rejects.toMatchObject({
@@ -240,6 +251,29 @@ describe('ConnectionGatewayService', () => {
       session: expect.objectContaining({
         id: session.id
       })
+    });
+  });
+
+  it('rejects a second bind while the same debug source still has an active session', async () => {
+    const { service, token } = makeService();
+    const signed = await signDebugToken(token);
+    const session = await service.bindConnection({
+      token: signed,
+      now
+    });
+
+    await expect(
+      service.bindConnection({
+        token: signed,
+        now: now + 1
+      })
+    ).rejects.toMatchObject({
+      code: 'connection_gateway.session_already_bound',
+      data: {
+        source: 'debug:user:u1',
+        sessionId: session.id,
+        subject: 'user:u1'
+      }
     });
   });
 
