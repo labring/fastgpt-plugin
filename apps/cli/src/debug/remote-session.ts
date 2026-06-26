@@ -365,6 +365,7 @@ async function promptConnectLink({
       '',
       ...(errorMessage ? [`Last error ${errorMessage}`, ''] : []),
       'Paste the FastGPT connection key or connect link to start the WSS debug session.',
+      ...(defaultValue ? ['Press Enter to reuse the current value, or type a new one to replace it.', ''] : []),
       ''
     ].join('\n')
   );
@@ -372,7 +373,6 @@ async function promptConnectLink({
   const connectUrl = await input({
     message: 'FastGPT connection key',
     default: defaultValue,
-    prefill: defaultValue ? 'editable' : undefined,
     validate(value) {
       return value.trim().length > 0 || '请输入 FastGPT connection key';
     }

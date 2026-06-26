@@ -84,8 +84,8 @@ export const PluginDebugSessionContract = {
       method: 'post',
       path: '/plugin/debug-sessions/:tmbId/revoke',
       operationId: 'pluginDebugSession.revoke',
-      description: 'Disable a plugin debug channel and close its gateway sessions',
-      summary: 'Disable debug channel',
+      description: 'Close the current plugin debug session without rotating its connection key',
+      summary: 'Close debug session',
       tags,
       security: authToken
     },

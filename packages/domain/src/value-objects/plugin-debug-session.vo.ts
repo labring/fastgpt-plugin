@@ -36,6 +36,7 @@ export const PluginDebugSessionSchema = z.object({
   enabled: z.boolean(),
   keyId: z.string().min(1),
   connectionKeyHash: z.string().min(1),
+  connectionKey: z.string().min(1).optional(),
   createdAt: z.number().int().positive(),
   updatedAt: z.number().int().positive(),
   refreshedAt: z.number().int().positive().optional(),

@@ -354,6 +354,10 @@ function toDebugSessionStatus(
     return 'connected';
   }
 
+  if (session.status === 'disconnected') {
+    return 'disconnected';
+  }
+
   return 'enabled';
 }
 

@@ -64,7 +64,7 @@ describe('InMemoryPluginDebugSessionRepo', () => {
     });
   });
 
-  it('revokes the debug channel and disables the connection key', async () => {
+  it('disconnects the debug session and keeps the connection key reusable', async () => {
     const repo = new InMemoryPluginDebugSessionRepo('secret');
     const created = await repo.create({
       tmbId: 'tmb-1',
@@ -72,12 +72,30 @@ describe('InMemoryPluginDebugSessionRepo', () => {
     });
 
     await expect(repo.revoke({ tmbId: 'tmb-1', now: 2_000 })).resolves.toMatchObject({
-      enabled: false,
-      status: 'revoked'
+      enabled: true,
+      status: 'disconnected'
     });
-    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
-      'Debug connection key not found'
-    );
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).resolves.toMatchObject({
+      session: {
+        keyId: created.session.keyId,
+        status: 'disconnected'
+      }
+    });
+
+    const enabledAgain = await repo.create({
+      tmbId: 'tmb-1',
+      now: 3_000
+    });
+
+    expect(enabledAgain.connectionKey).toBe(created.connectionKey);
+    expect(enabledAgain.session.keyId).toBe(created.session.keyId);
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 3_001)).resolves.toMatchObject({
+      session: {
+        keyId: created.session.keyId,
+        status: 'enabled'
+      }
+    });
   });
 });
 
@@ -132,6 +150,59 @@ describe('RedisPluginDebugSessionRepo', () => {
       }
     });
   });
+
+  it('disconnects the debug session without rotating the connection key', async () => {
+    const redis = makeRedisStub();
+    const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    await expect(repo.revoke({ tmbId: 'tmb-1', now: 2_000 })).resolves.toMatchObject({
+      enabled: true,
+      status: 'disconnected'
+    });
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).resolves.toMatchObject({
+      session: {
+        keyId: created.session.keyId,
+        status: 'disconnected'
+      }
+    });
+
+    const enabledAgain = await repo.create({ tmbId: 'tmb-1', now: 3_000 });
+
+    expect(enabledAgain.connectionKey).toBe(created.connectionKey);
+    expect(enabledAgain.session.keyId).toBe(created.session.keyId);
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 3_001)).resolves.toMatchObject({
+      session: {
+        keyId: created.session.keyId,
+        status: 'enabled'
+      }
+    });
+  });
+
+  it('backfills legacy session connection keys after a successful exchange', async () => {
+    const redis = makeRedisStub();
+    const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    redis.store.set(
+      'plugin-debug:sessions:by-tmb:tmb-1',
+      JSON.stringify({
+        ...created.session,
+        connectionKey: undefined
+      })
+    );
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 1_500)).resolves.toMatchObject({
+      session: {
+        connectionKey: created.connectionKey
+      }
+    });
+    await repo.revoke({ tmbId: 'tmb-1', now: 2_000 });
+
+    const enabledAgain = await repo.create({ tmbId: 'tmb-1', now: 3_000 });
+
+    expect(enabledAgain.connectionKey).toBe(created.connectionKey);
+  });
 });
 
 function makeRedisStub() {
@@ -140,6 +211,10 @@ function makeRedisStub() {
   return {
     store,
     get: vi.fn(async (key: string) => store.get(key) ?? null),
+    set: vi.fn(async (key: string, value: string) => {
+      store.set(key, value);
+      return 'OK';
+    }),
     del: vi.fn(async (...keys: string[]) => {
       keys.forEach((key) => store.delete(key));
       return keys.length;

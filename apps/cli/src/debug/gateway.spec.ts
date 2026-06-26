@@ -212,6 +212,59 @@ describe('connectDebugGateway', () => {
 
     await expect(clientPromise).rejects.toThrow('Gateway session already bound');
   });
+
+  it('stops reconnecting when gateway reports the debug source is already bound', async () => {
+    const firstSocket = new FakeWebSocket('wss://gateway.example.com/connection-gateway/v1?attempt=1');
+    const secondSocket = new FakeWebSocket('wss://gateway.example.com/connection-gateway/v1?attempt=2');
+    const webSocketCtor = makeTrackedWebSocketConstructorSequence([firstSocket, secondSocket]);
+    vi.stubGlobal('WebSocket', webSocketCtor.ctor);
+    const onLog = vi.fn();
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget()],
+      options: {
+        ...makeOptions(),
+        reconnect: true,
+        reconnectIntervalMs: 5
+      },
+      onLog
+    });
+
+    firstSocket.open();
+    await vi.waitFor(() => {
+      expect(firstSocket.sent).toHaveLength(1);
+    });
+    firstSocket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (firstSocket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    expect(client.session.id).toBe('session-a');
+
+    firstSocket.close();
+    await vi.waitFor(() => {
+      expect(webSocketCtor.calls()).toBe(2);
+    });
+    secondSocket.open();
+    await vi.waitFor(() => {
+      expect(secondSocket.sent).toHaveLength(1);
+    });
+    const bind = secondSocket.sent[0] as { requestId: string };
+    secondSocket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'error',
+      requestId: bind.requestId,
+      code: 'connection_gateway.session_already_bound',
+      message: 'Gateway session already bound'
+    });
+    secondSocket.close();
+
+    await expect(client.closed).rejects.toThrow('Gateway session already bound');
+    expect(webSocketCtor.calls()).toBe(2);
+  });
 });
 
 class FakeWebSocket extends EventTarget {
@@ -254,6 +307,41 @@ function makeWebSocketConstructor(socket: FakeWebSocket) {
       return socket;
     }
   } as unknown as typeof WebSocket;
+}
+
+function makeWebSocketConstructorSequence(sockets: FakeWebSocket[]) {
+  return class {
+    static OPEN = FakeWebSocket.OPEN;
+
+    constructor(readonly url: string) {
+      const socket = sockets.shift();
+      if (!socket) {
+        throw new Error(`Unexpected WebSocket creation: ${url}`);
+      }
+      return socket;
+    }
+  } as unknown as typeof WebSocket;
+}
+
+function makeTrackedWebSocketConstructorSequence(sockets: FakeWebSocket[]) {
+  let callCount = 0;
+  const ctor = class {
+    static OPEN = FakeWebSocket.OPEN;
+
+    constructor(readonly url: string) {
+      callCount += 1;
+      const socket = sockets.shift();
+      if (!socket) {
+        throw new Error(`Unexpected WebSocket creation: ${url}`);
+      }
+      return socket;
+    }
+  } as unknown as typeof WebSocket;
+
+  return {
+    ctor,
+    calls: () => callCount
+  };
 }
 
 function makeOptions() {

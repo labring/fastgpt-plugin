@@ -53,6 +53,21 @@ export function makeConnectionGatewayDeps() {
     }
   });
   const boundConnections = new Map<string, { sessionId: string; closed: boolean }>();
+  const disconnectSession = (sessionId: string, reason?: Error): boolean => {
+    for (const [connectionId, binding] of boundConnections.entries()) {
+      if (binding.sessionId !== sessionId || binding.closed) {
+        continue;
+      }
+
+      binding.closed = true;
+      boundConnections.delete(connectionId);
+      connectionById.get(connectionId)?.close(reason);
+      return true;
+    }
+
+    return false;
+  };
+  const connectionById = new Map<string, ConnectionGatewayTransportConnection>();
   const websocketTransport = new WebSocketConnectionGatewayTransport({
     path: gatewayEnv.CONNECTION_GATEWAY_WS_PATH,
     maxFrameBytes: gatewayEnv.CONNECTION_GATEWAY_MAX_ENVELOPE_BYTES,
@@ -60,6 +75,7 @@ export function makeConnectionGatewayDeps() {
     handlers: {
       onConnection: () => metrics.recordConnectionOpened(),
       onClose: (connection) => {
+        connectionById.delete(connection.id);
         metrics.recordConnectionClosed();
         const binding = boundConnections.get(connection.id);
         if (binding) {
@@ -77,6 +93,7 @@ export function makeConnectionGatewayDeps() {
       onMessage: async (connection, message) => {
         if (message.type === 'bind') {
           try {
+            connectionById.set(connection.id, connection);
             const session = await service.bindConnection({
               token: message.token,
               metadata: message.metadata
@@ -172,6 +189,7 @@ export function makeConnectionGatewayDeps() {
     redisClient,
     mailbox,
     service,
+    disconnectSession,
     websocketTransport,
     metrics,
     limiter,

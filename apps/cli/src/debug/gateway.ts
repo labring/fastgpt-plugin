@@ -38,6 +38,8 @@ export type DebugGatewayClient = {
   closed: Promise<void>;
 };
 
+const GATEWAY_DUPLICATE_CONNECTION_CODE = 'connection_gateway.session_already_bound';
+
 export async function connectDebugGateway({
   targets,
   options,
@@ -82,6 +84,11 @@ async function connectReconnectingDebugGateway({
       } catch (error) {
         if (closed) {
           return;
+        }
+
+        if (isDuplicateConnectionError(error)) {
+          closed = true;
+          throw error;
         }
 
         onLog?.(`Connection Gateway 调试通道断开: ${formatErrorMessage(error)}`);
@@ -161,7 +168,7 @@ async function connectSingleDebugGateway({
     }
 
     if (message.type === 'error') {
-      const error = new Error(message.message);
+      const error = createGatewayError(message.code, message.message);
       if (!session) {
         boundReject(error);
       }
@@ -424,6 +431,19 @@ function delay(ms: number): Promise<void> {
 
 function formatErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function createGatewayError(code: string, message: string): Error {
+  const error = new Error(message);
+  Object.assign(error, { code });
+  return error;
+}
+
+function isDuplicateConnectionError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    ('code' in error ? (error as Error & { code?: string }).code === GATEWAY_DUPLICATE_CONNECTION_CODE : false)
+  );
 }
 
 function parseWsServerMessage(data: unknown): ConnectionGatewayWsServerMessage {
