@@ -34,6 +34,7 @@ export const PluginDebugSessionConnectionKeyExchangeResponseDTOSchema = z.object
   transport: z.literal('websocket'),
   source: z.string().min(1),
   connectToken: z.string().min(1),
+  fastgptBaseUrl: z.string().min(1),
   expiresAt: z.number().int().positive()
 });
 

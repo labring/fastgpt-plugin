@@ -21,14 +21,20 @@ export type DebugGatewayClientOptions = {
   userId: string;
   teamId?: string;
   source?: string;
+  fastgptBaseUrl: string;
   tokenTtlMs: number;
   reconnect?: boolean;
   reconnectIntervalMs?: number;
+  resolveReconnectOptions?: () => Promise<DebugGatewayClientOptions>;
 };
 
 export type DebugGatewayTarget = {
   runtime: LocalDebugRuntime;
   snapshot: DebugPluginSnapshot;
+  invokeBridge?: {
+    bind(traceId: string, input: { invokeToken: string }): void;
+    release(traceId: string): void;
+  };
 };
 
 export type DebugGatewayClient = {
@@ -37,6 +43,8 @@ export type DebugGatewayClient = {
   close(): void;
   closed: Promise<void>;
 };
+
+const GATEWAY_DUPLICATE_CONNECTION_CODE = 'connection_gateway.session_already_bound';
 
 export async function connectDebugGateway({
   targets,
@@ -71,17 +79,38 @@ async function connectReconnectingDebugGateway({
   let current: DebugGatewayClient | null = null;
   let currentSession: ConnectionGatewaySession | null = null;
   let latestTargets = targets;
+  let hasAttemptedConnection = false;
+  let currentOptions = options;
+  const resolveReconnectOptions = options.resolveReconnectOptions;
   const intervalMs = Math.max(100, options.reconnectIntervalMs ?? 2_000);
 
   const closedPromise = (async () => {
     while (!closed) {
       try {
-        current = await connectSingleDebugGateway({ targets: latestTargets, options, onLog });
+        const attemptOptions =
+          hasAttemptedConnection && resolveReconnectOptions
+            ? await resolveReconnectOptions()
+            : currentOptions;
+        hasAttemptedConnection = true;
+        currentOptions = {
+          ...attemptOptions,
+          resolveReconnectOptions
+        };
+        current = await connectSingleDebugGateway({
+          targets: latestTargets,
+          options: currentOptions,
+          onLog
+        });
         currentSession = current.session;
         await current.closed;
       } catch (error) {
         if (closed) {
           return;
+        }
+
+        if (isDuplicateConnectionError(error)) {
+          closed = true;
+          throw error;
         }
 
         onLog?.(`Connection Gateway 调试通道断开: ${formatErrorMessage(error)}`);
@@ -161,7 +190,7 @@ async function connectSingleDebugGateway({
     }
 
     if (message.type === 'error') {
-      const error = new Error(message.message);
+      const error = createGatewayError(message.code, message.message);
       if (!session) {
         boundReject(error);
       }
@@ -254,6 +283,7 @@ async function handleGatewayEnvelope({
   if (!target) {
     throw new Error(`Gateway debug target not found: ${source} ${pluginId}`);
   }
+  const traceId = envelope.traceId ?? requiredRequestId(envelope);
   onLog?.(`收到远程调试请求: ${source} ${pluginId} ${envelope.requestId ?? '-'}`);
 
   await sendEnvelope(socket, {
@@ -271,17 +301,26 @@ async function handleGatewayEnvelope({
     }
   });
 
-  const result = await runDebugTool({
-    runtime: target.runtime,
-    snapshot: target.snapshot,
-    toolId: request.payload.childId,
-    input: request.payload.input,
-    secrets: request.payload.secrets,
-    systemVar: request.payload.systemVar
+  target.invokeBridge?.bind(traceId, {
+    invokeToken: request.payload.systemVar.invokeToken
   });
 
-  for (const message of result.streamMessages) {
-    await sendStreamChunk(socket, session, envelope, message);
+  try {
+    const result = await runDebugTool({
+      runtime: target.runtime,
+      snapshot: target.snapshot,
+      toolId: request.payload.childId,
+      input: request.payload.input,
+      secrets: request.payload.secrets,
+      systemVar: request.payload.systemVar,
+      traceId
+    });
+
+    for (const message of result.streamMessages) {
+      await sendStreamChunk(socket, session, envelope, message);
+    }
+  } finally {
+    target.invokeBridge?.release(traceId);
   }
 
   await sendEnvelope(socket, {
@@ -424,6 +463,19 @@ function delay(ms: number): Promise<void> {
 
 function formatErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function createGatewayError(code: string, message: string): Error {
+  const error = new Error(message);
+  Object.assign(error, { code });
+  return error;
+}
+
+function isDuplicateConnectionError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    ('code' in error ? (error as Error & { code?: string }).code === GATEWAY_DUPLICATE_CONNECTION_CODE : false)
+  );
 }
 
 function parseWsServerMessage(data: unknown): ConnectionGatewayWsServerMessage {

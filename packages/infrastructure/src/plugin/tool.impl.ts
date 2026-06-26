@@ -15,6 +15,10 @@ import {
 } from '@domain/ports/plugin/tool.port';
 import { createError, getErrorDefinition, type RegisteredError } from '@domain/value-objects/error.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
+import {
+  isPluginDebugSource,
+  parsePluginDebugSessionSource
+} from '@domain/value-objects/plugin-debug-session.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
@@ -211,7 +215,7 @@ export class ToolManager implements ToolManagerPort {
         token: this.getInvokeToken(systemVar),
         fastgptBaseUrl: this.deps.fastgptBaseUrl
       }),
-      ...(isDebugPluginSource(source)
+      ...(isPluginDebugSource(source)
         ? {
             debug: {
               ...getDebugIdentityFromSource(source),
@@ -252,18 +256,13 @@ export class ToolManager implements ToolManagerPort {
   }
 }
 
-function isDebugPluginSource(source: PluginSourceType | undefined): source is string {
-  return typeof source === 'string' && source.startsWith('debug:');
-}
-
 function getDebugIdentityFromSource(source: string): { tmbId?: string; userId?: string } {
-  const parts = source.split(':');
-  const tmbIndex = parts.indexOf('tmbId');
-  const tmbId = tmbIndex >= 0 ? parts[tmbIndex + 1] : undefined;
-  if (tmbId) {
-    return { tmbId };
+  const debugSessionSource = parsePluginDebugSessionSource(source);
+  if (debugSessionSource) {
+    return debugSessionSource;
   }
 
+  const parts = source.split(':');
   const userIndex = parts.indexOf('user');
   const userId = userIndex >= 0 ? parts[userIndex + 1] : undefined;
   if (userId) {

@@ -140,6 +140,7 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
           transport: 'websocket',
           source: session.source,
           connectToken,
+          fastgptBaseUrl: serverEnv.FASTGPT_BASE_URL,
           expiresAt
         });
       } catch (error) {
@@ -352,6 +353,10 @@ function toDebugSessionStatus(
 
   if (gatewayStatus?.session?.status === 'connected' && gatewayStatus.ownerAlive) {
     return 'connected';
+  }
+
+  if (session.status === 'disconnected') {
+    return 'disconnected';
   }
 
   return 'enabled';

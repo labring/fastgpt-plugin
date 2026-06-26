@@ -13,6 +13,7 @@ import {
 } from '@domain/value-objects/connection-gateway-debug.vo';
 import { createError } from '@domain/value-objects/error.vo';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
+import { makePluginDebugSessionSource } from '@domain/value-objects/plugin-debug-session.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
@@ -21,7 +22,6 @@ export type ConnectionGatewayDebugRuntimeManagerOptions = {
   baseUrl: string;
   authToken: string;
   requestTimeoutMs: number;
-  sourceForTmbId(input: { tmbId: string }): string;
   sourceForUser?: (input: { userId: string }) => string;
 };
 
@@ -233,7 +233,7 @@ export class ConnectionGatewayDebugRuntimeManager
     }
 
     if (debug?.tmbId) {
-      return this.options.sourceForTmbId({ tmbId: debug.tmbId });
+      return makePluginDebugSessionSource({ tmbId: debug.tmbId });
     }
 
     if (debug?.userId && this.options.sourceForUser) {

@@ -48,7 +48,8 @@ describe('debug command', () => {
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
       session: makeConnectedSession(options),
       close: vi.fn(),
-      closed: Promise.resolve().then(() => undefined)
+      closed: Promise.resolve().then(() => undefined),
+      updateTargets: vi.fn()
     }));
     connectDebugGatewayMock.mockClear();
     tempUploadDir = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-debug-'));
@@ -147,6 +148,7 @@ describe('debug command', () => {
               transport: 'websocket',
               source: 'debug:tmbId:tmb-1',
               connectToken: 'scoped-token',
+              fastgptBaseUrl: 'https://fastgpt-main.example.com',
               expiresAt: Date.now() + 60_000
             }
           })
@@ -170,7 +172,8 @@ describe('debug command', () => {
       gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
       connectToken: 'scoped-token',
       source: 'debug:tmbId:tmb-1',
-      userId: 'tmb-1'
+      userId: 'tmb-1',
+      fastgptBaseUrl: 'https://fastgpt-main.example.com'
     });
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).not.toHaveProperty(
       'authToken'
@@ -253,7 +256,8 @@ describe('dev command', () => {
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
       session: makeConnectedSession(options),
       close: vi.fn(),
-      closed: Promise.resolve()
+      closed: Promise.resolve(),
+      updateTargets: vi.fn()
     }));
     connectDebugGatewayMock.mockClear();
   });
@@ -532,8 +536,7 @@ describe('dev command', () => {
       expect(inputMock).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'FastGPT connection key',
-          default: 'bad-key',
-          prefill: 'editable'
+          default: 'bad-key'
         })
       );
       expect(fetchMock).toHaveBeenNthCalledWith(
@@ -553,6 +556,88 @@ describe('dev command', () => {
         await readFile(path.join(configHome, 'fastgpt-plugin', 'config.json'), 'utf-8')
       );
       expect(savedConfig.debug.connectionKey).toBe('good-key');
+    } finally {
+      restorePropertyDescriptor(process.stdin, 'isTTY', stdinIsTTY);
+      restorePropertyDescriptor(process.stdout, 'isTTY', stdoutIsTTY);
+    }
+  });
+
+  it('交互式 dev 读取本地 connection key 失败后空输入应保留原值重试', async () => {
+    const configDir = path.join(configHome, 'fastgpt-plugin');
+    await mkdir(configDir, { recursive: true });
+    await writeFile(
+      path.join(configDir, 'config.json'),
+      JSON.stringify({
+        debug: {
+          connectionKey: 'retry-key'
+        }
+      })
+    );
+    process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL =
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('gateway unavailable', { status: 503 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: {
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    inputMock.mockResolvedValue('retry-key');
+    const stdinIsTTY = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+    const stdoutIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdin, 'isTTY', {
+      configurable: true,
+      get: () => true
+    });
+    Object.defineProperty(process.stdout, 'isTTY', {
+      configurable: true,
+      get: () => true
+    });
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    try {
+      await run([process.execPath, 'cli', 'dev', GETTIME_TOOL_DIR]);
+
+      expect(inputMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'FastGPT connection key',
+          default: 'retry-key'
+        })
+      );
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        1,
+        'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            connectionKey: 'retry-key'
+          })
+        })
+      );
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        2,
+        'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            connectionKey: 'retry-key'
+          })
+        })
+      );
+      const savedConfig = JSON.parse(
+        await readFile(path.join(configHome, 'fastgpt-plugin', 'config.json'), 'utf-8')
+      );
+      expect(savedConfig.debug.connectionKey).toBe('retry-key');
     } finally {
       restorePropertyDescriptor(process.stdin, 'isTTY', stdinIsTTY);
       restorePropertyDescriptor(process.stdout, 'isTTY', stdoutIsTTY);
@@ -612,7 +697,8 @@ describe('dev command', () => {
     vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
       session: makeConnectedSession(options),
       close: closeMock,
-      closed
+      closed,
+      updateTargets: vi.fn()
     }));
     const stdinIsTTY = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
     const stdoutIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');

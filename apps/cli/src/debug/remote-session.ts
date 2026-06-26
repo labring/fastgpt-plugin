@@ -10,12 +10,15 @@ import { Box, type Instance,render as renderInk, Text, useInput } from 'ink';
 import React from 'react';
 import z from 'zod';
 
+import { parsePluginDebugSessionSource } from '@domain/value-objects/plugin-debug-session.vo';
+
 import { discoverDebugEntries } from './discover';
 import {
   connectDebugGateway,
   type DebugGatewayClientOptions,
   type DebugGatewayTarget
 } from './gateway';
+import { RemoteDebugInvokeBridge } from './remote-invoke';
 import { type DebugPluginSnapshot, loadDebugSession } from './session';
 
 export type RemoteDebugCommandOptions = {
@@ -80,6 +83,7 @@ async function runRemoteDebugSessionOnce({
     commandName,
     targets
   });
+  attachRemoteInvokeBridges(targets, gatewayOptions.fastgptBaseUrl);
   const reporter = createRemoteDebugReporter({
     commandName,
     options,
@@ -128,6 +132,7 @@ async function runWatchRemoteDebugSession({
     commandName,
     targets: initialTargets
   });
+  attachRemoteInvokeBridges(initialTargets, gatewayOptions.fastgptBaseUrl);
   const reporter = createRemoteDebugReporter({
     commandName,
     options,
@@ -152,6 +157,7 @@ async function runWatchRemoteDebugSession({
         reloadPending = false;
         try {
           const nextTargets = await loadTargets(entries, options);
+          attachRemoteInvokeBridges(nextTargets, gatewayOptions.fastgptBaseUrl);
           gateway?.updateTargets(nextTargets);
           reporter.log(`检测到插件文件变化，已热更新 ${nextTargets.length} 个本地插件。`);
         } catch (error) {
@@ -241,6 +247,17 @@ async function loadTargets(
   }
 
   return targets;
+}
+
+function attachRemoteInvokeBridges(
+  targets: DebugGatewayTarget[],
+  fastgptBaseUrl: string
+): void {
+  targets.forEach((target) => {
+    const invokeBridge = new RemoteDebugInvokeBridge(fastgptBaseUrl);
+    invokeBridge.attach(target.runtime);
+    target.invokeBridge = invokeBridge;
+  });
 }
 
 function watchDebugEntries(entries: string[], onChange: () => void): { close(): void } {
@@ -363,6 +380,7 @@ async function promptConnectLink({
       '',
       ...(errorMessage ? [`Last error ${errorMessage}`, ''] : []),
       'Paste the FastGPT connection key or connect link to start the WSS debug session.',
+      ...(defaultValue ? ['Press Enter to reuse the current value, or type a new one to replace it.', ''] : []),
       ''
     ].join('\n')
   );
@@ -370,7 +388,6 @@ async function promptConnectLink({
   const connectUrl = await input({
     message: 'FastGPT connection key',
     default: defaultValue,
-    prefill: defaultValue ? 'editable' : undefined,
     validate(value) {
       return value.trim().length > 0 || '请输入 FastGPT connection key';
     }
@@ -938,12 +955,14 @@ async function resolveConnectGatewayOptions(
     connectToken: info.connectToken,
     userId: info.tmbId,
     source: info.source,
+    fastgptBaseUrl: info.fastgptBaseUrl,
     tokenTtlMs: Math.max(1, info.expiresAt - Date.now()),
     reconnect: options.noReconnect ? false : options.reconnect ?? true,
     reconnectIntervalMs: toPositiveInt(
       options.reconnectIntervalMs ?? process.env.CONNECTION_GATEWAY_RECONNECT_INTERVAL_MS ?? '2000',
       'reconnect-interval-ms'
-    )
+    ),
+    resolveReconnectOptions: () => resolveConnectGatewayOptions(options)
   };
 }
 
@@ -974,13 +993,19 @@ const ConnectInfoSchema = z.object({
   transport: z.literal('websocket'),
   source: z.string().min(1),
   connectToken: z.string().min(1),
+  fastgptBaseUrl: z.string().min(1).optional(),
   expiresAt: z.number().int().positive()
 });
+type ConnectInfo = Omit<z.infer<typeof ConnectInfoSchema>, 'fastgptBaseUrl'> & {
+  fastgptBaseUrl: string;
+  tmbId: string;
+};
 
-async function exchangeConnectLink(connectInput: string) {
+async function exchangeConnectLink(connectInput: string): Promise<ConnectInfo> {
+  const exchangeUrl = isHttpUrl(connectInput) ? connectInput : resolveConnectionKeyExchangeUrl();
   const response = isHttpUrl(connectInput)
-    ? await fetch(connectInput)
-    : await fetch(resolveConnectionKeyExchangeUrl(), {
+    ? await fetch(exchangeUrl)
+    : await fetch(exchangeUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1000,6 +1025,7 @@ async function exchangeConnectLink(connectInput: string) {
 
   return {
     ...info,
+    fastgptBaseUrl: info.fastgptBaseUrl ?? new URL(exchangeUrl).origin,
     tmbId: parseTmbIdFromDebugSource(info.source)
   };
 }
@@ -1030,13 +1056,12 @@ function resolveConnectionKeyExchangeUrl(): string {
 }
 
 function parseTmbIdFromDebugSource(source: string): string {
-  const parts = source.split(':');
-  const index = parts.indexOf('tmbId');
-  const tmbId = index >= 0 ? parts[index + 1] : undefined;
-  if (!tmbId) {
+  const parsed = parsePluginDebugSessionSource(source);
+  if (!parsed) {
     throw new Error(`debug source 缺少 tmbId: ${source}`);
   }
-  return tmbId;
+
+  return parsed.tmbId;
 }
 
 function normalizeGatewayWsUrl(gatewayUrl: string): string {

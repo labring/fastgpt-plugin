@@ -159,10 +159,10 @@ importers:
         version: link:../../packages/shared
       '@hono/node-server':
         specifier: ^1.19.9
-        version: 1.19.10(hono@4.12.21)
+        version: 1.19.10(hono@4.12.25)
       hono:
         specifier: ^4.12.21
-        version: 4.12.21
+        version: 4.12.25
       zod:
         specifier: 'catalog:'
         version: 4.3.6

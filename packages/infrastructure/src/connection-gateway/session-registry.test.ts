@@ -1,3 +1,5 @@
+import '@infrastructure/errors/error.registry';
+
 import { describe, expect, it } from 'vitest';
 
 import { RedisConnectionGatewaySessionRegistry } from './session-registry';
@@ -52,6 +54,80 @@ describe('RedisConnectionGatewaySessionRegistry', () => {
       })
     ]);
   });
+
+  it('rejects a second active session on the same source and allows rebinding after close', async () => {
+    const now = Date.now();
+    const redis = makeRedisStub();
+    const registry = new RedisConnectionGatewaySessionRegistry(redis as never, 60_000);
+    await registry.create({
+      id: 'session-a',
+      consumerType: 'plugin-debug',
+      subject: 'user:u1',
+      sessionScope: {
+        userId: 'u1',
+        source: 'debug:user:u1'
+      },
+      transport: 'websocket',
+      capabilities: ['invoke'],
+      ownerNodeId: 'node-a',
+      expiresAt: now + 15_000,
+      metadata: {},
+      now
+    });
+
+    await expect(
+      registry.create({
+        id: 'session-b',
+        consumerType: 'plugin-debug',
+        subject: 'user:u1',
+        sessionScope: {
+          userId: 'u1',
+          source: 'debug:user:u1'
+        },
+        transport: 'websocket',
+        capabilities: ['invoke'],
+        ownerNodeId: 'node-b',
+        expiresAt: now + 15_000,
+        metadata: {},
+        now: now + 1
+      })
+    ).rejects.toMatchObject({
+      code: 'connection_gateway.session_already_bound',
+      data: {
+        source: 'debug:user:u1',
+        sessionId: 'session-a'
+      }
+    });
+
+    await expect(
+      registry.updateStatus({
+        sessionId: 'session-a',
+        ownerNodeId: 'node-a',
+        status: 'closed',
+        now: now + 2
+      })
+    ).resolves.toBe(true);
+
+    await expect(
+      registry.create({
+        id: 'session-c',
+        consumerType: 'plugin-debug',
+        subject: 'user:u1',
+        sessionScope: {
+          userId: 'u1',
+          source: 'debug:user:u1'
+        },
+        transport: 'websocket',
+        capabilities: ['invoke'],
+        ownerNodeId: 'node-c',
+        expiresAt: now + 15_000,
+        metadata: {},
+        now: now + 3
+      })
+    ).resolves.toMatchObject({
+      id: 'session-c'
+    });
+  });
 });
 
 function makeRedisStub() {
@@ -65,6 +141,39 @@ function makeRedisStub() {
       const prefix = pattern.endsWith('*') ? pattern.slice(0, -1) : pattern;
 
       return [...values.keys()].filter((key) => key.startsWith(prefix));
+    },
+    eval: async (script: string, numKeys: number, ...args: string[]) => {
+      const keys = args.slice(0, numKeys);
+      const valuesArgs = args.slice(numKeys);
+
+      if (script.includes('connection-gateway:source-owner:upsert')) {
+        const ttl = Number(valuesArgs[0]);
+        const sessionId = valuesArgs[1];
+        for (const key of keys) {
+          const owner = values.get(key);
+          if (owner && owner !== sessionId) {
+            return [0, key, owner];
+          }
+        }
+        for (const key of keys) {
+          redis.ops.push(['set', key, sessionId, 'PX', ttl]);
+          values.set(key, sessionId);
+        }
+        return [1];
+      }
+
+      if (script.includes('connection-gateway:source-owner:release')) {
+        const sessionId = valuesArgs[0];
+        for (const key of keys) {
+          if (values.get(key) === sessionId) {
+            redis.ops.push(['del', key]);
+            values.delete(key);
+          }
+        }
+        return [1];
+      }
+
+      throw new Error(`Unsupported eval script: ${script}`);
     },
     multi: () => {
       const multi = {

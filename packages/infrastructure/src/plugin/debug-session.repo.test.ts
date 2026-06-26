@@ -64,7 +64,7 @@ describe('InMemoryPluginDebugSessionRepo', () => {
     });
   });
 
-  it('revokes the debug channel and disables the connection key', async () => {
+  it('disconnects the debug session without rotating the connection key', async () => {
     const repo = new InMemoryPluginDebugSessionRepo('secret');
     const created = await repo.create({
       tmbId: 'tmb-1',
@@ -72,12 +72,26 @@ describe('InMemoryPluginDebugSessionRepo', () => {
     });
 
     await expect(repo.revoke({ tmbId: 'tmb-1', now: 2_000 })).resolves.toMatchObject({
-      enabled: false,
-      status: 'revoked'
+      enabled: true,
+      status: 'disconnected'
     });
     await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
-      'Debug connection key not found'
+      'Debug connection key disabled'
     );
+
+    const enabledAgain = await repo.create({
+      tmbId: 'tmb-1',
+      now: 3_000
+    });
+
+    expect(enabledAgain.connectionKey).toBe(created.connectionKey);
+    expect(enabledAgain.session.keyId).toBe(created.session.keyId);
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 3_001)).resolves.toMatchObject({
+      session: {
+        keyId: created.session.keyId,
+        status: 'enabled'
+      }
+    });
   });
 });
 
@@ -132,6 +146,121 @@ describe('RedisPluginDebugSessionRepo', () => {
       }
     });
   });
+
+  it('disconnects the debug session without rotating the connection key', async () => {
+    const redis = makeRedisStub();
+    const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    await expect(repo.revoke({ tmbId: 'tmb-1', now: 2_000 })).resolves.toMatchObject({
+      enabled: true,
+      status: 'disconnected'
+    });
+    expect(redis.store.has(`plugin-debug:sessions:by-connection-key:${created.session.connectionKeyHash}`)).toBe(
+      true
+    );
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+
+    const enabledAgain = await repo.create({ tmbId: 'tmb-1', now: 3_000 });
+
+    expect(enabledAgain.connectionKey).toBe(created.connectionKey);
+    expect(enabledAgain.session.keyId).toBe(created.session.keyId);
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 3_001)).resolves.toMatchObject({
+      session: {
+        keyId: created.session.keyId,
+        status: 'enabled'
+      }
+    });
+  });
+
+  it('rejects disconnected sessions even when stale connection key mappings exist', async () => {
+    const redis = makeRedisStub();
+    const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    redis.store.set(
+      'plugin-debug:sessions:by-tmb:tmb-1',
+      JSON.stringify({
+        ...created.session,
+        status: 'disconnected'
+      })
+    );
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+  });
+
+  it('rejects revoked sessions even when stale connection key mappings exist', async () => {
+    const redis = makeRedisStub();
+    const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    redis.store.set(
+      'plugin-debug:sessions:by-tmb:tmb-1',
+      JSON.stringify({
+        ...created.session,
+        enabled: false,
+        status: 'revoked',
+        revokedAt: 2_000
+      })
+    );
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+  });
+
+  it('rejects disconnected in-memory sessions even when the key mapping exists', async () => {
+    const repo = new InMemoryPluginDebugSessionRepo('secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    // Simulate a stale in-memory session state without deleting the key mapping.
+    (repo as unknown as { sessions: Map<string, unknown> }).sessions.set('tmb-1', {
+      ...created.session,
+      status: 'disconnected'
+    });
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+  });
+
+  it('rejects revoked in-memory sessions even when the key mapping exists', async () => {
+    const repo = new InMemoryPluginDebugSessionRepo('secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    // Simulate a stale in-memory session state without deleting the key mapping.
+    (repo as unknown as { sessions: Map<string, unknown> }).sessions.set('tmb-1', {
+      ...created.session,
+      enabled: false,
+      status: 'revoked',
+      revokedAt: 2_000
+    });
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+  });
+
+  it('keeps refreshed connection keys exchangeable', async () => {
+    const redis = makeRedisStub();
+    const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+    const refreshed = await repo.refresh({ tmbId: 'tmb-1', now: 2_000 });
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key not found'
+    );
+    await expect(repo.exchangeConnectionKey(refreshed.connectionKey!, 2_001)).resolves.toMatchObject({
+      session: {
+        keyId: refreshed.session.keyId,
+        status: 'enabled'
+      }
+    });
+  });
 });
 
 function makeRedisStub() {
@@ -140,6 +269,10 @@ function makeRedisStub() {
   return {
     store,
     get: vi.fn(async (key: string) => store.get(key) ?? null),
+    set: vi.fn(async (key: string, value: string) => {
+      store.set(key, value);
+      return 'OK';
+    }),
     del: vi.fn(async (...keys: string[]) => {
       keys.forEach((key) => store.delete(key));
       return keys.length;

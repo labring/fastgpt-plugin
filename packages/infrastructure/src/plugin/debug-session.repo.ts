@@ -25,6 +25,10 @@ export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
   async create(input: CreatePluginDebugSessionInput): Promise<CreatePluginDebugSessionOutput> {
     const existing = await this.get({ tmbId: input.tmbId });
     if (existing?.enabled) {
+      if (existing.status === 'disconnected') {
+        const session = await this.markEnabled(existing, input.now);
+        return { session, connectionKey: session.connectionKey };
+      }
       return { session: existing };
     }
 
@@ -50,13 +54,13 @@ export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
     if (
       !session ||
       !session.enabled ||
-      session.status === 'revoked' ||
+      session.status !== 'enabled' ||
       session.connectionKeyHash !== connectionKeyHash
     ) {
       throw new Error('Debug connection key disabled');
     }
 
-    return { session };
+    return { session: await this.ensureConnectionKeyStored(session, connectionKey) };
   }
 
   async get(input: { tmbId: string; now?: number }): Promise<PluginDebugSession | null> {
@@ -72,13 +76,41 @@ export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
     const now = input.now ?? Date.now();
     const next: PluginDebugSession = {
       ...session,
-      enabled: false,
-      status: 'revoked',
+      status: 'disconnected',
       updatedAt: now,
       revokedAt: session.revokedAt ?? now
     };
     this.sessions.set(this.sessionKey(next), next);
-    this.connectionKeys.delete(next.connectionKeyHash);
+    return next;
+  }
+
+  private async markEnabled(
+    session: PluginDebugSession,
+    now = Date.now()
+  ): Promise<PluginDebugSession> {
+    const next: PluginDebugSession = {
+      ...session,
+      status: 'enabled',
+      updatedAt: now,
+      revokedAt: undefined
+    };
+    this.sessions.set(this.sessionKey(next), next);
+    return next;
+  }
+
+  private async ensureConnectionKeyStored(
+    session: PluginDebugSession,
+    connectionKey: string
+  ): Promise<PluginDebugSession> {
+    if (session.connectionKey) {
+      return session;
+    }
+
+    const next = {
+      ...session,
+      connectionKey
+    };
+    this.sessions.set(this.sessionKey(next), next);
     return next;
   }
 
@@ -95,6 +127,7 @@ export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
       enabled: true,
       keyId: randomUUID(),
       connectionKeyHash: hashConnectionKey(connectionKey, this.hashSecret),
+      connectionKey,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
       refreshedAt: existing ? now : undefined
@@ -123,6 +156,10 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
   async create(input: CreatePluginDebugSessionInput): Promise<CreatePluginDebugSessionOutput> {
     const existing = await this.get({ tmbId: input.tmbId });
     if (existing?.enabled) {
+      if (existing.status === 'disconnected') {
+        const session = await this.markEnabled(existing, input.now);
+        return { session, connectionKey: session.connectionKey };
+      }
       return { session: existing };
     }
 
@@ -148,13 +185,13 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
     if (
       !session ||
       !session.enabled ||
-      session.status === 'revoked' ||
+      session.status !== 'enabled' ||
       session.connectionKeyHash !== connectionKeyHash
     ) {
       throw new Error('Debug connection key disabled');
     }
 
-    return { session };
+    return { session: await this.ensureConnectionKeyStored(session, connectionKey) };
   }
 
   async get(input: { tmbId: string; now?: number }): Promise<PluginDebugSession | null> {
@@ -182,13 +219,41 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
     const now = input.now ?? Date.now();
     const next: PluginDebugSession = {
       ...session,
-      enabled: false,
-      status: 'revoked',
+      status: 'disconnected',
       updatedAt: now,
       revokedAt: session.revokedAt ?? now
     };
     await this.saveSession(next);
-    await this.redis.del(this.connectionKeyRedisKey(next.connectionKeyHash));
+    return next;
+  }
+
+  private async markEnabled(
+    session: PluginDebugSession,
+    now = Date.now()
+  ): Promise<PluginDebugSession> {
+    const next: PluginDebugSession = {
+      ...session,
+      status: 'enabled',
+      updatedAt: now,
+      revokedAt: undefined
+    };
+    await this.saveSession(next);
+    return next;
+  }
+
+  private async ensureConnectionKeyStored(
+    session: PluginDebugSession,
+    connectionKey: string
+  ): Promise<PluginDebugSession> {
+    if (session.connectionKey) {
+      return session;
+    }
+
+    const next = {
+      ...session,
+      connectionKey
+    };
+    await this.saveSession(next);
     return next;
   }
 
@@ -205,6 +270,7 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
       enabled: true,
       keyId: randomUUID(),
       connectionKeyHash: hashConnectionKey(connectionKey, this.hashSecret),
+      connectionKey,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
       refreshedAt: existing ? now : undefined

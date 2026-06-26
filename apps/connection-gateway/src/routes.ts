@@ -21,7 +21,9 @@ import { createOpenAPIHono, createRoute, R } from '@infrastructure/hono/utils/re
 
 import type { ConnectionGatewayDeps } from './deps';
 
-export function createConnectionGatewayApp(deps: Pick<ConnectionGatewayDeps, 'service'>) {
+export function createConnectionGatewayApp(
+  deps: Pick<ConnectionGatewayDeps, 'service' | 'disconnectSession'>
+) {
   const app = createOpenAPIHono();
 
   app.use(
@@ -277,7 +279,9 @@ export function createConnectionGatewayApp(deps: Pick<ConnectionGatewayDeps, 'se
       }
     }),
     async (c) => {
-      await deps.service.deleteSession(requiredParam(c.req.param('sessionId')));
+      const sessionId = requiredParam(c.req.param('sessionId'));
+      deps.disconnectSession(sessionId, new Error('Gateway session revoked'));
+      await deps.service.deleteSession(sessionId);
       return R.success(c, { deleted: true });
     }
   );

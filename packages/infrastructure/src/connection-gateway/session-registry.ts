@@ -10,6 +10,9 @@ import {
   ConnectionGatewaySessionSchema,
   type ConnectionGatewaySessionStatus
 } from '@domain/value-objects/connection-gateway.vo';
+import { createError } from '@domain/value-objects/error.vo';
+
+import { ErrorCode } from '../errors/error.registry';
 
 const SESSION_KEY_PREFIX = 'connection-gateway:sessions';
 
@@ -29,6 +32,7 @@ export class InMemoryConnectionGatewaySessionRegistry
       lastSeenAt: now
     };
 
+    assertNoActiveSourceConflict(this.sessions.values(), session, now);
     this.sessions.set(session.id, session);
     return session;
   }
@@ -137,7 +141,13 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
       lastSeenAt: now
     };
 
-    await this.saveSessionAndIndexes(session);
+    await this.claimSourceOwners(session, now);
+    try {
+      await this.saveSessionAndIndexes(session);
+    } catch (error) {
+      await this.releaseSourceOwners(session).catch(() => undefined);
+      throw error;
+    }
 
     return session;
   }
@@ -156,6 +166,7 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
         .srem(this.subjectKey(parsed.subject), sessionId)
         .exec();
       await this.removeSourceIndexes(parsed, sessionId);
+      await this.releaseSourceOwners(parsed);
       return null;
     }
 
@@ -187,6 +198,9 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
       expiresAt: input.expiresAt,
       lastSeenAt: input.now ?? Date.now()
     };
+    if (!(await this.refreshSourceOwners(next, input.now ?? Date.now()))) {
+      return false;
+    }
     await this.saveSessionAndIndexes(next);
     return true;
   }
@@ -208,6 +222,13 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
       lastSeenAt: input.now ?? Date.now()
     };
     await this.saveSessionAndIndexes(next);
+    if (next.status === 'connected') {
+      if (!(await this.refreshSourceOwners(next, input.now ?? Date.now()))) {
+        return false;
+      }
+    } else {
+      await this.releaseSourceOwners(next);
+    }
     return true;
   }
 
@@ -242,6 +263,9 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
     }
 
     await multi.exec();
+    if (session) {
+      await this.releaseSourceOwners(session);
+    }
   }
 
   async countActive(): Promise<number> {
@@ -259,6 +283,10 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
 
   private sourceKey(source: string): string {
     return `${SESSION_KEY_PREFIX}:by-source:${source}`;
+  }
+
+  private sourceOwnerKey(source: string): string {
+    return `${SESSION_KEY_PREFIX}:source-owner:${source}`;
   }
 
   private async saveSessionAndIndexes(session: ConnectionGatewaySession): Promise<void> {
@@ -291,6 +319,73 @@ export class RedisConnectionGatewaySessionRegistry implements ConnectionGatewayS
     }
     await multi.exec();
   }
+
+  private async claimSourceOwners(session: ConnectionGatewaySession, now: number): Promise<void> {
+    const sources = getSessionSources(session);
+    if (sources.length === 0) {
+      return;
+    }
+
+    const ttlMs = getOwnerLeaseTtlMs(session, now);
+    const keys = sources.map((source) => this.sourceOwnerKey(source));
+    const result = (await this.redis.eval(
+      UPSERT_SOURCE_OWNER_SCRIPT,
+      keys.length,
+      ...keys,
+      String(ttlMs),
+      session.id
+    )) as [number, string?, string?];
+
+    if (result[0] === 1) {
+      return;
+    }
+
+    const conflictKey = result[1];
+    const conflictOwner = result[2];
+    const source = conflictKey ? this.sourceFromOwnerKey(conflictKey) : sources[0];
+    throw createError(ErrorCode.connectionGatewaySessionAlreadyBound, {
+      data: {
+        source,
+        sessionId: conflictOwner
+      }
+    });
+  }
+
+  private async refreshSourceOwners(
+    session: ConnectionGatewaySession,
+    now: number
+  ): Promise<boolean> {
+    const sources = getSessionSources(session);
+    if (sources.length === 0) {
+      return true;
+    }
+
+    const ttlMs = getOwnerLeaseTtlMs(session, now);
+    const keys = sources.map((source) => this.sourceOwnerKey(source));
+    const result = (await this.redis.eval(
+      UPSERT_SOURCE_OWNER_SCRIPT,
+      keys.length,
+      ...keys,
+      String(ttlMs),
+      session.id
+    )) as [number];
+
+    return result[0] === 1;
+  }
+
+  private async releaseSourceOwners(session: ConnectionGatewaySession): Promise<void> {
+    const sources = getSessionSources(session);
+    if (sources.length === 0) {
+      return;
+    }
+
+    const keys = sources.map((source) => this.sourceOwnerKey(source));
+    await this.redis.eval(RELEASE_SOURCE_OWNER_SCRIPT, keys.length, ...keys, session.id);
+  }
+
+  private sourceFromOwnerKey(key: string): string {
+    return key.replace(`${SESSION_KEY_PREFIX}:source-owner:`, '');
+  }
 }
 
 function getSessionSources(session: ConnectionGatewaySession): string[] {
@@ -299,3 +394,71 @@ function getSessionSources(session: ConnectionGatewaySession): string[] {
     ...(session.sessionScope.sources ?? [])
   ].filter((source, index, sources) => sources.indexOf(source) === index);
 }
+
+function getOwnerLeaseTtlMs(session: ConnectionGatewaySession, now: number): number {
+  return Math.max(1, session.expiresAt - now);
+}
+
+function assertNoActiveSourceConflict(
+  sessions: Iterable<ConnectionGatewaySession>,
+  nextSession: ConnectionGatewaySession,
+  now: number
+): void {
+  const nextSources = getSessionSources(nextSession);
+  if (nextSources.length === 0) {
+    return;
+  }
+
+  const activeSession = [...sessions].find((session) => {
+    if (session.id === nextSession.id) {
+      return false;
+    }
+    if (session.status !== 'connected' || session.expiresAt <= now) {
+      return false;
+    }
+
+    const sources = getSessionSources(session);
+    return nextSources.some((source) => sources.includes(source));
+  });
+
+  if (!activeSession) {
+    return;
+  }
+
+  const source = nextSources.find((item) => getSessionSources(activeSession).includes(item));
+  throw createError(ErrorCode.connectionGatewaySessionAlreadyBound, {
+    data: {
+      source,
+      sessionId: activeSession.id,
+      subject: activeSession.subject
+    }
+  });
+}
+
+const UPSERT_SOURCE_OWNER_SCRIPT = `
+-- connection-gateway:source-owner:upsert
+local ttl = tonumber(ARGV[1])
+local sessionId = ARGV[2]
+for i = 1, #KEYS do
+  local owner = redis.call('GET', KEYS[i])
+  if owner and owner ~= sessionId then
+    return {0, KEYS[i], owner}
+  end
+end
+for i = 1, #KEYS do
+  redis.call('SET', KEYS[i], sessionId, 'PX', ttl)
+end
+return {1}
+`;
+
+const RELEASE_SOURCE_OWNER_SCRIPT = `
+-- connection-gateway:source-owner:release
+local sessionId = ARGV[1]
+for i = 1, #KEYS do
+  local owner = redis.call('GET', KEYS[i])
+  if owner == sessionId then
+    redis.call('DEL', KEYS[i])
+  end
+end
+return {1}
+`;

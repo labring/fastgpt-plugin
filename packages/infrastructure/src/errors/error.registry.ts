@@ -30,6 +30,7 @@ export const ErrorCode = {
   connectionGatewayCapabilityDenied: 'connection_gateway.capability_denied',
   connectionGatewayStaleGeneration: 'connection_gateway.stale_generation',
   connectionGatewaySessionNotFound: 'connection_gateway.session_not_found',
+  connectionGatewaySessionAlreadyBound: 'connection_gateway.session_already_bound',
   connectionGatewaySessionOwnerExpired: 'connection_gateway.session_owner_expired',
   connectionGatewayResourceLimitExceeded: 'connection_gateway.resource_limit_exceeded',
   connectionGatewayEnvelopeTooLarge: 'connection_gateway.envelope_too_large'
@@ -226,6 +227,13 @@ registerErrors([
     reason: { en: 'Gateway session not found', 'zh-CN': 'Gateway 会话不存在' },
     httpStatus: 404,
     telemetryKind: 'connection_gateway_session_not_found'
+  },
+  {
+    code: ErrorCode.connectionGatewaySessionAlreadyBound,
+    message: 'Gateway session already bound',
+    reason: { en: 'Gateway session already bound', 'zh-CN': 'Gateway 会话已存在在线连接' },
+    httpStatus: 409,
+    telemetryKind: 'connection_gateway_session_already_bound'
   },
   {
     code: ErrorCode.connectionGatewaySessionOwnerExpired,

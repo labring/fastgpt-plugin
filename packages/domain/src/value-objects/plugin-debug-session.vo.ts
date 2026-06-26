@@ -1,5 +1,12 @@
 import z from 'zod';
 
+const PLUGIN_DEBUG_SOURCE_KIND = 'debug';
+const PLUGIN_DEBUG_SESSION_SOURCE_TMB_ID_KEY = 'tmbId';
+
+export const PLUGIN_DEBUG_SOURCE_PREFIX = `${PLUGIN_DEBUG_SOURCE_KIND}:`;
+export const PLUGIN_DEBUG_SESSION_SOURCE_FORMAT =
+  `${PLUGIN_DEBUG_SOURCE_KIND}:${PLUGIN_DEBUG_SESSION_SOURCE_TMB_ID_KEY}:{tmbId}` as const;
+
 export const PluginDebugSessionIdSchema = z.string().min(1);
 export type PluginDebugSessionId = z.infer<typeof PluginDebugSessionIdSchema>;
 
@@ -24,11 +31,12 @@ export type PluginDebugSessionStatus = z.infer<typeof PluginDebugSessionStatusSc
 
 export const PluginDebugSessionSchema = z.object({
   tmbId: PluginDebugSessionTmbIdSchema,
-  source: z.string().min(1),
+  source: PluginDebugSessionSourceSchema,
   status: PluginDebugSessionStatusSchema,
   enabled: z.boolean(),
   keyId: z.string().min(1),
   connectionKeyHash: z.string().min(1),
+  connectionKey: z.string().min(1).optional(),
   createdAt: z.number().int().positive(),
   updatedAt: z.number().int().positive(),
   refreshedAt: z.number().int().positive().optional(),
@@ -37,20 +45,42 @@ export const PluginDebugSessionSchema = z.object({
 export type PluginDebugSession = z.infer<typeof PluginDebugSessionSchema>;
 
 export function makePluginDebugSessionSource(input: { tmbId: string }): string {
-  return `debug:tmbId:${input.tmbId}`;
+  return [
+    PLUGIN_DEBUG_SOURCE_KIND,
+    PLUGIN_DEBUG_SESSION_SOURCE_TMB_ID_KEY,
+    input.tmbId
+  ].join(':');
 }
 
 export function parsePluginDebugSessionSource(source: string): { tmbId: string } | null {
-  const match = /^debug:tmbId:([^:]+)$/.exec(source);
-  if (!match) {
+  const parts = source.split(':');
+  if (
+    parts.length !== 3 ||
+    parts[0] !== PLUGIN_DEBUG_SOURCE_KIND ||
+    parts[1] !== PLUGIN_DEBUG_SESSION_SOURCE_TMB_ID_KEY ||
+    !parts[2]
+  ) {
     return null;
   }
 
   return {
-    tmbId: match[1]
+    tmbId: parts[2]
   };
 }
 
+export function isPluginDebugSource(source: string | undefined): source is string {
+  return typeof source === 'string' && source.startsWith(PLUGIN_DEBUG_SOURCE_PREFIX);
+}
+
 export function isPluginDebugSessionSource(source: string | undefined): source is string {
-  return typeof source === 'string' && parsePluginDebugSessionSource(source) !== null;
+  if (typeof source !== 'string') {
+    return false;
+  }
+
+  const match = parsePluginDebugSessionSource(source);
+  if (!match) {
+    return false;
+  }
+
+  return true;
 }
