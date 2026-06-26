@@ -38,8 +38,11 @@ describe('debug command', () => {
   };
   let exitSpy: ReturnType<typeof vi.spyOn>;
   let tempUploadDir: string;
+  let configHome: string;
 
   beforeEach(async () => {
+    configHome = await mkdtemp(path.join(tmpdir(), 'fastgpt-plugin-cli-config-'));
+    process.env.XDG_CONFIG_HOME = configHome;
     vi.spyOn(logger, 'success').mockImplementation(loggerSpy.success);
     vi.spyOn(logger, 'info').mockImplementation(loggerSpy.info);
     vi.spyOn(logger, 'error').mockImplementation(loggerSpy.error);
@@ -67,7 +70,9 @@ describe('debug command', () => {
     delete process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL;
     delete process.env.FASTGPT_PLUGIN_SERVER_URL;
     delete process.env.PLUGIN_SERVER_URL;
+    delete process.env.XDG_CONFIG_HOME;
     await rm(tempUploadDir, { recursive: true, force: true });
+    await rm(configHome, { recursive: true, force: true });
   });
 
   it('应能输出单工具的本地调试信息和调用命令', async () => {
@@ -477,6 +482,62 @@ describe('dev command', () => {
     expect(getLoggerOutput(loggerSpy.info)).toContain('已读取本地 FastGPT connection key 配置');
   });
 
+  it('dev --connect 启动成功后应覆盖本地 connection key 配置', async () => {
+    const configDir = path.join(configHome, 'fastgpt-plugin');
+    await mkdir(configDir, { recursive: true });
+    await writeFile(
+      path.join(configDir, 'config.json'),
+      JSON.stringify({
+        debug: {
+          connectionKey: 'old-key'
+        }
+      })
+    );
+    process.env.FASTGPT_PLUGIN_DEBUG_CONNECT_URL =
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
+
+    await run([
+      process.execPath,
+      'cli',
+      'dev',
+      GETTIME_TOOL_DIR,
+      '--connect',
+      'new-key',
+      '--no-interactive'
+    ]);
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'https://fastgpt.example.com/api/plugin/debug-sessions/connection-key:exchange',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          connectionKey: 'new-key'
+        })
+      })
+    );
+    const savedConfig = JSON.parse(
+      await readFile(path.join(configHome, 'fastgpt-plugin', 'config.json'), 'utf-8')
+    );
+    expect(savedConfig.debug.connectionKey).toBe('new-key');
+    expect(getLoggerOutput(loggerSpy.info)).toContain('已保存 FastGPT connection key 到本地配置');
+  });
+
   it('交互式 dev 读取本地 connection key 失败时应允许重新输入并保存新 key', async () => {
     const configDir = path.join(configHome, 'fastgpt-plugin');
     await mkdir(configDir, { recursive: true });
@@ -744,6 +805,118 @@ describe('dev command', () => {
       restorePropertyDescriptor(process.stdin, 'isTTY', stdinIsTTY);
       restorePropertyDescriptor(process.stdout, 'isTTY', stdoutIsTTY);
     }
+  });
+
+  it('非交互式 dev 收到 SIGINT 应先关闭远程调试通道，第二次应强制退出', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
+    const closeMock = vi.fn();
+    let resolveClosed: (() => void) | undefined;
+    const closed = new Promise<void>((resolve) => {
+      resolveClosed = resolve;
+    });
+    vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
+      session: makeConnectedSession(options),
+      close: closeMock,
+      closed,
+      updateTargets: vi.fn()
+    }));
+
+    const runPromise = run([
+      process.execPath,
+      'cli',
+      'dev',
+      GETTIME_TOOL_DIR,
+      '--connect',
+      'https://fastgpt.example.com/debug/connect?connectionKey=t1',
+      '--no-interactive'
+    ]);
+
+    await vi.waitFor(() => {
+      expect(vi.mocked(connectDebugGateway)).toHaveBeenCalled();
+    });
+
+    process.emit('SIGINT');
+    await vi.waitFor(() => {
+      expect(closeMock).toHaveBeenCalledTimes(1);
+    });
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    process.emit('SIGINT');
+    await vi.waitFor(() => {
+      expect(closeMock).toHaveBeenCalledTimes(2);
+      expect(exitSpy).toHaveBeenCalledWith(130);
+    });
+
+    resolveClosed?.();
+    await runPromise;
+  });
+
+  it('非交互式 dev 收到 SIGTERM 应关闭远程调试通道', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
+              transport: 'websocket',
+              source: 'debug:tmbId:tmb-1',
+              connectToken: 'scoped-token',
+              expiresAt: Date.now() + 60_000
+            }
+          })
+        )
+      )
+    );
+    const closeMock = vi.fn();
+    let resolveClosed: (() => void) | undefined;
+    const closed = new Promise<void>((resolve) => {
+      resolveClosed = resolve;
+    });
+    vi.mocked(connectDebugGateway).mockImplementation(async ({ options }) => ({
+      session: makeConnectedSession(options),
+      close: closeMock,
+      closed,
+      updateTargets: vi.fn()
+    }));
+
+    const runPromise = run([
+      process.execPath,
+      'cli',
+      'dev',
+      GETTIME_TOOL_DIR,
+      '--connect',
+      'https://fastgpt.example.com/debug/connect?connectionKey=t1',
+      '--no-interactive'
+    ]);
+
+    await vi.waitFor(() => {
+      expect(vi.mocked(connectDebugGateway)).toHaveBeenCalled();
+    });
+
+    process.emit('SIGTERM');
+    await vi.waitFor(() => {
+      expect(closeMock).toHaveBeenCalledTimes(1);
+    });
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    resolveClosed?.();
+    await runPromise;
   });
 
   it('非交互模式缺少 connection key 时应提示传入 --connect', async () => {

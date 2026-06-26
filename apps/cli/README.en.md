@@ -46,6 +46,8 @@ fastgpt-plugin dev --no-interactive \
   --connect "fpg_dbg_..."
 ```
 
+After `--connect` starts and connects successfully, it overwrites the persisted connection key in local `config.json`, so later `fastgpt-plugin dev` runs can reuse it. In the TUI, press `c` to enter and save a new connection key. Stop the session with `Ctrl+C`; press `Ctrl+C` again to force exit.
+
 When passing a raw connection key, set `FASTGPT_PLUGIN_DEBUG_CONNECT_URL`, or set `FASTGPT_PLUGIN_SERVER_URL` so the CLI can request `/api/plugin/debug-sessions/connection-key:exchange`. Full connect links remain supported for compatibility. The exchange result returns the gateway WSS endpoint, `debug:tmbId:{tmbId}` source, and scoped connect token. The CLI does not need `CONNECTION_GATEWAY_AUTH_TOKEN` or `JWT_SECRET`.
 
 When no plugin directories are passed, `dev` auto-discovers plugins from the current directory. If the current directory has `index.ts`, it is used as the plugin entry; otherwise, the CLI scans one level of child directories for `index.ts`. You can still pass multiple plugin directories explicitly.

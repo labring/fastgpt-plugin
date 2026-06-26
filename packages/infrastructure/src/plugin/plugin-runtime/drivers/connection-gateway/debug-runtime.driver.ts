@@ -138,7 +138,7 @@ export class ConnectionGatewayDebugRuntimeManager
       !session ||
       session.consumerType !== CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE ||
       session.status !== 'connected' ||
-      status.data.ownerAlive === false
+      status.data.ownerAlive !== true
     ) {
       throw createError(ErrorCode.connectionGatewaySessionNotFound, {
         data: {

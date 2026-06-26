@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { type PluginType, PluginTypeEnum } from '@domain/entities/plugin.entity';
 import { ToolSchema } from '@domain/entities/tool.entity';
 import type {
@@ -284,7 +286,7 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
       }
 
       const payload = JSON.parse(text) as GatewayStatusResponse;
-      if (!payload.data.session || payload.data.session.status !== 'connected' || payload.data.ownerAlive === false) {
+      if (!payload.data.session || payload.data.session.status !== 'connected' || payload.data.ownerAlive !== true) {
         return failureResult(
           createError(ErrorCode.connectionGatewaySessionNotFound, {
             message: `Debug plugin session is not connected: ${source}`,
@@ -454,6 +456,47 @@ function toI18n(value: string) {
   };
 }
 
-function toDebugEtag(source: string, metadata: Pick<DebugPluginMetadata, 'pluginId' | 'version'>): string {
-  return `debug-${Buffer.from(`${source}:${metadata.pluginId}:${metadata.version}`).toString('base64url').slice(0, 24)}`;
+function toDebugEtag(source: string, metadata: DebugPluginMetadata): string {
+  const digest = createHash('sha256')
+    .update(
+      stableStringify({
+        source,
+        pluginId: metadata.pluginId,
+        version: metadata.version,
+        name: metadata.name,
+        description: metadata.description,
+        toolDescription: metadata.toolDescription,
+        author: metadata.author,
+        tags: metadata.tags,
+        permissions: metadata.permissions,
+        secretSchema: metadata.secretSchema,
+        isToolSet: metadata.isToolSet,
+        tools: metadata.tools
+      })
+    )
+    .digest('base64url')
+    .slice(0, 24);
+
+  return `debug-${digest}`;
+}
+
+function stableStringify(value: unknown): string {
+  return JSON.stringify(sortJsonValue(value));
+}
+
+function sortJsonValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sortJsonValue);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, item]) => item !== undefined)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, item]) => [key, sortJsonValue(item)])
+    );
+  }
+
+  return value;
 }

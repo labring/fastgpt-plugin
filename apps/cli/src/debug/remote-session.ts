@@ -6,7 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import { input } from '@inquirer/prompts';
-import { Box, type Instance,render as renderInk, Text, useInput } from 'ink';
+import { Box, type Instance, render as renderInk, Text, useInput } from 'ink';
 import React from 'react';
 import z from 'zod';
 
@@ -37,6 +37,10 @@ export type RemoteDebugSessionRunOptions = {
   options: RemoteDebugCommandOptions;
   commandName: string;
   migrationHint?: string;
+};
+
+type RemoteDebugGatewayClientOptions = DebugGatewayClientOptions & {
+  onResolvedReconnectOptions?: (options: DebugGatewayClientOptions) => void;
 };
 
 export async function runRemoteDebugSession({
@@ -83,7 +87,11 @@ async function runRemoteDebugSessionOnce({
     commandName,
     targets
   });
-  attachRemoteInvokeBridges(targets, gatewayOptions.fastgptBaseUrl);
+  let currentGatewayOptions = gatewayOptions;
+  gatewayOptions.onResolvedReconnectOptions = (nextOptions) => {
+    currentGatewayOptions = nextOptions;
+  };
+  attachRemoteInvokeBridges(targets, () => currentGatewayOptions.fastgptBaseUrl);
   const reporter = createRemoteDebugReporter({
     commandName,
     options,
@@ -103,6 +111,21 @@ async function runRemoteDebugSessionOnce({
       if (force) {
         process.exit(130);
       }
+    });
+    reporter.attachConfigureConnectionKey(async () => {
+      await configureConnectionKey({
+        options,
+        commandName,
+        targets,
+        reconnect: () => {
+          if (gateway.reconnect) {
+            gateway.reconnect();
+            return;
+          }
+
+          gateway.close();
+        }
+      });
     });
     const source = gateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
 
@@ -132,7 +155,11 @@ async function runWatchRemoteDebugSession({
     commandName,
     targets: initialTargets
   });
-  attachRemoteInvokeBridges(initialTargets, gatewayOptions.fastgptBaseUrl);
+  let currentGatewayOptions = gatewayOptions;
+  gatewayOptions.onResolvedReconnectOptions = (nextOptions) => {
+    currentGatewayOptions = nextOptions;
+  };
+  attachRemoteInvokeBridges(initialTargets, () => currentGatewayOptions.fastgptBaseUrl);
   const reporter = createRemoteDebugReporter({
     commandName,
     options,
@@ -145,6 +172,7 @@ async function runWatchRemoteDebugSession({
   let gateway:
     | Awaited<ReturnType<typeof connectDebugGateway>>
     | undefined;
+  let activeTargets = initialTargets;
   const reloadTargets = async () => {
     if (reloadRunning) {
       reloadPending = true;
@@ -157,7 +185,8 @@ async function runWatchRemoteDebugSession({
         reloadPending = false;
         try {
           const nextTargets = await loadTargets(entries, options);
-          attachRemoteInvokeBridges(nextTargets, gatewayOptions.fastgptBaseUrl);
+          attachRemoteInvokeBridges(nextTargets, () => currentGatewayOptions.fastgptBaseUrl);
+          activeTargets = nextTargets;
           gateway?.updateTargets(nextTargets);
           reporter.log(`检测到插件文件变化，已热更新 ${nextTargets.length} 个本地插件。`);
         } catch (error) {
@@ -188,6 +217,21 @@ async function runWatchRemoteDebugSession({
       if (force) {
         process.exit(130);
       }
+    });
+    reporter.attachConfigureConnectionKey(async () => {
+      await configureConnectionKey({
+        options,
+        commandName,
+        targets: activeTargets,
+        reconnect: () => {
+          if (connectedGateway.reconnect) {
+            connectedGateway.reconnect();
+            return;
+          }
+
+          connectedGateway.close();
+        }
+      });
     });
     const source = connectedGateway.session.sessionScope.source ?? gatewayOptions.source ?? '-';
     reporter.ready(source);
@@ -251,10 +295,10 @@ async function loadTargets(
 
 function attachRemoteInvokeBridges(
   targets: DebugGatewayTarget[],
-  fastgptBaseUrl: string
+  getFastgptBaseUrl: () => string
 ): void {
   targets.forEach((target) => {
-    const invokeBridge = new RemoteDebugInvokeBridge(fastgptBaseUrl);
+    const invokeBridge = new RemoteDebugInvokeBridge(getFastgptBaseUrl);
     invokeBridge.attach(target.runtime);
     target.invokeBridge = invokeBridge;
   });
@@ -333,6 +377,7 @@ async function ensureConnectLink({
   targets: DebugGatewayTarget[];
 }): Promise<void> {
   if (options.connect) {
+    options.connectPersistOnSuccess = true;
     return;
   }
 
@@ -425,6 +470,28 @@ async function saveConnectionKey(connectionKey: string): Promise<void> {
   });
 }
 
+async function configureConnectionKey({
+  options,
+  commandName,
+  targets,
+  reconnect
+}: {
+  options: RemoteDebugCommandOptions;
+  commandName: string;
+  targets: DebugGatewayTarget[];
+  reconnect: () => void;
+}): Promise<void> {
+  const nextConnect = await promptConnectLink({
+    commandName,
+    targets,
+    defaultValue: options.connect
+  });
+  options.connect = nextConnect;
+  options.connectPersistOnSuccess = true;
+  logger.info('已更新 FastGPT connection key，重连成功后会保存到本地配置。');
+  reconnect();
+}
+
 async function readCliConfig(): Promise<CliConfig> {
   const configPath = getCliConfigPath();
   let raw: string;
@@ -479,6 +546,7 @@ type RemoteDebugReporter = {
   log(message: string): void;
   ready(source: string): void;
   attachClose(close: RemoteDebugCloseHandler): void;
+  attachConfigureConnectionKey(handler: RemoteDebugConfigureConnectionKeyHandler): void;
   end(): Promise<void> | void;
 };
 
@@ -487,6 +555,8 @@ type RemoteDebugCloseOptions = {
 };
 
 type RemoteDebugCloseHandler = (options: RemoteDebugCloseOptions) => void;
+type RemoteDebugConfigureConnectionKeyHandler = () => Promise<void> | void;
+type CloseSignal = 'SIGINT' | 'SIGTERM';
 
 const CLI_CONFIG_FILE_NAME = 'config.json';
 const CLI_CONFIG_DIR_NAME = 'fastgpt-plugin';
@@ -504,9 +574,20 @@ const CliConfigSchema = z
 type CliConfig = z.infer<typeof CliConfigSchema>;
 
 class PlainRemoteDebugReporter implements RemoteDebugReporter {
+  private closeSession: RemoteDebugCloseHandler | undefined;
+  private interruptCount = 0;
+  private readonly onSigint = () => {
+    this.requestClose('SIGINT');
+  };
+  private readonly onSigterm = () => {
+    this.requestClose('SIGTERM');
+  };
+
   constructor(private readonly summary: RemoteDebugReporterSummary) {}
 
   start(): void {
+    process.on('SIGINT', this.onSigint);
+    process.on('SIGTERM', this.onSigterm);
     logger.info(
       [
         'FastGPT 插件开发会话',
@@ -519,6 +600,20 @@ class PlainRemoteDebugReporter implements RemoteDebugReporter {
         ...this.summary.targets.map(formatTargetLine)
       ].join('\n')
     );
+  }
+
+  private requestClose(signal: CloseSignal): void {
+    this.interruptCount += 1;
+    const force = this.interruptCount >= 2;
+    this.log(
+      force
+        ? `再次收到 ${signal}，正在强制退出。`
+        : `收到 ${signal}，正在关闭远程调试会话。再次发送 ${signal} 强制退出。`
+    );
+    this.closeSession?.({ force });
+    if (force && !this.closeSession) {
+      process.exit(130);
+    }
   }
 
   log(message: string): void {
@@ -534,11 +629,17 @@ class PlainRemoteDebugReporter implements RemoteDebugReporter {
     );
   }
 
-  attachClose(): void {
+  attachClose(close: RemoteDebugCloseHandler): void {
+    this.closeSession = close;
+  }
+
+  attachConfigureConnectionKey(): void {
     return;
   }
 
   end(): void {
+    process.off('SIGINT', this.onSigint);
+    process.off('SIGTERM', this.onSigterm);
     logger.info('远程调试会话已结束。');
   }
 }
@@ -549,38 +650,43 @@ class TuiRemoteDebugReporter implements RemoteDebugReporter {
   private logs: TuiLogEntry[] = [];
   private instance: Instance | undefined;
   private closeSession: RemoteDebugCloseHandler | undefined;
+  private configureConnectionKey: RemoteDebugConfigureConnectionKeyHandler | undefined;
   private interruptCount = 0;
+  private configuring = false;
   private readonly onSigint = () => {
-    this.requestClose('ctrl-c');
+    this.requestClose('SIGINT');
   };
-  private readonly requestClose = (reason: TuiQuitReason) => {
-    if (reason === 'q') {
-      this.log('收到退出指令，正在关闭远程调试会话。');
-      this.closeSession?.({ force: false });
-      return;
-    }
+  private readonly requestClose = (signal: CloseSignal) => {
     this.interruptCount += 1;
     const force = this.interruptCount >= 2;
     this.status = force ? 'closed' : 'closing';
-    this.log(force ? '再次收到 Ctrl+C，正在强制退出。' : '收到 Ctrl+C，正在关闭远程调试会话。再次按 Ctrl+C 强制退出。');
+    this.log(
+      force
+        ? `再次收到 ${signal}，正在强制退出。`
+        : `收到 ${signal}，正在关闭远程调试会话。再次按 Ctrl+C 强制退出。`
+    );
     this.closeSession?.({ force });
     if (force && !this.closeSession) {
       process.exit(130);
     }
+  };
+  private readonly requestConfigureConnectionKey = () => {
+    if (this.configuring) {
+      return;
+    }
+    if (!this.configureConnectionKey) {
+      this.log('connection key 配置入口尚未就绪。');
+      return;
+    }
+
+    void this.runConfigureConnectionKey();
   };
 
   constructor(private readonly summary: RemoteDebugReporterSummary) {}
 
   start(): void {
     process.on('SIGINT', this.onSigint);
-    this.instance = renderInk(this.createApp(), {
-      stdin: process.stdin,
-      stdout: process.stdout,
-      stderr: process.stderr,
-      exitOnCtrlC: false,
-      interactive: true,
-      patchConsole: false
-    });
+    this.mount();
   }
 
   log(message: string): void {
@@ -602,22 +708,74 @@ class TuiRemoteDebugReporter implements RemoteDebugReporter {
     this.closeSession = close;
   }
 
+  attachConfigureConnectionKey(handler: RemoteDebugConfigureConnectionKeyHandler): void {
+    this.configureConnectionKey = handler;
+  }
+
   async end(): Promise<void> {
     process.off('SIGINT', this.onSigint);
     this.status = 'closed';
     this.rerender();
-    const instance = this.instance;
-    this.instance = undefined;
-    if (instance) {
-      await Promise.race([instance.waitUntilRenderFlush(), delay(50)]).catch(() => undefined);
-      instance.unmount();
-      await Promise.race([instance.waitUntilExit(), delay(50)]).catch(() => undefined);
-    }
+    await this.unmount();
     logger.info('远程调试会话已结束。');
   }
 
   private rerender(): void {
     this.instance?.rerender(this.createApp());
+  }
+
+  private mount(): void {
+    if (this.instance) {
+      return;
+    }
+
+    this.instance = renderInk(this.createApp(), {
+      stdin: process.stdin,
+      stdout: process.stdout,
+      stderr: process.stderr,
+      exitOnCtrlC: false,
+      interactive: true,
+      patchConsole: false
+    });
+  }
+
+  private async unmount(): Promise<void> {
+    const instance = this.instance;
+    this.instance = undefined;
+    if (!instance) {
+      return;
+    }
+
+    await Promise.race([instance.waitUntilRenderFlush(), delay(50)]).catch(() => undefined);
+    instance.unmount();
+    await Promise.race([instance.waitUntilExit(), delay(50)]).catch(() => undefined);
+  }
+
+  private async runConfigureConnectionKey(): Promise<void> {
+    if (!this.configureConnectionKey) {
+      return;
+    }
+
+    const previousStatus = this.status;
+    this.configuring = true;
+    this.status = 'configuring';
+    this.rerender();
+
+    try {
+      await this.unmount();
+      await this.configureConnectionKey();
+      this.status = 'connecting';
+      this.log('已更新 connection key，正在重新连接 Connection Gateway。');
+    } catch (error) {
+      this.status = previousStatus;
+      this.log(`connection key 配置失败: ${formatConnectionKeyExchangeError(error)}`);
+    } finally {
+      this.configuring = false;
+      if (this.status !== 'closed') {
+        this.mount();
+        this.rerender();
+      }
+    }
   }
 
   private createApp(): React.ReactElement {
@@ -626,12 +784,11 @@ class TuiRemoteDebugReporter implements RemoteDebugReporter {
       status: this.status,
       source: this.source,
       logs: this.logs,
-      onQuit: this.requestClose
+      onClose: () => this.requestClose('SIGINT'),
+      onConfigureConnectionKey: this.requestConfigureConnectionKey
     });
   }
 }
-
-type TuiQuitReason = 'ctrl-c' | 'q';
 
 type TuiLogEntry = {
   at: Date;
@@ -643,7 +800,8 @@ type RemoteDebugInkAppProps = {
   status: string;
   source: string;
   logs: TuiLogEntry[];
-  onQuit(reason: TuiQuitReason): void;
+  onClose(): void;
+  onConfigureConnectionKey(): void;
 };
 
 function RemoteDebugInkApp({
@@ -651,15 +809,16 @@ function RemoteDebugInkApp({
   status,
   source,
   logs,
-  onQuit
+  onClose,
+  onConfigureConnectionKey
 }: RemoteDebugInkAppProps): React.ReactElement {
   useInput((inputValue, key) => {
     if (key.ctrl && inputValue === 'c') {
-      onQuit('ctrl-c');
+      onClose();
       return;
     }
-    if (inputValue === 'q') {
-      onQuit('q');
+    if (inputValue === 'c') {
+      onConfigureConnectionKey();
     }
   });
 
@@ -823,7 +982,7 @@ function RemoteDebugInkApp({
     React.createElement(
       Box,
       { marginTop: 1, justifyContent: 'space-between' },
-      React.createElement(Text, { dimColor: true }, 'q stop'),
+      React.createElement(Text, { dimColor: true }, 'c configure connection key'),
       React.createElement(Text, { dimColor: true }, 'Ctrl+C stop · second Ctrl+C force exit')
     )
   );
@@ -855,6 +1014,16 @@ function getTuiStatusMeta(status: string): TuiStatusMeta {
       description: 'Remote debug session has been closed.',
       color: 'gray',
       borderColor: 'gray'
+    };
+  }
+
+  if (status === 'configuring') {
+    return {
+      label: 'CONFIGURE',
+      marker: '◆',
+      description: 'Waiting for a new FastGPT connection key.',
+      color: 'cyanBright',
+      borderColor: 'cyan'
     };
   }
 
@@ -902,7 +1071,7 @@ async function resolveGatewayOptions({
   options: RemoteDebugCommandOptions;
   commandName: string;
   targets: DebugGatewayTarget[];
-}): Promise<DebugGatewayClientOptions> {
+}): Promise<RemoteDebugGatewayClientOptions> {
   if (!options.connect) {
     throw new Error('dev 需要 --connect 来建立远程调试通道。');
   }
@@ -947,10 +1116,9 @@ function formatConnectionKeyExchangeError(error: unknown): string {
 
 async function resolveConnectGatewayOptions(
   options: RemoteDebugCommandOptions
-): Promise<DebugGatewayClientOptions> {
+): Promise<RemoteDebugGatewayClientOptions> {
   const info = await exchangeConnectLink(options.connect as string);
-
-  return {
+  const resolvedOptions: RemoteDebugGatewayClientOptions = {
     gatewayUrl: normalizeGatewayWsUrl(info.gatewayUrl),
     connectToken: info.connectToken,
     userId: info.tmbId,
@@ -961,9 +1129,21 @@ async function resolveConnectGatewayOptions(
     reconnectIntervalMs: toPositiveInt(
       options.reconnectIntervalMs ?? process.env.CONNECTION_GATEWAY_RECONNECT_INTERVAL_MS ?? '2000',
       'reconnect-interval-ms'
-    ),
-    resolveReconnectOptions: () => resolveConnectGatewayOptions(options)
+    )
   };
+  resolvedOptions.resolveReconnectOptions = async () => {
+    const nextOptions = await resolveConnectGatewayOptions(options);
+    if (options.connectPersistOnSuccess === true) {
+      await saveConnectionKey(options.connect as string);
+      logger.info(`已保存 FastGPT connection key 到本地配置: ${getCliConfigPath()}`);
+      options.connectPersistOnSuccess = false;
+    }
+    resolvedOptions.onResolvedReconnectOptions?.(nextOptions);
+    nextOptions.onResolvedReconnectOptions = resolvedOptions.onResolvedReconnectOptions;
+    return nextOptions;
+  };
+
+  return resolvedOptions;
 }
 
 function resolveUploadDir({

@@ -53,6 +53,10 @@ export function makeConnectionGatewayDeps() {
     }
   });
   const boundConnections = new Map<string, { sessionId: string; closed: boolean }>();
+  const isSessionConnected = (sessionId: string): boolean =>
+    [...boundConnections.values()].some(
+      (binding) => binding.sessionId === sessionId && !binding.closed
+    );
   const disconnectSession = (sessionId: string, reason?: Error): boolean => {
     for (const [connectionId, binding] of boundConnections.entries()) {
       if (binding.sessionId !== sessionId || binding.closed) {
@@ -130,6 +134,10 @@ export function makeConnectionGatewayDeps() {
         }
 
         if (message.type === 'heartbeat') {
+          const binding = boundConnections.get(connection.id);
+          if (binding && !binding.closed) {
+            await service.renewOwnerLease(binding.sessionId);
+          }
           await connection.send({
             protocol: 'connection-gateway.ws.v1',
             type: 'heartbeat',
@@ -143,10 +151,34 @@ export function makeConnectionGatewayDeps() {
           await connection.send({
             protocol: 'connection-gateway.ws.v1',
             type: 'error',
-            requestId: message.envelope.requestId,
+            requestId: message.type === 'metadata' ? message.requestId : message.envelope.requestId,
             code: 'connection_gateway.unbound',
             message: 'Gateway WebSocket connection is not bound'
           });
+          return;
+        }
+
+        await service.renewOwnerLease(binding.sessionId);
+
+        if (message.type === 'metadata') {
+          try {
+            await service.updateSessionMetadata({
+              sessionId: binding.sessionId,
+              metadata: message.metadata
+            });
+          } catch (error) {
+            const normalized = error instanceof Error ? error : new Error(String(error));
+            await connection.send({
+              protocol: 'connection-gateway.ws.v1',
+              type: 'error',
+              requestId: message.requestId,
+              code:
+                error instanceof RegisteredError
+                  ? error.code
+                  : 'connection_gateway.metadata_update_failed',
+              message: normalized.message
+            });
+          }
           return;
         }
 
@@ -186,9 +218,11 @@ export function makeConnectionGatewayDeps() {
   });
 
   return {
+    nodeId,
     redisClient,
     mailbox,
     service,
+    isSessionConnected,
     disconnectSession,
     websocketTransport,
     metrics,
@@ -214,7 +248,6 @@ async function pumpSessionMailbox({
 
   while (!binding.closed) {
     try {
-      await service.renewOwnerLease(binding.sessionId);
       const messages = await service.readSessionRequests({
         sessionId: binding.sessionId,
         afterId,

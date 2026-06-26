@@ -58,6 +58,44 @@ describe('connectDebugGateway', () => {
     expect(socket.closed).toBe(true);
   });
 
+  it('sends gateway heartbeats after bind so owner lease depends on the local client', async () => {
+    vi.useFakeTimers();
+    const socket = new FakeWebSocket();
+    vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget()],
+      options: makeOptions()
+    });
+
+    socket.open();
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(1);
+    });
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (socket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    expect(socket.sent).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          protocol: 'connection-gateway.ws.v1',
+          type: 'heartbeat'
+        })
+      ])
+    );
+
+    client.close();
+    await client.closed;
+    vi.useRealTimers();
+  });
+
   it('handles gateway request envelopes over WSS', async () => {
     const socket = new FakeWebSocket();
     vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
@@ -292,6 +330,24 @@ describe('connectDebugGateway', () => {
     expect(
       socket.sent.filter((message) => (message as { type?: string }).type === 'bind')
     ).toHaveLength(1);
+    expect(socket.sent).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          protocol: 'connection-gateway.ws.v1',
+          type: 'metadata',
+          metadata: {
+            pluginDebug: {
+              targets: [
+                expect.objectContaining({
+                  pluginId: 'getTime',
+                  tools: expect.any(Array)
+                })
+              ]
+            }
+          }
+        })
+      ])
+    );
 
     client.close();
     await client.closed;

@@ -46,6 +46,8 @@ fastgpt-plugin dev --no-interactive \
   --connect "fpg_dbg_..."
 ```
 
+`--connect` 启动并成功连接后会覆盖本地持久配置 `config.json` 里的 connection key，后续 `fastgpt-plugin dev` 可直接复用该配置。TUI 运行中按 `c` 可以重新输入并保存 connection key；停止会话使用 `Ctrl+C`，再次按 `Ctrl+C` 强制退出。
+
 使用裸 connection key 时，需要设置 `FASTGPT_PLUGIN_DEBUG_CONNECT_URL`，或设置 `FASTGPT_PLUGIN_SERVER_URL` 让 CLI 默认请求 `/api/plugin/debug-sessions/connection-key:exchange`。兼容场景仍可传入完整 connect link。exchange 结果会返回 gateway WSS 地址、`debug:tmbId:{tmbId}` source 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
 
 `dev` 未传插件目录时会自动探测当前目录：如果当前目录有 `index.ts`，则把当前目录作为插件；否则扫描当前目录下一层子目录中的 `index.ts`。也可以手动传入多个插件目录。

@@ -13,6 +13,7 @@ import { requestId } from 'hono/request-id';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import z from 'zod';
 
+import type { ConnectionGatewaySessionStatusView } from '@domain/value-objects/connection-gateway.vo';
 import { RegisteredError } from '@domain/value-objects/error.vo';
 import { gatewayEnv } from '@infrastructure/env';
 import { createBearerHonoAuthMiddleware } from '@infrastructure/hono/middleware/auth';
@@ -22,7 +23,7 @@ import { createOpenAPIHono, createRoute, R } from '@infrastructure/hono/utils/re
 import type { ConnectionGatewayDeps } from './deps';
 
 export function createConnectionGatewayApp(
-  deps: Pick<ConnectionGatewayDeps, 'service' | 'disconnectSession'>
+  deps: Pick<ConnectionGatewayDeps, 'nodeId' | 'service' | 'isSessionConnected' | 'disconnectSession'>
 ) {
   const app = createOpenAPIHono();
 
@@ -94,7 +95,10 @@ export function createConnectionGatewayApp(
     }),
     async (c) => {
       const source = decodeURIComponent(requiredParam(c.req.param('source')));
-      const status = await deps.service.getLatestStatusBySource(source);
+      const status = applyLocalOwnerLiveness(
+        await deps.service.getLatestStatusBySource(source),
+        deps
+      );
       if (!status.session) {
         return R.fail(c, 404, 'Gateway session not found');
       }
@@ -194,7 +198,10 @@ export function createConnectionGatewayApp(
       }
     }),
     async (c) => {
-      const status = await deps.service.getStatus(requiredParam(c.req.param('sessionId')));
+      const status = applyLocalOwnerLiveness(
+        await deps.service.getStatus(requiredParam(c.req.param('sessionId'))),
+        deps
+      );
       if (!status.session) {
         return R.fail(c, 404, 'Gateway session not found');
       }
@@ -287,6 +294,20 @@ export function createConnectionGatewayApp(
   );
 
   return app;
+}
+
+function applyLocalOwnerLiveness(
+  status: ConnectionGatewaySessionStatusView,
+  deps: Pick<ConnectionGatewayDeps, 'nodeId' | 'isSessionConnected'>
+): ConnectionGatewaySessionStatusView {
+  if (!status.session || status.session.ownerNodeId !== deps.nodeId) {
+    return status;
+  }
+
+  return {
+    ...status,
+    ownerAlive: status.ownerAlive && deps.isSessionConnected(status.session.id)
+  };
 }
 
 function jsonRequest(schema: z.ZodType) {

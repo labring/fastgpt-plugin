@@ -3,10 +3,6 @@
 import { run } from '@fastgpt-plugin/cli/cmd';
 import { logger } from '@fastgpt-plugin/cli/helpers';
 
-process.on('SIGINT', () => {
-  process.exit(130);
-});
-
 const main = async () => {
   try {
     await run();

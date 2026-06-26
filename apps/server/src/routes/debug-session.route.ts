@@ -121,6 +121,13 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
       try {
         const body = c.req.valid('json');
         const { session } = await deps.pluginDebugSessionRepo.exchangeConnectionKey(body.connectionKey);
+        await closeGatewaySessionBySource(session.source).catch((error) => {
+          logger.warn('Close existing debug gateway session before exchange failed', {
+            tmbId: session.tmbId,
+            source: session.source,
+            error
+          });
+        });
         const expiresAt = Date.now() + gatewayTokenTtlMs;
         const connectToken = await gatewayTokenSigner.sign({
           consumerType: 'plugin-debug',
@@ -167,7 +174,7 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
 
       const gatewayStatus = await getGatewayStatusBySource(session.source).catch(() => null);
       const plugins =
-        gatewayStatus?.session && gatewayStatus.ownerAlive
+        gatewayStatus?.session?.status === 'connected' && gatewayStatus.ownerAlive === true
           ? await listDebugPlugins(deps.pluginRepo, session.source, logger)
           : [];
 
@@ -351,7 +358,7 @@ function toDebugSessionStatus(
     return 'revoked';
   }
 
-  if (gatewayStatus?.session?.status === 'connected' && gatewayStatus.ownerAlive) {
+  if (gatewayStatus?.session?.status === 'connected' && gatewayStatus.ownerAlive === true) {
     return 'connected';
   }
 
