@@ -140,6 +140,7 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
           transport: 'websocket',
           source: session.source,
           connectToken,
+          fastgptBaseUrl: serverEnv.FASTGPT_BASE_URL,
           expiresAt
         });
       } catch (error) {

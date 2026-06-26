@@ -148,6 +148,7 @@ describe('debug command', () => {
               transport: 'websocket',
               source: 'debug:tmbId:tmb-1',
               connectToken: 'scoped-token',
+              fastgptBaseUrl: 'https://fastgpt-main.example.com',
               expiresAt: Date.now() + 60_000
             }
           })
@@ -171,7 +172,8 @@ describe('debug command', () => {
       gatewayUrl: 'wss://gateway.example.com/connection-gateway/v1',
       connectToken: 'scoped-token',
       source: 'debug:tmbId:tmb-1',
-      userId: 'tmb-1'
+      userId: 'tmb-1',
+      fastgptBaseUrl: 'https://fastgpt-main.example.com'
     });
     expect(vi.mocked(connectDebugGateway).mock.calls[0]?.[0].options).not.toHaveProperty(
       'authToken'

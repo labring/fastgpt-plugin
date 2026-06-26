@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { ConnectionGatewayWsServerMessage } from '@domain/value-objects/connection-gateway.vo';
+import { StreamData } from '@domain/value-objects/stream.vo';
+import { PluginChannelClientMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
 
 import { connectDebugGateway } from './gateway';
+import { RemoteDebugInvokeBridge } from './remote-invoke';
+import { createLocalDebugRuntime } from './runtime';
 
 describe('connectDebugGateway', () => {
   afterEach(() => {
@@ -122,6 +126,112 @@ describe('connectDebugGateway', () => {
                 kind: 'plugin-debug.stream',
                 event: 'end'
               }
+            })
+          })
+        ])
+      );
+    });
+
+    client.close();
+    await client.closed;
+  });
+
+  it('routes remote debug reverse uploadFile calls through FastGPT invoke APIs', async () => {
+    const socket = new FakeWebSocket();
+    vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
+    const fastgptFetch = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) =>
+      new Response(
+        JSON.stringify({
+          data: {
+            url: 'https://fastgpt.example.com/file/echo.txt'
+          }
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fastgptFetch);
+
+    const target = makeReverseUploadTarget();
+    const clientPromise = connectDebugGateway({
+      targets: [target],
+      options: makeOptions()
+    });
+
+    socket.open();
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(1);
+    });
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (socket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'envelope',
+      envelope: {
+        protocol: 'connection-gateway.v1',
+        sessionId: 'session-a',
+        generation: 0,
+        requestId: 'request-upload',
+        traceId: 'trace-upload',
+        type: 'request',
+        consumerType: 'plugin-debug',
+        capability: 'invoke',
+        createdAt: Date.now(),
+        payload: {
+          kind: 'plugin-debug.run',
+          eventName: 'run',
+          payload: {
+            pluginId: 'getTime',
+            childId: '',
+            input: {},
+            systemVar: {
+              ...makeSystemVar(),
+              invokeToken: 'real-fastgpt-invoke-token'
+            }
+          }
+        }
+      }
+    });
+
+    await vi.waitFor(() => {
+      expect(fastgptFetch).toHaveBeenCalledWith(
+        'https://fastgpt.example.com/api/invoke/fileUpload',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.any(Headers)
+        })
+      );
+    });
+    const init = fastgptFetch.mock.calls[0]![1]!;
+    expect((init.headers as Headers).get('Authorization')).toBe('Bearer real-fastgpt-invoke-token');
+    await vi.waitFor(() => {
+      expect(socket.sent).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'envelope',
+            envelope: expect.objectContaining({
+              type: 'stream',
+              requestId: 'request-upload',
+              payload: expect.objectContaining({
+                kind: 'plugin-debug.stream',
+                event: 'chunk',
+                data: {
+                  type: 'response',
+                  data: {
+                    value: 'https://fastgpt.example.com/file/echo.txt'
+                  }
+                }
+              })
             })
           })
         ])
@@ -374,20 +484,6 @@ function makeWebSocketConstructor(socket: FakeWebSocket) {
   } as unknown as typeof WebSocket;
 }
 
-function makeWebSocketConstructorSequence(sockets: FakeWebSocket[]) {
-  return class {
-    static OPEN = FakeWebSocket.OPEN;
-
-    constructor(readonly url: string) {
-      const socket = sockets.shift();
-      if (!socket) {
-        throw new Error(`Unexpected WebSocket creation: ${url}`);
-      }
-      return socket;
-    }
-  } as unknown as typeof WebSocket;
-}
-
 function makeTrackedWebSocketConstructorSequence(sockets: FakeWebSocket[]) {
   let callCount = 0;
   const ctor = class {
@@ -415,6 +511,7 @@ function makeOptions() {
     connectToken: 'scoped-token',
     userId: 'tmb-1',
     source: 'debug:tmbId:tmb-1',
+    fastgptBaseUrl: 'https://fastgpt.example.com',
     tokenTtlMs: 30_000,
     reconnect: false
   };
@@ -438,29 +535,85 @@ function makeTarget({ response = true }: { response?: unknown } = {}) {
         }
       })
     } as never,
-    snapshot: {
-      entryDir: '/tmp/plugin',
-      indexPath: '/tmp/plugin/index.ts',
-      pluginId: 'getTime',
-      version: '1.0.0',
-      name: 'getTime',
-      description: 'Get time',
-      toolDescription: 'Get time',
-      tags: [],
-      permissions: [],
-      secretSchema: {},
-      isToolSet: false,
-      tools: [
-        {
-          id: 'tool',
-          name: 'getTime',
-          description: 'Get time',
-          toolDescription: 'Get time',
-          inputSchema: {},
-          outputSchema: {}
+    snapshot: makeSnapshot()
+  };
+}
+
+function makeReverseUploadTarget() {
+  const runtime = createLocalDebugRuntime();
+  const invokeBridge = new RemoteDebugInvokeBridge('https://fastgpt.example.com');
+  invokeBridge.attach(runtime);
+
+  return {
+    runtime: {
+      invokePlugin: async (
+        _method: string,
+        _params: unknown,
+        options?: { traceId?: string }
+      ) => ({
+        output: {
+          stream: {
+            consume: async (callback: (chunk: unknown) => Promise<void> | void) => {
+              const uploadInput = StreamData.create<Buffer>();
+              uploadInput.write(Buffer.from('hello remote upload'));
+              uploadInput.end();
+              const response = await runtime.pluginChannel.request(
+                PluginChannelClientMethod.request,
+                {
+                  method: 'uploadFile',
+                  args: {
+                    fileName: 'echo.txt',
+                    contentType: 'text/plain'
+                  }
+                },
+                {
+                  traceId: options?.traceId,
+                  input: uploadInput
+                }
+              );
+              const [result, err] = response.result as [{ accessURL: string } | undefined, unknown];
+              if (err) {
+                throw err instanceof Error ? err : new Error(String(err));
+              }
+              await callback({
+                type: 'response',
+                data: {
+                  value: result?.accessURL
+                }
+              });
+            }
+          }
         }
-      ]
-    }
+      })
+    } as never,
+    invokeBridge,
+    snapshot: makeSnapshot()
+  };
+}
+
+function makeSnapshot() {
+  return {
+    entryDir: '/tmp/plugin',
+    indexPath: '/tmp/plugin/index.ts',
+    pluginId: 'getTime',
+    version: '1.0.0',
+    name: 'getTime',
+    description: 'Get time',
+    toolDescription: 'Get time',
+    tags: [],
+    permissions: [],
+    secretSchema: {},
+    isToolSet: false,
+    tools: [
+      {
+        id: 'tool',
+        name: 'getTime',
+        description: 'Get time',
+        toolDescription: 'Get time',
+        inputSchema: {},
+        outputSchema: {}
+      }
+    ]
   };
 }
 

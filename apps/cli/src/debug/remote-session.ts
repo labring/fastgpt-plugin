@@ -18,6 +18,7 @@ import {
   type DebugGatewayClientOptions,
   type DebugGatewayTarget
 } from './gateway';
+import { RemoteDebugInvokeBridge } from './remote-invoke';
 import { type DebugPluginSnapshot, loadDebugSession } from './session';
 
 export type RemoteDebugCommandOptions = {
@@ -82,6 +83,7 @@ async function runRemoteDebugSessionOnce({
     commandName,
     targets
   });
+  attachRemoteInvokeBridges(targets, gatewayOptions.fastgptBaseUrl);
   const reporter = createRemoteDebugReporter({
     commandName,
     options,
@@ -130,6 +132,7 @@ async function runWatchRemoteDebugSession({
     commandName,
     targets: initialTargets
   });
+  attachRemoteInvokeBridges(initialTargets, gatewayOptions.fastgptBaseUrl);
   const reporter = createRemoteDebugReporter({
     commandName,
     options,
@@ -154,6 +157,7 @@ async function runWatchRemoteDebugSession({
         reloadPending = false;
         try {
           const nextTargets = await loadTargets(entries, options);
+          attachRemoteInvokeBridges(nextTargets, gatewayOptions.fastgptBaseUrl);
           gateway?.updateTargets(nextTargets);
           reporter.log(`检测到插件文件变化，已热更新 ${nextTargets.length} 个本地插件。`);
         } catch (error) {
@@ -243,6 +247,17 @@ async function loadTargets(
   }
 
   return targets;
+}
+
+function attachRemoteInvokeBridges(
+  targets: DebugGatewayTarget[],
+  fastgptBaseUrl: string
+): void {
+  targets.forEach((target) => {
+    const invokeBridge = new RemoteDebugInvokeBridge(fastgptBaseUrl);
+    invokeBridge.attach(target.runtime);
+    target.invokeBridge = invokeBridge;
+  });
 }
 
 function watchDebugEntries(entries: string[], onChange: () => void): { close(): void } {
@@ -940,6 +955,7 @@ async function resolveConnectGatewayOptions(
     connectToken: info.connectToken,
     userId: info.tmbId,
     source: info.source,
+    fastgptBaseUrl: info.fastgptBaseUrl,
     tokenTtlMs: Math.max(1, info.expiresAt - Date.now()),
     reconnect: options.noReconnect ? false : options.reconnect ?? true,
     reconnectIntervalMs: toPositiveInt(
@@ -977,13 +993,19 @@ const ConnectInfoSchema = z.object({
   transport: z.literal('websocket'),
   source: z.string().min(1),
   connectToken: z.string().min(1),
+  fastgptBaseUrl: z.string().min(1).optional(),
   expiresAt: z.number().int().positive()
 });
+type ConnectInfo = Omit<z.infer<typeof ConnectInfoSchema>, 'fastgptBaseUrl'> & {
+  fastgptBaseUrl: string;
+  tmbId: string;
+};
 
-async function exchangeConnectLink(connectInput: string) {
+async function exchangeConnectLink(connectInput: string): Promise<ConnectInfo> {
+  const exchangeUrl = isHttpUrl(connectInput) ? connectInput : resolveConnectionKeyExchangeUrl();
   const response = isHttpUrl(connectInput)
-    ? await fetch(connectInput)
-    : await fetch(resolveConnectionKeyExchangeUrl(), {
+    ? await fetch(exchangeUrl)
+    : await fetch(exchangeUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1003,6 +1025,7 @@ async function exchangeConnectLink(connectInput: string) {
 
   return {
     ...info,
+    fastgptBaseUrl: info.fastgptBaseUrl ?? new URL(exchangeUrl).origin,
     tmbId: parseTmbIdFromDebugSource(info.source)
   };
 }

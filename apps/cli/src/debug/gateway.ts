@@ -21,6 +21,7 @@ export type DebugGatewayClientOptions = {
   userId: string;
   teamId?: string;
   source?: string;
+  fastgptBaseUrl: string;
   tokenTtlMs: number;
   reconnect?: boolean;
   reconnectIntervalMs?: number;
@@ -30,6 +31,10 @@ export type DebugGatewayClientOptions = {
 export type DebugGatewayTarget = {
   runtime: LocalDebugRuntime;
   snapshot: DebugPluginSnapshot;
+  invokeBridge?: {
+    bind(traceId: string, input: { invokeToken: string }): void;
+    release(traceId: string): void;
+  };
 };
 
 export type DebugGatewayClient = {
@@ -278,6 +283,7 @@ async function handleGatewayEnvelope({
   if (!target) {
     throw new Error(`Gateway debug target not found: ${source} ${pluginId}`);
   }
+  const traceId = envelope.traceId ?? requiredRequestId(envelope);
   onLog?.(`收到远程调试请求: ${source} ${pluginId} ${envelope.requestId ?? '-'}`);
 
   await sendEnvelope(socket, {
@@ -295,17 +301,26 @@ async function handleGatewayEnvelope({
     }
   });
 
-  const result = await runDebugTool({
-    runtime: target.runtime,
-    snapshot: target.snapshot,
-    toolId: request.payload.childId,
-    input: request.payload.input,
-    secrets: request.payload.secrets,
-    systemVar: request.payload.systemVar
+  target.invokeBridge?.bind(traceId, {
+    invokeToken: request.payload.systemVar.invokeToken
   });
 
-  for (const message of result.streamMessages) {
-    await sendStreamChunk(socket, session, envelope, message);
+  try {
+    const result = await runDebugTool({
+      runtime: target.runtime,
+      snapshot: target.snapshot,
+      toolId: request.payload.childId,
+      input: request.payload.input,
+      secrets: request.payload.secrets,
+      systemVar: request.payload.systemVar,
+      traceId
+    });
+
+    for (const message of result.streamMessages) {
+      await sendStreamChunk(socket, session, envelope, message);
+    }
+  } finally {
+    target.invokeBridge?.release(traceId);
   }
 
   await sendEnvelope(socket, {
