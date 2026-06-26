@@ -17,6 +17,30 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'groq/compound-mini',
+      maxContext: 131072,
+      maxTokens: 8192,
+      quoteMaxToken: 120000,
+      maxTemperature: 1.2,
+      vision: false,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'groq/compound',
+      maxContext: 131072,
+      maxTokens: 8192,
+      quoteMaxToken: 120000,
+      maxTemperature: 1.2,
+      vision: false,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'openai/gpt-oss-20b',
       maxContext: 131072,
       maxTokens: 65536,
@@ -73,7 +97,31 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'moonshotai/kimi-k2-instruct',
+      maxContext: 131072,
+      maxTokens: 8192,
+      quoteMaxToken: 120000,
+      maxTemperature: 1.2,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      maxContext: 131072,
+      maxTokens: 8192,
+      quoteMaxToken: 120000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
       maxContext: 131072,
       maxTokens: 8192,
       quoteMaxToken: 120000,
