@@ -265,6 +265,71 @@ describe('connectDebugGateway', () => {
     await expect(client.closed).rejects.toThrow('Gateway session already bound');
     expect(webSocketCtor.calls()).toBe(2);
   });
+
+  it('refreshes the connect token before reconnecting the WSS session', async () => {
+    const firstSocket = new FakeWebSocket('wss://gateway.example.com/connection-gateway/v1?attempt=1');
+    const secondSocket = new FakeWebSocket('wss://gateway.example.com/connection-gateway/v1?attempt=2');
+    const webSocketCtor = makeTrackedWebSocketConstructorSequence([firstSocket, secondSocket]);
+    vi.stubGlobal('WebSocket', webSocketCtor.ctor);
+    const resolveReconnectOptions = vi.fn(async () => ({
+      ...makeOptions(),
+      connectToken: 'refreshed-token',
+      reconnect: true,
+      reconnectIntervalMs: 5
+    }));
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget()],
+      options: {
+        ...makeOptions(),
+        reconnect: true,
+        reconnectIntervalMs: 5,
+        resolveReconnectOptions
+      }
+    });
+
+    firstSocket.open();
+    await vi.waitFor(() => {
+      expect(firstSocket.sent).toHaveLength(1);
+    });
+    expect(firstSocket.sent[0]).toMatchObject({
+      type: 'bind',
+      token: 'scoped-token'
+    });
+    firstSocket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (firstSocket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    firstSocket.close();
+    await vi.waitFor(() => {
+      expect(resolveReconnectOptions).toHaveBeenCalledTimes(1);
+      expect(webSocketCtor.calls()).toBe(2);
+    });
+    secondSocket.open();
+    await vi.waitFor(() => {
+      expect(secondSocket.sent).toHaveLength(1);
+    });
+    expect(secondSocket.sent[0]).toMatchObject({
+      type: 'bind',
+      token: 'refreshed-token'
+    });
+    secondSocket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (secondSocket.sent[0] as { requestId: string }).requestId,
+      session: makeSession({
+        id: 'session-b'
+      })
+    });
+
+    client.close();
+    secondSocket.close();
+    await client.closed;
+  });
 });
 
 class FakeWebSocket extends EventTarget {
@@ -426,7 +491,14 @@ function makeRunEnvelope(requestId: string): ConnectionGatewayWsServerMessage {
   };
 }
 
-function makeSession() {
+function makeSession(overrides: Partial<ReturnType<typeof makeSessionBase>> = {}) {
+  return {
+    ...makeSessionBase(),
+    ...overrides
+  };
+}
+
+function makeSessionBase() {
   return {
     id: 'session-a',
     consumerType: 'plugin-debug',

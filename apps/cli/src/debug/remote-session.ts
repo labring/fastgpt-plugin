@@ -945,7 +945,8 @@ async function resolveConnectGatewayOptions(
     reconnectIntervalMs: toPositiveInt(
       options.reconnectIntervalMs ?? process.env.CONNECTION_GATEWAY_RECONNECT_INTERVAL_MS ?? '2000',
       'reconnect-interval-ms'
-    )
+    ),
+    resolveReconnectOptions: () => resolveConnectGatewayOptions(options)
   };
 }
 

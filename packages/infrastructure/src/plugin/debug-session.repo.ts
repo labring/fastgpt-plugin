@@ -54,6 +54,7 @@ export class InMemoryPluginDebugSessionRepo implements PluginDebugSessionPort {
     if (
       !session ||
       !session.enabled ||
+      session.status !== 'enabled' ||
       session.connectionKeyHash !== connectionKeyHash
     ) {
       throw new Error('Debug connection key disabled');
@@ -184,6 +185,7 @@ export class RedisPluginDebugSessionRepo implements PluginDebugSessionPort {
     if (
       !session ||
       !session.enabled ||
+      session.status !== 'enabled' ||
       session.connectionKeyHash !== connectionKeyHash
     ) {
       throw new Error('Debug connection key disabled');

@@ -24,6 +24,7 @@ export type DebugGatewayClientOptions = {
   tokenTtlMs: number;
   reconnect?: boolean;
   reconnectIntervalMs?: number;
+  resolveReconnectOptions?: () => Promise<DebugGatewayClientOptions>;
 };
 
 export type DebugGatewayTarget = {
@@ -73,12 +74,28 @@ async function connectReconnectingDebugGateway({
   let current: DebugGatewayClient | null = null;
   let currentSession: ConnectionGatewaySession | null = null;
   let latestTargets = targets;
+  let hasAttemptedConnection = false;
+  let currentOptions = options;
+  const resolveReconnectOptions = options.resolveReconnectOptions;
   const intervalMs = Math.max(100, options.reconnectIntervalMs ?? 2_000);
 
   const closedPromise = (async () => {
     while (!closed) {
       try {
-        current = await connectSingleDebugGateway({ targets: latestTargets, options, onLog });
+        const attemptOptions =
+          hasAttemptedConnection && resolveReconnectOptions
+            ? await resolveReconnectOptions()
+            : currentOptions;
+        hasAttemptedConnection = true;
+        currentOptions = {
+          ...attemptOptions,
+          resolveReconnectOptions
+        };
+        current = await connectSingleDebugGateway({
+          targets: latestTargets,
+          options: currentOptions,
+          onLog
+        });
         currentSession = current.session;
         await current.closed;
       } catch (error) {

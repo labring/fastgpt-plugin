@@ -64,7 +64,7 @@ describe('InMemoryPluginDebugSessionRepo', () => {
     });
   });
 
-  it('disconnects the debug session and keeps the connection key reusable', async () => {
+  it('disconnects the debug session without rotating the connection key', async () => {
     const repo = new InMemoryPluginDebugSessionRepo('secret');
     const created = await repo.create({
       tmbId: 'tmb-1',
@@ -75,13 +75,9 @@ describe('InMemoryPluginDebugSessionRepo', () => {
       enabled: true,
       status: 'disconnected'
     });
-
-    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).resolves.toMatchObject({
-      session: {
-        keyId: created.session.keyId,
-        status: 'disconnected'
-      }
-    });
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
 
     const enabledAgain = await repo.create({
       tmbId: 'tmb-1',
@@ -160,12 +156,12 @@ describe('RedisPluginDebugSessionRepo', () => {
       enabled: true,
       status: 'disconnected'
     });
-    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).resolves.toMatchObject({
-      session: {
-        keyId: created.session.keyId,
-        status: 'disconnected'
-      }
-    });
+    expect(redis.store.has(`plugin-debug:sessions:by-connection-key:${created.session.connectionKeyHash}`)).toBe(
+      true
+    );
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
 
     const enabledAgain = await repo.create({ tmbId: 'tmb-1', now: 3_000 });
 
@@ -179,7 +175,7 @@ describe('RedisPluginDebugSessionRepo', () => {
     });
   });
 
-  it('backfills legacy session connection keys after a successful exchange', async () => {
+  it('rejects disconnected sessions even when stale connection key mappings exist', async () => {
     const redis = makeRedisStub();
     const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
     const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
@@ -188,20 +184,82 @@ describe('RedisPluginDebugSessionRepo', () => {
       'plugin-debug:sessions:by-tmb:tmb-1',
       JSON.stringify({
         ...created.session,
-        connectionKey: undefined
+        status: 'disconnected'
       })
     );
 
-    await expect(repo.exchangeConnectionKey(created.connectionKey!, 1_500)).resolves.toMatchObject({
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+  });
+
+  it('rejects revoked sessions even when stale connection key mappings exist', async () => {
+    const redis = makeRedisStub();
+    const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    redis.store.set(
+      'plugin-debug:sessions:by-tmb:tmb-1',
+      JSON.stringify({
+        ...created.session,
+        enabled: false,
+        status: 'revoked',
+        revokedAt: 2_000
+      })
+    );
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+  });
+
+  it('rejects disconnected in-memory sessions even when the key mapping exists', async () => {
+    const repo = new InMemoryPluginDebugSessionRepo('secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    // Simulate a stale in-memory session state without deleting the key mapping.
+    (repo as unknown as { sessions: Map<string, unknown> }).sessions.set('tmb-1', {
+      ...created.session,
+      status: 'disconnected'
+    });
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+  });
+
+  it('rejects revoked in-memory sessions even when the key mapping exists', async () => {
+    const repo = new InMemoryPluginDebugSessionRepo('secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+
+    // Simulate a stale in-memory session state without deleting the key mapping.
+    (repo as unknown as { sessions: Map<string, unknown> }).sessions.set('tmb-1', {
+      ...created.session,
+      enabled: false,
+      status: 'revoked',
+      revokedAt: 2_000
+    });
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key disabled'
+    );
+  });
+
+  it('keeps refreshed connection keys exchangeable', async () => {
+    const redis = makeRedisStub();
+    const repo = new RedisPluginDebugSessionRepo(redis as never, 'secret');
+    const created = await repo.create({ tmbId: 'tmb-1', now: 1_000 });
+    const refreshed = await repo.refresh({ tmbId: 'tmb-1', now: 2_000 });
+
+    await expect(repo.exchangeConnectionKey(created.connectionKey!, 2_001)).rejects.toThrow(
+      'Debug connection key not found'
+    );
+    await expect(repo.exchangeConnectionKey(refreshed.connectionKey!, 2_001)).resolves.toMatchObject({
       session: {
-        connectionKey: created.connectionKey
+        keyId: refreshed.session.keyId,
+        status: 'enabled'
       }
     });
-    await repo.revoke({ tmbId: 'tmb-1', now: 2_000 });
-
-    const enabledAgain = await repo.create({ tmbId: 'tmb-1', now: 3_000 });
-
-    expect(enabledAgain.connectionKey).toBe(created.connectionKey);
   });
 });
 
