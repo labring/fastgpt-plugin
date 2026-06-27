@@ -138,7 +138,8 @@ export async function runDebugTool({
   toolId,
   input,
   secrets,
-  systemVar
+  systemVar,
+  traceId
 }: {
   runtime: LocalDebugRuntime;
   snapshot: DebugPluginSnapshot;
@@ -146,6 +147,7 @@ export async function runDebugTool({
   input: Record<string, unknown>;
   secrets?: Record<string, unknown>;
   systemVar?: Partial<SystemVarType>;
+  traceId?: string;
 }): Promise<DebugToolRunResult> {
   const targetTool = pickTargetTool(snapshot, toolId);
   const mergedSystemVar = createDebugSystemVar(snapshot, targetTool.id, systemVar);
@@ -169,7 +171,7 @@ export async function runDebugTool({
       ...(secrets ? { secrets } : {})
     },
     {
-      traceId: randomUUID()
+      traceId: traceId ?? randomUUID()
     }
   );
 
@@ -375,12 +377,24 @@ async function readSourceToBuffer(
   }
 
   const chunks: Buffer[] = [];
-  const iterable = source instanceof StreamData ? source.values() : source;
+  const iterable = isStreamDataLike(source) ? source.values() : source;
 
   for await (const chunk of iterable) {
     chunks.push(toBuffer(chunk));
   }
   return Buffer.concat(chunks);
+}
+
+function isStreamDataLike<T>(
+  source: StreamData<T> | AsyncIterable<T>
+): source is StreamData<T> {
+  return (
+    source instanceof StreamData ||
+    (typeof source === 'object' &&
+      source !== null &&
+      typeof (source as { values?: unknown }).values === 'function' &&
+      typeof (source as { consume?: unknown }).consume === 'function')
+  );
 }
 
 function toBuffer(value: unknown): Buffer {

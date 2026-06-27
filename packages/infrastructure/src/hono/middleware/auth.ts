@@ -1,18 +1,31 @@
 import { createMiddleware } from 'hono/factory';
 import { HTTPException } from 'hono/http-exception';
 
-import { env } from '../../env';
+import { serverEnv } from '../../env';
 
 const PREFIX = 'Bearer ';
 
-export const bearerHonoAuthMiddleware = createMiddleware<Env>(async (c, next) => {
-  const authHeader = c.req.header('Authorization');
+function getBearerToken(authHeader: string | undefined) {
   if (!authHeader?.startsWith(PREFIX)) {
     throw new HTTPException(401, { message: 'Unauthorized' });
   }
 
-  const token = authHeader.slice(PREFIX.length);
-  if (token !== env.AUTH_TOKEN) {
+  return authHeader.slice(PREFIX.length);
+}
+
+export const createBearerHonoAuthMiddleware = (authToken: string) =>
+  createMiddleware<Env>(async (c, next) => {
+    const token = getBearerToken(c.req.header('Authorization'));
+    if (token !== authToken) {
+      throw new HTTPException(401, { message: 'Unauthorized' });
+    }
+
+    await next();
+  });
+
+export const bearerHonoAuthMiddleware = createMiddleware<Env>(async (c, next) => {
+  const token = getBearerToken(c.req.header('Authorization'));
+  if (token !== serverEnv.AUTH_TOKEN) {
     throw new HTTPException(401, { message: 'Unauthorized' });
   }
 

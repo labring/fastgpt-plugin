@@ -16,6 +16,11 @@ export type PluginRuntimeInvokeOptions = {
   invoke?: InvokePort;
   timeout?: number;
   priority?: number;
+  debug?: {
+    tmbId?: string;
+    userId?: string;
+    source?: string;
+  };
 };
 
 /**

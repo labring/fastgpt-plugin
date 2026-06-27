@@ -25,8 +25,40 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
 - **本地调试**
   - 提供 `debug` 命令查看插件和子工具信息
   - 支持直接运行工具、传入 input/secrets/systemVar 文件，并用本地目录模拟 `uploadFile`
+- **集成开发会话**
+  - 提供 `dev` 命令通过 Connection Gateway 建立 WSS 远程调试通道
+  - 支持在一个通道内挂载多个本地插件，适合接入 FastGPT 测试环境
 - **打包**
   - 提供 `pack` 命令把 `dist` 产物打成可上传的 `.pkg`
+
+### 远程调试
+
+本地插件可以通过 FastGPT 生成的长期 connection key 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并开启 debug channel，CLI 使用 connection key 换取短期 WSS connect token。
+
+```bash
+fastgpt-plugin dev
+```
+
+启动后把 FastGPT 页面生成的 connection key 粘贴到 TUI 中即可。脚本或 Agent 场景可以显式传入：
+
+```bash
+fastgpt-plugin dev --no-interactive \
+  --connect "fpg_dbg_..."
+```
+
+`--connect` 启动并成功连接后会覆盖本地持久配置 `config.json` 里的 connection key，后续 `fastgpt-plugin dev` 可直接复用该配置。TUI 运行中按 `c` 可以重新输入并保存 connection key；停止会话使用 `Ctrl+C`，再次按 `Ctrl+C` 强制退出。
+
+使用裸 connection key 时，需要设置 `FASTGPT_PLUGIN_DEBUG_CONNECT_URL`，或设置 `FASTGPT_PLUGIN_SERVER_URL` 让 CLI 默认请求 `/api/plugin/debug-sessions/connection-key:exchange`。兼容场景仍可传入完整 connect link。exchange 结果会返回 gateway WSS 地址、`debug:tmbId:{tmbId}` source 和 scoped connect token。CLI 不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
+
+`dev` 未传插件目录时会自动探测当前目录：如果当前目录有 `index.ts`，则把当前目录作为插件；否则扫描当前目录下一层子目录中的 `index.ts`。也可以手动传入多个插件目录。
+
+```bash
+fastgpt-plugin dev ./plugins/getTime ./plugins/dbops --watch
+```
+
+同一个 CLI 进程会建立 1 个 WSS 通道并挂载所有发现或传入的插件。断线后默认自动重连；如需关闭自动重连，可加 `--no-reconnect`。开发时可加 `--watch`，文件变化后会自动重载本地插件并重新建立远程调试会话。
+
+`debug --connect` 仍作为兼容入口保留，但新的远程集成调试应使用 `dev`。`debug` 会继续聚焦单插件本地查看和一次性运行。
 
 ### 待实现 / TODO
 
@@ -37,5 +69,5 @@ FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 
   - 可选的 dry-run 模式（仅输出将要执行的操作，不真正发布）
   - 支持自定义 npm registry / token 配置（环境变量或配置文件）
 - **更多开发体验优化**
-  - `watch` 模式：监听源码变化自动重新构建
+  - 构建 `watch` 模式：监听源码变化自动重新构建
   - 输出更友好的构建日志和错误提示

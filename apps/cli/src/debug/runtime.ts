@@ -400,7 +400,7 @@ function createIncomingStream<T>({
 }
 
 function toStreamData<T>(source: PluginChannelStreamSource<T>): StreamData<T> {
-  if (source instanceof StreamData) {
+  if (isStreamDataLike<T>(source)) {
     return source;
   }
 
@@ -418,4 +418,14 @@ function toStreamData<T>(source: PluginChannelStreamSource<T>): StreamData<T> {
   })();
 
   return output;
+}
+
+function isStreamDataLike<T>(source: PluginChannelStreamSource<T>): source is StreamData<T> {
+  return (
+    source instanceof StreamData ||
+    (typeof source === 'object' &&
+      source !== null &&
+      typeof (source as { values?: unknown }).values === 'function' &&
+      typeof (source as { consume?: unknown }).consume === 'function')
+  );
 }

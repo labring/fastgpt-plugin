@@ -82,6 +82,70 @@ describe('metrics facade', () => {
     expect(metrics.__getRuntimeGaugeSourcesForTest()).toEqual([]);
   });
 
+  it('registers connection gateway gauge sources lazily and unregisters them', async () => {
+    const metrics = await import('./index');
+    const source = {
+      getConnectionGatewayMetrics: () => ({
+        nodeId: 'node-a',
+        activeConnections: 1,
+        activeSessions: 2,
+        inFlightRequests: 3,
+        streamBufferBytes: 4,
+        slowConsumers: 5,
+        ownerLeaseExpiries: 6,
+        mailbox: {
+          lag: 7,
+          redisRoundTripMs: 8
+        },
+        limits: {
+          maxConnections: 100,
+          maxSessionsPerSubject: 5,
+          maxInFlightPerSession: 50,
+          maxEnvelopeBytes: 1024
+        }
+      })
+    };
+
+    const unregister = metrics.registerConnectionGatewayGaugeSource(source);
+
+    expect(metrics.__getConnectionGatewayGaugeSourcesForTest()).toEqual([source]);
+
+    unregister();
+
+    expect(metrics.__getConnectionGatewayGaugeSourcesForTest()).toEqual([]);
+  });
+
+  it('clears connection gateway gauge sources on destroy', async () => {
+    process.env.METRICS_ENABLE_OTEL = 'true';
+    const metrics = await import('./index');
+    metrics.registerConnectionGatewayGaugeSource({
+      getConnectionGatewayMetrics: () => ({
+        nodeId: 'node-a',
+        activeConnections: 0,
+        activeSessions: 0,
+        inFlightRequests: 0,
+        streamBufferBytes: 0,
+        slowConsumers: 0,
+        ownerLeaseExpiries: 0,
+        mailbox: {
+          lag: 0,
+          redisRoundTripMs: 0
+        },
+        limits: {
+          maxConnections: 1,
+          maxSessionsPerSubject: 1,
+          maxInFlightPerSession: 1,
+          maxEnvelopeBytes: 1
+        }
+      })
+    });
+
+    await metrics.configureMetrics();
+    await metrics.destroyMetrics();
+
+    expect(metrics.__getConnectionGatewayGaugeSourcesForTest()).toEqual([]);
+  });
+
   it('generates an opaque service instance id when env override is absent', async () => {
     const metrics = await import('./index');
 

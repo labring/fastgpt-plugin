@@ -15,6 +15,10 @@ import {
 } from '@domain/ports/plugin/tool.port';
 import { createError, getErrorDefinition, type RegisteredError } from '@domain/value-objects/error.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
+import {
+  isPluginDebugSource,
+  parsePluginDebugSessionSource
+} from '@domain/value-objects/plugin-debug-session.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
@@ -210,7 +214,15 @@ export class ToolManager implements ToolManagerPort {
       invoke: new InvokeManager({
         token: this.getInvokeToken(systemVar),
         fastgptBaseUrl: this.deps.fastgptBaseUrl
-      })
+      }),
+      ...(isPluginDebugSource(source)
+        ? {
+            debug: {
+              ...getDebugIdentityFromSource(source),
+              source
+            }
+          }
+        : {})
     };
 
     const [invokeRes, invokeErr] = await this.deps.pluginRuntimeManager.invoke<
@@ -242,6 +254,25 @@ export class ToolManager implements ToolManagerPort {
 
     return successResult(invokeRes);
   }
+}
+
+function getDebugIdentityFromSource(source: string): { tmbId?: string; userId?: string } {
+  const debugSessionSource = parsePluginDebugSessionSource(source);
+  if (debugSessionSource) {
+    return debugSessionSource;
+  }
+
+  const parts = source.split(':');
+  const userIndex = parts.indexOf('user');
+  const userId = userIndex >= 0 ? parts[userIndex + 1] : undefined;
+  if (userId) {
+    return { userId };
+  }
+
+  throw createError(ErrorCode.pluginRuntimePluginNotFound, {
+    message: 'Debug source must include tmbId or user id',
+    data: { source }
+  });
 }
 
 type ToolRunErrorContext = {

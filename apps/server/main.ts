@@ -2,7 +2,7 @@ import { inspect } from 'node:util';
 
 import { serve, type ServerType } from '@hono/node-server';
 
-import { env } from '@infrastructure/env';
+import { serverEnv } from '@infrastructure/env';
 import { app } from '@infrastructure/hono/app';
 import { configureLogger, destroyLogger, getLogger, mod, root } from '@infrastructure/logger';
 import { configureMetrics, destroyMetrics } from '@infrastructure/metrics';
@@ -11,8 +11,10 @@ import { getErrText } from '@shared/utils/err';
 
 import deps from './src/deps';
 import { init } from './src/init';
+import { makeDebugSessionRoute } from './src/routes/debug-session.route';
 import { makeModelRoute } from './src/routes/model.route';
 import { makePluginRoute } from './src/routes/plugin.route';
+import { makePluginServiceFeatureRoute } from './src/routes/plugin-service-feature.route';
 import { makeRuntimeRoute } from './src/routes/runtime.route';
 import { makeToolRoute } from './src/routes/tool.route';
 import { makeWorkflowRoute } from './src/routes/workflow.route';
@@ -20,10 +22,12 @@ import { makeWorkflowRoute } from './src/routes/workflow.route';
 await configureLogger(); // setup logger
 await configureMetrics(); // setup metrics
 const logger = getLogger(root);
-logger.debug(env);
+logger.debug(serverEnv);
 
 const modelRoute = makeModelRoute(deps);
+const debugSessionRoute = makeDebugSessionRoute(deps);
 const pluginRoute = makePluginRoute(deps);
+const pluginServiceFeatureRoute = makePluginServiceFeatureRoute();
 const runtimeRoute = makeRuntimeRoute(deps);
 const toolRoute = makeToolRoute({ toolManager: deps.toolManager, logger: getLogger(mod.tool) });
 const workflowRoute = makeWorkflowRoute(deps);
@@ -34,7 +38,9 @@ app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
 });
 
 app.route('/api', modelRoute);
+app.route('/api', debugSessionRoute);
 app.route('/api', pluginRoute);
+app.route('/api', pluginServiceFeatureRoute);
 app.route('/api', runtimeRoute);
 app.route('/api', toolRoute);
 app.route('/api', workflowRoute);
@@ -109,7 +115,7 @@ async function main() {
   server = serve(
     {
       fetch: app.fetch,
-      port: env.PORT
+      port: serverEnv.PORT
     },
     (info) => {
       logger.info(`Server is listening at http://0.0.0.0:${info.port}`);

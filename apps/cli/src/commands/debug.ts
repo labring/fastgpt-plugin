@@ -3,6 +3,10 @@ import path from 'node:path';
 
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
 import {
+  type RemoteDebugCommandOptions,
+  runRemoteDebugSession
+} from '@fastgpt-plugin/cli/debug/remote-session';
+import {
   type DebugPluginSnapshot,
   type DebugToolSnapshot,
   loadDebugSession,
@@ -14,7 +18,7 @@ import type { Command } from 'commander';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
-type DebugCommandOptions = {
+type DebugCommandOptions = RemoteDebugCommandOptions & {
   tool?: string;
   run?: boolean;
   input?: string;
@@ -23,13 +27,12 @@ type DebugCommandOptions = {
   secretsFile?: string;
   systemVar?: string;
   systemVarFile?: string;
-  uploadDir?: string;
 };
 
 export class DebugCommand extends BaseCommand {
   public register(parent: Command): void {
     parent
-      .command('debug <entry>')
+      .command('debug <entries...>')
       .description('直接加载本地插件目录并调试工具')
       .option('-t, --tool <childId>', '工具集子工具 ID')
       .option('--run', '立即执行一次工具调试', false)
@@ -40,22 +43,66 @@ export class DebugCommand extends BaseCommand {
       .option('--system-var <json>', 'systemVar JSON 字符串')
       .option('--system-var-file <path>', 'systemVar JSON 文件路径')
       .option('--upload-dir <path>', '虚拟 uploadFile 的输出目录')
-      .action(async (entry: string, opts: DebugCommandOptions) => {
-        await this.run(entry, opts);
+      .option('--connect <keyOrUrl>', '兼容入口：FastGPT debug connection key 或 connect link，建议改用 dev 命令')
+      .option('--reconnect', '兼容入口：断线后自动重连', true)
+      .option('--no-reconnect', '兼容入口：关闭自动重连')
+      .option('--reconnect-interval-ms <ms>', '兼容入口：重连间隔')
+      .action(async (entries: string[], opts: DebugCommandOptions) => {
+        await this.run(entries, opts);
       });
   }
 
-  public async run(entry: string, options: DebugCommandOptions): Promise<void> {
-    const entryDir = path.resolve(entry);
-    const uploadDir = path.resolve(
-      options.uploadDir ?? path.join(entryDir, '.fastgpt-plugin-debug/uploads')
+  public async run(entriesInput: string | string[], options: DebugCommandOptions): Promise<void> {
+    const entries = (Array.isArray(entriesInput) ? entriesInput : [entriesInput]).map((entry) =>
+      path.resolve(entry)
     );
-    const session = await loadDebugSession({
-      entryDir,
-      uploadDir
+    const isMultiEntry = entries.length > 1;
+
+    if (options.connect) {
+      await runRemoteDebugSession({
+        entriesInput,
+        options,
+        commandName: 'dev',
+        migrationHint: 'debug --connect 是兼容入口，远程集成调试建议改用 fastgpt-plugin dev。'
+      });
+      return;
+    }
+
+    if (isMultiEntry && !options.connect) {
+      throw new Error('debug 是轻量本地调试入口，一次只支持一个插件；多插件远程调试请使用 dev。');
+    }
+
+    if (isMultiEntry && options.run) {
+      throw new Error('--run 只支持单个插件入口。');
+    }
+
+    const sessions = [];
+    for (const [index, entryDir] of entries.entries()) {
+      sessions.push(
+        await loadDebugSession({
+          entryDir,
+          uploadDir: this.resolveUploadDir({
+            entryDir,
+            index,
+            total: entries.length,
+            uploadDir: options.uploadDir
+          })
+        })
+      );
+    }
+
+    sessions.forEach((session) => {
+      this.printSnapshot(session.snapshot, session.uploadDir);
     });
 
-    this.printSnapshot(session.snapshot, uploadDir);
+    const duplicatePluginIds = findDuplicateValues(
+      sessions.map((session) => session.snapshot.pluginId)
+    );
+    if (duplicatePluginIds.length > 0) {
+      throw new Error(`gateway pluginId 重复: ${duplicatePluginIds.join(', ')}`);
+    }
+
+    const [session] = sessions;
 
     if (!options.run) {
       return;
@@ -164,6 +211,31 @@ export class DebugCommand extends BaseCommand {
     return args.map(quoteShellArg).join(' ');
   }
 
+  private resolveUploadDir({
+    entryDir,
+    index,
+    total,
+    uploadDir
+  }: {
+    entryDir: string;
+    index: number;
+    total: number;
+    uploadDir?: string;
+  }): string {
+    if (!uploadDir) {
+      return path.resolve(path.join(entryDir, '.fastgpt-plugin-debug/uploads'));
+    }
+
+    if (total === 1) {
+      return path.resolve(uploadDir);
+    }
+
+    return path.resolve(
+      uploadDir,
+      `${index + 1}-${sanitizePathSegment(path.basename(entryDir))}`
+    );
+  }
+
   private createInputExample(schema: Record<string, unknown>): unknown {
     if (Array.isArray(schema.enum) && schema.enum.length > 0) {
       return schema.enum[0];
@@ -250,4 +322,23 @@ function quoteShellArg(value: string): string {
   }
 
   return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
+
+function findDuplicateValues(values: string[]): string[] {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+
+  values.forEach((value) => {
+    if (seen.has(value)) {
+      duplicates.add(value);
+      return;
+    }
+    seen.add(value);
+  });
+
+  return [...duplicates];
+}
+
+function sanitizePathSegment(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]/g, '_') || 'plugin';
 }

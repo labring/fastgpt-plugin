@@ -2,6 +2,7 @@ import { BuildCommand } from '@fastgpt-plugin/cli/commands/build';
 import { CheckCommand } from '@fastgpt-plugin/cli/commands/check';
 import { CreateCommand } from '@fastgpt-plugin/cli/commands/create';
 import { DebugCommand } from '@fastgpt-plugin/cli/commands/debug';
+import { DevCommand } from '@fastgpt-plugin/cli/commands/dev';
 import { PackCommand } from '@fastgpt-plugin/cli/commands/pack';
 import { CLI_NAME, CLI_VERSION } from '@fastgpt-plugin/cli/constants';
 import { Command } from 'commander';
@@ -15,6 +16,7 @@ function createProgram(): Command {
   new CheckCommand().register(program);
   new CreateCommand().register(program);
   new DebugCommand().register(program);
+  new DevCommand().register(program);
   new PackCommand().register(program);
 
   return program;

@@ -21,9 +21,20 @@ export const ErrorCode = {
   pluginRuntimePluginNotFound: 'plugin.runtime.plugin_not_found',
   pluginRuntimeEventNotSupported: 'plugin.runtime.event_not_supported',
   pluginRuntimeShutdownFailed: 'plugin.runtime.shutdown_failed',
+  pluginRemoteDebugDisabled: 'plugin.remote_debug_disabled',
   pluginInvokeFailed: 'plugin.invoke.failed',
   pluginInvokeTimeout: 'plugin.invoke.timeout',
-  pluginInvokeQueueTimeout: 'plugin.invoke.queue_timeout'
+  pluginInvokeQueueTimeout: 'plugin.invoke.queue_timeout',
+  connectionGatewayInvalidToken: 'connection_gateway.invalid_token',
+  connectionGatewayTokenExpired: 'connection_gateway.token_expired',
+  connectionGatewayTransportMismatch: 'connection_gateway.transport_mismatch',
+  connectionGatewayCapabilityDenied: 'connection_gateway.capability_denied',
+  connectionGatewayStaleGeneration: 'connection_gateway.stale_generation',
+  connectionGatewaySessionNotFound: 'connection_gateway.session_not_found',
+  connectionGatewaySessionAlreadyBound: 'connection_gateway.session_already_bound',
+  connectionGatewaySessionOwnerExpired: 'connection_gateway.session_owner_expired',
+  connectionGatewayResourceLimitExceeded: 'connection_gateway.resource_limit_exceeded',
+  connectionGatewayEnvelopeTooLarge: 'connection_gateway.envelope_too_large'
 } as const;
 
 registerErrors([
@@ -154,6 +165,16 @@ registerErrors([
     telemetryKind: 'runtime_shutdown_failed'
   },
   {
+    code: ErrorCode.pluginRemoteDebugDisabled,
+    message: 'Remote debug is disabled',
+    reason: {
+      en: 'Remote debug is disabled for this Plugin service',
+      'zh-CN': '当前 Plugin 服务未启用远程调试功能'
+    },
+    httpStatus: 400,
+    telemetryKind: 'remote_debug_disabled'
+  },
+  {
     code: ErrorCode.pluginInvokeFailed,
     message: 'Invoke failed',
     reason: { en: 'Invoke failed', 'zh-CN': '调用失败' },
@@ -175,5 +196,75 @@ registerErrors([
     },
     httpStatus: 503,
     telemetryKind: 'queue_timeout'
+  },
+  {
+    code: ErrorCode.connectionGatewayInvalidToken,
+    message: 'Invalid connection token',
+    reason: { en: 'Invalid connection token', 'zh-CN': '连接令牌无效' },
+    httpStatus: 401,
+    telemetryKind: 'connection_gateway_invalid_token'
+  },
+  {
+    code: ErrorCode.connectionGatewayTokenExpired,
+    message: 'Connection token expired',
+    reason: { en: 'Connection token expired', 'zh-CN': '连接令牌已过期' },
+    httpStatus: 401,
+    telemetryKind: 'connection_gateway_token_expired'
+  },
+  {
+    code: ErrorCode.connectionGatewayTransportMismatch,
+    message: 'Connection token transport mismatch',
+    reason: { en: 'Connection token transport mismatch', 'zh-CN': '连接令牌传输类型不匹配' },
+    httpStatus: 400,
+    telemetryKind: 'connection_gateway_transport_mismatch'
+  },
+  {
+    code: ErrorCode.connectionGatewayCapabilityDenied,
+    message: 'Connection token capability denied',
+    reason: { en: 'Connection token capability denied', 'zh-CN': '连接令牌缺少能力授权' },
+    httpStatus: 403,
+    telemetryKind: 'connection_gateway_capability_denied'
+  },
+  {
+    code: ErrorCode.connectionGatewayStaleGeneration,
+    message: 'Stale gateway generation',
+    reason: { en: 'Stale gateway generation', 'zh-CN': 'Gateway generation 已过期' },
+    httpStatus: 409,
+    telemetryKind: 'connection_gateway_stale_generation'
+  },
+  {
+    code: ErrorCode.connectionGatewaySessionNotFound,
+    message: 'Gateway session not found',
+    reason: { en: 'Gateway session not found', 'zh-CN': 'Gateway 会话不存在' },
+    httpStatus: 404,
+    telemetryKind: 'connection_gateway_session_not_found'
+  },
+  {
+    code: ErrorCode.connectionGatewaySessionAlreadyBound,
+    message: 'Gateway session already bound',
+    reason: { en: 'Gateway session already bound', 'zh-CN': 'Gateway 会话已存在在线连接' },
+    httpStatus: 409,
+    telemetryKind: 'connection_gateway_session_already_bound'
+  },
+  {
+    code: ErrorCode.connectionGatewaySessionOwnerExpired,
+    message: 'Gateway session owner expired',
+    reason: { en: 'Gateway session owner expired', 'zh-CN': 'Gateway 会话 owner 已过期' },
+    httpStatus: 409,
+    telemetryKind: 'connection_gateway_session_owner_expired'
+  },
+  {
+    code: ErrorCode.connectionGatewayResourceLimitExceeded,
+    message: 'Gateway resource limit exceeded',
+    reason: { en: 'Gateway resource limit exceeded', 'zh-CN': 'Gateway 资源限制已达到' },
+    httpStatus: 429,
+    telemetryKind: 'connection_gateway_resource_limit_exceeded'
+  },
+  {
+    code: ErrorCode.connectionGatewayEnvelopeTooLarge,
+    message: 'Gateway envelope too large',
+    reason: { en: 'Gateway envelope too large', 'zh-CN': 'Gateway 消息体过大' },
+    httpStatus: 413,
+    telemetryKind: 'connection_gateway_envelope_too_large'
   }
 ]);
