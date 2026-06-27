@@ -241,7 +241,7 @@ Plugin Server 使用：
 
 | 环境变量 | 说明 |
 | --- | --- |
-| `CONNECTION_GATEWAY_BASE_URL` | Plugin Server 调用 Gateway internal HTTP API 的地址，默认 `http://localhost:3010`。 |
+| `CONNECTION_GATEWAY_BASE_URL` | Plugin Server 调用 Gateway internal HTTP API 的地址；未配置时远程调试功能关闭。 |
 | `CONNECTION_GATEWAY_PUBLIC_URL` | 返回给 CLI 的 WebSocket 地址，默认 `ws://localhost:3011/connection-gateway/v1`。 |
 | `CONNECTION_GATEWAY_AUTH_TOKEN` | Plugin Server 调用 Gateway internal HTTP API 的 bearer token。 |
 | `CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS` | 调试调用等待 CLI 响应的超时时间。 |

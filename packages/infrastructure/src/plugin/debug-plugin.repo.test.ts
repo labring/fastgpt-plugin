@@ -211,13 +211,45 @@ describe('DebugPluginRepoOverlay', () => {
       }
     });
   });
+
+  it('fails closed without gateway lookup when remote debug is disabled', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const repo = createRepo({ remoteDebugEnabled: false });
+
+    const [, err] = await repo.getPluginByUserPluginId({
+      pluginId: 'getTime',
+      source: 'debug:user:u1'
+    });
+
+    expect(err).toMatchObject({
+      code: 'plugin.remote_debug_disabled'
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('fails debug source list when remote debug is disabled', async () => {
+    const fallback = makeFallbackRepo();
+    const repo = createRepo({ fallback, remoteDebugEnabled: false });
+
+    const [, err] = await repo.list({
+      sources: ['system', 'debug:user:u1']
+    });
+
+    expect(err).toMatchObject({
+      code: 'plugin.remote_debug_disabled'
+    });
+    expect(fallback.list).not.toHaveBeenCalled();
+  });
 });
 
-function createRepo(input: { fallback?: PluginRepoPort } = {}): DebugPluginRepoOverlay {
+function createRepo(
+  input: { fallback?: PluginRepoPort; remoteDebugEnabled?: boolean } = {}
+): DebugPluginRepoOverlay {
   return new DebugPluginRepoOverlay({
     fallback: input.fallback ?? makeFallbackRepo(),
     gatewayBaseUrl: 'http://gateway.local',
-    authToken: 'token'
+    authToken: 'token',
+    remoteDebugEnabled: input.remoteDebugEnabled ?? true
   });
 }
 

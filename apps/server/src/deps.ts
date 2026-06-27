@@ -48,7 +48,8 @@ const mongoPluginRepo = PluginRepo.getInstance({
 export const pluginRepo = new DebugPluginRepoOverlay({
   fallback: mongoPluginRepo,
   gatewayBaseUrl: serverEnv.CONNECTION_GATEWAY_BASE_URL,
-  authToken: serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN
+  authToken: serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN ?? '',
+  remoteDebugEnabled: serverEnv.REMOTE_DEBUG_ENABLED
 });
 
 export const pluginPKGFileResolver = new PluginPKFFileResolver({
@@ -65,8 +66,9 @@ const localPoolPluginRuntimeManager = LocalPoolPluginRuntimeManager.getInstance(
   redisClient
 });
 const connectionGatewayDebugRuntimeManager = new ConnectionGatewayDebugRuntimeManager({
+  enabled: serverEnv.REMOTE_DEBUG_ENABLED,
   baseUrl: serverEnv.CONNECTION_GATEWAY_BASE_URL,
-  authToken: serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN,
+  authToken: serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN ?? '',
   requestTimeoutMs: serverEnv.CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS
 });
 

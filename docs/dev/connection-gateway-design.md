@@ -241,7 +241,7 @@ Plugin Server uses:
 
 | Environment variable | Description |
 | --- | --- |
-| `CONNECTION_GATEWAY_BASE_URL` | Gateway internal HTTP base URL for Plugin Server, default `http://localhost:3010`. |
+| `CONNECTION_GATEWAY_BASE_URL` | Gateway internal HTTP base URL for Plugin Server. Remote debug is disabled when unset. |
 | `CONNECTION_GATEWAY_PUBLIC_URL` | WebSocket URL returned to CLI, default `ws://localhost:3011/connection-gateway/v1`. |
 | `CONNECTION_GATEWAY_AUTH_TOKEN` | Bearer token used by Plugin Server for Gateway internal HTTP APIs. |
 | `CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS` | Timeout while waiting for CLI responses during debug invocation. |

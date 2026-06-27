@@ -21,6 +21,7 @@ export const ErrorCode = {
   pluginRuntimePluginNotFound: 'plugin.runtime.plugin_not_found',
   pluginRuntimeEventNotSupported: 'plugin.runtime.event_not_supported',
   pluginRuntimeShutdownFailed: 'plugin.runtime.shutdown_failed',
+  pluginRemoteDebugDisabled: 'plugin.remote_debug_disabled',
   pluginInvokeFailed: 'plugin.invoke.failed',
   pluginInvokeTimeout: 'plugin.invoke.timeout',
   pluginInvokeQueueTimeout: 'plugin.invoke.queue_timeout',
@@ -162,6 +163,16 @@ registerErrors([
     message: 'Error during shutdown',
     reason: { en: 'Error during shutdown', 'zh-CN': '关闭过程中发生错误' },
     telemetryKind: 'runtime_shutdown_failed'
+  },
+  {
+    code: ErrorCode.pluginRemoteDebugDisabled,
+    message: 'Remote debug is disabled',
+    reason: {
+      en: 'Remote debug is disabled for this Plugin service',
+      'zh-CN': '当前 Plugin 服务未启用远程调试功能'
+    },
+    httpStatus: 400,
+    telemetryKind: 'remote_debug_disabled'
   },
   {
     code: ErrorCode.pluginInvokeFailed,

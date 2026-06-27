@@ -5,6 +5,7 @@ const originalEnv = process.env;
 const resetEnv = () => {
   process.env = { ...originalEnv };
   delete process.env.AUTH_TOKEN;
+  delete process.env.CONNECTION_GATEWAY_BASE_URL;
   delete process.env.CONNECTION_GATEWAY_AUTH_TOKEN;
   delete process.env.NODE_ENV;
   delete process.env.DISABLE_SSRF_CHECK;
@@ -68,6 +69,7 @@ describe('env AUTH_TOKEN', () => {
 
   it('allows server auth token and gateway auth token to differ', async () => {
     process.env.AUTH_TOKEN = 'server-token';
+    process.env.CONNECTION_GATEWAY_BASE_URL = 'http://localhost:3010';
     process.env.CONNECTION_GATEWAY_AUTH_TOKEN = 'gateway-token';
 
     const { serverEnv } = await import('./index');
@@ -78,15 +80,43 @@ describe('env AUTH_TOKEN', () => {
 
   it('falls back to AUTH_TOKEN for gateway auth token in local development', async () => {
     process.env.AUTH_TOKEN = 'server-and-gateway-token';
+    process.env.CONNECTION_GATEWAY_BASE_URL = 'http://localhost:3010';
 
     const { serverEnv } = await import('./index');
 
     expect(serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN).toBe('server-and-gateway-token');
   });
 
-  it('requires an explicit gateway auth token in production', async () => {
+  it('keeps remote debug disabled when gateway base url is not configured', async () => {
+    const { serverEnv } = await import('./index');
+
+    expect(serverEnv.REMOTE_DEBUG_ENABLED).toBe(false);
+    expect(serverEnv.CONNECTION_GATEWAY_BASE_URL).toBeUndefined();
+  });
+
+  it('enables remote debug when gateway base url is configured', async () => {
+    process.env.CONNECTION_GATEWAY_BASE_URL = 'http://localhost:3010';
+
+    const { serverEnv } = await import('./index');
+
+    expect(serverEnv.REMOTE_DEBUG_ENABLED).toBe(true);
+    expect(serverEnv.CONNECTION_GATEWAY_BASE_URL).toBe('http://localhost:3010');
+  });
+
+  it('does not require an explicit gateway auth token in production when remote debug is disabled', async () => {
     process.env.NODE_ENV = 'production';
     process.env.AUTH_TOKEN = 'a'.repeat(32);
+
+    const { serverEnv } = await import('./index');
+
+    expect(serverEnv.REMOTE_DEBUG_ENABLED).toBe(false);
+    expect(serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN).toBeUndefined();
+  });
+
+  it('requires an explicit gateway auth token in production when remote debug is enabled', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.AUTH_TOKEN = 'a'.repeat(32);
+    process.env.CONNECTION_GATEWAY_BASE_URL = 'http://localhost:3010';
 
     const { serverEnv } = await import('./index');
 
@@ -96,6 +126,7 @@ describe('env AUTH_TOKEN', () => {
   it('accepts different strong server and gateway auth tokens in production', async () => {
     process.env.NODE_ENV = 'production';
     process.env.AUTH_TOKEN = 's'.repeat(32);
+    process.env.CONNECTION_GATEWAY_BASE_URL = 'http://localhost:3010';
     process.env.CONNECTION_GATEWAY_AUTH_TOKEN = 'g'.repeat(32);
 
     const { serverEnv } = await import('./index');

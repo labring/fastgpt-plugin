@@ -3,6 +3,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { FastGPTPluginClient } from './client';
 
 describe('FastGPTPluginClient debug sessions', () => {
+  it('gets enabled Plugin service features', async () => {
+    const { client, fetchMock } = createClient({
+      remoteDebug: true
+    });
+
+    const result = await client.getPluginServiceFeatures();
+
+    expect(result.remoteDebug).toBe(true);
+    expect(getRequest(fetchMock)).toMatchObject({
+      url: 'https://plugin.local/api/plugin/features',
+      method: 'GET',
+      authorization: 'Bearer token'
+    });
+  });
+
   it('enables a debug channel', async () => {
     const { client, fetchMock } = createClient({
       tmbId: 'tmb-1',

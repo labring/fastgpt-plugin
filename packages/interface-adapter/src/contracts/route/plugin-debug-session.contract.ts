@@ -76,6 +76,7 @@ export const PluginDebugSessionContract = {
     },
     response: {
       200: jsonResponse({ data: PluginDebugSessionStatusResponseDTOSchema }),
+      400: jsonResponse({ error: ErrorResponseDTOSchema }),
       404: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),

@@ -79,8 +79,9 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
   constructor(
     private readonly deps: {
       fallback: PluginRepoPort;
-      gatewayBaseUrl: string;
+      gatewayBaseUrl?: string;
       authToken: string;
+      remoteDebugEnabled: boolean;
     }
   ) {}
 
@@ -157,6 +158,9 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
     if (debugSources.length === 0) {
       return this.deps.fallback.list(arg);
     }
+    if (!this.isRemoteDebugEnabled()) {
+      return failureResult(createError(ErrorCode.pluginRemoteDebugDisabled));
+    }
 
     const [fallbackItems, fallbackErr] =
       fallbackSources.length > 0
@@ -174,6 +178,9 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
     const { debugSources, fallbackSources } = splitSources(arg.sources);
     if (debugSources.length === 0) {
       return this.deps.fallback.listToolSummaries(arg);
+    }
+    if (!this.isRemoteDebugEnabled()) {
+      return failureResult(createError(ErrorCode.pluginRemoteDebugDisabled));
     }
 
     const [fallbackItems, fallbackErr] =
@@ -257,6 +264,10 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
   private async getDebugMetadataValue(
     source: string
   ): Promise<Result<DebugPluginMetadata | DebugPluginMetadataBundle | undefined>> {
+    if (!this.isRemoteDebugEnabled()) {
+      return failureResult(createError(ErrorCode.pluginRemoteDebugDisabled));
+    }
+
     try {
       const response = await fetch(
         `${this.gatewayBaseUrl}/internal/sessions/by-source/${encodeURIComponent(source)}/status`,
@@ -316,7 +327,11 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
   }
 
   private get gatewayBaseUrl(): string {
-    return this.deps.gatewayBaseUrl.replace(/\/+$/, '');
+    return this.deps.gatewayBaseUrl?.replace(/\/+$/, '') ?? '';
+  }
+
+  private isRemoteDebugEnabled(): boolean {
+    return this.deps.remoteDebugEnabled && Boolean(this.deps.gatewayBaseUrl);
   }
 }
 

@@ -38,6 +38,9 @@ describe('debug session route', () => {
       ])
     );
     const app = makeDebugSessionRoute({
+      remoteDebugEnabled: true,
+      gatewayBaseUrl: 'http://localhost:3010',
+      gatewayAuthToken: 'token',
       pluginDebugSessionRepo: {
         get: vi.fn(async () => ({
           tmbId: 'tmb-1',
@@ -89,6 +92,11 @@ describe('debug session route', () => {
       )
       .mockResolvedValueOnce(jsonResponse({ data: { deleted: true } }));
     const app = makeDebugSessionRoute({
+      remoteDebugEnabled: true,
+      gatewayBaseUrl: 'http://localhost:3010',
+      gatewayPublicUrl: 'ws://localhost:3011/connection-gateway/v1',
+      gatewayAuthToken: 'token',
+      jwtSecret: 'test-secret',
       pluginDebugSessionRepo: {
         exchangeConnectionKey: vi.fn(async () => ({
           session: {
@@ -138,6 +146,36 @@ describe('debug session route', () => {
         }
       })
     );
+  });
+
+  it('fails debug session APIs when remote debug is disabled', async () => {
+    const create = vi.fn();
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const app = makeDebugSessionRoute({
+      remoteDebugEnabled: false,
+      pluginDebugSessionRepo: {
+        create
+      } as never,
+      pluginRepo: {
+        list: vi.fn(async () => successResult([]))
+      } as never
+    });
+
+    const response = await app.request('/plugin/debug-sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tmbId: 'tmb-1'
+      })
+    });
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error.code).toBe('plugin.remote_debug_disabled');
+    expect(create).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

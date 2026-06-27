@@ -43,32 +43,16 @@ const GatewayAuthTokenSchema = z
   .string()
   .trim()
   .optional()
-  .transform((value, ctx) => {
+  .transform((value) => {
     if (process.env.NODE_ENV !== 'production') {
       return value || process.env.AUTH_TOKEN || DEV_AUTH_TOKEN;
     }
 
-    const token = value;
-    if (!token) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'CONNECTION_GATEWAY_AUTH_TOKEN is required in production'
-      });
-    } else if (
-      token.length < MIN_PRODUCTION_AUTH_TOKEN_LENGTH ||
-      WEAK_AUTH_TOKENS.has(token.toLowerCase())
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        message: `CONNECTION_GATEWAY_AUTH_TOKEN must be at least ${MIN_PRODUCTION_AUTH_TOKEN_LENGTH} characters and not use a default value in production`
-      });
-    }
-
-    return token;
+    return value;
   });
 
-const createValidatedEnv = <TOutput>(schema: z.ZodRawShape): TOutput => {
-  const result = z.object(schema).safeParse(normalizeRuntimeEnv(process.env));
+const createValidatedEnv = <TOutput>(schema: z.ZodType<TOutput>): TOutput => {
+  const result = schema.safeParse(normalizeRuntimeEnv(process.env));
   if (!result.success) {
     const paths = result.error.issues.map((issue) => issue.path).join(', ');
     throw new Error(`Invalid environment variables. Please check: ${paths}\n`);
@@ -77,7 +61,7 @@ const createValidatedEnv = <TOutput>(schema: z.ZodRawShape): TOutput => {
   return result.data as TOutput;
 };
 
-const createLazyValidatedEnv = <TOutput extends object>(schema: z.ZodRawShape): TOutput => {
+const createLazyValidatedEnv = <TOutput extends object>(schema: z.ZodType<TOutput>): TOutput => {
   let cachedEnv: TOutput | undefined;
   const getEnv = () => (cachedEnv ??= createValidatedEnv<TOutput>(schema));
 
@@ -149,7 +133,7 @@ const CommonEnvSchema = {
   DEPLOYMENT_ENVIRONMENT: z.string().optional()
 };
 
-const ServerEnvSchema = {
+const ServerEnvShape = {
   ...CommonEnvSchema,
 
   // 服务器配置
@@ -158,7 +142,7 @@ const ServerEnvSchema = {
   JWT_SECRET: z.string().default('fastgpt-plugin-secret'),
 
   // Connection Gateway client 配置
-  CONNECTION_GATEWAY_BASE_URL: z.url().default('http://localhost:3010'),
+  CONNECTION_GATEWAY_BASE_URL: z.url().optional(),
   CONNECTION_GATEWAY_PUBLIC_URL: z.string().default('ws://localhost:3011/connection-gateway/v1'),
   CONNECTION_GATEWAY_AUTH_TOKEN: GatewayAuthTokenSchema,
   CONNECTION_GATEWAY_DEBUG_SESSION_TTL_MS: PositiveIntSchema.default(30 * 60_000),
@@ -225,7 +209,37 @@ const ServerEnvSchema = {
   STORAGE_OSS_CNAME: BoolStringSchema.default(false)
 };
 
-const GatewayEnvSchema = {
+const ServerEnvSchema = z
+  .object(ServerEnvShape)
+  .superRefine((env, ctx) => {
+    if (!env.CONNECTION_GATEWAY_BASE_URL || env.NODE_ENV !== 'production') {
+      return;
+    }
+
+    const token = env.CONNECTION_GATEWAY_AUTH_TOKEN;
+    if (!token) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CONNECTION_GATEWAY_AUTH_TOKEN'],
+        message: 'CONNECTION_GATEWAY_AUTH_TOKEN is required in production'
+      });
+      return;
+    }
+
+    if (token.length < MIN_PRODUCTION_AUTH_TOKEN_LENGTH || WEAK_AUTH_TOKENS.has(token.toLowerCase())) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CONNECTION_GATEWAY_AUTH_TOKEN'],
+        message: `CONNECTION_GATEWAY_AUTH_TOKEN must be at least ${MIN_PRODUCTION_AUTH_TOKEN_LENGTH} characters and not use a default value in production`
+      });
+    }
+  })
+  .transform((env) => ({
+    ...env,
+    REMOTE_DEBUG_ENABLED: Boolean(env.CONNECTION_GATEWAY_BASE_URL)
+  }));
+
+const GatewayEnvSchema = z.object({
   ...CommonEnvSchema,
 
   // Connection Gateway 服务配置
@@ -246,16 +260,17 @@ const GatewayEnvSchema = {
   // 认证配置
   AUTH_TOKEN: AuthTokenSchema,
   JWT_SECRET: z.string().default('fastgpt-plugin-secret')
-};
+});
 
 export type ServerEnv = {
   NODE_ENV: 'development' | 'production' | 'test';
   PORT: number;
   AUTH_TOKEN: string;
   JWT_SECRET: string;
-  CONNECTION_GATEWAY_BASE_URL: string;
+  REMOTE_DEBUG_ENABLED: boolean;
+  CONNECTION_GATEWAY_BASE_URL?: string;
   CONNECTION_GATEWAY_PUBLIC_URL: string;
-  CONNECTION_GATEWAY_AUTH_TOKEN: string;
+  CONNECTION_GATEWAY_AUTH_TOKEN?: string;
   CONNECTION_GATEWAY_DEBUG_SESSION_TTL_MS: number;
   CONNECTION_GATEWAY_DEBUG_TICKET_TTL_MS: number;
   CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS: number;

@@ -19,8 +19,9 @@ import { StreamData } from '@domain/value-objects/stream.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 export type ConnectionGatewayDebugRuntimeManagerOptions = {
-  baseUrl: string;
-  authToken: string;
+  enabled: boolean;
+  baseUrl?: string;
+  authToken?: string;
   requestTimeoutMs: number;
   sourceForUser?: (input: { userId: string }) => string;
 };
@@ -90,6 +91,10 @@ export class ConnectionGatewayDebugRuntimeManager
   }): Promise<Result<S extends true ? StreamData<R> : R>> {
     if (eventName !== 'run' || !returnStream) {
       return failureResult(createError(ErrorCode.pluginRuntimeEventNotSupported));
+    }
+
+    if (!this.options.enabled || !this.options.baseUrl) {
+      return failureResult(createError(ErrorCode.pluginRemoteDebugDisabled));
     }
 
     const source = this.resolveSource(options?.debug);
@@ -224,7 +229,7 @@ export class ConnectionGatewayDebugRuntimeManager
   }
 
   private get baseUrl(): string {
-    return this.options.baseUrl.replace(/\/+$/, '');
+    return this.options.baseUrl?.replace(/\/+$/, '') ?? '';
   }
 
   private resolveSource(debug: ConnectionGatewayDebugRuntimeInvokeOptions['debug']): string | null {
