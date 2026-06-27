@@ -19,8 +19,9 @@ import { StreamData } from '@domain/value-objects/stream.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 export type ConnectionGatewayDebugRuntimeManagerOptions = {
-  baseUrl: string;
-  authToken: string;
+  enabled: boolean;
+  baseUrl?: string;
+  authToken?: string;
   requestTimeoutMs: number;
   sourceForUser?: (input: { userId: string }) => string;
 };
@@ -92,6 +93,10 @@ export class ConnectionGatewayDebugRuntimeManager
       return failureResult(createError(ErrorCode.pluginRuntimeEventNotSupported));
     }
 
+    if (!this.options.enabled || !this.options.baseUrl) {
+      return failureResult(createError(ErrorCode.pluginRemoteDebugDisabled));
+    }
+
     const source = this.resolveSource(options?.debug);
     if (!source) {
       return failureResult(
@@ -138,7 +143,7 @@ export class ConnectionGatewayDebugRuntimeManager
       !session ||
       session.consumerType !== CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE ||
       session.status !== 'connected' ||
-      status.data.ownerAlive === false
+      status.data.ownerAlive !== true
     ) {
       throw createError(ErrorCode.connectionGatewaySessionNotFound, {
         data: {
@@ -224,7 +229,7 @@ export class ConnectionGatewayDebugRuntimeManager
   }
 
   private get baseUrl(): string {
-    return this.options.baseUrl.replace(/\/+$/, '');
+    return this.options.baseUrl?.replace(/\/+$/, '') ?? '';
   }
 
   private resolveSource(debug: ConnectionGatewayDebugRuntimeInvokeOptions['debug']): string | null {

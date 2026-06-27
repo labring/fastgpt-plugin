@@ -9,23 +9,36 @@ import z from 'zod';
 
 import type { PluginDebugSessionPort } from '@domain/ports/plugin/plugin-debug-session.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
+import { createError } from '@domain/value-objects/error.vo';
 import type { PluginDebugSession } from '@domain/value-objects/plugin-debug-session.vo';
 import { HmacConnectionGatewayToken } from '@infrastructure/connection-gateway/token';
 import { serverEnv } from '@infrastructure/env';
+import { ErrorCode } from '@infrastructure/errors/error.registry';
 import { createOpenAPIHono, createRoute, R } from '@infrastructure/hono/utils/response';
 import { getLogger, mod } from '@infrastructure/logger';
 
 export type DebugSessionRouteDeps = {
   pluginDebugSessionRepo: PluginDebugSessionPort;
   pluginRepo: PluginRepoPort;
+  remoteDebugEnabled?: boolean;
+  gatewayBaseUrl?: string;
+  gatewayPublicUrl?: string;
+  gatewayAuthToken?: string;
+  jwtSecret?: string;
 };
 
-const gatewayTokenSigner = new HmacConnectionGatewayToken(serverEnv.JWT_SECRET);
 const gatewayTokenTtlMs = 5 * 60_000;
 
 export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
   const route = createOpenAPIHono();
   const logger = getLogger(mod.plugin);
+  const remoteDebugEnabled = deps.remoteDebugEnabled ?? serverEnv.REMOTE_DEBUG_ENABLED;
+  const gatewayConfig = {
+    baseUrl: deps.gatewayBaseUrl ?? serverEnv.CONNECTION_GATEWAY_BASE_URL,
+    publicUrl: deps.gatewayPublicUrl ?? serverEnv.CONNECTION_GATEWAY_PUBLIC_URL,
+    authToken: deps.gatewayAuthToken ?? serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN ?? ''
+  };
+  const gatewayTokenSigner = new HmacConnectionGatewayToken(deps.jwtSecret ?? serverEnv.JWT_SECRET);
 
   route.openapi(
     createRoute({
@@ -45,6 +58,9 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
       }
     }),
     async (c) => {
+      const disabledResponse = failIfRemoteDebugDisabled(c, remoteDebugEnabled);
+      if (disabledResponse) return disabledResponse;
+
       try {
         const body = c.req.valid('json');
         const { session, connectionKey } = await deps.pluginDebugSessionRepo.create({
@@ -77,13 +93,16 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
       }
     }),
     async (c) => {
+      const disabledResponse = failIfRemoteDebugDisabled(c, remoteDebugEnabled);
+      if (disabledResponse) return disabledResponse;
+
       try {
         const body = c.req.valid('json');
         const { session, connectionKey } = await deps.pluginDebugSessionRepo.refresh({
           tmbId: body.tmbId
         });
 
-        await closeGatewaySessionBySource(session.source).catch((error) => {
+        await closeGatewaySessionBySource(session.source, gatewayConfig).catch((error) => {
           logger.warn('Close refreshed debug gateway session failed', {
             tmbId: session.tmbId,
             source: session.source,
@@ -118,9 +137,19 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
       }
     }),
     async (c) => {
+      const disabledResponse = failIfRemoteDebugDisabled(c, remoteDebugEnabled);
+      if (disabledResponse) return disabledResponse;
+
       try {
         const body = c.req.valid('json');
         const { session } = await deps.pluginDebugSessionRepo.exchangeConnectionKey(body.connectionKey);
+        await closeGatewaySessionBySource(session.source, gatewayConfig).catch((error) => {
+          logger.warn('Close existing debug gateway session before exchange failed', {
+            tmbId: session.tmbId,
+            source: session.source,
+            error
+          });
+        });
         const expiresAt = Date.now() + gatewayTokenTtlMs;
         const connectToken = await gatewayTokenSigner.sign({
           consumerType: 'plugin-debug',
@@ -136,7 +165,7 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
         });
 
         return R.success(c, {
-          gatewayUrl: serverEnv.CONNECTION_GATEWAY_PUBLIC_URL,
+          gatewayUrl: gatewayConfig.publicUrl,
           transport: 'websocket',
           source: session.source,
           connectToken,
@@ -155,19 +184,25 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
       ...PluginDebugSessionContract.Status.meta,
       responses: {
         200: jsonResponse(PluginDebugSessionContract.Status.response[200]!),
+        400: jsonResponse(PluginDebugSessionContract.Status.response[400]!),
         404: jsonResponse(PluginDebugSessionContract.Status.response[404]!)
       }
     }),
     async (c) => {
+      const disabledResponse = failIfRemoteDebugDisabled(c, remoteDebugEnabled);
+      if (disabledResponse) return disabledResponse;
+
       const tmbId = requiredParam(c.req.param('tmbId'));
       const session = await deps.pluginDebugSessionRepo.get({ tmbId });
       if (!session) {
         return R.fail(c, 404, 'Debug channel not found');
       }
 
-      const gatewayStatus = await getGatewayStatusBySource(session.source).catch(() => null);
+      const gatewayStatus = await getGatewayStatusBySource(session.source, gatewayConfig).catch(
+        () => null
+      );
       const plugins =
-        gatewayStatus?.session && gatewayStatus.ownerAlive
+        gatewayStatus?.session?.status === 'connected' && gatewayStatus.ownerAlive === true
           ? await listDebugPlugins(deps.pluginRepo, session.source, logger)
           : [];
 
@@ -194,6 +229,9 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
       }
     }),
     async (c) => {
+      const disabledResponse = failIfRemoteDebugDisabled(c, remoteDebugEnabled);
+      if (disabledResponse) return disabledResponse;
+
       const tmbId = requiredParam(c.req.param('tmbId'));
       const body = c.req.valid('json');
       if (body.tmbId !== tmbId) {
@@ -205,7 +243,7 @@ export const makeDebugSessionRoute = (deps: DebugSessionRouteDeps) => {
       });
 
       if (session) {
-        await closeGatewaySessionBySource(session.source).catch((error) => {
+        await closeGatewaySessionBySource(session.source, gatewayConfig).catch((error) => {
           logger.warn('Close revoked debug gateway session failed', {
             tmbId,
             source: session.source,
@@ -278,12 +316,20 @@ async function listDebugPlugins(
   return plugins;
 }
 
-async function getGatewayStatusBySource(source: string): Promise<GatewayStatusView> {
+type GatewayClientConfig = {
+  baseUrl?: string;
+  authToken: string;
+};
+
+async function getGatewayStatusBySource(
+  source: string,
+  gatewayConfig: GatewayClientConfig
+): Promise<GatewayStatusView> {
   const response = await fetch(
-    `${gatewayBaseUrl()}/internal/sessions/by-source/${encodeURIComponent(source)}/status`,
+    `${gatewayBaseUrl(gatewayConfig)}/internal/sessions/by-source/${encodeURIComponent(source)}/status`,
     {
       headers: {
-        Authorization: `Bearer ${serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN}`
+        Authorization: `Bearer ${gatewayConfig.authToken}`
       }
     }
   );
@@ -291,20 +337,29 @@ async function getGatewayStatusBySource(source: string): Promise<GatewayStatusVi
   return GatewayStatusViewSchema.parse(payload.data);
 }
 
-async function closeGatewaySessionBySource(source: string): Promise<void> {
-  const gatewayStatus = await getGatewayStatusBySource(source).catch(() => null);
+async function closeGatewaySessionBySource(
+  source: string,
+  gatewayConfig: GatewayClientConfig
+): Promise<void> {
+  const gatewayStatus = await getGatewayStatusBySource(source, gatewayConfig).catch(() => null);
   if (gatewayStatus?.session) {
-    await deleteGatewaySession(gatewayStatus.session.id);
+    await deleteGatewaySession(gatewayStatus.session.id, gatewayConfig);
   }
 }
 
-async function deleteGatewaySession(sessionId: string): Promise<void> {
-  const response = await fetch(`${gatewayBaseUrl()}/internal/sessions/${encodeURIComponent(sessionId)}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN}`
+async function deleteGatewaySession(
+  sessionId: string,
+  gatewayConfig: GatewayClientConfig
+): Promise<void> {
+  const response = await fetch(
+    `${gatewayBaseUrl(gatewayConfig)}/internal/sessions/${encodeURIComponent(sessionId)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${gatewayConfig.authToken}`
+      }
     }
-  });
+  );
 
   await parseGatewayResponse(response);
 }
@@ -318,8 +373,19 @@ async function parseGatewayResponse(response: Response): Promise<any> {
   return payload;
 }
 
-function gatewayBaseUrl(): string {
-  return serverEnv.CONNECTION_GATEWAY_BASE_URL.replace(/\/+$/, '');
+function gatewayBaseUrl(gatewayConfig: GatewayClientConfig): string {
+  return gatewayConfig.baseUrl?.replace(/\/+$/, '') ?? '';
+}
+
+function failIfRemoteDebugDisabled(
+  c: Parameters<typeof R.fail>[0],
+  remoteDebugEnabled: boolean
+): ReturnType<typeof R.fail> | null {
+  if (remoteDebugEnabled) {
+    return null;
+  }
+
+  return R.fail(c, 400, createError(ErrorCode.pluginRemoteDebugDisabled));
 }
 
 function requiredParam(value: string | undefined): string {
@@ -351,7 +417,7 @@ function toDebugSessionStatus(
     return 'revoked';
   }
 
-  if (gatewayStatus?.session?.status === 'connected' && gatewayStatus.ownerAlive) {
+  if (gatewayStatus?.session?.status === 'connected' && gatewayStatus.ownerAlive === true) {
     return 'connected';
   }
 

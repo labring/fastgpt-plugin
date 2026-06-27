@@ -16,3 +16,10 @@ type PluginListType = {
 ```
 
 `PluginListItemType` and `PluginSourceType` are also exported so callers can handle the new `source` field and paginated responses.
+
+`getPluginServiceFeatures()` returns the enabled Plugin service capabilities:
+
+```ts
+const features = await client.getPluginServiceFeatures();
+// { remoteDebug: boolean }
+```

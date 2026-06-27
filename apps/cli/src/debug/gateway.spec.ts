@@ -58,6 +58,44 @@ describe('connectDebugGateway', () => {
     expect(socket.closed).toBe(true);
   });
 
+  it('sends gateway heartbeats after bind so owner lease depends on the local client', async () => {
+    vi.useFakeTimers();
+    const socket = new FakeWebSocket();
+    vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget()],
+      options: makeOptions()
+    });
+
+    socket.open();
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(1);
+    });
+    socket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (socket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    expect(socket.sent).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          protocol: 'connection-gateway.ws.v1',
+          type: 'heartbeat'
+        })
+      ])
+    );
+
+    client.close();
+    await client.closed;
+    vi.useRealTimers();
+  });
+
   it('handles gateway request envelopes over WSS', async () => {
     const socket = new FakeWebSocket();
     vi.stubGlobal('WebSocket', makeWebSocketConstructor(socket));
@@ -292,6 +330,24 @@ describe('connectDebugGateway', () => {
     expect(
       socket.sent.filter((message) => (message as { type?: string }).type === 'bind')
     ).toHaveLength(1);
+    expect(socket.sent).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          protocol: 'connection-gateway.ws.v1',
+          type: 'metadata',
+          metadata: {
+            pluginDebug: {
+              targets: [
+                expect.objectContaining({
+                  pluginId: 'getTime',
+                  tools: expect.any(Array)
+                })
+              ]
+            }
+          }
+        })
+      ])
+    );
 
     client.close();
     await client.closed;
@@ -434,6 +490,73 @@ describe('connectDebugGateway', () => {
       session: makeSession({
         id: 'session-b'
       })
+    });
+
+    client.close();
+    secondSocket.close();
+    await client.closed;
+  });
+
+  it('notifies the caller after a reconnect binds a new WSS session', async () => {
+    const firstSocket = new FakeWebSocket('wss://gateway.example.com/connection-gateway/v1?attempt=1');
+    const secondSocket = new FakeWebSocket('wss://gateway.example.com/connection-gateway/v1?attempt=2');
+    const webSocketCtor = makeTrackedWebSocketConstructorSequence([firstSocket, secondSocket]);
+    vi.stubGlobal('WebSocket', webSocketCtor.ctor);
+    const onReconnect = vi.fn();
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget()],
+      options: {
+        ...makeOptions(),
+        reconnect: true,
+        reconnectIntervalMs: 5,
+        resolveReconnectOptions: async () => ({
+          ...makeOptions(),
+          connectToken: 'refreshed-token',
+          reconnect: true,
+          reconnectIntervalMs: 5
+        })
+      },
+      onReconnect
+    });
+
+    firstSocket.open();
+    await vi.waitFor(() => {
+      expect(firstSocket.sent).toHaveLength(1);
+    });
+    firstSocket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (firstSocket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    expect(onReconnect).not.toHaveBeenCalled();
+
+    firstSocket.close();
+    await vi.waitFor(() => {
+      expect(webSocketCtor.calls()).toBe(2);
+    });
+    secondSocket.open();
+    await vi.waitFor(() => {
+      expect(secondSocket.sent).toHaveLength(1);
+    });
+    secondSocket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (secondSocket.sent[0] as { requestId: string }).requestId,
+      session: makeSession({
+        id: 'session-b'
+      })
+    });
+
+    await vi.waitFor(() => {
+      expect(onReconnect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'session-b'
+        })
+      );
     });
 
     client.close();

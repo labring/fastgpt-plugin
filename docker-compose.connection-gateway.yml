@@ -1,0 +1,53 @@
+services:
+  connection-gateway:
+    build:
+      context: .
+      dockerfile: apps/connection-gateway/Dockerfile
+    image: fastgpt-plugin-connection-gateway:local
+    container_name: fastgpt-plugin-connection-gateway
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      AUTH_TOKEN: ${CONNECTION_GATEWAY_AUTH_TOKEN:-change-me-connection-gateway-token-32}
+      CONNECTION_GATEWAY_AUTH_TOKEN: ${CONNECTION_GATEWAY_AUTH_TOKEN:-change-me-connection-gateway-token-32}
+      JWT_SECRET: ${JWT_SECRET:-change-me-connection-gateway-jwt-secret-32}
+      CONNECTION_GATEWAY_PORT: 3000
+      CONNECTION_GATEWAY_WS_PORT: 3001
+      CONNECTION_GATEWAY_WS_PATH: /connection-gateway/v1
+    ports:
+      - "${CONNECTION_GATEWAY_HTTP_PORT:-3010}:3000"
+      - "${CONNECTION_GATEWAY_WS_PUBLIC_PORT:-3011}:3001"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS "http://127.0.0.1:$${CONNECTION_GATEWAY_PORT}/health" >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: fastgpt-plugin-connection-gateway-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - connection-gateway-redis:/data
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  connection-gateway-redis:

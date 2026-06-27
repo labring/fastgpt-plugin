@@ -21,9 +21,9 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
               consumerType: 'plugin-debug',
               generation: 0,
               status: 'connected'
-            }
-          },
-          ownerAlive: true
+            },
+            ownerAlive: true
+          }
         })
       )
       .mockResolvedValueOnce(
@@ -71,6 +71,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
         ])
       );
     const manager = new ConnectionGatewayDebugRuntimeManager({
+      enabled: true,
       baseUrl: 'http://gateway.local',
       authToken: 'token',
       requestTimeoutMs: 1_000,
@@ -123,6 +124,77 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
       messages.push(message);
     });
     expect(messages).toEqual([{ type: 'response', data: { time: 'now' } }]);
+  });
+
+  it('fails closed when gateway owner liveness is missing', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          session: {
+            id: 'session-a',
+            consumerType: 'plugin-debug',
+            generation: 0,
+            status: 'connected'
+          }
+        }
+      })
+    );
+    const manager = new ConnectionGatewayDebugRuntimeManager({
+      enabled: true,
+      baseUrl: 'http://gateway.local',
+      authToken: 'token',
+      requestTimeoutMs: 1_000
+    });
+
+    const [, err] = await manager.invoke<ToolStreamMessageType, true>({
+      uniqueId: {
+        pluginId: 'getTime',
+        version: '1.0.0',
+        etag: 'debug'
+      },
+      eventName: 'run',
+      payload: {},
+      returnStream: true,
+      options: {
+        debug: {
+          source: 'debug:tmbId:tmb-1'
+        }
+      }
+    });
+
+    expect(err).toMatchObject({
+      code: 'plugin.invoke.failed'
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails closed without gateway lookup when remote debug is disabled', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const manager = new ConnectionGatewayDebugRuntimeManager({
+      enabled: false,
+      requestTimeoutMs: 1_000
+    });
+
+    const [, err] = await manager.invoke<ToolStreamMessageType, true>({
+      uniqueId: {
+        pluginId: 'getTime',
+        version: '1.0.0',
+        etag: 'debug'
+      },
+      eventName: 'run',
+      payload: {},
+      returnStream: true,
+      options: {
+        debug: {
+          source: 'debug:tmbId:tmb-1'
+        }
+      }
+    });
+
+    expect(err).toMatchObject({
+      code: 'plugin.remote_debug_disabled'
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-plugin/cli",
-  "version": "0.2.0-alpha.2",
+  "version": "0.2.0-alpha.4",
   "type": "module",
   "private": false,
   "publishConfig": {

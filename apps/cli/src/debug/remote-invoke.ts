@@ -10,8 +10,12 @@ type RemoteInvokeSession = {
 
 export class RemoteDebugInvokeBridge {
   private readonly sessions = new Map<string, RemoteInvokeSession>();
+  private readonly getFastgptBaseUrl: () => string;
 
-  constructor(private readonly fastgptBaseUrl: string) {}
+  constructor(fastgptBaseUrl: string | (() => string)) {
+    this.getFastgptBaseUrl =
+      typeof fastgptBaseUrl === 'function' ? fastgptBaseUrl : () => fastgptBaseUrl;
+  }
 
   attach(runtime: LocalDebugRuntime): void {
     runtime.setHostRequestHandler((request) => this.handleHostRequest(request));
@@ -44,7 +48,7 @@ export class RemoteDebugInvokeBridge {
 
     const invoke = new InvokeManager({
       token: session.invokeToken,
-      fastgptBaseUrl: this.fastgptBaseUrl
+      fastgptBaseUrl: this.getFastgptBaseUrl()
     });
 
     switch (method) {

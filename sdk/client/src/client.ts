@@ -21,6 +21,7 @@ import {
 import { ModelContract } from '@interface-adapter/contracts/route/model.contract';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
 import { PluginDebugSessionContract } from '@interface-adapter/contracts/route/plugin-debug-session.contract';
+import { PluginServiceFeatureContract } from '@interface-adapter/contracts/route/plugin-service-feature.contract';
 import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 import { WorkflowContract } from '@interface-adapter/contracts/route/workflow.contract';
 
@@ -44,6 +45,7 @@ import type {
   PluginListType,
   PluginPruneDisabledResultType,
   PluginRuntimeConfigType,
+  PluginServiceFeaturesType,
   PluginTagListType,
   PluginUniqueIdType,
   PluginUploadResultType,
@@ -211,6 +213,16 @@ export class FastGPTPluginClient {
 
   async listPluginTags(_requestOptions?: ClientRequestOptions): Promise<PluginTagListType> {
     return pluginTagList;
+  }
+
+  async getPluginServiceFeatures(
+    requestOptions?: ClientRequestOptions
+  ): Promise<PluginServiceFeaturesType> {
+    return this.transport.requestData<PluginServiceFeaturesType>({
+      path: this.withApiPath(PluginServiceFeatureContract.Get.meta.path),
+      method: PluginServiceFeatureContract.Get.meta.method,
+      signal: requestOptions?.signal
+    });
   }
 
   async getPluginRuntimeConfig(

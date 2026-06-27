@@ -41,6 +41,7 @@ Deeply **modularize** FastGPT to achieve maximum **extensibility**.
 - [v1.0.0 Upgrade Guide](./docs/upgrade/v1.0.0.md)
 - [Architecture](./docs/dev/architecture.md)
 - [Plugin System Design](./docs/dev/design.md)
+- [Connection Gateway Design](./docs/dev/connection-gateway-design.md)
 - [System Plugin Development Guide](./docs/dev/how-to-devlop-plugin.en.md)
 - [Local Pool Runtime Design](./docs/dev/process-pool-design.md)
 - [Runtime Metrics OpenTelemetry](./docs/dev/runtime-metrics-otel.md)

@@ -30,6 +30,7 @@ import type {
   PluginDebugSessionStatusDTO,
   PluginDebugSessionStatusResponseDTO
 } from '@interface-adapter/contracts/dto/plugin-debug-session.dto';
+import type { PluginServiceFeaturesDTO } from '@interface-adapter/contracts/dto/plugin-service-feature.dto';
 import type {
   ToolDetailDTOType,
   ToolGetParamsDTOType,
@@ -120,6 +121,7 @@ export type PluginDebugSessionStatusParamsType = PluginDebugSessionGetParamsDTO;
 export type PluginDebugSessionStatusResultType = PluginDebugSessionStatusResponseDTO;
 export type PluginDebugSessionRevokeParamsType = PluginDebugSessionRevokeRequestDTO;
 export type PluginDebugSessionRevokeResultType = PluginDebugSessionRevokeResponseDTO;
+export type PluginServiceFeaturesType = PluginServiceFeaturesDTO;
 
 export const pluginTagList: PluginTagListType = Object.entries(PluginTagsNameMap).map(
   ([id, name]) => ({

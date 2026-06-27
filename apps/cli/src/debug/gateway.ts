@@ -40,27 +40,31 @@ export type DebugGatewayTarget = {
 export type DebugGatewayClient = {
   session: ConnectionGatewaySession;
   updateTargets(targets: DebugGatewayTarget[]): void;
+  reconnect?(): void;
   close(): void;
   closed: Promise<void>;
 };
 
 const GATEWAY_DUPLICATE_CONNECTION_CODE = 'connection_gateway.session_already_bound';
+const GATEWAY_HEARTBEAT_INTERVAL_MS = 5_000;
 
 export async function connectDebugGateway({
   targets,
   options,
-  onLog
+  onLog,
+  onReconnect
 }: {
   targets: DebugGatewayTarget[];
   options: DebugGatewayClientOptions;
   onLog?: (message: string) => void;
+  onReconnect?: (session: ConnectionGatewaySession) => void;
 }): Promise<DebugGatewayClient> {
   if (targets.length === 0) {
     throw new Error('Gateway debug targets cannot be empty');
   }
 
   if (options.reconnect) {
-    return connectReconnectingDebugGateway({ targets, options, onLog });
+    return connectReconnectingDebugGateway({ targets, options, onLog, onReconnect });
   }
 
   return connectSingleDebugGateway({ targets, options, onLog });
@@ -69,11 +73,13 @@ export async function connectDebugGateway({
 async function connectReconnectingDebugGateway({
   targets,
   options,
-  onLog
+  onLog,
+  onReconnect
 }: {
   targets: DebugGatewayTarget[];
   options: DebugGatewayClientOptions;
   onLog?: (message: string) => void;
+  onReconnect?: (session: ConnectionGatewaySession) => void;
 }): Promise<DebugGatewayClient> {
   let closed = false;
   let current: DebugGatewayClient | null = null;
@@ -101,6 +107,9 @@ async function connectReconnectingDebugGateway({
           options: currentOptions,
           onLog
         });
+        if (currentSession) {
+          onReconnect?.(current.session);
+        }
         currentSession = current.session;
         await current.closed;
       } catch (error) {
@@ -139,6 +148,9 @@ async function connectReconnectingDebugGateway({
       latestTargets = targets;
       current?.updateTargets(targets);
     },
+    reconnect() {
+      current?.close();
+    },
     close() {
       closed = true;
       current?.close();
@@ -160,6 +172,7 @@ async function connectSingleDebugGateway({
   let targetsByPluginId = createTargetsByPluginId(targets);
   let closed = false;
   let session: ConnectionGatewaySession | null = null;
+  let stopHeartbeat: () => void = () => undefined;
   let boundResolve: (session: ConnectionGatewaySession) => void;
   let boundReject: (error: Error) => void;
   const bound = new Promise<ConnectionGatewaySession>((resolve, reject) => {
@@ -170,6 +183,7 @@ async function connectSingleDebugGateway({
   const closedPromise = new Promise<void>((resolve) => {
     socket.addEventListener('close', () => {
       closed = true;
+      stopHeartbeat();
       resolve();
     });
     socket.addEventListener('error', () => {
@@ -230,22 +244,73 @@ async function connectSingleDebugGateway({
   });
 
   const boundSession = await bound;
+  stopHeartbeat = startGatewayHeartbeat(socket);
   onLog?.(`已连接 Connection Gateway session: ${boundSession.id}`);
 
   return {
     session: boundSession,
     updateTargets(targets) {
       targetsByPluginId = createTargetsByPluginId(targets);
+      void updateGatewayMetadata({
+        socket,
+        targets,
+        options,
+        onLog
+      });
       onLog?.(
         `已热更新本地调试插件: ${targets.map((target) => target.snapshot.pluginId).join(', ')}`
       );
     },
     close() {
       if (!closed) {
+        stopHeartbeat();
         socket.close();
       }
     },
     closed: closedPromise
+  };
+}
+
+async function updateGatewayMetadata({
+  socket,
+  targets,
+  options,
+  onLog
+}: {
+  socket: WebSocket;
+  targets: DebugGatewayTarget[];
+  options: DebugGatewayClientOptions;
+  onLog?: (message: string) => void;
+}): Promise<void> {
+  try {
+    await sendMessage(socket, {
+      protocol: 'connection-gateway.ws.v1',
+      type: 'metadata',
+      requestId: randomUUID(),
+      metadata: makePluginDebugMetadata(targets, options.source)
+    });
+  } catch (error) {
+    onLog?.(`Connection Gateway metadata 更新失败: ${formatErrorMessage(error)}`);
+  }
+}
+
+function startGatewayHeartbeat(socket: WebSocket): () => void {
+  const timer = setInterval(() => {
+    void sendMessage(socket, {
+      protocol: 'connection-gateway.ws.v1',
+      type: 'heartbeat',
+      ts: Date.now()
+    }).catch(() => {
+      socket.close();
+    });
+  }, GATEWAY_HEARTBEAT_INTERVAL_MS);
+
+  if (typeof timer === 'object' && timer && 'unref' in timer) {
+    (timer as { unref(): void }).unref();
+  }
+
+  return () => {
+    clearInterval(timer);
   };
 }
 

@@ -39,6 +39,54 @@ describe('DebugPluginRepoOverlay', () => {
     expect(new Set(plugins?.map((plugin) => plugin.etag)).size).toBe(2);
   });
 
+  it('changes debug etag when mounted metadata changes without a version bump', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse(makeGatewayStatus()))
+      .mockResolvedValueOnce(
+        jsonResponse(
+          makeGatewayStatus({
+            metadataOverrides: {
+              getTime: {
+                toolDescription: 'changed tool description'
+              }
+            }
+          })
+        )
+      );
+    const repo = createRepo();
+
+    const [before, beforeErr] = await repo.list({
+      sources: ['debug:user:u1']
+    });
+    const [after, afterErr] = await repo.list({
+      sources: ['debug:user:u1']
+    });
+
+    expect(beforeErr).toBeNull();
+    expect(afterErr).toBeNull();
+    expect(before?.find((plugin) => plugin.pluginId === 'getTime')?.version).toBe('0.1.1');
+    expect(after?.find((plugin) => plugin.pluginId === 'getTime')?.version).toBe('0.1.1');
+    expect(before?.find((plugin) => plugin.pluginId === 'getTime')?.etag).not.toBe(
+      after?.find((plugin) => plugin.pluginId === 'getTime')?.etag
+    );
+  });
+
+  it('keeps debug etag stable when metadata key order changes', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse(makeGatewayStatus()))
+      .mockResolvedValueOnce(jsonResponse(makeGatewayStatus({ reverseMetadataKeyOrder: true })));
+    const repo = createRepo();
+
+    const [before] = await repo.list({
+      sources: ['debug:user:u1']
+    });
+    const [after] = await repo.list({
+      sources: ['debug:user:u1']
+    });
+
+    expect(before?.map((plugin) => plugin.etag)).toEqual(after?.map((plugin) => plugin.etag));
+  });
+
   it('keeps fallback plugins when listing mixed normal and debug sources', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(makeGatewayStatus()));
     const fallback = makeFallbackRepo({
@@ -143,13 +191,65 @@ describe('DebugPluginRepoOverlay', () => {
       }
     });
   });
+
+  it('does not expose debug metadata when gateway owner liveness is missing', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse(makeGatewayStatusWithoutOwnerAlive())
+    );
+    const repo = createRepo();
+
+    const [, err] = await repo.getPluginByUserPluginId({
+      pluginId: 'getTime',
+      source: 'debug:user:u1'
+    });
+
+    expect(err).toMatchObject({
+      code: 'connection_gateway.session_not_found',
+      data: {
+        source: 'debug:user:u1',
+        status: 'connected'
+      }
+    });
+  });
+
+  it('fails closed without gateway lookup when remote debug is disabled', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const repo = createRepo({ remoteDebugEnabled: false });
+
+    const [, err] = await repo.getPluginByUserPluginId({
+      pluginId: 'getTime',
+      source: 'debug:user:u1'
+    });
+
+    expect(err).toMatchObject({
+      code: 'plugin.remote_debug_disabled'
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('fails debug source list when remote debug is disabled', async () => {
+    const fallback = makeFallbackRepo();
+    const repo = createRepo({ fallback, remoteDebugEnabled: false });
+
+    const [, err] = await repo.list({
+      sources: ['system', 'debug:user:u1']
+    });
+
+    expect(err).toMatchObject({
+      code: 'plugin.remote_debug_disabled'
+    });
+    expect(fallback.list).not.toHaveBeenCalled();
+  });
 });
 
-function createRepo(input: { fallback?: PluginRepoPort } = {}): DebugPluginRepoOverlay {
+function createRepo(
+  input: { fallback?: PluginRepoPort; remoteDebugEnabled?: boolean } = {}
+): DebugPluginRepoOverlay {
   return new DebugPluginRepoOverlay({
     fallback: input.fallback ?? makeFallbackRepo(),
     gatewayBaseUrl: 'http://gateway.local',
-    authToken: 'token'
+    authToken: 'token',
+    remoteDebugEnabled: input.remoteDebugEnabled ?? true
   });
 }
 
@@ -190,8 +290,15 @@ function jsonResponse(payload: unknown): Response {
 
 function makeGatewayStatus({
   status = 'connected',
-  ownerAlive = true
-}: { status?: string; ownerAlive?: boolean } = {}) {
+  ownerAlive = true,
+  metadataOverrides = {},
+  reverseMetadataKeyOrder = false
+}: {
+  status?: string;
+  ownerAlive?: boolean;
+  metadataOverrides?: Record<string, Partial<ReturnType<typeof makeMetadata>>>;
+  reverseMetadataKeyOrder?: boolean;
+} = {}) {
   return {
     data: {
       session: {
@@ -203,8 +310,14 @@ function makeGatewayStatus({
         metadata: {
           pluginDebug: {
             targets: [
-              makeMetadata('getTime', '0.1.1'),
-              makeMetadata('dbops', '0.2.0')
+              makeMetadata('getTime', '0.1.1', {
+                override: metadataOverrides.getTime,
+                reverseKeyOrder: reverseMetadataKeyOrder
+              }),
+              makeMetadata('dbops', '0.2.0', {
+                override: metadataOverrides.dbops,
+                reverseKeyOrder: reverseMetadataKeyOrder
+              })
             ]
           }
         }
@@ -214,7 +327,35 @@ function makeGatewayStatus({
   };
 }
 
-function makeMetadata(pluginId: string, version: string) {
+function makeGatewayStatusWithoutOwnerAlive() {
+  const status = makeGatewayStatus();
+  delete (status.data as Partial<{ ownerAlive: boolean }>).ownerAlive;
+  return status;
+}
+
+function makeMetadata(
+  pluginId: string,
+  version: string,
+  {
+    override = {},
+    reverseKeyOrder = false
+  }: { override?: Partial<ReturnType<typeof makeMetadataBase>>; reverseKeyOrder?: boolean } = {}
+) {
+  const metadata = {
+    ...makeMetadataBase(pluginId, version),
+    ...override
+  };
+
+  if (!reverseKeyOrder) {
+    return metadata;
+  }
+
+  return Object.fromEntries(Object.entries(metadata).reverse()) as ReturnType<
+    typeof makeMetadataBase
+  >;
+}
+
+function makeMetadataBase(pluginId: string, version: string) {
   return {
     source: 'debug:user:u1',
     pluginId,

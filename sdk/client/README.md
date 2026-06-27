@@ -16,3 +16,10 @@ type PluginListType = {
 ```
 
 同时导出了 `PluginListItemType` 和 `PluginSourceType`，方便调用方处理新的 `source` / 分页返回。
+
+`getPluginServiceFeatures()` 可查询当前 Plugin 服务已启用的能力：
+
+```ts
+const features = await client.getPluginServiceFeatures();
+// { remoteDebug: boolean }
+```

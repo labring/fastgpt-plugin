@@ -74,6 +74,16 @@ export type ConnectionGatewayWsHeartbeatMessage = z.infer<
   typeof ConnectionGatewayWsHeartbeatMessageSchema
 >;
 
+export const ConnectionGatewayWsMetadataMessageSchema = z.object({
+  protocol: ConnectionGatewayWsProtocolSchema,
+  type: z.literal('metadata'),
+  requestId: z.string().min(1).optional(),
+  metadata: z.record(z.string(), z.unknown())
+});
+export type ConnectionGatewayWsMetadataMessage = z.infer<
+  typeof ConnectionGatewayWsMetadataMessageSchema
+>;
+
 export const ConnectionGatewayWsErrorMessageSchema = z.object({
   protocol: ConnectionGatewayWsProtocolSchema,
   type: z.literal('error'),
@@ -96,7 +106,8 @@ export type ConnectionGatewayWsBoundMessage = z.infer<typeof ConnectionGatewayWs
 export const ConnectionGatewayWsClientMessageSchema = z.discriminatedUnion('type', [
   ConnectionGatewayWsBindMessageSchema,
   ConnectionGatewayWsEnvelopeMessageSchema,
-  ConnectionGatewayWsHeartbeatMessageSchema
+  ConnectionGatewayWsHeartbeatMessageSchema,
+  ConnectionGatewayWsMetadataMessageSchema
 ]);
 export type ConnectionGatewayWsClientMessage = z.infer<
   typeof ConnectionGatewayWsClientMessageSchema

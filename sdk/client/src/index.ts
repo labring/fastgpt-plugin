@@ -30,6 +30,7 @@ export type {
   PluginPermissionEnumType,
   PluginPruneDisabledResultType,
   PluginRuntimeConfigType,
+  PluginServiceFeaturesType,
   PluginSourceType,
   PluginSummaryType,
   PluginTagListItemType,

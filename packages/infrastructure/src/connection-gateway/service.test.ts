@@ -369,6 +369,29 @@ describe('ConnectionGatewayService', () => {
     });
   });
 
+  it('allows rebinding the same debug source after the previous session is closed', async () => {
+    const { service, token } = makeService();
+    const signed = await signDebugToken(token);
+    const session = await service.bindConnection({
+      token: signed,
+      now
+    });
+
+    await service.closeSession(session.id, 'unit_test_rebind');
+
+    await expect(
+      service.bindConnection({
+        token: signed,
+        now: now + 1
+      })
+    ).resolves.toMatchObject({
+      status: 'connected',
+      sessionScope: {
+        source: 'debug:user:u1'
+      }
+    });
+  });
+
   it('denies response envelopes without the session capability', async () => {
     const { service, token } = makeService();
     const session = await service.bindConnection({
