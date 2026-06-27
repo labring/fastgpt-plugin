@@ -21,9 +21,13 @@ FastGPT-Plugin v1.0.0 systematically refactors the plugin project so plugin inst
 
 **Plugin Marketplace**: the centralized platform for managing plugins, where users can search, download, and install plugins.
 
-**Runtime**: the backend implementation responsible for executing plugin code. The current default runtime is the local process pool. The Serverless runtime is reserved for future extension.
+**Runtime**: the backend implementation responsible for executing plugin code. The current default production runtime is the local process pool. The Connection Gateway debug runtime is used for remote debugging. The Serverless runtime is reserved for future extension.
 
 **Pod / worker node**: a single plugin child process in the local process pool. One plugin service can own multiple Pods, and each Pod can process concurrent requests according to configuration.
+
+**Debug channel**: a remote debugging entrypoint enabled by FastGPT for one `tmbId`. Plugin Server generates a long-lived `connectionKey`; CLI exchanges it for a short-lived WebSocket `connectToken` and connects local plugins through Connection Gateway.
+
+**Source**: plugin source identifier. System plugins normally use regular sources. Remote debugging uses `debug:tmbId:{tmbId}` to route plugin listing, detail, and invocation to the corresponding Gateway session.
 
 ## FastGPT Plugin System Architecture
 
@@ -50,12 +54,21 @@ flowchart TB
 
     subgraph Plugin["FastGPT Plugin Service"]
         PluginServer["Plugin Service"]
+        DebugOverlay["DebugPluginRepoOverlay"]
+        RuntimeRouter["Composite Runtime Manager"]
         subgraph ProcessPool["Local Process Pool"]
             PluginProcess["Plugin Pod"]
             PluginProcess2["Plugin Pod"]
             PluginProcess3["Plugin Pod"]
         end
     end
+
+    subgraph Gateway["Connection Gateway"]
+        GatewayHTTP["Internal HTTP API"]
+        GatewayWS["WebSocket Debug Channel"]
+    end
+
+    LocalCLI["fastgpt-plugin dev"]
 
     subgraph Serverless["Serverless Runtime"]
         PluginServerless["Plugin Serverless Instance"]
@@ -71,8 +84,13 @@ flowchart TB
     Workflow -->|Calls plugin| Plugin
     FastGPT -->|Gets plugins| Marketplace
 
-    PluginServer -->|local-pool| ProcessPool
-    PluginServer -->|reserved| Serverless
+    PluginServer --> DebugOverlay
+    PluginServer --> RuntimeRouter
+    RuntimeRouter -->|local-pool| ProcessPool
+    RuntimeRouter -->|debug source| GatewayHTTP
+    LocalCLI -->|WSS bind / metadata / stream| GatewayWS
+    GatewayHTTP --> GatewayWS
+    RuntimeRouter -->|reserved| Serverless
     PluginProcess --> Google
     PluginProcess2 --> OpenAI
 ```
@@ -81,7 +99,13 @@ flowchart TB
 
 The FastGPT-Plugin service is responsible for plugin package management, runtime registration, plugin call forwarding, and system-level configuration. The FastGPT main service calls plugins through the plugin runtime interface, and the plugin service dispatches each call to the corresponding runtime.
 
-FastGPT-Plugin supports multiple runtimes. The local process pool, `local-pool`, is enabled by default. The Serverless runtime keeps extension points in interfaces and data structures.
+FastGPT-Plugin supports multiple runtimes:
+
+1. `local-pool`: the default production runtime. Plugins run in local child process pools.
+2. `connection-gateway-debug`: the remote debug runtime. It is active only under debug sources and forwards invocations to local CLI through Connection Gateway.
+3. Serverless: a reserved runtime with extension points in interfaces and data structures.
+
+`CompositePluginRuntimeManager` selects the runtime. Normal system plugin invocations enter `local-pool`. Invocations with debug source context enter `ConnectionGatewayDebugRuntimeManager`. If the debug path is disconnected or the session does not exist, the call fails directly and does not fall back to the production runtime.
 
 System plugins can be installed in two ways:
 
@@ -89,6 +113,57 @@ System plugins can be installed in two ways:
 2. Team-level installation, not yet implemented: a team administrator or a member with plugin management permission uploads a plugin, and the plugin is visible only to that team.
 
 After a plugin is installed, the service saves the plugin package file, parses plugin metadata, and registers the plugin with the runtime when it is enabled. Runtime configuration is saved per plugin. When no configuration record exists, defaults from environment variables are used.
+
+## Remote Debug Design
+
+Remote debugging lets developers run plugins locally and temporarily attach them to a FastGPT test environment. It is a debug connection layer, not a production plugin runtime.
+
+Current flow:
+
+1. FastGPT authenticates the current user and resolves `tmbId`.
+2. FastGPT calls Plugin Server `POST /plugin/debug-sessions` to enable the debug channel.
+3. Plugin Server creates source `debug:tmbId:{tmbId}` and generates a long-lived `connectionKey`. The server persists only `connectionKeyHash`; plaintext key is returned only on creation or refresh.
+4. Local CLI runs `fastgpt-plugin dev` and calls `POST /plugin/debug-sessions/connection-key:exchange` with the `connectionKey`.
+5. Plugin Server validates the connection key, signs a short-lived WebSocket `connectToken`, and returns `gatewayUrl`, `source`, `connectToken`, and `expiresAt`.
+6. CLI connects to Connection Gateway and sends `bind` plus local plugin metadata.
+7. Plugin Server reads metadata through Gateway status and temporarily merges local plugins into plugin and tool lists under the debug source.
+8. When FastGPT invokes a debug plugin, Plugin Server publishes a request envelope through Gateway internal API. CLI executes the local plugin and streams results back.
+
+```mermaid
+sequenceDiagram
+    participant FastGPT as FastGPT
+    participant Plugin as Plugin Server
+    participant Gateway as Connection Gateway
+    participant CLI as fastgpt-plugin dev
+
+    FastGPT->>Plugin: Enable debug channel with tmbId
+    Plugin-->>FastGPT: source, keyId, connectionKey
+    CLI->>Plugin: Exchange connectionKey
+    Plugin-->>CLI: gatewayUrl, source, connectToken
+    CLI->>Gateway: WSS bind + metadata
+    FastGPT->>Plugin: List / invoke debug plugin
+    Plugin->>Gateway: status / request stream
+    Gateway->>CLI: request envelope
+    CLI-->>Gateway: response stream
+    Gateway-->>Plugin: NDJSON stream
+    Plugin-->>FastGPT: tool stream
+```
+
+Debug APIs:
+
+| API | Description |
+| --- | --- |
+| `POST /plugin/debug-sessions` | Enable a `tmbId`-scoped debug channel. |
+| `POST /plugin/debug-sessions/key:refresh` | Refresh the long-lived connection key and close the old Gateway session. |
+| `POST /plugin/debug-sessions/connection-key:exchange` | Exchange the long-lived key for short-lived WebSocket connection info. |
+| `GET /plugin/debug-sessions/:tmbId` | Get debug channel status and mounted local plugins. |
+| `POST /plugin/debug-sessions/:tmbId/revoke` | Close the current debug session; key semantics are controlled by server-side state. |
+
+Debug source plugin queries are handled by `DebugPluginRepoOverlay`. It splits requested sources into debug sources and regular sources. Debug sources read local plugin metadata from Gateway session metadata; regular sources continue to read from the persistent plugin repository; results are merged afterwards.
+
+Debug invocation is handled by `ConnectionGatewayDebugRuntimeManager`. It requires a connected Gateway session with `ownerAlive=true`, then sends a `plugin-debug.run` envelope. CLI receives only a short-lived connect token and does not need `CONNECTION_GATEWAY_AUTH_TOKEN` or `JWT_SECRET`.
+
+For Connection Gateway long-connection protocol, sessions, mailbox, owner leases, and limits, see [Connection Gateway Design](./connection-gateway-design.md).
 
 ## System-Level Plugin Management
 
@@ -147,5 +222,9 @@ Environment variables provide default runtime parameters and global limits:
 | `POOL_SERVICE_QUEUE_TIMEOUT` | Maximum time a request can wait in queue for an available Pod, in milliseconds. |
 | `POOL_SERVICE_STARTUP_RETRY_BASE_DELAY` | Base delay for exponential backoff after Pod startup timeout, in milliseconds. |
 | `POOL_SERVICE_STARTUP_RETRY_MAX_DELAY` | Maximum delay for exponential backoff after Pod startup timeout, in milliseconds. |
+| `CONNECTION_GATEWAY_BASE_URL` | Gateway internal HTTP base URL for Plugin Server. |
+| `CONNECTION_GATEWAY_PUBLIC_URL` | WebSocket URL returned to CLI. |
+| `CONNECTION_GATEWAY_AUTH_TOKEN` | Bearer token used by Plugin Server for Gateway internal API. |
+| `CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS` | Timeout while waiting for CLI responses during remote debug invocation. |
 
 Pod startup errors are recorded and classified. Consecutive non-timeout startup failures trigger startup circuit breaking after the threshold is reached, preventing more Pods from being created. Startup timeouts are treated as resource pressure, enter exponential backoff, and retry later. For detailed scheduling, recycling, and metrics design, see [Process Pool Design](./process-pool-design.md).

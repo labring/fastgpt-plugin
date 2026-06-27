@@ -41,6 +41,7 @@ FastGPT 已有系统工具已经迁移到这个仓库，新工具也将在这个
 - [v1.0.0 更新文档](./docs/upgrade/v1.0.0.zh.md)
 - [项目架构](./docs/dev/architecture.zh.md)
 - [插件系统设计](./docs/dev/design.zh.md)
+- [Connection Gateway 设计](./docs/dev/connection-gateway-design.zh.md)
 - [系统插件开发指南](./docs/dev/how-to-devlop-plugin.md)
 - [进程池运行时设计](./docs/dev/process-pool-design.zh.md)
 - [Runtime Metrics OpenTelemetry](./docs/dev/runtime-metrics-otel.zh.md)
