@@ -51,18 +51,20 @@ const GATEWAY_HEARTBEAT_INTERVAL_MS = 5_000;
 export async function connectDebugGateway({
   targets,
   options,
-  onLog
+  onLog,
+  onReconnect
 }: {
   targets: DebugGatewayTarget[];
   options: DebugGatewayClientOptions;
   onLog?: (message: string) => void;
+  onReconnect?: (session: ConnectionGatewaySession) => void;
 }): Promise<DebugGatewayClient> {
   if (targets.length === 0) {
     throw new Error('Gateway debug targets cannot be empty');
   }
 
   if (options.reconnect) {
-    return connectReconnectingDebugGateway({ targets, options, onLog });
+    return connectReconnectingDebugGateway({ targets, options, onLog, onReconnect });
   }
 
   return connectSingleDebugGateway({ targets, options, onLog });
@@ -71,11 +73,13 @@ export async function connectDebugGateway({
 async function connectReconnectingDebugGateway({
   targets,
   options,
-  onLog
+  onLog,
+  onReconnect
 }: {
   targets: DebugGatewayTarget[];
   options: DebugGatewayClientOptions;
   onLog?: (message: string) => void;
+  onReconnect?: (session: ConnectionGatewaySession) => void;
 }): Promise<DebugGatewayClient> {
   let closed = false;
   let current: DebugGatewayClient | null = null;
@@ -103,6 +107,9 @@ async function connectReconnectingDebugGateway({
           options: currentOptions,
           onLog
         });
+        if (currentSession) {
+          onReconnect?.(current.session);
+        }
         currentSession = current.session;
         await current.closed;
       } catch (error) {

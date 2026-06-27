@@ -6,7 +6,15 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import { input } from '@inquirer/prompts';
-import { Box, type Instance, render as renderInk, Text, useInput } from 'ink';
+import {
+  Box,
+  type Instance,
+  render as renderInk,
+  type SuspendTerminal,
+  Text,
+  useApp,
+  useInput
+} from 'ink';
 import React from 'react';
 import z from 'zod';
 
@@ -104,7 +112,10 @@ async function runRemoteDebugSessionOnce({
     const gateway = await connectDebugGateway({
       targets,
       options: gatewayOptions,
-      onLog: (message) => reporter.log(`[gateway] ${message}`)
+      onLog: (message) => reporter.log(`[gateway] ${message}`),
+      onReconnect: (session) => {
+        reporter.ready(session.sessionScope.source ?? currentGatewayOptions.source ?? '-');
+      }
     });
     reporter.attachClose(({ force }) => {
       gateway.close();
@@ -207,7 +218,10 @@ async function runWatchRemoteDebugSession({
     const connectedGateway = await connectDebugGateway({
       targets: initialTargets,
       options: gatewayOptions,
-      onLog: (message) => reporter.log(`[gateway] ${message}`)
+      onLog: (message) => reporter.log(`[gateway] ${message}`),
+      onReconnect: (session) => {
+        reporter.ready(session.sessionScope.source ?? currentGatewayOptions.source ?? '-');
+      }
     });
     gateway = connectedGateway;
     reporter.attachClose(({ force }) => {
@@ -556,6 +570,7 @@ type RemoteDebugCloseOptions = {
 
 type RemoteDebugCloseHandler = (options: RemoteDebugCloseOptions) => void;
 type RemoteDebugConfigureConnectionKeyHandler = () => Promise<void> | void;
+type RemoteDebugConfigureConnectionKeyRequest = (suspendTerminal: SuspendTerminal) => void;
 type CloseSignal = 'SIGINT' | 'SIGTERM';
 
 const CLI_CONFIG_FILE_NAME = 'config.json';
@@ -670,7 +685,9 @@ class TuiRemoteDebugReporter implements RemoteDebugReporter {
       process.exit(130);
     }
   };
-  private readonly requestConfigureConnectionKey = () => {
+  private readonly requestConfigureConnectionKey: RemoteDebugConfigureConnectionKeyRequest = (
+    suspendTerminal
+  ) => {
     if (this.configuring) {
       return;
     }
@@ -679,7 +696,7 @@ class TuiRemoteDebugReporter implements RemoteDebugReporter {
       return;
     }
 
-    void this.runConfigureConnectionKey();
+    void this.runConfigureConnectionKey(suspendTerminal);
   };
 
   constructor(private readonly summary: RemoteDebugReporterSummary) {}
@@ -751,7 +768,7 @@ class TuiRemoteDebugReporter implements RemoteDebugReporter {
     await Promise.race([instance.waitUntilExit(), delay(50)]).catch(() => undefined);
   }
 
-  private async runConfigureConnectionKey(): Promise<void> {
+  private async runConfigureConnectionKey(suspendTerminal: SuspendTerminal): Promise<void> {
     if (!this.configureConnectionKey) {
       return;
     }
@@ -762,8 +779,9 @@ class TuiRemoteDebugReporter implements RemoteDebugReporter {
     this.rerender();
 
     try {
-      await this.unmount();
-      await this.configureConnectionKey();
+      await suspendTerminal(async () => {
+        await this.configureConnectionKey?.();
+      });
       this.status = 'connecting';
       this.log('已更新 connection key，正在重新连接 Connection Gateway。');
     } catch (error) {
@@ -801,7 +819,7 @@ type RemoteDebugInkAppProps = {
   source: string;
   logs: TuiLogEntry[];
   onClose(): void;
-  onConfigureConnectionKey(): void;
+  onConfigureConnectionKey: RemoteDebugConfigureConnectionKeyRequest;
 };
 
 function RemoteDebugInkApp({
@@ -812,13 +830,15 @@ function RemoteDebugInkApp({
   onClose,
   onConfigureConnectionKey
 }: RemoteDebugInkAppProps): React.ReactElement {
+  const { suspendTerminal } = useApp();
+
   useInput((inputValue, key) => {
     if (key.ctrl && inputValue === 'c') {
       onClose();
       return;
     }
     if (inputValue === 'c') {
-      onConfigureConnectionKey();
+      onConfigureConnectionKey(suspendTerminal);
     }
   });
 

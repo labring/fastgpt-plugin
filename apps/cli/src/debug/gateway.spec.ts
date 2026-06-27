@@ -496,6 +496,73 @@ describe('connectDebugGateway', () => {
     secondSocket.close();
     await client.closed;
   });
+
+  it('notifies the caller after a reconnect binds a new WSS session', async () => {
+    const firstSocket = new FakeWebSocket('wss://gateway.example.com/connection-gateway/v1?attempt=1');
+    const secondSocket = new FakeWebSocket('wss://gateway.example.com/connection-gateway/v1?attempt=2');
+    const webSocketCtor = makeTrackedWebSocketConstructorSequence([firstSocket, secondSocket]);
+    vi.stubGlobal('WebSocket', webSocketCtor.ctor);
+    const onReconnect = vi.fn();
+
+    const clientPromise = connectDebugGateway({
+      targets: [makeTarget()],
+      options: {
+        ...makeOptions(),
+        reconnect: true,
+        reconnectIntervalMs: 5,
+        resolveReconnectOptions: async () => ({
+          ...makeOptions(),
+          connectToken: 'refreshed-token',
+          reconnect: true,
+          reconnectIntervalMs: 5
+        })
+      },
+      onReconnect
+    });
+
+    firstSocket.open();
+    await vi.waitFor(() => {
+      expect(firstSocket.sent).toHaveLength(1);
+    });
+    firstSocket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (firstSocket.sent[0] as { requestId: string }).requestId,
+      session: makeSession()
+    });
+    const client = await clientPromise;
+
+    expect(onReconnect).not.toHaveBeenCalled();
+
+    firstSocket.close();
+    await vi.waitFor(() => {
+      expect(webSocketCtor.calls()).toBe(2);
+    });
+    secondSocket.open();
+    await vi.waitFor(() => {
+      expect(secondSocket.sent).toHaveLength(1);
+    });
+    secondSocket.receive({
+      protocol: 'connection-gateway.ws.v1',
+      type: 'bound',
+      requestId: (secondSocket.sent[0] as { requestId: string }).requestId,
+      session: makeSession({
+        id: 'session-b'
+      })
+    });
+
+    await vi.waitFor(() => {
+      expect(onReconnect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'session-b'
+        })
+      );
+    });
+
+    client.close();
+    secondSocket.close();
+    await client.closed;
+  });
 });
 
 class FakeWebSocket extends EventTarget {
