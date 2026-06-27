@@ -12,29 +12,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Connection Gateway
-    runs-on: ubuntu-24.04
+  build-image:
+    name: Build ${{ matrix.archs.arch }} Connection Gateway image
+    strategy:
+      fail-fast: false
+      matrix:
+        archs:
+          - arch: amd64
+          - arch: arm64
+            runs-on: ubuntu-24.04-arm
+    runs-on: ${{ matrix.archs.runs-on || 'ubuntu-24.04' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Enable pnpm
-        run: corepack enable pnpm
-
-      - name: Install dependencies
-        env:
-          HUSKY: 0
-        run: pnpm install --frozen-lockfile
-
-      - name: Build package
-        run: pnpm run build:connection-gateway
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -46,18 +37,87 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push for ${{ matrix.archs.arch }}
+        id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: apps/connection-gateway/Dockerfile
           target: runner
-          platforms: linux/amd64
+          platforms: linux/${{ matrix.archs.arch }}
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-connection-gateway:${{ github.sha }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-connection-gateway:${{ github.sha }}-${{ matrix.archs.arch }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=FastGPT Plugin Connection Gateway image
             org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha,scope=connection-gateway
-          cache-to: type=gha,mode=max,scope=connection-gateway
+          cache-from: type=gha,scope=connection-gateway-${{ matrix.archs.arch }}
+          cache-to: type=gha,mode=max,scope=connection-gateway-${{ matrix.archs.arch }}
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: connection-gateway-digests-${{ matrix.archs.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge-image:
+    name: Publish multi-arch Connection Gateway image
+    runs-on: ubuntu-24.04
+    needs:
+      - build-image
+
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: connection-gateway-digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_NAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Login to Ali Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: ${{ secrets.FASTGPT_ALI_IMAGE_USER }}
+          password: ${{ secrets.FASTGPT_ALI_IMAGE_PSW }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          GITHUB_IMAGE="ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-connection-gateway"
+          ALI_IMAGE="${{ secrets.FASTGPT_ALI_IMAGE_PREFIX }}/fastgpt-plugin-connection-gateway"
+          DOCKER_IMAGE="${{ secrets.DOCKER_IMAGE_NAME }}/fastgpt-plugin-connection-gateway"
+
+          TAGS="$GITHUB_IMAGE:${{ github.sha }} $ALI_IMAGE:${{ github.sha }} $DOCKER_IMAGE:${{ github.sha }}"
+
+          for TAG in $TAGS; do
+            echo "Creating manifest list for: $TAG"
+            docker buildx imagetools create -t "$TAG" \
+              $(printf 'ghcr.io/${{ github.repository_owner }}/fastgpt-plugin-connection-gateway@sha256:%s ' *)
+            sleep 2
+          done
