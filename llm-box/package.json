@@ -1,0 +1,26 @@
+{
+  "name": "@fastgpt-plugin/llm-box",
+  "version": "1.0.0",
+  "description": "llm-box workflow execution tool for FastGPT",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "bun run index.ts",
+    "build": "bun build index.ts --target=browser --outdir=dist --minify",
+    "test": "bun test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@fastgpt-plugin/sdk-factory": "workspace:*",
+    "@fastgpt-plugin/sdk-factory-config": "workspace:*",
+    "@fastgpt-plugin/sdk-factory-request": "workspace:*"
+  },
+  "keywords": [
+    "fastgpt",
+    "plugin",
+    "llm-box",
+    "workflow",
+    "automation"
+  ],
+  "author": "llm-box Team",
+  "license": "MIT"
+}
