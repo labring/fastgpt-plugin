@@ -14,7 +14,7 @@ import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runti
 import type { URLFileFetcherPort } from '@domain/ports/url-file-fetcher.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
-import { PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
+import { type PluginSourceType,PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
 import { type Result, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 import { batch } from '@shared/utils/fn';
@@ -35,7 +35,7 @@ export type PluginInstallUCDeps = {
 };
 
 /** Input Type*/
-type Input = { urls: string[]; batchDownloadSize: number };
+type Input = { urls: string[]; source?: PluginSourceType; batchDownloadSize: number };
 
 type DownloadedFile = {
   file: FileObject;
@@ -65,6 +65,7 @@ export const makePluginInstallUC =
   }: PluginInstallUCDeps) =>
   async (input: Input): Output => {
     logger.debug('plugin install', { input });
+    const source = input.source ?? 'system';
 
     const getDownloadedFileName = (url: string) => {
       try {
@@ -154,6 +155,7 @@ export const makePluginInstallUC =
       const [, createErr] = await pluginRepo.createPlugin({
         files: info.files,
         plugin: info.info,
+        source,
         pending: false
       });
 
@@ -181,8 +183,7 @@ export const makePluginInstallUC =
           pluginRuntimeManager,
           logger,
           replacementUniqueId: uniqueId,
-          replacedPlugins,
-          disableReplacedPlugins: false
+          replacedPlugins
         });
 
         if (replaceErr) {

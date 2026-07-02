@@ -102,6 +102,7 @@ type ReplaceInstalledPluginInput = {
   activateTarget: boolean;
   installedPlugin: MongoPluginWithId;
   pluginRecord: PluginRecordPayloadType;
+  source: PluginSourceType;
   uniqueId: PluginUniqueIdType;
 };
 
@@ -171,13 +172,17 @@ export class PluginRepo implements PluginRepoPort {
     return Object.keys(schema).length > 0;
   }
 
-  private async updateSystemInstallation(plugin: MongoPluginWithId, session?: ClientSession) {
+  private async updateInstallation(
+    source: PluginSourceType,
+    plugin: MongoPluginWithId,
+    session?: ClientSession
+  ) {
     const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
     const options = session ? { upsert: true, session } : { upsert: true };
 
     await installationModel.updateOne(
       {
-        source: 'system',
+        source,
         pluginId: plugin.pluginId,
         version: plugin.version
       },
@@ -231,6 +236,66 @@ export class PluginRepo implements PluginRepoPort {
     await pluginInstallationModel.deleteMany(installationFilter);
   }
 
+  private async disableUnreferencedPluginIds(
+    uniqueIds: PluginUniqueIdType[],
+    session?: ClientSession
+  ): Promise<PluginUniqueIdType[]> {
+    if (uniqueIds.length === 0) {
+      return [];
+    }
+
+    const pluginModel = this.deps.mongoClient.getModel('plugin');
+    const pluginInstallationModel = this.deps.mongoClient.getModel('pluginInstallation');
+    const installationFilter = {
+      $or: uniqueIds.map(({ pluginId, version, etag }) => ({
+        pluginId,
+        version,
+        etag
+      }))
+    };
+    const installationProjection = {
+      _id: 0,
+      pluginId: 1,
+      version: 1,
+      etag: 1
+    };
+    const remainingInstallations = await (session
+      ? pluginInstallationModel.find(installationFilter, installationProjection, { session })
+      : pluginInstallationModel.find(installationFilter, installationProjection)
+    ).lean();
+    const remainingKeys = new Set(
+      remainingInstallations.map((item) => this.getInstalledPluginKey(item))
+    );
+    const pluginsToDisable = uniqueIds.filter(
+      (uniqueId) => !remainingKeys.has(this.getInstalledPluginKey(uniqueId))
+    );
+
+    if (pluginsToDisable.length === 0) {
+      return [];
+    }
+
+    const updateFilter = {
+      $or: pluginsToDisable
+    };
+    const update = {
+      $set: {
+        status: PluginStatusEnum.disabled,
+        updateAt: new Date()
+      },
+      $unset: {
+        expiredAt: 1
+      }
+    };
+
+    if (session) {
+      await pluginModel.updateMany(updateFilter, update, { session });
+    } else {
+      await pluginModel.updateMany(updateFilter, update);
+    }
+
+    return pluginsToDisable;
+  }
+
   private async disableSameVersionActivePlugins(
     uniqueId: PluginUniqueIdType,
     session?: ClientSession
@@ -257,7 +322,7 @@ export class PluginRepo implements PluginRepoPort {
       ).lean();
 
       const replacedPluginIds = activePlugins.map((plugin) => PluginUniqueIdSchema.parse(plugin));
-      await this.disablePluginIds(replacedPluginIds, session);
+      await this.disableUnreferencedPluginIds(replacedPluginIds, session);
 
       return successResult({});
     } catch (error) {
@@ -275,18 +340,13 @@ export class PluginRepo implements PluginRepoPort {
     activateTarget,
     installedPlugin,
     pluginRecord,
+    source,
     uniqueId
   }: ReplaceInstalledPluginInput): Promise<Result> {
     const pluginModel = this.deps.mongoClient.getModel('plugin');
 
     try {
       await this.deps.mongoClient.sessionRun(async (session) => {
-        const [, replaceActiveErr] = await this.disableSameVersionActivePlugins(uniqueId, session);
-
-        if (replaceActiveErr) {
-          throw replaceActiveErr.error;
-        }
-
         if (activateTarget) {
           await pluginModel.updateOne(
             uniqueId,
@@ -306,7 +366,13 @@ export class PluginRepo implements PluginRepoPort {
           );
         }
 
-        await this.updateSystemInstallation(installedPlugin, session);
+        await this.updateInstallation(source, installedPlugin, session);
+
+        const [, replaceActiveErr] = await this.disableSameVersionActivePlugins(uniqueId, session);
+
+        if (replaceActiveErr) {
+          throw replaceActiveErr.error;
+        }
       }, {});
 
       return successResult({});
@@ -504,7 +570,10 @@ export class PluginRepo implements PluginRepoPort {
     return PluginRepo._instance;
   }
 
-  async confirmPlugin(pluginId: PluginUniqueIdType): Promise<Result<PluginType>> {
+  async confirmPlugin(
+    pluginId: PluginUniqueIdType,
+    source: PluginSourceType = 'system'
+  ): Promise<Result<PluginType>> {
     try {
       const pluginModel = this.deps.mongoClient.getModel('plugin');
       const plugin = await this.deps.mongoClient
@@ -594,10 +663,10 @@ export class PluginRepo implements PluginRepoPort {
         )
         .lean();
 
+      await this.updateInstallation(source, plugin);
+
       const [, replaceActiveErr] = await this.disableSameVersionActivePlugins(pluginId);
       if (replaceActiveErr) return failureResult(replaceActiveErr);
-
-      await this.updateSystemInstallation(plugin);
 
       return successResult(confirmedPlugin);
     } catch (error) {
@@ -647,6 +716,58 @@ export class PluginRepo implements PluginRepoPort {
         error
       );
     }
+  }
+
+  async deletePluginInstallation(
+    input: Required<Pick<UserPluginIdType, 'pluginId' | 'source' | 'version'>>
+  ): Promise<Result<{ plugin: PluginType; disabled: boolean }>> {
+    const [plugin, pluginErr] = await this.getPluginByUserPluginId(input);
+
+    if (pluginErr) {
+      return failureResult(
+        {
+          en: 'Plugin not found',
+          'zh-CN': '插件未找到'
+        },
+        pluginErr
+      );
+    }
+
+    const uniqueId = PluginUniqueIdSchema.parse(plugin);
+
+    try {
+      await this.deps.mongoClient.getModel('pluginInstallation').deleteOne({
+        source: input.source,
+        pluginId: input.pluginId,
+        version: input.version,
+        etag: uniqueId.etag
+      });
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Failed to delete plugin installation',
+          'zh-CN': '删除插件安装关系失败'
+        },
+        error
+      );
+    }
+
+    const [disableResult, disableErr] = await this.disableUnreferencedPlugins([uniqueId]);
+
+    if (disableErr) {
+      return failureResult(
+        {
+          en: 'Failed to disable plugin',
+          'zh-CN': '禁用插件失败'
+        },
+        disableErr
+      );
+    }
+
+    return successResult({
+      plugin,
+      disabled: Boolean(disableResult?.plugins.length)
+    });
   }
 
   private async listInstalledPluginsByView(
@@ -914,6 +1035,24 @@ export class PluginRepo implements PluginRepoPort {
     }
   }
 
+  async disableUnreferencedPlugins(
+    uniqueIds: PluginUniqueIdType[]
+  ): Promise<Result<{ plugins: PluginUniqueIdType[] }>> {
+    try {
+      const pluginsToDisable = await this.disableUnreferencedPluginIds(uniqueIds);
+
+      return successResult({ plugins: pluginsToDisable });
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Failed to disable unreferenced plugins',
+          'zh-CN': '禁用无引用插件失败'
+        },
+        error
+      );
+    }
+  }
+
   async pruneDisabled(): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>> {
     try {
       const pluginModel = this.deps.mongoClient.getModel('plugin');
@@ -1036,11 +1175,13 @@ export class PluginRepo implements PluginRepoPort {
   async createPlugin({
     plugin,
     files,
-    pending
+    pending,
+    source = 'system'
   }: {
     plugin: PluginType;
     files: PkgContentFileObjects;
     pending: boolean;
+    source?: PluginSourceType;
   }): Promise<Result> {
     const uniqueId = PluginUniqueIdSchema.parse(plugin);
     const pluginModel = this.deps.mongoClient.getModel('plugin');
@@ -1223,6 +1364,7 @@ export class PluginRepo implements PluginRepoPort {
           activateTarget: activateInstalledPlugin,
           installedPlugin,
           pluginRecord,
+          source,
           uniqueId
         });
         if (replaceActiveErr) return failureResult(replaceActiveErr);

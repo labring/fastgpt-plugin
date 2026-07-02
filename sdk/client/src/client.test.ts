@@ -168,3 +168,70 @@ function getRequest(fetchMock: ReturnType<typeof vi.fn>): {
     body: typeof init.body === 'string' ? JSON.parse(init.body) : undefined
   };
 }
+
+const makeJsonResponse = (payload: unknown) =>
+  new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+const readJsonBody = (request: RequestInit) =>
+  JSON.parse(String(request.body)) as Record<string, unknown>;
+
+describe('FastGPTPluginClient plugin source payloads', () => {
+  it('passes source when confirming plugins', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    const client = new FastGPTPluginClient({
+      baseUrl: 'https://plugin.example.com',
+      fetch: fetch as unknown as typeof globalThis.fetch
+    });
+
+    await client.confirmPlugin(
+      [
+        {
+          pluginId: 'plugin-a',
+          version: '1.0.0',
+          etag: 'etag-a'
+        }
+      ],
+      { source: 'team-a' }
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://plugin.example.com/api/plugin/confirm',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          uniqueIds: [
+            {
+              pluginId: 'plugin-a',
+              version: '1.0.0',
+              etag: 'etag-a'
+            }
+          ],
+          source: 'team-a'
+        })
+      })
+    );
+  });
+
+  it('passes source when installing plugins from URLs', async () => {
+    const fetch = vi.fn().mockResolvedValue(makeJsonResponse({ data: {} }));
+    const client = new FastGPTPluginClient({
+      baseUrl: 'https://plugin.example.com',
+      fetch: fetch as unknown as typeof globalThis.fetch
+    });
+
+    await client.installPlugins(['https://cdn.example.com/plugin.pkg'], { source: 'team-a' });
+
+    const [, request] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(fetch.mock.calls[0]?.[0]).toBe('https://plugin.example.com/api/plugin/install');
+    expect(request.method).toBe('POST');
+    expect(readJsonBody(request)).toEqual({
+      urls: ['https://cdn.example.com/plugin.pkg'],
+      source: 'team-a'
+    });
+  });
+});

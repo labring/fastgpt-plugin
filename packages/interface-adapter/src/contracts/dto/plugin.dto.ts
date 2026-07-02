@@ -78,7 +78,8 @@ export const PluginUniqueIdDTOSchema = z.object({
 });
 
 export const PluginConfirmParamsSchema = z.object({
-  uniqueIds: z.array(PluginUniqueIdDTOSchema).min(1)
+  uniqueIds: z.array(PluginUniqueIdDTOSchema).min(1),
+  source: PluginSourceDTOSchema.optional().default('system')
 });
 
 export const PluginPruneDisabledResponseDTOSchema = z.object({
@@ -99,7 +100,8 @@ export const PluginInstallFailureDTOSchema = z.object({
 
 export const PluginInstallDTOSchema = {
   request: z.object({
-    urls: z.array(z.string())
+    urls: z.array(z.string()),
+    source: PluginSourceDTOSchema.optional().default('system')
   }),
   response: z.object({
     failed: z.array(PluginInstallFailureDTOSchema).optional()

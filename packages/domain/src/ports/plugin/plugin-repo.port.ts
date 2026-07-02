@@ -65,13 +65,21 @@ export interface PluginRepoPort {
   createPlugin(arg: {
     plugin: PluginType;
     pending?: boolean;
+    source?: PluginSourceType;
     files: PkgContentFileObjects;
   }): Promise<Result>;
 
   /** 移除某个插件的 pending 状态 */
-  confirmPlugin(uniqueId: PluginUniqueIdType): Promise<Result<PluginType>>;
+  confirmPlugin(
+    uniqueId: PluginUniqueIdType,
+    source?: PluginSourceType
+  ): Promise<Result<PluginType>>;
   /** 删除 pending 插件及其临时文件 */
   deletePendingPlugin(uniqueId: PluginUniqueIdType): Promise<Result>;
+  /** 删除指定 source 下的安装关系；没有其他 source 引用时才禁用插件实体 */
+  deletePluginInstallation(
+    input: Required<Pick<UserPluginIdType, 'pluginId' | 'source' | 'version'>>
+  ): Promise<Result<{ plugin: PluginType; disabled: boolean }>>;
 
   /** 获取某个插件信息 */
   getPluginById(
@@ -87,6 +95,9 @@ export interface PluginRepoPort {
   listToolSummaries(arg: ToolListInputType): Promise<Result<ToolListOutputType>>;
   listActive(): Promise<Result<PluginType[]>>;
   disablePlugins(uniqueIds: PluginUniqueIdType[]): Promise<Result>;
+  disableUnreferencedPlugins(
+    uniqueIds: PluginUniqueIdType[]
+  ): Promise<Result<{ plugins: PluginUniqueIdType[] }>>;
   pruneDisabled(): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>>;
 
   listTags(): Promise<Result<PluginTagListType>>;

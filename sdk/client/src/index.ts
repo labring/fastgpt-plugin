@@ -32,6 +32,7 @@ export type {
   PluginRuntimeConfigType,
   PluginServiceFeaturesType,
   PluginSourceType,
+  PluginSourceRequestOptions,
   PluginSummaryType,
   PluginTagListItemType,
   PluginTagListType,

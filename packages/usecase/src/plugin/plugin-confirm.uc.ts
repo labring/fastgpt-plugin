@@ -9,7 +9,7 @@ import { isEqual } from 'es-toolkit';
 
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
-import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
+import type { PluginSourceType, PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
@@ -29,6 +29,7 @@ export type PluginConfirmUCDeps = {
 /** Input Type*/
 type Input = {
   uniqueIds: PluginUniqueIdType[];
+  source?: PluginSourceType;
 };
 
 /** Output Type */
@@ -36,8 +37,9 @@ type Output = Promise<Result>;
 
 export const makePluginConfirmUC =
   (deps: PluginConfirmUCDeps) =>
-  async ({ uniqueIds }: Input): Output => {
-    deps.logger.debug('Plugin Confirm', { uniqueIds });
+  async ({ uniqueIds, source: inputSource }: Input): Output => {
+    const source = inputSource ?? 'system';
+    deps.logger.debug('Plugin Confirm', { uniqueIds, source });
 
     const confirmOne = async (uniqueId: PluginUniqueIdType): Output => {
       deps.logger.debug('Plugin Confirm One', { uniqueId });
@@ -87,7 +89,7 @@ export const makePluginConfirmUC =
       }
 
       // 3. remove pending status
-      const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId);
+      const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId, source);
 
       if (err) {
         deps.logger.error('Plugin Confirm One Error', {
@@ -123,8 +125,7 @@ export const makePluginConfirmUC =
         const [, replaceErr] = await disableAndUnregisterReplacedPlugins({
           ...deps,
           replacementUniqueId: uniqueId,
-          replacedPlugins,
-          disableReplacedPlugins: false
+          replacedPlugins
         });
 
         if (replaceErr) {

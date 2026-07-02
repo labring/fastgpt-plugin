@@ -18,7 +18,7 @@ export const makePluginDeleteUC =
   ): Promise<Result> => {
     logger.debug('Plugin Delete', { input });
 
-    const [plugin, pluginErr] = await pluginRepo.getPluginByUserPluginId(input);
+    const [resolvedPlugin, pluginErr] = await pluginRepo.getPluginByUserPluginId(input);
 
     if (pluginErr) {
       logger.error('Plugin Delete Detail Error', toUsecaseErrorLog(pluginErr, { input }));
@@ -31,24 +31,26 @@ export const makePluginDeleteUC =
       );
     }
 
-    const uniqueId = PluginUniqueIdSchema.parse(plugin);
-    const [, disableErr] = await pluginRepo.disablePlugins([uniqueId]);
+    const [deleteResult, deleteErr] = await pluginRepo.deletePluginInstallation(input);
 
-    if (disableErr) {
-      logger.error('Plugin Delete Disable Error', {
-        uniqueId,
-        error: toUsecaseErrorLog(disableErr)
+    if (deleteErr) {
+      logger.error('Plugin Delete Installation Error', {
+        input,
+        error: toUsecaseErrorLog(deleteErr)
       });
       return failureResult(
         {
           en: 'Failed to delete plugin',
           'zh-CN': '删除插件失败'
         },
-        disableErr
+        deleteErr
       );
     }
 
-    if (plugin.type === 'tool') {
+    const plugin = deleteResult?.plugin ?? resolvedPlugin;
+    const uniqueId = PluginUniqueIdSchema.parse(plugin);
+
+    if (deleteResult?.disabled && plugin.type === 'tool') {
       let unregisterErr;
 
       try {

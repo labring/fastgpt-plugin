@@ -101,8 +101,8 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
     }),
     async (c) => {
       const pluginConfirmUC = makePluginConfirmUC(usecaseDeps);
-      const { uniqueIds } = c.req.valid('json');
-      const [, err] = await pluginConfirmUC({ uniqueIds });
+      const { uniqueIds, source } = c.req.valid('json');
+      const [, err] = await pluginConfirmUC({ uniqueIds, source });
 
       if (err) {
         return R.fail(c, 500, err.error);
@@ -221,6 +221,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const body = c.req.valid('json');
       const [result, err] = await pluginInstallUC({
         urls: body.urls,
+        source: body.source,
         batchDownloadSize: 5
       });
 

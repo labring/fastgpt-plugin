@@ -46,6 +46,7 @@ import type {
   PluginPruneDisabledResultType,
   PluginRuntimeConfigType,
   PluginServiceFeaturesType,
+  PluginSourceRequestOptions,
   PluginTagListType,
   PluginUniqueIdType,
   PluginUploadResultType,
@@ -147,9 +148,12 @@ export class FastGPTPluginClient {
 
   async confirmPlugin(
     uniqueIds: PluginUniqueIdType[],
-    requestOptions?: ClientRequestOptions
+    requestOptions?: PluginSourceRequestOptions
   ): Promise<void> {
-    const payload = PluginConfirmParamsSchema.parse({ uniqueIds });
+    const payload = PluginConfirmParamsSchema.parse({
+      uniqueIds,
+      source: requestOptions?.source
+    });
 
     await this.transport.requestEmpty({
       path: this.withApiPath(PluginContract.Confirm.meta.path),
@@ -171,9 +175,12 @@ export class FastGPTPluginClient {
 
   async installPlugins(
     urls: string[],
-    requestOptions?: ClientRequestOptions
+    requestOptions?: PluginSourceRequestOptions
   ): Promise<PluginInstallResultType> {
-    const payload = PluginInstallDTOSchema.request.parse({ urls });
+    const payload = PluginInstallDTOSchema.request.parse({
+      urls,
+      source: requestOptions?.source
+    });
 
     return this.transport.requestData<PluginInstallResultType>({
       path: this.withApiPath(PluginContract.Install.meta.path),

@@ -112,6 +112,7 @@ const basePluginRepo = (overrides: Record<string, unknown> = {}) => ({
   createPlugin: vi.fn(),
   confirmPlugin: vi.fn(),
   deletePendingPlugin: vi.fn().mockResolvedValue(successResult({})),
+  deletePluginInstallation: vi.fn(),
   getPluginById: vi.fn(),
   getPluginsByPluginId: vi.fn(),
   getPluginByUserPluginId: vi.fn(),
@@ -120,6 +121,7 @@ const basePluginRepo = (overrides: Record<string, unknown> = {}) => ({
   listToolSummaries: vi.fn(),
   listActive: vi.fn(),
   disablePlugins: vi.fn(),
+  disableUnreferencedPlugins: vi.fn(),
   pruneDisabled: vi.fn(),
   listTags: vi.fn(),
   getPluginFileAccessURL: vi.fn(),
@@ -1070,7 +1072,7 @@ describe('makePluginInstallUC', () => {
       pluginRepo: basePluginRepo({
         listActive: vi.fn().mockResolvedValue(successResult([])),
         createPlugin: vi.fn().mockResolvedValue(successResult({})),
-        disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+        disableUnreferencedPlugins: vi.fn().mockResolvedValue(successResult({ plugins: [] }))
       }),
       pluginRuntimeManager: baseRuntimeManager({
         register: vi.fn().mockResolvedValue(successResult({})),
@@ -1157,11 +1159,32 @@ describe('makePluginInstallUC', () => {
     expect(deps.pluginRepo.createPlugin).toHaveBeenNthCalledWith(1, {
       files: files(),
       plugin: plugin({ pluginId: 'first' }),
+      source: 'system',
       pending: false
     });
     expect(deps.pluginRepo.createPlugin).toHaveBeenNthCalledWith(2, {
       files: files(),
       plugin: plugin({ pluginId: 'second' }),
+      source: 'system',
+      pending: false
+    });
+  });
+
+  it('passes a custom source to direct URL installation', async () => {
+    const deps = makeDeps();
+
+    const [result, err] = await makePluginInstallUC(deps)({
+      urls: ['https://example.com/plugin.pkg'],
+      source: 'team-a',
+      batchDownloadSize: 1
+    });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.pluginRepo.createPlugin).toHaveBeenCalledWith({
+      files: files(),
+      plugin: plugin(),
+      source: 'team-a',
       pending: false
     });
   });
@@ -1306,7 +1329,9 @@ describe('makePluginInstallUC', () => {
           .fn()
           .mockResolvedValueOnce(failureResult(reason('create failed')))
           .mockResolvedValueOnce(successResult({})),
-        disablePlugins: vi.fn().mockResolvedValue(failureResult(reason('disable failed')))
+        disableUnreferencedPlugins: vi
+          .fn()
+          .mockResolvedValue(failureResult(reason('disable failed')))
       }),
       pluginRuntimeManager: baseRuntimeManager({
         register: vi.fn().mockResolvedValueOnce(failureResult(reason('register failed')))
@@ -1355,7 +1380,9 @@ describe('makePluginInstallUC', () => {
             ])
           ),
         createPlugin: vi.fn().mockResolvedValue(successResult({})),
-        disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+        disableUnreferencedPlugins: vi
+          .fn()
+          .mockResolvedValue(successResult({ plugins: [{ ...uniqueId, etag: 'old-etag' }] }))
       })
     });
 
@@ -1368,6 +1395,7 @@ describe('makePluginInstallUC', () => {
     expect(result).toEqual({});
     expect(deps.pluginRuntimeManager.register).toHaveBeenCalledTimes(1);
     expect(deps.pluginRepo.disablePlugins).not.toHaveBeenCalled();
+    expect(deps.pluginRepo.disableUnreferencedPlugins).toHaveBeenCalledTimes(1);
     expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(
       {
         pluginId: uniqueId.pluginId,
@@ -1385,7 +1413,7 @@ describe('makePluginConfirmUC', () => {
       listActive: vi.fn().mockResolvedValue(successResult([])),
       getPendingPluginIds: vi.fn().mockResolvedValue(successResult([uniqueId])),
       confirmPlugin: vi.fn().mockResolvedValue(successResult(plugin())),
-      disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+      disableUnreferencedPlugins: vi.fn().mockResolvedValue(successResult({ plugins: [] }))
     }),
     pluginRuntimeManager: baseRuntimeManager({
       register: vi.fn().mockResolvedValue(successResult({})),
@@ -1476,30 +1504,21 @@ describe('makePluginConfirmUC', () => {
     expect(err?.reason.en).toBe('Failed to register confirmed plugin');
   });
 
-  it('does not disable replaced plugins again after repo confirm succeeds', async () => {
-    const oldPlugin = plugin({ etag: 'old' });
+  it('returns failure when replaced plugins cannot be disabled', async () => {
     const deps = makeDeps({
       pluginRepo: basePluginRepo({
-        listActive: vi.fn().mockResolvedValue(successResult([oldPlugin])),
+        listActive: vi.fn().mockResolvedValue(successResult([plugin({ etag: 'old' })])),
         getPendingPluginIds: vi.fn().mockResolvedValue(successResult([uniqueId])),
         confirmPlugin: vi.fn().mockResolvedValue(successResult(plugin())),
-        disablePlugins: vi.fn().mockResolvedValue(failureResult(reason('disable failed')))
+        disableUnreferencedPlugins: vi
+          .fn()
+          .mockResolvedValue(failureResult(reason('disable failed')))
       })
     });
 
-    const [result, err] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId] });
+    const [, err] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId] });
 
-    expect(err).toBeNull();
-    expect(result).toEqual({});
-    expect(deps.pluginRepo.disablePlugins).not.toHaveBeenCalled();
-    expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(
-      {
-        pluginId: oldPlugin.pluginId,
-        version: oldPlugin.version,
-        etag: oldPlugin.etag
-      },
-      { replacementUniqueId: uniqueId }
-    );
+    expect(err?.reason.en).toBe('Failed to disable replaced plugins');
   });
 
   it('confirms every runnable pending plugin successfully', async () => {
@@ -1516,7 +1535,9 @@ describe('makePluginConfirmUC', () => {
           .fn()
           .mockResolvedValueOnce(successResult(plugin()))
           .mockResolvedValueOnce(successResult(plugin(secondId))),
-        disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+        disableUnreferencedPlugins: vi
+          .fn()
+          .mockResolvedValue(successResult({ plugins: [{ ...uniqueId, etag: 'old' }] }))
       })
     });
 
@@ -1525,6 +1546,21 @@ describe('makePluginConfirmUC', () => {
     expect(err).toBeNull();
     expect(result).toEqual({});
     expect(deps.pluginRepo.confirmPlugin).toHaveBeenCalledTimes(2);
+    expect(deps.pluginRepo.confirmPlugin).toHaveBeenNthCalledWith(1, uniqueId, 'system');
+    expect(deps.pluginRepo.confirmPlugin).toHaveBeenNthCalledWith(2, secondId, 'system');
+  });
+
+  it('passes a custom source to plugin confirmation', async () => {
+    const deps = makeDeps();
+
+    const [result, err] = await makePluginConfirmUC(deps)({
+      uniqueIds: [uniqueId],
+      source: 'team-a'
+    });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.pluginRepo.confirmPlugin).toHaveBeenCalledWith(uniqueId, 'team-a');
   });
 
   it('drains replaced runtimes to the confirmed plugin runtime', async () => {
@@ -1534,7 +1570,9 @@ describe('makePluginConfirmUC', () => {
         listActive: vi.fn().mockResolvedValue(successResult([oldPlugin])),
         getPendingPluginIds: vi.fn().mockResolvedValue(successResult([uniqueId])),
         confirmPlugin: vi.fn().mockResolvedValue(successResult(plugin())),
-        disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+        disableUnreferencedPlugins: vi
+          .fn()
+          .mockResolvedValue(successResult({ plugins: [{ ...uniqueId, etag: 'old' }] }))
       })
     });
 
@@ -1628,7 +1666,9 @@ describe('makePluginDeleteUC', () => {
   const makeDeps = (overrides: Record<string, unknown> = {}) => ({
     pluginRepo: basePluginRepo({
       getPluginByUserPluginId: vi.fn().mockResolvedValue(successResult(plugin())),
-      disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+      deletePluginInstallation: vi
+        .fn()
+        .mockResolvedValue(successResult({ plugin: plugin(), disabled: true }))
     }),
     pluginRuntimeManager: baseRuntimeManager({
       unregister: vi.fn().mockResolvedValue(successResult({}))
@@ -1637,7 +1677,7 @@ describe('makePluginDeleteUC', () => {
     ...overrides
   });
 
-  it('disables the installed plugin resolved by source, plugin id, and version', async () => {
+  it('deletes the installed plugin from the requested source', async () => {
     const deps = makeDeps();
 
     const [result, err] = await makePluginDeleteUC(deps)(input);
@@ -1645,7 +1685,7 @@ describe('makePluginDeleteUC', () => {
     expect(err).toBeNull();
     expect(result).toEqual({});
     expect(deps.pluginRepo.getPluginByUserPluginId).toHaveBeenCalledWith(input);
-    expect(deps.pluginRepo.disablePlugins).toHaveBeenCalledWith([uniqueId]);
+    expect(deps.pluginRepo.deletePluginInstallation).toHaveBeenCalledWith(input);
     expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(uniqueId);
   });
 
@@ -1659,20 +1699,37 @@ describe('makePluginDeleteUC', () => {
     const [, err] = await makePluginDeleteUC(deps)(input);
 
     expect(err?.reason.en).toBe('Plugin not found');
-    expect(deps.pluginRepo.disablePlugins).not.toHaveBeenCalled();
+    expect(deps.pluginRepo.deletePluginInstallation).not.toHaveBeenCalled();
   });
 
-  it('returns failure when disabling the plugin fails', async () => {
+  it('returns failure when deleting the installation fails', async () => {
     const deps = makeDeps({
       pluginRepo: basePluginRepo({
         getPluginByUserPluginId: vi.fn().mockResolvedValue(successResult(plugin())),
-        disablePlugins: vi.fn().mockResolvedValue(failureResult(reason('disable failed')))
+        deletePluginInstallation: vi.fn().mockResolvedValue(failureResult(reason('delete failed')))
       })
     });
 
     const [, err] = await makePluginDeleteUC(deps)(input);
 
     expect(err?.reason.en).toBe('Failed to delete plugin');
+    expect(deps.pluginRuntimeManager.unregister).not.toHaveBeenCalled();
+  });
+
+  it('keeps runtime registered when another source still references the plugin', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        getPluginByUserPluginId: vi.fn().mockResolvedValue(successResult(plugin())),
+        deletePluginInstallation: vi
+          .fn()
+          .mockResolvedValue(successResult({ plugin: plugin(), disabled: false }))
+      })
+    });
+
+    const [result, err] = await makePluginDeleteUC(deps)(input);
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
     expect(deps.pluginRuntimeManager.unregister).not.toHaveBeenCalled();
   });
 
@@ -1727,7 +1784,9 @@ describe('makePluginDeleteUC', () => {
     const deps = makeDeps({
       pluginRepo: basePluginRepo({
         getPluginByUserPluginId: vi.fn().mockResolvedValue(successResult(nonRunnablePlugin())),
-        disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+        deletePluginInstallation: vi
+          .fn()
+          .mockResolvedValue(successResult({ plugin: nonRunnablePlugin(), disabled: true }))
       })
     });
 
@@ -1778,7 +1837,9 @@ describe('plugin replacement helpers', () => {
     const appLogger = logger();
     const deps = {
       pluginRepo: basePluginRepo({
-        disablePlugins: vi.fn().mockResolvedValue(failureResult(reason('disable failed')))
+        disableUnreferencedPlugins: vi
+          .fn()
+          .mockResolvedValue(failureResult(reason('disable failed')))
       }),
       pluginRuntimeManager: baseRuntimeManager(),
       logger: appLogger,
@@ -1813,7 +1874,16 @@ describe('plugin replacement helpers', () => {
     const appLogger = logger();
     const deps = {
       pluginRepo: basePluginRepo({
-        disablePlugins: vi.fn().mockResolvedValue(successResult({}))
+        disableUnreferencedPlugins: vi.fn().mockResolvedValue(
+          successResult({
+            plugins: [
+              { ...uniqueId, etag: 'old-a' },
+              { ...uniqueId, etag: 'old-b' },
+              { ...uniqueId, etag: 'old-c' },
+              { ...uniqueId, etag: 'old-flow' }
+            ]
+          })
+        )
       }),
       pluginRuntimeManager: baseRuntimeManager({
         unregister: vi
@@ -1837,5 +1907,32 @@ describe('plugin replacement helpers', () => {
     expect(result).toEqual({});
     expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledTimes(3);
     expect(appLogger.error).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not unregister replaced runtimes that are still referenced by another source', async () => {
+    const deps = {
+      pluginRepo: basePluginRepo({
+        disableUnreferencedPlugins: vi.fn().mockResolvedValue(
+          successResult({
+            plugins: [{ ...uniqueId, etag: 'old-a' }]
+          })
+        )
+      }),
+      pluginRuntimeManager: baseRuntimeManager({
+        unregister: vi.fn().mockResolvedValue(successResult({}))
+      }),
+      logger: logger(),
+      replacedPlugins: [plugin({ etag: 'old-a' }), plugin({ etag: 'old-b' })]
+    };
+
+    const [result, err] = await disableAndUnregisterReplacedPlugins(deps);
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledTimes(1);
+    expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(
+      { ...uniqueId, etag: 'old-a' },
+      { replacementUniqueId: undefined }
+    );
   });
 });

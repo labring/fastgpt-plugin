@@ -152,6 +152,10 @@ export type ClientRequestOptions = {
   signal?: AbortSignal;
 };
 
+export type PluginSourceRequestOptions = ClientRequestOptions & {
+  source?: PluginSourceType;
+};
+
 export {
   PluginPermissionEnum,
   PluginPermissionEnumSchema,
