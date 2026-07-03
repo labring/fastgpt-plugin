@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { run } from '@fastgpt-plugin/cli/cmd';
-import { logger } from '@fastgpt-plugin/cli/helpers';
+import { formatCliError, logger } from '@fastgpt-plugin/cli/helpers';
 
 const main = async () => {
   try {
@@ -16,7 +16,7 @@ const main = async () => {
       process.exit(130);
     }
 
-    logger.error(error);
+    logger.error(formatCliError(error));
     process.exitCode = 1;
   }
 };

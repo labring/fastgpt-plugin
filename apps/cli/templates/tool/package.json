@@ -7,15 +7,19 @@
   "scripts": {
     "build": "npx @fastgpt-plugin/cli build --minify",
     "build:dev": "npx @fastgpt-plugin/cli build",
+    "check": "npx @fastgpt-plugin/cli check --entry . --output ./dist",
+    "dev": "fastgpt-plugin dev . --watch",
+    "debug": "npx @fastgpt-plugin/cli debug .",
+    "debug:run": "npx @fastgpt-plugin/cli debug . --run{{debugRunToolOption}} --input '{{debugRunInputJson}}'",
     "pack": "npx @fastgpt-plugin/cli pack",
     "test": "vitest run"
   },
   "dependencies": {},
   "devDependencies": {
-    "@fastgpt-plugin/cli": "catalog:",
-    "@fastgpt-plugin/sdk-factory": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
-    "zod": "catalog:"
+    "@fastgpt-plugin/cli": "{{cliPackageVersion}}",
+    "@fastgpt-plugin/sdk-factory": "{{sdkFactoryPackageVersion}}",
+    "typescript": "{{typescriptPackageVersion}}",
+    "vitest": "{{vitestPackageVersion}}",
+    "zod": "{{zodPackageVersion}}"
   }
 }

@@ -1,6 +1,14 @@
 {
   "name": "@fastgpt-plugin/cli",
   "version": "0.2.0",
+  "description": "CLI for creating, debugging, building, checking, and packaging FastGPT Plugin tools.",
+  "keywords": [
+    "fastgpt",
+    "fastgpt-plugin",
+    "plugin",
+    "cli",
+    "developer-tools"
+  ],
   "type": "module",
   "private": false,
   "publishConfig": {

@@ -31,25 +31,31 @@ type DebugCommandOptions = RemoteDebugCommandOptions & {
 
 export class DebugCommand extends BaseCommand {
   public register(parent: Command): void {
-    parent
-      .command('debug <entries...>')
-      .description('直接加载本地插件目录并调试工具')
-      .option('-t, --tool <childId>', '工具集子工具 ID')
-      .option('--run', '立即执行一次工具调试', false)
-      .option('-i, --input <json>', '工具输入 JSON 字符串')
-      .option('--input-file <path>', '工具输入 JSON 文件路径')
-      .option('--secrets <json>', 'secrets JSON 字符串')
-      .option('--secrets-file <path>', 'secrets JSON 文件路径')
-      .option('--system-var <json>', 'systemVar JSON 字符串')
-      .option('--system-var-file <path>', 'systemVar JSON 文件路径')
-      .option('--upload-dir <path>', '虚拟 uploadFile 的输出目录')
-      .option('--connect <keyOrUrl>', '兼容入口：FastGPT debug connection key 或 connect link，建议改用 dev 命令')
-      .option('--reconnect', '兼容入口：断线后自动重连', true)
-      .option('--no-reconnect', '兼容入口：关闭自动重连')
-      .option('--reconnect-interval-ms <ms>', '兼容入口：重连间隔')
-      .action(async (entries: string[], opts: DebugCommandOptions) => {
-        await this.run(entries, opts);
-      });
+    const command = this.addCommonOptions(
+      parent
+        .command('debug <entries...>')
+        .description('Load and debug a local plugin / 本地加载并调试插件')
+        .option('-t, --tool <childId>', '工具集子工具 ID / Child tool ID')
+        .option('--run', '立即执行一次工具调试 / Run the tool once', false)
+        .option('-i, --input <json>', '工具输入 JSON 字符串 / Tool input JSON string')
+        .option('--input-file <path>', '工具输入 JSON 文件路径 / Tool input JSON file')
+        .option('--secrets <json>', 'secrets JSON 字符串 / secrets JSON string')
+        .option('--secrets-file <path>', 'secrets JSON 文件路径 / secrets JSON file')
+        .option('--system-var <json>', 'systemVar JSON 字符串 / systemVar JSON string')
+        .option('--system-var-file <path>', 'systemVar JSON 文件路径 / systemVar JSON file')
+        .option('--upload-dir <path>', '虚拟 uploadFile 的输出目录 / virtual uploadFile output directory')
+        .option(
+          '--connect <keyOrUrl>',
+          '兼容入口：FastGPT debug connection key 或 connect link，建议改用 dev 命令'
+        )
+        .option('--reconnect', '兼容入口：断线后自动重连', true)
+        .option('--no-reconnect', '兼容入口：关闭自动重连')
+        .option('--reconnect-interval-ms <ms>', '兼容入口：重连间隔')
+    );
+
+    command.action(async (entries: string[], opts: DebugCommandOptions) => {
+      await this.run(entries, opts);
+    });
   }
 
   public async run(entriesInput: string | string[], options: DebugCommandOptions): Promise<void> {

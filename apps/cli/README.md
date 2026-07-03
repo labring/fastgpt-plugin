@@ -4,6 +4,34 @@
 
 FastGPT 插件开发的命令行工具，用于创建、构建和测试 FastGPT 工具 / 工具集。
 
+### 快速开始
+
+```bash
+npx @fastgpt-plugin/cli create dx-hello --type tool --description "DX hello world"
+cd dx-hello
+pnpm install
+pnpm run dev
+pnpm run debug
+pnpm run debug:run
+pnpm run build
+pnpm run check
+pnpm run pack
+```
+
+`pnpm run dev` 会调用 `fastgpt-plugin dev . --watch`，用于 FastGPT 远程集成调试。
+
+仅在定义了对应 catalog entry 的 pnpm workspace 中使用 `--dependency-mode catalog`：
+
+```bash
+npx @fastgpt-plugin/cli create dx-hello --type tool --dependency-mode catalog
+```
+
+需要完整 stack trace 时，在命令中加 `--verbose`：
+
+```bash
+npx @fastgpt-plugin/cli --verbose check --entry . --output ./dist
+```
+
 ### Features
 
 - **统一构建流程**

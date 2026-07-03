@@ -35,8 +35,40 @@ FastGPT 已有系统工具已经迁移到这个仓库，新工具也将在这个
 - [x]  URL 安装 SSRF 防护
 - [ ]  工具以外的更多插件类型
 
+## 5 分钟插件 Hello World
+
+创建一个使用 npm 发布版依赖的独立工具插件：
+
+```bash
+npx @fastgpt-plugin/cli create dx-hello --type tool --description "DX hello world"
+cd dx-hello
+pnpm install
+pnpm run dev
+pnpm run debug
+pnpm run debug:run
+pnpm run build
+pnpm run check
+pnpm run pack
+```
+
+预期结果：
+
+- `pnpm run dev` 启动 FastGPT 远程集成调试会话。
+- `pnpm run debug` 输出插件 manifest、schema 和可运行的调试命令。
+- `pnpm run debug:run` 执行一次生成的示例工具。
+- `pnpm run build` 生成 `dist/index.js` 和 `dist/manifest.json`。
+- `pnpm run check` 校验构建产物。
+- `pnpm run pack` 生成可上传的 `dx-hello.pkg`。
+
+如果在定义了 catalog 的官方 pnpm workspace 中生成插件，使用 catalog 依赖：
+
+```bash
+npx @fastgpt-plugin/cli create dx-hello --type tool --dependency-mode catalog
+```
+
 ## 文档
 
+- [版本记录](./CHANGELOG.md)
 - [开发规范](./dev_zh_CN.md)
 - [v1.0.0 更新文档](./docs/upgrade/v1.0.0.zh.md)
 - [项目架构](./docs/dev/architecture.zh.md)

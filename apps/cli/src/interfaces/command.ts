@@ -12,9 +12,10 @@ export interface BaseCommandOptions {
   cwd: string;
 }
 
+export type TemplateDependencyMode = 'semver' | 'catalog';
+
 export interface CreatePluginCommandOptions extends BaseCommandOptions {
   type: 'tool' | 'tool-suite';
   description?: string;
-  dependencies?: string[];
-  devDependencies?: string[];
+  dependencyMode: TemplateDependencyMode;
 }
