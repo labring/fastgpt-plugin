@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "prepare": "husky install",
+    "prepare": "node scripts/prepare-husky.mjs",
     "lint": "eslint --fix",
     "typecheck": "tsc --noEmit",
     "build:pkg": "pnpm tsc && pnpm --filter modules/tool build",

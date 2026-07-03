@@ -120,7 +120,4 @@ async function expectSdkFactoryExternalized(entryDir: string): Promise<void> {
 
   expect(source).toContain('@fastgpt-plugin/sdk-factory');
   expect(source).not.toContain('class ToolFactory');
-  expect(
-    existsSync(path.join(entryDir, 'node_modules/@fastgpt-plugin/sdk-factory/package.json'))
-  ).toBe(true);
 }

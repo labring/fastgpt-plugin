@@ -58,6 +58,7 @@ describe('create command', () => {
     });
     const files = await listCreatedFiles('test-plugin');
     expect(files).toContain('index.ts');
+    expect(files).toContain('index.spec.ts');
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
     expect(files).toContain('logo.svg');
@@ -156,6 +157,7 @@ describe('create command', () => {
     });
     const files = await listCreatedFiles('my-tool');
     expect(files).toContain('index.ts');
+    expect(files).toContain('index.spec.ts');
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
     expect(files).toContain('logo.svg');
