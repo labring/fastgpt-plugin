@@ -4,6 +4,36 @@ Language: [简体中文](./README.md) | [English](./README.en.md)
 
 Command-line tool for FastGPT plugin development. It is used to create, build, test, debug, and package FastGPT tools and tool suites.
 
+### Quick Start
+
+```bash
+npx @fastgpt-plugin/cli create dx-hello --type tool --description "DX hello world"
+cd dx-hello
+pnpm install
+pnpm run dev
+pnpm run debug
+pnpm run debug:run
+pnpm run build
+pnpm run check
+pnpm run pack
+```
+
+`pnpm run dev` calls `fastgpt-plugin dev . --watch` for remote FastGPT
+integration debugging.
+
+Use `--dependency-mode catalog` only inside a pnpm workspace that defines the
+matching catalog entries:
+
+```bash
+npx @fastgpt-plugin/cli create dx-hello --type tool --dependency-mode catalog
+```
+
+Use `--verbose` on any command when you need a full stack trace:
+
+```bash
+npx @fastgpt-plugin/cli --verbose check --entry . --output ./dist
+```
+
 ### Features
 
 - **Unified build flow**

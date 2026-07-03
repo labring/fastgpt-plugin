@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { checkBuildOutput, type CheckOptions } from '@fastgpt-plugin/cli/check';
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
 import { logger } from '@fastgpt-plugin/cli/helpers';
@@ -5,19 +7,25 @@ import type { Command } from 'commander';
 
 export class CheckCommand extends BaseCommand {
   public register(parent: Command): void {
-    parent
-      .command('check')
-      .description('检查构建产物的正确性（manifest.json、config.json、index.js）')
-      .option('-e, --entry <path>', '工具源码目录', process.cwd())
-      .option('-o, --output <path>', '构建输出目录', './dist')
-      .action(async (opts: CheckOptions) => {
-        await this.run(opts);
-      });
+    const command = this.addCommonOptions(
+      parent
+        .command('check')
+        .description('Check plugin build output / 检查插件构建产物')
+        .option('-e, --entry <path>', '插件源码目录 / Plugin source directory', process.cwd())
+        .option('-o, --output <path>', '构建输出目录 / Build output directory', './dist')
+    );
+
+    command.action(async (opts: CheckOptions) => {
+      await this.run(opts);
+    });
   }
 
   public async run(options: CheckOptions): Promise<void> {
-    logger.info(`检查目录: ${options.entry}`);
-    logger.info(`产物目录: ${options.output}`);
+    const entryDir = path.resolve(options.entry);
+    const outputDir = path.resolve(entryDir, options.output);
+
+    logger.info(`检查目录: ${entryDir}`);
+    logger.info(`产物目录: ${outputDir}`);
 
     const result = await checkBuildOutput(options);
 

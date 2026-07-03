@@ -10,7 +10,11 @@ import { Command } from 'commander';
 function createProgram(): Command {
   const program = new Command();
 
-  program.name(CLI_NAME).version(CLI_VERSION).description('FastGPT 插件开发 CLI');
+  program
+    .name(CLI_NAME)
+    .version(CLI_VERSION)
+    .description('FastGPT plugin development CLI / FastGPT 插件开发 CLI')
+    .option('--verbose', '显示完整错误堆栈 / Show full error stack');
 
   new BuildCommand().register(program);
   new CheckCommand().register(program);

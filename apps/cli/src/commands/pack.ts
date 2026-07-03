@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { buildToolPackage } from '@fastgpt-plugin/cli/build';
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
-import { logger } from '@fastgpt-plugin/cli/helpers';
+import { formatCliError, logger } from '@fastgpt-plugin/cli/helpers';
 import type { Command } from 'commander';
 import { ZipFile } from 'yazl';
 
@@ -13,6 +13,7 @@ interface PackCommandOptions {
   dist: string;
   output?: string;
   name?: string;
+  verbose?: boolean;
 }
 
 /**
@@ -25,16 +26,19 @@ interface PackCommandOptions {
  */
 export class PackCommand extends BaseCommand {
   public register(parent: Command): void {
-    parent
-      .command('pack')
-      .description('基于 build 产物打包 FastGPT 工具或工具集')
-      .option('-e, --entry <path>', '工具源码根目录', process.cwd())
-      .option('-d, --dist <path>', '构建产物目录', './dist')
-      .option('-o, --output <path>', 'pkg 输出目录（默认使用入口目录）')
-      .option('-n, --name <name>', '包名称（默认使用入口目录名）')
-      .action(async (opts: PackCommandOptions) => {
-        await this.run(opts);
-      });
+    const command = this.addCommonOptions(
+      parent
+        .command('pack')
+        .description('Pack a FastGPT plugin into .pkg / 打包 FastGPT 插件')
+        .option('-e, --entry <path>', '插件源码目录 / Plugin source directory', process.cwd())
+        .option('-d, --dist <path>', '构建产物目录 / Build output directory', './dist')
+        .option('-o, --output <path>', 'pkg 输出目录 / .pkg output directory')
+        .option('-n, --name <name>', '包名称 / Package name')
+    );
+
+    command.action(async (opts: PackCommandOptions) => {
+      await this.run(opts);
+    });
   }
 
   public async run(options: PackCommandOptions): Promise<void> {
@@ -62,7 +66,7 @@ export class PackCommand extends BaseCommand {
       logger.info(`输出文件: ${pkgPath}`);
     } catch (error) {
       logger.error('打包失败，详情如下:');
-      logger.error(error instanceof Error ? error : new Error(String(error)));
+      logger.error(formatCliError(error, options.verbose));
       process.exit(1);
     }
   }

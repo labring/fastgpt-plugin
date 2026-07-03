@@ -1,28 +1,36 @@
 import { buildToolPackage, type ToolBuildOptions } from '@fastgpt-plugin/cli/build';
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
-import { logger } from '@fastgpt-plugin/cli/helpers';
+import { formatCliError, logger } from '@fastgpt-plugin/cli/helpers';
 import type { Command } from 'commander';
+
+type BuildCommandOptions = ToolBuildOptions & {
+  verbose?: boolean;
+};
 
 export class BuildCommand extends BaseCommand {
   public register(parent: Command): void {
-    parent
-      .command('build')
-      .description('构建 FastGPT 插件为可分发的包')
-      .option('-e, --entry <path>', '工具入口目录', process.cwd())
-      .option('-o, --output <path>', '输出目录', './dist')
-      .option('-m, --minify', '压缩输出代码', false)
-      .option('-f, --format <format>', '输出格式: esm | cjs', 'esm')
-      .action(async (opts: ToolBuildOptions) => {
-        await this.run({
-          entry: opts.entry,
-          output: opts.output,
-          minify: opts.minify,
-          format: opts.format as 'esm' | 'cjs'
-        });
+    const command = this.addCommonOptions(
+      parent
+        .command('build')
+        .description('Build a distributable FastGPT plugin / 构建 FastGPT 插件')
+        .option('-e, --entry <path>', '插件源码目录 / Plugin source directory', process.cwd())
+        .option('-o, --output <path>', '输出目录 / Output directory', './dist')
+        .option('-m, --minify', '压缩输出代码 / Minify output', false)
+        .option('-f, --format <format>', '输出格式 / Output format: esm | cjs', 'esm')
+    );
+
+    command.action(async (opts: BuildCommandOptions) => {
+      await this.run({
+        entry: opts.entry,
+        output: opts.output,
+        minify: opts.minify,
+        format: opts.format as 'esm' | 'cjs',
+        verbose: opts.verbose
       });
+    });
   }
 
-  public async run(options: ToolBuildOptions): Promise<void> {
+  public async run(options: BuildCommandOptions): Promise<void> {
     const start = Date.now();
     try {
       const result = await buildToolPackage(options);
@@ -43,7 +51,7 @@ export class BuildCommand extends BaseCommand {
       }
     } catch (error) {
       logger.error('构建失败，详情如下:');
-      logger.error(error instanceof Error ? error : new Error(String(error)));
+      logger.error(formatCliError(error, options.verbose));
       logger.info('如果这是在 CI 中发生的，请查看上方构建日志以获取更多信息。');
       process.exit(1);
     }

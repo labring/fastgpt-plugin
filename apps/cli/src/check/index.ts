@@ -24,10 +24,39 @@ export interface CheckResult {
  *  - manifest.json 引用的 logo 文件存在
  */
 export async function checkBuildOutput(options: CheckOptions): Promise<CheckResult> {
-  const outputDir = path.resolve(options.output);
+  const entryDir = path.resolve(options.entry);
+  const outputDir = path.resolve(entryDir, options.output);
 
   const errors: string[] = [];
   const warnings: string[] = [];
+
+  if (!(await pathExists(entryDir))) {
+    errors.push(`入口目录不存在: ${entryDir}。请使用 --entry 指向包含 index.ts 的插件源码目录。`);
+    return {
+      ok: false,
+      errors,
+      warnings
+    };
+  }
+
+  const entryIndexPath = path.join(entryDir, 'index.ts');
+  if (!(await pathExists(entryIndexPath))) {
+    errors.push(`入口目录缺少 index.ts: ${entryIndexPath}。请确认 --entry 指向插件项目根目录。`);
+    return {
+      ok: false,
+      errors,
+      warnings
+    };
+  }
+
+  if (!(await pathExists(outputDir))) {
+    errors.push(`构建产物目录不存在: ${outputDir}。请先运行 pnpm run build，或使用 --output 指向 dist 目录。`);
+    return {
+      ok: false,
+      errors,
+      warnings
+    };
+  }
 
   const indexJsPath = path.join(outputDir, 'index.js');
   if (!(await pathExists(indexJsPath))) {

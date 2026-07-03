@@ -8,4 +8,8 @@ import type { Command } from 'commander';
  */
 export abstract class BaseCommand implements ICommand {
   abstract register(parent: Command): void;
+
+  protected addCommonOptions(command: Command): Command {
+    return command.option('--verbose', '显示完整错误堆栈 / Show full error stack');
+  }
 }

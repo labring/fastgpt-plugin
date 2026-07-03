@@ -3,6 +3,7 @@ import type { CreatePluginCommandOptions } from '@fastgpt-plugin/cli/interfaces/
 import type { IPrompt } from '@fastgpt-plugin/cli/prompts/base/types';
 import { defaultDeps, type PromptDeps } from '@fastgpt-plugin/cli/prompts/create/deps';
 import { inputPrompt } from '@fastgpt-plugin/cli/prompts/create/input-prompt';
+import { normalizeDependencyMode } from '@fastgpt-plugin/cli/prompts/create/normalize';
 import type { PluginType, RawCreateCliOptions } from '@fastgpt-plugin/cli/prompts/create/types';
 
 export class CreatePrompt implements IPrompt<RawCreateCliOptions, CreatePluginCommandOptions> {
@@ -18,6 +19,7 @@ export class CreatePrompt implements IPrompt<RawCreateCliOptions, CreatePluginCo
    * - 否则使用交互式 prompt 补全缺失部分
    */
   async run(input: RawCreateCliOptions): Promise<CreatePluginCommandOptions> {
+    const dependencyMode = normalizeDependencyMode(input.dependencyModeFlag);
     const getPluginType = () => {
       if (!input.typeFlag) return undefined;
       return input.typeFlag === 'tool-suite' ? 'tool-suite' : 'tool';
@@ -29,7 +31,8 @@ export class CreatePrompt implements IPrompt<RawCreateCliOptions, CreatePluginCo
         name: input.nameArg,
         cwd: input.cwd,
         type: pluginType,
-        description: input.descriptionFlag
+        description: input.descriptionFlag,
+        dependencyMode
       };
     }
 
@@ -72,7 +75,8 @@ export class CreatePrompt implements IPrompt<RawCreateCliOptions, CreatePluginCo
       name,
       cwd: input.cwd,
       type,
-      description
+      description,
+      dependencyMode
     };
   }
 }

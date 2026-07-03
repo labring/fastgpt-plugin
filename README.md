@@ -35,8 +35,41 @@ Deeply **modularize** FastGPT to achieve maximum **extensibility**.
 - [x] URL install SSRF protection
 - [ ] More plugin types beyond tools
 
+## 5-Minute Plugin Hello World
+
+Create a standalone tool plugin with published npm dependencies:
+
+```bash
+npx @fastgpt-plugin/cli create dx-hello --type tool --description "DX hello world"
+cd dx-hello
+pnpm install
+pnpm run dev
+pnpm run debug
+pnpm run debug:run
+pnpm run build
+pnpm run check
+pnpm run pack
+```
+
+Expected result:
+
+- `pnpm run dev` starts a remote FastGPT integration debug session.
+- `pnpm run debug` prints the plugin manifest, schemas, and runnable debug command.
+- `pnpm run debug:run` executes the generated sample tool once.
+- `pnpm run build` writes `dist/index.js` and `dist/manifest.json`.
+- `pnpm run check` validates the generated build output.
+- `pnpm run pack` creates `dx-hello.pkg` for upload.
+
+When generating plugins inside an official pnpm workspace that defines catalog
+entries, use catalog dependencies:
+
+```bash
+npx @fastgpt-plugin/cli create dx-hello --type tool --dependency-mode catalog
+```
+
 ## Documentation & Development Guides
 
+- [Changelog](./CHANGELOG.md)
 - [Development Specifications](./dev.md)
 - [v1.0.0 Upgrade Guide](./docs/upgrade/v1.0.0.md)
 - [Architecture](./docs/dev/architecture.md)
