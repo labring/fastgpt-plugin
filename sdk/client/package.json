@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-plugin/sdk-client",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.1",
   "description": "TypeScript client SDK for calling the FastGPT Plugin service APIs.",
   "keywords": [
     "fastgpt",

@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-plugin/sdk-factory",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.1",
   "description": "TypeScript factory SDK for authoring FastGPT Plugin tools and tool suites.",
   "keywords": [
     "fastgpt",
