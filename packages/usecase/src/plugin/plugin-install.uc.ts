@@ -181,7 +181,8 @@ export const makePluginInstallUC =
           pluginRuntimeManager,
           logger,
           replacementUniqueId: uniqueId,
-          replacedPlugins
+          replacedPlugins,
+          disableReplacedPlugins: false
         });
 
         if (replaceErr) {
