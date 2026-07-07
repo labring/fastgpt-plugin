@@ -123,7 +123,8 @@ export const makePluginConfirmUC =
         const [, replaceErr] = await disableAndUnregisterReplacedPlugins({
           ...deps,
           replacementUniqueId: uniqueId,
-          replacedPlugins
+          replacedPlugins,
+          disableReplacedPlugins: false
         });
 
         if (replaceErr) {

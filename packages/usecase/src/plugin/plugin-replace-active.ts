@@ -38,6 +38,7 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
   logger: UsecaseLogger;
   replacementUniqueId?: PluginUniqueIdType;
   replacedPlugins: PluginType[];
+  disableReplacedPlugins?: boolean;
 }): Promise<Result> => {
   const replacedPluginIds = deps.replacedPlugins.map((plugin) =>
     PluginUniqueIdSchema.parse(plugin)
@@ -46,21 +47,23 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
     .filter((plugin) => plugin.type === 'tool')
     .map((plugin) => PluginUniqueIdSchema.parse(plugin));
 
-  const [, disableErr] = await deps.pluginRepo.disablePlugins(replacedPluginIds);
+  if (deps.disableReplacedPlugins !== false) {
+    const [, disableErr] = await deps.pluginRepo.disablePlugins(replacedPluginIds);
 
-  if (disableErr) {
-    const failure = failureResult(
-      {
-        en: 'Failed to disable replaced plugins',
-        'zh-CN': '禁用被替换插件失败'
-      },
-      disableErr
-    )[1]!;
-    deps.logger.error('Plugin Replace Active Disable Error', {
-      replacedPluginIds,
-      error: toUsecaseErrorLog(failure)
-    });
-    return [null, failure];
+    if (disableErr) {
+      const failure = failureResult(
+        {
+          en: 'Failed to disable replaced plugins',
+          'zh-CN': '禁用被替换插件失败'
+        },
+        disableErr
+      )[1]!;
+      deps.logger.error('Plugin Replace Active Disable Error', {
+        replacedPluginIds,
+        error: toUsecaseErrorLog(failure)
+      });
+      return [null, failure];
+    }
   }
 
   await Promise.all(
