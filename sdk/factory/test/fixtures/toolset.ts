@@ -17,7 +17,8 @@ const toolSetSecretSchema = z.object({
 const handler = createToolHandler({
   inputSchema: z.object({
     msg: z.string().meta({
-      title: 'Message'
+      title: 'Message',
+      isToolParams: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({

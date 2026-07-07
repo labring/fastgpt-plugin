@@ -10,7 +10,12 @@ import {
 
 export { createToolHandler };
 
-export type InputSchemaMetaType = z.GlobalMeta;
+export type InputSchemaMetaType = z.GlobalMeta & {
+  /** 面向模型的参数说明 */
+  toolDescription?: string;
+  /** 标注该字段是否推荐由 AI 托管补充 */
+  isToolParams?: boolean;
+};
 
 export type OutputSchemaMetaType = z.GlobalMeta;
 

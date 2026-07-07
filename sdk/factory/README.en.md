@@ -28,7 +28,8 @@ import z from 'zod';
 const handler = createToolHandler({
   inputSchema: z.object({
     text: z.string().meta({
-      title: 'Text'
+      title: 'Text',
+      isToolParams: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -118,7 +119,7 @@ Defines a tool set with multiple child tools. All child tools share the top-leve
 
 A single tool can declare `secretSchema` in its handler. A tool set can declare a shared `secretSchema` at the top level of `defineToolSet()`.
 
-Schema field metadata is written into the built JSON Schema through Zod `.meta()`. Use `InputSchemaMetaType` for input fields, `OutputSchemaMetaType` for output fields, and `SecretSchemaMetaType` for secret fields. Every `secretSchema` field must include `isSecret`; set it to `true` for values that need encrypted storage.
+Schema field metadata is written into the built JSON Schema through Zod `.meta()`. Use `InputSchemaMetaType` for input fields and optionally set `isToolParams: true` for input parameters recommended to be managed by AI. Use `OutputSchemaMetaType` for output fields and `SecretSchemaMetaType` for secret fields. Every `secretSchema` field must include `isSecret`; set it to `true` for values that need encrypted storage.
 
 ## Host Invocation
 
@@ -128,7 +129,8 @@ Use `ctx.invoke` to call FastGPT host capabilities. The SDK currently exposes fi
 const handler = createToolHandler({
   inputSchema: z.object({
     content: z.string().meta({
-      title: 'Content'
+      title: 'Content',
+      isToolParams: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({

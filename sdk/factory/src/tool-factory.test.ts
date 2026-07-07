@@ -335,7 +335,9 @@ describe('ToolFactory schema metadata', () => {
     const handler = createToolHandler({
       inputSchema: z.object({
         query: z.string().meta({
-          title: 'Query'
+          title: 'Query',
+          toolDescription: 'Search query',
+          isToolParams: true
         } satisfies InputSchemaMetaType)
       }),
       outputSchema: z.object({
@@ -354,7 +356,9 @@ describe('ToolFactory schema metadata', () => {
     const secretJsonSchema = z.toJSONSchema(secretSchema) as JsonSchemaObject;
 
     expect(inputSchema.properties?.query).toMatchObject({
-      title: 'Query'
+      title: 'Query',
+      toolDescription: 'Search query',
+      isToolParams: true
     });
     expect(outputSchema.properties?.answer).toMatchObject({
       title: 'Answer'
