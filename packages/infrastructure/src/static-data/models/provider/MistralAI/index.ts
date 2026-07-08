@@ -143,6 +143,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'labs-devstral-small-2512',
+      maxContext: 256000,
+      maxTokens: 32000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1.2,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'devstral-medium-2507',
       maxContext: 128000,
       maxTokens: 32000,
