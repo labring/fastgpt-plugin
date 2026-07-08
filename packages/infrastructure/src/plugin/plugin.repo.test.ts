@@ -7,7 +7,7 @@ import { type PluginType } from '@domain/entities/plugin.entity';
 import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
-import { successResult } from '@domain/value-objects/result.vo';
+import { failureResult, successResult } from '@domain/value-objects/result.vo';
 
 import { PluginRepo, type PluginRepoDeps } from './plugin.repo';
 
@@ -249,6 +249,8 @@ describe('PluginRepo.createPlugin', () => {
   it('restores a disabled plugin with the same version and etag to active during direct installation', async () => {
     (PluginRepo as any)._instance = undefined;
 
+    const session = { id: 'session' };
+    const sessionRun = vi.fn(async (fn: (session: unknown) => Promise<unknown>) => fn(session));
     const updateOne = vi.fn().mockResolvedValue({ modifiedCount: 1 });
     const pluginModel = {
       findOne: vi.fn().mockReturnValue({
@@ -277,6 +279,7 @@ describe('PluginRepo.createPlugin', () => {
     const publicSave = vi.fn();
     const repo = PluginRepo.getInstance({
       mongoClient: {
+        sessionRun,
         getModel: vi.fn((modelName: string) =>
           modelName === 'pluginInstallation' ? installationModel : pluginModel
         )
@@ -296,6 +299,10 @@ describe('PluginRepo.createPlugin', () => {
     });
 
     expect(err).toBeNull();
+    expect(sessionRun).toHaveBeenCalledTimes(1);
+    expect(privateSave.mock.invocationCallOrder[0]).toBeLessThan(
+      sessionRun.mock.invocationCallOrder[0]
+    );
     expect(updateOne).toHaveBeenCalledWith(
       {
         pluginId: 'plugin-a',
@@ -313,6 +320,9 @@ describe('PluginRepo.createPlugin', () => {
         $unset: {
           expiredAt: 1
         }
+      },
+      {
+        session
       }
     );
     expect(privateSave).toHaveBeenCalledWith(
@@ -336,6 +346,9 @@ describe('PluginRepo.createPlugin', () => {
         pluginId: 1,
         version: 1,
         etag: 1
+      },
+      {
+        session
       }
     );
     expect(pluginModel.updateMany).toHaveBeenCalledWith(
@@ -356,17 +369,25 @@ describe('PluginRepo.createPlugin', () => {
         $unset: {
           expiredAt: 1
         }
+      },
+      {
+        session
       }
     );
-    expect(installationModel.deleteMany).toHaveBeenCalledWith({
-      $or: [
-        {
-          pluginId: 'plugin-a',
-          version: '1.0.0',
-          etag: 'old-etag'
-        }
-      ]
-    });
+    expect(installationModel.deleteMany).toHaveBeenCalledWith(
+      {
+        $or: [
+          {
+            pluginId: 'plugin-a',
+            version: '1.0.0',
+            etag: 'old-etag'
+          }
+        ]
+      },
+      {
+        session
+      }
+    );
     expect(installationModel.updateOne).toHaveBeenCalledWith(
       {
         source: 'system',
@@ -380,9 +401,71 @@ describe('PluginRepo.createPlugin', () => {
         }
       },
       {
-        upsert: true
+        upsert: true,
+        session
       }
     );
+  });
+
+  it('keeps restored disabled plugin unchanged when direct installation file upload fails', async () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const sessionRun = vi.fn();
+    const pluginModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          _id: 'existing-plugin',
+          status: PluginStatusEnum.disabled
+        })
+      }),
+      find: vi.fn(),
+      updateMany: vi.fn(),
+      updateOne: vi.fn()
+    };
+    const installationModel = {
+      deleteMany: vi.fn(),
+      updateOne: vi.fn()
+    };
+    const privateSave = vi
+      .fn()
+      .mockResolvedValue(failureResult({ en: 'save failed', 'zh-CN': '保存失败' }));
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        sessionRun,
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginInstallation' ? installationModel : pluginModel
+        )
+      },
+      privateRemoteFileStorageRepo: {
+        save: privateSave
+      },
+      publicRemoteFileStorageRepo: {
+        save: vi.fn()
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [, err] = await repo.createPlugin({
+      plugin: plugin(),
+      files: files(),
+      pending: false
+    });
+
+    expect(err?.reason).toEqual({
+      en: 'upload temp file error',
+      'zh-CN': '上传临时文件错误'
+    });
+    expect(privateSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileKey: 'plugin-a/1.0.0/etag-a/index.js',
+        fileName: 'index.js'
+      })
+    );
+    expect(sessionRun).not.toHaveBeenCalled();
+    expect(pluginModel.updateOne).not.toHaveBeenCalled();
+    expect(pluginModel.find).not.toHaveBeenCalled();
+    expect(pluginModel.updateMany).not.toHaveBeenCalled();
+    expect(installationModel.deleteMany).not.toHaveBeenCalled();
+    expect(installationModel.updateOne).not.toHaveBeenCalled();
   });
 
   it('reports same version and etag when uploading an already installed plugin', async () => {

@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import { addMinutes } from 'date-fns';
+import type { ClientSession } from 'mongoose';
 
 import { type PluginType } from '@domain/entities/plugin.entity';
 import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
@@ -42,7 +43,7 @@ import {
   serializePluginRecordJsonSchemaFields
 } from './utils/json-schema-storage-codec';
 import { Semver } from './utils/semver';
-import { pluginCodecRegistry, PluginRecordSchema } from './codec';
+import { pluginCodecRegistry, type PluginRecordPayloadType, PluginRecordSchema } from './codec';
 
 type PluginListView = 'summary' | 'toolSummary';
 
@@ -95,6 +96,13 @@ type InstalledPluginIdentity = {
 
 type MongoPluginWithId = MongoPluginSchemaType & {
   _id: unknown;
+};
+
+type ReplaceInstalledPluginInput = {
+  activateTarget: boolean;
+  installedPlugin: MongoPluginWithId;
+  pluginRecord: PluginRecordPayloadType;
+  uniqueId: PluginUniqueIdType;
 };
 
 type InstalledPluginRecord = {
@@ -163,8 +171,9 @@ export class PluginRepo implements PluginRepoPort {
     return Object.keys(schema).length > 0;
   }
 
-  private async updateSystemInstallation(plugin: MongoPluginWithId) {
+  private async updateSystemInstallation(plugin: MongoPluginWithId, session?: ClientSession) {
     const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
+    const options = session ? { upsert: true, session } : { upsert: true };
 
     await installationModel.updateOne(
       {
@@ -178,46 +187,77 @@ export class PluginRepo implements PluginRepoPort {
           pluginObjectId: plugin._id
         }
       },
-      {
-        upsert: true
-      }
+      options
     );
   }
 
-  private async disableSameVersionActivePlugins(uniqueId: PluginUniqueIdType): Promise<Result> {
+  private async disablePluginIds(
+    uniqueIds: PluginUniqueIdType[],
+    session?: ClientSession
+  ): Promise<void> {
+    if (uniqueIds.length === 0) {
+      return;
+    }
+
+    const pluginModel = this.deps.mongoClient.getModel('plugin');
+    const pluginInstallationModel = this.deps.mongoClient.getModel('pluginInstallation');
+    const updateFilter = {
+      $or: uniqueIds
+    };
+    const update = {
+      $set: {
+        status: PluginStatusEnum.disabled,
+        updateAt: new Date()
+      },
+      $unset: {
+        expiredAt: 1
+      }
+    };
+    const installationFilter = {
+      $or: uniqueIds.map(({ pluginId, version, etag }) => ({
+        pluginId,
+        version,
+        etag
+      }))
+    };
+
+    if (session) {
+      await pluginModel.updateMany(updateFilter, update, { session });
+      await pluginInstallationModel.deleteMany(installationFilter, { session });
+      return;
+    }
+
+    await pluginModel.updateMany(updateFilter, update);
+    await pluginInstallationModel.deleteMany(installationFilter);
+  }
+
+  private async disableSameVersionActivePlugins(
+    uniqueId: PluginUniqueIdType,
+    session?: ClientSession
+  ): Promise<Result> {
     try {
-      const activePlugins = await this.deps.mongoClient
-        .getModel('plugin')
-        .find(
-          {
-            pluginId: uniqueId.pluginId,
-            version: uniqueId.version,
-            etag: {
-              $ne: uniqueId.etag
-            },
-            status: PluginStatusEnum.active
-          },
-          {
-            _id: 0,
-            pluginId: 1,
-            version: 1,
-            etag: 1
-          }
-        )
-        .lean();
+      const pluginModel = this.deps.mongoClient.getModel('plugin');
+      const filter = {
+        pluginId: uniqueId.pluginId,
+        version: uniqueId.version,
+        etag: {
+          $ne: uniqueId.etag
+        },
+        status: PluginStatusEnum.active
+      };
+      const projection = {
+        _id: 0,
+        pluginId: 1,
+        version: 1,
+        etag: 1
+      };
+      const activePlugins = await (session
+        ? pluginModel.find(filter, projection, { session })
+        : pluginModel.find(filter, projection)
+      ).lean();
 
       const replacedPluginIds = activePlugins.map((plugin) => PluginUniqueIdSchema.parse(plugin));
-      const [, disableErr] = await this.disablePlugins(replacedPluginIds);
-
-      if (disableErr) {
-        return failureResult(
-          {
-            en: 'Failed to disable same-version active plugins',
-            'zh-CN': '禁用同版本 active 插件失败'
-          },
-          disableErr
-        );
-      }
+      await this.disablePluginIds(replacedPluginIds, session);
 
       return successResult({});
     } catch (error) {
@@ -225,6 +265,56 @@ export class PluginRepo implements PluginRepoPort {
         {
           en: 'Failed to disable same-version active plugins',
           'zh-CN': '禁用同版本 active 插件失败'
+        },
+        error
+      );
+    }
+  }
+
+  private async replaceInstalledPlugin({
+    activateTarget,
+    installedPlugin,
+    pluginRecord,
+    uniqueId
+  }: ReplaceInstalledPluginInput): Promise<Result> {
+    const pluginModel = this.deps.mongoClient.getModel('plugin');
+
+    try {
+      await this.deps.mongoClient.sessionRun(async (session) => {
+        const [, replaceActiveErr] = await this.disableSameVersionActivePlugins(uniqueId, session);
+
+        if (replaceActiveErr) {
+          throw replaceActiveErr.error;
+        }
+
+        if (activateTarget) {
+          await pluginModel.updateOne(
+            uniqueId,
+            {
+              $set: {
+                ...pluginRecord,
+                status: PluginStatusEnum.active,
+                updateAt: new Date()
+              },
+              $unset: {
+                expiredAt: 1
+              }
+            },
+            {
+              session
+            }
+          );
+        }
+
+        await this.updateSystemInstallation(installedPlugin, session);
+      }, {});
+
+      return successResult({});
+    } catch (error) {
+      return failureResult(
+        {
+          en: 'Failed to replace active plugin installation',
+          'zh-CN': '替换 active 插件安装失败'
         },
         error
       );
@@ -957,11 +1047,12 @@ export class PluginRepo implements PluginRepoPort {
     const pendingExpiresAt = pending
       ? addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
       : undefined;
+    const pluginRecord = this.toPluginRecord(plugin);
 
     let installedPlugin: MongoPluginWithId | undefined;
+    let activateInstalledPlugin = false;
 
     try {
-      const pluginRecord = this.toPluginRecord(plugin);
       const existingPlugin = await pluginModel
         .findOne(uniqueId, {
           _id: true,
@@ -999,17 +1090,7 @@ export class PluginRepo implements PluginRepoPort {
             ...pluginRecord,
             _id: existingPlugin._id
           } as MongoPluginWithId;
-
-          await pluginModel.updateOne(uniqueId, {
-            $set: {
-              ...pluginRecord,
-              status: PluginStatusEnum.active,
-              updateAt: new Date()
-            },
-            $unset: {
-              expiredAt: 1
-            }
-          });
+          activateInstalledPlugin = true;
         } else {
           return failureResult({
             en: 'Plugin with the same version and etag already exists',
@@ -1024,9 +1105,12 @@ export class PluginRepo implements PluginRepoPort {
                 status: PluginStatusEnum.pending,
                 expiredAt: pendingExpiresAt
               }
-            : {})
+            : {
+                status: PluginStatusEnum.disabled
+              })
         });
         installedPlugin = createdPlugin.toObject();
+        activateInstalledPlugin = !pending;
       }
     } catch (error) {
       return failureResult(
@@ -1135,20 +1219,13 @@ export class PluginRepo implements PluginRepoPort {
       }
 
       if (!pending && installedPlugin) {
-        const [, replaceActiveErr] = await this.disableSameVersionActivePlugins(uniqueId);
+        const [, replaceActiveErr] = await this.replaceInstalledPlugin({
+          activateTarget: activateInstalledPlugin,
+          installedPlugin,
+          pluginRecord,
+          uniqueId
+        });
         if (replaceActiveErr) return failureResult(replaceActiveErr);
-
-        try {
-          await this.updateSystemInstallation(installedPlugin);
-        } catch (error) {
-          return failureResult(
-            {
-              en: 'Failed to update plugin installation',
-              'zh-CN': '更新插件安装记录失败'
-            },
-            error
-          );
-        }
       }
 
       return successResult({});
