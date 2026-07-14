@@ -40,6 +40,18 @@ const models: ProviderConfigType = {
       toolChoice: true
     },
     {
+      type: ModelTypeEnum.llm,
+      model: 'qwen/qwen3.6-27b',
+      maxContext: 131072,
+      maxTokens: 32768,
+      quoteMaxToken: 120000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
       type: ModelTypeEnum.stt,
       model: 'whisper-large-v3'
     },
