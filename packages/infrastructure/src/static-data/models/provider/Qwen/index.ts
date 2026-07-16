@@ -16,7 +16,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
-      vision: false,
+      vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -30,6 +31,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -56,6 +58,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -69,6 +72,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -82,6 +86,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -95,6 +100,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -121,6 +127,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: true,
+      video: true,
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
@@ -134,6 +141,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: true,
+      video: true,
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
@@ -160,6 +168,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: true,
+      video: true,
       reasoning: false,
       reasoningEffort: false,
       toolChoice: false
@@ -186,6 +195,7 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object'],
       vision: true,
+      video: true,
       reasoning: false,
       reasoningEffort: false,
       toolChoice: false

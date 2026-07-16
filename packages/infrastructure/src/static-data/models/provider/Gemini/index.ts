@@ -11,6 +11,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -23,6 +25,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -35,6 +39,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -47,6 +53,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -59,6 +67,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -71,6 +81,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -83,6 +95,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -95,6 +109,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
@@ -107,6 +123,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
@@ -119,6 +137,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true

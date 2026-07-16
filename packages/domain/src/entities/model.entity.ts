@@ -37,6 +37,8 @@ export const LLMModelItemSchema = z.object({
 
   censor: z.boolean().optional(),
   vision: z.boolean(),
+  audio: z.boolean().optional(),
+  video: z.boolean().optional(),
   reasoning: z.boolean(),
   reasoningEffort: z.boolean(),
   toolChoice: z.boolean(),
