@@ -16,6 +16,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 1024000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -28,6 +29,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 256000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -40,6 +42,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 256000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -52,6 +55,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 256000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -64,6 +68,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 256000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -76,6 +81,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 224000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -88,6 +94,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 224000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -100,6 +108,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 224000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -112,6 +121,8 @@ const models: ProviderConfigType = {
       quoteMaxToken: 224000,
       maxTemperature: 1,
       vision: true,
+      audio: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -124,6 +135,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 224000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
@@ -136,6 +148,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 224000,
       maxTemperature: 1,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
