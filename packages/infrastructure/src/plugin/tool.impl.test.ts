@@ -139,14 +139,14 @@ describe('ToolManager.detail', () => {
               description: {
                 en: 'Explicit false fallback'
               },
-              isToolParams: false
+              isToolParam: false
             },
             explicitTrue: {
               type: 'string',
               description: {
                 en: 'Explicit true fallback'
               },
-              isToolParams: true
+              isToolParam: true
             }
           }
         },
@@ -190,23 +190,23 @@ describe('ToolManager.detail', () => {
     expect(err).toBeNull();
     expect(properties.withToolDescription).toMatchObject({
       toolDescription: 'Existing model-facing description',
-      isToolParams: true
+      isToolParam: true
     });
     expect(properties.manualByDefault).toMatchObject({
       toolDescription: 'Fallback manual description',
-      isToolParams: false
+      isToolParam: false
     });
     expect(properties.explicitFalse).toMatchObject({
       toolDescription: 'Explicit false fallback',
-      isToolParams: false
+      isToolParam: false
     });
     expect(properties.explicitTrue).toMatchObject({
       toolDescription: 'Explicit true fallback',
-      isToolParams: true
+      isToolParam: true
     });
     expect(childProperties.childParam).toMatchObject({
       toolDescription: 'Child fallback',
-      isToolParams: false
+      isToolParam: false
     });
   });
 });

@@ -337,7 +337,7 @@ describe('ToolFactory schema metadata', () => {
         query: z.string().meta({
           title: 'Query',
           toolDescription: 'Search query',
-          isToolParams: true
+          isToolParam: true
         } satisfies InputSchemaMetaType)
       }),
       outputSchema: z.object({
@@ -358,7 +358,7 @@ describe('ToolFactory schema metadata', () => {
     expect(inputSchema.properties?.query).toMatchObject({
       title: 'Query',
       toolDescription: 'Search query',
-      isToolParams: true
+      isToolParam: true
     });
     expect(outputSchema.properties?.answer).toMatchObject({
       title: 'Answer'

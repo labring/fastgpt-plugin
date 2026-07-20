@@ -34,7 +34,7 @@ const mysqlHandler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
       title: 'SQL Query',
-      isToolParams: true
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -64,7 +64,7 @@ const pgsqlHandler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
       title: 'SQL Query',
-      isToolParams: true
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({

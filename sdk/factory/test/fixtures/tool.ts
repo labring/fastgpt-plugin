@@ -12,7 +12,7 @@ const handler = createToolHandler({
   inputSchema: z.object({
     msg: z.string().meta({
       title: 'Message',
-      isToolParams: true
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({

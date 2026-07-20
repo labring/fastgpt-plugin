@@ -177,7 +177,7 @@ const handler = createToolHandler({
     query: z.string().min(1).meta({
       title: 'Query',
       description: 'Search keyword',
-      isToolParams: true
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -219,7 +219,7 @@ Core rules:
 - Keep `pluginId`, child tool `id`, input field names, and output field names stable after publishing.
 - Use `{ en, 'zh-CN' }` for `manifest.name`, `manifest.description`, and `versionDescription`.
 - Describe inputs, outputs, and secrets with Zod schemas.
-- Add `InputSchemaMetaType` to input fields and set `isToolParams: true` for parameters recommended to be managed by AI; add `OutputSchemaMetaType` to output fields.
+- Add `InputSchemaMetaType` to input fields and set `isToolParam: true` for parameters recommended to be managed by AI; add `OutputSchemaMetaType` to output fields.
 - Add `SecretSchemaMetaType` to secret fields and set `isSecret: true` for sensitive fields.
 - Handler return values must match `outputSchema`.
 - Convert external API errors into actionable messages and avoid exposing secrets, tokens, or complete sensitive responses.

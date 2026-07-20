@@ -10,7 +10,7 @@ const handler = createToolHandler({
   inputSchema: z.object({
     content: z.string().meta({
       title: 'Content',
-      isToolParams: true
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({

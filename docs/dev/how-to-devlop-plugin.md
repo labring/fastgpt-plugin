@@ -177,7 +177,7 @@ const handler = createToolHandler({
     query: z.string().min(1).meta({
       title: 'Query',
       description: 'Search keyword',
-      isToolParams: true
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -219,7 +219,7 @@ export default defineTool({
 - `pluginId`、子工具 `id`、输入字段名、输出字段名发布后保持稳定。
 - `manifest.name`、`manifest.description` 和 `versionDescription` 使用 `{ en, 'zh-CN' }`。
 - 输入、输出和密钥都用 Zod schema 描述。
-- 输入字段补充 `InputSchemaMetaType`，推荐由 AI 托管补充的参数设置 `isToolParams: true`；输出字段补充 `OutputSchemaMetaType`。
+- 输入字段补充 `InputSchemaMetaType`，推荐由 AI 托管补充的参数设置 `isToolParam: true`；输出字段补充 `OutputSchemaMetaType`。
 - 密钥字段补充 `SecretSchemaMetaType`，敏感字段设置 `isSecret: true`。
 - handler 返回值必须匹配 `outputSchema`。
 - 外部 API 错误需要转成可定位的错误信息，同时避免输出密钥、令牌和完整敏感响应。

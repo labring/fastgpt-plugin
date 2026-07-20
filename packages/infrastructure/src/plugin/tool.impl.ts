@@ -75,9 +75,9 @@ function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
       const hasToolDescription =
         typeof normalizedProperty.toolDescription === 'string' &&
         normalizedProperty.toolDescription.length > 0;
-      const hasIsToolParams = normalizedProperty.isToolParams !== undefined;
+      const hasIsToolParam = normalizedProperty.isToolParam !== undefined;
 
-      if (hasIsToolParams) {
+      if (hasIsToolParam) {
         if (!hasToolDescription) {
           const fallback = getDescriptionFallback(normalizedProperty.description);
           if (fallback !== undefined) {
@@ -89,7 +89,7 @@ function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
       }
 
       if (hasToolDescription) {
-        normalizedProperty.isToolParams = true;
+        normalizedProperty.isToolParam = true;
         return [key, normalizedProperty];
       }
 
@@ -97,7 +97,7 @@ function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
       if (fallback !== undefined) {
         normalizedProperty.toolDescription = fallback;
       }
-      normalizedProperty.isToolParams = false;
+      normalizedProperty.isToolParam = false;
 
       return [key, normalizedProperty];
     })

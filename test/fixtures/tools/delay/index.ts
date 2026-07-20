@@ -11,7 +11,7 @@ const handler = createToolHandler({
     delay: z.number().meta({
       title: 'Delay',
       description: 'Delay duration in milliseconds',
-      isToolParams: true
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({}).meta({} satisfies OutputSchemaMetaType),
