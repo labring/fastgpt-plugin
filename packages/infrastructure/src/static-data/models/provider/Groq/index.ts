@@ -41,18 +41,6 @@ const models: ProviderConfigType = {
       toolChoice: true
     },
     {
-      type: ModelTypeEnum.llm,
-      model: 'qwen/qwen3-32b',
-      maxContext: 131072,
-      maxTokens: 40960,
-      quoteMaxToken: 120000,
-      maxTemperature: 1.2,
-      vision: false,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true
-    },
-    {
       type: ModelTypeEnum.stt,
       model: 'whisper-large-v3'
     },
@@ -83,20 +71,7 @@ const models: ProviderConfigType = {
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-      maxContext: 131072,
-      maxTokens: 8192,
-      quoteMaxToken: 120000,
-      maxTemperature: 1.2,
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    }
-  ]
+    }]
 };
 
 export default models;
