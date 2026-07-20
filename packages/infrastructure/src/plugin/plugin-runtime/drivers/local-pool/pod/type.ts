@@ -31,6 +31,10 @@ export interface PluginPodOptions {
   pluginPath: string;
   podTimeout: number;
   maxRequests: number;
+  /** 单个插件进程的 V8 heap 上限，单位 MB */
+  maxOldSpaceSizeMb?: number;
+  /** SIGTERM 后等待 SIGKILL 的时间，单位毫秒 */
+  terminationGracePeriod?: number;
   /** 最大并发请求数（默认 1，I/O 密集型工具可调高） */
   maxConcurrentRequests: number;
   /** 插件声明的宿主调用权限 */

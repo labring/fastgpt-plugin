@@ -37,6 +37,8 @@ export const LocalPoolGlobalServiceConfigSchema = z
   .object({
     idleTimeout: z.number().positive(),
     maxRequestsPerPod: z.number().nonnegative(),
+    maxOldSpaceSizeMb: z.number().positive().optional(),
+    terminationGracePeriod: z.number().nonnegative().optional(),
     maxQueueSize: z.number().positive(),
     queueTimeout: z.number().nonnegative(),
     startupRetryBaseDelay: z.number().positive(),

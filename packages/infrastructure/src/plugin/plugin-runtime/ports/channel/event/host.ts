@@ -2,7 +2,10 @@ import z from 'zod';
 
 import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
 
-import type { PluginChannelStreamDescriptor } from '../message';
+import {
+  type PluginChannelStreamDescriptor,
+  PluginChannelStreamDescriptorSchema
+} from '../message';
 
 import type { PluginChannelRpcSpec } from './common';
 
@@ -53,9 +56,20 @@ export interface PluginChannelHostRequestParams<TPayload = unknown> {
   returnStream?: boolean;
 }
 
-export const PluginChannelPingParamsSchema = z.object({
-  timestamp: z.number()
-});
+export const PluginChannelHostRequestParamsSchema = z
+  .object({
+    eventName: z.string().min(1),
+    payload: z.unknown(),
+    input: PluginChannelStreamDescriptorSchema.optional(),
+    returnStream: z.boolean().optional()
+  })
+  .strict();
+
+export const PluginChannelPingParamsSchema = z
+  .object({
+    timestamp: z.number()
+  })
+  .strict();
 export type PluginChannelPingParams = z.infer<typeof PluginChannelPingParamsSchema>;
 
 export const PluginChannelPingResultSchema = z.object({
@@ -64,10 +78,12 @@ export const PluginChannelPingResultSchema = z.object({
 });
 export type PluginChannelPingResult = z.infer<typeof PluginChannelPingResultSchema>;
 
-export const PluginChannelShutdownParamsSchema = z.object({
-  reason: z.string().optional(),
-  timeoutMs: z.number().nonnegative().optional()
-});
+export const PluginChannelShutdownParamsSchema = z
+  .object({
+    reason: z.string().optional(),
+    timeoutMs: z.number().nonnegative().optional()
+  })
+  .strict();
 export type PluginChannelShutdownParams = z.infer<typeof PluginChannelShutdownParamsSchema>;
 
 export const PluginChannelShutdownResultSchema = z.object({

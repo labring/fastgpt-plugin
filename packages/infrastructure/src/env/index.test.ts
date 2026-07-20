@@ -13,6 +13,8 @@ const resetEnv = () => {
   delete process.env.METRICS_OTEL_URL;
   delete process.env.METRICS_EXPORT_INTERVAL_MS;
   delete process.env.METRICS_EXPORT_TIMEOUT_MS;
+  delete process.env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB;
+  delete process.env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD;
 };
 
 describe('env AUTH_TOKEN', () => {
@@ -183,5 +185,32 @@ describe('env AUTH_TOKEN', () => {
     process.env.AUTH_TOKEN = 'g'.repeat(32);
 
     await expect(import('../redis/redis-client')).resolves.toHaveProperty('RedisClient');
+  });
+
+  it('uses bounded local-pool process defaults', async () => {
+    const { env } = await import('./index');
+
+    expect(env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB).toBe(512);
+    expect(env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD).toBe(5_000);
+  });
+
+  it('rejects a non-positive local-pool heap limit', async () => {
+    process.env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB = '0';
+
+    const { env } = await import('./index');
+
+    expect(() => env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB).toThrow(
+      'POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB'
+    );
+  });
+
+  it('rejects a non-positive local-pool termination grace period', async () => {
+    process.env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD = '0';
+
+    const { env } = await import('./index');
+
+    expect(() => env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD).toThrow(
+      'POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD'
+    );
   });
 });

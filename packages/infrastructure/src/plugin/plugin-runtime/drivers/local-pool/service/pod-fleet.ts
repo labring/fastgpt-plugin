@@ -79,6 +79,8 @@ export class PodFleet {
       pluginPath: this.options.pluginPath,
       podTimeout: config.podTimeout,
       maxRequests: config.maxRequestsPerPod,
+      maxOldSpaceSizeMb: config.maxOldSpaceSizeMb,
+      terminationGracePeriod: config.terminationGracePeriod,
       maxConcurrentRequests: config.maxConcurrentRequestsPerPod,
       pluginPermissions: this.options.pluginPermissions,
       getInvokeSession: this.options.getInvokeSession,

@@ -15,6 +15,9 @@
   "devDependencies": {
     "tsdown": "catalog:"
   },
+  "peerDependencies": {
+    "zod": "catalog:"
+  },
   "type": "module",
   "files": [
     "dist",

@@ -218,6 +218,8 @@ Environment variables provide default runtime parameters and global limits:
 | `POOL_SERVICE_POD_TIMEOUT` | Execution timeout for one plugin call in milliseconds. |
 | `POOL_SERVICE_MAX_CONCURRENT_REQUESTS_PER_POD` | Default maximum concurrent requests for one Pod. |
 | `POOL_SERVICE_MAX_REQUESTS_PER_POD` | Maximum requests one Pod can process before replacement; this reduces memory leak risk from long-running processes. |
+| `POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB` | V8 old-space limit for one Pod process, in MB. |
+| `POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD` | Time between `SIGTERM` and forced `SIGKILL`, in milliseconds. |
 | `POOL_SERVICE_MAX_QUEUE_SIZE` | Maximum request queue capacity for one plugin service. New requests are rejected after this limit. |
 | `POOL_SERVICE_QUEUE_TIMEOUT` | Maximum time a request can wait in queue for an available Pod, in milliseconds. |
 | `POOL_SERVICE_STARTUP_RETRY_BASE_DELAY` | Base delay for exponential backoff after Pod startup timeout, in milliseconds. |
@@ -228,3 +230,11 @@ Environment variables provide default runtime parameters and global limits:
 | `CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS` | Timeout while waiting for CLI responses during remote debug invocation. |
 
 Pod startup errors are recorded and classified. Consecutive non-timeout startup failures trigger startup circuit breaking after the threshold is reached, preventing more Pods from being created. Startup timeouts are treated as resource pressure, enter exponential backoff, and retry later. For detailed scheduling, recycling, and metrics design, see [Process Pool Design](./process-pool-design.md).
+
+### Local Runtime Security Boundary
+
+The local-pool runtime starts each Pod with an explicit working directory, a minimal environment, isolated home and temporary directories, bounded V8 old space, and Node.js file-system permissions. IPC messages are schema-validated, and reverse host calls are authorized from plugin manifest permissions. Pod shutdown targets the whole POSIX process group and escalates from `SIGTERM` to `SIGKILL` after the configured grace period.
+
+In the production image, `/app` remains root-owned and read-only to the `fastgpt` user. Runtime cache files live under the writable `LOCAL_FILE_BASE_PATH`; the image default is `/runtime/cache/fastgpt-plugin`. Cache directories use mode `0700`, and cache files use mode `0600`.
+
+Node.js file-system permissions do not restrict network access, and the installation URL SSRF checks only cover package downloads. Deployments using local-pool must enforce runtime SSRF protection at the process or container network boundary, such as a network namespace or transparent egress proxy that blocks loopback, link-local, private, metadata, and IPv6 ULA destinations after DNS resolution and on redirects. CPU, total memory, and process-count hard limits likewise require container or cgroup controls; the V8 heap limit only bounds managed heap.
