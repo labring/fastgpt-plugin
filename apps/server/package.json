@@ -23,7 +23,7 @@
     "@fastgpt-plugin/usecase": "workspace:*",
     "@fastgpt-sdk/invoke": "catalog:",
     "@fastgpt-sdk/storage": "catalog:",
-    "@hono/node-server": "^1.19.9",
+    "@hono/node-server": "^2.0.10",
     "@t3-oss/env-core": "^0.13.10",
     "dayjs": "^1.11.19",
     "es-toolkit": "^1.44.0",
