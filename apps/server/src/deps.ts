@@ -1,5 +1,6 @@
-import { serverEnv } from '@infrastructure/env';
 import { createStorage, type IStorageOptions } from '@fastgpt-sdk/storage';
+
+import { serverEnv } from '@infrastructure/env';
 import { LocalFileStorageRepo } from '@infrastructure/file-storage/local-file-storage.repo';
 import { RemoteFileStorageRepo } from '@infrastructure/file-storage/remote-file-storage.repo';
 import { FileTTLManager } from '@infrastructure/file-ttl/file-ttl.impl';
@@ -78,7 +79,7 @@ const connectionGatewayDebugRuntimeManager = new ConnectionGatewayDebugRuntimeMa
 });
 
 const fcArtifactStorageClient =
-  serverEnv.PLUGIN_RUNTIME_MODE === 'serverless'
+  serverEnv.PLUGIN_RUNTIME_MODE === 'serverless-fc'
     ? createStorage({
         vendor: 'oss',
         bucket: serverEnv.FC_ARTIFACT_BUCKET ?? '',
@@ -105,14 +106,14 @@ export const fcRuntimeArtifactRepo = fcArtifactStorageClient
   : undefined;
 
 const fcFunctionProvider =
-  serverEnv.PLUGIN_RUNTIME_MODE === 'serverless' &&
+  serverEnv.PLUGIN_RUNTIME_MODE === 'serverless-fc' &&
   serverEnv.FC_HTTP_BASE_URL &&
   serverEnv.FC_INVOKE_SIGNING_SECRET
     ? new FCHttpFunctionProvider({
         httpBaseUrl: serverEnv.FC_HTTP_BASE_URL,
         signingSecret: serverEnv.FC_INVOKE_SIGNING_SECRET
       })
-    : serverEnv.PLUGIN_RUNTIME_MODE === 'serverless'
+    : serverEnv.PLUGIN_RUNTIME_MODE === 'serverless-fc'
       ? new FCAliyunFunctionProvider({
           region: serverEnv.FC_REGION ?? '',
           endpoint: serverEnv.FC_ENDPOINT,
@@ -127,7 +128,7 @@ const fcFunctionProvider =
       : undefined;
 
 const fcPluginRuntimeManager =
-  serverEnv.PLUGIN_RUNTIME_MODE === 'serverless' && fcRuntimeArtifactRepo
+  serverEnv.PLUGIN_RUNTIME_MODE === 'serverless-fc' && fcRuntimeArtifactRepo
     ? FCPluginRuntimeManager.getInstance({
         pluginRepo,
         mongoClient,

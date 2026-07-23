@@ -19,7 +19,7 @@ updated_at: 2026-05-22 Asia/Shanghai
 packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/
 ```
 
-它实现同一个 `PluginRuntimeManagerPort`，通过 `PLUGIN_RUNTIME_MODE=serverless` 接入 `apps/server/src/deps.ts`，在语义上替代 `LocalPoolPluginRuntimeManager`，负责插件注册、配置、状态、调用、注销和关闭。API server 本身的部署方式保持独立。
+它实现同一个 `PluginRuntimeManagerPort`，通过 `PLUGIN_RUNTIME_MODE=serverless-fc` 接入 `apps/server/src/deps.ts`，在语义上替代 `LocalPoolPluginRuntimeManager`，负责插件注册、配置、状态、调用、注销和关闭。API server 本身的部署方式保持独立。
 
 推荐落地路径：
 
@@ -40,7 +40,7 @@ v0 范围：
 - 支持安装新的团队级插件。
 - 以 `getTime` 作为最小 demo 插件。
 - 保留 `ctx.invoke.userInfo()` 和 `ctx.invoke.uploadFile()` 两个现有反向调用能力。
-- 保持 `PLUGIN_RUNTIME_MODE=localPool` 兼容，新增 `PLUGIN_RUNTIME_MODE=serverless`。
+- 保持 `PLUGIN_RUNTIME_MODE=localPool` 兼容，新增 canonical `PLUGIN_RUNTIME_MODE=serverless-fc`；env 入口继续接受旧值 `serverless` 并归一化为 `serverless-fc`。
 
 v0 明确不做：
 
@@ -83,7 +83,7 @@ v0 必须包含：
 - `FCFunctionInvoker` 的首选 `http-stream` 与 `openapi-buffered` fallback 框架；真实生产默认值在 staging 结果后确定。
 - API server 调 FC runtime 的请求签名校验：包含 `invocationId`、timestamp、body hash、runtime id，FC runtime 拒绝过期、重放和签名不匹配请求。
 - `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime` 的最小 HTTP bootstrap、artifact 下载、动态 import、handler context、NDJSON/SSE frame 输出。
-- `PLUGIN_RUNTIME_MODE=serverless` 选择路径。
+- `PLUGIN_RUNTIME_MODE=serverless-fc` 选择路径。
 - `getTime` staging 验收脚本或手册。
 
 v0 明确延后：
@@ -106,7 +106,7 @@ v0 明确延后：
 当前工作区已完成 v0 FC vertical slice 的本地实现，并保留以下状态记录：
 
 - [x] `FCPluginRuntimeManager` 实现 `PluginRuntimeManagerPort` 的 `register / unregister / getConfig / updateConfig / resetConfig / status / globalStatus / shutdown / invoke`。
-- [x] `PLUGIN_RUNTIME_MODE=serverless` 接入 `apps/server/src/deps.ts`，保留 `localPool` 兼容路径。
+- [x] `PLUGIN_RUNTIME_MODE=serverless-fc` 接入 `apps/server/src/deps.ts`，保留 `localPool` 兼容路径。
 - [x] FC env schema、默认配置、生产 signing secret 强度校验已补齐。
 - [x] `FCRuntimeArtifactRepo` 已支持 active `index.js` 发布到 FC 专用 OSS artifact key。
 - [x] `FCFunctionProvider` 抽象已拆出，包含 in-memory 测试 provider、HTTP provider、Aliyun FC SDK provider。
@@ -143,7 +143,7 @@ pnpm exec vitest run packages/infrastructure/src/plugin/plugin-runtime/drivers/l
 - local-pool service：`packages/infrastructure/src/plugin/plugin-runtime/drivers/local-pool/service/index.ts` 管理单个插件的队列、pod fleet、并发、超时和指标。
 - local-pool pod：`packages/infrastructure/src/plugin/plugin-runtime/drivers/local-pool/pod/index.ts` 通过 `child_process.fork` 启动插件 `index.js`，以 IPC channel 调用 `host.request`。
 - FC serverless 实现：`packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/fc.plugin-runtime.driver.ts` 已替换原 TODO，实现 FC manager 主流程。
-- 运行时选择点：`apps/server/src/deps.ts` 已按 `env.PLUGIN_RUNTIME_MODE` 分支导出 `localPool` 或 `serverless` runtime manager。
+- 运行时选择点：`apps/server/src/deps.ts` 已按 `env.PLUGIN_RUNTIME_MODE` 分支导出 `localPool` 或 `serverless-fc` runtime manager。
 - SDK 现状：`sdk/factory/src/plugin-factory.ts` 继续保持 `localPool` 和 `dev` channel；FC runtime 第一阶段直接 import 插件 factory 并执行 handler。
 
 ## What Already Exists
@@ -541,7 +541,7 @@ FC runtime -> fastgpt-plugin-server /api/runtime/fc/callback
 API server 侧新增：
 
 ```env
-PLUGIN_RUNTIME_MODE=serverless
+PLUGIN_RUNTIME_MODE=serverless-fc
 FC_REGION=cn-hangzhou
 FC_RUNTIME_IMAGE=registry.cn-hangzhou.aliyuncs.com/<ns>/fastgpt-plugin-fc-runtime:<tag>
 FC_FUNCTION_NAME_PREFIX=fastgpt-plugin
@@ -711,7 +711,7 @@ runtime artifact 缓存策略：
    - NDJSON/SSE output
 8. 修改 `apps/server/src/deps.ts`：
    - `PLUGIN_RUNTIME_MODE=localPool` 使用现有实现
-   - `PLUGIN_RUNTIME_MODE=serverless` 使用 FC 实现
+   - `PLUGIN_RUNTIME_MODE=serverless-fc` 使用 FC 实现
 9. 增加测试：
    - config parse
    - function name
@@ -735,7 +735,7 @@ CODE PATH COVERAGE TARGET
 =========================
 [+] packages/infrastructure/src/env/index.ts
     ├── [GAP] FC env defaults parse in non-serverless mode
-    ├── [GAP] PLUGIN_RUNTIME_MODE=serverless requires FC_REGION / FC_RUNTIME_IMAGE / FC_ROLE_ARN
+    ├── [GAP] PLUGIN_RUNTIME_MODE=serverless-fc requires FC_REGION / FC_RUNTIME_IMAGE / FC_ROLE_ARN
     └── [GAP] production rejects weak FC_INVOKE_SIGNING_SECRET
 
 [+] function-name.ts
@@ -818,7 +818,7 @@ Staging smoke test 可以先是手册或 `pnpm exec tsx scripts/fc/get-time-smok
 
 - `PLUGIN_RUNTIME_MODE=localPool` 行为保持兼容。
 - active 插件确认后，`index.js` 同时存在于 `PluginRepo` 业务存储和 FC artifact OSS。
-- `PLUGIN_RUNTIME_MODE=serverless` 启动后 active plugins 可以注册为 FC 函数。
+- `PLUGIN_RUNTIME_MODE=serverless-fc` 启动后 active plugins 可以注册为 FC 函数。
 - `/api/runtime/metrics` 能展示 FC runtime 的全局状态。
 - `/api/tools/run` 可以通过 FC runtime 执行工具。
 - `ctx.streamResponse` 能被客户端持续收到；buffered fallback 有明确标识。

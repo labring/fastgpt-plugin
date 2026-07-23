@@ -10,6 +10,7 @@ const DEV_AUTH_TOKEN = 'token';
 const MIN_PRODUCTION_AUTH_TOKEN_LENGTH = 32;
 const WEAK_AUTH_TOKENS = new Set(['token', 'changeme', 'password', 'secret', 'default']);
 const MIN_PRODUCTION_FC_SIGNING_SECRET_LENGTH = 32;
+const LEGACY_SERVERLESS_RUNTIME_MODE = 'serverless';
 
 const AuthTokenSchema = z
   .string()
@@ -53,6 +54,9 @@ const GatewayAuthTokenSchema = z
   });
 
 const OptionalServerlessStringSchema = z.string().trim().optional();
+const isServerlessFCRuntimeMode = () =>
+  process.env.PLUGIN_RUNTIME_MODE === PluginRuntimeModeEnum['serverless-fc'] ||
+  process.env.PLUGIN_RUNTIME_MODE === LEGACY_SERVERLESS_RUNTIME_MODE;
 
 const RequiredWhenServerlessSchema = (name: string) =>
   z
@@ -60,10 +64,10 @@ const RequiredWhenServerlessSchema = (name: string) =>
     .trim()
     .optional()
     .transform((value, ctx) => {
-      if (process.env.PLUGIN_RUNTIME_MODE === PluginRuntimeModeEnum.serverless && !value) {
+      if (isServerlessFCRuntimeMode() && !value) {
         ctx.addIssue({
           code: 'custom',
-          message: `${name} is required when PLUGIN_RUNTIME_MODE=serverless`
+          message: `${name} is required when PLUGIN_RUNTIME_MODE=serverless-fc`
         });
       }
 
@@ -75,16 +79,16 @@ const FCInvokeSigningSecretSchema = z
   .trim()
   .optional()
   .transform((value, ctx) => {
-    if (process.env.PLUGIN_RUNTIME_MODE === PluginRuntimeModeEnum.serverless && !value) {
+    if (isServerlessFCRuntimeMode() && !value) {
       ctx.addIssue({
         code: 'custom',
-        message: 'FC_INVOKE_SIGNING_SECRET is required when PLUGIN_RUNTIME_MODE=serverless'
+        message: 'FC_INVOKE_SIGNING_SECRET is required when PLUGIN_RUNTIME_MODE=serverless-fc'
       });
     }
 
     if (
       process.env.NODE_ENV === 'production' &&
-      process.env.PLUGIN_RUNTIME_MODE === PluginRuntimeModeEnum.serverless
+      isServerlessFCRuntimeMode()
     ) {
       const secret = value ?? '';
       if (
@@ -135,9 +139,15 @@ const createLazyValidatedEnv = <TOutput extends object>(schema: z.ZodType<TOutpu
 };
 
 function normalizeRuntimeEnv(runtimeEnv: NodeJS.ProcessEnv): Record<string, string | undefined> {
-  return Object.fromEntries(
+  const normalizedEnv = Object.fromEntries(
     Object.entries(runtimeEnv).map(([key, value]) => [key, value === '' ? undefined : value])
   );
+
+  if (normalizedEnv.PLUGIN_RUNTIME_MODE === LEGACY_SERVERLESS_RUNTIME_MODE) {
+    normalizedEnv.PLUGIN_RUNTIME_MODE = PluginRuntimeModeEnum['serverless-fc'];
+  }
+
+  return normalizedEnv;
 }
 
 const NodeEnvSchema = z.enum(['development', 'production', 'test']).default('development');
@@ -382,7 +392,7 @@ export type ServerEnv = {
   DEPLOYMENT_ENVIRONMENT?: string;
   ALLOWED_INSTALL_HOSTS?: string;
   DISABLE_SSRF_CHECK: boolean;
-  PLUGIN_RUNTIME_MODE: 'localPool' | 'serverless';
+  PLUGIN_RUNTIME_MODE: 'localPool' | 'serverless-fc';
   PLUGIN_REGISTER_CONCURRENCY: number;
   FC_REGION?: string;
   FC_ENDPOINT?: string;

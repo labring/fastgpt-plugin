@@ -11,7 +11,7 @@
 - FC function provider 已拆成抽象 provider、内存测试 provider、HTTP provider 和 Aliyun SDK provider。
 - request signature 已支持 timestamp、runtime id、invocation id、body hash、HMAC 签名和 replay 防护。
 - `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime` 已提供 HTTP bootstrap、artifact loader、handler 执行和 NDJSON frame 输出。
-- `PLUGIN_RUNTIME_MODE=serverless` 已接入 `apps/server/src/deps.ts`。
+- `PLUGIN_RUNTIME_MODE=serverless-fc` 已接入 `apps/server/src/deps.ts`。
 - 已补齐 infrastructure 层的 env、命名、签名、artifact、registry、invoker、manager 单元测试。
 
 仍待补齐：
@@ -54,7 +54,7 @@ Staging smoke test 前置条件：
 示例 staging 环境变量，真实密钥通过部署平台 secret 注入：
 
 ```env
-PLUGIN_RUNTIME_MODE=serverless
+PLUGIN_RUNTIME_MODE=serverless-fc
 FC_REGION=cn-hangzhou
 FC_ENDPOINT=https://123456789.cn-hangzhou.fc.aliyuncs.com
 FC_ACCOUNT_ID=123456789
@@ -76,8 +76,9 @@ FC_INVOKE_SIGNING_SECRET=<secret-from-secret-manager>
 | ID | 覆盖对象 | 状态 | 前置条件 | 步骤 | 预期结果 |
 | --- | --- | --- | --- | --- | --- |
 | FC-ENV-001 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `PLUGIN_RUNTIME_MODE=localPool` | 解析未配置 FC 变量的 env | FC 变量保持 optional，不影响 local-pool 启动 |
-| FC-ENV-002 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `PLUGIN_RUNTIME_MODE=serverless` | 缺少 FC 必填变量时解析 env | 返回明确配置错误 |
+| FC-ENV-002 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `PLUGIN_RUNTIME_MODE=serverless-fc` | 缺少 FC 必填变量时解析 env | 返回明确配置错误 |
 | FC-ENV-003 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `NODE_ENV=production` | 使用弱 `FC_INVOKE_SIGNING_SECRET` | 拒绝启动并提示 signing secret 过弱 |
+| FC-ENV-004 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `PLUGIN_RUNTIME_MODE=serverless` | 解析旧 runtime mode | 归一化为 `serverless-fc`，兼容已有部署配置 |
 | FC-TYPE-001 | `types.ts` | 已覆盖 | 默认配置 | 解析 `FCPluginConfigSchema` | 得到默认 timeout、concurrency、memory、cpu 和 queue 配置 |
 | FC-TYPE-002 | `types.ts` | 已覆盖 | 非法配置 | 输入负数 timeout 或非法 invocation mode | schema 校验失败 |
 | FC-NAME-001 | `function-name.ts` | 已覆盖 | 合法 plugin id、version、etag | 生成 runtime id 和 function name | 名称稳定、可推导、符合 FC 命名约束 |
@@ -134,7 +135,7 @@ pnpm exec vitest run packages/infrastructure/src/plugin/plugin-runtime/drivers/s
 | --- | --- | --- | --- | --- |
 | FC-STG-001 | runtime image | 待执行 | 构建并发布 `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime/Dockerfile` | ACR 中存在可拉取 image tag |
 | FC-STG-002 | OSS artifact | 待执行 | 配置 `FC_ARTIFACT_*`，注册 `getTime` 插件 | FC artifact OSS 中存在 immutable `index.js` |
-| FC-STG-003 | function create | 待执行 | `PLUGIN_RUNTIME_MODE=serverless` 启动 API server 后注册插件 | FC 中创建或更新目标函数 |
+| FC-STG-003 | function create | 待执行 | `PLUGIN_RUNTIME_MODE=serverless-fc` 启动 API server 后注册插件 | FC 中创建或更新目标函数 |
 | FC-STG-004 | tool invoke | 待执行 | 通过 API 执行 `getTime` | 返回时间结果，API server metrics 记录 FC invoke |
 | FC-STG-005 | stream output | 待执行 | 执行带 `ctx.streamResponse` 的官方 JS 插件 | 客户端能收到 stream frame；buffered fallback 有清晰标识 |
 | FC-STG-006 | reverse invoke | 待执行 | 执行调用 `ctx.invoke.userInfo()` 和 `ctx.invoke.uploadFile()` 的插件 | FC runtime 能访问 FastGPT invoke API 并得到正确结果 |

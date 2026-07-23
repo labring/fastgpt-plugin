@@ -260,18 +260,32 @@ describe('env AUTH_TOKEN', () => {
     expect(env.FC_FUNCTION_NAME_PREFIX).toBe('fastgpt-plugin');
   });
 
-  it('requires FC env in serverless mode', async () => {
-    process.env.PLUGIN_RUNTIME_MODE = 'serverless';
+  it('requires FC env in serverless-fc mode', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'serverless-fc';
 
     const { env } = await import('./index');
 
     expect(() => env.FC_REGION).toThrow('FC_REGION');
   });
 
-  it('rejects weak FC signing secrets in serverless production', async () => {
+  it('normalizes the legacy serverless mode to serverless-fc', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'serverless';
+    process.env.FC_REGION = 'cn-hangzhou';
+    process.env.FC_RUNTIME_IMAGE = 'runtime:latest';
+    process.env.FC_ROLE_ARN = 'role';
+    process.env.FC_ARTIFACT_ENDPOINT = 'https://oss-cn-hangzhou.aliyuncs.com';
+    process.env.FC_ARTIFACT_BUCKET = 'bucket';
+    process.env.FC_INVOKE_SIGNING_SECRET = 'test-signing-secret';
+
+    const { env } = await import('./index');
+
+    expect(env.PLUGIN_RUNTIME_MODE).toBe('serverless-fc');
+  });
+
+  it('rejects weak FC signing secrets in serverless-fc production', async () => {
     process.env.NODE_ENV = 'production';
     process.env.AUTH_TOKEN = 'a'.repeat(32);
-    process.env.PLUGIN_RUNTIME_MODE = 'serverless';
+    process.env.PLUGIN_RUNTIME_MODE = 'serverless-fc';
     process.env.FC_REGION = 'cn-hangzhou';
     process.env.FC_RUNTIME_IMAGE = 'runtime:latest';
     process.env.FC_ROLE_ARN = 'role';
