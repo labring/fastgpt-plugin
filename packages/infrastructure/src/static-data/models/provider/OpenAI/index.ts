@@ -221,19 +221,6 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'gpt-5.2-chat-latest',
-      maxContext: 128000,
-      maxTokens: 16384,
-      quoteMaxToken: 128000,
-      maxTemperature: null,
-      responseFormatList: ['text', 'json_schema'],
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'gpt-5.1',
       maxContext: 400000,
       maxTokens: 128000,
@@ -243,19 +230,6 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'gpt-5.1-chat-latest',
-      maxContext: 128000,
-      maxTokens: 16384,
-      quoteMaxToken: 128000,
-      maxTemperature: null,
-      responseFormatList: ['text', 'json_schema'],
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -284,19 +258,6 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'gpt-5-chat-latest',
-      maxContext: 128000,
-      maxTokens: 16384,
-      quoteMaxToken: 128000,
-      maxTemperature: null,
-      responseFormatList: ['text', 'json_schema'],
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
       toolChoice: true
     },
     {
@@ -359,19 +320,6 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'gpt-4.1-nano',
-      maxContext: 1000000,
-      maxTokens: 32000,
-      quoteMaxToken: 1000000,
-      maxTemperature: 1.2,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'gpt-4o-mini',
       maxContext: 128000,
       maxTokens: 16000,
@@ -398,44 +346,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'o4-mini',
-      maxContext: 200000,
-      maxTokens: 100000,
-      quoteMaxToken: 120000,
-      maxTemperature: null,
-      vision: true,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true,
-      showStopSign: false,
-      fieldMap: {
-        max_tokens: 'max_completion_tokens'
-      }
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'o3',
       maxContext: 200000,
       maxTokens: 100000,
       quoteMaxToken: 120000,
       maxTemperature: null,
       vision: true,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true,
-      showStopSign: false,
-      fieldMap: {
-        max_tokens: 'max_completion_tokens'
-      }
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'o3-mini',
-      maxContext: 200000,
-      maxTokens: 100000,
-      quoteMaxToken: 120000,
-      maxTemperature: null,
-      vision: false,
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true,
