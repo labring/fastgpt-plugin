@@ -23,7 +23,8 @@ import z from 'zod';
 const handler = createToolHandler({
   inputSchema: z.object({
     text: z.string().meta({
-      title: 'Text'
+      title: 'Text',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -64,7 +65,7 @@ export default defineTool({
 - Use `z.object(...)` for `inputSchema` and `outputSchema` so TypeScript can infer `input` and return types.
 - Import `InputSchemaMetaType`, `OutputSchemaMetaType`, and `SecretSchemaMetaType` from `@fastgpt-plugin/sdk-factory` when schema metadata is used.
 - Add `.meta({ ... } satisfies InputSchemaMetaType)` to input fields and `.meta({ ... } satisfies OutputSchemaMetaType)` to output fields that need UI/manifest metadata.
-- Set `toolDescription` in an input field's `.meta()` when that field should be available as an automatically filled tool-call parameter; without `toolDescription`, users must specify the field manually.
+- Set `isToolParam: true` in an input field's `.meta()` when that field is recommended to be managed by AI; use `toolDescription` for the model-facing parameter description.
 - Add `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)` to every `secretSchema` field; set `isSecret: true` for values that must be encrypted at rest.
 - Return an object that matches `outputSchema`; throw errors for failed operations.
 - Add `secretSchema` when plugin configuration needs secrets such as API keys.
@@ -84,7 +85,8 @@ const handler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
       title: 'Query',
-      toolDescription: 'Search query'
+      toolDescription: 'Search query',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -162,7 +164,8 @@ const secretSchema = z.object({
 const searchHandler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
-      title: 'Query'
+      title: 'Query',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -214,7 +217,8 @@ Use `ctx.invoke` for host capabilities. The SDK exposes `userInfo()` and `upload
 const uploadHandler = createToolHandler({
   inputSchema: z.object({
     content: z.string().meta({
-      title: 'Content'
+      title: 'Content',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({

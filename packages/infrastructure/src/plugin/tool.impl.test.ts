@@ -113,6 +113,102 @@ describe('ToolManager.detail', () => {
       version: '1.10.0'
     });
   });
+
+  it('normalizes input schema tool parameter metadata in tool detail', async () => {
+    const toolManager = createToolManager();
+    listVersions.mockResolvedValue(successResult([{ version: '1.0.0' }]));
+    getPluginByUserPluginId.mockResolvedValue(
+      successResult({
+        ...makeTool('1.0.0'),
+        inputSchema: {
+          type: 'object',
+          properties: {
+            withToolDescription: {
+              type: 'string',
+              toolDescription: 'Existing model-facing description'
+            },
+            manualByDefault: {
+              type: 'string',
+              description: {
+                en: 'Fallback manual description',
+                'zh-CN': '手动参数说明'
+              }
+            },
+            explicitFalse: {
+              type: 'string',
+              description: {
+                en: 'Explicit false fallback'
+              },
+              isToolParam: false
+            },
+            explicitTrue: {
+              type: 'string',
+              description: {
+                en: 'Explicit true fallback'
+              },
+              isToolParam: true
+            }
+          }
+        },
+        children: [
+          {
+            id: 'child',
+            name: { en: 'Child' },
+            description: { en: 'Child tool' },
+            icon: 'https://example.com/child.svg',
+            toolDescription: 'Child tool',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                childParam: {
+                  type: 'string',
+                  description: {
+                    en: 'Child fallback'
+                  }
+                }
+              }
+            },
+            outputSchema: {
+              type: 'object'
+            }
+          }
+        ]
+      } satisfies ToolType)
+    );
+
+    const [result, err] = await toolManager.detail({
+      pluginId: 'getTime',
+      source: 'system',
+      version: '1.0.0'
+    });
+
+    const properties = (result?.inputSchema as { properties: Record<string, unknown> }).properties;
+    const childProperties = (result?.children?.[0]?.inputSchema as {
+      properties: Record<string, unknown>;
+    }).properties;
+
+    expect(err).toBeNull();
+    expect(properties.withToolDescription).toMatchObject({
+      toolDescription: 'Existing model-facing description',
+      isToolParam: true
+    });
+    expect(properties.manualByDefault).toMatchObject({
+      toolDescription: 'Fallback manual description',
+      isToolParam: false
+    });
+    expect(properties.explicitFalse).toMatchObject({
+      toolDescription: 'Explicit false fallback',
+      isToolParam: false
+    });
+    expect(properties.explicitTrue).toMatchObject({
+      toolDescription: 'Explicit true fallback',
+      isToolParam: true
+    });
+    expect(childProperties.childParam).toMatchObject({
+      toolDescription: 'Child fallback',
+      isToolParam: false
+    });
+  });
 });
 
 describe('ToolManager.run', () => {
