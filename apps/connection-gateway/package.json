@@ -11,7 +11,7 @@
     "@fastgpt-plugin/interface-adapter": "workspace:*",
     "@fastgpt-plugin/shared": "workspace:*",
     "@hono/node-server": "^1.19.9",
-    "hono": "^4.12.21",
+    "hono": "^4.12.27",
     "zod": "catalog:"
   },
   "devDependencies": {
