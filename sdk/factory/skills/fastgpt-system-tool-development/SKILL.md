@@ -62,7 +62,7 @@ npx @fastgpt-plugin/cli pack --entry <plugin-directory> --dist <plugin-directory
 - 每个 handler 用 `createToolHandler()` 定义。
 - `inputSchema` 和 `outputSchema` 使用 `z.object(...)`。
 - `inputSchema` 字段使用 `.meta({ ... } satisfies InputSchemaMetaType)`。
-- `inputSchema` 字段需要被工具调用自动填参时，必须在 `.meta()` 中设置 `toolDescription`；未设置时该字段只能由用户手动指定。
+- `inputSchema` 字段推荐由 AI 托管补充时，在 `.meta()` 中设置 `isToolParam: true`；`toolDescription` 可用于补充面向模型的参数说明。
 - `outputSchema` 字段使用 `.meta({ ... } satisfies OutputSchemaMetaType)`。
 - `secretSchema` 字段使用 `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)`；需要加密存储的字段标记为 `isSecret: true`。
 - handler 返回值必须匹配 `outputSchema`。
@@ -137,7 +137,8 @@ const handler = createToolHandler({
   inputSchema: z.object({
     text: z.string().min(1).meta({
       title: 'Text',
-      toolDescription: 'Text to normalize'
+      toolDescription: 'Text to normalize',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -197,7 +198,8 @@ const searchHandler = createToolHandler({
   inputSchema: z.object({
     query: z.string().min(1).meta({
       title: 'Query',
-      toolDescription: 'Search query'
+      toolDescription: 'Search query',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -257,7 +259,7 @@ export default defineToolSet({
 - `manifest` 字段完整，国际化字段包含 `en` 和 `zh-CN`。
 - `permission` 只包含插件实际使用的权限，且权限值来自当前支持的枚举。
 - 使用 `ctx.invoke` 时已在 `manifest.permission` 声明对应权限，例如上传文件声明 `file-upload:allow`。
-- Zod schema 覆盖全部用户可见输入和输出；需要工具调用自动填参的输入字段包含 `toolDescription`。
+- Zod schema 覆盖全部用户可见输入和输出；推荐由 AI 托管补充的输入字段设置 `isToolParam: true`。
 - handler 成功路径返回值与 `outputSchema` 一致。
 - 外部调用失败、空响应、超时、鉴权失败都有明确错误。
 - 密钥配置只通过 `secretSchema` 和 `ctx.secrets` 处理。

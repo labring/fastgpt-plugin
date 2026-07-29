@@ -159,8 +159,8 @@ export class PluginRepo implements PluginRepoPort {
     if ('properties' in schema) {
       return Boolean(
         schema.properties &&
-          typeof schema.properties === 'object' &&
-          Object.keys(schema.properties).length > 0
+        typeof schema.properties === 'object' &&
+        Object.keys(schema.properties).length > 0
       );
     }
 
@@ -381,7 +381,7 @@ export class PluginRepo implements PluginRepoPort {
     return path.join('plugin', id.pluginId, id.version, id.etag, ...filePath);
   }
 
-  private constructor(private readonly deps: PluginRepoDeps) {}
+  private constructor(private readonly deps: PluginRepoDeps) { }
 
   async getPluginByUserPluginId({
     pluginId,
@@ -395,18 +395,18 @@ export class PluginRepo implements PluginRepoPort {
 
     const installation = normalizedVersion
       ? await installationModel
-          .findOne(
-            { source: normalizedSource, version: normalizedVersion, pluginId },
-            { _id: 0, pluginId: 1, version: 1, etag: 1 }
-          )
-          .lean()
+        .findOne(
+          { source: normalizedSource, version: normalizedVersion, pluginId },
+          { _id: 0, pluginId: 1, version: 1, etag: 1 }
+        )
+        .lean()
       : await installationModel
-          .find(
-            { source: normalizedSource, pluginId },
-            { _id: 0, pluginId: 1, version: 1, etag: 1 }
-          )
-          .lean()
-          .then((items) => items.sort((a, b) => this.compareVersions(b.version, a.version))[0]);
+        .find(
+          { source: normalizedSource, pluginId },
+          { _id: 0, pluginId: 1, version: 1, etag: 1 }
+        )
+        .lean()
+        .then((items) => items.sort((a, b) => this.compareVersions(b.version, a.version))[0]);
 
     if (installation) {
       const plugin = await pluginModel
@@ -462,12 +462,12 @@ export class PluginRepo implements PluginRepoPort {
       }));
       const plugins = pluginConditions.length
         ? await this.deps.mongoClient
-            .getModel('plugin')
-            .find({
-              status: PluginStatusEnum.active,
-              $or: pluginConditions
-            })
-            .lean()
+          .getModel('plugin')
+          .find({
+            status: PluginStatusEnum.active,
+            $or: pluginConditions
+          })
+          .lean()
         : [];
       const pluginMap = new Map(
         plugins.map((plugin) => [this.getInstalledPluginKey(plugin), this.toDomainPlugin(plugin)])
@@ -806,15 +806,15 @@ export class PluginRepo implements PluginRepoPort {
       const tools = installedPlugins.map(({ source, plugin }) => {
         const data = deserializePluginDataJsonSchemaFields(plugin.data) as
           | {
+            toolDescription?: unknown;
+            secretSchema?: unknown;
+            children?: Array<{
+              id?: unknown;
+              name?: unknown;
+              description?: unknown;
               toolDescription?: unknown;
-              secretSchema?: unknown;
-              children?: Array<{
-                id?: unknown;
-                name?: unknown;
-                description?: unknown;
-                toolDescription?: unknown;
-              }>;
-            }
+            }>;
+          }
           | undefined;
 
         return ToolListItemSchema.parse({
@@ -1102,12 +1102,12 @@ export class PluginRepo implements PluginRepoPort {
           ...pluginRecord,
           ...(pending
             ? {
-                status: PluginStatusEnum.pending,
-                expiredAt: pendingExpiresAt
-              }
+              status: PluginStatusEnum.pending,
+              expiredAt: pendingExpiresAt
+            }
             : {
-                status: PluginStatusEnum.disabled
-              })
+              status: PluginStatusEnum.disabled
+            })
         });
         installedPlugin = createdPlugin.toObject();
         activateInstalledPlugin = !pending;
@@ -1135,12 +1135,12 @@ export class PluginRepo implements PluginRepoPort {
     const publicSaveTasks = [
       ...(files.readme && READMEStream
         ? [
-            this.deps.publicRemoteFileStorageRepo.save({
-              ...files.readme.metaData,
-              fileKey: this.getFileKey(uniqueId, ['README.md'], pending),
-              file: READMEStream
-            })
-          ]
+          this.deps.publicRemoteFileStorageRepo.save({
+            ...files.readme.metaData,
+            fileKey: this.getFileKey(uniqueId, ['README.md'], pending),
+            file: READMEStream
+          })
+        ]
         : []),
       ...(files.logos ?? []).map(async (logo) => {
         const [stream, err] = await logo.fileStream;
@@ -1194,10 +1194,10 @@ export class PluginRepo implements PluginRepoPort {
         const ttlResults = await Promise.all([
           publicFileKeys.length
             ? this.deps.fileTTLManager.setExpiration(
-                publicFileKeys,
-                this.deps.publicRemoteFileStorageRepo.getBucketName(),
-                pendingExpiresAt
-              )
+              publicFileKeys,
+              this.deps.publicRemoteFileStorageRepo.getBucketName(),
+              pendingExpiresAt
+            )
             : successResult({}),
           this.deps.fileTTLManager.setExpiration(
             [this.getFileKey(uniqueId, ['index.js'], pending)],
