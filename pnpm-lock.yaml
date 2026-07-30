@@ -10,8 +10,8 @@ catalogs:
       specifier: ^0.0.1-alpha.2
       version: 0.0.1-alpha.2
     '@fastgpt-sdk/storage':
-      specifier: ^0.6.14
-      version: 0.6.15
+      specifier: ^0.9.0
+      version: 0.9.0
     tsdown:
       specifier: ^0.21.10
       version: 0.21.10
@@ -205,7 +205,7 @@ importers:
         version: 0.0.1-alpha.2
       '@fastgpt-sdk/storage':
         specifier: 'catalog:'
-        version: 0.6.15(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
+        version: 0.9.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
       '@hono/node-server':
         specifier: ^1.19.9
         version: 1.19.10(hono@4.12.25)
@@ -263,8 +263,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@fastgpt-sdk/storage':
-        specifier: ^0.7.0
-        version: 0.7.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
+        specifier: 'catalog:'
+        version: 0.9.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
       '@scalar/hono-api-reference':
         specifier: ^0.9.40
         version: 0.9.48(hono@4.12.25)
@@ -1234,12 +1234,8 @@ packages:
     resolution: {integrity: sha512-hmyETTNx0BCCVrlhhhiHouSQ5YYqhYr7WFbFDbODEdepGA+hUHdx82J7grWjyqRU/tSAAkPVHr6LRhBGtXIinw==}
     engines: {node: '>=20.19.0', pnpm: 10.x}
 
-  '@fastgpt-sdk/storage@0.6.15':
-    resolution: {integrity: sha512-oPbm6EtXQ3ysad/OebF2ovwbIax6PeCvYqA3cGAVEHEJMBU3633ktl1ZaIIkmyjWJLsABZpMf6m7lPBMyISGrA==}
-    engines: {node: '>=20'}
-
-  '@fastgpt-sdk/storage@0.7.0':
-    resolution: {integrity: sha512-xJLDO0F0gTfREaMjQ8HLS1pg2eiLHyo5KTRJHZmefk8Rsmu5kHBDW+PcCWcHiAtSctLwOdhWhYjBxPGpYjKvbw==}
+  '@fastgpt-sdk/storage@0.9.0':
+    resolution: {integrity: sha512-VuEH4gnnbW2NYTOixn/m+5IgiikZgSGdo+kZcaNaTRGa3NNs97xAJXShxBKw3OzJP8xT0r9E8k5wWs7y5pD9ug==}
     engines: {node: '>=20.19.0', pnpm: 10.x}
 
   '@hono/node-server@1.19.10':
@@ -5927,42 +5923,14 @@ snapshots:
       '@opentelemetry/sdk-trace-node': 2.7.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.40.0
 
-  '@fastgpt-sdk/storage@0.6.15(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))':
+  '@fastgpt-sdk/storage@0.9.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@aws-sdk/client-s3': 3.1017.0
       '@aws-sdk/lib-storage': 3.1017.0(@aws-sdk/client-s3@3.1017.0)
       '@aws-sdk/s3-request-presigner': 3.1017.0
       ali-oss: 6.23.0
       cos-nodejs-sdk-v5: 2.15.4
-      es-toolkit: 1.45.0
-      minio: 8.0.7
-      vitest: 4.1.8(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
-    transitivePeerDependencies:
-      - '@edge-runtime/vm'
-      - '@opentelemetry/api'
-      - '@types/node'
-      - '@vitest/browser-playwright'
-      - '@vitest/browser-preview'
-      - '@vitest/browser-webdriverio'
-      - '@vitest/coverage-istanbul'
-      - '@vitest/coverage-v8'
-      - '@vitest/ui'
-      - aws-crt
-      - happy-dom
-      - jsdom
-      - msw
-      - proxy-agent
-      - supports-color
-      - vite
-
-  '@fastgpt-sdk/storage@0.7.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))':
-    dependencies:
-      '@aws-sdk/client-s3': 3.1017.0
-      '@aws-sdk/lib-storage': 3.1017.0(@aws-sdk/client-s3@3.1017.0)
-      '@aws-sdk/s3-request-presigner': 3.1017.0
-      ali-oss: 6.23.0
-      cos-nodejs-sdk-v5: 2.15.4
-      es-toolkit: 1.45.0
+      es-toolkit: 1.47.0
       minio: 8.0.7
       vitest: 4.1.8(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@3.1.2(vitest@3.2.6(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))(vite@7.3.5(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
     transitivePeerDependencies:
