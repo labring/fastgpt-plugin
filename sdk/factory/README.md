@@ -34,7 +34,8 @@ import z from 'zod';
 const handler = createToolHandler({
   inputSchema: z.object({
     text: z.string().meta({
-      title: 'Text'
+      title: 'Text',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -83,7 +84,8 @@ Defines a tool handler and infers `input`, `output`, and `secrets` types from Zo
 const handler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
-      title: 'Query'
+      title: 'Query',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -144,7 +146,8 @@ Defines a tool set with multiple child tools. All child tools share the top-leve
 const searchHandler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
-      title: 'Query'
+      title: 'Query',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -158,7 +161,8 @@ const searchHandler = createToolHandler({
 const summaryHandler = createToolHandler({
   inputSchema: z.object({
     content: z.string().meta({
-      title: 'Content'
+      title: 'Content',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -240,9 +244,9 @@ export default defineToolSet({
 
 A single tool can declare `secretSchema` in its handler. A tool set can declare a shared `secretSchema` at the top level of `defineToolSet()`.
 
-Schema 字段元数据通过 Zod `.meta()` 写入构建后的 JSON Schema。输入字段使用 `InputSchemaMetaType`，输出字段使用 `OutputSchemaMetaType`，密钥字段使用 `SecretSchemaMetaType`。`secretSchema` 的每个字段都要包含 `isSecret`，需要加密存储时设为 `true`。
+Schema 字段元数据通过 Zod `.meta()` 写入构建后的 JSON Schema。输入字段使用 `InputSchemaMetaType`，推荐由 AI 托管补充的输入参数可设置 `isToolParam: true`。输出字段使用 `OutputSchemaMetaType`，密钥字段使用 `SecretSchemaMetaType`。`secretSchema` 的每个字段都要包含 `isSecret`，需要加密存储时设为 `true`。
 
-Schema field metadata is written into the built JSON Schema through Zod `.meta()`. Use `InputSchemaMetaType` for input fields, `OutputSchemaMetaType` for output fields, and `SecretSchemaMetaType` for secret fields. Every `secretSchema` field must include `isSecret`; set it to `true` for values that need encrypted storage.
+Schema field metadata is written into the built JSON Schema through Zod `.meta()`. Use `InputSchemaMetaType` for input fields and optionally set `isToolParam: true` for input parameters recommended to be managed by AI. Use `OutputSchemaMetaType` for output fields and `SecretSchemaMetaType` for secret fields. Every `secretSchema` field must include `isSecret`; set it to `true` for values that need encrypted storage.
 
 ```ts
 const secretSchema = z.object({
@@ -259,7 +263,8 @@ const secretSchema = z.object({
 const handler = createToolHandler({
   inputSchema: z.object({
     prompt: z.string().meta({
-      title: 'Prompt'
+      title: 'Prompt',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -286,7 +291,8 @@ Use `ctx.invoke` to call FastGPT host capabilities. The SDK currently exposes fi
 const handler = createToolHandler({
   inputSchema: z.object({
     content: z.string().meta({
-      title: 'Content'
+      title: 'Content',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({

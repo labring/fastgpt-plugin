@@ -9,7 +9,8 @@ import z from 'zod';
 const handler = createToolHandler({
   inputSchema: z.object({
     content: z.string().meta({
-      title: 'Content'
+      title: 'Content',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
