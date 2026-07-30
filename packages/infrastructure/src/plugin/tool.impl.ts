@@ -28,6 +28,8 @@ import { ErrorCode } from '@infrastructure/errors/error.registry';
 import { InvokeManager } from './invoke/invoke.impl';
 import { Semver } from './utils/semver';
 
+type JsonObject = Record<string, unknown>;
+
 export type ToolManagerDeps = {
   pluginRepo: PluginRepoPort;
   pluginRuntimeManager: PluginRuntimeManagerPort;
@@ -40,6 +42,72 @@ export type PluginToolRunPayloadType = {
   systemVar: SystemVarType;
   childId?: string;
 };
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getDescriptionFallback(description: unknown): string | undefined {
+  if (typeof description === 'string' && description.length > 0) {
+    return description;
+  }
+
+  if (!isJsonObject(description)) {
+    return undefined;
+  }
+
+  const en = description.en;
+  return typeof en === 'string' && en.length > 0 ? en : undefined;
+}
+
+function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
+  if (!isJsonObject(inputSchema) || !isJsonObject(inputSchema.properties)) {
+    return inputSchema;
+  }
+
+  const properties = Object.fromEntries(
+    Object.entries(inputSchema.properties).map(([key, property]) => {
+      if (!isJsonObject(property)) {
+        return [key, property];
+      }
+
+      const normalizedProperty = { ...property };
+      const hasToolDescription =
+        typeof normalizedProperty.toolDescription === 'string' &&
+        normalizedProperty.toolDescription.length > 0;
+      const hasIsToolParam = normalizedProperty.isToolParam !== undefined;
+
+      if (hasIsToolParam) {
+        if (!hasToolDescription) {
+          const fallback = getDescriptionFallback(normalizedProperty.description);
+          if (fallback !== undefined) {
+            normalizedProperty.toolDescription = fallback;
+          }
+        }
+
+        return [key, normalizedProperty];
+      }
+
+      if (hasToolDescription) {
+        normalizedProperty.isToolParam = true;
+        return [key, normalizedProperty];
+      }
+
+      const fallback = getDescriptionFallback(normalizedProperty.description);
+      if (fallback !== undefined) {
+        normalizedProperty.toolDescription = fallback;
+      }
+      normalizedProperty.isToolParam = false;
+
+      return [key, normalizedProperty];
+    })
+  );
+
+  return {
+    ...inputSchema,
+    properties
+  };
+}
 
 export class ToolManager implements ToolManagerPort {
   private static instance: ToolManager;
@@ -61,6 +129,11 @@ export class ToolManager implements ToolManagerPort {
   }): ToolDetailType {
     return {
       ...tool,
+      inputSchema: normalizeInputSchemaToolParams(tool.inputSchema),
+      children: tool.children?.map((child) => ({
+        ...child,
+        inputSchema: normalizeInputSchemaToolParams(child.inputSchema)
+      })),
       source,
       isToolset: Boolean(tool.children?.length),
       isLatestVersion

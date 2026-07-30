@@ -33,7 +33,8 @@ const secretSchema = z.object({
 const mysqlHandler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
-      title: 'SQL Query'
+      title: 'SQL Query',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
@@ -62,7 +63,8 @@ const mysqlHandler = createToolHandler({
 const pgsqlHandler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
-      title: 'SQL Query'
+      title: 'SQL Query',
+      isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
