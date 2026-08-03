@@ -346,19 +346,6 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'gpt-4o',
-      maxContext: 128000,
-      maxTokens: 4000,
-      quoteMaxToken: 60000,
-      maxTemperature: 1.2,
-      responseFormatList: ['text', 'json_object', 'json_schema'],
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'o3',
       maxContext: 200000,
       maxTokens: 100000,
