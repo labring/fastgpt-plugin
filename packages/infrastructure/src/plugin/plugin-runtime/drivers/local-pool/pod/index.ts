@@ -469,7 +469,6 @@ export class PluginPod {
     const configuredRuntimeDirectory = path.join(env.LOCAL_FILE_BASE_PATH, 'pods', this.podId);
     const configuredHomeDirectory = path.join(configuredRuntimeDirectory, 'home');
     const configuredTempDirectory = path.join(configuredRuntimeDirectory, 'tmp');
-    const runtimeNodeModules = path.join(env.LOCAL_FILE_BASE_PATH, 'node_modules');
 
     await rm(configuredRuntimeDirectory, { recursive: true, force: true });
     await Promise.all([
@@ -477,8 +476,10 @@ export class PluginPod {
       mkdir(configuredTempDirectory, { recursive: true, mode: 0o700 })
     ]);
     const runtimeDirectory = await realpath(configuredRuntimeDirectory);
+    const runtimeBaseDirectory = await realpath(env.LOCAL_FILE_BASE_PATH);
     const homeDirectory = path.join(runtimeDirectory, 'home');
     const tempDirectory = path.join(runtimeDirectory, 'tmp');
+    const runtimeNodeModules = path.join(runtimeBaseDirectory, 'node_modules');
     this.runtimeDirectory = runtimeDirectory;
     const runtimeReadPaths = await collectRuntimeReadPaths(runtimeNodeModules);
 
@@ -491,6 +492,7 @@ export class PluginPod {
         '--permission',
         `--max-old-space-size=${this.options.maxOldSpaceSizeMb ?? DEFAULT_MAX_OLD_SPACE_SIZE_MB}`,
         `--allow-fs-read=${pluginDirectory}`,
+        `--allow-fs-read=${runtimeNodeModules}`,
         ...runtimeReadPaths.map((readPath) => `--allow-fs-read=${readPath}`),
         `--allow-fs-read=${runtimeDirectory}`,
         `--allow-fs-write=${runtimeDirectory}`

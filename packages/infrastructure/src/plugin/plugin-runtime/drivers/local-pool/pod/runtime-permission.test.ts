@@ -24,10 +24,16 @@ describe.skipIf(process.platform === 'win32')('PluginPod runtime dependency perm
       await mkdtemp(path.join(os.tmpdir(), 'fastgpt-plugin-pod-runtime-'))
     );
     const cacheRoot = path.join(tempRoot, 'cache');
+    const configuredCacheRoot = path.join(os.tmpdir(), path.basename(tempRoot), 'cache');
     const sdkRoot = path.join(tempRoot, 'sdk-factory');
     const sdkNodeModules = path.join(sdkRoot, 'node_modules');
     const dependencyRoot = path.join(tempRoot, 'node_modules', 'runtime-dependency');
-    const siblingSecretPath = path.join(cacheRoot, 'node_modules', 'host-sibling', 'secret.txt');
+    const sharedRuntimeModulePath = path.join(
+      cacheRoot,
+      'node_modules',
+      'host-sibling',
+      'runtime-value.txt'
+    );
     const pluginRoot = path.join(cacheRoot, 'plugin', 'permission-test', '1.0.0', 'etag');
     const pluginPath = path.join(pluginRoot, 'index.js');
     tempRoots.push(tempRoot);
@@ -36,7 +42,7 @@ describe.skipIf(process.platform === 'win32')('PluginPod runtime dependency perm
       mkdir(path.join(sdkRoot, 'dist'), { recursive: true }),
       mkdir(sdkNodeModules, { recursive: true }),
       mkdir(dependencyRoot, { recursive: true }),
-      mkdir(path.dirname(siblingSecretPath), { recursive: true }),
+      mkdir(path.dirname(sharedRuntimeModulePath), { recursive: true }),
       mkdir(pluginRoot, { recursive: true })
     ]);
     await Promise.all([
@@ -61,7 +67,7 @@ describe.skipIf(process.platform === 'win32')('PluginPod runtime dependency perm
         })
       ),
       writeFile(path.join(dependencyRoot, 'index.js'), "export const value = 'runtime-loaded';\n"),
-      writeFile(siblingSecretPath, 'must stay private'),
+      writeFile(sharedRuntimeModulePath, 'runtime modules are readable'),
       writeFile(
         path.join(sdkRoot, 'dist', 'index.js'),
         "export { value as runtimeValue } from 'runtime-dependency';\n"
@@ -72,11 +78,8 @@ describe.skipIf(process.platform === 'win32')('PluginPod runtime dependency perm
           "import { runtimeValue } from '@fastgpt-plugin/sdk-factory';",
           "import { readFileSync } from 'node:fs';",
           "if (runtimeValue !== 'runtime-loaded') throw new Error('Runtime SDK failed to load');",
-          'try {',
-          `  readFileSync(${JSON.stringify(siblingSecretPath)}, 'utf8');`,
-          "  throw new Error('Sibling host dependency was readable');",
-          '} catch (error) {',
-          "  if (error?.code !== 'ERR_ACCESS_DENIED') throw error;",
+          `if (readFileSync(${JSON.stringify(sharedRuntimeModulePath)}, 'utf8') !== 'runtime modules are readable') {`,
+          "  throw new Error('Runtime node_modules was not readable');",
           '}',
           "process.send?.({ protocol: '1.0', method: 'client.ready', params: { pid: process.pid } });",
           "process.on('message', () => {});"
@@ -88,7 +91,7 @@ describe.skipIf(process.platform === 'win32')('PluginPod runtime dependency perm
     process.env.FASTGPT_PLUGIN_SDK_FACTORY_PATH = sdkRoot;
     vi.doMock('@infrastructure/env', () => ({
       env: {
-        LOCAL_FILE_BASE_PATH: cacheRoot
+        LOCAL_FILE_BASE_PATH: configuredCacheRoot
       }
     }));
 
