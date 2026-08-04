@@ -11,14 +11,22 @@ import {
 import { StreamData } from '@domain/value-objects/stream.vo';
 
 import {
+  PluginChannelClientMethod,
+  PluginChannelClientRequestParamsSchema,
   PluginChannelCommonMethod,
   type PluginChannelError,
   PluginChannelErrorCode,
+  PluginChannelFailParamsSchema,
+  PluginChannelHostMethod,
+  PluginChannelHostRequestParamsSchema,
   type PluginChannelIncomingStream,
   type PluginChannelMessage,
   type PluginChannelMessageId,
+  PluginChannelMessageSchema,
   type PluginChannelNotificationHandler,
   type PluginChannelNotificationMessage,
+  PluginChannelPingParamsSchema,
+  PluginChannelReadyParamsSchema,
   type PluginChannelReceiveNotificationMap,
   type PluginChannelReceiveRequestMap,
   type PluginChannelRequestHandler,
@@ -27,13 +35,16 @@ import {
   type PluginChannelRequestResult,
   type PluginChannelSendNotificationMap,
   type PluginChannelSendRequestMap,
+  PluginChannelShutdownParamsSchema,
   type PluginChannelSide,
   type PluginChannelSideNotificationParams,
   type PluginChannelSideRequestInput,
   type PluginChannelSideRequestOutput,
   type PluginChannelSideRequestParams,
   type PluginChannelSideRequestResultData,
+  PluginChannelStdioParamsSchema,
   type PluginChannelStreamFrame,
+  PluginChannelStreamFrameSchema,
   type PluginChannelStreamOptions,
   type PluginChannelStreamSource,
   type PluginChannelWritableStream,
@@ -129,7 +140,26 @@ export class PluginIpcRuntimeChannel<TSide extends PluginChannelSide>
     private readonly endpoint: PluginIpcEndpoint,
     private readonly options: PluginIpcRuntimeChannelOptions = {}
   ) {
-    this.unsubscribeMessage = subscribeToIpcMessages(endpoint, (message) => {
+    this.unsubscribeMessage = subscribeToIpcMessages(endpoint, (rawMessage) => {
+      const message = parsePluginChannelMessage(rawMessage);
+      if (!message || !isIncomingMessageAllowed(this.side, message)) {
+        this.emitError(
+          Object.assign(new Error('Invalid IPC channel message'), {
+            code: PluginChannelErrorCode.invalidMessage
+          })
+        );
+        return;
+      }
+
+      if (!hasValidIncomingParams(this.side, message)) {
+        this.emitError(
+          Object.assign(new Error('Invalid IPC channel message params'), {
+            code: PluginChannelErrorCode.invalidParams
+          })
+        );
+        return;
+      }
+
       void this.dispatch(message).catch((error) => {
         this.emitError(error instanceof Error ? error : new Error(String(error)));
       });
@@ -452,12 +482,12 @@ export class PluginIpcRuntimeChannel<TSide extends PluginChannelSide>
     clearTimeout(pending.timer);
     this.pending.delete(message.id);
 
-    if ('error' in message) {
+    if ('error' in message && message.error !== undefined) {
       pending.reject(toError(message.error));
       return;
     }
 
-    pending.resolve(decodeChannelResult(message.result));
+    pending.resolve(decodeChannelResult('result' in message ? message.result : undefined));
   }
 
   private async handleRequest(message: PluginChannelRequestMessage): Promise<void> {
@@ -678,14 +708,10 @@ export function createCurrentProcessPluginChannel(
 
 function subscribeToIpcMessages(
   endpoint: PluginIpcEndpoint,
-  handler: (message: PluginChannelMessage) => void
+  handler: (message: unknown) => void
 ): () => void {
   const port = endpoint as unknown as IpcPortLike;
-  const listener: IpcMessageListener = (message) => {
-    if (isPluginChannelMessage(message)) {
-      handler(message);
-    }
-  };
+  const listener: IpcMessageListener = (message) => handler(message);
   port.on('message', listener);
   return () => port.off('message', listener);
 }
@@ -707,16 +733,87 @@ function sendIpcMessage(endpoint: PluginIpcEndpoint, message: PluginChannelMessa
   });
 }
 
-function isPluginChannelMessage(value: unknown): value is PluginChannelMessage {
-  return Boolean(value && typeof value === 'object' && 'protocol' in value);
-}
-
 function isRequestMessage(message: PluginChannelMessage): message is PluginChannelRequestMessage {
   return 'id' in message && 'method' in message;
 }
 
 function isResponseMessage(message: PluginChannelMessage): message is PluginChannelResponseMessage {
   return 'id' in message && !('method' in message) && ('result' in message || 'error' in message);
+}
+
+function isIncomingMessageAllowed(
+  side: PluginChannelSide,
+  message: PluginChannelMessage
+): boolean {
+  if (isResponseMessage(message)) {
+    return true;
+  }
+
+  if (isRequestMessage(message)) {
+    return side === 'host'
+      ? message.method === PluginChannelClientMethod.request
+      : Object.values(PluginChannelHostMethod).includes(
+          message.method as (typeof PluginChannelHostMethod)[keyof typeof PluginChannelHostMethod]
+        );
+  }
+
+  return side === 'host'
+    ? message.method === PluginChannelCommonMethod.streamFrame ||
+        message.method === PluginChannelClientMethod.ready ||
+        message.method === PluginChannelClientMethod.stdio ||
+        message.method === PluginChannelClientMethod.fail
+    : message.method === PluginChannelCommonMethod.streamFrame;
+}
+
+function parsePluginChannelMessage(rawMessage: unknown): PluginChannelMessage | null {
+  try {
+    const parsed = PluginChannelMessageSchema.safeParse(rawMessage);
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function hasValidIncomingParams(
+  side: PluginChannelSide,
+  message: PluginChannelMessage
+): boolean {
+  if (isResponseMessage(message)) {
+    return true;
+  }
+
+  try {
+    if (message.method === PluginChannelCommonMethod.streamFrame) {
+      return PluginChannelStreamFrameSchema.safeParse(message.params).success;
+    }
+
+    if (side === 'host') {
+      switch (message.method) {
+        case PluginChannelClientMethod.request:
+          return PluginChannelClientRequestParamsSchema.safeParse(message.params).success;
+        case PluginChannelClientMethod.ready:
+          return PluginChannelReadyParamsSchema.optional().safeParse(message.params).success;
+        case PluginChannelClientMethod.stdio:
+          return PluginChannelStdioParamsSchema.safeParse(message.params).success;
+        case PluginChannelClientMethod.fail:
+          return PluginChannelFailParamsSchema.safeParse(message.params).success;
+      }
+      return false;
+    }
+
+    switch (message.method) {
+      case PluginChannelHostMethod.request:
+        return PluginChannelHostRequestParamsSchema.safeParse(message.params).success;
+      case PluginChannelHostMethod.ping:
+        return PluginChannelPingParamsSchema.safeParse(message.params).success;
+      case PluginChannelHostMethod.shutdown:
+        return PluginChannelShutdownParamsSchema.safeParse(message.params).success;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
 }
 
 function isChannelReplyDescriptor(value: unknown): value is ChannelReplyDescriptor {

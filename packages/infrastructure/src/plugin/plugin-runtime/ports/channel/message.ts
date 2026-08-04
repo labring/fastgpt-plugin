@@ -23,13 +23,11 @@ export type PluginChannelError = {
   cause?: PluginChannelError;
 };
 
-export const PluginChannelErrorSchema: z.ZodType<PluginChannelError> = z.object({
-  code: z.string(),
-  message: z.string(),
-  reason: I18nStringSchema.optional(),
-  data: z.unknown().optional(),
-  cause: z.lazy(() => PluginChannelErrorSchema).optional()
-});
+const MAX_PLUGIN_CHANNEL_ERROR_CAUSE_DEPTH = 8;
+
+export const PluginChannelErrorSchema = createPluginChannelErrorSchema(
+  MAX_PLUGIN_CHANNEL_ERROR_CAUSE_DEPTH
+);
 
 export const PluginChannelErrorCode = {
   parseError: 'PARSE_ERROR',
@@ -48,14 +46,16 @@ export const PluginChannelErrorCode = {
  * `method` 的合法集合由 `event/` 里的方向化类型控制；这里保持 string 是为了让
  * 底层协议可以承载未来扩展的 method。
  */
-export const PluginChannelRequestMessageSchema = z.object({
-  protocol: PluginChannelProtocolVersionSchema,
-  id: PluginChannelMessageIdSchema,
-  method: z.string(),
-  params: z.unknown().optional(),
-  traceId: z.string().optional(),
-  timestamp: z.number().optional()
-});
+export const PluginChannelRequestMessageSchema = z
+  .object({
+    protocol: PluginChannelProtocolVersionSchema,
+    id: PluginChannelMessageIdSchema,
+    method: z.string(),
+    params: z.unknown().optional(),
+    traceId: z.string().optional(),
+    timestamp: z.number().optional()
+  })
+  .strict();
 export type PluginChannelRequestMessage = z.infer<typeof PluginChannelRequestMessageSchema>;
 
 /**
@@ -76,32 +76,36 @@ export type PluginChannelNotificationMessage = z.infer<
  * 流式输出不会直接塞进 `result`，而是先返回一个 stream descriptor/envelope，
  * 再通过 `channel.stream` notification 发送 chunk。
  */
-export const PluginChannelSuccessMessageSchema = z.object({
-  protocol: PluginChannelProtocolVersionSchema,
-  id: PluginChannelMessageIdSchema,
-  result: z.unknown().optional(),
-  traceId: z.string().optional(),
-  timestamp: z.number().optional()
-});
+export const PluginChannelSuccessMessageSchema = z
+  .object({
+    protocol: PluginChannelProtocolVersionSchema,
+    id: PluginChannelMessageIdSchema,
+    result: z.unknown().optional(),
+    traceId: z.string().optional(),
+    timestamp: z.number().optional()
+  })
+  .strict();
 export type PluginChannelSuccessMessage = z.infer<typeof PluginChannelSuccessMessageSchema>;
 
 /**
  * error message：request 的失败响应。
  */
-export const PluginChannelErrorMessageSchema = z.object({
-  protocol: PluginChannelProtocolVersionSchema,
-  id: PluginChannelMessageIdSchema,
-  error: PluginChannelErrorSchema,
-  traceId: z.string().optional(),
-  timestamp: z.number().optional()
-});
+export const PluginChannelErrorMessageSchema = z
+  .object({
+    protocol: PluginChannelProtocolVersionSchema,
+    id: PluginChannelMessageIdSchema,
+    error: PluginChannelErrorSchema,
+    traceId: z.string().optional(),
+    timestamp: z.number().optional()
+  })
+  .strict();
 export type PluginChannelErrorMessage = z.infer<typeof PluginChannelErrorMessageSchema>;
 
 export const PluginChannelMessageSchema = z.union([
   PluginChannelRequestMessageSchema,
   PluginChannelNotificationMessageSchema,
-  PluginChannelSuccessMessageSchema,
-  PluginChannelErrorMessageSchema
+  PluginChannelErrorMessageSchema,
+  PluginChannelSuccessMessageSchema
 ]);
 export type PluginChannelMessage = z.infer<typeof PluginChannelMessageSchema>;
 
@@ -122,11 +126,13 @@ export const PluginChannelMessageKind = {
   error: 'error'
 } as const;
 
-export const PluginChannelStreamDescriptorSchema = z.object({
-  streamId: z.string(),
-  streamName: z.string(),
-  meta: z.unknown().optional()
-});
+export const PluginChannelStreamDescriptorSchema = z
+  .object({
+    streamId: z.string(),
+    streamName: z.string(),
+    meta: z.unknown().optional()
+  })
+  .strict();
 export type PluginChannelStreamDescriptor = z.infer<typeof PluginChannelStreamDescriptorSchema>;
 
 /**
@@ -136,26 +142,34 @@ export type PluginChannelStreamDescriptor = z.infer<typeof PluginChannelStreamDe
  * unknown，由具体事件类型决定真实数据结构。
  */
 export const PluginChannelStreamFrameSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('start'),
-    streamId: z.string(),
-    streamName: z.string(),
-    meta: z.unknown().optional()
-  }),
-  z.object({
-    type: z.literal('chunk'),
-    streamId: z.string(),
-    chunk: z.unknown()
-  }),
-  z.object({
-    type: z.literal('end'),
-    streamId: z.string()
-  }),
-  z.object({
-    type: z.literal('error'),
-    streamId: z.string(),
-    error: PluginChannelErrorSchema
-  })
+  z
+    .object({
+      type: z.literal('start'),
+      streamId: z.string(),
+      streamName: z.string(),
+      meta: z.unknown().optional()
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('chunk'),
+      streamId: z.string(),
+      chunk: z.unknown()
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('end'),
+      streamId: z.string()
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('error'),
+      streamId: z.string(),
+      error: PluginChannelErrorSchema
+    })
+    .strict()
 ]);
 export type PluginChannelStreamFrame = z.infer<typeof PluginChannelStreamFrameSchema>;
 
@@ -184,6 +198,22 @@ export interface PluginChannelWritableStream<T = unknown> extends PluginChannelS
   write(chunk: T): Promise<void>;
   end(): Promise<void>;
   fail(error: PluginChannelError | Error | string): Promise<void>;
+}
+
+function createPluginChannelErrorSchema(maxCauseDepth: number): z.ZodType<PluginChannelError> {
+  let causeSchema: z.ZodType<PluginChannelError> | null = null;
+
+  for (let depth = maxCauseDepth; depth >= 0; depth--) {
+    causeSchema = z.object({
+      code: z.string(),
+      message: z.string(),
+      reason: I18nStringSchema.optional(),
+      data: z.unknown().optional(),
+      cause: causeSchema?.optional() ?? z.never().optional()
+    }) as z.ZodType<PluginChannelError>;
+  }
+
+  return causeSchema!;
 }
 
 /**

@@ -44,6 +44,9 @@ type LegacyStreamInput = {
   stream: Readable;
 };
 
+const PRIVATE_DIRECTORY_MODE = 0o700;
+const PRIVATE_FILE_MODE = 0o600;
+
 export class LocalFileStorageRepo implements LocalFileStoragePort {
   private static _instance: LocalFileStorageRepo;
 
@@ -55,7 +58,7 @@ export class LocalFileStorageRepo implements LocalFileStoragePort {
     // Ensure base path exists
     // clean the base path on initialization to avoid stale files from previous runs
     await rm(this.basePath, { recursive: true, force: true });
-    await mkdir(this.basePath, { recursive: true });
+    await mkdir(this.basePath, { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
   }
 
   static getInstance(): LocalFileStorageRepo {
@@ -72,8 +75,11 @@ export class LocalFileStorageRepo implements LocalFileStoragePort {
     const lockPath = this.getLockPath(absolutePath);
 
     try {
-      await mkdir(path.dirname(absolutePath), { recursive: true });
-      const lockHandle = await open(lockPath, 'wx');
+      await mkdir(path.dirname(absolutePath), {
+        recursive: true,
+        mode: PRIVATE_DIRECTORY_MODE
+      });
+      const lockHandle = await open(lockPath, 'wx', PRIVATE_FILE_MODE);
 
       let released = false;
       const release = () => {
@@ -84,7 +90,7 @@ export class LocalFileStorageRepo implements LocalFileStoragePort {
         void rm(lockPath, { force: true }).catch(() => {});
       };
 
-      const stream = createWriteStream(absolutePath);
+      const stream = createWriteStream(absolutePath, { mode: PRIVATE_FILE_MODE });
       stream.once('close', release);
       stream.once('error', release);
 
@@ -146,13 +152,16 @@ export class LocalFileStorageRepo implements LocalFileStoragePort {
         });
       }
 
-      await mkdir(path.dirname(absolutePath), { recursive: true });
+      await mkdir(path.dirname(absolutePath), {
+        recursive: true,
+        mode: PRIVATE_DIRECTORY_MODE
+      });
 
       const file = this.normalizeFileInput(input.file);
 
       let metaData: FileMetaType;
       if (Buffer.isBuffer(file)) {
-        await writeFile(absolutePath, file);
+        await writeFile(absolutePath, file, { mode: PRIVATE_FILE_MODE });
 
         metaData = FileMetaSchema.parse({
           fileKey: relativeFileKey,
@@ -341,7 +350,10 @@ export class LocalFileStorageRepo implements LocalFileStoragePort {
     const targetPath = this.resolveStoragePath(newFileKey);
 
     try {
-      await mkdir(path.dirname(targetPath), { recursive: true });
+      await mkdir(path.dirname(targetPath), {
+        recursive: true,
+        mode: PRIVATE_DIRECTORY_MODE
+      });
       await rename(sourcePath, targetPath);
 
       const sourceMetaPath = this.getMetaPath(sourcePath);
@@ -477,7 +489,10 @@ export class LocalFileStorageRepo implements LocalFileStoragePort {
       createTime: metaData.createTime.toISOString()
     };
 
-    await writeFile(this.getMetaPath(targetPath), JSON.stringify(persistedMeta, null, 2), 'utf8');
+    await writeFile(this.getMetaPath(targetPath), JSON.stringify(persistedMeta, null, 2), {
+      encoding: 'utf8',
+      mode: PRIVATE_FILE_MODE
+    });
   }
 
   private async readPersistedMeta(targetPath: string): Promise<PersistedMeta | null> {

@@ -12,6 +12,8 @@ export const LOCAL_POOL_DEFAULT_PLUGIN_CONFIG: LocalPoolPluginConfigType = {
 export const LOCAL_POOL_GLOBAL_SERVICE_CONFIG: LocalPoolGlobalServiceConfigType = {
   idleTimeout: env.POOL_SERVICE_IDLE_TIMEOUT,
   maxRequestsPerPod: env.POOL_SERVICE_MAX_REQUESTS_PER_POD,
+  maxOldSpaceSizeMb: env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB,
+  terminationGracePeriod: env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD,
   maxQueueSize: env.POOL_SERVICE_MAX_QUEUE_SIZE,
   queueTimeout: env.POOL_SERVICE_QUEUE_TIMEOUT,
   startupRetryBaseDelay: env.POOL_SERVICE_STARTUP_RETRY_BASE_DELAY,
