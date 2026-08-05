@@ -218,6 +218,8 @@ Connection Gateway 的长连接协议、session、mailbox、owner lease 和资�
 | `POOL_SERVICE_POD_TIMEOUT` | 单次插件调用执行超时时间，单位为毫秒。 |
 | `POOL_SERVICE_MAX_CONCURRENT_REQUESTS_PER_POD` | 单个 Pod 默认最大并发请求数。 |
 | `POOL_SERVICE_MAX_REQUESTS_PER_POD` | 单个 Pod 最大处理请求数；超过后自动替换，用于降低长期运行导致的内存泄露风险。 |
+| `POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB` | 单个 Pod 进程的 V8 old space 上限，单位为 MB。 |
+| `POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD` | 从 `SIGTERM` 到强制 `SIGKILL` 的等待时间，单位为毫秒。 |
 | `POOL_SERVICE_MAX_QUEUE_SIZE` | 单插件 service 请求队列最大容量；超过后拒绝新请求。 |
 | `POOL_SERVICE_QUEUE_TIMEOUT` | 请求在队列中等待可用 Pod 的最长时间，单位为毫秒。 |
 | `POOL_SERVICE_STARTUP_RETRY_BASE_DELAY` | Pod 启动超时后的指数退避基础延迟，单位为毫秒。 |
@@ -228,3 +230,11 @@ Connection Gateway 的长连接协议、session、mailbox、owner lease 和资�
 | `CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS` | 远程调试调用等待 CLI 响应的超时时间。 |
 
 Pod 启动错误会被记录并分类。连续非超时启动失败达到阈值后会触发启动熔断，阻止继续创建 Pod；启动超时按资源繁忙处理，会进入指数退避后重试。详细调度、回收和指标设计见 [进程池设计文档](./process-pool-design.zh.md)。
+
+### 本地运行时安全边界
+
+local-pool 为每个 Pod 设置明确的工作目录、最小环境变量、独立 home/tmp 目录、V8 old space 上限和 Node.js 文件系统权限。IPC 消息经过 schema 校验，插件反向调用宿主能力时按 manifest 权限授权。Pod 关闭时会终止整个 POSIX 进程组，并在宽限期结束后从 `SIGTERM` 升级为 `SIGKILL`。
+
+生产镜像中的 `/app` 由 root 持有，`fastgpt` 用户只读访问。运行时 cache 写入独立的 `LOCAL_FILE_BASE_PATH`，镜像默认路径为 `/runtime/cache/fastgpt-plugin`。cache 目录权限为 `0700`，cache 文件权限为 `0600`。
+
+Node.js 文件系统权限不限制网络访问，安装 URL 的 SSRF 校验只覆盖插件包下载。使用 local-pool 的部署需要在进程或容器网络边界强制执行运行时 SSRF 防护，例如 network namespace 或透明 egress proxy；该边界应在 DNS 解析后以及重定向时拦截 loopback、link-local、内网、metadata 和 IPv6 ULA 地址。CPU、进程总数和总内存硬限制需要由容器或 cgroup 提供，V8 heap 上限只约束托管堆内存。

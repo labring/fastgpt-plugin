@@ -368,6 +368,10 @@ importers:
         version: 0.21.10(typescript@5.9.3)
 
   sdk/factory:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.3.6
     devDependencies:
       tsdown:
         specifier: 'catalog:'

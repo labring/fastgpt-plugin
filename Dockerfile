@@ -62,15 +62,21 @@ RUN apk add --no-cache \
     curl ca-certificates \
     && update-ca-certificates \
     && addgroup -S fastgpt \
-    && adduser -S -G fastgpt fastgpt
+    && adduser -S -G fastgpt fastgpt \
+    && mkdir -p /runtime/cache \
+    && chown fastgpt:fastgpt /runtime/cache \
+    && chmod 0700 /runtime/cache
 
-COPY --from=prod-deps --chown=fastgpt:fastgpt /app/node_modules /app/node_modules
-COPY --from=prod-deps --chown=fastgpt:fastgpt /app/apps/server/node_modules ./node_modules
-COPY --from=prod-deps --chown=fastgpt:fastgpt /app/apps/server/package.json ./package.json
-COPY --from=builder --chown=fastgpt:fastgpt /app/apps/server/dist ./dist
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=prod-deps /app/apps/server/node_modules ./node_modules
+COPY --from=prod-deps /app/apps/server/package.json ./package.json
+COPY --from=builder /app/apps/server/dist ./dist
+
+RUN chmod -R go-w /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV LOCAL_FILE_BASE_PATH=/runtime/cache/fastgpt-plugin
 EXPOSE 3000
 
 ENV serverPath=./dist/main.js

@@ -1,11 +1,11 @@
 import { EventEmitter } from 'node:events';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createError, createReasonError, RegisteredError } from '@domain/value-objects/error.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
-import { PluginChannelHostMethod } from '../../ports/channel';
+import { PluginChannelClientMethod, PluginChannelHostMethod } from '../../ports/channel';
 
 import { PluginIpcRuntimeChannel } from './ipc';
 
@@ -29,9 +29,128 @@ function createChannelPair() {
 
   return {
     host: new PluginIpcRuntimeChannel('host', hostEndpoint as never),
-    client: new PluginIpcRuntimeChannel('client', clientEndpoint as never)
+    client: new PluginIpcRuntimeChannel('client', clientEndpoint as never),
+    hostEndpoint,
+    clientEndpoint
   };
 }
+
+describe('PluginIpcRuntimeChannel validation', () => {
+  it('rejects invalid protocol envelopes before dispatch', async () => {
+    const { host, hostEndpoint } = createChannelPair();
+    const requestHandler = vi.fn();
+    const errorHandler = vi.fn();
+    host.setRequestHandler(requestHandler);
+    host.onError(errorHandler);
+
+    hostEndpoint.emit('message', {
+      protocol: '2.0',
+      id: 'invalid-request',
+      method: 'client.request',
+      params: {
+        method: 'userInfo',
+        args: {}
+      }
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(requestHandler).not.toHaveBeenCalled();
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'INVALID_MESSAGE',
+        message: 'Invalid IPC channel message'
+      })
+    );
+
+    await host.close();
+  });
+
+  it('rejects methods sent in the wrong direction', async () => {
+    const { host, hostEndpoint } = createChannelPair();
+    const requestHandler = vi.fn();
+    const errorHandler = vi.fn();
+    host.setRequestHandler(requestHandler);
+    host.onError(errorHandler);
+
+    hostEndpoint.emit('message', {
+      protocol: '1.0',
+      id: 'wrong-direction',
+      method: PluginChannelHostMethod.request,
+      params: {
+        eventName: 'run',
+        payload: {}
+      }
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(requestHandler).not.toHaveBeenCalled();
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'INVALID_MESSAGE',
+        message: 'Invalid IPC channel message'
+      })
+    );
+
+    await host.close();
+  });
+
+  it('rejects invalid method params before dispatch', async () => {
+    const { host, hostEndpoint } = createChannelPair();
+    const notificationHandler = vi.fn();
+    const errorHandler = vi.fn();
+    host.setNotificationHandler(notificationHandler);
+    host.onError(errorHandler);
+
+    hostEndpoint.emit('message', {
+      protocol: '1.0',
+      method: PluginChannelClientMethod.stdio,
+      params: {
+        stream: 'stdout',
+        chunk: 42
+      }
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(notificationHandler).not.toHaveBeenCalled();
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'INVALID_PARAMS',
+        message: 'Invalid IPC channel message params'
+      })
+    );
+
+    await host.close();
+  });
+
+  it('rejects cyclic error causes without throwing from the IPC listener', async () => {
+    const { host, hostEndpoint } = createChannelPair();
+    const errorHandler = vi.fn();
+    host.onError(errorHandler);
+    const cyclicError: Record<string, unknown> = {
+      code: 'CYCLIC_ERROR',
+      message: 'cyclic error'
+    };
+    cyclicError.cause = cyclicError;
+
+    expect(() =>
+      hostEndpoint.emit('message', {
+        protocol: '1.0',
+        id: 'cyclic-error',
+        error: cyclicError
+      })
+    ).not.toThrow();
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'INVALID_MESSAGE',
+        message: 'Invalid IPC channel message'
+      })
+    );
+
+    await host.close();
+  });
+});
 
 describe('PluginIpcRuntimeChannel errors', () => {
   it('round-trips registered errors with cause through request failures', async () => {

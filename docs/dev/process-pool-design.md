@@ -310,6 +310,8 @@ Constraints:
 | --- | --- | --- | --- |
 | `idleTimeout` | `POOL_SERVICE_IDLE_TIMEOUT` | `60000` | Pod idle recycle time in ms |
 | `maxRequestsPerPod` | `POOL_SERVICE_MAX_REQUESTS_PER_POD` | `100` | Maximum requests one Pod can process; `0` disables count-based recycling |
+| `maxOldSpaceSizeMb` | `POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB` | `512` | V8 old-space limit for one Pod process in MB |
+| `terminationGracePeriod` | `POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD` | `5000` | Delay between `SIGTERM` and forced `SIGKILL` in ms |
 | `maxQueueSize` | `POOL_SERVICE_MAX_QUEUE_SIZE` | `500` | Queue length limit for one service |
 | `queueTimeout` | `POOL_SERVICE_QUEUE_TIMEOUT` | `60000` | Queue wait timeout in ms |
 | `startupRetryBaseDelay` | `POOL_SERVICE_STARTUP_RETRY_BASE_DELAY` | `1000` | Startup timeout exponential backoff base time in ms |
@@ -366,9 +368,21 @@ client.request(method, args)
 
 The host locates the corresponding `InvokePort` by `invocationId`. Current reverse host capabilities include:
 
-- `uploadFile`
-- `userInfo`
-- `wecomCorpToken`
+- `uploadFile` requires `file-upload:allow`.
+- `userInfo` requires `userInfo:read`.
+- `wecomCorpToken` requires `teamInfo:read`.
+
+Incoming IPC envelopes are parsed against `PluginChannelMessageSchema`. Invalid or directionally unsupported messages fail closed before dispatch.
+
+## Pod Security And Resource Boundary
+
+Each fork uses the plugin directory as `cwd`, ignores stdin, passes a minimal environment, and assigns a private home/tmp directory under the Pod runtime directory. Explicit `execArgv` enables the Node.js Permission Model, grants read access to the plugin entry and runtime SDK, grants write access only to the Pod runtime directory, disables child-process creation, and applies the configured V8 old-space limit.
+
+The production image keeps `/app`, `dist`, and `node_modules` root-owned. The `fastgpt` process writes plugin packages and Pod scratch data beneath `LOCAL_FILE_BASE_PATH`; the image places this under `/runtime/cache`. The storage repository creates directories with mode `0700` and files with mode `0600`. When mounting a volume, mount the writable parent and configure `LOCAL_FILE_BASE_PATH` as a child so initialization can remove and recreate the cache root.
+
+On POSIX systems, a Pod starts in its own process group. Shutdown sends `SIGTERM` to that group, waits `terminationGracePeriod`, and sends `SIGKILL` if descendants remain. Container or cgroup PID limits remain the hard process-count boundary.
+
+The Node.js Permission Model does not govern networking. `DISABLE_SSRF_CHECK` and `ALLOWED_INSTALL_HOSTS` protect installation downloads only. Runtime SSRF protection is a deployment requirement for local-pool and must be enforced below plugin code through a network namespace, transparent egress proxy, or equivalent policy that validates resolved addresses and redirects. This enforcement blocks loopback, link-local, private, metadata, and IPv6 ULA destinations while allowing public destinations without a hostname allowlist.
 
 ## Metrics And Observability
 

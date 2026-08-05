@@ -2,7 +2,10 @@ import z from 'zod';
 
 import type { InvokeMethodType } from '@domain/ports/invoke.port';
 
-import type { PluginChannelStreamDescriptor } from '../message';
+import {
+  type PluginChannelStreamDescriptor,
+  PluginChannelStreamDescriptorSchema
+} from '../message';
 
 import type { PluginChannelNotificationSpec, PluginChannelRpcSpec } from './common';
 
@@ -39,36 +42,43 @@ export const PluginChannelClientMethodSchema = z.enum([
 ]);
 export type PluginChannelClientMethodType = z.infer<typeof PluginChannelClientMethodSchema>;
 
-export const PluginChannelReadyParamsSchema = z.object({
-  pid: z.number().optional(),
-  version: z.string().optional(),
-  runtimeMode: z.string().optional(),
-  capabilities: z.array(z.string()).optional(),
-  startedAt: z.number().optional(),
-  meta: z.unknown().optional()
-});
+export const PluginChannelReadyParamsSchema = z
+  .object({
+    pid: z.number().optional(),
+    version: z.string().optional(),
+    runtimeMode: z.string().optional(),
+    capabilities: z.array(z.string()).optional(),
+    startedAt: z.number().optional(),
+    meta: z.unknown().optional()
+  })
+  .strict();
 export type PluginChannelReadyParams = z.infer<typeof PluginChannelReadyParamsSchema>;
 
-export const PluginChannelStdioParamsSchema = z.object({
-  stream: z.enum(['stdout', 'stderr']),
-  chunk: z.string(),
-  timestamp: z.number().optional()
-});
+export const PluginChannelStdioParamsSchema = z
+  .object({
+    stream: z.enum(['stdout', 'stderr']),
+    chunk: z.string(),
+    timestamp: z.number().optional()
+  })
+  .strict();
 export type PluginChannelStdioParams = z.infer<typeof PluginChannelStdioParamsSchema>;
 
-export const PluginChannelFailParamsSchema = z.object({
-  reason: z.enum(['startup', 'runtime', 'crash', 'shutdown', 'unknown']),
-  error: z
-    .object({
-      code: z.string(),
-      message: z.string(),
-      data: z.unknown().optional()
-    })
-    .optional(),
-  exitCode: z.number().nullable().optional(),
-  signal: z.string().nullable().optional(),
-  timestamp: z.number().optional()
-});
+export const PluginChannelFailParamsSchema = z
+  .object({
+    reason: z.enum(['startup', 'runtime', 'crash', 'shutdown', 'unknown']),
+    error: z
+      .object({
+        code: z.string(),
+        message: z.string(),
+        data: z.unknown().optional()
+      })
+      .strict()
+      .optional(),
+    exitCode: z.number().nullable().optional(),
+    signal: z.string().nullable().optional(),
+    timestamp: z.number().optional()
+  })
+  .strict();
 export type PluginChannelFailParams = z.infer<typeof PluginChannelFailParamsSchema>;
 
 export interface PluginChannelClientRequestParams<TArgs = unknown> {
@@ -85,6 +95,14 @@ export interface PluginChannelClientRequestParams<TArgs = unknown> {
    */
   input?: PluginChannelStreamDescriptor;
 }
+
+export const PluginChannelClientRequestParamsSchema = z
+  .object({
+    method: z.string().min(1),
+    args: z.unknown(),
+    input: PluginChannelStreamDescriptorSchema.optional()
+  })
+  .strict();
 
 export interface PluginChannelClientToHostNotifications {
   [PluginChannelClientMethod.ready]: PluginChannelNotificationSpec<PluginChannelReadyParams>;
