@@ -48,11 +48,12 @@ const models: ProviderConfigType = {
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
-      maxTemperature: 1,
+      maxTemperature: null,
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true
+      toolChoice: true,
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -60,11 +61,12 @@ const models: ProviderConfigType = {
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
-      maxTemperature: 1,
+      maxTemperature: null,
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true
+      toolChoice: true,
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
