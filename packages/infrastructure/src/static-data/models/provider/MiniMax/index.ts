@@ -173,18 +173,6 @@ const models: ProviderConfigType = {
       toolChoice: false
     },
     {
-      type: ModelTypeEnum.llm,
-      model: 'M2-her',
-      maxContext: 64000,
-      maxTokens: 2048,
-      quoteMaxToken: 60000,
-      maxTemperature: 1,
-      vision: false,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: false
-    },
-    {
       type: ModelTypeEnum.tts,
       model: 'speech-2.8-hd',
       voices: minimaxTtsVoices
