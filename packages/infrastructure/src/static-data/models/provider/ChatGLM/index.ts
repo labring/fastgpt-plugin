@@ -213,19 +213,6 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'glm-4.5-flash',
-      maxContext: 128000,
-      maxTokens: 96000,
-      quoteMaxToken: 120000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: false,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'glm-4.1v-thinking-flashx',
       maxContext: 64000,
       maxTokens: 16000,

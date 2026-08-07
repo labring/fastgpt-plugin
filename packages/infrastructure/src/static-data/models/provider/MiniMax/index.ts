@@ -126,6 +126,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'MiniMax-M2.1-highspeed',
+      maxContext: 204000,
+      maxTokens: 100000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'MiniMax-M2.1-lightning',
       maxContext: 204000,
       maxTokens: 100000,
@@ -166,6 +178,18 @@ const models: ProviderConfigType = {
       maxContext: 1000000,
       maxTokens: 40000,
       quoteMaxToken: 90000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'M2-her',
+      maxContext: 64000,
+      maxTokens: 2048,
+      quoteMaxToken: 60000,
       maxTemperature: 1,
       vision: false,
       reasoning: false,

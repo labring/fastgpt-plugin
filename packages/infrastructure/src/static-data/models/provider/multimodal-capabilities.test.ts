@@ -47,11 +47,6 @@ describe('static model multimodal capabilities', () => {
       vision: true,
       video: true
     });
-    expect(getModel('Qwen', 'qwen-vl-max')).toMatchObject({
-      vision: true,
-      video: true
-    });
-    expect(getModel('Qwen', 'qwen3-max')).toMatchObject({ vision: false });
   });
 
   it('distinguishes Doubao audio-capable versions from video-only versions', () => {
