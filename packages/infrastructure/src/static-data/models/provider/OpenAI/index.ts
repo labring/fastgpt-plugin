@@ -209,6 +209,19 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'gpt-5.3-codex',
+      maxContext: 400000,
+      maxTokens: 128000,
+      quoteMaxToken: 350000,
+      maxTemperature: null,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5.2-pro',
       maxContext: 400000,
       maxTokens: 128000,
@@ -426,6 +439,26 @@ const models: ProviderConfigType = {
       showStopSign: false,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
+      }
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'o3-pro',
+      maxContext: 200000,
+      maxTokens: 100000,
+      quoteMaxToken: 120000,
+      maxTemperature: null,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      showStopSign: false,
+      fieldMap: {
+        max_tokens: 'max_completion_tokens'
+      },
+      responseFormatList: ['text', 'json_schema'],
+      defaultConfig: {
+        stream: false
       }
     },
     {
