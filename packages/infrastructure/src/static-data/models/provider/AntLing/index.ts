@@ -6,6 +6,19 @@ const models: ProviderConfigType = {
     // Ling series - general language models
     {
       type: ModelTypeEnum.llm,
+      model: 'Ling-3.0-flash',
+      maxContext: 256000,
+      maxTokens: 16000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'Ling-2.6-1T',
       maxContext: 256000,
       maxTokens: 16000,
