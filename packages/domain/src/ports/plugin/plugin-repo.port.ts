@@ -57,6 +57,10 @@ export type PluginVersionListInputType = {
 
 export type PluginVersionListOutputType = PluginVersionItemType[];
 
+export type PluginCreateResultType = {
+  runtimeRegistrationRequired: boolean;
+};
+
 /** 操作 Plugin S3, Mongo，本地缓存, 代码里面的静态配置 ...*/
 export interface PluginRepoPort {
   /** 获取 pending 的 plugin id */
@@ -67,7 +71,7 @@ export interface PluginRepoPort {
     pending?: boolean;
     source?: PluginSourceType;
     files: PkgContentFileObjects;
-  }): Promise<Result>;
+  }): Promise<Result<PluginCreateResultType>>;
 
   /** 移除某个插件的 pending 状态 */
   confirmPlugin(

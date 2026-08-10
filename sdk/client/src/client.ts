@@ -1,5 +1,6 @@
 import {
   PluginConfirmParamsSchema,
+  PluginDeleteParamsSchema,
   PluginInstallDTOSchema,
   PluginListParamsSchema,
   PluginRuntimeConfigGetParamsSchema,
@@ -40,6 +41,7 @@ import type {
   PluginDebugSessionRevokeResultType,
   PluginDebugSessionStatusParamsType,
   PluginDebugSessionStatusResultType,
+  PluginDeleteParamsType,
   PluginInstallResultType,
   PluginListParamsType,
   PluginListType,
@@ -185,6 +187,20 @@ export class FastGPTPluginClient {
     return this.transport.requestData<PluginInstallResultType>({
       path: this.withApiPath(PluginContract.Install.meta.path),
       method: PluginContract.Install.meta.method,
+      body: payload,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async deletePlugin(
+    params: PluginDeleteParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<void> {
+    const payload = PluginDeleteParamsSchema.parse(params);
+
+    await this.transport.requestEmpty({
+      path: this.withApiPath(PluginContract.Delete.meta.path),
+      method: PluginContract.Delete.meta.method,
       body: payload,
       signal: requestOptions?.signal
     });

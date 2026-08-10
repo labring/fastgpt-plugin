@@ -9,6 +9,7 @@ import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import type { FileTTLPort } from '@domain/ports/file-ttl.port';
 import type {
+  PluginCreateResultType,
   PluginListInputType,
   PluginListItemType,
   PluginListOutputType,
@@ -1182,7 +1183,7 @@ export class PluginRepo implements PluginRepoPort {
     files: PkgContentFileObjects;
     pending: boolean;
     source?: PluginSourceType;
-  }): Promise<Result> {
+  }): Promise<Result<PluginCreateResultType>> {
     const uniqueId = PluginUniqueIdSchema.parse(plugin);
     const pluginModel = this.deps.mongoClient.getModel('plugin');
     const pendingExpiresAt = pending
@@ -1194,6 +1195,20 @@ export class PluginRepo implements PluginRepoPort {
     let activateInstalledPlugin = false;
 
     try {
+      if (!pending) {
+        const existingInstallation = await this.deps.mongoClient
+          .getModel('pluginInstallation')
+          .findOne({ source, ...uniqueId })
+          .lean();
+
+        if (existingInstallation) {
+          return failureResult({
+            en: 'Plugin installation already exists for this source',
+            'zh-CN': '该来源下已存在相同插件安装'
+          });
+        }
+      }
+
       const existingPlugin = await pluginModel
         .findOne(uniqueId, {
           _id: true,
@@ -1220,7 +1235,7 @@ export class PluginRepo implements PluginRepoPort {
             }
           });
 
-          return successResult({});
+          return successResult({ runtimeRegistrationRequired: false });
         } else if (!pending && existingPlugin.status === PluginStatusEnum.active) {
           installedPlugin = {
             ...pluginRecord,
@@ -1370,7 +1385,7 @@ export class PluginRepo implements PluginRepoPort {
         if (replaceActiveErr) return failureResult(replaceActiveErr);
       }
 
-      return successResult({});
+      return successResult({ runtimeRegistrationRequired: activateInstalledPlugin });
     }
 
     return failureResult(

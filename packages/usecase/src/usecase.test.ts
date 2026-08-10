@@ -1071,7 +1071,9 @@ describe('makePluginInstallUC', () => {
       },
       pluginRepo: basePluginRepo({
         listActive: vi.fn().mockResolvedValue(successResult([])),
-        createPlugin: vi.fn().mockResolvedValue(successResult({})),
+        createPlugin: vi
+          .fn()
+          .mockResolvedValue(successResult({ runtimeRegistrationRequired: true })),
         disableUnreferencedPlugins: vi.fn().mockResolvedValue(successResult({ plugins: [] }))
       }),
       pluginRuntimeManager: baseRuntimeManager({
@@ -1187,6 +1189,41 @@ describe('makePluginInstallUC', () => {
       source: 'team-a',
       pending: false
     });
+  });
+
+  it('does not register an already active runtime when another source installs the same plugin', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        listActive: vi
+          .fn()
+          .mockResolvedValue(successResult([plugin(), plugin({ etag: 'old-etag' })])),
+        createPlugin: vi
+          .fn()
+          .mockResolvedValue(successResult({ runtimeRegistrationRequired: false })),
+        disableUnreferencedPlugins: vi
+          .fn()
+          .mockResolvedValue(
+            successResult({ plugins: [{ ...uniqueId, etag: 'old-etag' }] })
+          )
+      })
+    });
+
+    const [result, err] = await makePluginInstallUC(deps)({
+      urls: ['https://example.com/plugin.pkg'],
+      source: 'team-b',
+      batchDownloadSize: 1
+    });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.pluginRuntimeManager.register).not.toHaveBeenCalled();
+    expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(
+      {
+        ...uniqueId,
+        etag: 'old-etag'
+      },
+      { replacementUniqueId: uniqueId }
+    );
   });
 
   it('reports extract failures for downloaded files', async () => {
@@ -1328,7 +1365,7 @@ describe('makePluginInstallUC', () => {
         createPlugin: vi
           .fn()
           .mockResolvedValueOnce(failureResult(reason('create failed')))
-          .mockResolvedValueOnce(successResult({})),
+          .mockResolvedValueOnce(successResult({ runtimeRegistrationRequired: true })),
         disableUnreferencedPlugins: vi
           .fn()
           .mockResolvedValue(failureResult(reason('disable failed')))
@@ -1379,7 +1416,9 @@ describe('makePluginInstallUC', () => {
               nonRunnablePlugin({ etag: 'old-flow-etag' })
             ])
           ),
-        createPlugin: vi.fn().mockResolvedValue(successResult({})),
+        createPlugin: vi
+          .fn()
+          .mockResolvedValue(successResult({ runtimeRegistrationRequired: true })),
         disableUnreferencedPlugins: vi
           .fn()
           .mockResolvedValue(successResult({ plugins: [{ ...uniqueId, etag: 'old-etag' }] }))

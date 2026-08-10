@@ -152,7 +152,7 @@ export const makePluginInstallUC =
         continue;
       }
 
-      const [, createErr] = await pluginRepo.createPlugin({
+      const [createResult, createErr] = await pluginRepo.createPlugin({
         files: info.files,
         plugin: info.info,
         source,
@@ -168,14 +168,16 @@ export const makePluginInstallUC =
       }
 
       if (info.info.type === 'tool') {
-        const [, registerErr] = await pluginRuntimeManager.register(uniqueId);
+        if (createResult.runtimeRegistrationRequired) {
+          const [, registerErr] = await pluginRuntimeManager.register(uniqueId);
 
-        if (registerErr) {
-          failToInstalled.push({
-            fileKey: file.metaData.fileKey,
-            reason: registerErr.reason
-          });
-          continue;
+          if (registerErr) {
+            failToInstalled.push({
+              fileKey: file.metaData.fileKey,
+              reason: registerErr.reason
+            });
+            continue;
+          }
         }
 
         const [, replaceErr] = await disableAndUnregisterReplacedPlugins({

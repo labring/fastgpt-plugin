@@ -5,6 +5,7 @@ import type {
   ModelProviderListDTOType
 } from '@interface-adapter/contracts/dto/model.dto';
 import type {
+  PluginDeleteParamsDTOType,
   PluginDTOType,
   PluginInstallFailureDTOType,
   PluginInstallResponseDTOType,
@@ -103,6 +104,7 @@ export type PluginListItemType = PluginListItemDTOType;
 export type PluginListParamsType = Partial<PluginListParamsDTOType>;
 export type PluginInstallFailureType = PluginInstallFailureDTOType;
 export type PluginInstallResultType = PluginInstallResponseDTOType;
+export type PluginDeleteParamsType = PluginDeleteParamsDTOType;
 export type PluginUploadFailureType = PluginUploadFailureDTOType;
 export type PluginTagListItemType = PluginTagListType[number];
 export type PluginPruneDisabledResultType = PluginPruneDisabledResponseDTOType;

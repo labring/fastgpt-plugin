@@ -278,6 +278,9 @@ describe('PluginRepo.createPlugin', () => {
       updateOne
     };
     const installationModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null)
+      }),
       find: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue([])
       }),
@@ -437,6 +440,9 @@ describe('PluginRepo.createPlugin', () => {
       updateOne: vi.fn()
     };
     const installationModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null)
+      }),
       deleteMany: vi.fn(),
       updateOne: vi.fn()
     };
@@ -511,6 +517,121 @@ describe('PluginRepo.createPlugin', () => {
     });
   });
 
+  it('rejects an installation with the same source and complete plugin identity', async () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const pluginModel = {
+      findOne: vi.fn(() => {
+        throw new Error('plugin entity should not be queried for a duplicate installation');
+      })
+    };
+    const pluginInstallationModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          source: 'team-a',
+          pluginId: 'plugin-a',
+          version: '1.0.0',
+          etag: 'etag-a'
+        })
+      })
+    };
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginInstallation' ? pluginInstallationModel : pluginModel
+        )
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [, err] = await repo.createPlugin({
+      plugin: plugin(),
+      files: {} as PkgContentFileObjects,
+      pending: false,
+      source: 'team-a'
+    });
+
+    expect(err?.reason).toEqual({
+      en: 'Plugin installation already exists for this source',
+      'zh-CN': '该来源下已存在相同插件安装'
+    });
+    expect(pluginInstallationModel.findOne).toHaveBeenCalledWith({
+      source: 'team-a',
+      pluginId: 'plugin-a',
+      version: '1.0.0',
+      etag: 'etag-a'
+    });
+    expect(pluginModel.findOne).not.toHaveBeenCalled();
+  });
+
+  it('reuses an active plugin runtime when another source installs the same identity', async () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const session = { id: 'session' };
+    const sessionRun = vi.fn(async (fn: (session: unknown) => Promise<unknown>) => fn(session));
+    const pluginModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          _id: 'existing-plugin',
+          status: PluginStatusEnum.active
+        })
+      }),
+      find: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([])
+      }),
+      updateMany: vi.fn()
+    };
+    const pluginInstallationModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null)
+      }),
+      find: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([])
+      }),
+      updateOne: vi.fn()
+    };
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        sessionRun,
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginInstallation' ? pluginInstallationModel : pluginModel
+        )
+      },
+      privateRemoteFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(fileObject('index.js')))
+      },
+      publicRemoteFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(fileObject('README.md')))
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [result, err] = await repo.createPlugin({
+      plugin: plugin(),
+      files: pkgFiles(),
+      pending: false,
+      source: 'team-b'
+    });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({ runtimeRegistrationRequired: false });
+    expect(pluginInstallationModel.updateOne).toHaveBeenCalledWith(
+      {
+        source: 'team-b',
+        pluginId: 'plugin-a',
+        version: '1.0.0'
+      },
+      {
+        $set: {
+          etag: 'etag-a',
+          pluginObjectId: 'existing-plugin'
+        }
+      },
+      {
+        upsert: true,
+        session
+      }
+    );
+  });
+
   it('writes installation records under the requested source and keeps referenced plugins active', async () => {
     (PluginRepo as any)._instance = undefined;
 
@@ -539,6 +660,9 @@ describe('PluginRepo.createPlugin', () => {
       })
     };
     const pluginInstallationModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null)
+      }),
       find: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue([
           {
@@ -565,7 +689,7 @@ describe('PluginRepo.createPlugin', () => {
       }
     } as unknown as PluginRepoDeps);
 
-    const [, err] = await repo.createPlugin({
+    const [result, err] = await repo.createPlugin({
       plugin: plugin(),
       files: pkgFiles(),
       pending: false,
@@ -573,6 +697,7 @@ describe('PluginRepo.createPlugin', () => {
     });
 
     expect(err).toBeNull();
+    expect(result).toEqual({ runtimeRegistrationRequired: true });
     expect(pluginInstallationModel.updateOne).toHaveBeenCalledWith(
       {
         source: 'team-a',

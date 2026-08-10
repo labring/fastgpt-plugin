@@ -150,7 +150,7 @@ const ServerEnvShape = {
   CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS: PositiveIntSchema.default(120_000),
 
   // 安全配置
-  ALLOWED_INSTALL_HOSTS: z.string().optional(),
+  ALLOWED_INSTALL_HOSTS: z.string().optional().default('*.fastgpt.cn'),
   DISABLE_SSRF_CHECK: BoolStringSchema.default(false),
 
   // 插件运行配置
