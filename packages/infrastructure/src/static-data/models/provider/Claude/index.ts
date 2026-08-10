@@ -48,11 +48,12 @@ const models: ProviderConfigType = {
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
-      maxTemperature: 1,
+      maxTemperature: null,
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true
+      toolChoice: true,
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -60,11 +61,12 @@ const models: ProviderConfigType = {
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
-      maxTemperature: 1,
+      maxTemperature: null,
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true
+      toolChoice: true,
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
@@ -160,18 +162,6 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'claude-opus-4-1-20250805',
-      maxContext: 200000,
-      maxTokens: 32000,
-      quoteMaxToken: 100000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
       toolChoice: true
     }
   ]
