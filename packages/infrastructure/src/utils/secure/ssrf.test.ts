@@ -10,7 +10,8 @@ const importSsrf = async () => {
 describe('SSRF URL safety', () => {
   beforeEach(() => {
     process.env = { ...originalEnv };
-    delete process.env.ALLOWED_INSTALL_HOSTS;
+    // Keep the host allowlist out of the assertions in these tests.
+    process.env.ALLOWED_INSTALL_HOSTS = '127.0.0.1,10.0.0.5,8.8.8.8';
     delete process.env.DISABLE_SSRF_CHECK;
     delete process.env.NODE_ENV;
   });
