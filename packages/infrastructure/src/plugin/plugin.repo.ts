@@ -112,6 +112,11 @@ type InstalledPluginRecord = {
   plugin: ListedMongoPlugin;
 };
 
+class DuplicatePluginInstallationError extends Error {}
+
+const isDuplicateKeyError = (error: unknown): boolean =>
+  Boolean(error && typeof error === 'object' && 'code' in error && error.code === 11000);
+
 export type PluginRepoDeps = {
   mongoClient: MongoClient;
   localFileStorageRepo: LocalFileStoragePort;
@@ -343,12 +348,34 @@ export class PluginRepo implements PluginRepoPort {
     pluginRecord,
     source,
     uniqueId
-  }: ReplaceInstalledPluginInput): Promise<Result> {
+  }: ReplaceInstalledPluginInput): Promise<Result<boolean>> {
     const pluginModel = this.deps.mongoClient.getModel('plugin');
 
     try {
-      await this.deps.mongoClient.sessionRun(async (session) => {
-        if (activateTarget) {
+      const runtimeRegistrationRequired = await this.deps.mongoClient.sessionRun(async (session) => {
+        const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
+        const existingInstallation = await installationModel
+          .findOne(
+            {
+              source,
+              pluginId: uniqueId.pluginId,
+              version: uniqueId.version
+            },
+            { _id: 0, etag: 1 },
+            { session }
+          )
+          .lean();
+
+        if (existingInstallation?.etag === uniqueId.etag) {
+          throw new DuplicatePluginInstallationError();
+        }
+
+        const currentPlugin = await pluginModel
+          .findOne(uniqueId, { status: 1 }, { session })
+          .lean();
+        const shouldActivateTarget = activateTarget || currentPlugin?.status === PluginStatusEnum.disabled;
+
+        if (shouldActivateTarget) {
           await pluginModel.updateOne(
             uniqueId,
             {
@@ -367,17 +394,31 @@ export class PluginRepo implements PluginRepoPort {
           );
         }
 
-        await this.updateInstallation(source, installedPlugin, session);
+        try {
+          await this.updateInstallation(source, installedPlugin, session);
+        } catch (error) {
+          if (isDuplicateKeyError(error)) {
+            throw new DuplicatePluginInstallationError();
+          }
+          throw error;
+        }
 
         const [, replaceActiveErr] = await this.disableSameVersionActivePlugins(uniqueId, session);
 
         if (replaceActiveErr) {
           throw replaceActiveErr.error;
         }
+        return shouldActivateTarget;
       }, {});
 
-      return successResult({});
+      return successResult(runtimeRegistrationRequired);
     } catch (error) {
+      if (error instanceof DuplicatePluginInstallationError) {
+        return failureResult({
+          en: 'Plugin installation already exists for this source',
+          'zh-CN': '该来源下已存在相同插件安装'
+        });
+      }
       return failureResult(
         {
           en: 'Failed to replace active plugin installation',
@@ -737,11 +778,24 @@ export class PluginRepo implements PluginRepoPort {
     const uniqueId = PluginUniqueIdSchema.parse(plugin);
 
     try {
-      await this.deps.mongoClient.getModel('pluginInstallation').deleteOne({
-        source: input.source,
-        pluginId: input.pluginId,
-        version: input.version,
-        etag: uniqueId.etag
+      const disabled = await this.deps.mongoClient.sessionRun(async (session) => {
+        await this.deps.mongoClient.getModel('pluginInstallation').deleteOne(
+          {
+            source: input.source,
+            pluginId: input.pluginId,
+            version: input.version,
+            etag: uniqueId.etag
+          },
+          { session }
+        );
+
+        const disabledPluginIds = await this.disableUnreferencedPluginIds([uniqueId], session);
+        return disabledPluginIds.length > 0;
+      }, {});
+
+      return successResult({
+        plugin,
+        disabled
       });
     } catch (error) {
       return failureResult(
@@ -752,23 +806,6 @@ export class PluginRepo implements PluginRepoPort {
         error
       );
     }
-
-    const [disableResult, disableErr] = await this.disableUnreferencedPlugins([uniqueId]);
-
-    if (disableErr) {
-      return failureResult(
-        {
-          en: 'Failed to disable plugin',
-          'zh-CN': '禁用插件失败'
-        },
-        disableErr
-      );
-    }
-
-    return successResult({
-      plugin,
-      disabled: Boolean(disableResult?.plugins.length)
-    });
   }
 
   private async listInstalledPluginsByView(
@@ -1254,19 +1291,58 @@ export class PluginRepo implements PluginRepoPort {
           });
         }
       } else {
-        const createdPlugin = await pluginModel.create({
-          ...pluginRecord,
-          ...(pending
-            ? {
-              status: PluginStatusEnum.pending,
-              expiredAt: pendingExpiresAt
-            }
-            : {
-              status: PluginStatusEnum.disabled
+        try {
+          const createdPlugin = await pluginModel.create({
+            ...pluginRecord,
+            ...(pending
+              ? {
+                status: PluginStatusEnum.pending,
+                expiredAt: pendingExpiresAt
+              }
+              : {
+                status: PluginStatusEnum.disabled
+              })
+          });
+          installedPlugin = createdPlugin.toObject();
+          activateInstalledPlugin = !pending;
+        } catch (error) {
+          if (!isDuplicateKeyError(error)) {
+            throw error;
+          }
+
+          const concurrentPlugin = await pluginModel
+            .findOne(uniqueId, {
+              _id: true,
+              status: true
             })
-        });
-        installedPlugin = createdPlugin.toObject();
-        activateInstalledPlugin = !pending;
+            .lean();
+
+          if (!concurrentPlugin) {
+            throw error;
+          }
+
+          if (pending && concurrentPlugin.status === PluginStatusEnum.pending) {
+            await pluginModel.updateOne(uniqueId, {
+              $set: {
+                expiredAt: pendingExpiresAt,
+                updateAt: new Date()
+              }
+            });
+          } else if (!pending && concurrentPlugin.status === PluginStatusEnum.active) {
+            installedPlugin = {
+              ...pluginRecord,
+              _id: concurrentPlugin._id
+            } as MongoPluginWithId;
+          } else if (!pending && concurrentPlugin.status === PluginStatusEnum.disabled) {
+            installedPlugin = {
+              ...pluginRecord,
+              _id: concurrentPlugin._id
+            } as MongoPluginWithId;
+            activateInstalledPlugin = true;
+          } else {
+            throw error;
+          }
+        }
       }
     } catch (error) {
       return failureResult(
@@ -1375,7 +1451,7 @@ export class PluginRepo implements PluginRepoPort {
       }
 
       if (!pending && installedPlugin) {
-        const [, replaceActiveErr] = await this.replaceInstalledPlugin({
+        const [runtimeRegistrationRequired, replaceActiveErr] = await this.replaceInstalledPlugin({
           activateTarget: activateInstalledPlugin,
           installedPlugin,
           pluginRecord,
@@ -1383,9 +1459,11 @@ export class PluginRepo implements PluginRepoPort {
           uniqueId
         });
         if (replaceActiveErr) return failureResult(replaceActiveErr);
+
+        return successResult({ runtimeRegistrationRequired });
       }
 
-      return successResult({ runtimeRegistrationRequired: activateInstalledPlugin });
+      return successResult({ runtimeRegistrationRequired: false });
     }
 
     return failureResult(

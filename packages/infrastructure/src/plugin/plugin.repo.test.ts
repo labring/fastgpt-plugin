@@ -563,6 +563,55 @@ describe('PluginRepo.createPlugin', () => {
     expect(pluginModel.findOne).not.toHaveBeenCalled();
   });
 
+  it('rejects a duplicate installation detected inside the final transaction', async () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const pluginModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({ _id: 'existing-plugin', status: PluginStatusEnum.active })
+      }),
+      find: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([]) }),
+      updateOne: vi.fn(),
+      updateMany: vi.fn()
+    };
+    const pluginInstallationModel = {
+      findOne: vi
+        .fn()
+        .mockReturnValueOnce({ lean: vi.fn().mockResolvedValue(null) })
+        .mockReturnValueOnce({ lean: vi.fn().mockResolvedValue({ etag: 'etag-a' }) }),
+      updateOne: vi.fn()
+    };
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        sessionRun: vi.fn(async (fn: (session: unknown) => Promise<unknown>) =>
+          fn({ id: 'session' })
+        ),
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginInstallation' ? pluginInstallationModel : pluginModel
+        )
+      },
+      privateRemoteFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(fileObject('index.js')))
+      },
+      publicRemoteFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(fileObject('README.md')))
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [, err] = await repo.createPlugin({
+      plugin: plugin(),
+      files: pkgFiles(),
+      pending: false,
+      source: 'team-a'
+    });
+
+    expect(err?.reason).toEqual({
+      en: 'Plugin installation already exists for this source',
+      'zh-CN': '该来源下已存在相同插件安装'
+    });
+    expect(pluginInstallationModel.updateOne).not.toHaveBeenCalled();
+  });
+
   it('reuses an active plugin runtime when another source installs the same identity', async () => {
     (PluginRepo as any)._instance = undefined;
 
@@ -873,6 +922,9 @@ describe('PluginRepo.deletePluginInstallation', () => {
     };
     const repo = PluginRepo.getInstance({
       mongoClient: {
+        sessionRun: vi.fn(async (fn: (session: unknown) => Promise<unknown>) =>
+          fn({ id: 'session' })
+        ),
         getModel: vi.fn((modelName: string) =>
           modelName === 'pluginInstallation' ? pluginInstallationModel : pluginModel
         )
@@ -887,12 +939,15 @@ describe('PluginRepo.deletePluginInstallation', () => {
 
     expect(err).toBeNull();
     expect(result?.disabled).toBe(false);
-    expect(pluginInstallationModel.deleteOne).toHaveBeenCalledWith({
-      source: 'team-a',
-      pluginId: 'plugin-a',
-      version: '1.0.0',
-      etag: 'etag-a'
-    });
+    expect(pluginInstallationModel.deleteOne).toHaveBeenCalledWith(
+      {
+        source: 'team-a',
+        pluginId: 'plugin-a',
+        version: '1.0.0',
+        etag: 'etag-a'
+      },
+      { session: { id: 'session' } }
+    );
     expect(pluginModel.updateMany).not.toHaveBeenCalled();
   });
 
@@ -920,6 +975,9 @@ describe('PluginRepo.deletePluginInstallation', () => {
     };
     const repo = PluginRepo.getInstance({
       mongoClient: {
+        sessionRun: vi.fn(async (fn: (session: unknown) => Promise<unknown>) =>
+          fn({ id: 'session' })
+        ),
         getModel: vi.fn((modelName: string) =>
           modelName === 'pluginInstallation' ? pluginInstallationModel : pluginModel
         )
@@ -952,7 +1010,8 @@ describe('PluginRepo.deletePluginInstallation', () => {
         $unset: {
           expiredAt: 1
         }
-      }
+      },
+      { session: { id: 'session' } }
     );
   });
 });
