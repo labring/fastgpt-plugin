@@ -1,11 +1,11 @@
-import { ModelTypeEnum, type ProviderConfigType } from "../../type";
+import { ModelTypeEnum, type ProviderConfigType } from '../../type';
 
 const models: ProviderConfigType = {
-  provider: "Claude",
+  provider: 'Claude',
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: "claude-fable-5",
+      model: 'claude-fable-5',
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
@@ -13,11 +13,11 @@ const models: ProviderConfigType = {
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true,
-      showTopP: false,
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-opus-4-8",
+      model: 'claude-opus-4-8',
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
@@ -25,11 +25,11 @@ const models: ProviderConfigType = {
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true,
-      showTopP: false,
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-opus-5",
+      model: 'claude-opus-5',
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
@@ -37,23 +37,11 @@ const models: ProviderConfigType = {
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true,
-      showTopP: false,
+      showTopP: false
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-sonnet-5",
-      maxContext: 1000000,
-      maxTokens: 128000,
-      quoteMaxToken: 200000,
-      maxTemperature: 1,
-      vision: true,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true,
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: "claude-opus-4-7",
+      model: 'claude-sonnet-5',
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
@@ -61,11 +49,23 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-sonnet-4-6",
+      model: 'claude-opus-4-7',
+      maxContext: 1000000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'claude-sonnet-4-6',
       maxContext: 1000000,
       maxTokens: 64000,
       quoteMaxToken: 200000,
@@ -73,11 +73,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-opus-4-6",
+      model: 'claude-opus-4-6',
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
@@ -85,11 +85,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-haiku-4-5",
+      model: 'claude-haiku-4-5',
       maxContext: 200000,
       maxTokens: 64000,
       quoteMaxToken: 100000,
@@ -97,11 +97,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-opus-4-6-20260205",
+      model: 'claude-opus-4-6-20260205',
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 200000,
@@ -109,11 +109,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-sonnet-4-6-20260217",
+      model: 'claude-sonnet-4-6-20260217',
       maxContext: 1000000,
       maxTokens: 64000,
       quoteMaxToken: 200000,
@@ -121,11 +121,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-haiku-4-5-20251001",
+      model: 'claude-haiku-4-5-20251001',
       maxContext: 200000,
       maxTokens: 64000,
       quoteMaxToken: 100000,
@@ -133,11 +133,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-sonnet-4-5-20250929",
+      model: 'claude-sonnet-4-5-20250929',
       maxContext: 1000000,
       maxTokens: 64000,
       quoteMaxToken: 100000,
@@ -145,11 +145,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-opus-4-5-20251101",
+      model: 'claude-opus-4-5-20251101',
       maxContext: 200000,
       maxTokens: 64000,
       quoteMaxToken: 100000,
@@ -157,11 +157,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "claude-opus-4-1-20250805",
+      model: 'claude-opus-4-1-20250805',
       maxContext: 200000,
       maxTokens: 32000,
       quoteMaxToken: 100000,
@@ -169,9 +169,9 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
-    },
-  ],
+      toolChoice: true
+    }
+  ]
 };
 
 export default models;

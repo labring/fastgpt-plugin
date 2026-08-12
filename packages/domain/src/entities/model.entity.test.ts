@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { LLMModelItemSchema, ModelTypeEnum } from "./model.entity";
+import { LLMModelItemSchema, ModelTypeEnum } from './model.entity';
 
 const baseLlmModel = {
-  provider: "Test",
-  model: "test-model",
-  name: "Test Model",
+  provider: 'Test',
+  model: 'test-model',
+  name: 'Test Model',
   type: ModelTypeEnum.llm,
   maxContext: 128000,
   maxTokens: 8000,
@@ -13,28 +13,28 @@ const baseLlmModel = {
   vision: false,
   reasoning: true,
   reasoningEffort: false,
-  toolChoice: true,
+  toolChoice: true
 };
 
-describe("LLMModelItemSchema", () => {
-  it("allows unsupported temperature to be omitted", () => {
+describe('LLMModelItemSchema', () => {
+  it('allows unsupported temperature to be omitted', () => {
     expect(LLMModelItemSchema.parse(baseLlmModel)).not.toHaveProperty(
-      "maxTemperature",
+      'maxTemperature'
     );
   });
 
-  it("rejects null and string temperature values", () => {
+  it('rejects null and string temperature values', () => {
     expect(
       LLMModelItemSchema.safeParse({ ...baseLlmModel, maxTemperature: null })
-        .success,
+        .success
     ).toBe(false);
     expect(
-      LLMModelItemSchema.safeParse({ ...baseLlmModel, maxTemperature: "" })
-        .success,
+      LLMModelItemSchema.safeParse({ ...baseLlmModel, maxTemperature: '' })
+        .success
     ).toBe(false);
     expect(
-      LLMModelItemSchema.safeParse({ ...baseLlmModel, maxTemperature: "1" })
-        .success,
+      LLMModelItemSchema.safeParse({ ...baseLlmModel, maxTemperature: '1' })
+        .success
     ).toBe(false);
   });
 });

@@ -1,92 +1,92 @@
-import { ModelTypeEnum, type ProviderConfigType } from "../../type";
+import { ModelTypeEnum, type ProviderConfigType } from '../../type';
 
 const models: ProviderConfigType = {
-  provider: "AntLing",
+  provider: 'AntLing',
   list: [
     // Ling series - general language models
     {
       type: ModelTypeEnum.llm,
-      model: "Ling-3.0-flash",
+      model: 'Ling-3.0-flash',
       maxContext: 256000,
       maxTokens: 16000,
       quoteMaxToken: 240000,
       maxTemperature: 1,
-      responseFormatList: ["text", "json_object", "json_schema"],
+      responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: false,
       reasoning: true,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ling-2.6-1T",
+      model: 'Ling-2.6-1T',
       maxContext: 256000,
       maxTokens: 16000,
       quoteMaxToken: 240000,
       maxTemperature: 1,
-      responseFormatList: ["text", "json_object"],
+      responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ling-2.6-flash",
+      model: 'Ling-2.6-flash',
       maxContext: 256000,
       maxTokens: 16000,
       quoteMaxToken: 240000,
       maxTemperature: 1,
-      responseFormatList: ["text", "json_object"],
+      responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ling-1T",
+      model: 'Ling-1T',
       maxContext: 128000,
       maxTokens: 16000,
       quoteMaxToken: 120000,
       maxTemperature: 1,
-      responseFormatList: ["text", "json_object"],
+      responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ling-flash-2.0",
+      model: 'Ling-flash-2.0',
       maxContext: 128000,
       maxTokens: 16000,
       quoteMaxToken: 120000,
       maxTemperature: 1,
-      responseFormatList: ["text", "json_object"],
+      responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ling-mini-2.0",
+      model: 'Ling-mini-2.0',
       maxContext: 64000,
       maxTokens: 8000,
       quoteMaxToken: 60000,
       maxTemperature: 1,
-      responseFormatList: ["text", "json_object"],
+      responseFormatList: ['text', 'json_object'],
       vision: false,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
 
     // Ring series - reasoning models
     {
       type: ModelTypeEnum.llm,
-      model: "Ring-2.6-1T",
+      model: 'Ring-2.6-1T',
       maxContext: 256000,
       maxTokens: 16000,
       quoteMaxToken: 240000,
@@ -95,11 +95,11 @@ const models: ProviderConfigType = {
       reasoningEffort: true,
       toolChoice: true,
       showTopP: false,
-      showStopSign: false,
+      showStopSign: false
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ring-1T",
+      model: 'Ring-1T',
       maxContext: 128000,
       maxTokens: 16000,
       quoteMaxToken: 120000,
@@ -108,11 +108,11 @@ const models: ProviderConfigType = {
       reasoningEffort: false,
       toolChoice: false,
       showTopP: false,
-      showStopSign: false,
+      showStopSign: false
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ring-flash-2.0",
+      model: 'Ring-flash-2.0',
       maxContext: 128000,
       maxTokens: 16000,
       quoteMaxToken: 120000,
@@ -121,11 +121,11 @@ const models: ProviderConfigType = {
       reasoningEffort: false,
       toolChoice: false,
       showTopP: false,
-      showStopSign: false,
+      showStopSign: false
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ring-mini-2.0",
+      model: 'Ring-mini-2.0',
       maxContext: 64000,
       maxTokens: 8000,
       quoteMaxToken: 60000,
@@ -134,13 +134,13 @@ const models: ProviderConfigType = {
       reasoningEffort: false,
       toolChoice: false,
       showTopP: false,
-      showStopSign: false,
+      showStopSign: false
     },
 
     // Ming series - multimodal models
     {
       type: ModelTypeEnum.llm,
-      model: "Ming-flash-omni",
+      model: 'Ming-flash-omni',
       maxContext: 128000,
       maxTokens: 16000,
       quoteMaxToken: 120000,
@@ -148,11 +148,11 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "Ming-lite-omni",
+      model: 'Ming-lite-omni',
       maxContext: 64000,
       maxTokens: 8000,
       quoteMaxToken: 60000,
@@ -160,9 +160,9 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: false,
-    },
-  ],
+      toolChoice: false
+    }
+  ]
 };
 
 export default models;

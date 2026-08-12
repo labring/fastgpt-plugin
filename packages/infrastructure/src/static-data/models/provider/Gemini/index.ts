@@ -1,11 +1,11 @@
-import { ModelTypeEnum, type ProviderConfigType } from "../../type";
+import { ModelTypeEnum, type ProviderConfigType } from '../../type';
 
 const models: ProviderConfigType = {
-  provider: "Gemini",
+  provider: 'Gemini',
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3.5-flash",
+      model: 'gemini-3.5-flash',
       maxContext: 1048576,
       maxTokens: 65536,
       quoteMaxToken: 1000000,
@@ -15,11 +15,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3.6-flash",
+      model: 'gemini-3.6-flash',
       maxContext: 1048576,
       maxTokens: 65536,
       quoteMaxToken: 1000000,
@@ -28,11 +28,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3.1-pro-preview-customtools",
+      model: 'gemini-3.1-pro-preview-customtools',
       maxContext: 1000000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,
@@ -42,11 +42,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3.1-flash-lite",
+      model: 'gemini-3.1-flash-lite',
       maxContext: 1048576,
       maxTokens: 65536,
       quoteMaxToken: 1000000,
@@ -56,11 +56,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3.5-flash-lite",
+      model: 'gemini-3.5-flash-lite',
       maxContext: 1048576,
       maxTokens: 65536,
       quoteMaxToken: 1000000,
@@ -69,11 +69,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3.1-pro-preview",
+      model: 'gemini-3.1-pro-preview',
       maxContext: 1000000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,
@@ -83,11 +83,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3.1-pro",
+      model: 'gemini-3.1-pro',
       maxContext: 1000000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,
@@ -97,11 +97,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3-flash-preview",
+      model: 'gemini-3-flash-preview',
       maxContext: 1024000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,
@@ -111,11 +111,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-3-flash",
+      model: 'gemini-3-flash',
       maxContext: 1024000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,
@@ -125,11 +125,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-2.5-pro",
+      model: 'gemini-2.5-pro',
       maxContext: 1000000,
       maxTokens: 63000,
       quoteMaxToken: 1000000,
@@ -139,11 +139,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-2.5-flash",
+      model: 'gemini-2.5-flash',
       maxContext: 1000000,
       maxTokens: 63000,
       quoteMaxToken: 1000000,
@@ -153,11 +153,11 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
-      model: "gemini-2.5-flash-lite",
+      model: 'gemini-2.5-flash-lite',
       maxContext: 1000000,
       maxTokens: 63000,
       quoteMaxToken: 1000000,
@@ -167,15 +167,15 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: false,
       reasoningEffort: false,
-      toolChoice: true,
+      toolChoice: true
     },
     {
       type: ModelTypeEnum.embedding,
-      model: "gemini-embedding-2",
+      model: 'gemini-embedding-2',
       defaultToken: 512,
-      maxToken: 8192,
-    },
-  ],
+      maxToken: 8192
+    }
+  ]
 };
 
 export default models;
