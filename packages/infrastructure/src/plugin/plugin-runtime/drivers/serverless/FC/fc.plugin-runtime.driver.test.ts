@@ -50,9 +50,14 @@ describe('FCPluginRuntimeManager', () => {
     expect(provider.ensureFunction).toHaveBeenCalledWith(
       expect.objectContaining({
         runtimeId: 'fc@getTime@1.0.0@abc',
-        artifact: expect.objectContaining({ bucket: 'bucket' })
+        artifact: expect.objectContaining({ bucket: 'bucket' }),
+        env: expect.objectContaining({
+          FASTGPT_INVOKE_SIGNING_SECRET: expect.any(String)
+        })
       })
     );
+    const definition = vi.mocked(provider.ensureFunction).mock.calls[0]?.[0];
+    expect(Object.keys(definition?.env ?? {}).some((name) => name.startsWith('FC_'))).toBe(false);
     await manager.shutdown();
   });
 

@@ -442,7 +442,7 @@ export class FCPluginRuntimeManager implements PluginRuntimeManagerPort<FCPlugin
         PLUGIN_ARTIFACT_KEY: artifact.key,
         PLUGIN_ARTIFACT_ENDPOINT: env.FC_ARTIFACT_ENDPOINT ?? '',
         FASTGPT_BASE_URL: env.FASTGPT_BASE_URL,
-        FC_INVOKE_SIGNING_SECRET: env.FC_INVOKE_SIGNING_SECRET ?? ''
+        FASTGPT_INVOKE_SIGNING_SECRET: env.FC_INVOKE_SIGNING_SECRET ?? ''
       }
     };
   }

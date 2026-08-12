@@ -6,7 +6,7 @@
   "scripts": {
     "build:fc-runtime": "tsdown --config src/plugin/plugin-runtime/drivers/serverless/FC/runtime/tsdown.config.ts",
     "dev:fc-runtime": "tsx src/plugin/plugin-runtime/drivers/serverless/FC/runtime/src/bootstrap.ts",
-    "docker:fc-runtime": "docker build -f src/plugin/plugin-runtime/drivers/serverless/FC/runtime/Dockerfile -t fastgpt-plugin-fc-runtime:local ../.."
+    "docker:fc-runtime": "docker build --platform linux/amd64 -f src/plugin/plugin-runtime/drivers/serverless/FC/runtime/Dockerfile -t fastgpt-plugin-fc-runtime:local ../.."
   },
   "keywords": [],
   "author": "",

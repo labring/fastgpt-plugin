@@ -15,6 +15,7 @@ export const FCPluginConfigSchema = z.object({
   maxConcurrency: z.number().int().positive(),
   timeoutMs: z.number().int().positive(),
   memorySize: z.number().int().positive(),
+  diskSize: z.number().int().positive().default(512),
   cpu: z.number().positive(),
   reservedConcurrency: z.number().int().nonnegative().optional(),
   provisionedConcurrency: z.number().int().nonnegative().optional(),

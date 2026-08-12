@@ -24,6 +24,7 @@ const resetEnv = () => {
   delete process.env.FC_ROLE_ARN;
   delete process.env.FC_ARTIFACT_ENDPOINT;
   delete process.env.FC_ARTIFACT_BUCKET;
+  delete process.env.FC_DEFAULT_DISK_SIZE;
   delete process.env.FC_INVOKE_SIGNING_SECRET;
 };
 
@@ -258,6 +259,15 @@ describe('env AUTH_TOKEN', () => {
 
     expect(env.PLUGIN_RUNTIME_MODE).toBe('localPool');
     expect(env.FC_FUNCTION_NAME_PREFIX).toBe('fastgpt-plugin');
+    expect(env.FC_DEFAULT_DISK_SIZE).toBe(512);
+  });
+
+  it('rejects a non-positive FC disk size', async () => {
+    process.env.FC_DEFAULT_DISK_SIZE = '0';
+
+    const { env } = await import('./index');
+
+    expect(() => env.FC_DEFAULT_DISK_SIZE).toThrow('FC_DEFAULT_DISK_SIZE');
   });
 
   it('requires FC env in serverless-fc mode', async () => {
@@ -272,7 +282,7 @@ describe('env AUTH_TOKEN', () => {
     process.env.PLUGIN_RUNTIME_MODE = 'serverless';
     process.env.FC_REGION = 'cn-hangzhou';
     process.env.FC_RUNTIME_IMAGE = 'runtime:latest';
-    process.env.FC_ROLE_ARN = 'role';
+    process.env.FC_ROLE_ARN = 'acs:ram::1234567890123456:role/fastgpt-plugin-fc-runtime';
     process.env.FC_ARTIFACT_ENDPOINT = 'https://oss-cn-hangzhou.aliyuncs.com';
     process.env.FC_ARTIFACT_BUCKET = 'bucket';
     process.env.FC_INVOKE_SIGNING_SECRET = 'test-signing-secret';
@@ -288,7 +298,7 @@ describe('env AUTH_TOKEN', () => {
     process.env.PLUGIN_RUNTIME_MODE = 'serverless-fc';
     process.env.FC_REGION = 'cn-hangzhou';
     process.env.FC_RUNTIME_IMAGE = 'runtime:latest';
-    process.env.FC_ROLE_ARN = 'role';
+    process.env.FC_ROLE_ARN = 'acs:ram::1234567890123456:role/fastgpt-plugin-fc-runtime';
     process.env.FC_ARTIFACT_ENDPOINT = 'https://oss-cn-hangzhou.aliyuncs.com';
     process.env.FC_ARTIFACT_BUCKET = 'bucket';
     process.env.FC_INVOKE_SIGNING_SECRET = 'token';
@@ -296,5 +306,19 @@ describe('env AUTH_TOKEN', () => {
     const { env } = await import('./index');
 
     expect(() => env.FC_INVOKE_SIGNING_SECRET).toThrow('FC_INVOKE_SIGNING_SECRET');
+  });
+
+  it('rejects a RAM user ARN as the FC execution role', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'serverless-fc';
+    process.env.FC_REGION = 'cn-hangzhou';
+    process.env.FC_RUNTIME_IMAGE = 'runtime:latest';
+    process.env.FC_ROLE_ARN = 'acs:ram::1234567890123456:user/power-application-user';
+    process.env.FC_ARTIFACT_ENDPOINT = 'https://oss-cn-hangzhou.aliyuncs.com';
+    process.env.FC_ARTIFACT_BUCKET = 'bucket';
+    process.env.FC_INVOKE_SIGNING_SECRET = 'test-signing-secret';
+
+    const { env } = await import('./index');
+
+    expect(() => env.FC_ROLE_ARN).toThrow('FC_ROLE_ARN');
   });
 });

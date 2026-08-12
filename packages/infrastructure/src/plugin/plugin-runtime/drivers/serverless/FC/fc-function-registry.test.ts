@@ -46,6 +46,7 @@ function createDefinition(): FCFunctionDefinition {
       maxConcurrency: 10,
       timeoutMs: 120000,
       memorySize: 1024,
+      diskSize: 512,
       cpu: 1,
       maxQueueSize: 500,
       queueTimeoutMs: 60000,

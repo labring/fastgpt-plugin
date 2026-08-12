@@ -28,7 +28,7 @@ export async function loadPlugin(
 ): Promise<LoadedPluginFactory> {
   const runtimeId = getRuntimeId(env);
   const runtimeDir = path.join(
-    env.FC_RUNTIME_CACHE_DIR,
+    env.FASTGPT_RUNTIME_CACHE_DIR,
     env.PLUGIN_ID,
     env.PLUGIN_VERSION,
     env.PLUGIN_ETAG

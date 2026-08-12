@@ -13,10 +13,10 @@ export const FCRuntimeEnvSchema = z.object({
   PLUGIN_ARTIFACT_BUCKET: z.string().min(1),
   PLUGIN_ARTIFACT_KEY: z.string().min(1),
   FASTGPT_BASE_URL: z.string().url(),
-  FC_INVOKE_SIGNING_SECRET: z.string().min(1),
+  FASTGPT_INVOKE_SIGNING_SECRET: z.string().min(1),
   LOG_LEVEL: z.string().default('info'),
   FASTGPT_PLUGIN_SDK_FACTORY_PATH: z.string().optional(),
-  FC_RUNTIME_CACHE_DIR: z.string().default(path.join(os.tmpdir(), 'fastgpt-plugin-runtime'))
+  FASTGPT_RUNTIME_CACHE_DIR: z.string().default(path.join(os.tmpdir(), 'fastgpt-plugin-runtime'))
 });
 
 export type FCRuntimeEnv = z.infer<typeof FCRuntimeEnvSchema>;

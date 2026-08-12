@@ -362,6 +362,7 @@ type FCPluginConfigType = {
   maxConcurrency: number;
   timeoutMs: number;
   memorySize: number;
+  diskSize: number;
   cpu: number;
   reservedConcurrency?: number;
   provisionedConcurrency?: number;
@@ -562,6 +563,7 @@ FC_ARTIFACT_ACCESS_KEY_SECRET=<可选，优先使用 RAM Role/STS>
 FC_DEFAULT_TIMEOUT_MS=120000
 FC_DEFAULT_INSTANCE_CONCURRENCY=10
 FC_DEFAULT_MEMORY_SIZE=1024
+FC_DEFAULT_DISK_SIZE=512
 FC_DEFAULT_CPU=1
 FC_INVOKE_SIGNING_SECRET=<server -> FC runtime HMAC secret>
 ```
@@ -580,7 +582,8 @@ PLUGIN_ARTIFACT_ENDPOINT=<artifact OSS endpoint>
 PLUGIN_ARTIFACT_BUCKET=<bucket>
 PLUGIN_ARTIFACT_KEY=<object key>
 FASTGPT_BASE_URL=<FastGPT base url>
-FC_INVOKE_SIGNING_SECRET=<通过云端 Secret 或 KMS 注入>
+FASTGPT_INVOKE_SIGNING_SECRET=<由 API server 的 FC_INVOKE_SIGNING_SECRET 注入>
+FASTGPT_RUNTIME_CACHE_DIR=<可选，默认使用系统临时目录>
 LOG_LEVEL=info
 ```
 

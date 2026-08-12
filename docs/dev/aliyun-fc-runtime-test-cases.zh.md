@@ -68,6 +68,7 @@ FC_SECURITY_GROUP_ID=sg-xxx
 FC_ARTIFACT_REGION=cn-hangzhou
 FC_ARTIFACT_BUCKET=fastgpt-plugin-runtime-artifacts
 FC_ARTIFACT_PREFIX=plugin-runtime
+FC_DEFAULT_DISK_SIZE=512
 FC_INVOKE_SIGNING_SECRET=<secret-from-secret-manager>
 ```
 
@@ -79,7 +80,11 @@ FC_INVOKE_SIGNING_SECRET=<secret-from-secret-manager>
 | FC-ENV-002 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `PLUGIN_RUNTIME_MODE=serverless-fc` | 缺少 FC 必填变量时解析 env | 返回明确配置错误 |
 | FC-ENV-003 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `NODE_ENV=production` | 使用弱 `FC_INVOKE_SIGNING_SECRET` | 拒绝启动并提示 signing secret 过弱 |
 | FC-ENV-004 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `PLUGIN_RUNTIME_MODE=serverless` | 解析旧 runtime mode | 归一化为 `serverless-fc`，兼容已有部署配置 |
-| FC-TYPE-001 | `types.ts` | 已覆盖 | 默认配置 | 解析 `FCPluginConfigSchema` | 得到默认 timeout、concurrency、memory、cpu 和 queue 配置 |
+| FC-TYPE-001 | `types.ts` | 已覆盖 | 默认配置 | 解析 `FCPluginConfigSchema` | 得到默认 timeout、concurrency、memory、disk、cpu 和 queue 配置 |
+| FC-PROVIDER-001 | `fc-aliyun-function-provider.ts` | 已覆盖 | custom-container 函数定义 | 构造阿里云 CreateFunction input | 请求包含显式 `diskSize`，避免 FC 拒绝创建函数 |
+| FC-PROVIDER-002 | `fc-aliyun-function-provider.ts` | 已覆盖 | FC invoke input | 构造阿里云 InvokeFunction body stream | stream 仅输出 `Buffer` chunk，兼容 Darabonba SDK 的 `Buffer.concat` |
+| FC-PROVIDER-003 | `fc-aliyun-function-provider.ts` | 已覆盖 | FC endpoint 首次连接超时 | 调用 InvokeFunction | 仅对连接建立前的 `ConnectTimeout` 重试一次，并为重试重建 body stream |
+| FC-RUNTIME-ENV-001 | `runtime/src/env.ts` | 已覆盖 | API server 配置 `FC_INVOKE_SIGNING_SECRET` | 构造函数定义并解析 runtime env | 函数容器使用 `FASTGPT_INVOKE_SIGNING_SECRET`，避开阿里云保留的 `FC_*` 前缀 |
 | FC-TYPE-002 | `types.ts` | 已覆盖 | 非法配置 | 输入负数 timeout 或非法 invocation mode | schema 校验失败 |
 | FC-NAME-001 | `function-name.ts` | 已覆盖 | 合法 plugin id、version、etag | 生成 runtime id 和 function name | 名称稳定、可推导、符合 FC 命名约束 |
 | FC-NAME-002 | `function-name.ts` | 已覆盖 | 超长 plugin id | 生成 function name | 名称被截断并带稳定 hash suffix |

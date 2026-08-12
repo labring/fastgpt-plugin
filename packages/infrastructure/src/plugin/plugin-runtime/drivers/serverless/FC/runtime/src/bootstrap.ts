@@ -31,7 +31,7 @@ const server = createServer(async (req, res) => {
       path: '/invoke',
       body,
       headers: req.headers as Record<string, string | undefined>,
-      secret: env.FC_INVOKE_SIGNING_SECRET,
+      secret: env.FASTGPT_INVOKE_SIGNING_SECRET,
       expectedRuntimeId: runtimeId,
       replayStore
     });

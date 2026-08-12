@@ -94,6 +94,7 @@ export class FCAliyunFunctionProvider implements FCFunctionProvider {
           maxConcurrency: body.instanceConcurrency ?? 1,
           timeoutMs: (body.timeout ?? 120) * 1000,
           memorySize: body.memorySize ?? 1024,
+          diskSize: body.diskSize ?? 512,
           cpu: body.cpu ?? 1,
           maxQueueSize: 500,
           queueTimeoutMs: 60000,
@@ -113,7 +114,7 @@ export class FCAliyunFunctionProvider implements FCFunctionProvider {
 
   async ensureFunction(definition: FCFunctionDefinition): Promise<FCFunctionEnsureResult> {
     const existing = await this.getFunction(definition.functionName);
-    const body = this.toFunctionInput(definition);
+    const body = toAliyunFunctionInput(definition, this.toVpcConfig());
 
     if (!existing) {
       const response = await this.client.createFunction(
@@ -166,31 +167,26 @@ export class FCAliyunFunctionProvider implements FCFunctionProvider {
   async invoke<P = unknown, R = unknown>(
     input: FCFunctionInvokeInput<P>
   ): Promise<FCFunctionInvokeResult<R>> {
-    const body = JSON.stringify({
-      protocol: FC_REQUEST_PROTOCOL,
-      invocationId: input.invocationId,
-      eventName: input.eventName,
-      returnStream: input.returnStream,
-      payload: input.payload
-    });
-    const response = await this.client.invokeFunctionWithOptions(
-      input.functionName,
-      new InvokeFunctionRequest({
-        body: Readable.from(body)
-      }),
-      new InvokeFunctionHeaders({
-        xFcInvocationType: 'Sync',
-        commonHeaders: {
-          'content-type': 'application/json',
-          'x-fastgpt-runtime-id': input.runtimeId,
-          'x-fastgpt-invocation-id': input.invocationId
+    const response = await invokeAliyunWithConnectRetry(() =>
+      this.client.invokeFunctionWithOptions(
+        input.functionName,
+        new InvokeFunctionRequest({
+          body: toAliyunInvokeBody(input)
+        }),
+        new InvokeFunctionHeaders({
+          xFcInvocationType: 'Sync',
+          commonHeaders: {
+            'content-type': 'application/json',
+            'x-fastgpt-runtime-id': input.runtimeId,
+            'x-fastgpt-invocation-id': input.invocationId
+          }
+        }),
+        {
+          readTimeout: input.timeoutMs,
+          connectTimeout: 10_000,
+          toMap: () => ({ readTimeout: input.timeoutMs, connectTimeout: 10_000 })
         }
-      }),
-      {
-        readTimeout: input.timeoutMs,
-        connectTimeout: 10_000,
-        toMap: () => ({ readTimeout: input.timeoutMs, connectTimeout: 10_000 })
-      }
+      )
     );
 
     if (response.statusCode && response.statusCode >= 400) {
@@ -218,28 +214,6 @@ export class FCAliyunFunctionProvider implements FCFunctionProvider {
     );
   }
 
-  private toFunctionInput(definition: FCFunctionDefinition) {
-    return {
-      runtime: 'custom-container',
-      handler: 'index.handler',
-      role: definition.roleArn,
-      cpu: definition.config.cpu,
-      memorySize: definition.config.memorySize,
-      timeout: Math.ceil(definition.config.timeoutMs / 1000),
-      instanceConcurrency: definition.config.maxConcurrency,
-      internetAccess: true,
-      environmentVariables: {
-        ...definition.env,
-        FASTGPT_RUNTIME_ID: definition.runtimeId
-      },
-      customContainerConfig: new CustomContainerConfig({
-        image: definition.image,
-        port: 9000
-      }),
-      vpcConfig: this.toVpcConfig()
-    };
-  }
-
   private toVpcConfig(): VPCConfig | undefined {
     if (!this.deps.vpcId && !this.deps.securityGroupId && !this.deps.vSwitchIds?.length) {
       return undefined;
@@ -264,6 +238,55 @@ export class FCAliyunFunctionProvider implements FCFunctionProvider {
   }
 }
 
+export function toAliyunInvokeBody(input: FCFunctionInvokeInput): Readable {
+  const body = JSON.stringify({
+    protocol: FC_REQUEST_PROTOCOL,
+    invocationId: input.invocationId,
+    eventName: input.eventName,
+    returnStream: input.returnStream,
+    payload: input.payload
+  });
+
+  return Readable.from([Buffer.from(body)]);
+}
+
+export async function invokeAliyunWithConnectRetry<T>(invoke: () => Promise<T>): Promise<T> {
+  try {
+    return await invoke();
+  } catch (error) {
+    if (!isConnectTimeoutError(error)) {
+      throw error;
+    }
+    return invoke();
+  }
+}
+
+export function toAliyunFunctionInput(
+  definition: FCFunctionDefinition,
+  vpcConfig?: VPCConfig
+) {
+  return {
+    runtime: 'custom-container',
+    handler: 'index.handler',
+    role: definition.roleArn,
+    cpu: definition.config.cpu,
+    memorySize: definition.config.memorySize,
+    diskSize: definition.config.diskSize,
+    timeout: Math.ceil(definition.config.timeoutMs / 1000),
+    instanceConcurrency: definition.config.maxConcurrency,
+    internetAccess: true,
+    environmentVariables: {
+      ...definition.env,
+      FASTGPT_RUNTIME_ID: definition.runtimeId
+    },
+    customContainerConfig: new CustomContainerConfig({
+      image: definition.image,
+      port: 9000
+    }),
+    vpcConfig
+  };
+}
+
 function isFunctionDrifted(existing: FCFunctionRecord, next: FCFunctionDefinition): boolean {
   return (
     existing.image !== next.image ||
@@ -273,6 +296,7 @@ function isFunctionDrifted(existing: FCFunctionRecord, next: FCFunctionDefinitio
     existing.config.maxConcurrency !== next.config.maxConcurrency ||
     existing.config.timeoutMs !== next.config.timeoutMs ||
     existing.config.memorySize !== next.config.memorySize ||
+    existing.config.diskSize !== next.config.diskSize ||
     existing.config.cpu !== next.config.cpu ||
     Object.entries(next.env).some(([key, value]) => existing.env[key] !== value)
   );
@@ -287,6 +311,14 @@ function isNotFoundError(error: unknown): boolean {
   const statusCode = record.statusCode ?? record.status;
   const code = String(record.code ?? record.name ?? '');
   return statusCode === 404 || /notfound|not_found|FunctionNotFound/i.test(code);
+}
+
+function isConnectTimeoutError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.name === 'RequestTimeoutError' &&
+    /ConnectTimeout/i.test(error.message)
+  );
 }
 
 async function readBody(body: Readable | undefined): Promise<string> {

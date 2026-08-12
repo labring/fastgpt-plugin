@@ -74,6 +74,22 @@ const RequiredWhenServerlessSchema = (name: string) =>
       return value;
     });
 
+const FCRoleArnSchema = RequiredWhenServerlessSchema('FC_ROLE_ARN').transform((value, ctx) => {
+  if (
+    value &&
+    isServerlessFCRuntimeMode() &&
+    !/^acs:ram:[a-z0-9-]*:\d+:role\/[A-Za-z0-9.-]{1,64}$/.test(value)
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      message:
+        'FC_ROLE_ARN must be a RAM role ARN such as acs:ram::<accountId>:role/<roleName>'
+    });
+  }
+
+  return value;
+});
+
 const FCInvokeSigningSecretSchema = z
   .string()
   .trim()
@@ -227,7 +243,7 @@ const ServerEnvShape = {
   FC_HTTP_BASE_URL: OptionalServerlessStringSchema,
   FC_ACCESS_KEY_ID: OptionalServerlessStringSchema,
   FC_ACCESS_KEY_SECRET: OptionalServerlessStringSchema,
-  FC_ROLE_ARN: RequiredWhenServerlessSchema('FC_ROLE_ARN'),
+  FC_ROLE_ARN: FCRoleArnSchema,
   FC_VPC_ID: OptionalServerlessStringSchema,
   FC_VSWITCH_IDS: OptionalServerlessStringSchema,
   FC_SECURITY_GROUP_ID: OptionalServerlessStringSchema,
@@ -240,6 +256,7 @@ const ServerEnvShape = {
   FC_DEFAULT_TIMEOUT_MS: PositiveIntSchema.default(120_000),
   FC_DEFAULT_INSTANCE_CONCURRENCY: PositiveIntSchema.default(10),
   FC_DEFAULT_MEMORY_SIZE: PositiveIntSchema.default(1024),
+  FC_DEFAULT_DISK_SIZE: PositiveIntSchema.default(512),
   FC_DEFAULT_CPU: z.coerce.number().positive().default(1),
   FC_DEFAULT_MAX_QUEUE_SIZE: PositiveIntSchema.default(500),
   FC_DEFAULT_QUEUE_TIMEOUT_MS: PositiveIntSchema.default(60_000),
@@ -416,6 +433,7 @@ export type ServerEnv = {
   FC_DEFAULT_TIMEOUT_MS: number;
   FC_DEFAULT_INSTANCE_CONCURRENCY: number;
   FC_DEFAULT_MEMORY_SIZE: number;
+  FC_DEFAULT_DISK_SIZE: number;
   FC_DEFAULT_CPU: number;
   FC_DEFAULT_MAX_QUEUE_SIZE: number;
   FC_DEFAULT_QUEUE_TIMEOUT_MS: number;

@@ -86,7 +86,7 @@ export class RemoteFileStorageRepo implements RemoteFileStoragePort {
       const parsed = FileMetaSchema.parse({
         contentType: metadata.contentType,
         createTime: new Date(metadata.metadata['createTime']),
-        etag: metadata.etag,
+        etag: metadata.etag ?? '',
         fileKey,
         fileName: metadata.metadata['fileName'],
         size: metadata.contentLength
