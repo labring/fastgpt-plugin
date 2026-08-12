@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 
-import FCClient, {
+import FCClientExport, {
   CreateFunctionInput,
   CreateFunctionRequest,
   CustomContainerConfig,
@@ -36,8 +36,29 @@ export type FCAliyunFunctionProviderDeps = {
   securityGroupId?: string;
 };
 
+type FCClientConstructor = typeof FCClientExport;
+
+export function resolveFCClientConstructor(moduleExport: unknown): FCClientConstructor {
+  if (typeof moduleExport === 'function') {
+    return moduleExport as FCClientConstructor;
+  }
+
+  if (
+    moduleExport &&
+    typeof moduleExport === 'object' &&
+    'default' in moduleExport &&
+    typeof moduleExport.default === 'function'
+  ) {
+    return moduleExport.default as FCClientConstructor;
+  }
+
+  throw new TypeError('Invalid @alicloud/fc20230330 client export');
+}
+
+const FCClient = resolveFCClientConstructor(FCClientExport);
+
 export class FCAliyunFunctionProvider implements FCFunctionProvider {
-  private readonly client: FCClient;
+  private readonly client: InstanceType<FCClientConstructor>;
 
   constructor(private readonly deps: FCAliyunFunctionProviderDeps) {
     this.client = new FCClient(
