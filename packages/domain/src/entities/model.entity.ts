@@ -29,7 +29,7 @@ export const LLMModelItemSchema = z.object({
   maxContext: z.number(),
   maxTokens: z.number(),
   quoteMaxToken: z.number(),
-  maxTemperature: z.union([z.number(), z.null()]),
+  maxTemperature: z.number().optional(),
 
   showTopP: z.boolean().optional(),
   responseFormatList: z.array(z.string()).optional(),
