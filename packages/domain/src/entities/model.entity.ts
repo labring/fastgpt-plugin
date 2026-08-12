@@ -1,23 +1,29 @@
-import z from 'zod';
+import z from "zod";
 
-import { I18nStringStrictSchema } from '../value-objects/i18n-string.vo';
+import { I18nStringStrictSchema } from "../value-objects/i18n-string.vo";
 
 // 模型类型枚举
-export const ModelTypeSchema = z.enum(['llm', 'embedding', 'rerank', 'tts', 'stt']);
+export const ModelTypeSchema = z.enum([
+  "llm",
+  "embedding",
+  "rerank",
+  "tts",
+  "stt",
+]);
 export const ModelTypeEnum = ModelTypeSchema.enum;
 
 // 价格类型 schema
 const PriceSchema = z.object({
   charsPointsPrice: z.number().optional(), // 1k chars=n points; 60s=n points
   inputPrice: z.number().optional(), // 1k tokens=n points
-  outputPrice: z.number().optional() // 1k tokens=n points
+  outputPrice: z.number().optional(), // 1k tokens=n points
 });
 
 // 基础模型项类型 schema
 const BaseModelItemSchema = z.object({
   provider: z.string(),
   model: z.string(),
-  name: z.string()
+  name: z.string(),
 });
 
 // LLM 模型类型 schema
@@ -29,7 +35,7 @@ export const LLMModelItemSchema = z.object({
   maxContext: z.number(),
   maxTokens: z.number(),
   quoteMaxToken: z.number(),
-  maxTemperature: z.union([z.number(), z.null()]),
+  maxTemperature: z.number().optional(),
 
   showTopP: z.boolean().optional(),
   responseFormatList: z.array(z.string()).optional(),
@@ -52,7 +58,7 @@ export const LLMModelItemSchema = z.object({
 
   defaultSystemChatPrompt: z.string().optional(),
   defaultConfig: z.record(z.string(), z.any()).optional(),
-  fieldMap: z.record(z.string(), z.string()).optional()
+  fieldMap: z.record(z.string(), z.string()).optional(),
 });
 
 export type LLMModelItemType = z.infer<typeof LLMModelItemSchema>;
@@ -68,7 +74,7 @@ export const EmbeddingModelItemSchema = z.object({
   normalization: z.boolean().optional(), // normalization processing
   defaultConfig: z.record(z.string(), z.any()).optional(), // post request config
   dbConfig: z.record(z.string(), z.any()).optional(), // Custom parameters for storage
-  queryConfig: z.record(z.string(), z.any()).optional() // Custom parameters for query
+  queryConfig: z.record(z.string(), z.any()).optional(), // Custom parameters for query
 });
 
 export type EmbeddingModelItemType = z.infer<typeof EmbeddingModelItemSchema>;
@@ -78,7 +84,7 @@ export const RerankModelItemSchema = z.object({
   ...PriceSchema.shape,
   ...BaseModelItemSchema.shape,
   type: z.literal(ModelTypeEnum.rerank),
-  maxToken: z.number()
+  maxToken: z.number(),
 });
 
 export type RerankModelItemType = z.infer<typeof RerankModelItemSchema>;
@@ -91,9 +97,9 @@ export const TTSModelSchema = z.object({
   voices: z.array(
     z.object({
       label: z.string(),
-      value: z.string()
-    })
-  )
+      value: z.string(),
+    }),
+  ),
 });
 
 export type TTSModelItemType = z.infer<typeof TTSModelSchema>;
@@ -102,17 +108,17 @@ export type TTSModelItemType = z.infer<typeof TTSModelSchema>;
 export const STTModelSchema = z.object({
   ...PriceSchema.shape,
   ...BaseModelItemSchema.shape,
-  type: z.literal(ModelTypeEnum.stt)
+  type: z.literal(ModelTypeEnum.stt),
 });
 
 export type STTModelItemType = z.infer<typeof STTModelSchema>;
 
-export const ModelItemSchema = z.discriminatedUnion('type', [
+export const ModelItemSchema = z.discriminatedUnion("type", [
   LLMModelItemSchema,
   EmbeddingModelItemSchema,
   RerankModelItemSchema,
   TTSModelSchema,
-  STTModelSchema
+  STTModelSchema,
 ]);
 
 export type ModelItemType = z.infer<typeof ModelItemSchema>;
@@ -120,7 +126,7 @@ export type ModelItemType = z.infer<typeof ModelItemSchema>;
 export const ModelProviderSchema = z.object({
   id: z.string(),
   name: I18nStringStrictSchema,
-  avatar: z.string()
+  avatar: z.string(),
 });
 
 export type ModelProviderType = z.infer<typeof ModelProviderSchema>;
