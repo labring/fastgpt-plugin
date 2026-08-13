@@ -31,6 +31,19 @@ describe('FCFunctionRegistry', () => {
       })
     ).resolves.toMatchObject({ state: 'updated' });
   });
+
+  it('updates when the container startup command drifts', async () => {
+    const registry = new FCFunctionRegistry(new InMemoryFCFunctionProvider());
+
+    await registry.ensureFunction(createDefinition());
+
+    await expect(
+      registry.ensureFunction({
+        ...createDefinition(),
+        entrypoint: ['docker-entrypoint.sh']
+      })
+    ).resolves.toMatchObject({ state: 'updated' });
+  });
 });
 
 function createDefinition(): FCFunctionDefinition {
@@ -40,6 +53,8 @@ function createDefinition(): FCFunctionDefinition {
     functionName: 'fastgpt-plugin-gettime',
     image: 'runtime:latest',
     roleArn: 'role',
+    entrypoint: ['node', 'dist/bootstrap.js'],
+    command: [],
     artifact: { bucket: 'bucket', key: 'key' },
     config: {
       minInstances: 0,

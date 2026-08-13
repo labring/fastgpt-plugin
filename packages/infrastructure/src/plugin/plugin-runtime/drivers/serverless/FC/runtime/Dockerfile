@@ -43,17 +43,21 @@ RUN pnpm --filter @fastgpt-plugin/sdk-factory build && \
 
 # --------- runner -----------
 FROM node:22-alpine AS runner
-WORKDIR /app
+WORKDIR /app/packages/infrastructure
 
 RUN addgroup -S fastgpt && adduser -S -G fastgpt fastgpt
+
+COPY packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime/package.json ./package.json
+RUN npm install --omit=dev --ignore-scripts --no-audit --no-fund --no-package-lock
 
 COPY --from=builder --chown=fastgpt:fastgpt \
   /app/packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime/dist ./dist
 
 ENV NODE_ENV=production
 ENV PORT=9000
+ENV FASTGPT_PLUGIN_SDK_FACTORY_PATH=/app/packages/infrastructure/dist/runtime-sdk/@fastgpt-plugin/sdk-factory
 
 EXPOSE 9000
 
 USER fastgpt
-CMD ["node", "dist/bootstrap.js"]
+ENTRYPOINT ["node", "dist/bootstrap.js"]

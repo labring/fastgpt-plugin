@@ -4,8 +4,13 @@ import {
   invokeAliyunWithConnectRetry,
   resolveFCClientConstructor,
   toAliyunFunctionInput,
-  toAliyunInvokeBody
+  toAliyunInvokeBody,
+  toAliyunInvokeRequest
 } from './fc-aliyun-function-provider';
+import {
+  parseFCSignedRequestEnvelope,
+  verifyFCRequestSignature
+} from './fc-request-signature';
 import type { FCFunctionDefinition } from './types';
 
 describe('resolveFCClientConstructor', () => {
@@ -36,6 +41,8 @@ describe('toAliyunFunctionInput', () => {
       functionName: 'fastgpt-plugin-gettime',
       image: 'runtime:latest',
       roleArn: 'acs:ram::1234567890123456:role/fastgpt-plugin-fc-runtime',
+      entrypoint: ['node', 'dist/bootstrap.js'],
+      command: [],
       artifact: { bucket: 'bucket', key: 'key' },
       config: {
         minInstances: 0,
@@ -55,6 +62,12 @@ describe('toAliyunFunctionInput', () => {
       runtime: 'custom-container',
       memorySize: 1024,
       diskSize: 512,
+      customContainerConfig: {
+        image: 'runtime:latest',
+        port: 9000,
+        entrypoint: ['node', 'dist/bootstrap.js'],
+        command: []
+      },
       environmentVariables: {
         PLUGIN_ID: 'getTime',
         FASTGPT_RUNTIME_ID: definition.runtimeId
@@ -64,9 +77,9 @@ describe('toAliyunFunctionInput', () => {
 });
 
 describe('toAliyunInvokeBody', () => {
-  it('emits Buffer chunks accepted by the Darabonba SDK stream reader', async () => {
+  it('signs the exact Buffer body emitted to the Darabonba SDK', async () => {
     const chunks: unknown[] = [];
-    const body = toAliyunInvokeBody({
+    const input = {
       runtimeId: 'fc@getTime@1.0.0@abc',
       functionName: 'fastgpt-plugin-gettime',
       invocationId: 'invocation-1',
@@ -74,8 +87,10 @@ describe('toAliyunInvokeBody', () => {
       payload: { input: { timezone: 'Asia/Shanghai' } },
       returnStream: false,
       timeoutMs: 120000,
-      invocationMode: 'openapi-buffered'
-    });
+      invocationMode: 'openapi-buffered' as const
+    };
+    const request = toAliyunInvokeRequest(input, 'test-signing-secret');
+    const body = toAliyunInvokeBody(request.body);
 
     for await (const chunk of body) {
       chunks.push(chunk);
@@ -83,10 +98,27 @@ describe('toAliyunInvokeBody', () => {
 
     expect(chunks).toHaveLength(1);
     expect(Buffer.isBuffer(chunks[0])).toBe(true);
-    expect(JSON.parse((chunks[0] as Buffer).toString('utf8'))).toMatchObject({
+    expect(chunks[0]).toEqual(request.body);
+    const signedRequest = parseFCSignedRequestEnvelope(chunks[0] as Buffer);
+    expect(signedRequest.body).toEqual(request.requestBody);
+    expect(signedRequest.headers).toEqual(request.headers);
+    expect(JSON.parse(signedRequest.body.toString('utf8'))).toMatchObject({
       protocol: 'fastgpt-plugin-fc/v1',
       invocationId: 'invocation-1',
       payload: { input: { timezone: 'Asia/Shanghai' } }
+    });
+    expect(
+      verifyFCRequestSignature({
+        method: 'POST',
+        path: '/invoke',
+        body: signedRequest.body,
+        headers: signedRequest.headers,
+        secret: 'test-signing-secret',
+        expectedRuntimeId: input.runtimeId
+      })
+    ).toEqual({
+      invocationId: input.invocationId,
+      runtimeId: input.runtimeId
     });
   });
 });

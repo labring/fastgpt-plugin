@@ -119,6 +119,7 @@ const fcFunctionProvider =
           endpoint: serverEnv.FC_ENDPOINT,
           accessKeyId: serverEnv.FC_ACCESS_KEY_ID,
           accessKeySecret: serverEnv.FC_ACCESS_KEY_SECRET,
+          signingSecret: serverEnv.FC_INVOKE_SIGNING_SECRET ?? '',
           vpcId: serverEnv.FC_VPC_ID,
           vSwitchIds: serverEnv.FC_VSWITCH_IDS?.split(',')
             .map((id) => id.trim())

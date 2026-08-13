@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createFCSignedRequestEnvelope,
   MemoryFCSignatureReplayStore,
+  parseFCSignedRequestEnvelope,
   signFCRequest,
   verifyFCRequestSignature
 } from './fc-request-signature';
@@ -31,6 +33,14 @@ describe('FC request signature', () => {
       invocationId: 'invocation-1',
       runtimeId: baseInput.runtimeId
     });
+  });
+
+  it('round-trips signed requests through an OpenAPI body envelope', () => {
+    const body = Buffer.from(baseInput.body);
+    const headers = signFCRequest({ ...baseInput, body }, 'secret');
+    const envelope = createFCSignedRequestEnvelope(body, headers);
+
+    expect(parseFCSignedRequestEnvelope(envelope)).toEqual({ body, headers });
   });
 
   it('rejects body tampering', () => {

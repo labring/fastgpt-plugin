@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { FC_DEFAULT_HTTP_PATH, FC_REQUEST_PROTOCOL } from './const';
+import { FC_DEFAULT_HTTP_PATH, FC_REQUEST_PROTOCOL } from './constants';
 import { parseFCInvokeFrames } from './fc-function-invoker';
 import { signFCRequest } from './fc-request-signature';
 import type {

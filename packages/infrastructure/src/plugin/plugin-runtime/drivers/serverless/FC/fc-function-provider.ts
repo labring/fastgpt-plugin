@@ -49,6 +49,8 @@ function isSameFunction(previous: FCFunctionRecord, next: FCFunctionDefinition):
   return (
     previous.image === next.image &&
     previous.roleArn === next.roleArn &&
+    JSON.stringify(previous.entrypoint) === JSON.stringify(next.entrypoint) &&
+    JSON.stringify(previous.command) === JSON.stringify(next.command) &&
     previous.artifact.bucket === next.artifact.bucket &&
     previous.artifact.key === next.artifact.key &&
     JSON.stringify(previous.config) === JSON.stringify(next.config) &&

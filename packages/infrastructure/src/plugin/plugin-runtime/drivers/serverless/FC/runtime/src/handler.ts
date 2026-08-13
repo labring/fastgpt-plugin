@@ -1,5 +1,5 @@
 import { InvokeManager } from '@infrastructure/plugin/invoke/invoke.impl';
-import { FC_REQUEST_PROTOCOL } from '@infrastructure/plugin/plugin-runtime/drivers/serverless/FC/const';
+import { FC_REQUEST_PROTOCOL } from '@infrastructure/plugin/plugin-runtime/drivers/serverless/FC/constants';
 import type { FCInvokeFrame } from '@infrastructure/plugin/plugin-runtime/drivers/serverless/FC/types';
 import type { PluginToolRunPayloadType } from '@infrastructure/plugin/tool.impl';
 import { getErrText } from '@shared/utils/err';

@@ -22,6 +22,7 @@ import type { MongoClient } from '../../../../../storage/mongo';
 import { PluginRuntimeConfigRepo } from '../../../plugin-runtime-config.repo';
 
 import { FC_DEFAULT_PLUGIN_CONFIG } from './const';
+import { FC_RUNTIME_COMMAND, FC_RUNTIME_ENTRYPOINT } from './constants';
 import { FCFunctionInvoker } from './fc-function-invoker';
 import { InMemoryFCFunctionProvider } from './fc-function-provider';
 import { FCFunctionRegistry } from './fc-function-registry';
@@ -430,6 +431,8 @@ export class FCPluginRuntimeManager implements PluginRuntimeManagerPort<FCPlugin
       functionName,
       image: env.FC_RUNTIME_IMAGE ?? '',
       roleArn: env.FC_ROLE_ARN ?? '',
+      entrypoint: FC_RUNTIME_ENTRYPOINT,
+      command: FC_RUNTIME_COMMAND,
       artifact,
       config,
       env: {
@@ -441,6 +444,11 @@ export class FCPluginRuntimeManager implements PluginRuntimeManagerPort<FCPlugin
         PLUGIN_ARTIFACT_BUCKET: artifact.bucket,
         PLUGIN_ARTIFACT_KEY: artifact.key,
         PLUGIN_ARTIFACT_ENDPOINT: env.FC_ARTIFACT_ENDPOINT ?? '',
+        FASTGPT_ARTIFACT_REGION: env.FC_ARTIFACT_REGION ?? env.FC_REGION ?? '',
+        FASTGPT_ARTIFACT_ACCESS_KEY_ID:
+          env.FC_ARTIFACT_ACCESS_KEY_ID ?? env.FC_ACCESS_KEY_ID ?? '',
+        FASTGPT_ARTIFACT_ACCESS_KEY_SECRET:
+          env.FC_ARTIFACT_ACCESS_KEY_SECRET ?? env.FC_ACCESS_KEY_SECRET ?? '',
         FASTGPT_BASE_URL: env.FASTGPT_BASE_URL,
         FASTGPT_INVOKE_SIGNING_SECRET: env.FC_INVOKE_SIGNING_SECRET ?? ''
       }

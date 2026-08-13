@@ -465,6 +465,8 @@ x-fastgpt-body-sha256: <hex>
 x-fastgpt-signature: hmac_sha256(FC_INVOKE_SIGNING_SECRET, method + path + timestamp + invocationId + bodyHash)
 ```
 
+`http-stream` 通过请求 headers 传递以上字段。FC OpenAPI `InvokeFunction` 不保证把调用 API 的自定义 headers 转发给 custom container，因此 `openapi-buffered` 把原始请求 body 和签名字段封装进 `fastgpt-plugin-fc-signed/v1` body envelope；runtime 解包后使用同一套规则验签。
+
 FC runtime 验证：
 
 - timestamp 超过允许窗口则拒绝。
@@ -581,13 +583,16 @@ PLUGIN_ETAG=<etag>
 PLUGIN_ARTIFACT_ENDPOINT=<artifact OSS endpoint>
 PLUGIN_ARTIFACT_BUCKET=<bucket>
 PLUGIN_ARTIFACT_KEY=<object key>
+FASTGPT_ARTIFACT_REGION=<由 API server 的 FC_ARTIFACT_REGION 或 FC_REGION 注入>
+FASTGPT_ARTIFACT_ACCESS_KEY_ID=<由 API server 的 FC_ARTIFACT_ACCESS_KEY_ID 或 FC_ACCESS_KEY_ID 注入>
+FASTGPT_ARTIFACT_ACCESS_KEY_SECRET=<由 API server 的 FC_ARTIFACT_ACCESS_KEY_SECRET 或 FC_ACCESS_KEY_SECRET 注入>
 FASTGPT_BASE_URL=<FastGPT base url>
 FASTGPT_INVOKE_SIGNING_SECRET=<由 API server 的 FC_INVOKE_SIGNING_SECRET 注入>
 FASTGPT_RUNTIME_CACHE_DIR=<可选，默认使用系统临时目录>
 LOG_LEVEL=info
 ```
 
-敏感配置通过 RAM Role、STS 或云端 Secret 注入，仓库内只保存非敏感模板。
+API server 保留 `FC_ARTIFACT_*` 配置名；写入函数自定义环境变量时映射为 `FASTGPT_ARTIFACT_*`，避开阿里云 FC 保留的 `FC_*` 前缀。敏感配置通过最小权限 RAM 用户、STS 或云端 Secret 注入，仓库内只保存非敏感模板。
 
 ## 权限模型
 

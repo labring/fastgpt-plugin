@@ -2,6 +2,15 @@ import { Readable } from 'node:stream';
 
 import { describe, expect, it, vi } from 'vitest';
 
+vi.hoisted(() => {
+  process.env.FC_REGION = 'cn-shanghai';
+  process.env.FC_ARTIFACT_REGION = 'cn-hangzhou';
+  process.env.FC_ACCESS_KEY_ID = 'fallback-access-key-id';
+  process.env.FC_ACCESS_KEY_SECRET = 'fallback-access-key-secret';
+  process.env.FC_ARTIFACT_ACCESS_KEY_ID = 'artifact-access-key-id';
+  process.env.FC_ARTIFACT_ACCESS_KEY_SECRET = 'artifact-access-key-secret';
+});
+
 import { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { successResult } from '@domain/value-objects/result.vo';
 
@@ -52,6 +61,9 @@ describe('FCPluginRuntimeManager', () => {
         runtimeId: 'fc@getTime@1.0.0@abc',
         artifact: expect.objectContaining({ bucket: 'bucket' }),
         env: expect.objectContaining({
+          FASTGPT_ARTIFACT_REGION: 'cn-hangzhou',
+          FASTGPT_ARTIFACT_ACCESS_KEY_ID: 'artifact-access-key-id',
+          FASTGPT_ARTIFACT_ACCESS_KEY_SECRET: 'artifact-access-key-secret',
           FASTGPT_INVOKE_SIGNING_SECRET: expect.any(String)
         })
       })

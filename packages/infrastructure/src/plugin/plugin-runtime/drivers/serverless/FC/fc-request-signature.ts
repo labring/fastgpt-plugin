@@ -1,6 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
-import { FC_SIGNATURE_TOLERANCE_MS } from './const';
+import { FC_SIGNATURE_TOLERANCE_MS, FC_SIGNED_REQUEST_PROTOCOL } from './constants';
 
 export type FCSignedRequestInput = {
   method: string;
@@ -17,6 +17,12 @@ export type FCRequestSignatureHeaders = {
   'x-fastgpt-timestamp': string;
   'x-fastgpt-body-sha256': string;
   'x-fastgpt-signature': string;
+};
+
+type FCSignedRequestEnvelope = {
+  protocol: typeof FC_SIGNED_REQUEST_PROTOCOL;
+  body: string;
+  headers: FCRequestSignatureHeaders;
 };
 
 export type FCSignatureReplayStore = {
@@ -43,6 +49,38 @@ export function signFCRequest(
     'x-fastgpt-timestamp': String(input.timestamp),
     'x-fastgpt-body-sha256': bodyHash,
     'x-fastgpt-signature': signature
+  };
+}
+
+export function createFCSignedRequestEnvelope(
+  body: Buffer,
+  headers: FCRequestSignatureHeaders
+): Buffer {
+  return Buffer.from(
+    JSON.stringify({
+      protocol: FC_SIGNED_REQUEST_PROTOCOL,
+      body: body.toString('base64'),
+      headers
+    } satisfies FCSignedRequestEnvelope)
+  );
+}
+
+export function parseFCSignedRequestEnvelope(value: Buffer): {
+  body: Buffer;
+  headers: FCRequestSignatureHeaders;
+} {
+  const envelope = JSON.parse(value.toString('utf8')) as Partial<FCSignedRequestEnvelope>;
+  if (
+    envelope.protocol !== FC_SIGNED_REQUEST_PROTOCOL ||
+    typeof envelope.body !== 'string' ||
+    !envelope.headers
+  ) {
+    throw new Error('Invalid FC signed request envelope');
+  }
+
+  return {
+    body: Buffer.from(envelope.body, 'base64'),
+    headers: envelope.headers
   };
 }
 

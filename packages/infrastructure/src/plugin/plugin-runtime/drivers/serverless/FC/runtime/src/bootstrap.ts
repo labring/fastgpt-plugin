@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage } from 'node:http';
 
 import {
   MemoryFCSignatureReplayStore,
+  parseFCSignedRequestEnvelope,
   verifyFCRequestSignature
 } from '@infrastructure/plugin/plugin-runtime/drivers/serverless/FC/fc-request-signature';
 import type { FCInvokeFrame } from '@infrastructure/plugin/plugin-runtime/drivers/serverless/FC/types';
@@ -23,20 +24,26 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  const body = await readRequestBody(req);
+  const transportBody = await readRequestBody(req);
 
   try {
+    const signedRequest = hasSignatureHeaders(req)
+      ? {
+          body: transportBody,
+          headers: req.headers as Record<string, string | undefined>
+        }
+      : parseFCSignedRequestEnvelope(transportBody);
     verifyFCRequestSignature({
       method: 'POST',
       path: '/invoke',
-      body,
-      headers: req.headers as Record<string, string | undefined>,
+      body: signedRequest.body,
+      headers: signedRequest.headers,
       secret: env.FASTGPT_INVOKE_SIGNING_SECRET,
       expectedRuntimeId: runtimeId,
       replayStore
     });
 
-    const request = JSON.parse(body.toString('utf8')) as FCRuntimeInvokeRequest;
+    const request = JSON.parse(signedRequest.body.toString('utf8')) as FCRuntimeInvokeRequest;
     const factory = await loadPluginOnce(env, {
       downloadArtifact: artifactDownloader
     });
@@ -87,4 +94,8 @@ async function readRequestBody(req: IncomingMessage) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   return Buffer.concat(chunks);
+}
+
+function hasSignatureHeaders(req: IncomingMessage): boolean {
+  return typeof req.headers['x-fastgpt-signature'] === 'string';
 }

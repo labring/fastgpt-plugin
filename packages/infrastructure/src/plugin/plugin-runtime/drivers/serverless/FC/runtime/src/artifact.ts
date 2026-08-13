@@ -9,11 +9,10 @@ export function createArtifactDownloader(env: FCRuntimeEnv) {
     vendor: 'oss',
     bucket: env.PLUGIN_ARTIFACT_BUCKET,
     endpoint: env.PLUGIN_ARTIFACT_ENDPOINT ?? '',
-    region: process.env.FC_ARTIFACT_REGION ?? process.env.FC_REGION ?? '',
+    region: env.FASTGPT_ARTIFACT_REGION,
     credentials: {
-      accessKeyId: process.env.FC_ARTIFACT_ACCESS_KEY_ID ?? process.env.FC_ACCESS_KEY_ID ?? '',
-      secretAccessKey:
-        process.env.FC_ARTIFACT_ACCESS_KEY_SECRET ?? process.env.FC_ACCESS_KEY_SECRET ?? ''
+      accessKeyId: env.FASTGPT_ARTIFACT_ACCESS_KEY_ID,
+      secretAccessKey: env.FASTGPT_ARTIFACT_ACCESS_KEY_SECRET
     },
     secure: true,
     internal: false,

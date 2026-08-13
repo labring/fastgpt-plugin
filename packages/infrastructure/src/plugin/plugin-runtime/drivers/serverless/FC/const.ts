@@ -2,6 +2,14 @@ import { env } from '../../../../../env';
 
 import type { FCPluginConfigType } from './types';
 
+export {
+  FC_DEFAULT_HTTP_PATH,
+  FC_REQUEST_PROTOCOL,
+  FC_RUNTIME_COMMAND,
+  FC_RUNTIME_ENTRYPOINT,
+  FC_SIGNATURE_TOLERANCE_MS
+} from './constants';
+
 export const FC_DEFAULT_PLUGIN_CONFIG: FCPluginConfigType = {
   minInstances: 0,
   maxConcurrency: env.FC_DEFAULT_INSTANCE_CONCURRENCY,
@@ -15,7 +23,3 @@ export const FC_DEFAULT_PLUGIN_CONFIG: FCPluginConfigType = {
   queueTimeoutMs: env.FC_DEFAULT_QUEUE_TIMEOUT_MS,
   invocationMode: env.FC_INVOCATION_MODE
 };
-
-export const FC_REQUEST_PROTOCOL = 'fastgpt-plugin-fc/v1';
-export const FC_DEFAULT_HTTP_PATH = '/invoke';
-export const FC_SIGNATURE_TOLERANCE_MS = 5 * 60 * 1000;

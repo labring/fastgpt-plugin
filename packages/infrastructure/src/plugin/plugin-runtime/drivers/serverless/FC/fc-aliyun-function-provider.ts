@@ -15,8 +15,9 @@ import FCClientExport, {
 } from '@alicloud/fc20230330';
 import { $OpenApiUtil } from '@alicloud/openapi-core';
 
-import { FC_REQUEST_PROTOCOL } from './const';
+import { FC_REQUEST_PROTOCOL, FC_RUNTIME_COMMAND, FC_RUNTIME_ENTRYPOINT } from './constants';
 import { parseFCInvokeFrames } from './fc-function-invoker';
+import { createFCSignedRequestEnvelope, signFCRequest } from './fc-request-signature';
 import type {
   FCFunctionDefinition,
   FCFunctionEnsureResult,
@@ -31,6 +32,7 @@ export type FCAliyunFunctionProviderDeps = {
   endpoint?: string;
   accessKeyId?: string;
   accessKeySecret?: string;
+  signingSecret: string;
   vpcId?: string;
   vSwitchIds?: string[];
   securityGroupId?: string;
@@ -85,6 +87,8 @@ export class FCAliyunFunctionProvider implements FCFunctionProvider {
         functionName: body.functionName ?? functionName,
         image: body.customContainerConfig?.image ?? '',
         roleArn: body.role ?? '',
+        entrypoint: body.customContainerConfig?.entrypoint ?? [],
+        command: body.customContainerConfig?.command ?? [],
         artifact: {
           bucket: body.environmentVariables?.PLUGIN_ARTIFACT_BUCKET ?? '',
           key: body.environmentVariables?.PLUGIN_ARTIFACT_KEY ?? ''
@@ -167,18 +171,17 @@ export class FCAliyunFunctionProvider implements FCFunctionProvider {
   async invoke<P = unknown, R = unknown>(
     input: FCFunctionInvokeInput<P>
   ): Promise<FCFunctionInvokeResult<R>> {
+    const request = toAliyunInvokeRequest(input, this.deps.signingSecret);
     const response = await invokeAliyunWithConnectRetry(() =>
       this.client.invokeFunctionWithOptions(
         input.functionName,
         new InvokeFunctionRequest({
-          body: toAliyunInvokeBody(input)
+          body: toAliyunInvokeBody(request.body)
         }),
         new InvokeFunctionHeaders({
           xFcInvocationType: 'Sync',
           commonHeaders: {
-            'content-type': 'application/json',
-            'x-fastgpt-runtime-id': input.runtimeId,
-            'x-fastgpt-invocation-id': input.invocationId
+            'content-type': 'application/json'
           }
         }),
         {
@@ -238,16 +241,41 @@ export class FCAliyunFunctionProvider implements FCFunctionProvider {
   }
 }
 
-export function toAliyunInvokeBody(input: FCFunctionInvokeInput): Readable {
-  const body = JSON.stringify({
-    protocol: FC_REQUEST_PROTOCOL,
-    invocationId: input.invocationId,
-    eventName: input.eventName,
-    returnStream: input.returnStream,
-    payload: input.payload
-  });
+export function toAliyunInvokeRequest(input: FCFunctionInvokeInput, signingSecret: string) {
+  const requestBody = serializeAliyunInvokeBody(input);
+  const headers = signFCRequest(
+    {
+      method: 'POST',
+      path: '/invoke',
+      timestamp: Date.now(),
+      invocationId: input.invocationId,
+      runtimeId: input.runtimeId,
+      body: requestBody
+    },
+    signingSecret
+  );
 
-  return Readable.from([Buffer.from(body)]);
+  return {
+    body: createFCSignedRequestEnvelope(requestBody, headers),
+    requestBody,
+    headers
+  };
+}
+
+export function toAliyunInvokeBody(body: Buffer): Readable {
+  return Readable.from([body]);
+}
+
+export function serializeAliyunInvokeBody(input: FCFunctionInvokeInput): Buffer {
+  return Buffer.from(
+    JSON.stringify({
+      protocol: FC_REQUEST_PROTOCOL,
+      invocationId: input.invocationId,
+      eventName: input.eventName,
+      returnStream: input.returnStream,
+      payload: input.payload
+    })
+  );
 }
 
 export async function invokeAliyunWithConnectRetry<T>(invoke: () => Promise<T>): Promise<T> {
@@ -281,7 +309,9 @@ export function toAliyunFunctionInput(
     },
     customContainerConfig: new CustomContainerConfig({
       image: definition.image,
-      port: 9000
+      port: 9000,
+      entrypoint: FC_RUNTIME_ENTRYPOINT,
+      command: FC_RUNTIME_COMMAND
     }),
     vpcConfig
   };
@@ -291,6 +321,8 @@ function isFunctionDrifted(existing: FCFunctionRecord, next: FCFunctionDefinitio
   return (
     existing.image !== next.image ||
     existing.roleArn !== next.roleArn ||
+    !arraysEqual(existing.entrypoint, next.entrypoint) ||
+    !arraysEqual(existing.command, next.command) ||
     existing.artifact.bucket !== next.artifact.bucket ||
     existing.artifact.key !== next.artifact.key ||
     existing.config.maxConcurrency !== next.config.maxConcurrency ||
@@ -300,6 +332,13 @@ function isFunctionDrifted(existing: FCFunctionRecord, next: FCFunctionDefinitio
     existing.config.cpu !== next.config.cpu ||
     Object.entries(next.env).some(([key, value]) => existing.env[key] !== value)
   );
+}
+
+function arraysEqual(left: string[] | undefined, right: string[] | undefined): boolean {
+  if ((left?.length ?? 0) !== (right?.length ?? 0)) {
+    return false;
+  }
+  return (left ?? []).every((value, index) => value === right?.[index]);
 }
 
 function isNotFoundError(error: unknown): boolean {

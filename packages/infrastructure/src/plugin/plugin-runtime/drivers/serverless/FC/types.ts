@@ -42,6 +42,8 @@ export type FCFunctionDefinition = {
   functionName: string;
   image: string;
   roleArn: string;
+  entrypoint: string[];
+  command: string[];
   artifact: Pick<FCArtifactInfo, 'bucket' | 'key' | 'etag' | 'size'>;
   config: FCPluginConfigType;
   env: Record<string, string>;

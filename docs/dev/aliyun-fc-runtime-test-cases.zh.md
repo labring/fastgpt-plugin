@@ -68,6 +68,8 @@ FC_SECURITY_GROUP_ID=sg-xxx
 FC_ARTIFACT_REGION=cn-hangzhou
 FC_ARTIFACT_BUCKET=fastgpt-plugin-runtime-artifacts
 FC_ARTIFACT_PREFIX=plugin-runtime
+FC_ARTIFACT_ACCESS_KEY_ID=<secret-from-secret-manager>
+FC_ARTIFACT_ACCESS_KEY_SECRET=<secret-from-secret-manager>
 FC_DEFAULT_DISK_SIZE=512
 FC_INVOKE_SIGNING_SECRET=<secret-from-secret-manager>
 ```
@@ -82,9 +84,10 @@ FC_INVOKE_SIGNING_SECRET=<secret-from-secret-manager>
 | FC-ENV-004 | `packages/infrastructure/src/env/index.ts` | 已覆盖 | `PLUGIN_RUNTIME_MODE=serverless` | 解析旧 runtime mode | 归一化为 `serverless-fc`，兼容已有部署配置 |
 | FC-TYPE-001 | `types.ts` | 已覆盖 | 默认配置 | 解析 `FCPluginConfigSchema` | 得到默认 timeout、concurrency、memory、disk、cpu 和 queue 配置 |
 | FC-PROVIDER-001 | `fc-aliyun-function-provider.ts` | 已覆盖 | custom-container 函数定义 | 构造阿里云 CreateFunction input | 请求包含显式 `diskSize`，避免 FC 拒绝创建函数 |
-| FC-PROVIDER-002 | `fc-aliyun-function-provider.ts` | 已覆盖 | FC invoke input | 构造阿里云 InvokeFunction body stream | stream 仅输出 `Buffer` chunk，兼容 Darabonba SDK 的 `Buffer.concat` |
+| FC-PROVIDER-002 | `fc-aliyun-function-provider.ts` | 已覆盖 | FC invoke input | 构造带签名 envelope 的阿里云 InvokeFunction body stream | stream 仅输出 `Buffer` chunk；runtime 解包后的原始 body 和签名可通过校验，且不依赖 FC 转发自定义 headers |
 | FC-PROVIDER-003 | `fc-aliyun-function-provider.ts` | 已覆盖 | FC endpoint 首次连接超时 | 调用 InvokeFunction | 仅对连接建立前的 `ConnectTimeout` 重试一次，并为重试重建 body stream |
 | FC-RUNTIME-ENV-001 | `runtime/src/env.ts` | 已覆盖 | API server 配置 `FC_INVOKE_SIGNING_SECRET` | 构造函数定义并解析 runtime env | 函数容器使用 `FASTGPT_INVOKE_SIGNING_SECRET`，避开阿里云保留的 `FC_*` 前缀 |
+| FC-RUNTIME-ENV-002 | `runtime/src/env.ts`、`runtime/src/artifact.ts` | 已覆盖 | API server 配置 `FC_ARTIFACT_REGION` 和 artifact OSS AK/SK | 构造函数定义并初始化 artifact downloader | server 配置映射为 `FASTGPT_ARTIFACT_*`，runtime 使用映射后的 region 和凭证下载 artifact |
 | FC-TYPE-002 | `types.ts` | 已覆盖 | 非法配置 | 输入负数 timeout 或非法 invocation mode | schema 校验失败 |
 | FC-NAME-001 | `function-name.ts` | 已覆盖 | 合法 plugin id、version、etag | 生成 runtime id 和 function name | 名称稳定、可推导、符合 FC 命名约束 |
 | FC-NAME-002 | `function-name.ts` | 已覆盖 | 超长 plugin id | 生成 function name | 名称被截断并带稳定 hash suffix |
@@ -140,7 +143,7 @@ pnpm exec vitest run packages/infrastructure/src/plugin/plugin-runtime/drivers/s
 | --- | --- | --- | --- | --- |
 | FC-STG-001 | runtime image | 待执行 | 构建并发布 `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime/Dockerfile` | ACR 中存在可拉取 image tag |
 | FC-STG-002 | OSS artifact | 待执行 | 配置 `FC_ARTIFACT_*`，注册 `getTime` 插件 | FC artifact OSS 中存在 immutable `index.js` |
-| FC-STG-003 | function create | 待执行 | `PLUGIN_RUNTIME_MODE=serverless-fc` 启动 API server 后注册插件 | FC 中创建或更新目标函数 |
+| FC-STG-003 | function create | 待执行 | `PLUGIN_RUNTIME_MODE=serverless-fc` 启动 API server 后注册插件 | FC 中创建或更新目标函数，函数环境变量包含 `FASTGPT_ARTIFACT_*` 且不包含 `FC_*` 自定义变量 |
 | FC-STG-004 | tool invoke | 待执行 | 通过 API 执行 `getTime` | 返回时间结果，API server metrics 记录 FC invoke |
 | FC-STG-005 | stream output | 待执行 | 执行带 `ctx.streamResponse` 的官方 JS 插件 | 客户端能收到 stream frame；buffered fallback 有清晰标识 |
 | FC-STG-006 | reverse invoke | 待执行 | 执行调用 `ctx.invoke.userInfo()` 和 `ctx.invoke.uploadFile()` 的插件 | FC runtime 能访问 FastGPT invoke API 并得到正确结果 |
@@ -154,6 +157,7 @@ pnpm exec vitest run packages/infrastructure/src/plugin/plugin-runtime/drivers/s
 1. 构建并推送 runtime image。
 2. 配置 OSS bucket、RAM role、FC VPC 和 API server secret。
 3. 使用 `getTime` 插件注册并确认 FC function/env/artifact。
+   API server 的 `FC_ARTIFACT_*` 会映射为函数容器的 `FASTGPT_ARTIFACT_*`；检查配置时不要输出 AK/SK 的值。
 4. 执行一次同步 invoke，再执行一次 streaming invoke。
 5. 验证 `userInfo` 和 `uploadFile` 反向调用。
 6. 故意制造 bad signature、missing artifact、handler throw。
