@@ -64,7 +64,9 @@ export const makePluginConfirmUC =
       }
 
       // 1. get pending plugins
-      const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
+      const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds(
+        source === 'system' ? undefined : source
+      );
 
       if (pendingErr) {
         deps.logger.error('Plugin Confirm Pending List Error', {
@@ -105,21 +107,23 @@ export const makePluginConfirmUC =
         );
       }
 
-      // 4. register the plugin to runtime (when it is runable)
+      // 4. register the plugin to runtime only when this source confirmed the first entity.
       if (plugin.type === 'tool') {
-        const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
-        if (registerErr) {
-          deps.logger.error('Plugin Confirm Register Runtime Error', {
-            uniqueId,
-            error: toUsecaseErrorLog(registerErr)
-          });
-          return failureResult(
-            {
-              en: 'Failed to register confirmed plugin',
-              'zh-CN': '注册确认后的插件失败'
-            },
-            registerErr
-          );
+        if (plugin.runtimeRegistrationRequired !== false) {
+          const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
+          if (registerErr) {
+            deps.logger.error('Plugin Confirm Register Runtime Error', {
+              uniqueId,
+              error: toUsecaseErrorLog(registerErr)
+            });
+            return failureResult(
+              {
+                en: 'Failed to register confirmed plugin',
+                'zh-CN': '注册确认后的插件失败'
+              },
+              registerErr
+            );
+          }
         }
 
         const [, replaceErr] = await disableAndUnregisterReplacedPlugins({

@@ -8,7 +8,11 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import type { PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
-import { PluginUniqueIdSchema, type PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
+import {
+  type PluginSourceType,
+  PluginUniqueIdSchema,
+  type PluginUniqueIdType
+} from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
@@ -21,6 +25,7 @@ export type PluginUploadUCDeps = {
 };
 
 type Input = {
+  source?: PluginSourceType;
   files: {
     file: Readable;
     fileName?: string;
@@ -72,14 +77,18 @@ const toPluginKey = (uniqueId: PluginUniqueIdType) =>
 const rollbackPendingPlugins = async (
   deps: Pick<PluginUploadUCDeps, 'logger' | 'pluginRepo'>,
   uniqueIds: PluginUniqueIdType[],
-  existingPendingPluginKeys: Set<string>
+  existingPendingPluginKeys: Set<string>,
+  source: PluginSourceType
 ) => {
   for (const uniqueId of uniqueIds) {
     if (existingPendingPluginKeys.has(toPluginKey(uniqueId))) {
       continue;
     }
 
-    const [, err] = await deps.pluginRepo.deletePendingPlugin(uniqueId);
+    const [, err] =
+      source === 'system'
+        ? await deps.pluginRepo.deletePendingPlugin(uniqueId)
+        : await deps.pluginRepo.deletePendingPlugin(uniqueId, source);
 
     if (err) {
       deps.logger.warn('Failed to rollback pending plugin', {
@@ -105,6 +114,7 @@ export const makePluginUploadUC =
   (deps: PluginUploadUCDeps) =>
   async (input: Input): Promise<Result<Output>> => {
     const { logger } = deps;
+    const source = input.source ?? 'system';
     logger.debug('Plugin Upload', { fileCount: input.files.length });
     logger.info('Upload plugin package files');
 
@@ -117,7 +127,9 @@ export const makePluginUploadUC =
 
     const uploadedPlugins: PluginType[] = [];
     const failed: UploadFailure[] = [];
-    const [existingPendingPlugins, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
+    const [existingPendingPlugins, pendingErr] = await deps.pluginRepo.getPendingPluginIds(
+      source === 'system' ? undefined : source
+    );
 
     if (pendingErr) {
       logger.error('Plugin Upload Pending List Error', toUsecaseErrorLog(pendingErr));
@@ -181,11 +193,17 @@ export const makePluginUploadUC =
         const [, createErr] = await deps.pluginRepo.createPlugin({
           files: parsedPackage.files,
           plugin: parsedPackage.plugin,
-          pending: true
+          pending: true,
+          ...(source === 'system' ? {} : { source })
         });
 
         if (createErr) {
-          await rollbackPendingPlugins(deps, [parsedPackage.uniqueId], existingPendingPluginKeys);
+          await rollbackPendingPlugins(
+            deps,
+            [parsedPackage.uniqueId],
+            existingPendingPluginKeys,
+            source
+          );
           addFailure(failed, parsedPackage.pkgFile.metaData.fileName, createErr.reason);
           continue;
         }

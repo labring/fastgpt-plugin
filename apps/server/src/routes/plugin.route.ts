@@ -57,7 +57,9 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
     }
 
+    const source = String(formData.get('source') ?? 'system');
     const [result, err] = await pluginUploadUC({
+      source,
       files: files.map((file) => ({
         file: Readable.fromWeb((file as File).stream() as ReadableStream),
         fileName: (file as File).name

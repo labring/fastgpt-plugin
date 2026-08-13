@@ -9,6 +9,7 @@ import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import type { FileTTLPort } from '@domain/ports/file-ttl.port';
 import type {
+  PluginConfirmResultType,
   PluginCreateResultType,
   PluginListInputType,
   PluginListItemType,
@@ -485,6 +486,17 @@ export class PluginRepo implements PluginRepoPort {
     return path.join(...array);
   }
 
+  private getPendingFileKey(
+    id: PluginUniqueIdType,
+    source: PluginSourceType,
+    filePath: string[]
+  ): string {
+    if (source === 'system') {
+      return this.getFileKey(id, filePath, true);
+    }
+    return path.join('temp', source, id.pluginId, id.version, id.etag, ...filePath);
+  }
+
   private getLocalPluginRuntimeFileKey(id: PluginUniqueIdType, filePath: string[]): string {
     return path.join('plugin', id.pluginId, id.version, id.etag, ...filePath);
   }
@@ -615,15 +627,19 @@ export class PluginRepo implements PluginRepoPort {
   async confirmPlugin(
     pluginId: PluginUniqueIdType,
     source: PluginSourceType = 'system'
-  ): Promise<Result<PluginType>> {
+  ): Promise<Result<PluginConfirmResultType>> {
     try {
       const pluginModel = this.deps.mongoClient.getModel('plugin');
-      const plugin = await this.deps.mongoClient
-        .getModel('plugin')
-        .findOne({
-          ...pluginId
-        })
-        .lean();
+      const pendingModel = this.deps.mongoClient.getModel('pluginPendingInstallation');
+      const pluginPendingModelIsAvailable = pendingModel.name !== pluginModel.name;
+      const pending = pluginPendingModelIsAvailable
+        ? (await pendingModel.findOne({ source, ...pluginId }).lean()) ??
+          (source === 'system'
+            ? await pluginModel.findOne({ ...pluginId, status: PluginStatusEnum.pending }).lean()
+            : null)
+        : await pluginModel.findOne({ ...pluginId, status: PluginStatusEnum.pending }).lean();
+      if (!pending) return failureResult({ en: 'Pending Plugin not found', 'zh-CN': '待确认插件未找到' });
+      const plugin = await pluginModel.findOne({ ...pluginId }).lean();
 
       if (!plugin) {
         return failureResult({
@@ -632,13 +648,30 @@ export class PluginRepo implements PluginRepoPort {
         });
       }
 
-      // get s3 files
+      if (plugin?.status === PluginStatusEnum.active && pluginPendingModelIsAvailable) {
+        await Promise.all([
+          this.deps.publicRemoteFileStorageRepo.deletePath(
+            this.getPendingFileKey(pluginId, source, [])
+          ),
+          this.deps.privateRemoteFileStorageRepo.deletePath(
+            this.getPendingFileKey(pluginId, source, [])
+          )
+        ]);
+        await pendingModel.deleteOne({ source, ...pluginId });
+        await this.updateInstallation(source, plugin as MongoPluginWithId);
+        return successResult({ ...this.toDomainPlugin(plugin), runtimeRegistrationRequired: false });
+      }
+      if (!plugin) {
+        return failureResult({ en: 'Plugin not found', 'zh-CN': '插件未找到' });
+      }
+
+      // get source-isolated pending files
       const [publicFiles, err] = await this.deps.publicRemoteFileStorageRepo.getFileKeysByPath(
-        this.getFileKey(pluginId, [], true)
+        this.getPendingFileKey(pluginId, source, [])
       );
       const [privateFiles, privateErr] =
         await this.deps.privateRemoteFileStorageRepo.getFileKeysByPath(
-          this.getFileKey(pluginId, [], true)
+          this.getPendingFileKey(pluginId, source, [])
         );
 
       if (err || privateErr) {
@@ -652,13 +685,13 @@ export class PluginRepo implements PluginRepoPort {
         ...publicFiles.map(async (fileKey) => {
           return await this.deps.publicRemoteFileStorageRepo.move(
             fileKey,
-            fileKey.replace('temp/', '')
+            fileKey.replace(/^temp(?:\/system)?\//, '')
           );
         }),
         ...privateFiles.map(async (fileKey) => {
           return await this.deps.privateRemoteFileStorageRepo.move(
             fileKey,
-            fileKey.replace('temp/', '')
+            fileKey.replace(/^temp(?:\/system)?\//, '')
           );
         })
       ]);
@@ -705,20 +738,26 @@ export class PluginRepo implements PluginRepoPort {
         )
         .lean();
 
-      await this.updateInstallation(source, plugin);
+      if (pluginPendingModelIsAvailable) {
+        await pendingModel.deleteOne({ source, ...pluginId });
+      }
+      await this.updateInstallation(source, plugin as MongoPluginWithId);
 
       const [, replaceActiveErr] = await this.disableSameVersionActivePlugins(pluginId);
       if (replaceActiveErr) return failureResult(replaceActiveErr);
 
-      return successResult(confirmedPlugin);
+      return successResult({ ...confirmedPlugin, runtimeRegistrationRequired: true });
     } catch (error) {
       return failureResult({ en: 'Failed to confirm plugin', 'zh-CN': '确认插件失败' }, error);
     }
   }
 
-  async deletePendingPlugin(uniqueId: PluginUniqueIdType): Promise<Result> {
+  async deletePendingPlugin(
+    uniqueId: PluginUniqueIdType,
+    source: PluginSourceType = 'system'
+  ): Promise<Result> {
     try {
-      const pendingPrefix = this.getFileKey(uniqueId, [], true);
+      const pendingPrefix = this.getPendingFileKey(uniqueId, source, []);
       const pendingPathPrefix = `${pendingPrefix}/`;
       const cleanupSteps = await Promise.all([
         this.deps.publicRemoteFileStorageRepo.deletePath(pendingPrefix),
@@ -743,10 +782,15 @@ export class PluginRepo implements PluginRepoPort {
         }
       });
 
-      await this.deps.mongoClient.getModel('plugin').deleteOne({
-        ...uniqueId,
-        status: PluginStatusEnum.pending
-      });
+      const pendingModel = this.deps.mongoClient.getModel('pluginPendingInstallation');
+      if (pendingModel.name !== this.deps.mongoClient.getModel('plugin').name) {
+        await pendingModel.deleteOne({ source, ...uniqueId });
+      } else {
+        await this.deps.mongoClient.getModel('plugin').deleteOne({
+          ...uniqueId,
+          status: PluginStatusEnum.pending
+        });
+      }
 
       return successResult({});
     } catch (error) {
@@ -1182,14 +1226,13 @@ export class PluginRepo implements PluginRepoPort {
     }
   }
 
-  async getPendingPluginIds(): Promise<Result<PluginUniqueIdType[]>> {
+  async getPendingPluginIds(source: PluginSourceType = 'system'): Promise<Result<PluginUniqueIdType[]>> {
     try {
-      const pendingPlugins = await this.deps.mongoClient
-        .getModel('plugin')
+      const pendingModel = this.deps.mongoClient.getModel('pluginPendingInstallation');
+      const pluginModel = this.deps.mongoClient.getModel('plugin');
+      const pendingPlugins = await pendingModel
         .find(
-          {
-            status: PluginStatusEnum.pending
-          },
+          pendingModel.name === pluginModel.name ? { status: PluginStatusEnum.pending } : { source },
           {
             _id: true,
             pluginId: true,
@@ -1198,7 +1241,22 @@ export class PluginRepo implements PluginRepoPort {
           }
         )
         .lean();
-      return successResult(pendingPlugins.map((plugin) => PluginUniqueIdSchema.parse(plugin)));
+      if (source === 'system' && pendingModel.name !== pluginModel.name) {
+        const legacyPendingPlugins = await pluginModel
+          .find(
+            { status: PluginStatusEnum.pending },
+            { _id: true, pluginId: true, version: true, etag: true }
+          )
+          .lean();
+        pendingPlugins.push(
+          ...(legacyPendingPlugins as unknown as typeof pendingPlugins)
+        );
+      }
+      return successResult(
+        pendingPlugins.map(({ pluginId, version, etag }) =>
+          PluginUniqueIdSchema.parse({ pluginId, version, etag })
+        )
+      );
     } catch (error) {
       return failureResult(
         {
@@ -1227,11 +1285,24 @@ export class PluginRepo implements PluginRepoPort {
       ? addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
       : undefined;
     const pluginRecord = this.toPluginRecord(plugin);
+    const pendingInstallationModel = this.deps.mongoClient.getModel('pluginPendingInstallation');
+      const pluginPendingModelIsAvailable = pendingInstallationModel.name !== pluginModel.name;
 
     let installedPlugin: MongoPluginWithId | undefined;
     let activateInstalledPlugin = false;
 
     try {
+      if (pending && pluginPendingModelIsAvailable) {
+        const existingPending = await pendingInstallationModel
+          .findOne({ source, ...uniqueId })
+          .lean();
+        if (existingPending) {
+          return failureResult({
+            en: 'Plugin upload already exists for this source',
+            'zh-CN': '该来源下已存在相同插件上传'
+          });
+        }
+      }
       if (!pending) {
         const existingInstallation = await this.deps.mongoClient
           .getModel('pluginInstallation')
@@ -1254,25 +1325,26 @@ export class PluginRepo implements PluginRepoPort {
         .lean();
 
       if (existingPlugin) {
-        if (pending && existingPlugin.status === PluginStatusEnum.pending) {
-          await pluginModel.updateOne(uniqueId, {
-            $set: {
-              expiredAt: pendingExpiresAt,
-              updateAt: new Date()
-            }
+        if (pending && pluginPendingModelIsAvailable) {
+          installedPlugin = { ...pluginRecord, _id: existingPlugin._id } as MongoPluginWithId;
+        } else if (pending) {
+          if (existingPlugin.status === PluginStatusEnum.disabled) {
+            await pluginModel.updateOne(uniqueId, {
+              $set: { status: PluginStatusEnum.pending, updateAt: new Date() },
+              $unset: { expiredAt: 1 }
+            });
+            return successResult({ runtimeRegistrationRequired: false });
+          }
+          if (existingPlugin.status === PluginStatusEnum.pending) {
+            await pluginModel.updateOne(uniqueId, {
+              $set: { expiredAt: pendingExpiresAt, updateAt: new Date() }
+            });
+            return successResult({ runtimeRegistrationRequired: false });
+          }
+          return failureResult({
+            en: 'Plugin with the same version and etag already exists',
+            'zh-CN': '已存在相同版本且 etag 相同的插件'
           });
-        } else if (pending && existingPlugin.status === PluginStatusEnum.disabled) {
-          await pluginModel.updateOne(uniqueId, {
-            $set: {
-              status: PluginStatusEnum.pending,
-              updateAt: new Date()
-            },
-            $unset: {
-              expiredAt: 1
-            }
-          });
-
-          return successResult({ runtimeRegistrationRequired: false });
         } else if (!pending && existingPlugin.status === PluginStatusEnum.active) {
           installedPlugin = {
             ...pluginRecord,
@@ -1294,14 +1366,7 @@ export class PluginRepo implements PluginRepoPort {
         try {
           const createdPlugin = await pluginModel.create({
             ...pluginRecord,
-            ...(pending
-              ? {
-                status: PluginStatusEnum.pending,
-                expiredAt: pendingExpiresAt
-              }
-              : {
-                status: PluginStatusEnum.disabled
-              })
+            status: PluginStatusEnum.disabled
           });
           installedPlugin = createdPlugin.toObject();
           activateInstalledPlugin = !pending;
@@ -1321,13 +1386,16 @@ export class PluginRepo implements PluginRepoPort {
             throw error;
           }
 
-          if (pending && concurrentPlugin.status === PluginStatusEnum.pending) {
-            await pluginModel.updateOne(uniqueId, {
-              $set: {
-                expiredAt: pendingExpiresAt,
-                updateAt: new Date()
-              }
-            });
+          if (pending && pluginPendingModelIsAvailable) {
+            installedPlugin = { ...pluginRecord, _id: concurrentPlugin._id } as MongoPluginWithId;
+          } else if (pending) {
+            if (concurrentPlugin.status === PluginStatusEnum.pending) {
+              await pluginModel.updateOne(uniqueId, {
+                $set: { expiredAt: pendingExpiresAt, updateAt: new Date() }
+              });
+              return successResult({ runtimeRegistrationRequired: false });
+            }
+            throw error;
           } else if (!pending && concurrentPlugin.status === PluginStatusEnum.active) {
             installedPlugin = {
               ...pluginRecord,
@@ -1369,7 +1437,9 @@ export class PluginRepo implements PluginRepoPort {
         ? [
           this.deps.publicRemoteFileStorageRepo.save({
             ...files.readme.metaData,
-            fileKey: this.getFileKey(uniqueId, ['README.md'], pending),
+            fileKey: pending
+              ? this.getPendingFileKey(uniqueId, source, ['README.md'])
+              : this.getFileKey(uniqueId, ['README.md'], false),
             file: READMEStream
           })
         ]
@@ -1381,7 +1451,9 @@ export class PluginRepo implements PluginRepoPort {
         }
         return this.deps.publicRemoteFileStorageRepo.save({
           ...logo.metaData,
-          fileKey: this.getFileKey(uniqueId, [logo.metaData.fileName], pending),
+          fileKey: pending
+            ? this.getPendingFileKey(uniqueId, source, [logo.metaData.fileName])
+            : this.getFileKey(uniqueId, [logo.metaData.fileName], false),
           file: stream
         });
       }),
@@ -1392,7 +1464,9 @@ export class PluginRepo implements PluginRepoPort {
           return failureResult({ en: 'get asset stream error', 'zh-CN': '获取文件流错误' }, err);
         return this.deps.publicRemoteFileStorageRepo.save({
           ...metadata,
-          fileKey: this.getFileKey(uniqueId, ['assets', metadata.fileName], pending),
+          fileKey: pending
+            ? this.getPendingFileKey(uniqueId, source, ['assets', metadata.fileName])
+            : this.getFileKey(uniqueId, ['assets', metadata.fileName], false),
           file: stream
         });
       }) ?? [])
@@ -1401,7 +1475,9 @@ export class PluginRepo implements PluginRepoPort {
     const saveTasks = [
       this.deps.privateRemoteFileStorageRepo.save({
         ...files.index.metaData,
-        fileKey: this.getFileKey(uniqueId, ['index.js'], pending),
+        fileKey: pending
+          ? this.getPendingFileKey(uniqueId, source, ['index.js'])
+          : this.getFileKey(uniqueId, ['index.js'], false),
         file: indexStream
       }),
       ...publicSaveTasks
@@ -1432,7 +1508,7 @@ export class PluginRepo implements PluginRepoPort {
             )
             : successResult({}),
           this.deps.fileTTLManager.setExpiration(
-            [this.getFileKey(uniqueId, ['index.js'], pending)],
+            [this.getPendingFileKey(uniqueId, source, ['index.js'])],
             this.deps.privateRemoteFileStorageRepo.getBucketName(),
             pendingExpiresAt
           )
@@ -1461,6 +1537,15 @@ export class PluginRepo implements PluginRepoPort {
         if (replaceActiveErr) return failureResult(replaceActiveErr);
 
         return successResult({ runtimeRegistrationRequired });
+      }
+
+      if (pending && pendingExpiresAt && installedPlugin && pluginPendingModelIsAvailable) {
+        await pendingInstallationModel.create({
+          source,
+          ...uniqueId,
+          pluginObjectId: installedPlugin._id,
+          expiredAt: pendingExpiresAt
+        });
       }
 
       return successResult({ runtimeRegistrationRequired: false });

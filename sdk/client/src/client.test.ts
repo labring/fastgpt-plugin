@@ -181,6 +181,20 @@ const readJsonBody = (request: RequestInit) =>
   JSON.parse(String(request.body)) as Record<string, unknown>;
 
 describe('FastGPTPluginClient plugin source payloads', () => {
+  it('passes source when uploading plugin packages', async () => {
+    const fetch = vi.fn().mockResolvedValue(makeJsonResponse({ data: { plugins: [] } }));
+    const client = new FastGPTPluginClient({
+      baseUrl: 'https://plugin.example.com',
+      fetch: fetch as unknown as typeof globalThis.fetch
+    });
+
+    await client.uploadPlugin([new Blob(['pkg'])], { source: 'team-a' });
+
+    const [, request] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(request.body).toBeInstanceOf(FormData);
+    expect((request.body as FormData).get('source')).toBe('team-a');
+  });
+
   it('passes source when confirming plugins', async () => {
     const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     const client = new FastGPTPluginClient({

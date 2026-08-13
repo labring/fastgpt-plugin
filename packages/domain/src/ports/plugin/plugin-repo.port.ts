@@ -61,10 +61,14 @@ export type PluginCreateResultType = {
   runtimeRegistrationRequired: boolean;
 };
 
+export type PluginConfirmResultType = PluginType & {
+  runtimeRegistrationRequired?: boolean;
+};
+
 /** 操作 Plugin S3, Mongo，本地缓存, 代码里面的静态配置 ...*/
 export interface PluginRepoPort {
   /** 获取 pending 的 plugin id */
-  getPendingPluginIds(): Promise<Result<PluginUniqueIdType[]>>;
+  getPendingPluginIds(source?: PluginSourceType): Promise<Result<PluginUniqueIdType[]>>;
   /** 创建插件 */
   createPlugin(arg: {
     plugin: PluginType;
@@ -77,9 +81,9 @@ export interface PluginRepoPort {
   confirmPlugin(
     uniqueId: PluginUniqueIdType,
     source?: PluginSourceType
-  ): Promise<Result<PluginType>>;
+  ): Promise<Result<PluginConfirmResultType>>;
   /** 删除 pending 插件及其临时文件 */
-  deletePendingPlugin(uniqueId: PluginUniqueIdType): Promise<Result>;
+  deletePendingPlugin(uniqueId: PluginUniqueIdType, source?: PluginSourceType): Promise<Result>;
   /** 删除指定 source 下的安装关系；没有其他 source 引用时才禁用插件实体 */
   deletePluginInstallation(
     input: Required<Pick<UserPluginIdType, 'pluginId' | 'source' | 'version'>>

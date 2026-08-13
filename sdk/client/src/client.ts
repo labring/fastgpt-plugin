@@ -26,6 +26,8 @@ import { PluginServiceFeatureContract } from '@interface-adapter/contracts/route
 import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 import { WorkflowContract } from '@interface-adapter/contracts/route/workflow.contract';
 
+import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
+
 import { RunToolWithStream } from './tool-stream';
 import { ClientTransport } from './transport';
 import type {
@@ -127,7 +129,7 @@ export class FastGPTPluginClient {
 
   async uploadPlugin(
     files: (Blob | { file: Blob; filename?: string })[],
-    requestOptions?: ClientRequestOptions
+    requestOptions?: ClientRequestOptions & { source?: PluginSourceType }
   ): Promise<PluginUploadResultType> {
     const formData = new FormData();
 
@@ -139,6 +141,9 @@ export class FastGPTPluginClient {
 
       formData.append('files', file, filename ?? defaultName);
     });
+    if (requestOptions?.source) {
+      formData.append('source', requestOptions.source);
+    }
 
     return this.transport.requestData<PluginUploadResultType>({
       path: this.withApiPath(PluginContract.Upload.meta.path),

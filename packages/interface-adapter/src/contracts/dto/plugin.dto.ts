@@ -68,7 +68,8 @@ export const PluginUploadResponseDTOSchema = z
 
 export const PluginUploadParamsSchema = z
   .object({
-    files: z.array(z.file()).min(1)
+    files: z.array(z.file()).min(1),
+    source: PluginSourceDTOSchema.optional().default('system')
   });
 
 export const PluginUniqueIdDTOSchema = z.object({
