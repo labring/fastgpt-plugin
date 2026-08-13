@@ -13,12 +13,13 @@
 - `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime` 已提供 HTTP bootstrap、artifact loader、handler 执行和 NDJSON frame 输出。
 - `PLUGIN_RUNTIME_MODE=serverless-fc` 已接入 `apps/server/src/deps.ts`。
 - 已补齐 infrastructure 层的 env、命名、签名、artifact、registry、invoker、manager 单元测试。
+- 已提供手动构建并推送 runtime image 到阿里云 ACR 的 GitHub Actions workflow。
 
 仍待补齐：
 
 - `packages/infrastructure/src/plugin/plugin-runtime/drivers/serverless/FC/runtime` 的 runtime 进程级单元测试。
 - 真实阿里云 FC + OSS staging smoke test。
-- runtime image 发布、RAM policy、FC/OSS 部署模板文档。
+- RAM policy、FC/OSS 部署模板文档。
 - artifact 历史版本保留与自动清理策略。
 
 ## 已通过验证
@@ -138,6 +139,20 @@ pnpm exec vitest run packages/infrastructure/src/plugin/plugin-runtime/drivers/s
 ```
 
 ## Staging Smoke Test
+
+### 手动发布 runtime image
+
+在 GitHub Actions 中手动运行 `Build and Push FC Runtime Image`，填写 `image_tag`，例如
+`2026-08-13-rc1`。workflow 使用以下仓库 secrets 登录阿里云 ACR，并推送：
+
+```text
+${FASTGPT_ALI_IMAGE_PREFIX}/fastgpt-plugin-fc-runtime:<image_tag>
+```
+
+- `FASTGPT_ALI_IMAGE_PREFIX` 应包含 ACR 命名空间，例如 `registry.cn-hangzhou.aliyuncs.com/fastgpt-finley`。
+- `FASTGPT_ALI_IMAGE_USER` 和 `FASTGPT_ALI_IMAGE_PSW` 使用 ACR 访问凭证。
+- 当前 runtime 按 `linux/amd64` 构建，和 FC 配置保持一致。
+- 推送成功后，将完整镜像地址填入 API server 的 `FC_RUNTIME_IMAGE`。
 
 | ID | 覆盖目标 | 状态 | 步骤 | 预期结果 |
 | --- | --- | --- | --- | --- |
