@@ -82,6 +82,7 @@ export interface PluginRepoPort {
     uniqueId: PluginUniqueIdType,
     source?: PluginSourceType
   ): Promise<Result<PluginConfirmResultType>>;
+  rollbackPluginConfirmation(uniqueId: PluginUniqueIdType, source?: PluginSourceType): Promise<Result>;
   /** 删除 pending 插件及其临时文件 */
   deletePendingPlugin(uniqueId: PluginUniqueIdType, source?: PluginSourceType): Promise<Result>;
   /** 删除指定 source 下的安装关系；没有其他 source 引用时才禁用插件实体 */

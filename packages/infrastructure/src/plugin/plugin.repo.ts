@@ -152,6 +152,24 @@ export class PluginRepo implements PluginRepoPort {
     return `${pluginId}::${version}::${etag}`;
   }
 
+  private getActiveInstallationFilter(filter: Record<string, unknown>) {
+    return {
+      $and: [
+        filter,
+        { $or: [{ status: 'active' }, { status: { $exists: false } }] }
+      ]
+    };
+  }
+
+  private getActivePluginFilter(filter: Record<string, unknown> = {}) {
+    return {
+      $and: [
+        filter,
+        { $or: [{ status: PluginStatusEnum.active }, { status: { $exists: false } }] }
+      ]
+    };
+  }
+
   private hasSecretSchema(secretSchema: unknown): boolean {
     if (!secretSchema || typeof secretSchema !== 'object') {
       return false;
@@ -200,6 +218,7 @@ export class PluginRepo implements PluginRepoPort {
           etag: plugin.etag,
           pluginObjectId: plugin._id,
           status,
+          updatedAt: new Date(),
           ...(expiredAt ? { expiredAt } : {})
         },
         $unset: expiredAt ? {} : { expiredAt: 1 }
@@ -271,13 +290,14 @@ export class PluginRepo implements PluginRepoPort {
       version: 1,
       etag: 1
     };
+    const activeInstallationFilter = this.getActiveInstallationFilter(installationFilter);
     const remainingInstallations = await (session
       ? pluginInstallationModel.find(
-          { ...installationFilter, status: 'active' },
+          activeInstallationFilter,
           installationProjection,
           { session }
         )
-      : pluginInstallationModel.find({ ...installationFilter, status: 'active' }, installationProjection)
+      : pluginInstallationModel.find(activeInstallationFilter, installationProjection)
     ).lean();
     const remainingKeys = new Set(
       remainingInstallations.map((item) => this.getInstalledPluginKey(item))
@@ -318,14 +338,13 @@ export class PluginRepo implements PluginRepoPort {
   ): Promise<Result> {
     try {
       const pluginModel = this.deps.mongoClient.getModel('plugin');
-      const filter = {
+      const filter = this.getActivePluginFilter({
         pluginId: uniqueId.pluginId,
         version: uniqueId.version,
         etag: {
           $ne: uniqueId.etag
         },
-        status: PluginStatusEnum.active
-      };
+      });
       const projection = {
         _id: 0,
         pluginId: 1,
@@ -376,7 +395,7 @@ export class PluginRepo implements PluginRepoPort {
           )
           .lean();
 
-        if (existingInstallation?.etag === uniqueId.etag) {
+        if (existingInstallation?.etag === uniqueId.etag && existingInstallation.status !== 'disabled') {
           throw new DuplicatePluginInstallationError();
         }
 
@@ -439,55 +458,6 @@ export class PluginRepo implements PluginRepoPort {
     }
   }
 
-  private getManagedPublicFileNames(fileKeys: string[]): Set<string> {
-    return new Set(fileKeys.map((fileKey) => path.basename(fileKey)));
-  }
-
-  private extractManagedFileName(value: string | undefined, managedFileNames: Set<string>) {
-    if (!value) return undefined;
-
-    try {
-      const parsed = new URL(value);
-      const fileName = path.basename(parsed.pathname);
-      return managedFileNames.has(fileName) ? fileName : undefined;
-    } catch {
-      const fileName = path.basename(value);
-      return managedFileNames.has(fileName) ? fileName : undefined;
-    }
-  }
-
-  private async refreshConfirmedPlugin(
-    plugin: MongoPluginSchemaType,
-    managedPublicFileNames: Set<string>
-  ): Promise<Result<PluginType>> {
-    const domainPlugin = this.toDomainPlugin(plugin);
-    const uniqueId = PluginUniqueIdSchema.parse(domainPlugin);
-
-    const resolvePublicFileURL = async (value: string | undefined) => {
-      const fileName = this.extractManagedFileName(value, managedPublicFileNames);
-      if (!fileName) {
-        return successResult(value);
-      }
-
-      const [url, err] = await this.getPluginFileAccessURL(uniqueId, [fileName], false);
-      if (err) {
-        return failureResult(
-          {
-            en: `Failed to resolve confirmed file url: ${fileName}`,
-            'zh-CN': `解析确认后文件地址失败: ${fileName}`
-          },
-          err
-        );
-      }
-
-      return successResult(url);
-    };
-
-    return pluginCodecRegistry.refreshConfirmedAssets(domainPlugin, {
-      resolvePublicFileURL
-    });
-  }
-
   private getFileKey(id: PluginUniqueIdType, filePath: string[], _pending = false): string {
     return path.join(id.pluginId, id.version, id.etag, ...filePath);
   }
@@ -511,13 +481,17 @@ export class PluginRepo implements PluginRepoPort {
     const installation = normalizedVersion
       ? await installationModel
         .findOne(
-          { source: normalizedSource, version: normalizedVersion, pluginId, status: 'active' },
+          this.getActiveInstallationFilter({
+            source: normalizedSource,
+            version: normalizedVersion,
+            pluginId
+          }),
           { _id: 0, pluginId: 1, version: 1, etag: 1 }
         )
         .lean()
       : await installationModel
         .find(
-          { source: normalizedSource, pluginId, status: 'active' },
+          this.getActiveInstallationFilter({ source: normalizedSource, pluginId }),
           { _id: 0, pluginId: 1, version: 1, etag: 1 }
         )
         .lean()
@@ -529,7 +503,7 @@ export class PluginRepo implements PluginRepoPort {
           pluginId: installation.pluginId,
           version: installation.version,
           etag: installation.etag,
-          status: PluginStatusEnum.active
+          $or: [{ status: PluginStatusEnum.active }, { status: { $exists: false } }]
         })
         .lean();
 
@@ -557,11 +531,7 @@ export class PluginRepo implements PluginRepoPort {
       const installations = await this.deps.mongoClient
         .getModel('pluginInstallation')
         .find(
-          {
-            pluginId,
-            source,
-            status: 'active'
-          },
+          this.getActiveInstallationFilter({ pluginId, source }),
           {
             _id: 0,
             pluginId: 1,
@@ -579,10 +549,7 @@ export class PluginRepo implements PluginRepoPort {
       const plugins = pluginConditions.length
         ? await this.deps.mongoClient
           .getModel('plugin')
-          .find({
-            status: PluginStatusEnum.active,
-            $or: pluginConditions
-          })
+          .find(this.getActivePluginFilter({ $or: pluginConditions }))
           .lean()
         : [];
       const pluginMap = new Map(
@@ -637,7 +604,11 @@ export class PluginRepo implements PluginRepoPort {
         const plugin = await pluginModel.findOne(pluginId, undefined, { session }).lean();
         if (!plugin) throw new Error('Plugin not found');
         const activeCount = await installationModel.countDocuments(
-          { pluginId: plugin.pluginId, version: plugin.version, etag: plugin.etag, status: 'active' },
+          this.getActiveInstallationFilter({
+            pluginId: plugin.pluginId,
+            version: plugin.version,
+            etag: plugin.etag
+          }),
           { session }
         );
         const runtimeRegistrationRequired = activeCount === 1 && plugin.status !== PluginStatusEnum.active;
@@ -661,130 +632,37 @@ export class PluginRepo implements PluginRepoPort {
         runtimeRegistrationRequired: confirmed.runtimeRegistrationRequired
       });
 
-      /* legacy confirmation implementation removed: files use identity paths
-      if (false) {
-      const pendingModel = this.deps.mongoClient.getModel('pluginPendingInstallation');
-      const pendingModelSupportsSourceIsolation = true;
-      const pending = undefined;
-      const plugin = await pluginModel.findOne({ ...pluginId }).lean();
-
-      if (!plugin) {
-        return failureResult({
-          en: 'Plugin not found',
-          'zh-CN': '插件未找到'
-        });
-      }
-      if (plugin?.status === PluginStatusEnum.active) {
-        await Promise.all([
-          this.deps.publicRemoteFileStorageRepo.deletePath(
-            this.getPendingFileKey(pluginId, source, [])
-          ),
-          this.deps.privateRemoteFileStorageRepo.deletePath(
-            this.getPendingFileKey(pluginId, source, [])
-          )
-        ]);
-        if (pendingModelSupportsSourceIsolation) {
-          await pendingModel.deleteOne({ source, ...pluginId });
-        }
-        await this.updateInstallation(source, plugin as MongoPluginWithId);
-        return successResult({ ...this.toDomainPlugin(plugin), runtimeRegistrationRequired: false });
-      }
-      if (!plugin) {
-        return failureResult({ en: 'Plugin not found', 'zh-CN': '插件未找到' });
-      }
-
-      // get source-isolated pending files
-      const [publicFiles, err] = await this.deps.publicRemoteFileStorageRepo.getFileKeysByPath(
-        this.getPendingFileKey(pluginId, source, [])
-      );
-      const [privateFiles, privateErr] =
-        await this.deps.privateRemoteFileStorageRepo.getFileKeysByPath(
-          this.getPendingFileKey(pluginId, source, [])
-        );
-
-      if (err || privateErr) {
-        return failureResult(
-          { en: 'Failed to get s3 files', 'zh-CN': '获取s3文件失败' },
-          err || privateErr
-        );
-      }
-
-      const fileMoveResults = await Promise.all([
-        ...publicFiles.map(async (fileKey) => {
-          return await this.deps.publicRemoteFileStorageRepo.move(
-            fileKey,
-            fileKey.replace(
-              this.getPendingFileKey(pluginId, source, []),
-              this.getFileKey(pluginId, [], false)
-            )
-          );
-        }),
-        ...privateFiles.map(async (fileKey) => {
-          return await this.deps.privateRemoteFileStorageRepo.move(
-            fileKey,
-            fileKey.replace(
-              this.getPendingFileKey(pluginId, source, []),
-              this.getFileKey(pluginId, [], false)
-            )
-          );
-        })
-      ]);
-
-      if (fileMoveResults.some((result) => result[1])) {
-        return failureResult({
-          en:
-            'Failed to move files: ' + fileMoveResults.filter((result) => result[1])[0][1]?.reason,
-          'zh-CN': '移动文件失败' + fileMoveResults.filter((result) => result[1])[0][1]?.reason
-        });
-      }
-
-      const managedPublicFileNames = this.getManagedPublicFileNames(publicFiles);
-      const [confirmedPlugin, refreshErr] = await this.refreshConfirmedPlugin(
-        plugin,
-        managedPublicFileNames
-      );
-
-      if (refreshErr) {
-        return failureResult(
-          {
-            en: 'Failed to refresh confirmed plugin',
-            'zh-CN': '刷新确认后的插件数据失败'
-          },
-          refreshErr
-        );
-      }
-
-      await pluginModel
-        .findOneAndUpdate(
-          {
-            ...pluginId
-          },
-          {
-            $set: {
-              ...this.toPluginRecord(confirmedPlugin),
-              status: PluginStatusEnum.active,
-              updateAt: new Date()
-            },
-            $unset: {
-              expiredAt: 1
-            }
-          }
-        )
-        .lean();
-
-      if (pendingModelSupportsSourceIsolation) {
-        await pendingModel.deleteOne({ source, ...pluginId });
-      }
-      await this.updateInstallation(source, plugin as MongoPluginWithId);
-
-      const [, replaceActiveErr] = await this.disableSameVersionActivePlugins(pluginId);
-      if (replaceActiveErr) return failureResult(replaceActiveErr);
-
-      return successResult({ ...confirmedPlugin, runtimeRegistrationRequired: true });
-      }
-      */
     } catch (error) {
       return failureResult({ en: 'Failed to confirm plugin', 'zh-CN': '确认插件失败' }, error);
+    }
+  }
+
+  async rollbackPluginConfirmation(
+    uniqueId: PluginUniqueIdType,
+    source: PluginSourceType = 'system'
+  ): Promise<Result> {
+    try {
+      await this.deps.mongoClient.sessionRun(async (session) => {
+        const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
+        await installationModel.updateOne(
+          { source, ...uniqueId, status: 'active' },
+          {
+            $set: {
+              status: 'pending',
+              expiredAt: addMinutes(Date.now(), PluginRepo.ExpiresMinutes),
+              updatedAt: new Date()
+            }
+          },
+          { session }
+        );
+        await this.disableUnreferencedPluginIds([uniqueId], session);
+      }, {});
+      return successResult({});
+    } catch (error) {
+      return failureResult(
+        { en: 'Failed to rollback plugin confirmation', 'zh-CN': '恢复插件待确认状态失败' },
+        error
+      );
     }
   }
 
@@ -831,13 +709,12 @@ export class PluginRepo implements PluginRepoPort {
     try {
       const disabled = await this.deps.mongoClient.sessionRun(async (session) => {
         const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
-        const filter = {
+        const filter = this.getActiveInstallationFilter({
           source: input.source,
           pluginId: input.pluginId,
           version: input.version,
-          etag: uniqueId.etag,
-          status: 'active'
-        };
+          etag: uniqueId.etag
+        });
         if (typeof installationModel.updateOne === 'function') {
           await installationModel.updateOne(
             filter,
@@ -879,9 +756,7 @@ export class PluginRepo implements PluginRepoPort {
     const pluginModel = this.deps.mongoClient.getModel('plugin');
     const installations = await pluginInstallationModel
       .find(
-        {
-          source: { $in: normalizedSources }
-        },
+        this.getActiveInstallationFilter({ source: { $in: normalizedSources } }),
         {
           _id: 0,
           source: 1,
@@ -943,15 +818,17 @@ export class PluginRepo implements PluginRepoPort {
       version: item.version,
       etag: item.etag
     }));
-    const query: Record<string, unknown> = {
-      status: PluginStatusEnum.active,
+    const query: Record<string, unknown> = this.getActivePluginFilter({
       $or: installedPluginConditions
-    };
+    });
 
     if (filterConditions.length > 0) {
       if (op === 'or') {
-        query.$and = [{ $or: installedPluginConditions }, { $or: filterConditions }];
-        delete query.$or;
+        query.$and = [
+          { $or: [{ status: PluginStatusEnum.active }, { status: { $exists: false } }] },
+          { $or: installedPluginConditions },
+          { $or: filterConditions }
+        ];
       } else {
         Object.assign(query, ...filterConditions);
       }
@@ -1074,9 +951,7 @@ export class PluginRepo implements PluginRepoPort {
     try {
       const results = await this.deps.mongoClient
         .getModel('plugin')
-        .find({
-          status: PluginStatusEnum.active
-        })
+        .find(this.getActivePluginFilter())
         .lean();
 
       return successResult(results.map((result) => this.toDomainPlugin(result)));
@@ -1288,15 +1163,21 @@ export class PluginRepo implements PluginRepoPort {
       ? addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
       : undefined;
     const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
-    let installedPlugin: MongoPluginWithId;
-    let shouldSaveFiles = false;
+    let installedPlugin: MongoPluginWithId | undefined;
+    let shouldUpdatePluginRecord = false;
 
     try {
       const existingInstallation = await installationModel
         .findOne({ source, ...uniqueId })
         .lean();
-      if (existingInstallation?.etag === uniqueId.etag) {
+      if (existingInstallation?.etag === uniqueId.etag && existingInstallation.status !== 'disabled') {
         if (!pending) {
+          return failureResult({
+            en: 'Plugin installation already exists for this source',
+            'zh-CN': '该来源下已存在相同插件安装'
+          });
+        }
+        if (existingInstallation.status !== 'pending') {
           return failureResult({
             en: 'Plugin installation already exists for this source',
             'zh-CN': '该来源下已存在相同插件安装'
@@ -1308,7 +1189,7 @@ export class PluginRepo implements PluginRepoPort {
         );
         return successResult({ runtimeRegistrationRequired: false });
       }
-      if (existingInstallation) {
+      if (existingInstallation && existingInstallation.status !== 'disabled') {
         return failureResult({
           en: 'A different plugin version is already installed for this source',
           'zh-CN': '该来源下已存在其他插件版本'
@@ -1319,46 +1200,17 @@ export class PluginRepo implements PluginRepoPort {
       if (existingPlugin) {
         // identity is immutable: retain the first package metadata and files.
         installedPlugin = { ...existingPlugin, ...uniqueId } as MongoPluginWithId;
-      } else {
-        const createdPlugin = await pluginModel.create({
-          ...this.toPluginRecord(plugin),
-          status: PluginStatusEnum.disabled
-        });
-        installedPlugin = createdPlugin.toObject() as MongoPluginWithId;
-        shouldSaveFiles = true;
       }
     } catch (error) {
-      if (!isDuplicateKeyError(error)) {
-        return failureResult(
-          { en: 'Failed to create plugin in MongoDB', 'zh-CN': '在 MongoDB 中创建插件失败' },
-          error
-        );
-      }
-      const concurrentPlugin = await pluginModel.findOne(uniqueId).lean();
-      if (!concurrentPlugin) {
-        return failureResult(
-          { en: 'Failed to create plugin in MongoDB', 'zh-CN': '在 MongoDB 中创建插件失败' },
-          error
-        );
-      }
-      installedPlugin = concurrentPlugin as MongoPluginWithId;
+      return failureResult(
+        { en: 'Failed to query plugin in MongoDB', 'zh-CN': '查询 MongoDB 插件失败' },
+        error
+      );
     }
 
-    if (!shouldSaveFiles) {
+    if (installedPlugin) {
       if (pending) {
-        await installationModel.updateOne(
-          { source, pluginId: uniqueId.pluginId, version: uniqueId.version },
-          {
-            $set: {
-              etag: uniqueId.etag,
-              pluginObjectId: installedPlugin._id,
-              status: 'pending',
-              expiredAt: pendingExpiresAt,
-              updatedAt: new Date()
-            }
-          },
-          { upsert: true }
-        );
+        await this.updateInstallation(source, installedPlugin, undefined, 'pending', pendingExpiresAt);
         return successResult({ runtimeRegistrationRequired: false });
       }
       const [runtimeRegistrationRequired, replaceErr] = await this.replaceInstalledPlugin({
@@ -1427,41 +1279,46 @@ export class PluginRepo implements PluginRepoPort {
 
     const saveFileResults = await Promise.all(saveTasks);
 
-    if (
-      saveFileResults.every(([, err]) => {
-        return !err;
-      })
-    ) {
-      if (!pending) {
-        const [runtimeRegistrationRequired, replaceActiveErr] = await this.replaceInstalledPlugin({
-          activateTarget: true,
-          installedPlugin,
-          pluginRecord,
-          source,
-          uniqueId
+    if (saveFileResults.every(([, saveErr]) => !saveErr)) {
+      try {
+        const createdPlugin = await pluginModel.create({
+          ...pluginRecord,
+          status: PluginStatusEnum.disabled
         });
-        if (replaceActiveErr) return failureResult(replaceActiveErr);
-
-        return successResult({ runtimeRegistrationRequired });
+        installedPlugin = createdPlugin.toObject() as MongoPluginWithId;
+        shouldUpdatePluginRecord = true;
+      } catch (createError) {
+        if (!isDuplicateKeyError(createError)) {
+          return failureResult(
+            { en: 'Failed to create plugin in MongoDB', 'zh-CN': '在 MongoDB 中创建插件失败' },
+            createError
+          );
+        }
+        const concurrentPlugin = await pluginModel.findOne(uniqueId).lean();
+        if (!concurrentPlugin) {
+          return failureResult(
+            { en: 'Failed to create plugin in MongoDB', 'zh-CN': '在 MongoDB 中创建插件失败' },
+            createError
+          );
+        }
+        installedPlugin = concurrentPlugin as MongoPluginWithId;
       }
 
-      if (pending && installedPlugin) {
-        await installationModel.updateOne(
-          { source, pluginId: uniqueId.pluginId, version: uniqueId.version },
-          {
-            $set: {
-              etag: uniqueId.etag,
-              pluginObjectId: installedPlugin._id,
-              status: 'pending',
-              expiredAt: pendingExpiresAt,
-              updatedAt: new Date()
-            }
-          },
-          { upsert: true }
-        );
+      if (pending) {
+        await this.updateInstallation(source, installedPlugin, undefined, 'pending', pendingExpiresAt);
+        return successResult({ runtimeRegistrationRequired: false });
       }
 
-      return successResult({ runtimeRegistrationRequired: false });
+      const [runtimeRegistrationRequired, replaceActiveErr] = await this.replaceInstalledPlugin({
+        activateTarget: true,
+        installedPlugin,
+        pluginRecord: shouldUpdatePluginRecord ? pluginRecord : undefined,
+        source,
+        uniqueId
+      });
+      if (replaceActiveErr) return failureResult(replaceActiveErr);
+
+      return successResult({ runtimeRegistrationRequired });
     }
 
     return failureResult(

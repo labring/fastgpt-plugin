@@ -98,6 +98,12 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
     return this.deps.fallback.confirmPlugin(...args);
   }
 
+  rollbackPluginConfirmation(
+    ...args: Parameters<PluginRepoPort['rollbackPluginConfirmation']>
+  ): ReturnType<PluginRepoPort['rollbackPluginConfirmation']> {
+    return this.deps.fallback.rollbackPluginConfirmation(...args);
+  }
+
   deletePendingPlugin(uniqueId: PluginUniqueIdType): Promise<Result> {
     return this.deps.fallback.deletePendingPlugin(uniqueId);
   }

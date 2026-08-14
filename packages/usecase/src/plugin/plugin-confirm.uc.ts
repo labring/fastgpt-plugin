@@ -83,6 +83,15 @@ export const makePluginConfirmUC =
         if (plugin.runtimeRegistrationRequired !== false) {
           const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
           if (registerErr) {
+            if (typeof deps.pluginRepo.rollbackPluginConfirmation === 'function') {
+              const [, rollbackErr] = await deps.pluginRepo.rollbackPluginConfirmation(uniqueId, source);
+              if (rollbackErr) {
+                deps.logger.error('Plugin Confirm Rollback Error', {
+                  uniqueId,
+                  error: toUsecaseErrorLog(rollbackErr)
+                });
+              }
+            }
             deps.logger.error('Plugin Confirm Register Runtime Error', {
               uniqueId,
               error: toUsecaseErrorLog(registerErr)

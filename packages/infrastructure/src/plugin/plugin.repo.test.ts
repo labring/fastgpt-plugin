@@ -201,7 +201,6 @@ describe('PluginRepo.createPlugin', () => {
   it('restores a disabled plugin with the same version and etag to pending without rewriting files', async () => {
     (PluginRepo as any)._instance = undefined;
 
-    const updateOne = vi.fn().mockResolvedValue({ modifiedCount: 1 });
     const pluginModel = {
       findOne: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue({
@@ -209,20 +208,19 @@ describe('PluginRepo.createPlugin', () => {
           status: PluginStatusEnum.disabled
         })
       }),
-      updateOne
     };
-    const pendingModel = {
+    const installationModel = {
       findOne: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue(null)
       }),
-      create: vi.fn().mockResolvedValue({})
+      updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 })
     };
     const privateSave = vi.fn();
     const publicSave = vi.fn();
     const repo = PluginRepo.getInstance({
       mongoClient: {
         getModel: vi.fn((modelName: string) =>
-          modelName === 'pluginPendingInstallation' ? pendingModel : pluginModel
+          modelName === 'pluginInstallation' ? installationModel : pluginModel
         )
       },
       privateRemoteFileStorageRepo: {
@@ -240,21 +238,23 @@ describe('PluginRepo.createPlugin', () => {
     });
 
     expect(err).toBeNull();
-    expect(updateOne).toHaveBeenCalledWith(
+    expect(installationModel.updateOne).toHaveBeenCalledWith(
       {
+        source: 'system',
         pluginId: 'plugin-a',
-        version: '1.0.0',
-        etag: 'etag-a'
+        version: '1.0.0'
       },
       {
         $set: {
+          etag: 'etag-a',
+          pluginObjectId: 'existing-plugin',
           status: PluginStatusEnum.pending,
-          updateAt: expect.any(Date)
+          updatedAt: expect.any(Date),
+          expiredAt: expect.any(Date)
         },
-        $unset: {
-          expiredAt: 1
-        }
-      }
+        $unset: {}
+      },
+      { upsert: true }
     );
     expect(privateSave).not.toHaveBeenCalled();
     expect(publicSave).not.toHaveBeenCalled();
@@ -319,46 +319,30 @@ describe('PluginRepo.createPlugin', () => {
 
     expect(err).toBeNull();
     expect(sessionRun).toHaveBeenCalledTimes(1);
-    expect(privateSave.mock.invocationCallOrder[0]).toBeLessThan(
-      sessionRun.mock.invocationCallOrder[0]
-    );
     expect(updateOne).toHaveBeenCalledWith(
-      {
-        pluginId: 'plugin-a',
-        version: '1.0.0',
-        etag: 'etag-a'
-      },
-      {
-        $set: expect.objectContaining({
-          pluginId: 'plugin-a',
-          version: '1.0.0',
-          etag: 'etag-a',
-          status: PluginStatusEnum.active,
-          updateAt: expect.any(Date)
-        }),
-        $unset: {
-          expiredAt: 1
-        }
-      },
-      {
-        session
-      }
-    );
-    expect(privateSave).toHaveBeenCalledWith(
+      { pluginId: 'plugin-a', version: '1.0.0', etag: 'etag-a' },
       expect.objectContaining({
-        fileKey: 'plugin-a/1.0.0/etag-a/index.js',
-        fileName: 'index.js'
-      })
+        $set: expect.objectContaining({ status: PluginStatusEnum.active }),
+        $unset: { expiredAt: 1 }
+      }),
+      { session }
     );
+    expect(privateSave).not.toHaveBeenCalled();
     expect(publicSave).not.toHaveBeenCalled();
     expect(pluginModel.find).toHaveBeenCalledWith(
       {
-        pluginId: 'plugin-a',
-        version: '1.0.0',
-        etag: {
-          $ne: 'etag-a'
-        },
-        status: PluginStatusEnum.active
+        $and: [
+          {
+            pluginId: 'plugin-a',
+            version: '1.0.0',
+            etag: {
+              $ne: 'etag-a'
+            }
+          },
+          {
+            $or: [{ status: PluginStatusEnum.active }, { status: { $exists: false } }]
+          }
+        ]
       },
       {
         _id: 0,
@@ -395,11 +379,18 @@ describe('PluginRepo.createPlugin', () => {
     );
     expect(installationModel.find).toHaveBeenCalledWith(
       {
-        $or: [
+        $and: [
           {
-            pluginId: 'plugin-a',
-            version: '1.0.0',
-            etag: 'old-etag'
+            $or: [
+              {
+                pluginId: 'plugin-a',
+                version: '1.0.0',
+                etag: 'old-etag'
+              }
+            ]
+          },
+          {
+            $or: [{ status: 'active' }, { status: { $exists: false } }]
           }
         ]
       },
@@ -420,10 +411,13 @@ describe('PluginRepo.createPlugin', () => {
         version: '1.0.0'
       },
       {
-        $set: {
+        $set: expect.objectContaining({
           etag: 'etag-a',
-          pluginObjectId: 'existing-plugin'
-        }
+          pluginObjectId: 'existing-plugin',
+          status: PluginStatusEnum.active,
+          updatedAt: expect.any(Date)
+        }),
+        $unset: { expiredAt: 1 }
       },
       {
         upsert: true,
@@ -438,10 +432,7 @@ describe('PluginRepo.createPlugin', () => {
     const sessionRun = vi.fn();
     const pluginModel = {
       findOne: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({
-          _id: 'existing-plugin',
-          status: PluginStatusEnum.disabled
-        })
+        lean: vi.fn().mockResolvedValue(null)
       }),
       find: vi.fn(),
       updateMany: vi.fn(),
@@ -479,8 +470,8 @@ describe('PluginRepo.createPlugin', () => {
     });
 
     expect(err?.reason).toEqual({
-      en: 'upload temp file error',
-      'zh-CN': '上传临时文件错误'
+      en: 'upload plugin file error',
+      'zh-CN': '上传插件文件错误'
     });
     expect(privateSave).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -507,15 +498,21 @@ describe('PluginRepo.createPlugin', () => {
         })
       })
     };
-    const pendingModel = {
+    const installationModel = {
       findOne: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue(null)
+        lean: vi.fn().mockResolvedValue({
+          source: 'system',
+          pluginId: 'plugin-a',
+          version: '1.0.0',
+          etag: 'etag-a',
+          status: PluginStatusEnum.active
+        })
       })
     };
     const repo = PluginRepo.getInstance({
       mongoClient: {
         getModel: vi.fn((modelName: string) =>
-          modelName === 'pluginPendingInstallation' ? pendingModel : pluginModel
+          modelName === 'pluginInstallation' ? installationModel : pluginModel
         )
       }
     } as unknown as PluginRepoDeps);
@@ -527,8 +524,8 @@ describe('PluginRepo.createPlugin', () => {
     });
 
     expect(err?.reason).toEqual({
-      en: 'Plugin with the same version and etag already exists',
-      'zh-CN': '已存在相同版本且 etag 相同的插件'
+      en: 'Plugin installation already exists for this source',
+      'zh-CN': '该来源下已存在相同插件安装'
     });
   });
 
@@ -543,6 +540,7 @@ describe('PluginRepo.createPlugin', () => {
     const pluginInstallationModel = {
       findOne: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue({
+          _id: 'installation',
           source: 'team-a',
           pluginId: 'plugin-a',
           version: '1.0.0',
@@ -686,8 +684,11 @@ describe('PluginRepo.createPlugin', () => {
       {
         $set: {
           etag: 'etag-a',
-          pluginObjectId: 'existing-plugin'
-        }
+          pluginObjectId: 'existing-plugin',
+          status: PluginStatusEnum.active,
+          updatedAt: expect.any(Date)
+        },
+        $unset: { expiredAt: 1 }
       },
       {
         upsert: true,
@@ -696,7 +697,7 @@ describe('PluginRepo.createPlugin', () => {
     );
   });
 
-  it('refreshes an existing source-aware pending upload so it remains confirmable', async () => {
+  it('keeps an existing source-aware pending upload ready without rewriting files', async () => {
     (PluginRepo as any)._instance = undefined;
 
     const pluginModel = {
@@ -704,10 +705,16 @@ describe('PluginRepo.createPlugin', () => {
         lean: vi.fn().mockResolvedValue({ _id: 'existing-plugin', status: PluginStatusEnum.active })
       })
     };
-    const pendingModel = {
-      schema: { path: vi.fn().mockReturnValue({}) },
+    const installationModel = {
       findOne: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ source: 'team-a' })
+        lean: vi.fn().mockResolvedValue({
+          _id: 'installation',
+          source: 'team-a',
+          pluginId: 'plugin-a',
+          version: '1.0.0',
+          etag: 'etag-a',
+          status: 'pending'
+        })
       }),
       updateOne: vi.fn().mockResolvedValue({})
     };
@@ -715,7 +722,7 @@ describe('PluginRepo.createPlugin', () => {
     const repo = PluginRepo.getInstance({
       mongoClient: {
         getModel: vi.fn((modelName: string) =>
-          modelName === 'pluginPendingInstallation' ? pendingModel : pluginModel
+          modelName === 'pluginInstallation' ? installationModel : pluginModel
         )
       },
       privateRemoteFileStorageRepo: {
@@ -743,25 +750,10 @@ describe('PluginRepo.createPlugin', () => {
     });
 
     expect(err).toBeNull();
-    expect(publicSave).toHaveBeenCalledWith(
-      expect.objectContaining({
-        fileKey: 'temp/team-a/plugin-a/1.0.0/etag-a/README.md'
-      })
-    );
-    expect(publicSave).toHaveBeenCalledWith(
-      expect.objectContaining({
-        fileKey: 'temp/team-a/plugin-a/1.0.0/etag-a/logo.png'
-      })
-    );
-    expect(pendingModel.updateOne).toHaveBeenCalledWith(
-      { source: 'team-a', pluginId: 'plugin-a', version: '1.0.0', etag: 'etag-a' },
-      {
-        $set: {
-          pluginObjectId: 'existing-plugin',
-          expiredAt: expect.any(Date)
-        }
-      },
-      { upsert: true }
+    expect(publicSave).not.toHaveBeenCalled();
+    expect(installationModel.updateOne).toHaveBeenCalledWith(
+      { _id: 'installation' },
+      { $set: { status: 'pending', expiredAt: expect.any(Date), updatedAt: expect.any(Date) } }
     );
   });
 
@@ -807,6 +799,7 @@ describe('PluginRepo.createPlugin', () => {
       }),
       updateOne: vi.fn()
     };
+    const privateSave = vi.fn().mockResolvedValue(successResult(fileObject('index.js')));
     const repo = PluginRepo.getInstance({
       mongoClient: {
         sessionRun,
@@ -815,7 +808,7 @@ describe('PluginRepo.createPlugin', () => {
         )
       },
       privateRemoteFileStorageRepo: {
-        save: vi.fn().mockResolvedValue(successResult(fileObject('index.js')))
+        save: privateSave
       },
       publicRemoteFileStorageRepo: {
         save: vi.fn().mockResolvedValue(successResult(fileObject('README.md')))
@@ -831,6 +824,9 @@ describe('PluginRepo.createPlugin', () => {
 
     expect(err).toBeNull();
     expect(result).toEqual({ runtimeRegistrationRequired: true });
+    expect(privateSave.mock.invocationCallOrder[0]).toBeLessThan(
+      pluginModel.create.mock.invocationCallOrder[0]
+    );
     expect(pluginInstallationModel.updateOne).toHaveBeenCalledWith(
       {
         source: 'team-a',
@@ -840,8 +836,11 @@ describe('PluginRepo.createPlugin', () => {
       {
         $set: {
           etag: 'etag-a',
-          pluginObjectId: 'created-plugin'
-        }
+          pluginObjectId: 'created-plugin',
+          status: PluginStatusEnum.active,
+          updatedAt: expect.any(Date)
+        },
+        $unset: { expiredAt: 1 }
       },
       {
         upsert: true,
@@ -853,28 +852,20 @@ describe('PluginRepo.createPlugin', () => {
 });
 
 describe('PluginRepo.getPendingPluginIds', () => {
-  it('keeps source-aware pending queries separate from legacy system pending records', async () => {
+  it('queries pending installation records by source', async () => {
     (PluginRepo as any)._instance = undefined;
 
-    const pendingModel = {
-      schema: { path: vi.fn().mockReturnValue({}) },
+    const installationModel = {
       find: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue([
           { pluginId: 'team-plugin', version: '1.0.0', etag: 'team-etag' }
         ])
       })
     };
-    const pluginModel = {
-      find: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue([
-          { pluginId: 'legacy-plugin', version: '1.0.0', etag: 'legacy-etag' }
-        ])
-      })
-    };
     const repo = PluginRepo.getInstance({
       mongoClient: {
         getModel: vi.fn((modelName: string) =>
-          modelName === 'pluginPendingInstallation' ? pendingModel : pluginModel
+          modelName === 'pluginInstallation' ? installationModel : {}
         )
       }
     } as unknown as PluginRepoDeps);
@@ -882,25 +873,9 @@ describe('PluginRepo.getPendingPluginIds', () => {
     const [teamIds, teamErr] = await repo.getPendingPluginIds('team-a');
     expect(teamErr).toBeNull();
     expect(teamIds).toEqual([{ pluginId: 'team-plugin', version: '1.0.0', etag: 'team-etag' }]);
-    expect(pendingModel.find).toHaveBeenCalledWith(
-      { source: 'team-a' },
-      expect.objectContaining({ pluginId: true })
-    );
-    expect(pluginModel.find).not.toHaveBeenCalled();
-
-    const [systemIds, systemErr] = await repo.getPendingPluginIds('system');
-    expect(systemErr).toBeNull();
-    expect(systemIds).toEqual([
-      { pluginId: 'team-plugin', version: '1.0.0', etag: 'team-etag' },
-      { pluginId: 'legacy-plugin', version: '1.0.0', etag: 'legacy-etag' }
-    ]);
-    expect(pendingModel.find).toHaveBeenLastCalledWith(
-      { source: 'system' },
-      expect.objectContaining({ pluginId: true })
-    );
-    expect(pluginModel.find).toHaveBeenCalledWith(
-      { status: PluginStatusEnum.pending },
-      expect.objectContaining({ pluginId: true })
+    expect(installationModel.find).toHaveBeenCalledWith(
+      { source: 'team-a', status: 'pending' },
+      { _id: true, pluginId: true, version: true, etag: true }
     );
   });
 });
