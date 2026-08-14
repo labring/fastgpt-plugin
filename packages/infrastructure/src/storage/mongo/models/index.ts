@@ -22,6 +22,7 @@ export const ModelSchemaMap = {
   s3ttl: s3TtlModel,
   pluginRuntimeConfig: pluginRuntimeConfig,
   pluginInstallation: pluginInstallationModel,
+  // legacy collection remains registered for TTL cleanup of old production data.
   pluginPendingInstallation: pluginPendingInstallationModel
 } as const satisfies Record<ModelEnumType, { name: string; schema: Schema }>;
 

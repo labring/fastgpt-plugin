@@ -5,8 +5,6 @@
  * Author：FinleyGe
  */
 
-import { isEqual } from 'es-toolkit';
-
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginSourceType, PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
@@ -63,34 +61,7 @@ export const makePluginConfirmUC =
         );
       }
 
-      // 1. get pending plugins
-      const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds(
-        source === 'system' ? undefined : source
-      );
-
-      if (pendingErr) {
-        deps.logger.error('Plugin Confirm Pending List Error', {
-          uniqueId,
-          error: toUsecaseErrorLog(pendingErr)
-        });
-        return failureResult(
-          {
-            en: 'Failed to get pending plugins',
-            'zh-CN': '获取待确认插件失败'
-          },
-          pendingErr
-        );
-      }
-
-      // 2. check the id
-      if (!pendingIds.some((pendingId) => isEqual(pendingId, uniqueId))) {
-        return failureResult({
-          en: 'Pending Plugin not found',
-          'zh-CN': '待确认插件未找到'
-        });
-      }
-
-      // 3. remove pending status
+      // confirmPlugin performs the source-scoped pending lookup atomically with confirmation.
       const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId, source);
 
       if (err) {
@@ -107,7 +78,7 @@ export const makePluginConfirmUC =
         );
       }
 
-      // 4. register the plugin to runtime only when this source confirmed the first entity.
+      // Register the plugin to runtime only when this source confirmed the first entity.
       if (plugin.type === 'tool') {
         if (plugin.runtimeRegistrationRequired !== false) {
           const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);

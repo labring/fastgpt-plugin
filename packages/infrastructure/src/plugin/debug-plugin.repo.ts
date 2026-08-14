@@ -227,9 +227,10 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
   getPluginFileAccessURL(
     uniqueId: PluginUniqueIdType,
     filePath: string[],
-    pending: boolean
+    pending: boolean,
+    source?: PluginSourceType
   ): ReturnType<PluginRepoPort['getPluginFileAccessURL']> {
-    return this.deps.fallback.getPluginFileAccessURL(uniqueId, filePath, pending);
+    return this.deps.fallback.getPluginFileAccessURL(uniqueId, filePath, pending, source);
   }
 
   private async listDebugPlugins(sources: string[]) {

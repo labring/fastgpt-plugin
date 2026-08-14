@@ -7,6 +7,7 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { detectMimeTypeFromContent } from '@domain/value-objects/file/MIME.vo';
 import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
+import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
 import { bufferToReadable, readStreamToBuffer, unpkg } from './pkg';
@@ -120,7 +121,8 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
 
   async parsePluginPkg(
     pkgFile: FileObject,
-    pending: boolean
+    pending: boolean,
+    source: PluginSourceType = 'system'
   ): Promise<
     Result<{
       files: PkgContentFileObjects;
@@ -143,7 +145,8 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
             version
           },
           filePath,
-          pending
+          pending,
+          source
         );
       }
     });

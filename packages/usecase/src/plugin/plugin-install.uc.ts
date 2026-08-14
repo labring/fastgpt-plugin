@@ -131,7 +131,10 @@ export const makePluginInstallUC =
     }
 
     for await (const { file } of installableFiles) {
-      const [info, parseErr] = await pluginPKGFileResolver.parsePluginPkg(file, false);
+      const [info, parseErr] =
+        source === 'system'
+          ? await pluginPKGFileResolver.parsePluginPkg(file, false)
+          : await pluginPKGFileResolver.parsePluginPkg(file, false, source);
 
       if (parseErr) {
         failToInstalled.push({

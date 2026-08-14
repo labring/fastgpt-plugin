@@ -211,11 +211,19 @@ describe('PluginRepo.createPlugin', () => {
       }),
       updateOne
     };
+    const pendingModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null)
+      }),
+      create: vi.fn().mockResolvedValue({})
+    };
     const privateSave = vi.fn();
     const publicSave = vi.fn();
     const repo = PluginRepo.getInstance({
       mongoClient: {
-        getModel: vi.fn().mockReturnValue(pluginModel)
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginPendingInstallation' ? pendingModel : pluginModel
+        )
       },
       privateRemoteFileStorageRepo: {
         save: privateSave
@@ -499,9 +507,16 @@ describe('PluginRepo.createPlugin', () => {
         })
       })
     };
+    const pendingModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null)
+      })
+    };
     const repo = PluginRepo.getInstance({
       mongoClient: {
-        getModel: vi.fn().mockReturnValue(pluginModel)
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginPendingInstallation' ? pendingModel : pluginModel
+        )
       }
     } as unknown as PluginRepoDeps);
 
@@ -681,6 +696,75 @@ describe('PluginRepo.createPlugin', () => {
     );
   });
 
+  it('refreshes an existing source-aware pending upload so it remains confirmable', async () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const pluginModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({ _id: 'existing-plugin', status: PluginStatusEnum.active })
+      })
+    };
+    const pendingModel = {
+      schema: { path: vi.fn().mockReturnValue({}) },
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue({ source: 'team-a' })
+      }),
+      updateOne: vi.fn().mockResolvedValue({})
+    };
+    const publicSave = vi.fn().mockResolvedValue(successResult(fileObject('saved')));
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginPendingInstallation' ? pendingModel : pluginModel
+        )
+      },
+      privateRemoteFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(fileObject('index.js'))),
+        getBucketName: vi.fn().mockReturnValue('private'),
+      },
+      publicRemoteFileStorageRepo: {
+        save: publicSave,
+        getBucketName: vi.fn().mockReturnValue('public'),
+      },
+      fileTTLManager: {
+        setExpiration: vi.fn().mockResolvedValue(successResult({}))
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [, err] = await repo.createPlugin({
+      plugin: plugin(),
+      files: {
+        ...pkgFiles(),
+        readme: fileObject('README.md'),
+        logos: [fileObject('logo.png')]
+      },
+      pending: true,
+      source: 'team-a'
+    });
+
+    expect(err).toBeNull();
+    expect(publicSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileKey: 'temp/team-a/plugin-a/1.0.0/etag-a/README.md'
+      })
+    );
+    expect(publicSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileKey: 'temp/team-a/plugin-a/1.0.0/etag-a/logo.png'
+      })
+    );
+    expect(pendingModel.updateOne).toHaveBeenCalledWith(
+      { source: 'team-a', pluginId: 'plugin-a', version: '1.0.0', etag: 'etag-a' },
+      {
+        $set: {
+          pluginObjectId: 'existing-plugin',
+          expiredAt: expect.any(Date)
+        }
+      },
+      { upsert: true }
+    );
+  });
+
   it('writes installation records under the requested source and keeps referenced plugins active', async () => {
     (PluginRepo as any)._instance = undefined;
 
@@ -765,6 +849,59 @@ describe('PluginRepo.createPlugin', () => {
       }
     );
     expect(pluginModel.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('PluginRepo.getPendingPluginIds', () => {
+  it('keeps source-aware pending queries separate from legacy system pending records', async () => {
+    (PluginRepo as any)._instance = undefined;
+
+    const pendingModel = {
+      schema: { path: vi.fn().mockReturnValue({}) },
+      find: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          { pluginId: 'team-plugin', version: '1.0.0', etag: 'team-etag' }
+        ])
+      })
+    };
+    const pluginModel = {
+      find: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          { pluginId: 'legacy-plugin', version: '1.0.0', etag: 'legacy-etag' }
+        ])
+      })
+    };
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginPendingInstallation' ? pendingModel : pluginModel
+        )
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [teamIds, teamErr] = await repo.getPendingPluginIds('team-a');
+    expect(teamErr).toBeNull();
+    expect(teamIds).toEqual([{ pluginId: 'team-plugin', version: '1.0.0', etag: 'team-etag' }]);
+    expect(pendingModel.find).toHaveBeenCalledWith(
+      { source: 'team-a' },
+      expect.objectContaining({ pluginId: true })
+    );
+    expect(pluginModel.find).not.toHaveBeenCalled();
+
+    const [systemIds, systemErr] = await repo.getPendingPluginIds('system');
+    expect(systemErr).toBeNull();
+    expect(systemIds).toEqual([
+      { pluginId: 'team-plugin', version: '1.0.0', etag: 'team-etag' },
+      { pluginId: 'legacy-plugin', version: '1.0.0', etag: 'legacy-etag' }
+    ]);
+    expect(pendingModel.find).toHaveBeenLastCalledWith(
+      { source: 'system' },
+      expect.objectContaining({ pluginId: true })
+    );
+    expect(pluginModel.find).toHaveBeenCalledWith(
+      { status: PluginStatusEnum.pending },
+      expect.objectContaining({ pluginId: true })
+    );
   });
 });
 

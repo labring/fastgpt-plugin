@@ -1474,38 +1474,18 @@ describe('makePluginConfirmUC', () => {
     expect(err?.reason.en).toBe('Failed to get active plugins');
   });
 
-  it('returns failure when pending plugins cannot be listed', async () => {
+  it('delegates pending existence checks to the source-scoped repository confirmation', async () => {
     const deps = makeDeps({
       pluginRepo: basePluginRepo({
         listActive: vi.fn().mockResolvedValue(successResult([])),
-        getPendingPluginIds: vi.fn().mockResolvedValue(failureResult(reason('pending failed')))
+        confirmPlugin: vi.fn().mockResolvedValue(failureResult(reason('Pending Plugin not found')))
       })
     });
 
     const [, err] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId] });
 
-    expect(err?.reason.en).toBe('Failed to get pending plugins');
-  });
-
-  it('returns failure when the target plugin is not pending', async () => {
-    const deps = makeDeps({
-      pluginRepo: basePluginRepo({
-        listActive: vi.fn().mockResolvedValue(successResult([])),
-        getPendingPluginIds: vi.fn().mockResolvedValue(
-          successResult([
-            {
-              pluginId: 'other',
-              version: uniqueId.version,
-              etag: uniqueId.etag
-            }
-          ])
-        )
-      })
-    });
-
-    const [, err] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId] });
-
-    expect(err?.reason.en).toBe('Pending Plugin not found');
+    expect(err?.reason.en).toBe('Failed to confirm plugin');
+    expect(deps.pluginRepo.confirmPlugin).toHaveBeenCalledWith(uniqueId, 'system');
   });
 
   it('returns failure when confirming the pending plugin fails', async () => {

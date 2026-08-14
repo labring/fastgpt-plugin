@@ -115,6 +115,7 @@ export interface PluginRepoPort {
   getPluginFileAccessURL(
     uniqueId: PluginUniqueIdType,
     filePath: string[],
-    pending: boolean
+    pending: boolean,
+    source?: PluginSourceType
   ): Promise<Result<string>>;
 }

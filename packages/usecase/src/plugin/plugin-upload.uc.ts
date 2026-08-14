@@ -81,9 +81,7 @@ const rollbackPendingPlugins = async (
   source: PluginSourceType
 ) => {
   for (const uniqueId of uniqueIds) {
-    if (existingPendingPluginKeys.has(toPluginKey(uniqueId))) {
-      continue;
-    }
+    if (existingPendingPluginKeys.has(toPluginKey(uniqueId))) continue;
 
     const [, err] =
       source === 'system'
@@ -130,18 +128,13 @@ export const makePluginUploadUC =
     const [existingPendingPlugins, pendingErr] = await deps.pluginRepo.getPendingPluginIds(
       source === 'system' ? undefined : source
     );
-
     if (pendingErr) {
       logger.error('Plugin Upload Pending List Error', toUsecaseErrorLog(pendingErr));
       return failureResult(
-        {
-          en: 'Failed to get pending plugin ids',
-          'zh-CN': '获取待确认插件列表失败'
-        },
+        { en: 'Failed to get pending plugin ids', 'zh-CN': '获取待确认插件列表失败' },
         pendingErr
       );
     }
-
     const existingPendingPluginKeys = new Set(existingPendingPlugins.map(toPluginKey));
 
     for (const uploadedFile of input.files) {
@@ -173,7 +166,10 @@ export const makePluginUploadUC =
       }
 
       for (const pkgFile of pkgFiles) {
-        const [info, parseErr] = await deps.pluginPKGFileResolver.parsePluginPkg(pkgFile, true);
+        const [info, parseErr] =
+          source === 'system'
+            ? await deps.pluginPKGFileResolver.parsePluginPkg(pkgFile, true)
+            : await deps.pluginPKGFileResolver.parsePluginPkg(pkgFile, true, source);
         logger.debug('plugin info', { info });
 
         if (parseErr) {
