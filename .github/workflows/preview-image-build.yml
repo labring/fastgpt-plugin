@@ -3,21 +3,10 @@ name: Preview Plugin Image Build
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: ['**']
-    paths:
-      - 'Dockerfile'
-      - '.dockerignore'
-      - 'apps/server/**'
-      - 'packages/**'
-      - 'sdk/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/preview-image-build.yml'
-      - '.github/workflows/preview-image-push.yml'
+    branches: ["**"]
 
 concurrency:
-  group: preview-plugin-image-build-${{ github.event.pull_request.number || github.head_ref }}
+  group: "preview-plugin-image-build-${{ github.event.pull_request.number }}"
   cancel-in-progress: true
 
 permissions:
@@ -27,19 +16,21 @@ jobs:
   build:
     name: Build preview Server image
     runs-on: ubuntu-24.04
+    timeout-minutes: 120
 
     steps:
       - name: Checkout PR code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
+          persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Build Docker image artifact
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: Dockerfile
@@ -47,27 +38,19 @@ jobs:
           platforms: linux/amd64
           push: false
           tags: fastgpt-plugin-pr:${{ github.event.pull_request.head.sha }}
+          provenance: false
+          sbom: false
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=FastGPT Plugin PR preview image
             org.opencontainers.image.revision=${{ github.event.pull_request.head.sha }}
           outputs: type=docker,dest=/tmp/fastgpt-plugin-image.tar
-          cache-from: type=gha,scope=preview-plugin-server
-          cache-to: type=gha,mode=max,scope=preview-plugin-server
-
-      - name: Save PR metadata
-        run: |
-          echo "${{ github.event.pull_request.number }}" > /tmp/pr-number.txt
-          echo "${{ github.event.pull_request.head.sha }}" > /tmp/pr-sha.txt
-          echo "server" > /tmp/image-type.txt
 
       - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: preview-plugin-server-image
-          path: |
-            /tmp/fastgpt-plugin-image.tar
-            /tmp/pr-number.txt
-            /tmp/pr-sha.txt
-            /tmp/image-type.txt
+          path: /tmp/fastgpt-plugin-image.tar
+          compression-level: 0
+          if-no-files-found: error
           retention-days: 1
