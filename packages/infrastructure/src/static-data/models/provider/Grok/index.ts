@@ -17,6 +17,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'grok-4.6',
+      maxContext: 500000,
+      maxTokens: 8000,
+      quoteMaxToken: 500000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'grok-4.3',
       maxContext: 1000000,
       maxTokens: 8000,
