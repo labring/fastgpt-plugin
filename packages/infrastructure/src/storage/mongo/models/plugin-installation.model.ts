@@ -39,7 +39,11 @@ const model = defineModel(
       }
     }
   )
-    .index({ source: 1, pluginId: 1, version: 1 }, { unique: true })
+    .index({ source: 1, pluginId: 1, version: 1, etag: 1 }, { unique: true })
+    .index(
+      { source: 1, pluginId: 1, version: 1 },
+      { unique: true, partialFilterExpression: { status: 'active' } }
+    )
     .index({ expiredAt: 1 }, { expireAfterSeconds: 0 })
 );
 export default model;

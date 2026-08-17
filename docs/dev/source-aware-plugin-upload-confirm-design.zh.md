@@ -84,9 +84,10 @@ plugin_installations 表表示某个 source 对插件的使用状态。
 
 唯一索引：
 
-    { source: 1, pluginId: 1, version: 1 } // unique
+    { source: 1, pluginId: 1, version: 1, etag: 1 } // unique identity
+    { source: 1, pluginId: 1, version: 1 } // unique when status = active
 
-同一个 source、pluginId、version 只保留一条关系。重新上传其他 etag 时更新这条关系中的 etag 和状态。
+同一个 source、pluginId、version 可以同时保留旧 active 和新 pending 候选，但只能有一个 active etag。确认新 identity 时，在同一个事务中禁用旧 active 并激活新候选。
 
 状态含义：
 
@@ -143,7 +144,7 @@ upload 阶段直接写入上述路径，pending 阶段也直接返回上述路�
     5. 如果 identity 已存在，复用原 plugin 和原文件
     6. 如果 identity 不存在，写入文件并创建 plugin，status = disabled
     7. upsert plugin_installations：
-       source + pluginId + version
+       source + pluginId + version + etag
        etag
        pluginObjectId
        status = pending

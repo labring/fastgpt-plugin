@@ -63,6 +63,23 @@ export type PluginCreateResultType = {
 
 export type PluginConfirmResultType = PluginType & {
   runtimeRegistrationRequired?: boolean;
+  idempotent?: boolean;
+  replacedInstallationIds?: PluginUniqueIdType[];
+};
+
+export type PluginDeleteInputType =
+  | (Required<Pick<UserPluginIdType, 'pluginId' | 'source' | 'version'>> & {
+      scope?: 'version';
+    })
+  | (Required<Pick<UserPluginIdType, 'pluginId' | 'source'>> & {
+      scope: 'allVersions';
+    });
+
+export type PluginDeleteResultType = {
+  plugins: {
+    plugin: PluginType;
+    disabled: boolean;
+  }[];
 };
 
 /** 操作 Plugin S3, Mongo，本地缓存, 代码里面的静态配置 ...*/
@@ -82,13 +99,17 @@ export interface PluginRepoPort {
     uniqueId: PluginUniqueIdType,
     source?: PluginSourceType
   ): Promise<Result<PluginConfirmResultType>>;
-  rollbackPluginConfirmation(uniqueId: PluginUniqueIdType, source?: PluginSourceType): Promise<Result>;
+  rollbackPluginConfirmation(
+    uniqueId: PluginUniqueIdType,
+    source?: PluginSourceType,
+    replacedInstallationIds?: PluginUniqueIdType[]
+  ): Promise<Result>;
   /** 删除 pending 插件及其临时文件 */
   deletePendingPlugin(uniqueId: PluginUniqueIdType, source?: PluginSourceType): Promise<Result>;
   /** 删除指定 source 下的安装关系；没有其他 source 引用时才禁用插件实体 */
   deletePluginInstallation(
-    input: Required<Pick<UserPluginIdType, 'pluginId' | 'source' | 'version'>>
-  ): Promise<Result<{ plugin: PluginType; disabled: boolean }>>;
+    input: PluginDeleteInputType
+  ): Promise<Result<PluginDeleteResultType>>;
 
   /** 获取某个插件信息 */
   getPluginById(

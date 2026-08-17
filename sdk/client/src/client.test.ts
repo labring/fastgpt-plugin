@@ -271,4 +271,25 @@ describe('FastGPTPluginClient plugin source payloads', () => {
       source: 'team-a'
     });
   });
+
+  it('deletes all plugin versions from the requested source explicitly', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    const client = new FastGPTPluginClient({
+      baseUrl: 'https://plugin.example.com',
+      fetch: fetch as unknown as typeof globalThis.fetch
+    });
+
+    await client.deletePlugin({
+      pluginId: 'plugin-a',
+      source: 'team-a',
+      scope: 'allVersions'
+    });
+
+    const [, request] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(readJsonBody(request)).toEqual({
+      pluginId: 'plugin-a',
+      source: 'team-a',
+      scope: 'allVersions'
+    });
+  });
 });

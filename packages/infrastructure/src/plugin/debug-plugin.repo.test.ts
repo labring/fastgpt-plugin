@@ -307,9 +307,7 @@ function makeFallbackRepo({
     listActive: vi.fn().mockResolvedValue(successResult([])),
     disablePlugins: vi.fn().mockResolvedValue(successResult({})),
     disableUnreferencedPlugins: vi.fn().mockResolvedValue(successResult({ plugins: [] })),
-    deletePluginInstallation: vi.fn().mockResolvedValue(
-      successResult({ plugin: {}, disabled: false })
-    ),
+    deletePluginInstallation: vi.fn().mockResolvedValue(successResult({ plugins: [] })),
     pruneDisabled: vi.fn().mockResolvedValue(successResult({ count: 0, plugins: [] })),
     listTags: vi.fn().mockResolvedValue(successResult([])),
     getPluginFileAccessURL: vi.fn()

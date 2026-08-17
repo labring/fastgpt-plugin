@@ -104,13 +104,13 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
     async (c) => {
       const pluginConfirmUC = makePluginConfirmUC(usecaseDeps);
       const { uniqueIds, source } = c.req.valid('json');
-      const [, err] = await pluginConfirmUC({ uniqueIds, source });
+      const [result, err] = await pluginConfirmUC({ uniqueIds, source });
 
       if (err) {
         return R.fail(c, 500, err.error);
       }
 
-      return c.json({ ok: true }, 200);
+      return R.success(c, result);
     }
   );
 

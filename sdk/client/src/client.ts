@@ -35,6 +35,7 @@ import type {
   FastGPTPluginClientOptions,
   ModelListType,
   ModelProviderListType,
+  PluginConfirmResultType,
   PluginDebugSessionConnectionKeyExchangeParamsType,
   PluginDebugSessionConnectionKeyExchangeResultType,
   PluginDebugSessionCreateParamsType,
@@ -156,13 +157,13 @@ export class FastGPTPluginClient {
   async confirmPlugin(
     uniqueIds: PluginUniqueIdType[],
     requestOptions?: PluginSourceRequestOptions
-  ): Promise<void> {
+  ): Promise<PluginConfirmResultType> {
     const payload = PluginConfirmParamsSchema.parse({
       uniqueIds,
       source: requestOptions?.source
     });
 
-    await this.transport.requestEmpty({
+    return this.transport.requestData<PluginConfirmResultType>({
       path: this.withApiPath(PluginContract.Confirm.meta.path),
       method: PluginContract.Confirm.meta.method,
       body: payload,

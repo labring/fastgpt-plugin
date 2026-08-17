@@ -7,6 +7,7 @@
 
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import type { PluginSourceType, PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { toUsecaseErrorLog } from '@usecase/log-error';
@@ -31,7 +32,15 @@ type Input = {
 };
 
 /** Output Type */
-type Output = Promise<Result>;
+export type PluginConfirmUCOutput = {
+  confirmed: PluginUniqueIdType[];
+  failed: {
+    uniqueId: PluginUniqueIdType;
+    reason: I18nStringType;
+  }[];
+};
+
+type Output = Promise<Result<PluginConfirmUCOutput>>;
 
 export const makePluginConfirmUC =
   (deps: PluginConfirmUCDeps) =>
@@ -39,7 +48,7 @@ export const makePluginConfirmUC =
     const source = inputSource ?? 'system';
     deps.logger.debug('Plugin Confirm', { uniqueIds, source });
 
-    const confirmOne = async (uniqueId: PluginUniqueIdType): Output => {
+    const confirmOne = async (uniqueId: PluginUniqueIdType): Promise<Result> => {
       deps.logger.debug('Plugin Confirm One', { uniqueId });
 
       const [replacedPlugins, replacedErr] = await listReplacedActivePlugins(
@@ -80,11 +89,19 @@ export const makePluginConfirmUC =
 
       // Register the plugin to runtime only when this source confirmed the first entity.
       if (plugin.type === 'tool') {
+        if (plugin.idempotent) {
+          return successResult({});
+        }
+
         if (plugin.runtimeRegistrationRequired !== false) {
           const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
           if (registerErr) {
             if (typeof deps.pluginRepo.rollbackPluginConfirmation === 'function') {
-              const [, rollbackErr] = await deps.pluginRepo.rollbackPluginConfirmation(uniqueId, source);
+              const [, rollbackErr] = await deps.pluginRepo.rollbackPluginConfirmation(
+                uniqueId,
+                source,
+                plugin.replacedInstallationIds
+              );
               if (rollbackErr) {
                 deps.logger.error('Plugin Confirm Rollback Error', {
                   uniqueId,
@@ -130,6 +147,9 @@ export const makePluginConfirmUC =
       });
     };
 
+    const confirmed: PluginUniqueIdType[] = [];
+    const failed: PluginConfirmUCOutput['failed'] = [];
+
     for (const uniqueId of uniqueIds) {
       const [, err] = await confirmOne(uniqueId);
       if (err) {
@@ -137,9 +157,11 @@ export const makePluginConfirmUC =
           uniqueId,
           error: toUsecaseErrorLog(err)
         });
-        return failureResult(err);
+        failed.push({ uniqueId, reason: err.reason });
+      } else {
+        confirmed.push(uniqueId);
       }
     }
 
-    return successResult({});
+    return successResult({ confirmed, failed });
   };

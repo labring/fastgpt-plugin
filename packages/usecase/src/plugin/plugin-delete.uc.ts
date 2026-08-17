@@ -1,6 +1,9 @@
-import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
+import type {
+  PluginDeleteInputType,
+  PluginRepoPort
+} from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
-import { PluginUniqueIdSchema, type UserPluginIdType } from '@domain/value-objects/plugin.vo';
+import { PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { isResultFailure, toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
@@ -13,23 +16,8 @@ export type PluginDeleteUCDeps = {
 
 export const makePluginDeleteUC =
   ({ logger, pluginRepo, pluginRuntimeManager }: PluginDeleteUCDeps) =>
-  async (
-    input: Required<Pick<UserPluginIdType, 'pluginId' | 'source' | 'version'>>
-  ): Promise<Result> => {
+  async (input: PluginDeleteInputType): Promise<Result> => {
     logger.debug('Plugin Delete', { input });
-
-    const [resolvedPlugin, pluginErr] = await pluginRepo.getPluginByUserPluginId(input);
-
-    if (pluginErr) {
-      logger.error('Plugin Delete Detail Error', toUsecaseErrorLog(pluginErr, { input }));
-      return failureResult(
-        {
-          en: 'Plugin not found',
-          'zh-CN': '插件未找到'
-        },
-        pluginErr
-      );
-    }
 
     const [deleteResult, deleteErr] = await pluginRepo.deletePluginInstallation(input);
 
@@ -47,10 +35,9 @@ export const makePluginDeleteUC =
       );
     }
 
-    const plugin = deleteResult?.plugin ?? resolvedPlugin;
-    const uniqueId = PluginUniqueIdSchema.parse(plugin);
-
-    if (deleteResult?.disabled && plugin.type === 'tool') {
+    for (const { plugin, disabled } of deleteResult.plugins) {
+      if (!disabled || plugin.type !== 'tool') continue;
+      const uniqueId = PluginUniqueIdSchema.parse(plugin);
       let unregisterErr;
 
       try {

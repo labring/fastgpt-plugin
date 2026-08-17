@@ -13,6 +13,7 @@ export type {
   ModelListType,
   ModelProviderItemType,
   ModelProviderListType,
+  PluginConfirmResultType,
   PluginDebugSessionConnectionKeyExchangeParamsType,
   PluginDebugSessionConnectionKeyExchangeResultType,
   PluginDebugSessionCreateParamsType,
