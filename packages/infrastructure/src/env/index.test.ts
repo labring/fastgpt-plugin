@@ -15,6 +15,7 @@ const resetEnv = () => {
   delete process.env.METRICS_EXPORT_TIMEOUT_MS;
   delete process.env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB;
   delete process.env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD;
+  delete process.env.PLUGIN_REGISTER_CONCURRENCY;
 };
 
 describe('env AUTH_TOKEN', () => {
@@ -212,5 +213,19 @@ describe('env AUTH_TOKEN', () => {
     expect(() => env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD).toThrow(
       'POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD'
     );
+  });
+
+  it('defaults plugin registration concurrency to four', async () => {
+    const { env } = await import('./index');
+
+    expect(env.PLUGIN_REGISTER_CONCURRENCY).toBe(4);
+  });
+
+  it('uses the configured plugin registration concurrency', async () => {
+    process.env.PLUGIN_REGISTER_CONCURRENCY = '7';
+
+    const { env } = await import('./index');
+
+    expect(env.PLUGIN_REGISTER_CONCURRENCY).toBe(7);
   });
 });
