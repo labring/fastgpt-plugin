@@ -136,8 +136,7 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
           try {
             await result.consume(async (message) => {
               if (message.type === 'error') {
-                deps.logger.error('Tool Stream Error', {
-                  code: ErrorCode.pluginInvokeFailed,
+                deps.logger.debug('Tool Returned Error', {
                   message: message.data,
                   data: {
                     pluginId: body.pluginId,
