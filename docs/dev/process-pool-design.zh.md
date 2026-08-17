@@ -376,13 +376,13 @@ client.request(method, args)
 
 ## Pod 安全与资源边界
 
-每次 fork 都使用插件目录作为 `cwd`，忽略 stdin，只传入最小环境变量，并在 Pod runtime 目录下分配私有 home/tmp 目录。显式 `execArgv` 启用 Node.js Permission Model，只授予插件入口和 runtime SDK 读取权限，只授予 Pod runtime 目录写入权限，禁止创建子进程，并设置 V8 old space 上限。
+每次 fork 都使用插件目录作为 `cwd`，忽略 stdin，只传入最小环境变量，并在 Pod runtime 目录下分配私有 home/tmp 目录。显式 `execArgv` 启用 Node.js Permission Model，只授予插件入口和 runtime SDK 读取权限，只授予 Pod runtime 目录写入权限，禁止创建子进程，并设置 V8 old space 上限。仅当 `POOL_SERVICE_POD_ALLOW_NET=true` 时才添加 `--allow-net`；该变量默认关闭，生产 Node 22 镜像应保持关闭，Node 26+ 本地开发按需开启。
 
 生产镜像中的 `/app`、`dist` 和 `node_modules` 由 root 持有。`fastgpt` 进程在 `LOCAL_FILE_BASE_PATH` 下写入插件包和 Pod scratch 数据，镜像将该路径放在 `/runtime/cache` 下。文件存储仓储使用 `0700` 创建目录，使用 `0600` 创建文件。挂载 volume 时应挂载可写父目录，并将 `LOCAL_FILE_BASE_PATH` 配置为其子目录，使初始化逻辑可以删除并重建 cache 根目录。
 
 在 POSIX 系统中，每个 Pod 使用独立进程组。关闭时先向整个进程组发送 `SIGTERM`，等待 `terminationGracePeriod`，仍有后代进程存活时发送 `SIGKILL`。容器或 cgroup 的 PID 限制继续作为进程数量硬边界。
 
-Node.js Permission Model 不管理网络。`DISABLE_SSRF_CHECK` 与 `ALLOWED_INSTALL_HOSTS` 只保护安装下载。local-pool 的运行时 SSRF 防护属于部署前置条件，需要在插件代码下层通过 network namespace、透明 egress proxy 或等价策略强制执行，并在 DNS 解析后和重定向时校验目标地址。该边界拦截 loopback、link-local、内网、metadata 和 IPv6 ULA 地址，同时允许公网目标且不要求 hostname allowlist。
+生产镜像使用 Node 22，Node.js Permission Model 不提供网络权限开关，因此 `POOL_SERVICE_POD_ALLOW_NET` 必须保持关闭；Node 26+ 本地开发可按需开启，但 `--allow-net` 仍可能产生实验性警告。`DISABLE_SSRF_CHECK` 与 `ALLOWED_INSTALL_HOSTS` 只保护安装下载。local-pool 的运行时 SSRF 防护属于部署前置条件，需要在插件代码下层通过 network namespace、透明 egress proxy 或等价策略强制执行，并在 DNS 解析后和重定向时校验目标地址。该边界拦截 loopback、link-local、内网、metadata 和 IPv6 ULA 地址，同时允许公网目标且不要求 hostname allowlist。
 
 ## 指标与观测
 

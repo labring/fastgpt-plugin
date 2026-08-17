@@ -10,6 +10,9 @@ import { LocalPoolPluginRuntimeManager } from './local-pool-runtime.driver';
 import type { LocalPoolPluginConfigType } from './types';
 
 const serviceMockState = vi.hoisted(() => {
+  const runtimeState = {
+    initializeGate: undefined as (() => Promise<void>) | undefined
+  };
   const instances: Array<{
     serviceName: string;
     config: unknown;
@@ -29,7 +32,9 @@ const serviceMockState = vi.hoisted(() => {
     const instance = {
       serviceName,
       config,
-      initialize: vi.fn(async () => {}),
+      initialize: vi.fn(async () => {
+        await runtimeState.initializeGate?.();
+      }),
       updateConfig: vi.fn(async () => {}),
       destroy: vi.fn(async () => {}),
       drainTo: vi.fn(async () => {}),
@@ -48,7 +53,13 @@ const serviceMockState = vi.hoisted(() => {
     return instance;
   });
 
-  return { instances, PluginService };
+  return {
+    instances,
+    PluginService,
+    setInitializeGate: (gate: (() => Promise<void>) | undefined) => {
+      runtimeState.initializeGate = gate;
+    }
+  };
 });
 
 vi.mock('./service/index', () => ({
@@ -140,6 +151,7 @@ beforeEach(() => {
   savedConfigs.length = 0;
   redisStore.clear();
   serviceMockState.instances.length = 0;
+  serviceMockState.setInitializeGate(undefined);
   pluginRuntimeConfigModel.storedConfig = undefined;
   redisClient.getClient.get.mockImplementation(async (key: string) => redisStore.get(key) ?? null);
   redisClient.getClient.set.mockImplementation(
@@ -235,6 +247,38 @@ describe('LocalPoolPluginRuntimeManager config', () => {
 });
 
 describe('LocalPoolPluginRuntimeManager version keys', () => {
+  it('reserves pending pods across concurrent registrations', async () => {
+    const manager = createManager();
+    (manager as any).managerConfig.maxTotalPods = 1;
+    pluginRuntimeConfigModel.storedConfig = pluginConfig({ minPods: 1 });
+
+    let releaseInitialize!: () => void;
+    const initializeGate = new Promise<void>((resolve) => {
+      releaseInitialize = resolve;
+    });
+    serviceMockState.setInitializeGate(() => initializeGate);
+
+    const firstRegistration = manager.register(weatherUniqueId);
+    await vi.waitFor(() => expect(serviceMockState.instances).toHaveLength(1));
+
+    const [, secondErr] = await manager.register({
+      pluginId: 'other-weather',
+      version: '1.0.0',
+      etag: 'etag-other-weather'
+    });
+
+    expect(secondErr?.error).toBeInstanceOf(RegisteredError);
+    expect((secondErr?.error as RegisteredError).code).toBe(
+      ErrorCode.pluginRuntimePodQuotaExceeded
+    );
+
+    releaseInitialize();
+    const [, firstErr] = await firstRegistration;
+    expect(firstErr).toBeNull();
+
+    await manager.shutdown();
+  });
+
   it('publishes a runtime version key when a runtime is registered', async () => {
     const manager = createManager();
 

@@ -1749,6 +1749,36 @@ describe('makePluginRegisterActiveUC', () => {
     expect(deps.pluginRuntimeManager.register).toHaveBeenCalledWith(uniqueId);
   });
 
+  it('registers active plugins with the configured concurrency', async () => {
+    const activePlugins = ['plugin-a', 'plugin-b', 'plugin-c', 'plugin-d'].map((pluginId) =>
+      plugin({ pluginId })
+    );
+    let activeRegistrations = 0;
+    let maxActiveRegistrations = 0;
+    const register = vi.fn(async () => {
+      activeRegistrations += 1;
+      maxActiveRegistrations = Math.max(maxActiveRegistrations, activeRegistrations);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      activeRegistrations -= 1;
+      return successResult({});
+    });
+    const deps = {
+      pluginRepo: basePluginRepo({
+        listActive: vi.fn().mockResolvedValue(successResult(activePlugins))
+      }),
+      pluginRuntimeManager: baseRuntimeManager({ register }),
+      logger: logger(),
+      registerConcurrency: 2
+    };
+
+    const [result, err] = await makePluginRegisterActiveUC(deps)();
+
+    expect(err).toBeNull();
+    expect(result).toBe('ok');
+    expect(register).toHaveBeenCalledTimes(activePlugins.length);
+    expect(maxActiveRegistrations).toBe(2);
+  });
+
   it('returns failure when registering an active plugin fails', async () => {
     const deps = {
       pluginRepo: basePluginRepo({
@@ -1763,6 +1793,36 @@ describe('makePluginRegisterActiveUC', () => {
     const [, err] = await makePluginRegisterActiveUC(deps)();
 
     expect(err?.reason.en).toBe('Failed to register active plugin');
+  });
+
+  it('waits for all registrations and summarizes multiple failures', async () => {
+    const activePlugins = [plugin({ pluginId: 'failed-result' }), plugin({ pluginId: 'failed-throw' })];
+    const register = vi.fn(async ({ pluginId }: PluginUniqueIdType) => {
+      if (pluginId === 'failed-result') {
+        return failureResult(reason('register failed'));
+      }
+      throw new Error('register threw');
+    });
+    const deps = {
+      pluginRepo: basePluginRepo({
+        listActive: vi.fn().mockResolvedValue(successResult(activePlugins))
+      }),
+      pluginRuntimeManager: baseRuntimeManager({ register }),
+      logger: logger(),
+      registerConcurrency: 2
+    };
+
+    const [result, err] = await makePluginRegisterActiveUC(deps)();
+
+    expect(result).toBeNull();
+    expect(err?.reason.en).toBe('Failed to register active plugin');
+    expect(err?.data).toMatchObject({
+      failures: expect.arrayContaining([
+        expect.objectContaining({ uniqueId: expect.objectContaining({ pluginId: 'failed-result' }) }),
+        expect.objectContaining({ uniqueId: expect.objectContaining({ pluginId: 'failed-throw' }) })
+      ])
+    });
+    expect(register).toHaveBeenCalledTimes(activePlugins.length);
   });
 });
 

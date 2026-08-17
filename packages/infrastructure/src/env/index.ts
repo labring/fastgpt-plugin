@@ -155,6 +155,7 @@ const ServerEnvShape = {
 
   // 插件运行配置
   PLUGIN_RUNTIME_MODE: PluginRuntimeModeSchema.default(PluginRuntimeModeEnum['localPool']),
+  PLUGIN_REGISTER_CONCURRENCY: PositiveIntSchema.default(4),
 
   // 进程池配置（插件级配置可被 MongoDB 中的 pluginConfig 覆盖）
   POOL_HEALTH_CHECK_INTERVAL: PositiveIntSchema.default(30_000),
@@ -166,6 +167,7 @@ const ServerEnvShape = {
   POOL_SERVICE_MAX_CONCURRENT_REQUESTS_PER_POD: PositiveIntSchema.default(10),
   POOL_SERVICE_MAX_REQUESTS_PER_POD: PositiveIntSchema.default(100),
   POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB: PositiveIntSchema.default(512),
+  POOL_SERVICE_POD_ALLOW_NET: BoolStringSchema.default(false),
   POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD: PositiveIntSchema.default(5_000),
   POOL_SERVICE_MAX_QUEUE_SIZE: PositiveIntSchema.default(500),
   POOL_SERVICE_QUEUE_TIMEOUT: PositiveIntSchema.default(60_000),
@@ -303,6 +305,7 @@ export type ServerEnv = {
   ALLOWED_INSTALL_HOSTS?: string;
   DISABLE_SSRF_CHECK: boolean;
   PLUGIN_RUNTIME_MODE: 'localPool' | 'serverless';
+  PLUGIN_REGISTER_CONCURRENCY: number;
   POOL_HEALTH_CHECK_INTERVAL: number;
   POOL_MAX_TOTAL_PODS: number;
   POOL_SERVICE_MIN_PODS: number;
@@ -312,6 +315,7 @@ export type ServerEnv = {
   POOL_SERVICE_MAX_CONCURRENT_REQUESTS_PER_POD: number;
   POOL_SERVICE_MAX_REQUESTS_PER_POD: number;
   POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB: number;
+  POOL_SERVICE_POD_ALLOW_NET: boolean;
   POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD: number;
   POOL_SERVICE_MAX_QUEUE_SIZE: number;
   POOL_SERVICE_QUEUE_TIMEOUT: number;

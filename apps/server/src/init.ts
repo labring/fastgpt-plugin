@@ -1,4 +1,5 @@
 import { makePluginRegisterActiveUC } from '@usecase/plugin/plugin-register-active.uc';
+import { serverEnv } from '@infrastructure/env';
 import { getLogger, root } from '@infrastructure/logger';
 import { initStaticModelAssets } from '@infrastructure/static-data/models/model-static';
 import {
@@ -47,7 +48,8 @@ export const init = async () => {
   const pluginRegisterActiveUC = makePluginRegisterActiveUC({
     pluginRepo,
     pluginRuntimeManager,
-    logger
+    logger,
+    registerConcurrency: serverEnv.PLUGIN_REGISTER_CONCURRENCY
   });
 
   const [, err] = await pluginRegisterActiveUC();
