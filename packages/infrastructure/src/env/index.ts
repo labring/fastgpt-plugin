@@ -155,6 +155,7 @@ const ServerEnvShape = {
 
   // 插件运行配置
   PLUGIN_RUNTIME_MODE: PluginRuntimeModeSchema.default(PluginRuntimeModeEnum['localPool']),
+  PLUGIN_REGISTER_CONCURRENCY: PositiveIntSchema.default(4),
 
   // 进程池配置（插件级配置可被 MongoDB 中的 pluginConfig 覆盖）
   POOL_HEALTH_CHECK_INTERVAL: PositiveIntSchema.default(30_000),
@@ -304,6 +305,7 @@ export type ServerEnv = {
   ALLOWED_INSTALL_HOSTS?: string;
   DISABLE_SSRF_CHECK: boolean;
   PLUGIN_RUNTIME_MODE: 'localPool' | 'serverless';
+  PLUGIN_REGISTER_CONCURRENCY: number;
   POOL_HEALTH_CHECK_INTERVAL: number;
   POOL_MAX_TOTAL_PODS: number;
   POOL_SERVICE_MIN_PODS: number;

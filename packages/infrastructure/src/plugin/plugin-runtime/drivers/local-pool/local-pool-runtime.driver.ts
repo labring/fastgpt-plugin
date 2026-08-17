@@ -66,6 +66,8 @@ export class LocalPoolPluginRuntimeManager
   private readonly plugins = new Map<string, LocalPoolPluginItemType>();
   /** key: pluginId, value: 这个 pluginId 对印的所有 id */
   private readonly pluginIdMap = new Map<string, string[]>();
+  /** 注册中的插件预留的 minPods，避免并发注册同时通过全局配额检查 */
+  private pendingPodReservations = 0;
   private versionKeyStore: VersionKeyStore;
 
   /** 插件运行时配置仓储 */
@@ -262,8 +264,8 @@ export class LocalPoolPluginRuntimeManager
 
     const svcConfig = this.toServiceConfig(pluginConfig);
 
-    // 检查全局 Pod 配额
-    const currentPods = this.getTotalPods();
+    // 检查并预留全局 Pod 配额。预留会持续到注册流程结束，覆盖异步初始化期间的窗口。
+    const currentPods = this.getTotalPodsIncludingReservations();
     if (currentPods + svcConfig.minPods > this.managerConfig.maxTotalPods) {
       this.logger.warn('Plugin registration rejected because pod quota was exceeded', {
         current: currentPods,
@@ -289,95 +291,101 @@ export class LocalPoolPluginRuntimeManager
       );
     }
 
-    const [info, err] = await this.deps.pluginRepo.getPluginById(uniqueId);
-    if (err) {
-      return failureResult(
-        createError(ErrorCode.pluginRuntimePluginInfoLoadFailed, { cause: err })
-      );
-    }
-    const service = new PluginService(
-      id,
-      info.entryFilePath,
-      svcConfig,
-      {
-        onPodCreated: () => {
-          const totalPods = this.getTotalPods();
-          if (totalPods > this.managerConfig.maxTotalPods) {
-            this.logger.warn('Plugin runtime exceeded global pod quota', {
-              current: totalPods,
-              max: this.managerConfig.maxTotalPods,
-              pluginId: id
-            });
-          }
-        },
-        onPodStartup: ({ outcome }: { outcome: 'success' | 'failure' | 'timeout' }) => {
-          getRuntimeMetrics().recordPodStartup({
-            ...toRuntimeMetricAttributes(id),
-            outcome
-          });
-        },
-        onRequestCompleted: ({ duration }: { requestId: string; duration: number }) => {
-          this.logger.debug(`Plugin request completed`, { pluginId: id, duration });
-          // this.globalMetrics.globalTotalRequests++;
-          // this.globalMetrics.globalResponseTimes.push(duration);
-          // if (this.globalMetrics.globalResponseTimes.length > 2000) {
-          //   this.globalMetrics.globalResponseTimes.shift();
-          // }
-        },
-        onRequestFailed: ({ error }: { requestId: string; error: unknown }) => {
-          this.logger.error(`Plugin request failed`, { pluginId: id, error });
-          // this.globalMetrics.globalTotalRequests++;
-          // this.globalMetrics.globalErrors++;
-        },
-        onPodLog: ({
-          podId,
-          level,
-          message
-        }: {
-          podId: string;
-          level: 'debug' | 'error';
-          message: string;
-        }) => {
-          const prefix = `[plugin:${id}][pod:${podId.slice(0, 8)}]`;
-          if (level === 'error') {
-            this.logger.error(`${prefix} ${message}`);
-          } else {
-            this.logger.debug(`${prefix} ${message}`);
-          }
-        }
-      },
-      info.info.permission ?? []
-    );
-
     try {
-      await service.initialize();
-    } catch (error) {
-      return failureResult(
-        createError(ErrorCode.pluginRuntimeInitializeFailed, {
-          cause: error,
-          data: {
-            pluginId: id
+      this.pendingPodReservations += svcConfig.minPods;
+
+      const [info, err] = await this.deps.pluginRepo.getPluginById(uniqueId);
+      if (err) {
+        return failureResult(
+          createError(ErrorCode.pluginRuntimePluginInfoLoadFailed, { cause: err })
+        );
+      }
+      const service = new PluginService(
+        id,
+        info.entryFilePath,
+        svcConfig,
+        {
+          onPodCreated: () => {
+            const totalPods = this.getTotalPodsIncludingReservations();
+            if (totalPods > this.managerConfig.maxTotalPods) {
+              this.logger.warn('Plugin runtime exceeded global pod quota', {
+                current: totalPods,
+                max: this.managerConfig.maxTotalPods,
+                pluginId: id
+              });
+            }
+          },
+          onPodStartup: ({ outcome }: { outcome: 'success' | 'failure' | 'timeout' }) => {
+            getRuntimeMetrics().recordPodStartup({
+              ...toRuntimeMetricAttributes(id),
+              outcome
+            });
+          },
+          onRequestCompleted: ({ duration }: { requestId: string; duration: number }) => {
+            this.logger.debug(`Plugin request completed`, { pluginId: id, duration });
+            // this.globalMetrics.globalTotalRequests++;
+            // this.globalMetrics.globalResponseTimes.push(duration);
+            // if (this.globalMetrics.globalResponseTimes.length > 2000) {
+            //   this.globalMetrics.globalResponseTimes.shift();
+            // }
+          },
+          onRequestFailed: ({ error }: { requestId: string; error: unknown }) => {
+            this.logger.error(`Plugin request failed`, { pluginId: id, error });
+            // this.globalMetrics.globalTotalRequests++;
+            // this.globalMetrics.globalErrors++;
+          },
+          onPodLog: ({
+            podId,
+            level,
+            message
+          }: {
+            podId: string;
+            level: 'debug' | 'error';
+            message: string;
+          }) => {
+            const prefix = `[plugin:${id}][pod:${podId.slice(0, 8)}]`;
+            if (level === 'error') {
+              this.logger.error(`${prefix} ${message}`);
+            } else {
+              this.logger.debug(`${prefix} ${message}`);
+            }
           }
-        })
+        },
+        info.info.permission ?? []
       );
+
+      try {
+        await service.initialize();
+      } catch (error) {
+        return failureResult(
+          createError(ErrorCode.pluginRuntimeInitializeFailed, {
+            cause: error,
+            data: {
+              pluginId: id
+            }
+          })
+        );
+      }
+
+      this.plugins.set(id, {
+        config: pluginConfig,
+        filePath: info.entryFilePath,
+        service,
+        meta: info.info,
+        mutex: new Mutex()
+      });
+      this.addPluginRuntimeId(uniqueId.pluginId, id);
+      await Promise.all([
+        options.publishVersionKey ?? true
+          ? this.versionKeyStore.ensureVersionKey(id)
+          : this.versionKeyStore.syncVersionKey(id),
+        this.versionKeyStore.syncVersionKey(this.getConfigVersionKey(uniqueId.pluginId))
+      ]);
+
+      return successResult({});
+    } finally {
+      this.pendingPodReservations -= svcConfig.minPods;
     }
-
-    this.plugins.set(id, {
-      config: pluginConfig,
-      filePath: info.entryFilePath,
-      service,
-      meta: info.info,
-      mutex: new Mutex()
-    });
-    this.addPluginRuntimeId(uniqueId.pluginId, id);
-    await Promise.all([
-      options.publishVersionKey ?? true
-        ? this.versionKeyStore.ensureVersionKey(id)
-        : this.versionKeyStore.syncVersionKey(id),
-      this.versionKeyStore.syncVersionKey(this.getConfigVersionKey(uniqueId.pluginId))
-    ]);
-
-    return successResult({});
   }
 
   /**
@@ -493,6 +501,10 @@ export class LocalPoolPluginRuntimeManager
       total += service.getMetrics().pods.total;
     }
     return total;
+  }
+
+  private getTotalPodsIncludingReservations(): number {
+    return this.getTotalPods() + this.pendingPodReservations;
   }
 
   private getGlobalMetricsSnapshot(): GlobalMetrics {
