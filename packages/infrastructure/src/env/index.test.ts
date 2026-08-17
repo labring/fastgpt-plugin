@@ -9,6 +9,7 @@ const resetEnv = () => {
   delete process.env.CONNECTION_GATEWAY_AUTH_TOKEN;
   delete process.env.NODE_ENV;
   delete process.env.DISABLE_SSRF_CHECK;
+  delete process.env.ALLOWED_INSTALL_HOSTS;
   delete process.env.METRICS_ENABLE_OTEL;
   delete process.env.METRICS_OTEL_URL;
   delete process.env.METRICS_EXPORT_INTERVAL_MS;
@@ -33,6 +34,12 @@ describe('env AUTH_TOKEN', () => {
     const { env } = await import('./index');
 
     expect(env.AUTH_TOKEN).toBe('token');
+  });
+
+  it('allows FastGPT hosts for plugin URL installation by default', async () => {
+    const { env } = await import('./index');
+
+    expect(env.ALLOWED_INSTALL_HOSTS).toBe('*.fastgpt.cn');
   });
 
   it('requires AUTH_TOKEN in production', async () => {

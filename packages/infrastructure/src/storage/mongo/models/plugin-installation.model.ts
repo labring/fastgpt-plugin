@@ -13,7 +13,18 @@ const model = defineModel(
       version: { type: String, required: true },
       etag: { type: String, required: true },
 
-      pluginObjectId: { type: Types.ObjectId, require: true }
+      status: {
+        type: String,
+        required: true,
+        default: 'active',
+        enum: ['pending', 'active', 'disabled']
+      },
+      expiredAt: { type: Date },
+
+      createAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now },
+
+      pluginObjectId: { type: Types.ObjectId, required: true }
     },
     {
       virtuals: {
@@ -27,6 +38,12 @@ const model = defineModel(
         }
       }
     }
-  ).index({ source: 1, pluginId: 1, version: 1 }, { unique: true })
+  )
+    .index({ source: 1, pluginId: 1, version: 1, etag: 1 }, { unique: true })
+    .index(
+      { source: 1, pluginId: 1, version: 1 },
+      { unique: true, partialFilterExpression: { status: 'active' } }
+    )
+    .index({ expiredAt: 1 }, { expireAfterSeconds: 0 })
 );
 export default model;

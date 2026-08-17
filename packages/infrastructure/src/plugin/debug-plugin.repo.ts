@@ -20,7 +20,6 @@ import type {
 import { ToolListItemSchema } from '@domain/ports/plugin/tool.port';
 import { createError } from '@domain/value-objects/error.vo';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
-import type { PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import type {
   PluginSourceType,
   PluginUniqueIdType,
@@ -89,16 +88,30 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
     return this.deps.fallback.getPendingPluginIds();
   }
 
-  createPlugin(arg: { plugin: PluginType; pending?: boolean; files: PkgContentFileObjects }): Promise<Result> {
+  createPlugin(arg: Parameters<PluginRepoPort['createPlugin']>[0]): ReturnType<PluginRepoPort['createPlugin']> {
     return this.deps.fallback.createPlugin(arg);
   }
 
-  confirmPlugin(uniqueId: PluginUniqueIdType): Promise<Result<PluginType>> {
-    return this.deps.fallback.confirmPlugin(uniqueId);
+  confirmPlugin(
+    ...args: Parameters<PluginRepoPort['confirmPlugin']>
+  ): ReturnType<PluginRepoPort['confirmPlugin']> {
+    return this.deps.fallback.confirmPlugin(...args);
+  }
+
+  rollbackPluginConfirmation(
+    ...args: Parameters<PluginRepoPort['rollbackPluginConfirmation']>
+  ): ReturnType<PluginRepoPort['rollbackPluginConfirmation']> {
+    return this.deps.fallback.rollbackPluginConfirmation(...args);
   }
 
   deletePendingPlugin(uniqueId: PluginUniqueIdType): Promise<Result> {
     return this.deps.fallback.deletePendingPlugin(uniqueId);
+  }
+
+  deletePluginInstallation(
+    input: Parameters<PluginRepoPort['deletePluginInstallation']>[0]
+  ): ReturnType<PluginRepoPort['deletePluginInstallation']> {
+    return this.deps.fallback.deletePluginInstallation(input);
   }
 
   getPluginById(
@@ -203,6 +216,12 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
     return this.deps.fallback.disablePlugins(uniqueIds);
   }
 
+  disableUnreferencedPlugins(
+    uniqueIds: Parameters<PluginRepoPort['disableUnreferencedPlugins']>[0]
+  ): ReturnType<PluginRepoPort['disableUnreferencedPlugins']> {
+    return this.deps.fallback.disableUnreferencedPlugins(uniqueIds);
+  }
+
   pruneDisabled(): ReturnType<PluginRepoPort['pruneDisabled']> {
     return this.deps.fallback.pruneDisabled();
   }
@@ -214,9 +233,10 @@ export class DebugPluginRepoOverlay implements PluginRepoPort {
   getPluginFileAccessURL(
     uniqueId: PluginUniqueIdType,
     filePath: string[],
-    pending: boolean
+    pending: boolean,
+    source?: PluginSourceType
   ): ReturnType<PluginRepoPort['getPluginFileAccessURL']> {
-    return this.deps.fallback.getPluginFileAccessURL(uniqueId, filePath, pending);
+    return this.deps.fallback.getPluginFileAccessURL(uniqueId, filePath, pending, source);
   }
 
   private async listDebugPlugins(sources: string[]) {

@@ -1,5 +1,6 @@
 import {
   PluginConfirmParamsSchema,
+  PluginDeleteParamsSchema,
   PluginInstallDTOSchema,
   PluginListParamsSchema,
   PluginRuntimeConfigGetParamsSchema,
@@ -25,6 +26,8 @@ import { PluginServiceFeatureContract } from '@interface-adapter/contracts/route
 import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 import { WorkflowContract } from '@interface-adapter/contracts/route/workflow.contract';
 
+import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
+
 import { RunToolWithStream } from './tool-stream';
 import { ClientTransport } from './transport';
 import type {
@@ -32,6 +35,7 @@ import type {
   FastGPTPluginClientOptions,
   ModelListType,
   ModelProviderListType,
+  PluginConfirmResultType,
   PluginDebugSessionConnectionKeyExchangeParamsType,
   PluginDebugSessionConnectionKeyExchangeResultType,
   PluginDebugSessionCreateParamsType,
@@ -40,12 +44,14 @@ import type {
   PluginDebugSessionRevokeResultType,
   PluginDebugSessionStatusParamsType,
   PluginDebugSessionStatusResultType,
+  PluginDeleteParamsType,
   PluginInstallResultType,
   PluginListParamsType,
   PluginListType,
   PluginPruneDisabledResultType,
   PluginRuntimeConfigType,
   PluginServiceFeaturesType,
+  PluginSourceRequestOptions,
   PluginTagListType,
   PluginUniqueIdType,
   PluginUploadResultType,
@@ -124,7 +130,7 @@ export class FastGPTPluginClient {
 
   async uploadPlugin(
     files: (Blob | { file: Blob; filename?: string })[],
-    requestOptions?: ClientRequestOptions
+    requestOptions?: ClientRequestOptions & { source?: PluginSourceType }
   ): Promise<PluginUploadResultType> {
     const formData = new FormData();
 
@@ -136,6 +142,9 @@ export class FastGPTPluginClient {
 
       formData.append('files', file, filename ?? defaultName);
     });
+    if (requestOptions?.source) {
+      formData.append('source', requestOptions.source);
+    }
 
     return this.transport.requestData<PluginUploadResultType>({
       path: this.withApiPath(PluginContract.Upload.meta.path),
@@ -147,11 +156,14 @@ export class FastGPTPluginClient {
 
   async confirmPlugin(
     uniqueIds: PluginUniqueIdType[],
-    requestOptions?: ClientRequestOptions
-  ): Promise<void> {
-    const payload = PluginConfirmParamsSchema.parse({ uniqueIds });
+    requestOptions?: PluginSourceRequestOptions
+  ): Promise<PluginConfirmResultType> {
+    const payload = PluginConfirmParamsSchema.parse({
+      uniqueIds,
+      source: requestOptions?.source
+    });
 
-    await this.transport.requestEmpty({
+    return this.transport.requestData<PluginConfirmResultType>({
       path: this.withApiPath(PluginContract.Confirm.meta.path),
       method: PluginContract.Confirm.meta.method,
       body: payload,
@@ -171,13 +183,30 @@ export class FastGPTPluginClient {
 
   async installPlugins(
     urls: string[],
-    requestOptions?: ClientRequestOptions
+    requestOptions?: PluginSourceRequestOptions
   ): Promise<PluginInstallResultType> {
-    const payload = PluginInstallDTOSchema.request.parse({ urls });
+    const payload = PluginInstallDTOSchema.request.parse({
+      urls,
+      source: requestOptions?.source
+    });
 
     return this.transport.requestData<PluginInstallResultType>({
       path: this.withApiPath(PluginContract.Install.meta.path),
       method: PluginContract.Install.meta.method,
+      body: payload,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async deletePlugin(
+    params: PluginDeleteParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<void> {
+    const payload = PluginDeleteParamsSchema.parse(params);
+
+    await this.transport.requestEmpty({
+      path: this.withApiPath(PluginContract.Delete.meta.path),
+      method: PluginContract.Delete.meta.method,
       body: payload,
       signal: requestOptions?.signal
     });

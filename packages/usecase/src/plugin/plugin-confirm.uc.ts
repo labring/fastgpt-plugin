@@ -5,11 +5,10 @@
  * Author：FinleyGe
  */
 
-import { isEqual } from 'es-toolkit';
-
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
-import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
+import type { PluginSourceType, PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
@@ -29,17 +28,27 @@ export type PluginConfirmUCDeps = {
 /** Input Type*/
 type Input = {
   uniqueIds: PluginUniqueIdType[];
+  source?: PluginSourceType;
 };
 
 /** Output Type */
-type Output = Promise<Result>;
+export type PluginConfirmUCOutput = {
+  confirmed: PluginUniqueIdType[];
+  failed: {
+    uniqueId: PluginUniqueIdType;
+    reason: I18nStringType;
+  }[];
+};
+
+type Output = Promise<Result<PluginConfirmUCOutput>>;
 
 export const makePluginConfirmUC =
   (deps: PluginConfirmUCDeps) =>
-  async ({ uniqueIds }: Input): Output => {
-    deps.logger.debug('Plugin Confirm', { uniqueIds });
+  async ({ uniqueIds, source: inputSource }: Input): Output => {
+    const source = inputSource ?? 'system';
+    deps.logger.debug('Plugin Confirm', { uniqueIds, source });
 
-    const confirmOne = async (uniqueId: PluginUniqueIdType): Output => {
+    const confirmOne = async (uniqueId: PluginUniqueIdType): Promise<Result> => {
       deps.logger.debug('Plugin Confirm One', { uniqueId });
 
       const [replacedPlugins, replacedErr] = await listReplacedActivePlugins(
@@ -61,33 +70,8 @@ export const makePluginConfirmUC =
         );
       }
 
-      // 1. get pending plugins
-      const [pendingIds, pendingErr] = await deps.pluginRepo.getPendingPluginIds();
-
-      if (pendingErr) {
-        deps.logger.error('Plugin Confirm Pending List Error', {
-          uniqueId,
-          error: toUsecaseErrorLog(pendingErr)
-        });
-        return failureResult(
-          {
-            en: 'Failed to get pending plugins',
-            'zh-CN': '获取待确认插件失败'
-          },
-          pendingErr
-        );
-      }
-
-      // 2. check the id
-      if (!pendingIds.some((pendingId) => isEqual(pendingId, uniqueId))) {
-        return failureResult({
-          en: 'Pending Plugin not found',
-          'zh-CN': '待确认插件未找到'
-        });
-      }
-
-      // 3. remove pending status
-      const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId);
+      // confirmPlugin performs the source-scoped pending lookup atomically with confirmation.
+      const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId, source);
 
       if (err) {
         deps.logger.error('Plugin Confirm One Error', {
@@ -103,28 +87,46 @@ export const makePluginConfirmUC =
         );
       }
 
-      // 4. register the plugin to runtime (when it is runable)
+      // Register the plugin to runtime only when this source confirmed the first entity.
       if (plugin.type === 'tool') {
-        const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
-        if (registerErr) {
-          deps.logger.error('Plugin Confirm Register Runtime Error', {
-            uniqueId,
-            error: toUsecaseErrorLog(registerErr)
-          });
-          return failureResult(
-            {
-              en: 'Failed to register confirmed plugin',
-              'zh-CN': '注册确认后的插件失败'
-            },
-            registerErr
-          );
+        if (plugin.idempotent) {
+          return successResult({});
+        }
+
+        if (plugin.runtimeRegistrationRequired !== false) {
+          const [, registerErr] = await deps.pluginRuntimeManager.register(uniqueId);
+          if (registerErr) {
+            if (typeof deps.pluginRepo.rollbackPluginConfirmation === 'function') {
+              const [, rollbackErr] = await deps.pluginRepo.rollbackPluginConfirmation(
+                uniqueId,
+                source,
+                plugin.replacedInstallationIds
+              );
+              if (rollbackErr) {
+                deps.logger.error('Plugin Confirm Rollback Error', {
+                  uniqueId,
+                  error: toUsecaseErrorLog(rollbackErr)
+                });
+              }
+            }
+            deps.logger.error('Plugin Confirm Register Runtime Error', {
+              uniqueId,
+              error: toUsecaseErrorLog(registerErr)
+            });
+            return failureResult(
+              {
+                en: 'Failed to register confirmed plugin',
+                'zh-CN': '注册确认后的插件失败'
+              },
+              registerErr
+            );
+          }
         }
 
         const [, replaceErr] = await disableAndUnregisterReplacedPlugins({
           ...deps,
           replacementUniqueId: uniqueId,
-          replacedPlugins,
-          disableReplacedPlugins: false
+          replacedPlugins
         });
 
         if (replaceErr) {
@@ -145,6 +147,9 @@ export const makePluginConfirmUC =
       });
     };
 
+    const confirmed: PluginUniqueIdType[] = [];
+    const failed: PluginConfirmUCOutput['failed'] = [];
+
     for (const uniqueId of uniqueIds) {
       const [, err] = await confirmOne(uniqueId);
       if (err) {
@@ -152,9 +157,11 @@ export const makePluginConfirmUC =
           uniqueId,
           error: toUsecaseErrorLog(err)
         });
-        return failureResult(err);
+        failed.push({ uniqueId, reason: err.reason });
+      } else {
+        confirmed.push(uniqueId);
       }
     }
 
-    return successResult({});
+    return successResult({ confirmed, failed });
   };
