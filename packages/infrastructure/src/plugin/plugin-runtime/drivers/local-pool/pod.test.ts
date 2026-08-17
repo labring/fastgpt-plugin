@@ -96,7 +96,7 @@ describe('PluginPod', () => {
     expect(pod.isAvailable()).toBe(true);
   });
 
-  it('starts with restricted filesystem, process, and environment permissions', async () => {
+  it('starts with restricted filesystem, process, and environment permissions with network access', async () => {
     process.env.LOCAL_POOL_PARENT_SECRET = 'must-not-be-inherited';
     const pod = createPod();
 
@@ -138,6 +138,7 @@ describe('PluginPod', () => {
       expect(result.execArgv).toEqual(
         expect.arrayContaining([
           '--permission',
+          '--allow-net',
           '--max-old-space-size=128',
           expect.stringMatching(/^--allow-fs-read=/),
           expect.stringMatching(/^--allow-fs-write=/)

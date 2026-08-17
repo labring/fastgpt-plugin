@@ -490,6 +490,7 @@ export class PluginPod {
       tempDirectory,
       execArgv: [
         '--permission',
+        '--allow-net',
         `--max-old-space-size=${this.options.maxOldSpaceSizeMb ?? DEFAULT_MAX_OLD_SPACE_SIZE_MB}`,
         `--allow-fs-read=${pluginDirectory}`,
         `--allow-fs-read=${runtimeNodeModules}`,
