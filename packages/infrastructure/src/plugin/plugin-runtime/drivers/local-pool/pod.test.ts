@@ -96,7 +96,7 @@ describe('PluginPod', () => {
     expect(pod.isAvailable()).toBe(true);
   });
 
-  it('starts with restricted filesystem, process, and environment permissions', async () => {
+  it('applies the configured network permission', async () => {
     process.env.LOCAL_POOL_PARENT_SECRET = 'must-not-be-inherited';
     const pod = createPod();
 
@@ -143,6 +143,11 @@ describe('PluginPod', () => {
           expect.stringMatching(/^--allow-fs-write=/)
         ])
       );
+      if (process.env.POOL_SERVICE_POD_ALLOW_NET === 'true') {
+        expect(result.execArgv).toContain('--allow-net');
+      } else {
+        expect(result.execArgv).not.toContain('--allow-net');
+      }
     } finally {
       delete process.env.LOCAL_POOL_PARENT_SECRET;
     }

@@ -14,6 +14,7 @@ const resetEnv = () => {
   delete process.env.METRICS_EXPORT_INTERVAL_MS;
   delete process.env.METRICS_EXPORT_TIMEOUT_MS;
   delete process.env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB;
+  delete process.env.POOL_SERVICE_POD_ALLOW_NET;
   delete process.env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD;
 };
 
@@ -191,7 +192,16 @@ describe('env AUTH_TOKEN', () => {
     const { env } = await import('./index');
 
     expect(env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB).toBe(512);
+    expect(env.POOL_SERVICE_POD_ALLOW_NET).toBe(false);
     expect(env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD).toBe(5_000);
+  });
+
+  it('allows enabling local-pool network access explicitly', async () => {
+    process.env.POOL_SERVICE_POD_ALLOW_NET = 'true';
+
+    const { env } = await import('./index');
+
+    expect(env.POOL_SERVICE_POD_ALLOW_NET).toBe(true);
   });
 
   it('rejects a non-positive local-pool heap limit', async () => {
