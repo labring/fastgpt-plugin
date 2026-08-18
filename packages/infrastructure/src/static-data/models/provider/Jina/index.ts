@@ -48,7 +48,7 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.rerank,
       model: 'jina-reranker-v3',
-      maxToken: 134144
+      maxToken: 131072
     },
     {
       type: ModelTypeEnum.rerank,

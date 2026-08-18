@@ -54,7 +54,7 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'step-r1-v-mini',
-      maxContext: 64000,
+      maxContext: 100000,
       maxTokens: 8000,
       quoteMaxToken: 60000,
       maxTemperature: 2,
