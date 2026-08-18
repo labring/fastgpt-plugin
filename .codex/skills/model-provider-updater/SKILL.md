@@ -1,6 +1,6 @@
 ---
 name: model-provider-updater
-description: Update FastGPT plugin static model provider presets by auditing packages/infrastructure/src/static-data/models/provider entries against official provider model catalogs. Use when asked to refresh, add, remove, or verify FastGPT model provider presets, check for new models, remove deprecated models, or keep provider files aligned with official model docs.
+description: Update FastGPT plugin static model provider presets by auditing packages/infrastructure/src/static-data/models/provider entries against official provider model catalogs. Use when asked to refresh, add, or verify FastGPT model provider presets, check for new models, or keep provider files aligned with official model docs.
 ---
 
 # Model Provider Updater
@@ -9,6 +9,12 @@ Use this repo-level skill to update the FastGPT plugin static model registry in 
 Only work on providers already registered by `packages/infrastructure/src/static-data/models/index.ts`; never add a new provider directory or registry import as part of this workflow unless the user explicitly asks to add a new provider.
 
 This skill was restored from the old `.codex/skills/model-provider-updater` layout. The plugin code has since moved from the legacy `modules/model/*` tree into the v1 `packages/infrastructure/src/static-data/models/*` tree, so use the paths and commands below rather than the old `modules/model` or `.agents/skills` paths.
+
+## Add-Only Policy
+
+This workflow is strictly additive. Never remove an existing provider preset, even when an official source marks it deprecated, retired, unavailable, superseded, or absent from the current catalog. Record such findings in the run summary when useful, but leave the registry entry unchanged.
+
+Every executable update plan must keep each provider's `remove` array empty. The helper script retains removal support for legacy or explicitly separate workflows, but this skill must not populate or apply removal operations.
 
 ## Workflow
 
@@ -32,13 +38,11 @@ This skill was restored from the old `.codex/skills/model-provider-updater` layo
 
    Add a preset when an official source lists an in-scope model that is absent locally and it belongs to an existing provider. Clone the closest existing preset in the same provider and family, then adjust context, output limit, vision, reasoning, tool calling, response-format, and field-map fields from official docs or the closest local pattern.
 
-   Remove a preset only when an official source explicitly marks the model as deprecated, retired, unavailable, or when an authoritative model-list API/document states that only the returned/listed models are supported and the local model is absent. Do not delete local custom placeholders in `Other`, `Ollama`, `HuggingFace`, `OpenRouter`, or similar open catalogs unless the provider explicitly removes that exact model from its own official API/catalog.
-
-   Remove preview, experimental, or dated candidate presets when the same model family has a stable public model ID in the same provider and official docs describe the preview/experimental ID as deprecated, superseded, unavailable, or no longer recommended. Do not remove a preview ID solely because a stable-looking sibling exists; keep it when official docs still list it as current, required for a distinct capability, or the stable ID has not reached the same capability.
+   Keep every existing preset. Deprecated, retired, unavailable, superseded, preview, experimental, and dated candidate IDs may be noted in the audit summary, but must not be removed by this workflow.
 
 4. Create and apply an update plan.
 
-   Generate a template and fill only confirmed additions/removals:
+   Generate a template and fill only confirmed additions. Keep every `remove` array empty:
 
    ```bash
    node .codex/skills/model-provider-updater/scripts/model_provider_presets.mjs plan-template --provider OpenAI > /tmp/model-provider-plan.json
@@ -53,12 +57,12 @@ This skill was restored from the old `.codex/skills/model-provider-updater` layo
 
    The plan format is documented in `references/plan.example.json`. That file includes an intentionally unregistered `ExampleProvider` shape example, so use `plan-template` for executable plans instead of applying the example file directly. Keep every audited provider in the plan:
    - Use `auditStatus: "checked"` with empty `add` and `remove` when the provider was checked and no registry change is needed.
-   - Use `auditStatus: "changed"` when adding or removing presets.
+   - Use `auditStatus: "changed"` when adding presets.
    - Leave `auditStatus: "pending"` only for providers not yet checked.
 
    `replace` supports top-level provider-model fields only, such as `maxContext`, `maxTokens`, `vision`, `reasoning`, `responseFormatList`, or `fieldMap`. Do not use dotted paths such as `fieldMap.max_tokens`; replace the full top-level object instead.
 
-   The script only edits providers registered by `packages/infrastructure/src/static-data/models/index.ts`, skips already-present additions, applies additions before removals within a provider, validates the whole plan before writing any file, and errors if `cloneFrom` or required evidence fields are missing.
+   The script only edits providers registered by `packages/infrastructure/src/static-data/models/index.ts`, skips already-present additions, validates the whole plan before writing any file, and errors if `cloneFrom` or required evidence fields are missing. Although the script can mechanically process removals for legacy workflows, this skill must always submit empty `remove` arrays.
 
 5. Validate.
 
@@ -72,7 +76,7 @@ This skill was restored from the old `.codex/skills/model-provider-updater` layo
 ## Evidence Rules
 
 - Record the official source URL and check date in the plan for every provider audited, including providers with no changes.
-- For removals, record a non-empty official-source reason on each remove item. Do not use string-only remove entries.
+- Do not add removal entries to the plan. Record retirement or deprecation findings only in the run summary when they materially affect users.
 - Prefer primary API references over marketing pages when fields disagree.
 - When official docs group many modality-specific variants under one family, treat the main public chat/LLM model as the preset target and skip derivative IDs unless the request names that capability.
 - When official docs list both provider-hosted main model IDs and open-weight/checkpoint IDs in one table, target the main hosted IDs and skip parameter-scale checkpoint IDs unless the user explicitly asks to support open-source model names.
@@ -86,7 +90,7 @@ This skill was restored from the old `.codex/skills/model-provider-updater` layo
 
 - `inventory`: list registered providers, provider files, model counts, and type counts.
 - `plan-template`: create a JSON update plan skeleton for all or selected providers.
-- `apply-plan`: mechanically add cloned presets and remove confirmed deprecated presets.
+- `apply-plan`: mechanically apply cloned additions. Its legacy removal capability is out of scope for this skill.
 - `check-sources`: sanity-check source hint URLs from `references/provider_sources.json`.
 
 Use the script for repeatable mechanics, then review the diff manually before final validation.

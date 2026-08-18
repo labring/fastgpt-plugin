@@ -489,7 +489,9 @@ export class PluginPod {
       homeDirectory,
       tempDirectory,
       execArgv: [
+        '--no-warnings',
         '--permission',
+        ...(env.POOL_SERVICE_POD_ALLOW_NET ? ['--allow-net'] : []),
         `--max-old-space-size=${this.options.maxOldSpaceSizeMb ?? DEFAULT_MAX_OLD_SPACE_SIZE_MB}`,
         `--allow-fs-read=${pluginDirectory}`,
         `--allow-fs-read=${runtimeNodeModules}`,

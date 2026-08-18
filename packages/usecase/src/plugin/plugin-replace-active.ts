@@ -38,7 +38,6 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
   logger: UsecaseLogger;
   replacementUniqueId?: PluginUniqueIdType;
   replacedPlugins: PluginType[];
-  disableReplacedPlugins?: boolean;
 }): Promise<Result> => {
   const replacedPluginIds = deps.replacedPlugins.map((plugin) =>
     PluginUniqueIdSchema.parse(plugin)
@@ -47,48 +46,58 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
     .filter((plugin) => plugin.type === 'tool')
     .map((plugin) => PluginUniqueIdSchema.parse(plugin));
 
-  if (deps.disableReplacedPlugins !== false) {
-    const [, disableErr] = await deps.pluginRepo.disablePlugins(replacedPluginIds);
+  const [disableResult, disableErr] = await deps.pluginRepo.disableUnreferencedPlugins(
+    replacedPluginIds
+  );
 
-    if (disableErr) {
-      const failure = failureResult(
-        {
-          en: 'Failed to disable replaced plugins',
-          'zh-CN': '禁用被替换插件失败'
-        },
-        disableErr
-      )[1]!;
-      deps.logger.error('Plugin Replace Active Disable Error', {
-        replacedPluginIds,
-        error: toUsecaseErrorLog(failure)
-      });
-      return [null, failure];
-    }
+  if (disableErr) {
+    const failure = failureResult(
+      {
+        en: 'Failed to disable replaced plugins',
+        'zh-CN': '禁用被替换插件失败'
+      },
+      disableErr
+    )[1]!;
+    deps.logger.error('Plugin Replace Active Disable Error', {
+      replacedPluginIds,
+      error: toUsecaseErrorLog(failure)
+    });
+    return [null, failure];
   }
 
+  const disabledKeys = new Set(
+    (disableResult?.plugins ?? []).map(
+      ({ pluginId, version, etag }) => `${pluginId}:${version}:${etag}`
+    )
+  );
+
   await Promise.all(
-    replacedRunnablePluginIds.map(async (uniqueId) => {
-      try {
-        const [, unregisterErr] = await deps.pluginRuntimeManager.unregister(uniqueId, {
-          replacementUniqueId: deps.replacementUniqueId
-        });
-        if (unregisterErr) {
+    replacedRunnablePluginIds
+      .filter((uniqueId) =>
+        disabledKeys.has(`${uniqueId.pluginId}:${uniqueId.version}:${uniqueId.etag}`)
+      )
+      .map(async (uniqueId) => {
+        try {
+          const [, unregisterErr] = await deps.pluginRuntimeManager.unregister(uniqueId, {
+            replacementUniqueId: deps.replacementUniqueId
+          });
+          if (unregisterErr) {
+            deps.logger.error('Failed to unregister replaced plugin runtime', {
+              pluginId: uniqueId.pluginId,
+              version: uniqueId.version,
+              etag: uniqueId.etag,
+              error: toUsecaseErrorLog(unregisterErr)
+            });
+          }
+        } catch (error) {
           deps.logger.error('Failed to unregister replaced plugin runtime', {
             pluginId: uniqueId.pluginId,
             version: uniqueId.version,
             etag: uniqueId.etag,
-            error: toUsecaseErrorLog(unregisterErr)
+            error
           });
         }
-      } catch (error) {
-        deps.logger.error('Failed to unregister replaced plugin runtime', {
-          pluginId: uniqueId.pluginId,
-          version: uniqueId.version,
-          etag: uniqueId.etag,
-          error
-        });
-      }
-    })
+      })
   );
 
   return successResult({});

@@ -7,7 +7,7 @@ describe('URLFileFetcher', () => {
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
-    delete process.env.ALLOWED_INSTALL_HOSTS;
+    process.env.ALLOWED_INSTALL_HOSTS = '127.0.0.1,8.8.8.8';
     delete process.env.DISABLE_SSRF_CHECK;
     delete process.env.NODE_ENV;
     globalThis.fetch = vi.fn() as unknown as typeof fetch;
