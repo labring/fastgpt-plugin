@@ -1,10 +1,10 @@
 {
   "OpenAI": {
-    "docs": ["https://platform.openai.com/docs/models"],
+    "docs": ["https://developers.openai.com/api/docs/models"],
     "notes": "Use official OpenAI model docs or authenticated model-list API if credentials are explicitly available."
   },
   "Claude": {
-    "docs": ["https://docs.anthropic.com/en/docs/about-claude/models"],
+    "docs": ["https://platform.claude.com/docs/en/about-claude/models/overview"],
     "notes": "Anthropic documents current model IDs and aliases on the models page."
   },
   "Gemini": {
@@ -12,11 +12,11 @@
     "notes": "Use Gemini API model docs or official list models API."
   },
   "Grok": {
-    "docs": ["https://docs.x.ai/docs/models"],
+    "docs": ["https://docs.x.ai/developers/models"],
     "notes": "Use xAI model docs."
   },
   "MistralAI": {
-    "docs": ["https://docs.mistral.ai/getting-started/models/models_overview/"],
+    "docs": ["https://docs.mistral.ai/models"],
     "notes": "Use Mistral model overview and API docs."
   },
   "Qwen": {
@@ -32,7 +32,7 @@
     "notes": "Use DeepSeek API docs and pricing/model page."
   },
   "ChatGLM": {
-    "docs": ["https://docs.bigmodel.cn/cn/guide/models"],
+    "docs": ["https://docs.bigmodel.cn/cn/guide/start/model-overview"],
     "notes": "Use Zhipu BigModel model docs."
   },
   "MiniMax": {
@@ -52,8 +52,8 @@
     "notes": "Use iFlytek Spark official docs."
   },
   "Hunyuan": {
-    "docs": ["https://cloud.tencent.com/document/product/1729"],
-    "notes": "Use Tencent Hunyuan official docs."
+    "docs": ["https://cloud.tencent.com/document/product/1823/132252"],
+    "notes": "Use Tencent TokenHub's official Hy model docs."
   },
   "Baichuan": {
     "docs": ["https://platform.baichuan-ai.com/docs"],

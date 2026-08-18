@@ -68,7 +68,8 @@ export const PluginUploadResponseDTOSchema = z
 
 export const PluginUploadParamsSchema = z
   .object({
-    files: z.array(z.file()).min(1)
+    files: z.array(z.file()).min(1),
+    source: PluginSourceDTOSchema.optional().default('system')
   });
 
 export const PluginUniqueIdDTOSchema = z.object({
@@ -78,7 +79,18 @@ export const PluginUniqueIdDTOSchema = z.object({
 });
 
 export const PluginConfirmParamsSchema = z.object({
-  uniqueIds: z.array(PluginUniqueIdDTOSchema).min(1)
+  uniqueIds: z.array(PluginUniqueIdDTOSchema).min(1),
+  source: PluginSourceDTOSchema.optional().default('system')
+});
+
+export const PluginConfirmResultDTOSchema = z.object({
+  confirmed: z.array(PluginUniqueIdDTOSchema),
+  failed: z.array(
+    z.object({
+      uniqueId: PluginUniqueIdDTOSchema,
+      reason: I18nStringDTOSchema
+    })
+  )
 });
 
 export const PluginPruneDisabledResponseDTOSchema = z.object({
@@ -86,11 +98,19 @@ export const PluginPruneDisabledResponseDTOSchema = z.object({
   plugins: z.array(PluginUniqueIdDTOSchema)
 });
 
-export const PluginDeleteParamsSchema = z.object({
-  pluginId: z.string(),
-  source: z.string(),
-  version: z.string()
-});
+export const PluginDeleteParamsSchema = z.union([
+  z.object({
+    pluginId: z.string(),
+    source: z.string(),
+    version: z.string(),
+    scope: z.literal('version').optional()
+  }),
+  z.object({
+    pluginId: z.string(),
+    source: z.string(),
+    scope: z.literal('allVersions')
+  })
+]);
 
 export const PluginInstallFailureDTOSchema = z.object({
   url: z.string(),
@@ -99,7 +119,8 @@ export const PluginInstallFailureDTOSchema = z.object({
 
 export const PluginInstallDTOSchema = {
   request: z.object({
-    urls: z.array(z.string())
+    urls: z.array(z.string()),
+    source: PluginSourceDTOSchema.optional().default('system')
   }),
   response: z.object({
     failed: z.array(PluginInstallFailureDTOSchema).optional()
@@ -168,6 +189,7 @@ export type PluginListDTOType = z.infer<typeof PluginListDTOSchema>;
 export type PluginListItemDTOType = z.infer<typeof PluginListItemDTOSchema>;
 export type PluginUniqueIdDTOType = z.infer<typeof PluginUniqueIdDTOSchema>;
 export type PluginConfirmParamsDTOType = z.infer<typeof PluginConfirmParamsSchema>;
+export type PluginConfirmResultDTOType = z.infer<typeof PluginConfirmResultDTOSchema>;
 export type PluginPruneDisabledResponseDTOType = z.infer<
   typeof PluginPruneDisabledResponseDTOSchema
 >;

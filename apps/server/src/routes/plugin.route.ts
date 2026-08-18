@@ -57,7 +57,9 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       });
     }
 
+    const source = String(formData.get('source') ?? 'system');
     const [result, err] = await pluginUploadUC({
+      source,
       files: files.map((file) => ({
         file: Readable.fromWeb((file as File).stream() as ReadableStream),
         fileName: (file as File).name
@@ -101,14 +103,14 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
     }),
     async (c) => {
       const pluginConfirmUC = makePluginConfirmUC(usecaseDeps);
-      const { uniqueIds } = c.req.valid('json');
-      const [, err] = await pluginConfirmUC({ uniqueIds });
+      const { uniqueIds, source } = c.req.valid('json');
+      const [result, err] = await pluginConfirmUC({ uniqueIds, source });
 
       if (err) {
         return R.fail(c, 500, err.error);
       }
 
-      return c.json({ ok: true }, 200);
+      return R.success(c, result);
     }
   );
 
@@ -221,6 +223,7 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
       const body = c.req.valid('json');
       const [result, err] = await pluginInstallUC({
         urls: body.urls,
+        source: body.source,
         batchDownloadSize: 5
       });
 

@@ -14,7 +14,7 @@ import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runti
 import type { URLFileFetcherPort } from '@domain/ports/url-file-fetcher.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
-import { PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
+import { type PluginSourceType,PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
 import { type Result, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 import { batch } from '@shared/utils/fn';
@@ -35,7 +35,7 @@ export type PluginInstallUCDeps = {
 };
 
 /** Input Type*/
-type Input = { urls: string[]; batchDownloadSize: number };
+type Input = { urls: string[]; source?: PluginSourceType; batchDownloadSize: number };
 
 type DownloadedFile = {
   file: FileObject;
@@ -65,6 +65,7 @@ export const makePluginInstallUC =
   }: PluginInstallUCDeps) =>
   async (input: Input): Output => {
     logger.debug('plugin install', { input });
+    const source = input.source ?? 'system';
 
     const getDownloadedFileName = (url: string) => {
       try {
@@ -130,7 +131,10 @@ export const makePluginInstallUC =
     }
 
     for await (const { file } of installableFiles) {
-      const [info, parseErr] = await pluginPKGFileResolver.parsePluginPkg(file, false);
+      const [info, parseErr] =
+        source === 'system'
+          ? await pluginPKGFileResolver.parsePluginPkg(file, false)
+          : await pluginPKGFileResolver.parsePluginPkg(file, false, source);
 
       if (parseErr) {
         failToInstalled.push({
@@ -151,9 +155,10 @@ export const makePluginInstallUC =
         continue;
       }
 
-      const [, createErr] = await pluginRepo.createPlugin({
+      const [createResult, createErr] = await pluginRepo.createPlugin({
         files: info.files,
         plugin: info.info,
+        source,
         pending: false
       });
 
@@ -166,14 +171,16 @@ export const makePluginInstallUC =
       }
 
       if (info.info.type === 'tool') {
-        const [, registerErr] = await pluginRuntimeManager.register(uniqueId);
+        if (createResult.runtimeRegistrationRequired) {
+          const [, registerErr] = await pluginRuntimeManager.register(uniqueId);
 
-        if (registerErr) {
-          failToInstalled.push({
-            fileKey: file.metaData.fileKey,
-            reason: registerErr.reason
-          });
-          continue;
+          if (registerErr) {
+            failToInstalled.push({
+              fileKey: file.metaData.fileKey,
+              reason: registerErr.reason
+            });
+            continue;
+          }
         }
 
         const [, replaceErr] = await disableAndUnregisterReplacedPlugins({
@@ -181,8 +188,7 @@ export const makePluginInstallUC =
           pluginRuntimeManager,
           logger,
           replacementUniqueId: uniqueId,
-          replacedPlugins,
-          disableReplacedPlugins: false
+          replacedPlugins
         });
 
         if (replaceErr) {

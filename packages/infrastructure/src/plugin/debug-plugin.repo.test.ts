@@ -26,6 +26,39 @@ describe('DebugPluginRepoOverlay', () => {
     });
   });
 
+  it('forwards source-aware installation lifecycle methods to the fallback repo', async () => {
+    const fallback = makeFallbackRepo();
+    const repo = createRepo({ fallback });
+    const uniqueId = {
+      pluginId: 'plugin-a',
+      version: '1.0.0',
+      etag: 'etag-a'
+    };
+    const source = 'team-a';
+    const createInput = {
+      plugin: {} as never,
+      pending: false,
+      source,
+      files: {} as never
+    };
+
+    await repo.createPlugin(createInput);
+    await repo.disableUnreferencedPlugins([uniqueId]);
+    await repo.deletePluginInstallation({
+      ...uniqueId,
+      source
+    });
+    await repo.confirmPlugin(uniqueId, source);
+
+    expect(fallback.disableUnreferencedPlugins).toHaveBeenCalledWith([uniqueId]);
+    expect(fallback.deletePluginInstallation).toHaveBeenCalledWith({
+      ...uniqueId,
+      source
+    });
+    expect(fallback.confirmPlugin).toHaveBeenCalledWith(uniqueId, source);
+    expect(fallback.createPlugin).toHaveBeenCalledWith(createInput);
+  });
+
   it('lists all debug plugins mounted under one source', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(makeGatewayStatus()));
     const repo = createRepo();
@@ -273,6 +306,8 @@ function makeFallbackRepo({
     listToolSummaries: vi.fn().mockResolvedValue(successResult(tools)),
     listActive: vi.fn().mockResolvedValue(successResult([])),
     disablePlugins: vi.fn().mockResolvedValue(successResult({})),
+    disableUnreferencedPlugins: vi.fn().mockResolvedValue(successResult({ plugins: [] })),
+    deletePluginInstallation: vi.fn().mockResolvedValue(successResult({ plugins: [] })),
     pruneDisabled: vi.fn().mockResolvedValue(successResult({ count: 0, plugins: [] })),
     listTags: vi.fn().mockResolvedValue(successResult([])),
     getPluginFileAccessURL: vi.fn()

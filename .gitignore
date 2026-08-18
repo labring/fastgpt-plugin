@@ -11,3 +11,4 @@ public/imgs/
 local/
 .gstack/
 .pnpm-store
+.codex/environments/environment.toml

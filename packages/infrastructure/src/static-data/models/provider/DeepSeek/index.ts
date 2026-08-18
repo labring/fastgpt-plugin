@@ -48,7 +48,6 @@ const models: ProviderConfigType = {
       maxContext: 64000,
       maxTokens: 8000,
       quoteMaxToken: 60000,
-      maxTemperature: null,
       vision: false,
       reasoning: true,
       reasoningEffort: false,

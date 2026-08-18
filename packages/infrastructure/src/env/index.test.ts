@@ -9,12 +9,15 @@ const resetEnv = () => {
   delete process.env.CONNECTION_GATEWAY_AUTH_TOKEN;
   delete process.env.NODE_ENV;
   delete process.env.DISABLE_SSRF_CHECK;
+  delete process.env.ALLOWED_INSTALL_HOSTS;
   delete process.env.METRICS_ENABLE_OTEL;
   delete process.env.METRICS_OTEL_URL;
   delete process.env.METRICS_EXPORT_INTERVAL_MS;
   delete process.env.METRICS_EXPORT_TIMEOUT_MS;
   delete process.env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB;
+  delete process.env.POOL_SERVICE_POD_ALLOW_NET;
   delete process.env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD;
+  delete process.env.PLUGIN_REGISTER_CONCURRENCY;
 };
 
 describe('env AUTH_TOKEN', () => {
@@ -31,6 +34,12 @@ describe('env AUTH_TOKEN', () => {
     const { env } = await import('./index');
 
     expect(env.AUTH_TOKEN).toBe('token');
+  });
+
+  it('allows FastGPT hosts for plugin URL installation by default', async () => {
+    const { env } = await import('./index');
+
+    expect(env.ALLOWED_INSTALL_HOSTS).toBe('*.fastgpt.cn');
   });
 
   it('requires AUTH_TOKEN in production', async () => {
@@ -191,7 +200,16 @@ describe('env AUTH_TOKEN', () => {
     const { env } = await import('./index');
 
     expect(env.POOL_SERVICE_POD_MAX_OLD_SPACE_SIZE_MB).toBe(512);
+    expect(env.POOL_SERVICE_POD_ALLOW_NET).toBe(false);
     expect(env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD).toBe(5_000);
+  });
+
+  it('allows enabling local-pool network access explicitly', async () => {
+    process.env.POOL_SERVICE_POD_ALLOW_NET = 'true';
+
+    const { env } = await import('./index');
+
+    expect(env.POOL_SERVICE_POD_ALLOW_NET).toBe(true);
   });
 
   it('rejects a non-positive local-pool heap limit', async () => {
@@ -212,5 +230,19 @@ describe('env AUTH_TOKEN', () => {
     expect(() => env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD).toThrow(
       'POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD'
     );
+  });
+
+  it('defaults plugin registration concurrency to four', async () => {
+    const { env } = await import('./index');
+
+    expect(env.PLUGIN_REGISTER_CONCURRENCY).toBe(4);
+  });
+
+  it('uses the configured plugin registration concurrency', async () => {
+    process.env.PLUGIN_REGISTER_CONCURRENCY = '7';
+
+    const { env } = await import('./index');
+
+    expect(env.PLUGIN_REGISTER_CONCURRENCY).toBe(7);
   });
 });

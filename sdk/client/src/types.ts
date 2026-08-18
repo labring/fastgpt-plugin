@@ -5,6 +5,8 @@ import type {
   ModelProviderListDTOType
 } from '@interface-adapter/contracts/dto/model.dto';
 import type {
+  PluginConfirmResultDTOType,
+  PluginDeleteParamsDTOType,
   PluginDTOType,
   PluginInstallFailureDTOType,
   PluginInstallResponseDTOType,
@@ -103,6 +105,8 @@ export type PluginListItemType = PluginListItemDTOType;
 export type PluginListParamsType = Partial<PluginListParamsDTOType>;
 export type PluginInstallFailureType = PluginInstallFailureDTOType;
 export type PluginInstallResultType = PluginInstallResponseDTOType;
+export type PluginDeleteParamsType = PluginDeleteParamsDTOType;
+export type PluginConfirmResultType = PluginConfirmResultDTOType;
 export type PluginUploadFailureType = PluginUploadFailureDTOType;
 export type PluginTagListItemType = PluginTagListType[number];
 export type PluginPruneDisabledResultType = PluginPruneDisabledResponseDTOType;
@@ -150,6 +154,10 @@ export type FastGPTPluginClientOptions = {
 
 export type ClientRequestOptions = {
   signal?: AbortSignal;
+};
+
+export type PluginSourceRequestOptions = ClientRequestOptions & {
+  source?: PluginSourceType;
 };
 
 export {

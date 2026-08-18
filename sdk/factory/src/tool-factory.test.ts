@@ -395,6 +395,9 @@ function createStreamDataLike<T>() {
         await consumer(chunk);
       }
     },
+    [Symbol.asyncIterator](): AsyncIterator<T> {
+      return streamLikeValues()[Symbol.asyncIterator]();
+    },
     values: streamLikeValues
   };
 

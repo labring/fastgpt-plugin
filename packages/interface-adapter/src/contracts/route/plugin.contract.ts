@@ -9,6 +9,7 @@ import {
 import { ErrorResponseDTOSchema } from '../dto/common.dto';
 import {
   PluginConfirmParamsSchema,
+  PluginConfirmResultDTOSchema,
   PluginDeleteParamsSchema,
   PluginInstallDTOSchema,
   PluginListDTOSchema,
@@ -93,7 +94,7 @@ export const PluginContract = {
     },
     request: PluginConfirmParamsSchema,
     response: {
-      200: emptyResponse(),
+      200: jsonResponse({ data: PluginConfirmResultDTOSchema }),
       500: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   }),
@@ -117,7 +118,7 @@ export const PluginContract = {
       method: 'post',
       path: '/plugin/delete',
       operationId: 'plugin.delete',
-      description: 'Disable an installed plugin by source, plugin id, and version',
+      description: 'Disable one or all installed plugin versions for a source',
       summary: 'Delete a plugin',
       tags: ['plugin'],
       security: authToken
