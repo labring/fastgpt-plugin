@@ -8,13 +8,15 @@ import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import type { Result } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 
+type ErasedPluginRuntimeManagerPort = PluginRuntimeManagerPort<PluginRuntimeConfigType>;
+
 export class CompositePluginRuntimeManager<Config extends PluginRuntimeConfigType = PluginRuntimeConfigType>
   implements PluginRuntimeManagerPort<Config>
 {
   constructor(
     private readonly deps: {
-      primary: PluginRuntimeManagerPort<Config>;
-      debug: PluginRuntimeManagerPort<PluginRuntimeConfigType>;
+      primary: ErasedPluginRuntimeManagerPort;
+      debug: ErasedPluginRuntimeManagerPort;
     }
   ) {}
 
@@ -30,7 +32,7 @@ export class CompositePluginRuntimeManager<Config extends PluginRuntimeConfigTyp
   }
 
   getConfig(pluginId: string): Promise<Result<Config>> {
-    return this.deps.primary.getConfig(pluginId);
+    return this.deps.primary.getConfig(pluginId) as Promise<Result<Config>>;
   }
 
   updateConfig(pluginId: string, config: Config): Promise<Result> {

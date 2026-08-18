@@ -16,6 +16,7 @@ import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import { type PluginSourceType,PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
 import { type Result, successResult } from '@domain/value-objects/result.vo';
+import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 import { batch } from '@shared/utils/fn';
 
@@ -175,6 +176,11 @@ export const makePluginInstallUC =
           const [, registerErr] = await pluginRuntimeManager.register(uniqueId);
 
           if (registerErr) {
+            logger.error('Plugin Install Register Runtime Error', {
+              fileKey: file.metaData.fileKey,
+              uniqueId,
+              error: toUsecaseErrorLog(registerErr)
+            });
             failToInstalled.push({
               fileKey: file.metaData.fileKey,
               reason: registerErr.reason

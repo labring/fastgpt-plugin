@@ -1385,6 +1385,16 @@ describe('makePluginInstallUC', () => {
       'create failed',
       'register failed'
     ]);
+    expect(deps.logger.error).toHaveBeenCalledWith(
+      'Plugin Install Register Runtime Error',
+      expect.objectContaining({
+        fileKey: 'register',
+        uniqueId: expect.objectContaining({ pluginId: 'register' }),
+        error: expect.objectContaining({
+          reason: reason('register failed')
+        })
+      })
+    );
     expect(deps.pluginRepo.disablePlugins).not.toHaveBeenCalled();
   });
 

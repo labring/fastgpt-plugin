@@ -21,9 +21,13 @@ export const PluginTagListSchema = z.array(PluginTagListItemSchema);
 export type PluginTagListItemType = z.infer<typeof PluginTagListItemSchema>;
 export type PluginTagListType = z.infer<typeof PluginTagListSchema>;
 
-export const PluginRuntimeModeSchema = z.enum(['localPool', 'serverless']);
+export const PluginRuntimeModeSchema = z.enum(['localPool', 'serverless-fc']);
 export type PluginRuntimeModeType = z.infer<typeof PluginRuntimeModeSchema>;
-export const PluginRuntimeModeEnum = PluginRuntimeModeSchema.enum;
+export const PluginRuntimeModeEnum = {
+  ...PluginRuntimeModeSchema.enum,
+  /** @deprecated 使用 serverless-fc。 */
+  serverless: PluginRuntimeModeSchema.enum['serverless-fc']
+} as const;
 
 // 用户视角能看到的 Plugin ID，去掉了 etag，因为用户不需要关心 etag，通过 source 来定位唯一插件
 export const UserPluginIdSchema = z.object({

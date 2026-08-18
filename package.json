@@ -11,6 +11,8 @@
     "build:pkg": "pnpm tsc && pnpm --filter modules/tool build",
     "build:sdk-client": "pnpm --filter @fastgpt-plugin/sdk-client build",
     "build:sdk-factory": "pnpm --filter @fastgpt-plugin/sdk-factory build",
+    "build:fc-runtime": "pnpm --filter @fastgpt-plugin/sdk-factory build && pnpm --filter @fastgpt-plugin/infrastructure build:fc-runtime",
+    "docker:fc-runtime": "pnpm --filter @fastgpt-plugin/infrastructure docker:fc-runtime",
     "build:server": "pnpm --filter @fastgpt-plugin/server build",
     "build:connection-gateway": "pnpm --filter @fastgpt-plugin/connection-gateway build",
     "build:cli": "pnpm --filter @fastgpt-plugin/cli build",

@@ -10,7 +10,7 @@ export type PluginManagerConfig =
       healthCheckInterval?: number;
     }
   | {
-      mode: typeof PluginRuntimeModeEnum.serverless;
+      mode: (typeof PluginRuntimeModeEnum)['serverless-fc'];
       // not implemented yet
     };
 
