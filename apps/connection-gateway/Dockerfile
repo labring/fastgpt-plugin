@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # --------- build base -----------
-FROM --platform=$BUILDPLATFORM node:22-alpine AS base
+FROM --platform=$BUILDPLATFORM node:22.23.2-alpine AS base
 WORKDIR /app
 
 ENV CI=true
@@ -37,7 +37,7 @@ COPY . .
 RUN pnpm --filter @fastgpt-plugin/connection-gateway build
 
 # --------- production dependencies -----------
-FROM --platform=$TARGETPLATFORM node:22-alpine AS prod-deps
+FROM --platform=$TARGETPLATFORM node:22.23.2-alpine AS prod-deps
 WORKDIR /app
 
 ENV CI=true
@@ -63,7 +63,7 @@ RUN --mount=type=cache,target=/pnpm/store \
       --filter @fastgpt-plugin/connection-gateway...
 
 # --------- runner -----------
-FROM --platform=$TARGETPLATFORM node:22-alpine AS runner
+FROM --platform=$TARGETPLATFORM node:22.23.2-alpine AS runner
 WORKDIR /app/apps/connection-gateway
 
 RUN apk add --no-cache \

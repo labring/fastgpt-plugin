@@ -24,10 +24,10 @@
     "@commitlint/cli": "^21.0.2",
     "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^9.24.0",
-    "@eslint/json": "^0.11.0",
+    "@eslint/json": "^1.2.0",
     "@inquirer/prompts": "^7.5.3",
     "@types/node": "^25.5.0",
-    "@vitest/coverage-v8": "3.1.2",
+    "@vitest/coverage-v8": "3.2.7",
     "chalk": "^5.4.1",
     "date-fns": "^4.1.0",
     "eslint": "^9.24.0",
@@ -35,16 +35,31 @@
     "globals": "^16.0.0",
     "husky": "^8.0.3",
     "json5": "^2.2.3",
-    "lint-staged": "^13.3.0",
+    "lint-staged": "^16.4.0",
     "tsx": "^4.19.2",
     "typescript-eslint": "^8.29.1",
-    "vitest": "3.2.6"
+    "vitest": "3.2.7"
   },
   "peerDependencies": {
     "typescript": "catalog:",
     "zod": "catalog:"
   },
+  "engines": {
+    "node": ">=22.23.2"
+  },
   "packageManager": "pnpm@10.33.2",
+  "pnpm": {
+    "overrides": {
+      "@opentelemetry/core": "2.8.0",
+      "@opentelemetry/otlp-transformer>protobufjs": "7.6.5",
+      "@scalar/types>nanoid": "5.1.16",
+      "fast-uri": "3.1.5",
+      "js-yaml": "4.3.1",
+      "minimatch@10>brace-expansion": "5.0.9",
+      "minimatch@3>brace-expansion": "1.1.18",
+      "minimatch@9>brace-expansion": "2.1.4"
+    }
+  },
   "lint-staged": {
     "**/*.{ts,js,mjs,cjs}": "eslint --fix"
   }
