@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # --------- base -----------
-FROM --platform=$BUILDPLATFORM node:22-alpine AS base
+FROM --platform=$BUILDPLATFORM node:22.23.2-alpine AS base
 WORKDIR /app
 
 ENV CI=true
@@ -29,7 +29,7 @@ COPY apps/debug-runtime-monitor apps/debug-runtime-monitor
 RUN pnpm --filter @fastgpt-plugin/debug-runtime-monitor build
 
 # --------- runner -----------
-FROM --platform=$TARGETPLATFORM node:22-alpine AS runner
+FROM --platform=$TARGETPLATFORM node:22.23.2-alpine AS runner
 WORKDIR /app
 
 RUN addgroup -S fastgpt \

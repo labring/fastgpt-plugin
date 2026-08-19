@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # --------- base -----------
-FROM node:22-alpine AS base
+FROM node:22.23.2-alpine AS base
 WORKDIR /app
 
 ENV CI=true
@@ -55,7 +55,7 @@ RUN --mount=type=cache,target=/pnpm/store \
     pnpm install --frozen-lockfile --prod --ignore-scripts --filter @fastgpt-plugin/server...
 
 # --------- runner -----------
-FROM node:22-alpine AS runner
+FROM node:22.23.2-alpine AS runner
 WORKDIR /app/apps/server
 
 RUN apk add --no-cache \
