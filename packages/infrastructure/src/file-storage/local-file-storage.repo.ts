@@ -308,28 +308,35 @@ export class LocalFileStorageRepo implements LocalFileStoragePort {
     const absolutePath = this.resolveStoragePath(fileKey);
 
     try {
-      const stats = await stat(absolutePath);
-      const persistedMeta = await this.readPersistedMeta(absolutePath);
-      const normalizedFileKey = this.normalizeFileKey(fileKey);
-      const buffer = persistedMeta ? null : await readFile(absolutePath);
-      const fallbackContentType = buffer
-        ? detectMimeTypeFromContent(
-            buffer,
-            getMimeTypeFromFilename(path.basename(normalizedFileKey)) ?? 'application/octet-stream'
-          )
-        : undefined;
+      const fileHandle = await open(absolutePath, 'r');
+      try {
+        const stats = await fileHandle.stat();
+        const persistedMeta = await this.readPersistedMeta(absolutePath);
+        const normalizedFileKey = this.normalizeFileKey(fileKey);
+        const buffer = persistedMeta ? null : await fileHandle.readFile();
+        const fallbackContentType = buffer
+          ? detectMimeTypeFromContent(
+              buffer,
+              getMimeTypeFromFilename(path.basename(normalizedFileKey)) ??
+                'application/octet-stream'
+            )
+          : undefined;
 
-      const metaData = FileMetaSchema.parse({
-        fileKey: normalizedFileKey,
-        fileName: persistedMeta?.fileName ?? path.basename(normalizedFileKey),
-        contentType:
-          persistedMeta?.contentType ?? fallbackContentType ?? 'application/octet-stream',
-        size: stats.size,
-        etag: persistedMeta?.etag ?? calculateMD5(buffer ?? Buffer.alloc(0)),
-        createTime: persistedMeta?.createTime ? new Date(persistedMeta.createTime) : stats.birthtime
-      });
+        const metaData = FileMetaSchema.parse({
+          fileKey: normalizedFileKey,
+          fileName: persistedMeta?.fileName ?? path.basename(normalizedFileKey),
+          contentType:
+            persistedMeta?.contentType ?? fallbackContentType ?? 'application/octet-stream',
+          size: stats.size,
+          etag: persistedMeta?.etag ?? calculateMD5(buffer ?? Buffer.alloc(0)),
+          createTime:
+            persistedMeta?.createTime ? new Date(persistedMeta.createTime) : stats.birthtime
+        });
 
-      return successResult(metaData);
+        return successResult(metaData);
+      } finally {
+        await fileHandle.close();
+      }
     } catch (error) {
       return failureResult(
         {

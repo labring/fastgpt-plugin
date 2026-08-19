@@ -42,6 +42,14 @@ describe('LocalFileStorageRepo permissions', () => {
       await expectMode(path.dirname(path.join(basePath, fileKey)), 0o700);
       await expectMode(path.join(basePath, fileKey), 0o600);
       await expectMode(`${path.join(basePath, fileKey)}.meta.json`, 0o600);
+
+      await rm(`${path.join(basePath, fileKey)}.meta.json`);
+      const [legacyMeta, legacyError] = await repo.getInfo(fileKey);
+      expect(legacyError).toBeNull();
+      expect(legacyMeta).toMatchObject({
+        fileKey,
+        size: Buffer.byteLength('export default {}')
+      });
     } finally {
       process.umask(previousUmask);
     }
