@@ -125,7 +125,8 @@ export class CreateCommand extends BaseCommand {
   }
 
   private pickDebugRunInputJson(type: CreatePluginCommandOptions['type']): string {
-    return this.pickDebugRunInput(type).replace(/"/g, '\\"');
+    const input = JSON.stringify(this.pickDebugRunInput(type));
+    return input.slice(1, -1);
   }
 
   private pickDebugRunToolOption(type: CreatePluginCommandOptions['type']): string {
