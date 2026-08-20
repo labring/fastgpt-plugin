@@ -45,6 +45,19 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'Ling-3.0-tiny',
+      maxContext: 256000,
+      maxTokens: 32000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'Ling-1T',
       maxContext: 128000,
       maxTokens: 16000,
