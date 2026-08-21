@@ -8,7 +8,7 @@ export type I18nLangType = z.infer<typeof I18nLangSchema>;
 
 export const I18nStringSchema = z.object({
   [I18nLangEnum.en]: z.string(),
-  [I18nLangEnum['zh-CN']]: z.string().optional(),
+  [I18nLangEnum['zh-CN']]: z.string(),
   [I18nLangEnum['zh-Hant']]: z.string().optional()
 });
 
