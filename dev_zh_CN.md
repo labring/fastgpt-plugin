@@ -10,6 +10,8 @@
 pnpm install
 ```
 
+安装完成后会自动构建 `sdk/factory`，确保开发环境启动插件时可以解析 `dist/index.js`。修改 SDK 源码后可重新运行 `pnpm build:sdk-factory`。
+
 ### 构建
 
 ```bash

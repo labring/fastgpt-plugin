@@ -10,6 +10,8 @@ Language: [简体中文](./dev_zh_CN.md) | [English](./dev.md)
 pnpm install
 ```
 
+The install hook builds `sdk/factory` so plugins started during development can resolve `dist/index.js`. Run `pnpm build:sdk-factory` again after changing the SDK source.
+
 ### Build
 
 ```bash
