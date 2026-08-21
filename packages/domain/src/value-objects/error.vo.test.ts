@@ -5,6 +5,7 @@ import {
   createReasonError,
   deserializeError,
   getErrorDefinition,
+  getErrorReason,
   RegisteredError,
   registerErrors,
   serializeError,
@@ -42,6 +43,13 @@ if (!getErrorDefinition(ErrorCode.pluginRuntimeConfigLoadFailed)) {
 }
 
 describe('RegisteredError', () => {
+  it('does not treat English-only objects as i18n reasons', () => {
+    expect(getErrorReason({ en: 'English only' })).toEqual({
+      en: 'Internal Server Error',
+      'zh-CN': '服务器内部错误'
+    });
+  });
+
   it('preserves registered metadata and native cause', () => {
     const cause = new Error('database offline');
     const error = createError(ErrorCode.pluginRuntimeConfigLoadFailed, { cause });

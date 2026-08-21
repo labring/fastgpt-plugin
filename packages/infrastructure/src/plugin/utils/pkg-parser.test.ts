@@ -8,11 +8,13 @@ const baseManifest = {
   version: '1.0.0',
   type: 'tool',
   name: {
-    en: 'Etag demo'
+    en: 'Etag demo',
+    'zh-CN': 'Etag 示例'
   },
   icon: 'logo.svg',
   description: {
-    en: 'Etag demo'
+    en: 'Etag demo',
+    'zh-CN': 'Etag 示例'
   },
   toolDescription: 'Etag demo',
   secretSchema: {}
