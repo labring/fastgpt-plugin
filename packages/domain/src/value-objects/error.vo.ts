@@ -381,7 +381,7 @@ function isI18nString(value: unknown): value is I18nStringType {
   return (
     isRecord(value) &&
     typeof value.en === 'string' &&
-    (value['zh-CN'] === undefined || typeof value['zh-CN'] === 'string') &&
+    typeof value['zh-CN'] === 'string' &&
     (value['zh-Hant'] === undefined || typeof value['zh-Hant'] === 'string')
   );
 }
