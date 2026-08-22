@@ -150,6 +150,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'M2-her',
+      maxContext: 64000,
+      maxTokens: 2048,
+      quoteMaxToken: 60000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'MiniMax-M1',
       maxContext: 1000000,
       maxTokens: 40000,
