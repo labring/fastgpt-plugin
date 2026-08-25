@@ -4,7 +4,7 @@
     "notes": "Use official OpenAI model docs or authenticated model-list API if credentials are explicitly available."
   },
   "Claude": {
-    "docs": ["https://platform.claude.com/docs/en/about-claude/models/overview"],
+    "docs": ["https://platform.claude.com/docs/en/models/overview"],
     "notes": "Anthropic documents current model IDs and aliases on the models page."
   },
   "Gemini": {
@@ -20,15 +20,15 @@
     "notes": "Use Mistral model overview and API docs."
   },
   "Qwen": {
-    "docs": ["https://help.aliyun.com/zh/model-studio/getting-started/models"],
+    "docs": ["https://help.aliyun.com/zh/model-studio/models"],
     "notes": "Use Alibaba Cloud Model Studio model docs."
   },
   "Doubao": {
-    "docs": ["https://www.volcengine.com/docs/82379/1330310"],
+    "docs": ["https://www.volcengine.com/docs/82379/2549861?lang=zh"],
     "notes": "Use Volcengine Ark/Doubao model docs."
   },
   "DeepSeek": {
-    "docs": ["https://api-docs.deepseek.com/quick_start/pricing"],
+    "docs": ["https://api-docs.deepseek.com/quick_start/pricing/"],
     "notes": "Use DeepSeek API docs and pricing/model page."
   },
   "ChatGLM": {
@@ -36,7 +36,7 @@
     "notes": "Use Zhipu BigModel model docs."
   },
   "MiniMax": {
-    "docs": ["https://platform.minimaxi.com/document/Models"],
+    "docs": ["https://platform.minimaxi.com/docs/api-reference/models/openai/list-models"],
     "notes": "Use MiniMax platform model docs."
   },
   "Moonshot": {
@@ -44,7 +44,7 @@
     "notes": "Use Kimi/Moonshot official API docs, models page, or authenticated list-models API."
   },
   "Ernie": {
-    "docs": ["https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu"],
+    "docs": ["https://cloud.baidu.com/doc/qianfan/s/Kmh4stnjp"],
     "notes": "Use Baidu Qianfan/Wenxin model docs."
   },
   "SparkDesk": {
@@ -52,7 +52,7 @@
     "notes": "Use iFlytek Spark official docs."
   },
   "Hunyuan": {
-    "docs": ["https://cloud.tencent.com/document/product/1823/132252"],
+    "docs": ["https://cloud.tencent.com/document/product/1823/130051"],
     "notes": "Use Tencent TokenHub's official Hy model docs."
   },
   "Baichuan": {
@@ -116,7 +116,7 @@
     "notes": "Use InternLM official docs."
   },
   "AliCloud": {
-    "docs": ["https://help.aliyun.com/zh/model-studio/getting-started/models"],
+    "docs": ["https://help.aliyun.com/zh/model-studio/models"],
     "notes": "Use Alibaba Cloud official model docs."
   },
   "PPIO": {
@@ -124,7 +124,7 @@
     "notes": "Use PPIO official docs; verify the exact model page during each run."
   },
   "AntLing": {
-    "docs": ["https://developer.ant-ling.com/zh-CN/docs", "https://www.ant-ling.com/en/"],
+    "docs": ["https://developer.ant-ling.com/en/docs/models", "https://www.ant-ling.com/en/"],
     "notes": "Use Ant Ling developer docs and official model-family pages."
   },
   "Moka": {
