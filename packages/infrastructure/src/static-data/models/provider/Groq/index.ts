@@ -53,14 +53,6 @@ const models: ProviderConfigType = {
       toolChoice: true
     },
     {
-      type: ModelTypeEnum.stt,
-      model: 'whisper-large-v3'
-    },
-    {
-      type: ModelTypeEnum.stt,
-      model: 'whisper-large-v3-turbo'
-    },
-    {
       type: ModelTypeEnum.llm,
       model: 'llama-3.1-8b-instant',
       maxContext: 131072,
@@ -95,6 +87,14 @@ const models: ProviderConfigType = {
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.stt,
+      model: 'whisper-large-v3'
+    },
+    {
+      type: ModelTypeEnum.stt,
+      model: 'whisper-large-v3-turbo'
     }
   ]
 };

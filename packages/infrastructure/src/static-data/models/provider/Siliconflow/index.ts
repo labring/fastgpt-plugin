@@ -51,6 +51,11 @@ const models: ProviderConfigType = {
       maxToken: 8000
     },
     {
+      type: ModelTypeEnum.rerank,
+      model: 'BAAI/bge-reranker-v2-m3',
+      maxToken: 8192
+    },
+    {
       type: ModelTypeEnum.tts,
       model: 'FunAudioLLM/CosyVoice2-0.5B',
       voices: [
@@ -95,11 +100,6 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.stt,
       model: 'FunAudioLLM/SenseVoiceSmall'
-    },
-    {
-      type: ModelTypeEnum.rerank,
-      model: 'BAAI/bge-reranker-v2-m3',
-      maxToken: 8192
     }
   ]
 };
