@@ -5,7 +5,21 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: 'glm-5.2',
+      model: 'glm-5.3-flash',
+      maxContext: 1000000,
+      maxTokens: 128000,
+      quoteMaxToken: 900000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'glm-5.3',
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 900000,
@@ -18,7 +32,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'glm-5.3',
+      model: 'glm-5.2',
       maxContext: 1000000,
       maxTokens: 128000,
       quoteMaxToken: 900000,

@@ -6,11 +6,12 @@ import {
   ModelTypeEnum
 } from '@domain/entities/model.entity';
 
+import chatglm from './ChatGLM';
 import doubao from './Doubao';
 import gemini from './Gemini';
 import qwen from './Qwen';
 
-const staticModelList = [gemini, qwen, doubao].flatMap((provider) =>
+const staticModelList = [chatglm, doubao, gemini, qwen].flatMap((provider) =>
   provider.list.map((model) =>
     ModelItemSchema.parse({
       ...model,
@@ -79,5 +80,18 @@ describe('static model multimodal capabilities', () => {
       video: true
     });
     expect(getModel('Doubao', 'doubao-seed-2-0-pro-260215')).not.toHaveProperty('audio');
+  });
+
+  it('marks GLM-5.3-Flash with its multimodal and agent capabilities', () => {
+    expect(getModel('ChatGLM', 'glm-5.3-flash')).toMatchObject({
+      maxContext: 1000000,
+      maxTokens: 128000,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    });
   });
 });
