@@ -1,6 +1,7 @@
 import { makePluginRegisterActiveUC } from '@usecase/plugin/plugin-register-active.uc';
 import { serverEnv } from '@infrastructure/env';
 import { getLogger, root } from '@infrastructure/logger';
+import { ensureSdkFactoryRuntimeDependencyAtRoot } from '@infrastructure/plugin/plugin-runtime/drivers/local-pool/sdk-factory-runtime';
 import { initStaticModelAssets } from '@infrastructure/static-data/models/model-static';
 import {
   initStaticWorkflowAssets,
@@ -26,6 +27,10 @@ export const init = async () => {
     publicRemoteFileStorageRepo.init(),
     mongoClient.init()
   ]);
+
+  await ensureSdkFactoryRuntimeDependencyAtRoot({
+    runtimeRoot: serverEnv.LOCAL_FILE_BASE_PATH
+  });
 
   try {
     await Promise.all([

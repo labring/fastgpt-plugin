@@ -11,12 +11,26 @@ export interface EnsureSdkFactoryRuntimeOptions {
   searchFrom?: string;
 }
 
+export interface EnsureSdkFactoryRuntimeAtRootOptions {
+  runtimeRoot: string;
+  searchFrom?: string;
+}
+
 export async function ensureSdkFactoryRuntimeDependency({
   pluginIndexPath,
   searchFrom
 }: EnsureSdkFactoryRuntimeOptions): Promise<void> {
+  return ensureSdkFactoryRuntimeDependencyAtRoot({
+    runtimeRoot: resolveRuntimeRoot(pluginIndexPath),
+    searchFrom
+  });
+}
+
+export async function ensureSdkFactoryRuntimeDependencyAtRoot({
+  runtimeRoot,
+  searchFrom
+}: EnsureSdkFactoryRuntimeAtRootOptions): Promise<void> {
   const packageRoot = resolveSdkFactoryPackageRoot(searchFrom);
-  const runtimeRoot = resolveRuntimeRoot(pluginIndexPath);
   const targetRoot = path.join(runtimeRoot, 'node_modules', '@fastgpt-plugin');
   const targetPath = path.join(targetRoot, 'sdk-factory');
 
@@ -50,6 +64,12 @@ export function resolveSdkFactoryPackageRoot(searchFrom?: string): string {
   const packageRoot = resolveOptionalSdkFactoryPackageRoot(searchFrom);
 
   if (!packageRoot) {
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error(
+        `Cannot find built ${SDK_FACTORY_PACKAGE}. Run \`pnpm build:sdk-factory\` first.`
+      );
+    }
+
     throw new Error(
       `Cannot find ${SDK_FACTORY_PACKAGE}. Set ${SDK_FACTORY_PATH_ENV} to the built SDK package path.`
     );
@@ -60,8 +80,17 @@ export function resolveSdkFactoryPackageRoot(searchFrom?: string): string {
 
 function resolveOptionalSdkFactoryPackageRoot(searchFrom?: string): string | undefined {
   const configuredPath = process.env[SDK_FACTORY_PATH_ENV];
-  if (configuredPath && isPackageRoot(configuredPath, SDK_FACTORY_PACKAGE)) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (
+    configuredPath &&
+    isPackageRoot(configuredPath, SDK_FACTORY_PACKAGE) &&
+    (isProduction || isBuiltSdkFactoryPackageRoot(configuredPath))
+  ) {
     return configuredPath;
+  }
+
+  if (!isProduction) {
+    return findWorkspaceBuiltSdkFactoryPackageRoot(process.cwd());
   }
 
   if (searchFrom) {
@@ -207,6 +236,28 @@ function findWorkspaceSdkFactoryPackageRoot(startDir: string): string | undefine
 
     currentDir = parentDir;
   }
+}
+
+function findWorkspaceBuiltSdkFactoryPackageRoot(startDir: string): string | undefined {
+  let currentDir = path.resolve(startDir);
+
+  while (true) {
+    const candidate = path.join(currentDir, 'sdk', 'factory');
+    if (isPackageRoot(candidate, SDK_FACTORY_PACKAGE)) {
+      return isBuiltSdkFactoryPackageRoot(candidate) ? candidate : undefined;
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      return undefined;
+    }
+
+    currentDir = parentDir;
+  }
+}
+
+function isBuiltSdkFactoryPackageRoot(packageRoot: string): boolean {
+  return existsSync(path.join(packageRoot, 'dist', 'index.js'));
 }
 
 function isPackageRoot(packageRoot: string, packageName: string): boolean {

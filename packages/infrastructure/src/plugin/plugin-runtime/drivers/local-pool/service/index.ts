@@ -7,7 +7,6 @@ import { StreamData } from '@domain/value-objects/stream.vo';
 import { getRuntimeMetrics, type RuntimeFailureKind } from '@infrastructure/metrics';
 
 import type { PluginPod } from '../pod';
-import { ensureSdkFactoryRuntimeDependency } from '../sdk-factory-runtime';
 import type {
   DestroyOptions,
   InvokeOptions,
@@ -86,9 +85,6 @@ export class PluginService {
       throw new Error('Service already destroyed');
     }
 
-    await ensureSdkFactoryRuntimeDependency({
-      pluginIndexPath: this.pluginPath
-    });
     await this.fleet.ensureMinPods();
     this.startIdleCheck();
     this.initialized = true;
