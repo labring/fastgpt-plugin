@@ -43,4 +43,19 @@ describe('static model provider ordering', () => {
     expect(lastQwen38Index).toBeGreaterThanOrEqual(0);
     expect(firstQwen37Index).toBeGreaterThan(lastQwen38Index);
   });
+
+  it('places ChatGLM 5.3 models before 5.2 and 5.1 models', () => {
+    const chatglm = providerConfigs.find(({ provider }) => provider === 'ChatGLM');
+    const modelIds = chatglm?.list.map((model) => model.model) ?? [];
+    const lastGlm53Index = modelIds.reduce(
+      (lastIndex, model, index) => (model.startsWith('glm-5.3') ? index : lastIndex),
+      -1
+    );
+    const glm52Index = modelIds.indexOf('glm-5.2');
+    const glm51Index = modelIds.indexOf('glm-5.1');
+
+    expect(lastGlm53Index).toBeGreaterThanOrEqual(0);
+    expect(glm52Index).toBeGreaterThan(lastGlm53Index);
+    expect(glm51Index).toBeGreaterThan(glm52Index);
+  });
 });
