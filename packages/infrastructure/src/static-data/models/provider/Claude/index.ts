@@ -5,6 +5,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'claude-fable-5-1',
+      maxContext: 1000000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      showTopP: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'claude-fable-5',
       maxContext: 1000000,
       maxTokens: 128000,
