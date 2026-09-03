@@ -1,20 +1,34 @@
 {
   "providers": {
     "OpenAI": {
-      "source": "https://platform.openai.com/docs/models",
+      "sources": ["https://developers.openai.com/api/docs/models"],
       "checkedAt": "2026-05-04",
       "auditStatus": "checked",
+      "catalogStatus": "reviewed",
+      "auditNote": "Enumerated the official primary model IDs and reconciled them with the local inventory.",
+      "candidateModelIds": ["gpt-5.4"],
+      "skip": [],
       "add": [],
       "remove": []
     },
     "ExampleProvider": {
-      "source": "https://example.invalid/official-model-catalog",
+      "sources": ["https://example.invalid/official-model-catalog"],
       "checkedAt": "2026-05-04",
       "auditStatus": "changed",
+      "catalogStatus": "reviewed",
+      "auditNote": "Enumerated the official catalog; one primary model is new and one specialized model is intentionally excluded.",
+      "candidateModelIds": ["example-new-model", "example-specialized-audio"],
+      "skip": [
+        {
+          "model": "example-specialized-audio",
+          "reason": "Audio-only model is outside the general LLM refresh scope."
+        }
+      ],
       "add": [
         {
           "model": "example-new-model",
           "cloneFrom": "example-existing-model",
+          "insertBefore": "example-existing-model",
           "reason": "Official model catalog lists this as a new public model.",
           "replace": {
             "maxContext": 128000,

@@ -109,14 +109,20 @@ function commandInventory(parsedArgs) {
 function commandPlanTemplate(parsedArgs) {
   const repoRoot = getRepoRoot(parsedArgs);
   const providers = filterProviders(getRegisteredProviders(repoRoot), parsedArgs.provider);
+  const sourceHints = getSourceHints();
   const plan = { providers: {} };
   for (const provider of providers) {
     const content = readFileSync(provider.filePath, 'utf8');
     const declaredProvider = readDeclaredProvider(content) || provider.dirName;
+    const hint = sourceHints[declaredProvider] || sourceHints[provider.dirName] || {};
     plan.providers[declaredProvider] = {
-      source: '',
+      sources: Array.isArray(hint.docs) ? hint.docs : [],
       checkedAt: todayDateString(),
       auditStatus: 'pending',
+      catalogStatus: 'pending',
+      auditNote: '',
+      candidateModelIds: [],
+      skip: [],
       add: [],
       remove: []
     };
@@ -141,13 +147,18 @@ async function commandApplyPlan(parsedArgs) {
     throw new Error('Plan must contain an object at providers');
   }
   const registeredProviders = getRegisteredProviders(repoRoot);
+  const sourceHints = getSourceHints();
+  const allowPartial = Boolean(parsedArgs['allow-partial']);
+  const resolvedPlans = resolveAndValidatePlanCoverage(repoRoot, providerPlans, registeredProviders, allowPartial);
   const results = [];
   const pendingWrites = [];
 
-  for (const [providerName, providerPlan] of Object.entries(providerPlans)) {
-    const providerFile = resolveProviderFile(repoRoot, providerName, registeredProviders);
-    const validatedPlan = validateProviderPlan(providerFile.provider, providerPlan);
+  for (const { providerFile, providerPlan } of resolvedPlans) {
     let content = readFileSync(providerFile.filePath, 'utf8');
+    const localModelIds = new Set(readModelEntries(content).map((entry) => entry.model));
+    const hint = sourceHints[providerFile.provider] || sourceHints[providerFile.dirName] || {};
+    const expectedSources = Array.isArray(hint.docs) ? hint.docs : [];
+    const validatedPlan = validateProviderPlan(providerFile.provider, providerPlan, localModelIds, expectedSources);
     const before = content;
     const providerResults = [];
 
@@ -158,6 +169,7 @@ async function commandApplyPlan(parsedArgs) {
         action: 'add',
         model: addition.model,
         cloneFrom: addition.cloneFrom,
+        insertBefore: addition.insertBefore,
         status: result.status,
         reason: addition.reason
       });
@@ -181,9 +193,13 @@ async function commandApplyPlan(parsedArgs) {
       provider: providerFile.provider,
       file: relative(repoRoot, providerFile.filePath),
       changed,
-      source: validatedPlan.source,
+      sources: validatedPlan.sources,
       checkedAt: validatedPlan.checkedAt,
       auditStatus: validatedPlan.auditStatus,
+      catalogStatus: validatedPlan.catalogStatus,
+      auditNote: validatedPlan.auditNote,
+      candidateModelIds: validatedPlan.candidateModelIds,
+      skippedCandidates: validatedPlan.skip,
       operations: providerResults
     });
   }
@@ -201,7 +217,9 @@ async function commandApplyPlan(parsedArgs) {
     return;
   }
 
-  console.log(`apply-plan ${write ? 'write' : 'dry-run'} complete`);
+  console.log(
+    `apply-plan ${write ? 'write' : 'dry-run'} complete (${results.length}/${registeredProviders.length} providers audited${allowPartial ? ', partial mode' : ''})`
+  );
   for (const result of results) {
     console.log(`- ${result.provider} (${result.file}): ${result.changed ? 'changed' : 'unchanged'}`);
     for (const operation of result.operations) {
@@ -214,8 +232,7 @@ async function commandApplyPlan(parsedArgs) {
 async function commandCheckSources(parsedArgs) {
   const repoRoot = getRepoRoot(parsedArgs);
   const providers = filterProviders(getRegisteredProviders(repoRoot), parsedArgs.provider);
-  const sourcePath = join(skillDir, 'references/provider_sources.json');
-  const sourceHints = JSON.parse(readFileSync(sourcePath, 'utf8'));
+  const sourceHints = getSourceHints();
   const results = [];
   const tasks = [];
   const concurrency = parsePositiveInteger(parsedArgs.concurrency, 4);
@@ -226,7 +243,12 @@ async function commandCheckSources(parsedArgs) {
     const hint = sourceHints[providerName] || sourceHints[provider.dirName] || {};
     const docs = Array.isArray(hint.docs) ? hint.docs : [];
     if (docs.length === 0) {
-      results.push({ provider: providerName, url: '', ok: false, status: 'missing-source-hint' });
+      results.push({
+        provider: providerName,
+        url: '',
+        ok: false,
+        status: 'missing-source-hint'
+      });
       continue;
     }
     for (const url of docs) {
@@ -238,7 +260,11 @@ async function commandCheckSources(parsedArgs) {
     if (!parsedArgs.json) {
       console.error(`[${index + 1}/${tasks.length}] checking ${task.provider}: ${task.url}`);
     }
-    return { provider: task.provider, url: task.url, ...(await checkUrl(task.url)) };
+    return {
+      provider: task.provider,
+      url: task.url,
+      ...(await checkUrl(task.url))
+    };
   });
   results.push(...checked);
 
@@ -282,7 +308,10 @@ async function checkUrl(url) {
     }
     return { ok: response.ok, status: String(response.status) };
   } catch (error) {
-    return { ok: false, status: error instanceof Error ? error.message : String(error) };
+    return {
+      ok: false,
+      status: error instanceof Error ? error.message : String(error)
+    };
   }
 }
 
@@ -304,7 +333,12 @@ function getRegisteredProviders(repoRoot) {
 
 function filterProviders(providers, providerFilter) {
   if (!providerFilter) return providers;
-  const requested = new Set(String(providerFilter).split(',').map((item) => item.trim()).filter(Boolean));
+  const requested = new Set(
+    String(providerFilter)
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
   return providers.filter((provider) => {
     const content = readFileSync(provider.filePath, 'utf8');
     const declaredProvider = readDeclaredProvider(content) || provider.dirName;
@@ -318,13 +352,54 @@ function resolveProviderFile(repoRoot, providerName, registeredProviders = getRe
     const content = readFileSync(filePath, 'utf8');
     const declaredProvider = readDeclaredProvider(content) || provider.dirName;
     if (provider.dirName === providerName || declaredProvider === providerName) {
-      return { provider: declaredProvider, dirName: provider.dirName, filePath };
+      return {
+        provider: declaredProvider,
+        dirName: provider.dirName,
+        filePath
+      };
     }
   }
 
   throw new Error(
     `Provider is not registered in packages/infrastructure/src/static-data/models/index.ts: ${providerName}`
   );
+}
+
+function getSourceHints() {
+  const sourcePath = join(skillDir, 'references/provider_sources.json');
+  return JSON.parse(readFileSync(sourcePath, 'utf8'));
+}
+
+function resolveAndValidatePlanCoverage(repoRoot, providerPlans, registeredProviders, allowPartial) {
+  const resolved = [];
+  const seenProviders = new Set();
+
+  for (const [providerName, providerPlan] of Object.entries(providerPlans)) {
+    const providerFile = resolveProviderFile(repoRoot, providerName, registeredProviders);
+    if (seenProviders.has(providerFile.provider)) {
+      throw new Error(
+        `Plan contains the same registered provider more than once through aliases: ${providerFile.provider}`
+      );
+    }
+    seenProviders.add(providerFile.provider);
+    resolved.push({ providerFile, providerPlan });
+  }
+
+  if (!allowPartial) {
+    const missing = registeredProviders
+      .map((provider) => {
+        const content = readFileSync(provider.filePath, 'utf8');
+        return readDeclaredProvider(content) || provider.dirName;
+      })
+      .filter((providerName) => !seenProviders.has(providerName));
+    if (missing.length > 0) {
+      throw new Error(
+        `Complete audit required: ${missing.length} registered provider(s) missing from plan: ${missing.join(', ')}. Use --allow-partial only for an explicitly scoped provider request.`
+      );
+    }
+  }
+
+  return resolved;
 }
 
 function readDeclaredProvider(content) {
@@ -433,7 +508,10 @@ function removeModelEntry(content, model) {
     if (content[cursor] === ',') removeStart = cursor;
   }
 
-  return { content: content.slice(0, removeStart) + content.slice(removeEnd), removed: true };
+  return {
+    content: content.slice(0, removeStart) + content.slice(removeEnd),
+    removed: true
+  };
 }
 
 function addModelEntry(content, addition) {
@@ -445,6 +523,12 @@ function addModelEntry(content, addition) {
   if (!source) {
     throw new Error(`cloneFrom model not found: ${addition.cloneFrom}`);
   }
+  const insertionTarget = addition.insertBefore
+    ? entries.find((entry) => entry.model === addition.insertBefore)
+    : undefined;
+  if (addition.insertBefore && !insertionTarget) {
+    throw new Error(`insertBefore model not found: ${addition.insertBefore}`);
+  }
 
   let cloneText = source.text.replace(
     /(model:\s*)(['"`])([^'"`]+)(['"`])/,
@@ -454,6 +538,15 @@ function addModelEntry(content, addition) {
     for (const [key, value] of Object.entries(addition.replace)) {
       cloneText = replaceSimpleProperty(cloneText, key, value);
     }
+  }
+
+  if (insertionTarget) {
+    const lineStart = content.lastIndexOf('\n', insertionTarget.start) + 1;
+    const indent = content.slice(lineStart, insertionTarget.start);
+    return {
+      content: `${content.slice(0, lineStart)}${indent}${cloneText},\n${content.slice(lineStart)}`,
+      status: 'added'
+    };
   }
 
   const lineStart = content.lastIndexOf('\n', source.start) + 1;
@@ -509,25 +602,52 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function validateProviderPlan(providerName, providerPlan) {
+function validateProviderPlan(providerName, providerPlan, localModelIds, expectedSources) {
   if (!isPlainObject(providerPlan)) {
     throw new Error(`${providerName}: provider plan must be an object`);
   }
   const add = providerPlan.add === undefined ? [] : providerPlan.add;
   const remove = providerPlan.remove === undefined ? [] : providerPlan.remove;
+  const skip = providerPlan.skip === undefined ? [] : providerPlan.skip;
+  const sources = providerPlan.sources;
+  const candidateModelIds = providerPlan.candidateModelIds;
   if (!Array.isArray(add)) {
     throw new Error(`${providerName}: add must be an array`);
   }
   if (!Array.isArray(remove)) {
     throw new Error(`${providerName}: remove must be an array`);
   }
+  if (!Array.isArray(skip)) {
+    throw new Error(`${providerName}: skip must be an array`);
+  }
+  if (!Array.isArray(sources)) {
+    throw new Error(`${providerName}: sources must be an array of every official URL checked`);
+  }
+  if (!Array.isArray(candidateModelIds)) {
+    throw new Error(`${providerName}: candidateModelIds must be an array`);
+  }
 
   const hasChanges = add.length > 0 || remove.length > 0;
   const auditStatus = String(providerPlan.auditStatus || (hasChanges ? 'changed' : 'pending'));
-  const source = typeof providerPlan.source === 'string' ? providerPlan.source.trim() : '';
+  const catalogStatus = String(providerPlan.catalogStatus || 'pending');
+  const auditNote = typeof providerPlan.auditNote === 'string' ? providerPlan.auditNote.trim() : '';
   const checkedAt = typeof providerPlan.checkedAt === 'string' ? providerPlan.checkedAt.trim() : '';
+  const validatedSources = validateUniqueStrings(providerName, 'sources', sources);
+  const validatedCandidateModelIds = validateUniqueStrings(providerName, 'candidateModelIds', candidateModelIds);
+  const validatedAdd = add.map((addition, index) => validateAddition(providerName, addition, index));
+  const validatedRemove = remove.map((removal, index) => validateRemoval(providerName, removal, index));
+  const validatedSkip = skip.map((item, index) => validateSkip(providerName, item, index));
+
   if (!['pending', 'checked', 'changed'].includes(auditStatus)) {
     throw new Error(`${providerName}: auditStatus must be pending, checked, or changed`);
+  }
+  if (auditStatus === 'pending') {
+    throw new Error(`${providerName}: auditStatus is pending; every provider must be checked before apply-plan`);
+  }
+  if (!['reviewed', 'no-in-scope-models', 'dynamic-catalog', 'no-authoritative-catalog'].includes(catalogStatus)) {
+    throw new Error(
+      `${providerName}: catalogStatus must be reviewed, no-in-scope-models, dynamic-catalog, or no-authoritative-catalog`
+    );
   }
   if (hasChanges && auditStatus !== 'changed') {
     throw new Error(`${providerName}: auditStatus must be changed when add or remove is non-empty`);
@@ -535,20 +655,107 @@ function validateProviderPlan(providerName, providerPlan) {
   if (!hasChanges && auditStatus === 'changed') {
     throw new Error(`${providerName}: auditStatus changed requires a non-empty add or remove list`);
   }
-  if ((hasChanges || auditStatus === 'checked') && !source) {
-    throw new Error(`${providerName}: source is required for changed or checked providers`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(checkedAt)) {
+    throw new Error(`${providerName}: checkedAt must use YYYY-MM-DD`);
   }
-  if ((hasChanges || auditStatus === 'checked') && !/^\d{4}-\d{2}-\d{2}$/.test(checkedAt)) {
-    throw new Error(`${providerName}: checkedAt must use YYYY-MM-DD for changed or checked providers`);
+  if (checkedAt !== todayDateString()) {
+    throw new Error(
+      `${providerName}: checkedAt must be today's date (${todayDateString()}); regenerate or re-audit stale plans`
+    );
+  }
+  if (!auditNote) {
+    throw new Error(`${providerName}: auditNote is required to record what was checked and concluded`);
+  }
+  const missingConfiguredSources = expectedSources.filter(
+    (expectedSource) => !validatedSources.includes(expectedSource)
+  );
+  if (missingConfiguredSources.length > 0) {
+    throw new Error(
+      `${providerName}: configured official source(s) were not checked: ${missingConfiguredSources.join(', ')}`
+    );
+  }
+  if (catalogStatus === 'reviewed' && validatedSources.length === 0) {
+    throw new Error(`${providerName}: reviewed catalog requires at least one official source`);
+  }
+  if (catalogStatus === 'reviewed' && validatedCandidateModelIds.length === 0) {
+    throw new Error(`${providerName}: reviewed catalog requires non-empty candidateModelIds`);
+  }
+  if (catalogStatus === 'no-in-scope-models' && validatedSources.length === 0) {
+    throw new Error(`${providerName}: no-in-scope-models requires at least one official source`);
+  }
+  if (catalogStatus !== 'reviewed' && validatedCandidateModelIds.length > 0) {
+    throw new Error(`${providerName}: candidateModelIds must be empty unless catalogStatus is reviewed`);
+  }
+
+  const candidateSet = new Set(validatedCandidateModelIds);
+  const addModels = validateUniqueModels(providerName, 'add', validatedAdd);
+  const skipModels = validateUniqueModels(providerName, 'skip', validatedSkip);
+  validateUniqueModels(providerName, 'remove', validatedRemove);
+
+  for (const model of addModels) {
+    if (skipModels.has(model)) {
+      throw new Error(`${providerName}: candidate cannot appear in both add and skip: ${model}`);
+    }
+  }
+
+  for (const addition of validatedAdd) {
+    if (!candidateSet.has(addition.model)) {
+      throw new Error(`${providerName}: added model is absent from candidateModelIds: ${addition.model}`);
+    }
+    if (localModelIds.has(addition.model)) {
+      throw new Error(`${providerName}: add contains a model already present locally: ${addition.model}`);
+    }
+  }
+  for (const skipped of validatedSkip) {
+    if (!candidateSet.has(skipped.model)) {
+      throw new Error(`${providerName}: skipped model is absent from candidateModelIds: ${skipped.model}`);
+    }
+    if (localModelIds.has(skipped.model)) {
+      throw new Error(`${providerName}: skip contains a model already present locally: ${skipped.model}`);
+    }
+  }
+  for (const candidate of validatedCandidateModelIds) {
+    if (!localModelIds.has(candidate) && !addModels.has(candidate) && !skipModels.has(candidate)) {
+      throw new Error(
+        `${providerName}: unaccounted catalog candidate ${candidate}; add it or include it in skip with a reason`
+      );
+    }
   }
 
   return {
-    source,
+    sources: validatedSources,
     checkedAt,
     auditStatus,
-    add: add.map((addition, index) => validateAddition(providerName, addition, index)),
-    remove: remove.map((removal, index) => validateRemoval(providerName, removal, index))
+    catalogStatus,
+    auditNote,
+    candidateModelIds: validatedCandidateModelIds,
+    skip: validatedSkip,
+    add: validatedAdd,
+    remove: validatedRemove
   };
+}
+
+function validateUniqueStrings(providerName, fieldName, values) {
+  const normalized = values.map((value, index) => {
+    if (!isNonEmptyString(value)) {
+      throw new Error(`${providerName}: ${fieldName}[${index}] must be a non-empty string`);
+    }
+    return value.trim();
+  });
+  const duplicate = normalized.find((value, index) => normalized.indexOf(value) !== index);
+  if (duplicate) {
+    throw new Error(`${providerName}: ${fieldName} contains duplicate value: ${duplicate}`);
+  }
+  return normalized;
+}
+
+function validateUniqueModels(providerName, fieldName, entries) {
+  const models = entries.map((entry) => entry.model);
+  const duplicate = models.find((model, index) => models.indexOf(model) !== index);
+  if (duplicate) {
+    throw new Error(`${providerName}: ${fieldName} contains duplicate model: ${duplicate}`);
+  }
+  return new Set(models);
 }
 
 function validateAddition(providerName, addition, index) {
@@ -563,6 +770,9 @@ function validateAddition(providerName, addition, index) {
   }
   if (!isNonEmptyString(addition.reason)) {
     throw new Error(`${providerName}: add[${index}] is missing reason`);
+  }
+  if (addition.insertBefore !== undefined && !isNonEmptyString(addition.insertBefore)) {
+    throw new Error(`${providerName}: add[${index}].insertBefore must be a non-empty model ID`);
   }
   if (addition.replace !== undefined && !isPlainObject(addition.replace)) {
     throw new Error(`${providerName}: add[${index}].replace must be an object`);
@@ -589,6 +799,19 @@ function validateRemoval(providerName, removal, index) {
     throw new Error(`${providerName}: remove[${index}] is missing reason`);
   }
   return removal;
+}
+
+function validateSkip(providerName, skipped, index) {
+  if (!isPlainObject(skipped)) {
+    throw new Error(`${providerName}: skip[${index}] must be an object`);
+  }
+  if (!isNonEmptyString(skipped.model)) {
+    throw new Error(`${providerName}: skip[${index}] is missing model`);
+  }
+  if (!isNonEmptyString(skipped.reason)) {
+    throw new Error(`${providerName}: skip[${index}] is missing reason`);
+  }
+  return skipped;
 }
 
 function findTopLevelProperty(objectText, key) {
@@ -848,12 +1071,13 @@ function printUsage() {
   console.log(`Usage:
   node .codex/skills/model-provider-updater/scripts/model_provider_presets.mjs inventory [--provider OpenAI] [--json]
   node .codex/skills/model-provider-updater/scripts/model_provider_presets.mjs plan-template [--provider OpenAI]
-  node .codex/skills/model-provider-updater/scripts/model_provider_presets.mjs apply-plan --plan /tmp/plan.json (--dry-run | --write) [--json]
+  node .codex/skills/model-provider-updater/scripts/model_provider_presets.mjs apply-plan --plan /tmp/plan.json (--dry-run | --write) [--allow-partial] [--json]
   node .codex/skills/model-provider-updater/scripts/model_provider_presets.mjs check-sources [--provider OpenAI] [--strict] [--json] [--concurrency 4]
 
 Options:
   --repo-root <path>  Override the FastGPT plugin repository root.
   --provider <name>   Limit to one provider or a comma-separated list.
+  --allow-partial     Permit a scoped plan that omits registered providers; never use for a full refresh.
   --concurrency <n>   Limit concurrent source URL checks.
 `);
 }

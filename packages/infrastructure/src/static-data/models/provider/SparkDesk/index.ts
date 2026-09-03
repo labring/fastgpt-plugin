@@ -74,6 +74,18 @@ const models: ProviderConfigType = {
       reasoning: false,
       reasoningEffort: false,
       toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'spark-x',
+      maxContext: 262144,
+      maxTokens: 262144,
+      quoteMaxToken: 250000,
+      maxTemperature: 2,
+      vision: false,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
     }
   ]
 };

@@ -44,6 +44,14 @@ describe('static model provider ordering', () => {
     expect(firstQwen37Index).toBeGreaterThan(lastQwen38Index);
   });
 
+  it('places Gemini Flash models in descending version order', () => {
+    const gemini = providerConfigs.find(({ provider }) => provider === 'Gemini');
+    const modelIds = gemini?.list.map((model) => model.model) ?? [];
+    const flashModels = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+
+    expect(modelIds.slice(0, flashModels.length)).toEqual(flashModels);
+  });
+
   it('places ChatGLM 5.3 models before 5.2 and 5.1 models', () => {
     const chatglm = providerConfigs.find(({ provider }) => provider === 'ChatGLM');
     const modelIds = chatglm?.list.map((model) => model.model) ?? [];

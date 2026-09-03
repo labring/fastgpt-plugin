@@ -10,8 +10,9 @@ import chatglm from './ChatGLM';
 import doubao from './Doubao';
 import gemini from './Gemini';
 import qwen from './Qwen';
+import sparkdesk from './SparkDesk';
 
-const staticModelList = [chatglm, doubao, gemini, qwen].flatMap((provider) =>
+const staticModelList = [chatglm, doubao, gemini, qwen, sparkdesk].flatMap((provider) =>
   provider.list.map((model) =>
     ModelItemSchema.parse({
       ...model,
@@ -33,6 +34,19 @@ describe('static model multimodal capabilities', () => {
 
     expect(llms).not.toHaveLength(0);
     expect(llms.every((model) => model.vision && model.audio && model.video)).toBe(true);
+  });
+
+  it('marks Gemini 3.8 Flash with its documented limits and agent capabilities', () => {
+    expect(getModel('Gemini', 'gemini-3.8-flash')).toMatchObject({
+      maxContext: 1048576,
+      maxTokens: 65536,
+      vision: true,
+      audio: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    });
   });
 
   it('marks Qwen visual models with their video input capability', () => {
@@ -91,6 +105,16 @@ describe('static model multimodal capabilities', () => {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      toolChoice: true
+    });
+  });
+
+  it('marks Spark X2 with its reasoning and tool capabilities', () => {
+    expect(getModel('SparkDesk', 'spark-x')).toMatchObject({
+      maxContext: 262144,
+      maxTokens: 262144,
+      reasoning: true,
+      reasoningEffort: false,
       toolChoice: true
     });
   });

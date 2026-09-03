@@ -8,8 +8,13 @@
     "notes": "Anthropic documents current model IDs and aliases on the models page."
   },
   "Gemini": {
-    "docs": ["https://ai.google.dev/gemini-api/docs/models"],
-    "notes": "Use Gemini API model docs or official list models API."
+    "docs": [
+      "https://ai.google.dev/gemini-api/docs/models",
+      "https://ai.google.dev/gemini-api/docs/changelog",
+      "https://ai.google.dev/gemini-api/docs/deprecations",
+      "https://ai.google.dev/gemini-api/docs/pricing"
+    ],
+    "notes": "Check the model catalog, release notes, deprecations, and pricing together because the catalog page can lag a newly released model. Use the official list-models API too when credentials are explicitly available."
   },
   "Grok": {
     "docs": ["https://docs.x.ai/developers/models"],
