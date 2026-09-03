@@ -169,6 +169,7 @@ async function commandApplyPlan(parsedArgs) {
         action: 'add',
         model: addition.model,
         cloneFrom: addition.cloneFrom,
+        insertBefore: addition.insertBefore,
         status: result.status,
         reason: addition.reason
       });
@@ -522,6 +523,12 @@ function addModelEntry(content, addition) {
   if (!source) {
     throw new Error(`cloneFrom model not found: ${addition.cloneFrom}`);
   }
+  const insertionTarget = addition.insertBefore
+    ? entries.find((entry) => entry.model === addition.insertBefore)
+    : undefined;
+  if (addition.insertBefore && !insertionTarget) {
+    throw new Error(`insertBefore model not found: ${addition.insertBefore}`);
+  }
 
   let cloneText = source.text.replace(
     /(model:\s*)(['"`])([^'"`]+)(['"`])/,
@@ -531,6 +538,15 @@ function addModelEntry(content, addition) {
     for (const [key, value] of Object.entries(addition.replace)) {
       cloneText = replaceSimpleProperty(cloneText, key, value);
     }
+  }
+
+  if (insertionTarget) {
+    const lineStart = content.lastIndexOf('\n', insertionTarget.start) + 1;
+    const indent = content.slice(lineStart, insertionTarget.start);
+    return {
+      content: `${content.slice(0, lineStart)}${indent}${cloneText},\n${content.slice(lineStart)}`,
+      status: 'added'
+    };
   }
 
   const lineStart = content.lastIndexOf('\n', source.start) + 1;
@@ -754,6 +770,9 @@ function validateAddition(providerName, addition, index) {
   }
   if (!isNonEmptyString(addition.reason)) {
     throw new Error(`${providerName}: add[${index}] is missing reason`);
+  }
+  if (addition.insertBefore !== undefined && !isNonEmptyString(addition.insertBefore)) {
+    throw new Error(`${providerName}: add[${index}].insertBefore must be a non-empty model ID`);
   }
   if (addition.replace !== undefined && !isPlainObject(addition.replace)) {
     throw new Error(`${providerName}: add[${index}].replace must be an object`);

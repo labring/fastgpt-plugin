@@ -52,7 +52,7 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
    For a general model refresh, add only primary LLM/chat/reasoning models. Do not add derived or specialized non-LLM variants just because the provider docs list them, such as TTS, STT, transcription, audio, image, video, realtime, moderation, or batch-only model IDs (`gpt-4o-transcribe`, `gpt-4o-mini-tts`, and similar). Also skip open-weight/checkpoint style IDs that encode parameter scale or architecture details when the provider has productized main model IDs, such as Qwen `qwen3.6-27b`, `qwen3.5-397b-a17b`, `qwen3.5-122b-a10b`, or `qwen3.5-35b-a3b`; prefer `max`, `plus`, `flash`, or other documented main product model IDs instead. Handle those only when the user explicitly asks for that modality/model class or when the provider itself is a modality-specific or open-model provider already maintained for that type.
 
-   Transcribe exact official model IDs into `candidateModelIds`; do not rely on prose such as "latest models checked." Compare that list mechanically with the local inventory. Add a preset when an official source lists an in-scope model that is absent locally and it belongs to an existing provider. Clone the closest existing preset in the same provider and family, then adjust context, output limit, vision, reasoning, tool calling, response-format, and field-map fields from official docs or the closest local pattern.
+   Transcribe exact official model IDs into `candidateModelIds`; do not rely on prose such as "latest models checked." Compare that list mechanically with the local inventory. Add a preset when an official source lists an in-scope model that is absent locally and it belongs to an existing provider. Clone the closest existing preset in the same provider and family, then adjust context, output limit, vision, reasoning, tool calling, response-format, and field-map fields from official docs or the closest local pattern. When the new model is newer or more capable than its clone source, set `insertBefore` to the existing model that it must precede; cloning and display placement are separate decisions.
 
    If a missing candidate is intentionally excluded by the scope rules, put it in `skip` with its exact model ID and a specific reason. The plan is incomplete while any missing candidate is neither added nor skipped.
 
@@ -82,6 +82,8 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
    - Fill `catalogStatus`, `auditNote`, `candidateModelIds`, and `skip` for every provider, even when nothing changes.
 
    `replace` supports top-level provider-model fields only, such as `maxContext`, `maxTokens`, `vision`, `reasoning`, `responseFormatList`, or `fieldMap`. Do not use dotted paths such as `fieldMap.max_tokens`; replace the full top-level object instead.
+
+   `insertBefore` accepts an exact existing model ID and places the cloned addition before it. Use it to preserve newest-or-most-capable-first ordering; otherwise additions are inserted after `cloneFrom` for backward compatibility.
 
    The script only edits providers registered by `packages/infrastructure/src/static-data/models/index.ts`, validates the whole plan before writing any file, and errors on incomplete provider coverage, unchecked configured sources, pending states, missing audit notes, duplicate IDs, unaccounted catalog candidates, or missing addition evidence. Although the script can mechanically process removals for legacy workflows, this skill must always submit empty `remove` arrays.
 

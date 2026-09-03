@@ -5,20 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: 'gemini-3.5-flash',
-      maxContext: 1048576,
-      maxTokens: 65536,
-      quoteMaxToken: 1000000,
-      vision: true,
-      audio: true,
-      video: true,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'gemini-3.6-flash',
+      model: 'gemini-3.8-flash',
       maxContext: 1048576,
       maxTokens: 65536,
       quoteMaxToken: 1000000,
@@ -44,7 +31,20 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'gemini-3.8-flash',
+      model: 'gemini-3.6-flash',
+      maxContext: 1048576,
+      maxTokens: 65536,
+      quoteMaxToken: 1000000,
+      vision: true,
+      audio: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gemini-3.5-flash',
       maxContext: 1048576,
       maxTokens: 65536,
       quoteMaxToken: 1000000,

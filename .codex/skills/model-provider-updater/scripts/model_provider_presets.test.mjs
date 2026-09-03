@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
@@ -154,4 +154,38 @@ test('a candidate cannot be both added and skipped', () => {
   const result = run(['apply-plan', '--plan', plan, '--dry-run', '--allow-partial']);
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /cannot appear in both add and skip/);
+});
+
+test('insertBefore separates clone source from display placement', () => {
+  const repoRoot = join(tempDir, 'placement-repo');
+  const providerDir = join(repoRoot, 'packages/infrastructure/src/static-data/models/provider/Gemini');
+  mkdirSync(providerDir, { recursive: true });
+  writeFileSync(
+    join(repoRoot, 'packages/infrastructure/src/static-data/models/index.ts'),
+    "import gemini from './provider/Gemini';\n\nexport default [gemini];\n"
+  );
+  writeFileSync(
+    join(providerDir, 'index.ts'),
+    "const models = { provider: 'Gemini', list: [\n  { model: 'gemini-3.7-flash', maxTokens: 65536 }\n] };\nexport default models;\n"
+  );
+  const plan = writePlan(
+    'insert-before',
+    geminiPlan({
+      auditStatus: 'changed',
+      candidateModelIds: ['gemini-3.7-flash', 'gemini-future-test-model'],
+      add: [
+        {
+          model: 'gemini-future-test-model',
+          cloneFrom: 'gemini-3.7-flash',
+          insertBefore: 'gemini-3.7-flash',
+          reason: 'Synthetic newer model for placement testing.'
+        }
+      ]
+    })
+  );
+
+  const result = run(['apply-plan', '--repo-root', repoRoot, '--plan', plan, '--write']);
+  assert.equal(result.status, 0, result.stderr);
+  const providerFile = readFileSync(join(providerDir, 'index.ts'), 'utf8');
+  assert.ok(providerFile.indexOf('gemini-future-test-model') < providerFile.indexOf('gemini-3.7-flash'));
 });

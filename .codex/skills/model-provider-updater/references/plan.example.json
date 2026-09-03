@@ -28,6 +28,7 @@
         {
           "model": "example-new-model",
           "cloneFrom": "example-existing-model",
+          "insertBefore": "example-existing-model",
           "reason": "Official model catalog lists this as a new public model.",
           "replace": {
             "maxContext": 128000,
