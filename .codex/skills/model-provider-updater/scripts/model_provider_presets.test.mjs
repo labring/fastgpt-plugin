@@ -111,21 +111,21 @@ test('every configured official source must be checked', () => {
 test('a missing catalog candidate must be added or explicitly skipped', () => {
   const plan = writePlan(
     'unaccounted-candidate',
-    geminiPlan({ candidateModelIds: ['gemini-3.7-flash', 'gemini-3.8-flash'] })
+    geminiPlan({ candidateModelIds: ['gemini-3.7-flash', 'gemini-future-test-model'] })
   );
   const result = run(['apply-plan', '--plan', plan, '--dry-run', '--allow-partial']);
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /unaccounted catalog candidate gemini-3\.8-flash/);
+  assert.match(result.stderr, /unaccounted catalog candidate gemini-future-test-model/);
 });
 
 test('a reasoned skip closes the catalog diff', () => {
   const plan = writePlan(
     'skipped-candidate',
     geminiPlan({
-      candidateModelIds: ['gemini-3.7-flash', 'gemini-3.8-flash'],
+      candidateModelIds: ['gemini-3.7-flash', 'gemini-future-test-model'],
       skip: [
         {
-          model: 'gemini-3.8-flash',
+          model: 'gemini-future-test-model',
           reason: 'Explicit test-only scope exclusion.'
         }
       ]
@@ -140,15 +140,15 @@ test('a candidate cannot be both added and skipped', () => {
     'conflicting-disposition',
     geminiPlan({
       auditStatus: 'changed',
-      candidateModelIds: ['gemini-3.7-flash', 'gemini-3.8-flash'],
+      candidateModelIds: ['gemini-3.7-flash', 'gemini-future-test-model'],
       add: [
         {
-          model: 'gemini-3.8-flash',
+          model: 'gemini-future-test-model',
           cloneFrom: 'gemini-3.7-flash',
           reason: 'Official release.'
         }
       ],
-      skip: [{ model: 'gemini-3.8-flash', reason: 'Conflicting test disposition.' }]
+      skip: [{ model: 'gemini-future-test-model', reason: 'Conflicting test disposition.' }]
     })
   );
   const result = run(['apply-plan', '--plan', plan, '--dry-run', '--allow-partial']);

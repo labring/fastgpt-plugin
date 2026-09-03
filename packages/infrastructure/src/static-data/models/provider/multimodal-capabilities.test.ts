@@ -36,6 +36,19 @@ describe('static model multimodal capabilities', () => {
     expect(llms.every((model) => model.vision && model.audio && model.video)).toBe(true);
   });
 
+  it('marks Gemini 3.8 Flash with its documented limits and agent capabilities', () => {
+    expect(getModel('Gemini', 'gemini-3.8-flash')).toMatchObject({
+      maxContext: 1048576,
+      maxTokens: 65536,
+      vision: true,
+      audio: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    });
+  });
+
   it('marks Qwen visual models with their video input capability', () => {
     expect(getModel('Qwen', 'qwen3.8-flash')).toMatchObject({
       maxContext: 1000000,
