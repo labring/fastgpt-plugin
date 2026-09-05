@@ -52,6 +52,14 @@ describe('static model provider ordering', () => {
     expect(modelIds.slice(0, flashModels.length)).toEqual(flashModels);
   });
 
+  it('places the newest OpenAI and Hunyuan models first', () => {
+    const openai = providerConfigs.find(({ provider }) => provider === 'OpenAI');
+    const hunyuan = providerConfigs.find(({ provider }) => provider === 'Hunyuan');
+
+    expect(openai?.list[0]?.model).toBe('gpt-6-astra');
+    expect(hunyuan?.list[0]?.model).toBe('hy4-preview');
+  });
+
   it('places ChatGLM 5.3 models before 5.2 and 5.1 models', () => {
     const chatglm = providerConfigs.find(({ provider }) => provider === 'ChatGLM');
     const modelIds = chatglm?.list.map((model) => model.model) ?? [];

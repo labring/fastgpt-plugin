@@ -9,10 +9,12 @@ import {
 import chatglm from './ChatGLM';
 import doubao from './Doubao';
 import gemini from './Gemini';
+import hunyuan from './Hunyuan';
+import openai from './OpenAI';
 import qwen from './Qwen';
 import sparkdesk from './SparkDesk';
 
-const staticModelList = [chatglm, doubao, gemini, qwen, sparkdesk].flatMap((provider) =>
+const staticModelList = [chatglm, doubao, gemini, hunyuan, openai, qwen, sparkdesk].flatMap((provider) =>
   provider.list.map((model) =>
     ModelItemSchema.parse({
       ...model,
@@ -106,6 +108,30 @@ describe('static model multimodal capabilities', () => {
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
+    });
+  });
+
+  it('marks GPT-6 Astra with its documented limits and agent capabilities', () => {
+    expect(getModel('OpenAI', 'gpt-6-astra')).toMatchObject({
+      maxContext: 1050000,
+      maxTokens: 128000,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      responseFormatList: ['text', 'json_schema']
+    });
+  });
+
+  it('marks Hy4 preview with its documented limits and agent capabilities', () => {
+    expect(getModel('Hunyuan', 'hy4-preview')).toMatchObject({
+      maxContext: 1024000,
+      maxTokens: 64000,
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      responseFormatList: ['text', 'json_object', 'json_schema']
     });
   });
 
