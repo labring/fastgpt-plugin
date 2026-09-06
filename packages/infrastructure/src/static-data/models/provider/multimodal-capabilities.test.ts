@@ -123,6 +123,18 @@ describe('static model multimodal capabilities', () => {
     });
   });
 
+  it('marks GPT-5.3 Codex with its documented limits and coding capabilities', () => {
+    expect(getModel('OpenAI', 'gpt-5.3-codex')).toMatchObject({
+      maxContext: 400000,
+      maxTokens: 128000,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      responseFormatList: ['text', 'json_schema']
+    });
+  });
+
   it('marks Hy4 preview with its documented limits and agent capabilities', () => {
     expect(getModel('Hunyuan', 'hy4-preview')).toMatchObject({
       maxContext: 1024000,

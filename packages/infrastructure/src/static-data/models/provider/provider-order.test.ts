@@ -60,6 +60,14 @@ describe('static model provider ordering', () => {
     expect(hunyuan?.list[0]?.model).toBe('hy4-preview');
   });
 
+  it('places GPT-5.3 Codex before GPT-5.2', () => {
+    const openai = providerConfigs.find(({ provider }) => provider === 'OpenAI');
+    const modelIds = openai?.list.map((model) => model.model) ?? [];
+
+    expect(modelIds.indexOf('gpt-5.3-codex')).toBeGreaterThanOrEqual(0);
+    expect(modelIds.indexOf('gpt-5.2')).toBeGreaterThan(modelIds.indexOf('gpt-5.3-codex'));
+  });
+
   it('places ChatGLM 5.3 models before 5.2 and 5.1 models', () => {
     const chatglm = providerConfigs.find(({ provider }) => provider === 'ChatGLM');
     const modelIds = chatglm?.list.map((model) => model.model) ?? [];
