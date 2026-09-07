@@ -4,8 +4,11 @@
     "notes": "Use official OpenAI model docs or authenticated model-list API if credentials are explicitly available."
   },
   "Claude": {
-    "docs": ["https://platform.claude.com/docs/en/models/overview"],
-    "notes": "Anthropic documents current model IDs and aliases on the models page."
+    "docs": [
+      "https://platform.claude.com/docs/en/models/overview",
+      "https://platform.claude.com/docs/en/release-notes/overview"
+    ],
+    "notes": "Anthropic documents current model IDs and aliases on the models page; check release notes for newly launched models that may not yet appear throughout the catalog."
   },
   "Gemini": {
     "docs": [
@@ -17,16 +20,25 @@
     "notes": "Check the model catalog, release notes, deprecations, and pricing together because the catalog page can lag a newly released model. Use the official list-models API too when credentials are explicitly available."
   },
   "Grok": {
-    "docs": ["https://docs.x.ai/developers/models"],
-    "notes": "Use xAI model docs."
+    "docs": [
+      "https://docs.x.ai/developers/models",
+      "https://docs.x.ai/developers/release-notes"
+    ],
+    "notes": "Use xAI model docs and release notes together."
   },
   "MistralAI": {
-    "docs": ["https://docs.mistral.ai/models"],
-    "notes": "Use Mistral model overview and API docs."
+    "docs": [
+      "https://docs.mistral.ai/models",
+      "https://docs.mistral.ai/resources/changelogs"
+    ],
+    "notes": "Use Mistral model overview and changelog together."
   },
   "Qwen": {
-    "docs": ["https://help.aliyun.com/zh/model-studio/models"],
-    "notes": "Use Alibaba Cloud Model Studio model docs."
+    "docs": [
+      "https://help.aliyun.com/zh/model-studio/models",
+      "https://help.aliyun.com/zh/model-studio/newly-released-models"
+    ],
+    "notes": "Use Alibaba Cloud Model Studio model docs and release ledger together."
   },
   "Doubao": {
     "docs": ["https://www.volcengine.com/docs/82379/2549861?lang=zh"],
@@ -57,8 +69,11 @@
     "notes": "Use iFlytek Spark official docs."
   },
   "Hunyuan": {
-    "docs": ["https://cloud.tencent.com/document/product/1823/130051"],
-    "notes": "Use Tencent TokenHub's official Hy model docs."
+    "docs": [
+      "https://cloud.tencent.com/document/product/1823/130051",
+      "https://cloud.tencent.com/document/product/1823/130675"
+    ],
+    "notes": "Use Tencent TokenHub's official Hy model docs and product updates together."
   },
   "Baichuan": {
     "docs": ["https://platform.baichuan-ai.com/docs"],
@@ -129,8 +144,12 @@
     "notes": "Use PPIO official docs; verify the exact model page during each run."
   },
   "AntLing": {
-    "docs": ["https://developer.ant-ling.com/en/docs/models", "https://www.ant-ling.com/en/"],
-    "notes": "Use Ant Ling developer docs and official model-family pages."
+    "docs": [
+      "https://developer.ant-ling.com/en/docs/models",
+      "https://developer.ant-ling.com/en/docs/models/deprecation/",
+      "https://www.ant-ling.com/en/"
+    ],
+    "notes": "Use Ant Ling developer docs, deprecation notices, and official model-family pages."
   },
   "Moka": {
     "docs": [],

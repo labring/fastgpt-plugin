@@ -64,6 +64,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'gpt-6-astra',
+      maxContext: 1050000,
+      maxTokens: 128000,
+      quoteMaxToken: 1000000,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5.6',
       maxContext: 1050000,
       maxTokens: 128000,
@@ -175,6 +187,18 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'gpt-5.4-nano',
+      maxContext: 400000,
+      maxTokens: 128000,
+      quoteMaxToken: 350000,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gpt-5.3-codex',
       maxContext: 400000,
       maxTokens: 128000,
       quoteMaxToken: 350000,
