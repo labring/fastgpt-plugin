@@ -144,8 +144,12 @@
     "notes": "Use PPIO official docs; verify the exact model page during each run."
   },
   "AntLing": {
-    "docs": ["https://developer.ant-ling.com/en/docs/models", "https://www.ant-ling.com/en/"],
-    "notes": "Use Ant Ling developer docs and official model-family pages."
+    "docs": [
+      "https://developer.ant-ling.com/en/docs/models",
+      "https://developer.ant-ling.com/en/docs/models/deprecation/",
+      "https://www.ant-ling.com/en/"
+    ],
+    "notes": "Use Ant Ling developer docs, deprecation notices, and official model-family pages."
   },
   "Moka": {
     "docs": [],
