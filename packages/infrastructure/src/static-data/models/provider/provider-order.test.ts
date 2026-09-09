@@ -60,6 +60,12 @@ describe('static model provider ordering', () => {
     expect(hunyuan?.list[0]?.model).toBe('hy4-preview');
   });
 
+  it('places the newest Ant Ling model first', () => {
+    const antling = providerConfigs.find(({ provider }) => provider === 'AntLing');
+
+    expect(antling?.list[0]?.model).toBe('Ling-3.0-flash-VL');
+  });
+
   it('places GPT-5.3 Codex before GPT-5.2', () => {
     const openai = providerConfigs.find(({ provider }) => provider === 'OpenAI');
     const modelIds = openai?.list.map((model) => model.model) ?? [];

@@ -6,6 +6,7 @@ import {
   ModelTypeEnum
 } from '@domain/entities/model.entity';
 
+import antling from './AntLing';
 import chatglm from './ChatGLM';
 import doubao from './Doubao';
 import gemini from './Gemini';
@@ -14,7 +15,7 @@ import openai from './OpenAI';
 import qwen from './Qwen';
 import sparkdesk from './SparkDesk';
 
-const staticModelList = [chatglm, doubao, gemini, hunyuan, openai, qwen, sparkdesk].flatMap((provider) =>
+const staticModelList = [antling, chatglm, doubao, gemini, hunyuan, openai, qwen, sparkdesk].flatMap((provider) =>
   provider.list.map((model) =>
     ModelItemSchema.parse({
       ...model,
@@ -28,6 +29,19 @@ const getModel = (provider: string, model: string) =>
   staticModelList.find((item) => item.provider === provider && item.model === model);
 
 describe('static model multimodal capabilities', () => {
+  it('marks Ant Ling Ling-3.0-flash-VL with its documented multimodal limits', () => {
+    expect(getModel('AntLing', 'Ling-3.0-flash-VL')).toMatchObject({
+      maxContext: 256000,
+      maxTokens: 102400,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      video: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    });
+  });
+
   it('marks Gemini LLMs as supporting image, audio, and video inputs', () => {
     const llms = staticModelList.filter(
       (item): item is LLMModelItemType =>

@@ -147,9 +147,10 @@
     "docs": [
       "https://developer.ant-ling.com/en/docs/models",
       "https://developer.ant-ling.com/en/docs/models/deprecation/",
+      "https://developer.ant-ling.com/en/docs/getting-started/changelog/",
       "https://www.ant-ling.com/en/"
     ],
-    "notes": "Use Ant Ling developer docs, deprecation notices, and official model-family pages."
+    "notes": "Use Ant Ling developer docs, changelog, deprecation notices, and official model-family pages."
   },
   "Moka": {
     "docs": [],
