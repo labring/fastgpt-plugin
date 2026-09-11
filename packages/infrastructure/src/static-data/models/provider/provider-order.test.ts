@@ -66,6 +66,26 @@ describe('static model provider ordering', () => {
     expect(antling?.list[0]?.model).toBe('Ling-3.0-flash-VL');
   });
 
+  it('places Ernie preview models before their stable aliases', () => {
+    const ernie = providerConfigs.find(({ provider }) => provider === 'Ernie');
+    const modelIds = ernie?.list.map((model) => model.model) ?? [];
+
+    expect(modelIds.indexOf('ernie-x1.1-preview')).toBeGreaterThanOrEqual(0);
+    expect(modelIds.indexOf('ernie-5.0-thinking-preview')).toBeGreaterThanOrEqual(0);
+    expect(modelIds.indexOf('ernie-x1.1')).toBeGreaterThan(modelIds.indexOf('ernie-x1.1-preview'));
+    expect(modelIds.indexOf('ernie-5.0-thinking-latest')).toBeGreaterThan(
+      modelIds.indexOf('ernie-5.0-thinking-preview')
+    );
+  });
+
+  it('places Groq-hosted Qwen models in descending version order', () => {
+    const groq = providerConfigs.find(({ provider }) => provider === 'Groq');
+    const modelIds = groq?.list.map((model) => model.model) ?? [];
+
+    expect(modelIds.indexOf('qwen/qwen3.8-27b')).toBeLessThan(modelIds.indexOf('qwen/qwen3.6-27b'));
+    expect(modelIds.indexOf('qwen/qwen3.6-27b')).toBeLessThan(modelIds.indexOf('qwen/qwen3-32b'));
+  });
+
   it('places GPT-5.3 Codex before GPT-5.2', () => {
     const openai = providerConfigs.find(({ provider }) => provider === 'OpenAI');
     const modelIds = openai?.list.map((model) => model.model) ?? [];
