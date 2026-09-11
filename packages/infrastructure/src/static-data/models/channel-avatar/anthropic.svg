@@ -1,7 +1,1 @@
-<svg t="1710840533172" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1458"
-    width="128" height="128">
-    <path d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z" fill="#F3DFBC" p-id="1459"></path>
-    <path
-        d="M653.443072 286.424064h-97.913856l178.556928 451.150848H832L653.443072 286.424064z m-282.886144 0L192 737.575936h99.84512l36.514816-94.741504h186.805248l36.514816 94.741504h99.84512L472.968192 286.424064H370.556928z m-9.89696 272.622592l61.103104-158.55104 61.103104 158.55104H360.659968z"
-        fill="#20201C" p-id="1460"></path>
-</svg>
+<svg fill="currentColor" fill-rule="evenodd" height="1em" style="flex:none;line-height:1" viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>Anthropic</title><path d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-7.258 0h3.767L16.906 20h-3.674l-1.343-3.461H5.017l-1.344 3.46H0L6.57 3.522zm4.132 9.959L8.453 7.687 6.205 13.48H10.7z"></path></svg>
