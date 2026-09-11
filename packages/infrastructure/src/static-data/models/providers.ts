@@ -340,7 +340,7 @@ export const aiproxyChannels: AIProxyChannelsType = [
       "zh-Hant": "AIProxy 杭州区",
     },
     avatar: "aiproxy",
-    website: "https://hzh.sealos.run/",
+    website: "https://hzh.sealos.run?openapp=system-aiproxy",
   },
   {
     channelId: 58,
@@ -350,7 +350,7 @@ export const aiproxyChannels: AIProxyChannelsType = [
       "zh-Hant": "AIProxy 美国区",
     },
     avatar: "aiproxy",
-    website: "https://usw-1.sealos.io/",
+    website: "https://usw-1.sealos.io?openapp=system-aiproxy",
   },
   {
     channelId: 20,
