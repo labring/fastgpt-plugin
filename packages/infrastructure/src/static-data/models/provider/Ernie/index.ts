@@ -65,6 +65,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'ernie-5.0-thinking-exp',
+      maxContext: 128000,
+      maxTokens: 65536,
+      quoteMaxToken: 119000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'ernie-5.0-thinking-latest',
       maxContext: 128000,
       maxTokens: 65536,
@@ -74,6 +86,18 @@ const models: ProviderConfigType = {
       reasoning: true,
       reasoningEffort: false,
       toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'ernie-4.5-turbo-20260402',
+      maxContext: 128000,
+      maxTokens: 12288,
+      quoteMaxToken: 123000,
+      maxTemperature: 2,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: false
     },
     {
       type: ModelTypeEnum.llm,

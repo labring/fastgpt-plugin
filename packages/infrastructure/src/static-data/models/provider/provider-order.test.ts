@@ -44,6 +44,25 @@ describe('static model provider ordering', () => {
     expect(firstQwen37Index).toBeGreaterThan(lastQwen38Index);
   });
 
+  it('keeps Qwen snapshots and specialized models ahead of their aliases', () => {
+    const qwen = providerConfigs.find(({ provider }) => provider === 'Qwen');
+    const modelIds = qwen?.list.map((model) => model.model) ?? [];
+
+    expect(modelIds.indexOf('qwen3.8-max-0902')).toBeLessThan(modelIds.indexOf('qwen3.8-max'));
+    expect(modelIds.indexOf('qwen3.8-27b')).toBeLessThan(modelIds.indexOf('qwen3.7-max'));
+    expect(modelIds.indexOf('qwen3.8-2.4t-a95b')).toBeLessThan(modelIds.indexOf('qwen3.7-max'));
+    expect(modelIds.indexOf('qwen3.7-flash-2026-07-15')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-flash')
+    );
+    expect(modelIds.indexOf('qwen3.7-text-embedding')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-text-embedding-flash')
+    );
+    expect(modelIds.indexOf('qwen3.7-text-embedding-flash')).toBeLessThan(
+      modelIds.indexOf('text-embedding-v4')
+    );
+    expect(modelIds.indexOf('qwen3.7-text-rerank')).toBeLessThan(modelIds.indexOf('qwen3-rerank'));
+  });
+
   it('places Gemini Flash models in descending version order', () => {
     const gemini = providerConfigs.find(({ provider }) => provider === 'Gemini');
     const modelIds = gemini?.list.map((model) => model.model) ?? [];
@@ -72,9 +91,12 @@ describe('static model provider ordering', () => {
 
     expect(modelIds.indexOf('ernie-x1.1-preview')).toBeGreaterThanOrEqual(0);
     expect(modelIds.indexOf('ernie-5.0-thinking-preview')).toBeGreaterThanOrEqual(0);
+    expect(modelIds.indexOf('ernie-5.0-thinking-exp')).toBeGreaterThan(
+      modelIds.indexOf('ernie-5.0-thinking-preview')
+    );
     expect(modelIds.indexOf('ernie-x1.1')).toBeGreaterThan(modelIds.indexOf('ernie-x1.1-preview'));
     expect(modelIds.indexOf('ernie-5.0-thinking-latest')).toBeGreaterThan(
-      modelIds.indexOf('ernie-5.0-thinking-preview')
+      modelIds.indexOf('ernie-5.0-thinking-exp')
     );
   });
 
