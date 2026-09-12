@@ -5,6 +5,20 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'qwen3.8-max-0902',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'qwen3.8-max',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -33,7 +47,63 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'qwen3.8-27b',
+      maxContext: 1000000,
+      maxTokens: 131072,
+      quoteMaxToken: 990000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3.8-2.4t-a95b',
+      maxContext: 1000000,
+      maxTokens: 131072,
+      quoteMaxToken: 990000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: false,
+      video: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3.7-max-2026-06-08',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'qwen3.7-max',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3.7-plus-2026-05-26',
       maxContext: 1000000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,
@@ -51,6 +121,20 @@ const models: ProviderConfigType = {
       maxContext: 1000000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'qwen3.7-flash-2026-07-15',
+      maxContext: 1000000,
+      maxTokens: 131072,
+      quoteMaxToken: 990000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
@@ -553,6 +637,20 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      model: 'qwen3.7-text-embedding',
+      defaultToken: 512,
+      maxToken: 128000,
+      defaultConfig: { dimensions: 1024 }
+    },
+    {
+      type: ModelTypeEnum.embedding,
+      model: 'qwen3.7-text-embedding-flash',
+      defaultToken: 512,
+      maxToken: 128000,
+      defaultConfig: { dimensions: 1024 }
+    },
+    {
+      type: ModelTypeEnum.embedding,
       model: 'text-embedding-v4',
       defaultToken: 512,
       maxToken: 8000,
@@ -565,6 +663,11 @@ const models: ProviderConfigType = {
       model: 'text-embedding-v3',
       defaultToken: 512,
       maxToken: 8000
+    },
+    {
+      type: ModelTypeEnum.rerank,
+      model: 'qwen3.7-text-rerank',
+      maxToken: 32768
     },
     {
       type: ModelTypeEnum.rerank,

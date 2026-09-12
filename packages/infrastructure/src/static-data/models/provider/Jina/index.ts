@@ -29,6 +29,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      model: 'jina-code-embeddings-1.5b',
+      defaultToken: 512,
+      maxToken: 32000
+    },
+    {
+      type: ModelTypeEnum.embedding,
+      model: 'jina-code-embeddings-0.5b',
+      defaultToken: 512,
+      maxToken: 32000
+    },
+    {
+      type: ModelTypeEnum.embedding,
       model: 'jina-embeddings-v4',
       defaultToken: 512,
       maxToken: 32000
