@@ -637,6 +637,13 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      model: 'qwen3-vl-embedding',
+      defaultToken: 512,
+      maxToken: 32000,
+      defaultConfig: { dimensions: 2560 }
+    },
+    {
+      type: ModelTypeEnum.embedding,
       model: 'qwen3.7-text-embedding',
       defaultToken: 512,
       maxToken: 128000,
@@ -662,6 +669,11 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.embedding,
       model: 'text-embedding-v3',
       defaultToken: 512,
+      maxToken: 8000
+    },
+    {
+      type: ModelTypeEnum.rerank,
+      model: 'qwen3-vl-rerank',
       maxToken: 8000
     },
     {

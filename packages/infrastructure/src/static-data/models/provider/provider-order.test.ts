@@ -54,11 +54,17 @@ describe('static model provider ordering', () => {
     expect(modelIds.indexOf('qwen3.7-flash-2026-07-15')).toBeLessThan(
       modelIds.indexOf('qwen3.7-flash')
     );
+    expect(modelIds.indexOf('qwen3-vl-embedding')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-text-embedding')
+    );
     expect(modelIds.indexOf('qwen3.7-text-embedding')).toBeLessThan(
       modelIds.indexOf('qwen3.7-text-embedding-flash')
     );
     expect(modelIds.indexOf('qwen3.7-text-embedding-flash')).toBeLessThan(
       modelIds.indexOf('text-embedding-v4')
+    );
+    expect(modelIds.indexOf('qwen3-vl-rerank')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-text-rerank')
     );
     expect(modelIds.indexOf('qwen3.7-text-rerank')).toBeLessThan(modelIds.indexOf('qwen3-rerank'));
   });
