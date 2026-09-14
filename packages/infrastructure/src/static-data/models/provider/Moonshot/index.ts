@@ -109,32 +109,6 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'moonshot-v1-8k-vision-preview',
-      maxContext: 8000,
-      maxTokens: 4000,
-      quoteMaxToken: 6000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'moonshot-v1-32k-vision-preview',
-      maxContext: 32000,
-      maxTokens: 4000,
-      quoteMaxToken: 32000,
-      maxTemperature: 1,
-      responseFormatList: ['text', 'json_object'],
-      vision: true,
-      reasoning: false,
-      reasoningEffort: false,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'moonshot-v1-128k-vision-preview',
       maxContext: 128000,
       maxTokens: 4000,
