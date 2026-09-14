@@ -16,6 +16,7 @@ const models: ProviderConfigType = {
       reasoningEffort: true,
       toolChoice: true
     },
+
     {
       type: ModelTypeEnum.llm,
       model: 'deepseek-v4-flash',

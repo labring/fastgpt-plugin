@@ -96,34 +96,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'gemini-3.1-pro-preview',
-      maxContext: 1000000,
-      maxTokens: 64000,
-      quoteMaxToken: 1000000,
-      vision: true,
-      audio: true,
-      video: true,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
       model: 'gemini-3.1-pro',
       maxContext: 1000000,
-      maxTokens: 64000,
-      quoteMaxToken: 1000000,
-      vision: true,
-      audio: true,
-      video: true,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true
-    },
-    {
-      type: ModelTypeEnum.llm,
-      model: 'gemini-3-flash-preview',
-      maxContext: 1024000,
       maxTokens: 64000,
       quoteMaxToken: 1000000,
       vision: true,
@@ -187,6 +161,13 @@ const models: ProviderConfigType = {
       reasoning: false,
       reasoningEffort: false,
       toolChoice: true
+    },
+
+    {
+      type: ModelTypeEnum.embedding,
+      model: 'gemini-embedding-001',
+      defaultToken: 512,
+      maxToken: 2048
     },
     {
       type: ModelTypeEnum.embedding,
