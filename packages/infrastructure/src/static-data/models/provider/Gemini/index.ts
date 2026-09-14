@@ -188,6 +188,7 @@ const models: ProviderConfigType = {
       reasoningEffort: false,
       toolChoice: true
     },
+
     {
       type: ModelTypeEnum.embedding,
       model: 'gemini-embedding-001',
