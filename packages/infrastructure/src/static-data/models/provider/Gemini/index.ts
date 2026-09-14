@@ -188,12 +188,7 @@ const models: ProviderConfigType = {
       reasoningEffort: false,
       toolChoice: true
     },
-    {
-      type: ModelTypeEnum.embedding,
-      model: 'gemini-embedding-001',
-      defaultToken: 512,
-      maxToken: 2048
-    },
+
     {
       type: ModelTypeEnum.embedding,
       model: 'gemini-embedding-2',
