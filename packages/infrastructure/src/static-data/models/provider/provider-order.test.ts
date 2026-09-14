@@ -51,6 +51,9 @@ describe('static model provider ordering', () => {
     expect(modelIds.indexOf('qwen3.8-max-0902')).toBeLessThan(modelIds.indexOf('qwen3.8-max'));
     expect(modelIds.indexOf('qwen3.8-27b')).toBeLessThan(modelIds.indexOf('qwen3.7-max'));
     expect(modelIds.indexOf('qwen3.8-2.4t-a95b')).toBeLessThan(modelIds.indexOf('qwen3.7-max'));
+    expect(modelIds.indexOf('qwen3.7-max-2026-05-20')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-max')
+    );
     expect(modelIds.indexOf('qwen3.7-flash-2026-07-15')).toBeLessThan(
       modelIds.indexOf('qwen3.7-flash')
     );

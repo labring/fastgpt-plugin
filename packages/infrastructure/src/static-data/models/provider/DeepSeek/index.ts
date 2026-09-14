@@ -18,6 +18,19 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'deepseek-v4-flash-vision-exp',
+      maxContext: 1000000,
+      maxTokens: 384000,
+      quoteMaxToken: 960000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'deepseek-v4-flash',
       maxContext: 1000000,
       maxTokens: 384000,

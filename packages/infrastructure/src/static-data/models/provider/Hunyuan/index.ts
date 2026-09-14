@@ -31,6 +31,32 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'hy3-preview',
+      maxContext: 256000,
+      maxTokens: 128000,
+      quoteMaxToken: 192000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'hy3-202608',
+      maxContext: 256000,
+      maxTokens: 128000,
+      quoteMaxToken: 192000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'hunyuan-large',
       maxContext: 28000,
       maxTokens: 4000,

@@ -89,6 +89,20 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'qwen3.7-max-2026-05-20',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 1000000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'qwen3.7-max',
       maxContext: 1000000,
       maxTokens: 64000,
