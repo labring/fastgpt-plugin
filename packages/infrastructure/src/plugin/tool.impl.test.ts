@@ -20,11 +20,13 @@ const makeTool = (version: string): ToolType => ({
   etag: `etag-${version}`,
   type: PluginTypeEnum.tool,
   name: {
-    en: 'Get Time'
+    en: 'Get Time',
+    'zh-CN': '获取时间'
   },
   icon: 'https://example.com/icon.svg',
   description: {
-    en: 'Get current time'
+    en: 'Get current time',
+    'zh-CN': '获取当前时间'
   },
   toolDescription: 'Get current time'
 });
@@ -153,8 +155,8 @@ describe('ToolManager.detail', () => {
         children: [
           {
             id: 'child',
-            name: { en: 'Child' },
-            description: { en: 'Child tool' },
+            name: { en: 'Child', 'zh-CN': '子工具' },
+            description: { en: 'Child tool', 'zh-CN': '子工具' },
             icon: 'https://example.com/child.svg',
             toolDescription: 'Child tool',
             inputSchema: {
