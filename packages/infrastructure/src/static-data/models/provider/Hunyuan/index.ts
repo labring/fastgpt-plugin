@@ -5,10 +5,24 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
-      model: 'hy4-preview',
-      maxContext: 1024000,
-      maxTokens: 64000,
-      quoteMaxToken: 960000,
+      model: 'hy3',
+      maxContext: 256000,
+      maxTokens: 128000,
+      quoteMaxToken: 192000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+
+    {
+      type: ModelTypeEnum.llm,
+      model: 'hy3-202608',
+      maxContext: 256000,
+      maxTokens: 128000,
+      quoteMaxToken: 192000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: false,
@@ -18,7 +32,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
-      model: 'hy3',
+      model: 'hy3-202608',
       maxContext: 256000,
       maxTokens: 128000,
       quoteMaxToken: 192000,

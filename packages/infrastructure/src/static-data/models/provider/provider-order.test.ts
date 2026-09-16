@@ -44,6 +44,34 @@ describe('static model provider ordering', () => {
     expect(firstQwen37Index).toBeGreaterThan(lastQwen38Index);
   });
 
+  it('keeps Qwen snapshots and specialized models ahead of their aliases', () => {
+    const qwen = providerConfigs.find(({ provider }) => provider === 'Qwen');
+    const modelIds = qwen?.list.map((model) => model.model) ?? [];
+
+    expect(modelIds.indexOf('qwen3.8-max-0902')).toBeLessThan(modelIds.indexOf('qwen3.8-max'));
+    expect(modelIds.indexOf('qwen3.8-27b')).toBeLessThan(modelIds.indexOf('qwen3.7-max'));
+    expect(modelIds.indexOf('qwen3.8-2.4t-a95b')).toBeLessThan(modelIds.indexOf('qwen3.7-max'));
+    expect(modelIds.indexOf('qwen3.7-max-2026-05-20')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-max')
+    );
+    expect(modelIds.indexOf('qwen3.7-flash-2026-07-15')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-flash')
+    );
+    expect(modelIds.indexOf('qwen3-vl-embedding')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-text-embedding')
+    );
+    expect(modelIds.indexOf('qwen3.7-text-embedding')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-text-embedding-flash')
+    );
+    expect(modelIds.indexOf('qwen3.7-text-embedding-flash')).toBeLessThan(
+      modelIds.indexOf('text-embedding-v4')
+    );
+    expect(modelIds.indexOf('qwen3-vl-rerank')).toBeLessThan(
+      modelIds.indexOf('qwen3.7-text-rerank')
+    );
+    expect(modelIds.indexOf('qwen3.7-text-rerank')).toBeLessThan(modelIds.indexOf('qwen3-rerank'));
+  });
+
   it('places Gemini Flash models in descending version order', () => {
     const gemini = providerConfigs.find(({ provider }) => provider === 'Gemini');
     const modelIds = gemini?.list.map((model) => model.model) ?? [];
@@ -64,6 +92,29 @@ describe('static model provider ordering', () => {
     const antling = providerConfigs.find(({ provider }) => provider === 'AntLing');
 
     expect(antling?.list[0]?.model).toBe('Ling-3.0-flash-VL');
+  });
+
+  it('places Ernie preview models before their stable aliases', () => {
+    const ernie = providerConfigs.find(({ provider }) => provider === 'Ernie');
+    const modelIds = ernie?.list.map((model) => model.model) ?? [];
+
+    expect(modelIds.indexOf('ernie-x1.1-preview')).toBeGreaterThanOrEqual(0);
+    expect(modelIds.indexOf('ernie-5.0-thinking-preview')).toBeGreaterThanOrEqual(0);
+    expect(modelIds.indexOf('ernie-5.0-thinking-exp')).toBeGreaterThan(
+      modelIds.indexOf('ernie-5.0-thinking-preview')
+    );
+    expect(modelIds.indexOf('ernie-x1.1')).toBeGreaterThan(modelIds.indexOf('ernie-x1.1-preview'));
+    expect(modelIds.indexOf('ernie-5.0-thinking-latest')).toBeGreaterThan(
+      modelIds.indexOf('ernie-5.0-thinking-exp')
+    );
+  });
+
+  it('places Groq-hosted Qwen models in descending version order', () => {
+    const groq = providerConfigs.find(({ provider }) => provider === 'Groq');
+    const modelIds = groq?.list.map((model) => model.model) ?? [];
+
+    expect(modelIds.indexOf('qwen/qwen3.8-27b')).toBeLessThan(modelIds.indexOf('qwen/qwen3.6-27b'));
+    expect(modelIds.indexOf('qwen/qwen3.6-27b')).toBeLessThan(modelIds.indexOf('qwen/qwen3-32b'));
   });
 
   it('places GPT-5.3 Codex before GPT-5.2', () => {
