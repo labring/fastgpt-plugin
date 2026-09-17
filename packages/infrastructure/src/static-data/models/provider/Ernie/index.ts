@@ -53,6 +53,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'ernie-4.5-turbo-20260402',
+      maxContext: 128000,
+      maxTokens: 12288,
+      quoteMaxToken: 123000,
+      maxTemperature: 2,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'ernie-4.5-turbo-128k',
       maxContext: 128000,
       maxTokens: 12288,

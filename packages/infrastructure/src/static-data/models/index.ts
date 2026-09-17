@@ -37,7 +37,7 @@ import siliconflow from './provider/Siliconflow';
 import sparkdesk from './provider/SparkDesk';
 import stepfun from './provider/StepFun';
 import yi from './provider/Yi';
-import { aiproxyChannels, ModelProviderMap, ModelProviders } from './model';
+import { aiproxyChannels, ModelProviderMap, ModelProviders } from './providers';
 import type { ProviderConfigType } from './type';
 
 export const staticModelDataDir = fileURLToPath(new URL('./', import.meta.url));

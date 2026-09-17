@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Provider Updater"
+  short_description: "Update FastGPT static model presets"
+  default_prompt: "Update existing FastGPT static model provider presets from official model catalogs."
