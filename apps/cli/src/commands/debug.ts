@@ -9,17 +9,14 @@ import {
 import {
   type DebugPluginSnapshot,
   type DebugToolSnapshot,
-  DEFAULT_DEBUG_LOCALE,
   loadDebugSession,
-  runDebugTool,
-  selectDebugText
+  runDebugTool
 } from '@fastgpt-plugin/cli/debug/session';
 import { logger } from '@fastgpt-plugin/cli/helpers';
-import { type Command,Option } from 'commander';
+import type { Command } from 'commander';
 
-import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 type DebugCommandOptions = RemoteDebugCommandOptions & {
   tool?: string;
@@ -30,7 +27,6 @@ type DebugCommandOptions = RemoteDebugCommandOptions & {
   secretsFile?: string;
   systemVar?: string;
   systemVarFile?: string;
-  lang?: I18nLangType;
 };
 
 export class DebugCommand extends BaseCommand {
@@ -48,11 +44,6 @@ export class DebugCommand extends BaseCommand {
         .option('--system-var <json>', 'systemVar JSON 字符串 / systemVar JSON string')
         .option('--system-var-file <path>', 'systemVar JSON 文件路径 / systemVar JSON file')
         .option('--upload-dir <path>', '虚拟 uploadFile 的输出目录 / virtual uploadFile output directory')
-        .addOption(
-          new Option('--lang <locale>', '本地化调试输出语言 / Debug output locale')
-            .choices(['en', 'zh-CN', 'zh-Hant'])
-            .default(DEFAULT_DEBUG_LOCALE)
-        )
         .option(
           '--connect <keyOrUrl>',
           '兼容入口：FastGPT debug connection key 或 connect link，建议改用 dev 命令'
@@ -106,9 +97,8 @@ export class DebugCommand extends BaseCommand {
       );
     }
 
-    const locale = options.lang ?? DEFAULT_DEBUG_LOCALE;
     sessions.forEach((session) => {
-      this.printSnapshot(session.snapshot, session.uploadDir, locale);
+      this.printSnapshot(session.snapshot, session.uploadDir);
     });
 
     const duplicatePluginIds = findDuplicateValues(
@@ -158,24 +148,21 @@ export class DebugCommand extends BaseCommand {
     }
   }
 
-  private printSnapshot(
-    snapshot: DebugPluginSnapshot,
-    uploadDir: string,
-    locale: string
-  ): void {
+  private printSnapshot(snapshot: DebugPluginSnapshot, uploadDir: string): void {
     const lines = [
       '插件信息',
       `  entry: ${snapshot.entryDir}`,
       `  index: ${snapshot.indexPath}`,
       `  pluginId: ${snapshot.pluginId}`,
       `  version: ${snapshot.version}`,
-      `  name: ${selectDebugText(snapshot.name, locale) || '-'}`,
-      `  description: ${selectDebugText(snapshot.description, locale) || '-'}`,
+      `  name: ${snapshot.name || '-'}`,
+      `  description: ${snapshot.description || '-'}`,
+      `  toolDescription: ${snapshot.toolDescription || '-'}`,
       `  author: ${snapshot.author ?? '-'}`,
       `  tags: ${snapshot.tags?.join(', ') ?? '-'}`,
       `  permissions: ${snapshot.permissions?.join(', ') ?? '-'}`,
       `  uploadDir: ${uploadDir}`,
-      `  secretKeys: ${this.formatSchemaKeys(snapshot.secretSchema, locale)}`
+      `  secretKeys: ${this.formatSchemaKeys(snapshot.secretSchema)}`
     ];
 
     logger.info(lines.join('\n'));
@@ -183,15 +170,15 @@ export class DebugCommand extends BaseCommand {
     const toolLines = ['可调试工具'];
     snapshot.tools.forEach((tool) => {
       toolLines.push(`  - id: ${tool.id}`);
-      toolLines.push(`    name: ${selectDebugText(tool.name, locale) || '-'}`);
-      toolLines.push(`    description: ${selectDebugText(tool.description, locale) || '-'}`);
-      toolLines.push(`    inputKeys: ${this.formatSchemaKeys(tool.inputSchema, locale)}`);
-      toolLines.push(`    command: ${this.buildCommand(snapshot, tool, locale)}`);
+      toolLines.push(`    name: ${tool.name || '-'}`);
+      toolLines.push(`    description: ${tool.description || '-'}`);
+      toolLines.push(`    inputKeys: ${this.formatSchemaKeys(tool.inputSchema)}`);
+      toolLines.push(`    command: ${this.buildCommand(snapshot, tool)}`);
     });
     logger.info(toolLines.join('\n'));
   }
 
-  private printStreamMessages(messages: ToolStreamMessageType[]): void {
+  private printStreamMessages(messages: PluginStreamMessageType[]): void {
     if (messages.length === 0) {
       logger.info('流式输出: 无');
       return;
@@ -216,17 +203,11 @@ export class DebugCommand extends BaseCommand {
     logger.info(lines.join('\n'));
   }
 
-  private buildCommand(
-    snapshot: DebugPluginSnapshot,
-    tool: DebugToolSnapshot,
-    locale: string
-  ): string {
+  private buildCommand(snapshot: DebugPluginSnapshot, tool: DebugToolSnapshot): string {
     const args = [
       'fastgpt-plugin',
       'debug',
       snapshot.entryDir,
-      '--lang',
-      locale,
       '--run',
       ...(snapshot.isToolSet ? ['--tool', tool.id] : []),
       '--input',
@@ -302,15 +283,9 @@ export class DebugCommand extends BaseCommand {
     }
   }
 
-  private formatSchemaKeys(schema: Record<string, unknown>, locale: string): string {
+  private formatSchemaKeys(schema: Record<string, unknown>): string {
     const properties = asObject(schema.properties);
-    const keys = Object.entries(properties).map(([key, property]) => {
-      const metadata = asObject(property);
-      const i18n = asObject(metadata['x-i18n']);
-      const title = selectDebugText(i18n.title, locale as I18nLangType) ||
-        selectDebugText(metadata.title, locale as I18nLangType);
-      return title ? `${key} (${title})` : key;
-    });
+    const keys = Object.keys(properties);
     return keys.length > 0 ? keys.join(', ') : '-';
   }
 

@@ -7,9 +7,10 @@ import {
   type PluginSourceType,
   UserPluginIdSchema
 } from '../../value-objects/plugin.vo';
+import type { PluginStreamMessageType } from '../../value-objects/plugin-stream.vo';
 import type { Result } from '../../value-objects/result.vo';
 import type { StreamData } from '../../value-objects/stream.vo';
-import type { ToolRunInputType, ToolStreamMessageType } from '../../value-objects/tool.vo';
+import type { ToolRunInputType } from '../../value-objects/tool.vo';
 
 export const ToolListChildItemSchema = z.object({
   id: ToolSetChildItemSchema.shape.id,
@@ -62,5 +63,5 @@ export type ToolDetailType = z.infer<typeof ToolDetailSchema>;
 export interface ToolManagerPort {
   list(arg0: ToolListInputType): Promise<Result<ToolListOutputType>>;
   detail(arg0: ToolDetailInputType): Promise<Result<ToolDetailType>>;
-  run(arg0: ToolRunInputType): Promise<Result<StreamData<ToolStreamMessageType>>>;
+  run(arg0: ToolRunInputType): Promise<Result<StreamData<PluginStreamMessageType>>>;
 }
