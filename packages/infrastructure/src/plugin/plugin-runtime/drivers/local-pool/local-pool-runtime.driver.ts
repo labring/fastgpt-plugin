@@ -8,10 +8,11 @@
 import { Mutex } from 'es-toolkit';
 
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
-import type {
-  PluginInvokeEventNameType,
-  PluginRuntimeInvokeOptions,
-  PluginRuntimeManagerPort
+import {
+  isPluginEventSupported,
+  type PluginInvokeEventNameType,
+  type PluginRuntimeInvokeOptions,
+  type PluginRuntimeManagerPort
 } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { createError, type RegisteredError } from '@domain/value-objects/error.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
@@ -444,15 +445,7 @@ export class LocalPoolPluginRuntimeManager
     if (!plugin) return failureResult(createError(ErrorCode.pluginRuntimePluginNotFound));
 
     // 判断插件是否能调用这个方法
-    // TODO: 这个逻辑应该抽出去
-    const check = () => {
-      if (plugin.meta.type === 'tool' && eventName === 'run') {
-        return true;
-      }
-      return false;
-    };
-
-    if (check()) {
+    if (isPluginEventSupported(plugin.meta.type, eventName)) {
       try {
         const result = await plugin.service.invoke<P, R, S>({
           eventName,

@@ -5,6 +5,7 @@ import type { StatusCodeType } from '../http/http.type';
 export const OpenAPITagsEnum = {
   plugin: 'plugin',
   tool: 'tool',
+  moderation: 'moderation',
   model: 'model',
   workflow: 'workflow',
   connectionGateway: 'connection-gateway'

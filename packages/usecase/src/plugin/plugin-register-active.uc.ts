@@ -1,4 +1,4 @@
-import type { PluginType } from '@domain/entities/plugin.entity';
+import { isRunnablePluginType, type PluginType } from '@domain/entities/plugin.entity';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { normalizeToError, serializeError } from '@domain/value-objects/error.vo';
@@ -16,7 +16,7 @@ export type PluginRegisterActiveUCDeps = {
 
 type Output = Promise<Result>;
 
-const isRunnablePlugin = (plugin: PluginType) => plugin.type === 'tool';
+const isRunnablePlugin = (plugin: PluginType) => isRunnablePluginType(plugin.type);
 
 type RegisterFailure = {
   uniqueId?: PluginUniqueIdType;

@@ -1,5 +1,7 @@
 import z from 'zod';
 
+import { PluginInvokeEventnameSchema } from '../ports/plugin/plugin-runtime-manager.port';
+
 import { PluginStreamMessageSchema } from './plugin-stream.vo';
 import { SystemVarSchema } from './system-var.vo';
 
@@ -9,7 +11,7 @@ export const CONNECTION_GATEWAY_BIND_CAPABILITY = 'gateway.bind';
 
 export const ConnectionGatewayPluginDebugRequestPayloadSchema = z.object({
   kind: z.literal('plugin-debug.run'),
-  eventName: z.literal('run'),
+  eventName: PluginInvokeEventnameSchema,
   payload: z.object({
     pluginId: z.string().min(1).optional(),
     input: z.record(z.string(), z.unknown()),
