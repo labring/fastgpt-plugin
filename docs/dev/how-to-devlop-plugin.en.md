@@ -6,12 +6,13 @@ Language: [简体中文](./how-to-devlop-plugin.md) | [English](./how-to-devlop-
 
 This document targets system plugin development after FastGPT v4.15.0. The new FastGPT Plugin service unifies system tools, model presets, and similar capabilities as installable, updatable, runtime-isolated plugin packages. A plugin is eventually delivered to the FastGPT Plugin service as a `.pkg` file.
 
-The currently stable plugin type is system tool plugins:
+The currently stable plugin types are system tool plugins and content moderation plugins:
 
 - Single tool: one plugin exposes one tool and is declared with `defineTool()`.
 - Tool suite: one plugin exposes multiple related child tools and is declared with `defineToolSet()`.
+- Content moderation: one plugin maps a provider's content review service onto the FastGPT standard structure and is declared with `defineModeration()`.
 
-System tool plugins run in the runtime provided by the FastGPT Plugin service. The FastGPT main service invokes tools through the plugin service, and plugin code uses `@fastgpt-plugin/sdk-factory` to describe input, output, secret configuration, and execution logic.
+System tool plugins run in the runtime provided by the FastGPT Plugin service. The FastGPT main service invokes tools through the plugin service, and plugin code uses `@fastgpt-plugin/sdk-factory` to describe input, output, secret configuration, and execution logic. Content moderation plugins use the same runtime and package protocol, but the end-to-end flow in this document covers system tools only; for moderation authoring rules see `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`.
 
 ## Differences From The Legacy Mechanism
 
@@ -53,7 +54,7 @@ Clarify these items before coding:
 
 | Information | Description |
 | --- | --- |
-| Plugin type | `tool` or `tool-suite`. |
+| Plugin type | `tool`, `tool-suite`, or `moderation`. |
 | Plugin ID | `pluginId`, globally stable and unique. Keep it unchanged after release. |
 | Child tool ID | Required only for tool suites. `children[].id` stays unchanged after release. |
 | Chinese and English names | `name.en` and `name.zh-CN`. |
@@ -144,7 +145,7 @@ The CLI creates the plugin directory and common files:
 
 | File | Purpose |
 | --- | --- |
-| `index.ts` | Plugin entry, default-exporting `defineTool()` or `defineToolSet()`. |
+| `index.ts` | Plugin entry, default-exporting `defineTool()`, `defineToolSet()`, or `defineModeration()`. |
 | `package.json` | Plugin dependencies and `build`, `build:dev`, `pack`, and `test` scripts. |
 | `tsconfig.json` | TypeScript config. |
 | `vitest.config.ts` | Test config. |
@@ -366,6 +367,10 @@ Business plugins are released to private repositories. Manage versions, secrets,
 ### How should I choose between `tool` and `tool-suite`?
 
 Use `tool` for a single capability. Use `tool-suite` for multiple capabilities that share authentication, the same upstream API, and strong business relevance, such as search, detail, and task creation in one plugin.
+
+### How do I write a content moderation plugin?
+
+Declare it with `defineModeration()`; authoring rules live in `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`. Three easy mistakes: return an `error` verdict result instead of throwing when the provider cannot decide; put per-item detail in `hits` and treat the top-level `verdict` as the only authoritative judgement; express strictness through the provider's own configuration, since the framework does not normalise it. This version serves `modality: 'text'` only.
 
 ### How should plugin versions be managed?
 

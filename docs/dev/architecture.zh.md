@@ -51,6 +51,7 @@ flowchart TB
     subgraph Usecase["应用层 packages/usecase"]
         PluginUC["Plugin 用例"]
         ToolUC["Tool 用例"]
+        ModerationUC["审查用例"]
         RuntimeUC["Runtime 用例"]
         ModelUC["Model 用例"]
     end
@@ -104,9 +105,9 @@ flowchart TB
 
 `packages/domain` 保存稳定的业务模型：
 
-- `entities/`：插件、工具、模型、数据集、工作流等核心实体。
-- `value-objects/`：`Result`、错误、权限、流式响应、国际化字符串等不可变业务值。
-- `ports/`：仓储、文件存储、URL 文件获取、插件运行时、工具调用等端口接口。
+- `entities/`：插件、工具、审查插件、模型、数据集、工作流等核心实体。
+- `value-objects/`：`Result`、错误、权限、流式响应、审查标准契约、国际化字符串等不可变业务值。
+- `ports/`：仓储、文件存储、URL 文件获取、插件运行时、工具与审查调用等端口接口。
 
 端口由领域层定义，具体实现放在 `infrastructure`。用例只依赖端口，便于替换 Mongo、S3、运行时驱动或外部文件获取策略。
 
@@ -116,6 +117,7 @@ flowchart TB
 
 - `plugin/`：插件上传、安装、确认、删除、配置读写、版本列表、标签列表、替换激活插件等。
 - `tool/`：工具列表、工具详情、工具运行。
+- `moderation/`：审查插件详情、内容审查。
 - `model/`：模型列表、模型供应商。
 - `runtime/`：运行时指标快照。
 
@@ -141,7 +143,7 @@ Server 路由基于这些合约注册 OpenAPI，并在 handler 内调用 usecase
 - `storage/s3/`：S3 客户端与对象存储能力。
 - `redis/`：Redis 客户端。
 - `file-storage/`、`file-ttl/`：本地与远程文件存储、临时文件清理。
-- `plugin/`：插件仓储、`.pkg` 解析、调用、运行时管理与驱动。
+- `plugin/`：插件仓储、`.pkg` 解析、调用、运行时管理与驱动、审查管理器。
 - `logger/`、`metrics/`：日志与 OpenTelemetry 指标。
 - `utils/secure/`：SSRF 等安全工具。
 
@@ -155,7 +157,7 @@ Server 路由基于这些合约注册 OpenAPI，并在 handler 内调用 usecase
 
 1. 初始化 logger 与 metrics。
 2. 创建路由依赖。
-3. 注册 model、plugin、runtime、tool、workflow 路由。
+3. 注册 model、plugin、runtime、tool、moderation、workflow 路由。
 4. 初始化代理、数据库、运行时等基础设施。
 5. 通过 Hono Node Server 监听 `env.PORT`。
 6. 处理 `SIGTERM` 和 `SIGINT`，关闭 HTTP server、metrics 和 logger。
@@ -170,8 +172,8 @@ Server 路由基于这些合约注册 OpenAPI，并在 handler 内调用 usecase
 
 ## SDK
 
-- `sdk/client`：面向 FastGPT 或其他调用方，封装 FastGPT Plugin 服务请求、传输层和工具流式响应。
-- `sdk/factory`：面向插件作者，提供插件 manifest、tool factory、invoke client、runtime channel 等声明能力。
+- `sdk/client`：面向 FastGPT 或其他调用方，封装 FastGPT Plugin 服务请求、传输层、工具流式响应与内容审查。
+- `sdk/factory`：面向插件作者，提供插件 manifest、tool factory、moderation factory、invoke client、runtime channel 等声明能力。
 
 SDK 独立发布，`apps/server` 构建时会先构建 `sdk/factory`，确保运行时加载插件所需类型和产物可用。
 
@@ -207,7 +209,7 @@ sequenceDiagram
 4. usecase 通过 `LocalFileStoragePort` 保存临时文件。
 5. usecase 通过 `PluginPKGFilePort` 解析 `.pkg` 或 zip 内的插件包。
 6. usecase 通过 `PluginRepoPort` 写入插件信息与文件。
-7. 如果插件类型是 tool，usecase 通过 `PluginRuntimeManagerPort` 注册运行时。
+7. 如果插件类型可运行（`tool` 或 `moderation`），usecase 通过 `PluginRuntimeManagerPort` 注册运行时。
 
 ## 依赖注入约定
 
@@ -256,7 +258,7 @@ sequenceDiagram
 ## 扩展原则
 
 - 保持 `domain` 和 `usecase` 不依赖 Hono、Mongo、S3、Redis 等基础设施细节。
-- 新增插件类型时，从领域实体、包协议解析、运行时注册和 API 合约四个位置同步建模。
+- 新增插件类型时，以下位置必须一起更新：domain 的 `PluginTypeSchema` 与判别式 `PluginSchema`、interface-adapter 的 `PluginTypeDTOSchema`（一份独立手抄的枚举，决定列表过滤能否通过）、`PluginTypeEventNames` 里的按类型事件门禁、包加载与 codec 注册、运行时注册、API 合约、SDK factory，以及 CLI 的按类型分发。
 - 新增运行时驱动时，实现 `PluginRuntimeManagerPort`，并在 `deps.ts` 中切换装配。
 - 新增存储后端时，实现对应 file storage 或 repo port，保持 usecase 不变。
 - 修改公开 SDK、CLI、HTTP API 或 `.pkg` 包协议时，需要考虑向后兼容和升级文档。
