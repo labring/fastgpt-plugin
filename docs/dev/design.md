@@ -19,6 +19,8 @@ FastGPT-Plugin v1.0.0 systematically refactors the plugin project so plugin inst
 
 **Tool**: a plugin type that usually wraps third-party services, internal APIs, or local computation and can be called by workflows and Agents.
 
+**Moderation**: a plugin type that normalises different providers' content moderation services into one structure: a four-state verdict (`pass` / `block` / `suspected` / `error`) plus per-hit details (normalised label, provider native label, confidence, matched keywords). FastGPT decides whether to allow the content; this layer implements neither the decision nor strictness normalisation.
+
 **Plugin Marketplace**: the centralized platform for managing plugins, where users can search, download, and install plugins.
 
 **Runtime**: the backend implementation responsible for executing plugin code. The current default production runtime is the local process pool. The Connection Gateway debug runtime is used for remote debugging. The Serverless runtime is reserved for future extension.
