@@ -203,8 +203,8 @@ Debug invocation is handled by `ConnectionGatewayDebugRuntimeManager`:
 
 1. Find a Gateway session by source.
 2. Require the session to exist with `consumerType=plugin-debug`, `status=connected`, and `ownerAlive=true`.
-3. Publish a `plugin-debug.run` payload through `/requests:stream`.
-4. Convert CLI `plugin-debug.accepted` and `plugin-debug.stream` envelopes into the tool invocation stream.
+3. Publish a `plugin-debug.run` payload through `/requests:stream`. The payload carries the target `eventName` (`run` for tools, `check` for moderation plugins) alongside the event payload.
+4. Convert CLI `plugin-debug.accepted` and `plugin-debug.stream` envelopes into the plugin invocation stream.
 
 Debug plugin listing is handled by `DebugPluginRepoOverlay`:
 

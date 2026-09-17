@@ -116,6 +116,18 @@ System plugins can be installed in two ways:
 
 After a plugin is installed, the service saves the plugin package file, parses plugin metadata, and registers the plugin with the runtime when it is enabled. Runtime configuration is saved per plugin. When no configuration record exists, defaults from environment variables are used.
 
+## Moderation Plugin
+
+`moderation` is the second runnable plugin type. A moderation plugin maps one provider's content review service onto one standard structure, so FastGPT needs no provider-specific integration. The plugin service exposes it through `GET /moderation` (plugin detail) and `POST /moderation/check` (content check). Both run through the same package, runtime, and process-pool pipeline as tools; the plugin is invoked with the `check` event instead of `run`.
+
+The contract normalises the provider signal:
+
+- **Verdict** is one of `pass`, `block`, `suspected`, or `error`. `suspected` and `error` are deliberately distinct: `suspected` is a judgement the provider did make (Tencent `Review`, Baidu `conclusionType=3`, NetEase `action=2`) and usually means human review, while `error` means the provider could not judge at all (HTTP error, timeout, unknown label, Baidu `conclusionType=4`) and usually means retry or fallback. A provider that cannot judge returns an `error` verdict result instead of failing the call, so callers always receive one shape.
+- **Hits** carry the normalised label, the provider's own label (`providerLabel`), the provider's own confidence score, and the matched keywords. Hits are detail for callers to locate and review; the top-level `verdict` is the authoritative judgement. There is deliberately no per-hit verdict and no aggregate label or score: confidence is per label, so a framework-wide severity scale would invent a calibration the provider never supplied.
+- **Modality** reserves `text`, `image`, `audio`, and `video` in the schema, but this version serves text only. Any other modality fails with `plugin.moderation.modality_not_supported` instead of being silently reviewed as text.
+
+Whether content is allowed is FastGPT's decision; this layer reports the verdict and the hits and nothing more. Two things are deliberately absent. **Strictness** belongs to the provider: its console-side policy identifier or score thresholds reach the plugin through the plugin's own `secretSchema`, so the framework neither normalises a review level nor rewrites the verdict against a threshold. **Asynchronous providers** (submit and poll) arrive together with multimodal support, at which point the `status` field of the check envelope gains a `pending` value.
+
 ## Remote Debug Design
 
 Remote debugging lets developers run plugins locally and temporarily attach them to a FastGPT test environment. It is a debug connection layer, not a production plugin runtime.
@@ -128,7 +140,7 @@ Current flow:
 4. Local CLI runs `fastgpt-plugin dev` and calls `POST /plugin/debug-sessions/connection-key:exchange` with the `connectionKey`.
 5. Plugin Server validates the connection key, signs a short-lived WebSocket `connectToken`, and returns `gatewayUrl`, `source`, `connectToken`, and `expiresAt`.
 6. CLI connects to Connection Gateway and sends `bind` plus local plugin metadata.
-7. Plugin Server reads metadata through Gateway status and temporarily merges local plugins into plugin and tool lists under the debug source.
+7. Plugin Server reads metadata through Gateway status and temporarily merges local plugins into the plugin list under the debug source; tool plugins also appear in the tool list.
 8. When FastGPT invokes a debug plugin, Plugin Server publishes a request envelope through Gateway internal API. CLI executes the local plugin and streams results back.
 
 ```mermaid
@@ -163,7 +175,7 @@ Debug APIs:
 
 Debug source plugin queries are handled by `DebugPluginRepoOverlay`. It splits requested sources into debug sources and regular sources. Debug sources read local plugin metadata from Gateway session metadata; regular sources continue to read from the persistent plugin repository; results are merged afterwards.
 
-Debug invocation is handled by `ConnectionGatewayDebugRuntimeManager`. It requires a connected Gateway session with `ownerAlive=true`, then sends a `plugin-debug.run` envelope. CLI receives only a short-lived connect token and does not need `CONNECTION_GATEWAY_AUTH_TOKEN` or `JWT_SECRET`.
+Debug invocation is handled by `ConnectionGatewayDebugRuntimeManager`. It requires a connected Gateway session with `ownerAlive=true`, then sends a `plugin-debug.run` envelope carrying the target `eventName` (`run` for tools, `check` for moderation plugins). CLI receives only a short-lived connect token and does not need `CONNECTION_GATEWAY_AUTH_TOKEN` or `JWT_SECRET`.
 
 For Connection Gateway long-connection protocol, sessions, mailbox, owner leases, and limits, see [Connection Gateway Design](./connection-gateway-design.md).
 
@@ -185,7 +197,7 @@ System-level plugins can configure "system secrets" that other users in the syst
 
 ### Local Process Pool Parameters
 
-Each tool plugin can configure four runtime parameters.
+Each runnable plugin (tool or moderation) can configure four runtime parameters.
 
 ![config](../imgs/process-pool-runtime-config.png)
 
