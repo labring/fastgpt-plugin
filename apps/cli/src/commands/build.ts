@@ -1,9 +1,9 @@
-import { buildToolPackage, type ToolBuildOptions } from '@fastgpt-plugin/cli/build';
+import { buildPluginPackage, type PluginBuildOptions } from '@fastgpt-plugin/cli/build';
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
 import { formatCliError, logger } from '@fastgpt-plugin/cli/helpers';
 import type { Command } from 'commander';
 
-type BuildCommandOptions = ToolBuildOptions & {
+type BuildCommandOptions = PluginBuildOptions & {
   verbose?: boolean;
 };
 
@@ -33,7 +33,7 @@ export class BuildCommand extends BaseCommand {
   public async run(options: BuildCommandOptions): Promise<void> {
     const start = Date.now();
     try {
-      const result = await buildToolPackage(options);
+      const result = await buildPluginPackage(options);
 
       const duration = ((Date.now() - start) / 1000).toFixed(2);
 

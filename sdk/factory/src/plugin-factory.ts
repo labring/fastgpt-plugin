@@ -1,4 +1,8 @@
-import { PluginRuntimeModeEnum, type PluginRuntimeModeType } from '@domain/value-objects/plugin.vo';
+import type { PluginTypeType } from '@domain/entities/plugin-base.entity';
+import {
+  PluginRuntimeModeEnum,
+  type PluginRuntimeModeType
+} from '@domain/value-objects/plugin.vo';
 import { createCurrentProcessPluginChannel } from '@infrastructure/plugin/plugin-runtime/drivers/channel/ipc';
 import { PluginChannelClientMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
 
@@ -14,8 +18,11 @@ import {
  * Plugin 侧基类，管理生命周期（ready 信号、信号处理）。
  * 不要直接实例化这个类，而是继承它来创建具体的 PluginFactory
  */
-export class PluginFactory {
+export abstract class PluginFactory {
   private channel: PluginRuntimeChannel | undefined;
+
+  /** 该 factory 声明的插件类型，用于构建产物的 manifest.json 与调试会话 */
+  public abstract getPluginType(): PluginTypeType;
 
   protected getChannel() {
     if (!this.channel) {

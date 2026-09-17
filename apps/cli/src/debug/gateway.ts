@@ -13,7 +13,7 @@ import {
 import { PluginStreamMessageSchema, type PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 
 import type { LocalDebugRuntime } from './runtime';
-import { type DebugPluginSnapshot, runDebugTool } from './session';
+import { type DebugPluginSnapshot, runDebugPlugin } from './session';
 
 export type DebugGatewayClientOptions = {
   gatewayUrl: string;
@@ -371,10 +371,11 @@ async function handleGatewayEnvelope({
   });
 
   try {
-    const result = await runDebugTool({
+    const result = await runDebugPlugin({
       runtime: target.runtime,
       snapshot: target.snapshot,
       toolId: request.payload.childId,
+      eventName: request.eventName,
       input: request.payload.input,
       secrets: request.payload.secrets,
       systemVar: request.payload.systemVar,
@@ -462,6 +463,7 @@ function makePluginDebugMetadata(
         source,
         pluginId: target.snapshot.pluginId,
         version: target.snapshot.version,
+        type: target.snapshot.type,
         name: target.snapshot.name,
         description: target.snapshot.description,
         toolDescription: target.snapshot.toolDescription,
@@ -469,6 +471,7 @@ function makePluginDebugMetadata(
         tags: target.snapshot.tags,
         permissions: target.snapshot.permissions,
         secretSchema: target.snapshot.secretSchema,
+        ...(target.snapshot.meta ? { meta: target.snapshot.meta } : {}),
         isToolSet: target.snapshot.isToolSet,
         tools: target.snapshot.tools
       }))

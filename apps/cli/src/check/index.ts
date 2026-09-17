@@ -1,7 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import z from 'zod';
+
 import {
+  ModerationManifestSchema,
+  type ModerationManifestType,
   ToolManifestSchema,
   type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
@@ -77,13 +81,9 @@ export async function checkBuildOutput(options: CheckOptions): Promise<CheckResu
     }
 
     if (rawManifest !== undefined) {
-      const result = ToolManifestSchema.safeParse(rawManifest);
-      if (!result.success) {
-        for (const issue of result.error.issues) {
-          errors.push(`manifest.json 校验失败 [${issue.path.join('.')}]: ${issue.message}`);
-        }
-      } else {
-        await validateManifestAssets(result.data, outputDir, errors, warnings);
+      const manifest = parseManifestByType(rawManifest, errors);
+      if (manifest) {
+        await validateManifestAssets(manifest, outputDir, errors, warnings);
       }
     }
   }
@@ -95,8 +95,38 @@ export async function checkBuildOutput(options: CheckOptions): Promise<CheckResu
   };
 }
 
+/** 按 manifest 的 type 选择对应 schema 校验，未知类型报明确错误 */
+function parseManifestByType(
+  rawManifest: unknown,
+  errors: string[]
+): ToolManifestType | ModerationManifestType | undefined {
+  const typeResult = z.object({ type: z.string() }).safeParse(rawManifest);
+  if (!typeResult.success) {
+    errors.push('manifest.json 校验失败 [type]: 缺少 type 字段');
+    return undefined;
+  }
+
+  const { type } = typeResult.data;
+  if (type !== 'tool' && type !== 'moderation') {
+    errors.push(`不支持的插件类型: ${type}`);
+    return undefined;
+  }
+
+  const result = (type === 'tool' ? ToolManifestSchema : ModerationManifestSchema).safeParse(
+    rawManifest
+  );
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      errors.push(`manifest.json 校验失败 [${issue.path.join('.')}]: ${issue.message}`);
+    }
+    return undefined;
+  }
+
+  return result.data;
+}
+
 async function validateManifestAssets(
-  manifest: ToolManifestType,
+  manifest: ToolManifestType | ModerationManifestType,
   outputDir: string,
   errors: string[],
   warnings: string[]
@@ -106,7 +136,7 @@ async function validateManifestAssets(
     errors.push(`manifest.json 引用的主 logo 不存在：${manifest.icon}`);
   }
 
-  if (manifest.children && manifest.children.length > 0) {
+  if (manifest.type === 'tool' && manifest.children && manifest.children.length > 0) {
     for (const child of manifest.children) {
       const childIconPath = path.join(outputDir, child.icon);
       if (!(await pathExists(childIconPath))) {

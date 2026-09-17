@@ -15,7 +15,7 @@ export interface BaseCommandOptions {
 export type TemplateDependencyMode = 'semver' | 'catalog';
 
 export interface CreatePluginCommandOptions extends BaseCommandOptions {
-  type: 'tool' | 'tool-suite';
+  type: 'tool' | 'tool-suite' | 'moderation';
   description?: string;
   dependencyMode: TemplateDependencyMode;
 }

@@ -3,7 +3,7 @@ import type { CreatePluginCommandOptions } from '@fastgpt-plugin/cli/interfaces/
 import type { IPrompt } from '@fastgpt-plugin/cli/prompts/base/types';
 import { defaultDeps, type PromptDeps } from '@fastgpt-plugin/cli/prompts/create/deps';
 import { inputPrompt } from '@fastgpt-plugin/cli/prompts/create/input-prompt';
-import { normalizeDependencyMode } from '@fastgpt-plugin/cli/prompts/create/normalize';
+import { normalizeDependencyMode, normalizePluginType } from '@fastgpt-plugin/cli/prompts/create/normalize';
 import type { PluginType, RawCreateCliOptions } from '@fastgpt-plugin/cli/prompts/create/types';
 
 export class CreatePrompt implements IPrompt<RawCreateCliOptions, CreatePluginCommandOptions> {
@@ -20,11 +20,7 @@ export class CreatePrompt implements IPrompt<RawCreateCliOptions, CreatePluginCo
    */
   async run(input: RawCreateCliOptions): Promise<CreatePluginCommandOptions> {
     const dependencyMode = normalizeDependencyMode(input.dependencyModeFlag);
-    const getPluginType = () => {
-      if (!input.typeFlag) return undefined;
-      return input.typeFlag === 'tool-suite' ? 'tool-suite' : 'tool';
-    };
-    const pluginType = getPluginType();
+    const pluginType = normalizePluginType(input.typeFlag);
 
     if (input.nameArg && pluginType && input.descriptionFlag !== undefined) {
       return {
@@ -57,6 +53,11 @@ export class CreatePrompt implements IPrompt<RawCreateCliOptions, CreatePluginCo
             name: '工具集',
             value: 'tool-suite' as const,
             description: '创建一个包含多个子工具的工具集'
+          },
+          {
+            name: '内容审查',
+            value: 'moderation' as const,
+            description: '创建一个内容审查插件（兼容不同 provider 的审查服务）'
           }
         ]
       });

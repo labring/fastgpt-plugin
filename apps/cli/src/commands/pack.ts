@@ -2,7 +2,7 @@ import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { buildToolPackage } from '@fastgpt-plugin/cli/build';
+import { buildPluginPackage } from '@fastgpt-plugin/cli/build';
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
 import { formatCliError, logger } from '@fastgpt-plugin/cli/helpers';
 import type { Command } from 'commander';
@@ -51,7 +51,7 @@ export class PackCommand extends BaseCommand {
     const pkgPath = path.join(outputDir, `${packageName}.pkg`);
 
     try {
-      await buildToolPackage({
+      await buildPluginPackage({
         entry: entryDir,
         output: distDir,
         minify: false,

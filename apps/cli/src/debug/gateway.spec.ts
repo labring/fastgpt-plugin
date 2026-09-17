@@ -718,6 +718,7 @@ function makeSnapshot() {
   return {
     entryDir: '/tmp/plugin',
     indexPath: '/tmp/plugin/index.ts',
+    type: 'tool' as const,
     pluginId: 'getTime',
     version: '1.0.0',
     name: 'getTime',

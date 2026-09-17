@@ -6,21 +6,24 @@ import { logger } from '@fastgpt-plugin/cli/helpers';
 import { build as tsdownBuild } from 'tsdown';
 import z from 'zod';
 
+import type { PluginTypeType } from '@domain/entities/plugin-base.entity';
 import {
+  ModerationManifestSchema,
+  type PluginManifestType,
   ToolManifestSchema,
   type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
 
 const SDK_FACTORY_PACKAGE = '@fastgpt-plugin/sdk-factory';
 
-export interface ToolBuildOptions {
+export interface PluginBuildOptions {
   entry: string;
   output: string;
   minify: boolean;
   format: 'esm' | 'cjs';
 }
 
-export interface ToolBuildResult {
+export interface PluginBuildResult {
   entryDir: string;
   outputDir: string;
   files: string[];
@@ -39,15 +42,17 @@ type PackableToolChild = {
   toolDescription?: string;
 };
 
-type PackableToolExport = {
+type PackablePluginExport = {
+  getPluginType(): PluginTypeType;
   getUserToolManifest(): Record<string, unknown>;
+  getUserModerationManifest(): Record<string, unknown>;
   getSecretSchema(): z.ZodType<any>;
   getToolHandler(childId?: string): PackableToolHandler | undefined;
   getChildManifests(): PackableToolChild[];
 };
 
 type BuildPlan = {
-  manifest: ToolManifestType;
+  manifest: PluginManifestType;
   logoFiles: Array<{
     fileName: string;
     sourcePath: string;
@@ -64,7 +69,7 @@ type BuildPlan = {
  *   dist/README.md（可选）
  *   dist/assets/**（可选）
  */
-export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolBuildResult> {
+export async function buildPluginPackage(options: PluginBuildOptions): Promise<PluginBuildResult> {
   const entryDir = path.resolve(options.entry);
   const outputDir = path.resolve(options.output);
   const indexPath = path.join(entryDir, 'index.ts');
@@ -115,7 +120,7 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
 
     const tAssembleStart = Date.now();
     const indexJsPath = path.join(outputDir, 'index.js');
-    const toolExport = await loadPackableTool(indexJsPath);
+    const toolExport = await loadPackablePlugin(indexJsPath);
     const plan = await createBuildPlan(entryDir, toolExport);
     await fs.writeFile(
       path.join(outputDir, 'manifest.json'),
@@ -153,23 +158,23 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
   }
 }
 
-async function loadPackableTool(indexJsPath: string): Promise<PackableToolExport> {
+async function loadPackablePlugin(indexJsPath: string): Promise<PackablePluginExport> {
   await assertPathExists(indexJsPath, `找不到编译产物 index.js：${indexJsPath}`);
 
   const moduleUrl = `${pathToFileURL(indexJsPath).href}?t=${Date.now()}`;
   const mod = await import(moduleUrl);
-  const tool = mod.default;
+  const plugin = mod.default;
 
-  if (!isPackableToolExport(tool)) {
+  if (!isPackablePluginExport(plugin)) {
     throw new Error(
-      'index.ts 的 default export 必须是 defineTool()/defineToolSet() 返回的 factory-sdk 实例'
+      'index.ts 的 default export 必须是 defineTool()/defineToolSet()/defineModeration() 返回的 factory-sdk 实例；若为旧版本 SDK 构建的产物，请升级 @fastgpt-plugin/sdk-factory 到 2.x'
     );
   }
 
-  return tool;
+  return plugin;
 }
 
-async function createBuildPlan(entryDir: string, tool: PackableToolExport): Promise<BuildPlan> {
+async function createBuildPlan(entryDir: string, plugin: PackablePluginExport): Promise<BuildPlan> {
   const rootLogoPath = await findRootLogoFile(entryDir);
   if (!rootLogoPath) {
     throw new Error(`找不到主 logo 文件，请在 ${entryDir} 下提供 logo.*`);
@@ -178,13 +183,30 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
   const rootLogoName = path.basename(rootLogoPath);
   const logoFiles = new Map<string, string>([[rootLogoName, rootLogoPath]]);
 
-  const userManifest = tool.getUserToolManifest();
-  const secretSchema = z.toJSONSchema(tool.getSecretSchema());
+  if (plugin.getPluginType() === 'moderation') {
+    const manifestCandidate = {
+      ...plugin.getUserModerationManifest(),
+      type: 'moderation',
+      icon: rootLogoName,
+      secretSchema: z.toJSONSchema(plugin.getSecretSchema())
+    };
+
+    return {
+      manifest: ModerationManifestSchema.parse(manifestCandidate),
+      logoFiles: [...logoFiles.entries()].map(([fileName, sourcePath]) => ({
+        fileName,
+        sourcePath
+      }))
+    };
+  }
+
+  const userManifest = plugin.getUserToolManifest();
+  const secretSchema = z.toJSONSchema(plugin.getSecretSchema());
   const toolDescription = pickToolDescription(
     getOptionalString(userManifest.toolDescription),
     userManifest.description
   );
-  const childManifests = tool.getChildManifests();
+  const childManifests = plugin.getChildManifests();
 
   const manifestCandidate: Record<string, unknown> = {
     ...userManifest,
@@ -195,7 +217,7 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
   };
 
   if (childManifests.length === 0) {
-    const handler = tool.getToolHandler();
+    const handler = plugin.getToolHandler();
     if (!handler) {
       throw new Error('default export 未注册任何工具 handler');
     }
@@ -205,7 +227,7 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
   } else {
     manifestCandidate.children = await Promise.all(
       childManifests.map(async (child) => {
-        const handler = tool.getToolHandler(child.id);
+        const handler = plugin.getToolHandler(child.id);
         if (!handler) {
           throw new Error(`找不到子工具 handler: ${child.id}`);
         }
@@ -333,19 +355,8 @@ async function copyDirectory(sourceDir: string, targetDir: string): Promise<void
   }
 }
 
-function isPackableToolExport(value: unknown): value is PackableToolExport {
-  return Boolean(
-    value &&
-      typeof value === 'object' &&
-      'getUserToolManifest' in value &&
-      typeof value.getUserToolManifest === 'function' &&
-      'getSecretSchema' in value &&
-      typeof value.getSecretSchema === 'function' &&
-      'getToolHandler' in value &&
-      typeof value.getToolHandler === 'function' &&
-      'getChildManifests' in value &&
-      typeof value.getChildManifests === 'function'
-  );
+function isPackablePluginExport(value: unknown): value is PackablePluginExport {
+  return Boolean(value && typeof value === 'object' && 'getPluginType' in value);
 }
 
 function pickToolDescription(

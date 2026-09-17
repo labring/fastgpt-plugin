@@ -1,5 +1,6 @@
 import z from 'zod';
 
+import { PluginTypeEnum, type PluginTypeType } from '@domain/entities/plugin-base.entity';
 import type { InvokePort } from '@domain/ports/invoke.port';
 import type { PluginStreamAnswerType, PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
@@ -160,6 +161,10 @@ export class ToolFactory extends PluginFactory {
 
   static getInstance(userToolManifest: UserToolManifestType): ToolFactory {
     return new ToolFactory(userToolManifest);
+  }
+
+  public getPluginType(): PluginTypeType {
+    return PluginTypeEnum.tool;
   }
 
   public getSecretSchema() {

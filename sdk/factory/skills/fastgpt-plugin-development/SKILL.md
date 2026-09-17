@@ -12,16 +12,19 @@ description: Use as the entry skill when a user wants to develop a FastGPT plugi
 先确认用户要开发的插件类型：
 
 - 系统工具：通过 `@fastgpt-plugin/sdk-factory` 暴露 `defineTool()` 或 `defineToolSet()`，由 FastGPT 作为工具调用。
+- 内容审查：通过 `@fastgpt-plugin/sdk-factory` 暴露 `defineModeration()`，把某个 provider 的审查服务归一化成标准结构供 FastGPT 调用。
 - 其他插件类型：按后续新增的专项 skill 处理。
 
 当前已支持：
 
 - `fastgpt-system-tool-development`: 系统工具插件开发规范，文件位于 `../fastgpt-system-tool-development/SKILL.md`。
+- `fastgpt-moderation-development`: 内容审查插件开发规范，文件位于 `../fastgpt-moderation-development/SKILL.md`。
 
 ## 路由规则
 
 - 用户提到系统工具、tool、tool-suite、工具调用、`defineTool()`、`defineToolSet()`、`createToolHandler()` 时，继续读取 `../fastgpt-system-tool-development/SKILL.md`。
-- 用户只说“开发插件”且没有说明类型时，先根据需求判断是否属于系统工具；能判断时直接进入对应专项 skill。
+- 用户提到内容审查、moderation、`defineModeration()`、`defineModerationManifest()`、审查插件时，继续读取 `../fastgpt-moderation-development/SKILL.md`。
+- 用户只说“开发插件”且没有说明类型时，先根据需求判断是否属于系统工具或内容审查；能判断时直接进入对应专项 skill。
 - 无法判断插件类型时，先询问用户插件要暴露成哪类能力，再进入对应专项 skill。
 
 ## 通用原则
