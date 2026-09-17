@@ -1,6 +1,8 @@
 import { BlobWriter, Uint8ArrayReader, ZipWriter } from '@zip.js/zip.js';
 import { describe, expect, it } from 'vitest';
 
+import { successResult } from '@domain/value-objects/result.vo';
+
 import { parsePkg } from './pkg-parser';
 
 const baseManifest = {
@@ -23,11 +25,15 @@ const baseManifest = {
 const createPkg = async ({
   index = 'export default {};\n',
   lastModDate,
-  reverseEntries = false
+  reverseEntries = false,
+  manifest = baseManifest,
+  withReadme = false
 }: {
   index?: string;
   lastModDate: Date;
   reverseEntries?: boolean;
+  manifest?: Record<string, unknown>;
+  withReadme?: boolean;
 }) => {
   const entries = [
     {
@@ -36,12 +42,20 @@ const createPkg = async ({
     },
     {
       filename: 'manifest.json',
-      buffer: Buffer.from(JSON.stringify(baseManifest, null, 2))
+      buffer: Buffer.from(JSON.stringify(manifest, null, 2))
     },
     {
       filename: 'logo.svg',
       buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
-    }
+    },
+    ...(withReadme
+      ? [
+          {
+            filename: 'README.md',
+            buffer: Buffer.from('# readme\n')
+          }
+        ]
+      : [])
   ];
   const writer = new ZipWriter(new BlobWriter('application/zip'));
 
@@ -89,5 +103,36 @@ describe('parsePkg', () => {
     expect(firstErr).toBeNull();
     expect(secondErr).toBeNull();
     expect(firstParsed?.info.etag).not.toBe(secondParsed?.info.etag);
+  });
+
+  it('loads a moderation package with its meta and resolved assets', async () => {
+    const pkg = await createPkg({
+      lastModDate: new Date('2026-01-01T00:00:00Z'),
+      withReadme: true,
+      manifest: {
+        pluginId: 'keyword-moderation',
+        version: '1.0.0',
+        type: 'moderation',
+        name: { en: 'Keyword Moderation', 'zh-CN': '关键词审查' },
+        icon: 'logo.svg',
+        description: { en: 'Keyword Moderation', 'zh-CN': '关键词审查' },
+        meta: { provider: 'keyword', modalities: ['text'] },
+        secretSchema: { type: 'object', properties: {} }
+      }
+    });
+
+    const [parsed, err] = await parsePkg({
+      input: pkg,
+      getAccessURL: async ({ filePath }) =>
+        successResult(`https://cdn.example.com/${filePath.join('/')}`)
+    });
+
+    expect(err).toBeNull();
+    const loaded = parsed?.info;
+    expect(loaded?.type).toBe('moderation');
+    if (loaded?.type !== 'moderation') throw new Error('expected a moderation plugin');
+    expect(loaded.meta).toEqual({ provider: 'keyword', modalities: ['text'] });
+    expect(loaded.icon).toBe('https://cdn.example.com/logo.svg');
+    expect(loaded.readmeUrl).toBe('https://cdn.example.com/README.md');
   });
 });

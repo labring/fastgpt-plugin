@@ -4,10 +4,11 @@ import type { InvokePort } from '@domain/ports/invoke.port';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 
 import type { PluginRuntimeConfigType } from '../../entities/plugin.entity';
+import type { PluginTypeType } from '../../entities/plugin-base.entity';
 import type { PluginUniqueIdType } from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
 
-export const PluginInvokeEventnameSchema = z.enum(['run']);
+export const PluginInvokeEventnameSchema = z.enum(['run', 'check']);
 export type PluginInvokeEventNameType = z.infer<typeof PluginInvokeEventnameSchema>;
 export const PluginInvokeEventnameEnum = PluginInvokeEventnameSchema.enum;
 
@@ -93,4 +94,25 @@ export interface PluginRuntimeManagerPort<
     options?: PluginRuntimeInvokeOptions;
     // sendStream?: boolean
   }): Promise<Result<S extends true ? StreamData<R> : R>>;
+}
+
+/** 各插件类型允许调用的事件。新增插件类型时必须在这里补一行 */
+export const PluginTypeEventNames = {
+  tool: ['run'],
+  moderation: ['check']
+} as const satisfies Record<PluginTypeType, readonly PluginInvokeEventNameType[]>;
+
+/** 该插件类型是否允许调用该事件（运行时门禁的唯一来源） */
+export function isPluginEventSupported(type: PluginTypeType, eventName: string): boolean {
+  return (PluginTypeEventNames[type] as readonly string[]).includes(eventName);
+}
+
+/**
+ * 任一插件类型允许的事件。debug 通道在不知道插件类型时用它保留显式事件边界，
+ * 不能只放行 `run`。
+ */
+export function isKnownPluginEvent(eventName: string): boolean {
+  return Object.values(PluginTypeEventNames).some((names) =>
+    (names as readonly string[]).includes(eventName)
+  );
 }

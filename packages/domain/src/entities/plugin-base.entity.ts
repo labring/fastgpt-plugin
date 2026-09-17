@@ -24,7 +24,8 @@ export const PluginTagEnum = PluginTagSchema.enum;
 export type PluginTagType = z.infer<typeof PluginTagSchema>;
 
 export const PluginTypeSchema = z.enum([
-  'tool'
+  'tool',
+  'moderation'
   /** unimplemented */
   // 'model',
   // 'workflow',

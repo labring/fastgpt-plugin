@@ -395,6 +395,7 @@ function makeMetadataBase(pluginId: string, version: string) {
     source: 'debug:user:u1',
     pluginId,
     version,
+    type: 'tool' as const,
     name: pluginId,
     description: `${pluginId} description`,
     toolDescription: `${pluginId} tool`,

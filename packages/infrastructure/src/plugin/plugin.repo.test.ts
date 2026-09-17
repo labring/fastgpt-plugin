@@ -3,15 +3,15 @@ import { Readable } from 'node:stream';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { type PluginType } from '@domain/entities/plugin.entity';
 import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
+import { type ToolType } from '@domain/entities/tool.entity';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import { failureResult, successResult } from '@domain/value-objects/result.vo';
 
 import { PluginRepo, type PluginRepoDeps } from './plugin.repo';
 
-const plugin = (): PluginType =>
+const plugin = (): ToolType =>
   ({
     pluginId: 'plugin-a',
     version: '1.0.0',
@@ -21,7 +21,7 @@ const plugin = (): PluginType =>
     icon: 'https://example.com/icon.svg',
     description: { en: 'Plugin A', 'zh-CN': 'Plugin A' },
     toolDescription: 'Plugin A'
-  }) as PluginType;
+  }) as ToolType;
 
 const pluginRecord = () => {
   const { toolDescription, inputSchema, outputSchema, secretSchema, children, ...base } = plugin();

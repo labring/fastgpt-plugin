@@ -7,6 +7,7 @@
 
 import { randomUUID } from 'node:crypto';
 
+import { isRunnablePluginType } from '@domain/entities/plugin.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
@@ -170,7 +171,7 @@ export const makePluginInstallUC =
         continue;
       }
 
-      if (info.info.type === 'tool') {
+      if (isRunnablePluginType(info.info.type)) {
         if (createResult.runtimeRegistrationRequired) {
           const [, registerErr] = await pluginRuntimeManager.register(uniqueId);
 

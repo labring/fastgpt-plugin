@@ -1,4 +1,4 @@
-import type { PluginType } from '@domain/entities/plugin.entity';
+import { isRunnablePluginType, type PluginType } from '@domain/entities/plugin.entity';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginUniqueIdSchema, type PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
@@ -43,7 +43,7 @@ export const disableAndUnregisterReplacedPlugins = async (deps: {
     PluginUniqueIdSchema.parse(plugin)
   );
   const replacedRunnablePluginIds = deps.replacedPlugins
-    .filter((plugin) => plugin.type === 'tool')
+    .filter((plugin) => isRunnablePluginType(plugin.type))
     .map((plugin) => PluginUniqueIdSchema.parse(plugin));
 
   const [disableResult, disableErr] = await deps.pluginRepo.disableUnreferencedPlugins(

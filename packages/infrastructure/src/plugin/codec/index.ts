@@ -1,3 +1,4 @@
+import { moderationPluginCodec } from './moderation.codec';
 import { PluginCodecRegistry } from './registry';
 import { toolPluginCodec } from './tool.codec';
 
@@ -7,3 +8,4 @@ export * from './registry';
 export const pluginCodecRegistry = new PluginCodecRegistry();
 
 pluginCodecRegistry.register(toolPluginCodec);
+pluginCodecRegistry.register(moderationPluginCodec);
