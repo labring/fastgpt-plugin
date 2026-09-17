@@ -6,9 +6,10 @@
  */
 
 import type { ToolManagerPort } from '@domain/ports/plugin/tool.port';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
-import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import type { ToolRunInputType } from '@domain/value-objects/tool.vo';
 import { toUsecaseErrorLog } from '@usecase/log-error';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
@@ -18,7 +19,7 @@ export type ToolRunUCDeps = {
   logger: UsecaseLogger;
 };
 
-type Output = Promise<Result<StreamData<ToolStreamMessageType>>>;
+type Output = Promise<Result<StreamData<PluginStreamMessageType>>>;
 
 export const makeToolRunUC =
   ({ toolManager, logger }: ToolRunUCDeps) =>

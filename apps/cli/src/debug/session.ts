@@ -7,10 +7,10 @@ import { ensureDebugImportHooks } from '@fastgpt-plugin/cli/debug/import-hooks';
 import z from 'zod';
 
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
+import { PluginStreamMessageSchema, type PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { SystemVarSchema, type SystemVarType } from '@domain/value-objects/system-var.vo';
-import { ToolStreamMessageSchema, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 import {
   createLocalDebugRuntime,
@@ -74,7 +74,7 @@ export type DebugToolRunResult = {
   systemVar: SystemVarType;
   response?: Record<string, unknown>;
   error?: string;
-  streamMessages: ToolStreamMessageType[];
+  streamMessages: PluginStreamMessageType[];
 };
 
 export async function loadDebugSession({
@@ -161,7 +161,7 @@ export async function runDebugTool({
     },
     void,
     never,
-    ToolStreamMessageType
+    PluginStreamMessageType
   >(
     'run',
     {
@@ -179,12 +179,12 @@ export async function runDebugTool({
     throw new Error('调试运行未返回输出流。');
   }
 
-  const streamMessages: ToolStreamMessageType[] = [];
+  const streamMessages: PluginStreamMessageType[] = [];
   let finalResponse: Record<string, unknown> | undefined;
   let finalError: string | undefined;
 
   await response.output.stream.consume(async (chunk) => {
-    const parsed = ToolStreamMessageSchema.parse(chunk);
+    const parsed = PluginStreamMessageSchema.parse(chunk);
     streamMessages.push(parsed);
 
     if (parsed.type === 'response') {

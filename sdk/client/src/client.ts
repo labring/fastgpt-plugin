@@ -52,6 +52,7 @@ import type {
   PluginRuntimeConfigType,
   PluginServiceFeaturesType,
   PluginSourceRequestOptions,
+  PluginStreamResponseDataType,
   PluginTagListType,
   PluginUniqueIdType,
   PluginUploadResultType,
@@ -60,7 +61,6 @@ import type {
   RunToolStreamParams,
   ToolDetailType,
   ToolGetParamsType,
-  ToolHandlerReturnType,
   ToolListParamsType,
   ToolListType,
   WorkflowListType
@@ -372,7 +372,7 @@ export class FastGPTPluginClient {
   async runToolStream(
     params: RunToolStreamParams,
     requestOptions?: ClientRequestOptions
-  ): Promise<ToolHandlerReturnType> {
+  ): Promise<PluginStreamResponseDataType> {
     ToolRunInputDTOSchema.parse(params);
     return this.toolRunner.run(params, requestOptions);
   }

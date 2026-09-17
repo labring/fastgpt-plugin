@@ -10,7 +10,7 @@ import {
   CONNECTION_GATEWAY_PLUGIN_DEBUG_INVOKE_CAPABILITY,
   ConnectionGatewayPluginDebugRequestPayloadSchema
 } from '@domain/value-objects/connection-gateway-debug.vo';
-import { ToolStreamMessageSchema, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import { PluginStreamMessageSchema, type PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 
 import type { LocalDebugRuntime } from './runtime';
 import { type DebugPluginSnapshot, runDebugTool } from './session';
@@ -409,7 +409,7 @@ async function sendStreamChunk(
   socket: WebSocket,
   session: ConnectionGatewaySession,
   request: ConnectionGatewayEnvelope,
-  message: ToolStreamMessageType
+  message: PluginStreamMessageType
 ): Promise<void> {
   await sendEnvelope(socket, {
     protocol: 'connection-gateway.v1',
@@ -424,7 +424,7 @@ async function sendStreamChunk(
     payload: {
       kind: 'plugin-debug.stream',
       event: 'chunk',
-      data: ToolStreamMessageSchema.parse(message)
+      data: PluginStreamMessageSchema.parse(message)
     }
   });
 }

@@ -61,12 +61,8 @@ import type {
   PluginTagListType,
   PluginUniqueIdType
 } from '@domain/value-objects/plugin.vo';
+import type { PluginStreamAnswerType, PluginStreamMessageType,PluginStreamResponseDataType } from '@domain/value-objects/plugin-stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type {
-  ToolAnswerType,
-  ToolHandlerReturnType,
-  ToolStreamMessageType
-} from '@domain/value-objects/tool.vo';
 import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
 
 export type JsonObject = Record<string, unknown>;
@@ -78,6 +74,9 @@ export type {
   LLMModelItemType,
   ModelItemType,
   PluginSourceType,
+  PluginStreamAnswerType,
+  PluginStreamMessageType,
+  PluginStreamResponseDataType,
   PluginTagListType,
   PluginTagType,
   PluginTypeType,
@@ -85,9 +84,6 @@ export type {
   RerankModelItemType,
   STTModelItemType,
   SystemVarType,
-  ToolAnswerType,
-  ToolHandlerReturnType,
-  ToolStreamMessageType,
   TTSModelItemType
 };
 
@@ -143,7 +139,7 @@ export type AIProxyChannelItemType = AIProxyChannelItemDTOType;
 export type ModelProviderListType = ModelProviderListDTOType;
 
 export type RunToolStreamParams = ToolRunInputType & {
-  onMessage?: (message: ToolAnswerType) => void;
+  onMessage?: (message: PluginStreamAnswerType) => void;
 };
 
 export type FastGPTPluginClientOptions = {

@@ -15,8 +15,8 @@ import {
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import type { Command } from 'commander';
 
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 type DebugCommandOptions = RemoteDebugCommandOptions & {
   tool?: string;
@@ -178,7 +178,7 @@ export class DebugCommand extends BaseCommand {
     logger.info(toolLines.join('\n'));
   }
 
-  private printStreamMessages(messages: ToolStreamMessageType[]): void {
+  private printStreamMessages(messages: PluginStreamMessageType[]): void {
     if (messages.length === 0) {
       logger.info('流式输出: 无');
       return;

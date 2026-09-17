@@ -2,7 +2,7 @@ import '@infrastructure/errors/error.registry';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 
 import { ConnectionGatewayDebugRuntimeManager } from './debug-runtime.driver';
 
@@ -78,7 +78,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
       sourceForUser: ({ userId }) => `debug:user:${userId}`
     });
 
-    const [stream, err] = await manager.invoke<ToolStreamMessageType, true>({
+    const [stream, err] = await manager.invoke<PluginStreamMessageType, true>({
       uniqueId: {
         pluginId: 'getTime',
         version: '1.0.0',
@@ -119,7 +119,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
         }
       }
     });
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await stream?.consume((message) => {
       messages.push(message);
     });
@@ -146,7 +146,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
       requestTimeoutMs: 1_000
     });
 
-    const [, err] = await manager.invoke<ToolStreamMessageType, true>({
+    const [, err] = await manager.invoke<PluginStreamMessageType, true>({
       uniqueId: {
         pluginId: 'getTime',
         version: '1.0.0',
@@ -175,7 +175,7 @@ describe('ConnectionGatewayDebugRuntimeManager', () => {
       requestTimeoutMs: 1_000
     });
 
-    const [, err] = await manager.invoke<ToolStreamMessageType, true>({
+    const [, err] = await manager.invoke<PluginStreamMessageType, true>({
       uniqueId: {
         pluginId: 'getTime',
         version: '1.0.0',

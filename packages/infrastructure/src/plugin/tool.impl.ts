@@ -19,10 +19,11 @@ import {
   isPluginDebugSource,
   parsePluginDebugSessionSource
 } from '@domain/value-objects/plugin-debug-session.vo';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import type { ToolRunInputType } from '@domain/value-objects/tool.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 import { InvokeManager } from './invoke/invoke.impl';
@@ -246,7 +247,7 @@ export class ToolManager implements ToolManagerPort {
     childId,
     source,
     secrets
-  }: ToolRunInputType): Promise<Result<StreamData<ToolStreamMessageType>>> {
+  }: ToolRunInputType): Promise<Result<StreamData<PluginStreamMessageType>>> {
     const [res, err] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
       source: source ?? 'system',
@@ -299,7 +300,7 @@ export class ToolManager implements ToolManagerPort {
     };
 
     const [invokeRes, invokeErr] = await this.deps.pluginRuntimeManager.invoke<
-      ToolStreamMessageType,
+      PluginStreamMessageType,
       true
     >({
       uniqueId: {

@@ -1,9 +1,9 @@
 import z from 'zod';
 
 import type { InvokePort } from '@domain/ports/invoke.port';
+import type { PluginStreamAnswerType, PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolAnswerType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 import { PluginChannelHostMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
 import type { PluginToolRunPayloadType } from '@infrastructure/plugin/tool.impl';
 import { getErrText } from '@shared/utils/err';
@@ -36,7 +36,7 @@ export type ToolHandlerContext<TSecret extends ToolSecretSchema> = {
   systemVar: SystemVarType;
   secrets?: ToolSecretValue<TSecret>;
   invoke: InvokePort;
-  streamResponse: (msg: ToolAnswerType) => void;
+  streamResponse: (msg: PluginStreamAnswerType) => void;
 };
 
 type ToolHandlerFn<
@@ -90,7 +90,7 @@ export class ToolFactory extends PluginFactory {
               throw new Error('No tool registered');
             }
 
-            const output = StreamData.create<ToolStreamMessageType>();
+            const output = StreamData.create<PluginStreamMessageType>();
 
             void (async () => {
               try {
@@ -100,7 +100,7 @@ export class ToolFactory extends PluginFactory {
                   invoke: new InvokeClient(this.getChannel(), {
                     invocationId: msg.traceId
                   }),
-                  streamResponse: (msg: ToolAnswerType) => {
+                  streamResponse: (msg: PluginStreamAnswerType) => {
                     output.send({
                       type: 'stream',
                       data: msg
@@ -126,7 +126,7 @@ export class ToolFactory extends PluginFactory {
               output
             });
           } catch (err) {
-            const output: StreamData<ToolStreamMessageType> = StreamData.create();
+            const output: StreamData<PluginStreamMessageType> = StreamData.create();
             output.write({
               data: getErrText(err, 'Unknown error during tool execution'),
               type: 'error'

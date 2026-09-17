@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
-import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 import { makeToolRoute } from './tool.route';
 
 describe('tool route', () => {
   it('returns tool errors to the client without logging them as system errors', async () => {
-    const stream = StreamData.create<ToolStreamMessageType>();
+    const stream = StreamData.create<PluginStreamMessageType>();
     stream.send({ type: 'error', data: 'Invalid URL' });
     stream.close();
 
@@ -35,7 +35,7 @@ describe('tool route', () => {
   });
 
   it('logs stream transport failures as system errors', async () => {
-    const stream = StreamData.create<ToolStreamMessageType>();
+    const stream = StreamData.create<PluginStreamMessageType>();
     stream.fail(new Error('stream connection lost'));
 
     const logger = createLogger();
