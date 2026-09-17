@@ -179,7 +179,7 @@ Registration immediately creates `minPods` Pods. If the current global Pod count
 
 ```mermaid
 sequenceDiagram
-    participant Caller as ToolManager / Usecase
+    participant Caller as ToolManager / ModerationManager / Usecase
     participant M as Manager
     participant S as PluginService
     participant F as PodFleet
@@ -359,6 +359,8 @@ When invoking a plugin, the host sends:
 ```text
 host.request(eventName, payload, returnStream)
 ```
+
+The host event name is gated per plugin type by `PluginTypeEventNames`: tools accept `run`, moderation plugins accept `check`. A mismatched pair fails with `plugin.runtime.event_not_supported` before any Pod is touched. The debug channel does not know the mounted plugin type, so it accepts any known event name and leaves the final gate to the runtime.
 
 When a plugin needs host capabilities, the client sends:
 
