@@ -1,4 +1,8 @@
 import {
+  ModerationCheckInputDTOSchema,
+  ModerationGetParamsDTOSchema
+} from '@interface-adapter/contracts/dto/moderation.dto';
+import {
   PluginConfirmParamsSchema,
   PluginDeleteParamsSchema,
   PluginInstallDTOSchema,
@@ -20,6 +24,7 @@ import {
   ToolRunInputDTOSchema
 } from '@interface-adapter/contracts/dto/tool.dto';
 import { ModelContract } from '@interface-adapter/contracts/route/model.contract';
+import { ModerationContract } from '@interface-adapter/contracts/route/moderation.contract';
 import { PluginContract } from '@interface-adapter/contracts/route/plugin.contract';
 import { PluginDebugSessionContract } from '@interface-adapter/contracts/route/plugin-debug-session.contract';
 import { PluginServiceFeatureContract } from '@interface-adapter/contracts/route/plugin-service-feature.contract';
@@ -35,6 +40,10 @@ import type {
   FastGPTPluginClientOptions,
   ModelListType,
   ModelProviderListType,
+  ModerationCheckParamsType,
+  ModerationCheckResultType,
+  ModerationDetailType,
+  ModerationGetParamsType,
   PluginConfirmResultType,
   PluginDebugSessionConnectionKeyExchangeParamsType,
   PluginDebugSessionConnectionKeyExchangeResultType,
@@ -124,6 +133,34 @@ export class FastGPTPluginClient {
       path: this.withApiPath(ToolContract.List.meta.path),
       method: ToolContract.List.meta.method,
       query,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async getModeration(
+    params: ModerationGetParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<ModerationDetailType> {
+    const query = ModerationGetParamsDTOSchema.parse(params);
+
+    return this.transport.requestData<ModerationDetailType>({
+      path: this.withApiPath(ModerationContract.Get.meta.path),
+      method: ModerationContract.Get.meta.method,
+      query,
+      signal: requestOptions?.signal
+    });
+  }
+
+  async checkModeration(
+    params: ModerationCheckParamsType,
+    requestOptions?: ClientRequestOptions
+  ): Promise<ModerationCheckResultType> {
+    const body = ModerationCheckInputDTOSchema.parse(params);
+
+    return this.transport.requestData<ModerationCheckResultType>({
+      path: this.withApiPath(ModerationContract.Check.meta.path),
+      method: ModerationContract.Check.meta.method,
+      body,
       signal: requestOptions?.signal
     });
   }
