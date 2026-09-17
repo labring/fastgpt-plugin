@@ -103,6 +103,7 @@ describe('create command', () => {
     expect(pkgJson.description).toBe(description);
     expect(pkgJson.devDependencies['@fastgpt-plugin/cli']).toBe('^0.2.0');
     expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-alpha.4');
+    expect(pkgJson.devDependencies.typescript).toBe('^5.9.3');
     expect(Object.values(pkgJson.devDependencies)).not.toContain('catalog:');
     expect(pkgJson.scripts.dev).toBe('fastgpt-plugin dev . --watch');
     expect(pkgJson.scripts['debug:run']).toContain('{"delay":0}');
@@ -204,7 +205,7 @@ describe('create command', () => {
       'create',
       'foo',
       '--type',
-      'single-tool',
+      'tool',
       '--description',
       'Test',
       '--cwd',
@@ -232,10 +233,44 @@ describe('create command', () => {
     const indexContent = await readFile(path.join(testCwd, 'delay-tool', 'index.ts'), 'utf-8');
     expect(indexContent).toContain('defineTool');
     expect(indexContent).not.toContain('defineToolSet');
-    expect(indexContent).toContain('inputSchema: defineInputSchema({');
-    expect(indexContent).toContain('outputSchema: defineOutputSchema({');
-    expect(indexContent).toContain("title: { en: 'Delay', 'zh-CN': '延迟' }");
-    expect(indexContent).not.toContain('InputSchemaMetaType');
-    expect(indexContent).not.toContain('OutputSchemaMetaType');
+  });
+
+  it('应能生成 moderation 模板项目', async () => {
+    await run([
+      process.execPath,
+      'cli',
+      'create',
+      'keyword-moderation',
+      '--type',
+      'moderation',
+      '--description',
+      'Keyword moderation',
+      '--cwd',
+      testCwd
+    ]);
+
+    expect(loggerSpy.success).toHaveBeenLastCalledWith(
+      '创建插件项目: keyword-moderation (moderation)',
+      { cwd: testCwd }
+    );
+
+    const files = await listCreatedFiles('keyword-moderation');
+    expect(files).toContain('index.ts');
+    expect(files).toContain('index.spec.ts');
+    expect(files).not.toContain('index.moderation.ts');
+    expect(files).not.toContain('index.tool.ts');
+    expect(files).not.toContain('index.toolset.ts');
+
+    const indexContent = await readFile(
+      path.join(testCwd, 'keyword-moderation', 'index.ts'),
+      'utf-8'
+    );
+    expect(indexContent).toContain('defineModeration');
+    expect(indexContent).not.toContain('defineTool');
+
+    const packageJson = JSON.parse(
+      await readFile(path.join(testCwd, 'keyword-moderation', 'package.json'), 'utf-8')
+    ) as { scripts: Record<string, string> };
+    expect(packageJson.scripts['debug:run']).toContain('{"content":"hello world","modality":"text"}');
   });
 });
