@@ -1,7 +1,7 @@
 import z from 'zod';
 
+import { PluginStreamMessageSchema } from './plugin-stream.vo';
 import { SystemVarSchema } from './system-var.vo';
-import { ToolStreamMessageSchema } from './tool.vo';
 
 export const CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE = 'plugin-debug';
 export const CONNECTION_GATEWAY_PLUGIN_DEBUG_INVOKE_CAPABILITY = 'invoke';
@@ -42,7 +42,7 @@ export const ConnectionGatewayPluginDebugStreamPayloadSchema = z.discriminatedUn
   z.object({
     kind: z.literal('plugin-debug.stream'),
     event: z.literal('chunk'),
-    data: ToolStreamMessageSchema
+    data: PluginStreamMessageSchema
   }),
   z.object({
     kind: z.literal('plugin-debug.stream'),

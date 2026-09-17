@@ -19,10 +19,11 @@ import {
   isPluginDebugSource,
   parsePluginDebugSessionSource
 } from '@domain/value-objects/plugin-debug-session.vo';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import { type ToolRunInputType, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import type { ToolRunInputType } from '@domain/value-objects/tool.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 import { InvokeManager } from './invoke/invoke.impl';
@@ -47,31 +48,65 @@ function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function getDescriptionFallback(description: unknown): string | undefined {
+  if (typeof description === 'string' && description.length > 0) {
+    return description;
+  }
+
+  if (!isJsonObject(description)) {
+    return undefined;
+  }
+
+  const en = description.en;
+  return typeof en === 'string' && en.length > 0 ? en : undefined;
+}
+
 function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
   if (!isJsonObject(inputSchema) || !isJsonObject(inputSchema.properties)) {
     return inputSchema;
   }
 
-  return {
-    ...inputSchema,
-    properties: Object.fromEntries(
-      Object.entries(inputSchema.properties).map(([key, property]) => {
-        if (!isJsonObject(property)) {
-          return [key, property];
+  const properties = Object.fromEntries(
+    Object.entries(inputSchema.properties).map(([key, property]) => {
+      if (!isJsonObject(property)) {
+        return [key, property];
+      }
+
+      const normalizedProperty = { ...property };
+      const hasToolDescription =
+        typeof normalizedProperty.toolDescription === 'string' &&
+        normalizedProperty.toolDescription.length > 0;
+      const hasIsToolParam = normalizedProperty.isToolParam !== undefined;
+
+      if (hasIsToolParam) {
+        if (!hasToolDescription) {
+          const fallback = getDescriptionFallback(normalizedProperty.description);
+          if (fallback !== undefined) {
+            normalizedProperty.toolDescription = fallback;
+          }
         }
 
-        return [
-          key,
-          {
-            ...property,
-            isToolParam:
-              property.isToolParam !== undefined
-                ? property.isToolParam
-                : property.toolDescription !== undefined
-          }
-        ];
-      })
-    )
+        return [key, normalizedProperty];
+      }
+
+      if (hasToolDescription) {
+        normalizedProperty.isToolParam = true;
+        return [key, normalizedProperty];
+      }
+
+      const fallback = getDescriptionFallback(normalizedProperty.description);
+      if (fallback !== undefined) {
+        normalizedProperty.toolDescription = fallback;
+      }
+      normalizedProperty.isToolParam = false;
+
+      return [key, normalizedProperty];
+    })
+  );
+
+  return {
+    ...inputSchema,
+    properties
   };
 }
 
@@ -96,15 +131,10 @@ export class ToolManager implements ToolManagerPort {
     return {
       ...tool,
       inputSchema: normalizeInputSchemaToolParams(tool.inputSchema),
-      outputSchema: tool.outputSchema,
-      secretSchema: tool.secretSchema,
-      children: tool.children?.map((child) => {
-        return {
-          ...child,
-          inputSchema: normalizeInputSchemaToolParams(child.inputSchema),
-          outputSchema: child.outputSchema
-        };
-      }),
+      children: tool.children?.map((child) => ({
+        ...child,
+        inputSchema: normalizeInputSchemaToolParams(child.inputSchema)
+      })),
       source,
       isToolset: Boolean(tool.children?.length),
       isLatestVersion
@@ -217,7 +247,7 @@ export class ToolManager implements ToolManagerPort {
     childId,
     source,
     secrets
-  }: ToolRunInputType): Promise<Result<StreamData<ToolStreamMessageType>>> {
+  }: ToolRunInputType): Promise<Result<StreamData<PluginStreamMessageType>>> {
     const [res, err] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
       source: source ?? 'system',
@@ -270,7 +300,7 @@ export class ToolManager implements ToolManagerPort {
     };
 
     const [invokeRes, invokeErr] = await this.deps.pluginRuntimeManager.invoke<
-      ToolStreamMessageType,
+      PluginStreamMessageType,
       true
     >({
       uniqueId: {

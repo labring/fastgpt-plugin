@@ -7,11 +7,10 @@ import { ensureDebugImportHooks } from '@fastgpt-plugin/cli/debug/import-hooks';
 import z from 'zod';
 
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
-import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
+import { PluginStreamMessageSchema, type PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { SystemVarSchema, type SystemVarType } from '@domain/value-objects/system-var.vo';
-import { ToolStreamMessageSchema, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 import {
   createLocalDebugRuntime,
@@ -27,10 +26,10 @@ type PackableToolHandler = {
 
 type PackableToolChild = {
   id: string;
-  description: unknown;
-  name: unknown;
+  description: Record<string, unknown>;
+  name: Record<string, unknown>;
   icon?: string;
-  toolDescription?: unknown;
+  toolDescription?: string;
 };
 
 type PackableToolExport = {
@@ -40,13 +39,11 @@ type PackableToolExport = {
   getChildManifests(): PackableToolChild[];
 };
 
-export type DebugText = string | Record<string, unknown>;
-
 export type DebugToolSnapshot = {
   id: string;
-  name: DebugText;
-  description: DebugText;
-  toolDescription?: unknown;
+  name: string;
+  description: string;
+  toolDescription: string;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -56,9 +53,9 @@ export type DebugPluginSnapshot = {
   indexPath: string;
   pluginId: string;
   version: string;
-  name: DebugText;
-  description: DebugText;
-  toolDescription?: unknown;
+  name: string;
+  description: string;
+  toolDescription: string;
   author?: string;
   tags?: string[];
   permissions?: string[];
@@ -77,7 +74,7 @@ export type DebugToolRunResult = {
   systemVar: SystemVarType;
   response?: Record<string, unknown>;
   error?: string;
-  streamMessages: ToolStreamMessageType[];
+  streamMessages: PluginStreamMessageType[];
 };
 
 export async function loadDebugSession({
@@ -164,7 +161,7 @@ export async function runDebugTool({
     },
     void,
     never,
-    ToolStreamMessageType
+    PluginStreamMessageType
   >(
     'run',
     {
@@ -182,12 +179,12 @@ export async function runDebugTool({
     throw new Error('调试运行未返回输出流。');
   }
 
-  const streamMessages: ToolStreamMessageType[] = [];
+  const streamMessages: PluginStreamMessageType[] = [];
   let finalResponse: Record<string, unknown> | undefined;
   let finalError: string | undefined;
 
   await response.output.stream.consume(async (chunk) => {
-    const parsed = ToolStreamMessageSchema.parse(chunk);
+    const parsed = PluginStreamMessageSchema.parse(chunk);
     streamMessages.push(parsed);
 
     if (parsed.type === 'response') {
@@ -259,9 +256,12 @@ function createDebugSnapshot(
     indexPath: location.indexPath,
     pluginId: getRequiredString(userManifest.pluginId, '缺少 pluginId'),
     version: getRequiredString(userManifest.version, '缺少 version'),
-    name: getDebugText(userManifest.name),
-    description: getDebugText(userManifest.description),
-    toolDescription: userManifest.toolDescription,
+    name: pickLocalizedText(userManifest.name),
+    description: pickLocalizedText(userManifest.description),
+    toolDescription: pickToolDescription(
+      getOptionalString(userManifest.toolDescription),
+      userManifest.description
+    ),
     author: getOptionalString(userManifest.author),
     tags: toStringArray(userManifest.tags),
     permissions: toStringArray(userManifest.permission),
@@ -282,9 +282,12 @@ function createSingleToolSnapshot(
 
   return {
     id: 'tool',
-    name: getDebugText(userManifest.name),
-    description: getDebugText(userManifest.description),
-    toolDescription: userManifest.toolDescription,
+    name: pickLocalizedText(userManifest.name),
+    description: pickLocalizedText(userManifest.description),
+    toolDescription: pickToolDescription(
+      getOptionalString(userManifest.toolDescription),
+      userManifest.description
+    ),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -301,9 +304,9 @@ function createChildToolSnapshot(
 
   return {
     id: child.id,
-    name: getDebugText(child.name),
-    description: getDebugText(child.description),
-    toolDescription: child.toolDescription,
+    name: pickLocalizedText(child.name),
+    description: pickLocalizedText(child.description),
+    toolDescription: pickToolDescription(child.toolDescription, child.description),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -422,42 +425,34 @@ function isPackableToolExport(value: unknown): value is PackableToolExport {
   );
 }
 
-export const DEFAULT_DEBUG_LOCALE: I18nLangType = 'en';
-
-function getDebugText(value: unknown): DebugText {
-  return getOptionalDebugText(value) ?? '';
-}
-
-function getOptionalDebugText(value: unknown): DebugText | undefined {
+function pickLocalizedText(value: unknown): string {
   if (typeof value === 'string') {
     return value;
   }
 
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
+  if (value && typeof value === 'object') {
     const localized = value as Record<string, unknown>;
-    if (typeof localized.en === 'string' && typeof localized['zh-CN'] === 'string') {
-      return localized;
+    const preferred = [localized['zh-CN'], localized.en, ...Object.values(localized)].find(
+      (item) => typeof item === 'string' && item.trim().length > 0
+    );
+
+    if (typeof preferred === 'string') {
+      return preferred;
     }
   }
 
-  return undefined;
+  return '';
 }
 
-
-export function selectDebugText(value: unknown, locale: string = DEFAULT_DEBUG_LOCALE): string {
-  const text = getOptionalDebugText(value);
-  if (typeof text === 'string') {
-    return text;
-  }
-  if (!text) {
-    return '';
+function pickToolDescription(
+  explicitDescription: string | undefined,
+  fallbackSource: unknown
+): string {
+  if (explicitDescription && explicitDescription.trim().length > 0) {
+    return explicitDescription;
   }
 
-  const preferred = [text[locale as I18nLangType], text.en].find(
-    (item) => typeof item === 'string' && item.trim().length > 0
-  );
-
-  return typeof preferred === 'string' ? preferred : '';
+  return pickLocalizedText(fallbackSource);
 }
 
 function getRequiredString(value: unknown, message: string): string {
