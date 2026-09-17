@@ -6,44 +6,17 @@ import {
   ToolListChildItemSchema,
   ToolListItemSchema
 } from '@domain/ports/plugin/tool.port';
-import { SystemVarSchema } from '@domain/value-objects/system-var.vo';
 
-const PluginSourceDTOSchema = z.string();
+import {
+  arrayQueryParam,
+  booleanQueryParam,
+  PluginSourceDTOSchema,
+  SystemVarDTOSchema
+} from './common.dto';
+
+export { SystemVarDTOSchema };
+
 const PluginTagDTOSchema = PluginTagSchema;
-
-const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
-  z.preprocess((value) => {
-    if (value == null) {
-      return undefined;
-    }
-
-    return Array.isArray(value) ? value : [value];
-  }, z.array(schema).optional());
-
-const booleanQueryParam = <T extends z.ZodType>(schema: T) =>
-  z.preprocess((value) => {
-    if (typeof value === 'boolean') {
-      return value;
-    }
-
-    if (typeof value !== 'string') {
-      return value;
-    }
-
-    if (value === 'true') {
-      return true;
-    }
-
-    if (value === 'false') {
-      return false;
-    }
-
-    return value;
-  }, schema);
-
-export const SystemVarDTOSchema = z.object({
-  ...SystemVarSchema.shape
-});
 
 export const ToolRunInputDTOSchema = z.object({
   pluginId: z.string(),
