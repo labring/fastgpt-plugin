@@ -13,6 +13,7 @@ import deps from './src/deps';
 import { init } from './src/init';
 import { makeDebugSessionRoute } from './src/routes/debug-session.route';
 import { makeModelRoute } from './src/routes/model.route';
+import { makeModerationRoute } from './src/routes/moderation.route';
 import { makePluginRoute } from './src/routes/plugin.route';
 import { makePluginServiceFeatureRoute } from './src/routes/plugin-service-feature.route';
 import { makeRuntimeRoute } from './src/routes/runtime.route';
@@ -30,6 +31,10 @@ const pluginRoute = makePluginRoute(deps);
 const pluginServiceFeatureRoute = makePluginServiceFeatureRoute();
 const runtimeRoute = makeRuntimeRoute(deps);
 const toolRoute = makeToolRoute({ toolManager: deps.toolManager, logger: getLogger(mod.tool) });
+const moderationRoute = makeModerationRoute({
+  moderationManager: deps.moderationManager,
+  logger: getLogger(mod.moderation)
+});
 const workflowRoute = makeWorkflowRoute(deps);
 
 app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
@@ -43,6 +48,7 @@ app.route('/api', pluginRoute);
 app.route('/api', pluginServiceFeatureRoute);
 app.route('/api', runtimeRoute);
 app.route('/api', toolRoute);
+app.route('/api', moderationRoute);
 app.route('/api', workflowRoute);
 
 let server: ServerType | null = null;
