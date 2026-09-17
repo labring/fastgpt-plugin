@@ -5,6 +5,12 @@ import type {
   ModelProviderListDTOType
 } from '@interface-adapter/contracts/dto/model.dto';
 import type {
+  ModerationCheckInputDTOType,
+  ModerationCheckResultDTOType,
+  ModerationDetailDTOType,
+  ModerationGetParamsDTOType
+} from '@interface-adapter/contracts/dto/moderation.dto';
+import type {
   PluginConfirmResultDTOType,
   PluginDeleteParamsDTOType,
   PluginDTOType,
@@ -93,6 +99,20 @@ export type ToolGetParamsType = ToolGetParamsDTOType;
 export type ToolListType = ToolListDTOType;
 export type ToolListItemType = ToolListItemDTOType;
 export type ToolListParamsType = Partial<ToolListParamsDTOType>;
+
+export type ModerationCheckParamsType = ModerationCheckInputDTOType;
+export type ModerationCheckResultType = ModerationCheckResultDTOType;
+export type ModerationDetailType = ModerationDetailDTOType;
+export type ModerationGetParamsType = ModerationGetParamsDTOType;
+
+export type {
+  ModerationCheckInputType,
+  ModerationHitType,
+  ModerationLabelType,
+  ModerationModalityType,
+  ModerationResultType,
+  ModerationVerdictType
+} from '@domain/value-objects/moderation.vo';
 
 export type PluginSummaryType = PluginDTOType;
 export type PluginUploadResultType = PluginUploadResponseDTOType;

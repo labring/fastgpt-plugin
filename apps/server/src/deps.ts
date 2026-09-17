@@ -4,6 +4,7 @@ import { RemoteFileStorageRepo } from '@infrastructure/file-storage/remote-file-
 import { FileTTLManager } from '@infrastructure/file-ttl/file-ttl.impl';
 import { DebugPluginRepoOverlay } from '@infrastructure/plugin/debug-plugin.repo';
 import { RedisPluginDebugSessionRepo } from '@infrastructure/plugin/debug-session.repo';
+import { ModerationManager } from '@infrastructure/plugin/moderation.impl';
 import { PluginRepo } from '@infrastructure/plugin/plugin.repo';
 import { CompositePluginRuntimeManager } from '@infrastructure/plugin/plugin-runtime/composite-runtime.manager';
 import { ConnectionGatewayDebugRuntimeManager } from '@infrastructure/plugin/plugin-runtime/drivers/connection-gateway/debug-runtime.driver';
@@ -83,6 +84,12 @@ export const toolManager = ToolManager.getInstance({
   fastgptBaseUrl: serverEnv.FASTGPT_BASE_URL
 });
 
+export const moderationManager = ModerationManager.getInstance({
+  pluginRepo,
+  pluginRuntimeManager,
+  fastgptBaseUrl: serverEnv.FASTGPT_BASE_URL
+});
+
 export const pluginDebugSessionRepo = new RedisPluginDebugSessionRepo(
   redisClient.getClient,
   serverEnv.JWT_SECRET
@@ -98,6 +105,7 @@ const deps = {
   mongoClient,
   fileTTLManager,
   toolManager,
+  moderationManager,
   pluginRuntimeManager,
   pluginDebugSessionRepo
 };
