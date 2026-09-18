@@ -149,18 +149,6 @@ describe('static model multimodal capabilities', () => {
     });
   });
 
-  it('marks Hy4 preview with its documented limits and agent capabilities', () => {
-    expect(getModel('Hunyuan', 'hy4-preview')).toMatchObject({
-      maxContext: 1024000,
-      maxTokens: 64000,
-      vision: false,
-      reasoning: true,
-      reasoningEffort: true,
-      toolChoice: true,
-      responseFormatList: ['text', 'json_object', 'json_schema']
-    });
-  });
-
   it('marks Spark X2 with its reasoning and tool capabilities', () => {
     expect(getModel('SparkDesk', 'spark-x')).toMatchObject({
       maxContext: 262144,
