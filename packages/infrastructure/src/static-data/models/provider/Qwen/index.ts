@@ -33,6 +33,21 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'qwen3.8-omni-flash',
+      maxContext: 1000000,
+      maxTokens: 131072,
+      quoteMaxToken: 990000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      audio: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'qwen3.8-flash',
       maxContext: 1000000,
       maxTokens: 64000,
