@@ -167,6 +167,20 @@ const models: ProviderConfigType = {
     // Ming series - multimodal models
     {
       type: ModelTypeEnum.llm,
+      model: 'Ming-flash-omni-2.0',
+      maxContext: 128000,
+      maxTokens: 16000,
+      quoteMaxToken: 120000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true,
+      audio: true,
+      video: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'Ming-flash-omni',
       maxContext: 128000,
       maxTokens: 16000,
