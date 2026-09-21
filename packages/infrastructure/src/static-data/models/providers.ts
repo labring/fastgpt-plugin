@@ -147,6 +147,11 @@ export const ModelProviderMap = {
     "zh-CN": "OpenRouter",
     "zh-Hant": "OpenRouter",
   },
+  TokenDance: {
+    en: "TokenDance",
+    "zh-CN": "词元跳动",
+    "zh-Hant": "詞元跳動",
+  },
   vertexai: {
     en: "vertexai",
     "zh-CN": "vertexai",
@@ -351,6 +356,12 @@ export const aiproxyChannels: AIProxyChannelsType = [
     },
     avatar: "aiproxy",
     website: "https://usw-1.sealos.io?openapp=system-aiproxy",
+  },
+  {
+    channelId: 59,
+    name: { en: "TokenDance", "zh-CN": "词元跳动", "zh-Hant": "詞元跳動" },
+    avatar: "tokendance",
+    website: "https://tokendance.space",
   },
   {
     channelId: 20,

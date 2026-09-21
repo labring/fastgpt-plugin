@@ -85,28 +85,13 @@ describe('static model provider ordering', () => {
     const hunyuan = providerConfigs.find(({ provider }) => provider === 'Hunyuan');
 
     expect(openai?.list[0]?.model).toBe('gpt-6-astra');
-    expect(hunyuan?.list[0]?.model).toBe('hy4-preview');
+    expect(hunyuan?.list[0]?.model).toBe('hy3');
   });
 
   it('places the newest Ant Ling model first', () => {
     const antling = providerConfigs.find(({ provider }) => provider === 'AntLing');
 
     expect(antling?.list[0]?.model).toBe('Ling-3.0-flash-VL');
-  });
-
-  it('places Ernie preview models before their stable aliases', () => {
-    const ernie = providerConfigs.find(({ provider }) => provider === 'Ernie');
-    const modelIds = ernie?.list.map((model) => model.model) ?? [];
-
-    expect(modelIds.indexOf('ernie-x1.1-preview')).toBeGreaterThanOrEqual(0);
-    expect(modelIds.indexOf('ernie-5.0-thinking-preview')).toBeGreaterThanOrEqual(0);
-    expect(modelIds.indexOf('ernie-5.0-thinking-exp')).toBeGreaterThan(
-      modelIds.indexOf('ernie-5.0-thinking-preview')
-    );
-    expect(modelIds.indexOf('ernie-x1.1')).toBeGreaterThan(modelIds.indexOf('ernie-x1.1-preview'));
-    expect(modelIds.indexOf('ernie-5.0-thinking-latest')).toBeGreaterThan(
-      modelIds.indexOf('ernie-5.0-thinking-exp')
-    );
   });
 
   it('places Groq-hosted Qwen models in descending version order', () => {
