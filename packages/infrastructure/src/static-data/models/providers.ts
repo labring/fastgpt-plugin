@@ -335,7 +335,7 @@ export const aiproxyChannels: AIProxyChannelsType = [
     channelId: 43,
     name: { en: "Siliconflow", "zh-CN": "硅基流动", "zh-Hant": "矽基流動" },
     avatar: "siliconflow",
-    website: "https://siliconflow.cn",
+    website: "https://cloud.siliconflow.cn/i/TR9Ym0c4",
   },
   {
     channelId: 57,
