@@ -5,6 +5,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'mistral-large-3-25-12',
+      maxContext: 256000,
+      maxTokens: 8000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'mistral-large-2512',
       maxContext: 256000,
       maxTokens: 8000,
@@ -12,6 +24,18 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: true,
       reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'mistral-small-4-0-26-03',
+      maxContext: 256000,
+      maxTokens: 32000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: true,
       reasoningEffort: false,
       toolChoice: true
     },
@@ -25,6 +49,18 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'mistral-medium-3-5-26-04',
+      maxContext: 256000,
+      maxTokens: 32000,
+      quoteMaxToken: 240000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
