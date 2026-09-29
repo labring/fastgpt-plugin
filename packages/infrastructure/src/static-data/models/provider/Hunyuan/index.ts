@@ -215,7 +215,8 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.embedding,
       model: 'hunyuan-embedding',
       defaultToken: 512,
-      maxToken: 1024
+      maxToken: 1024,
+      vision: false
     }
   ]
 };

@@ -132,6 +132,7 @@ const models: ProviderConfigType = {
       model: 'doubao-embedding-large-text-250515',
       defaultToken: 512,
       maxToken: 4096,
+      vision: false,
       normalization: true
     },
     {
@@ -139,6 +140,7 @@ const models: ProviderConfigType = {
       model: 'doubao-embedding-text-240715',
       defaultToken: 512,
       maxToken: 4096,
+      vision: false,
       normalization: true
     },
     {
