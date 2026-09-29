@@ -167,13 +167,15 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.embedding,
       model: 'gemini-embedding-001',
       defaultToken: 512,
-      maxToken: 2048
+      maxToken: 2048,
+      vision: false
     },
     {
       type: ModelTypeEnum.embedding,
       model: 'gemini-embedding-2',
       defaultToken: 512,
-      maxToken: 8192
+      maxToken: 8192,
+      vision: true
     }
   ]
 };
