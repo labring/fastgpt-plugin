@@ -5,6 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 12, outputPrice: 12 }],
       model: 'yi-medium-200k',
       maxContext: 200000,
       maxTokens: 4000,
@@ -17,6 +18,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2.5, outputPrice: 2.5 }],
       model: 'yi-medium',
       maxContext: 16000,
       maxTokens: 4000,
@@ -29,6 +31,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.99, outputPrice: 0.99 }],
       model: 'yi-lightning',
       maxContext: 16000,
       maxTokens: 4000,
@@ -41,6 +44,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 6, outputPrice: 6 }],
       model: 'yi-vision-v2',
       maxContext: 16000,
       maxTokens: 4000,

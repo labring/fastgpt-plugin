@@ -5,6 +5,10 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [
+        { maxInputTokens: 200000, inputPrice: 14, outputPrice: 42 },
+        { minInputTokens: 200000, inputPrice: 28, outputPrice: 84 }
+      ],
       model: 'grok-4.5',
       maxContext: 500000,
       maxTokens: 8000,
@@ -17,6 +21,10 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [
+        { maxInputTokens: 200000, inputPrice: 14, outputPrice: 42 },
+        { minInputTokens: 200000, inputPrice: 28, outputPrice: 84 }
+      ],
       model: 'grok-4.7',
       maxContext: 500000,
       maxTokens: 8000,
@@ -29,6 +37,10 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [
+        { maxInputTokens: 200000, inputPrice: 14, outputPrice: 42 },
+        { minInputTokens: 200000, inputPrice: 28, outputPrice: 84 }
+      ],
       model: 'grok-4.6',
       maxContext: 500000,
       maxTokens: 8000,
@@ -41,6 +53,10 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [
+        { maxInputTokens: 200000, inputPrice: 8.75, outputPrice: 17.5 },
+        { minInputTokens: 200000, inputPrice: 17.5, outputPrice: 35 }
+      ],
       model: 'grok-4.3',
       maxContext: 1000000,
       maxTokens: 8000,
@@ -53,6 +69,10 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [
+        { maxInputTokens: 200000, inputPrice: 8.75, outputPrice: 17.5 },
+        { minInputTokens: 200000, inputPrice: 17.5, outputPrice: 35 }
+      ],
       model: 'grok-4.20',
       maxContext: 1000000,
       maxTokens: 8000,
@@ -65,6 +85,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 14, outputPrice: 70 }],
       model: 'grok-4.20-multi-agent-0309',
       maxContext: 1000000,
       maxTokens: 8000,
@@ -77,6 +98,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 14, outputPrice: 70 }],
       model: 'grok-4.20-0309-reasoning',
       maxContext: 1000000,
       maxTokens: 8000,
@@ -89,6 +111,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 14, outputPrice: 70 }],
       model: 'grok-4.20-0309-non-reasoning',
       maxContext: 1000000,
       maxTokens: 8000,
@@ -101,6 +124,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.4, outputPrice: 10.5 }],
       model: 'grok-code-fast-1',
       maxContext: 256000,
       maxTokens: 8000,
@@ -113,6 +137,10 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [
+        { maxInputTokens: 200000, inputPrice: 7, outputPrice: 14 },
+        { minInputTokens: 200000, inputPrice: 14, outputPrice: 28 }
+      ],
       model: 'grok-build-0.1',
       maxContext: 256000,
       maxTokens: 8000,

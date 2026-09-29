@@ -1,37 +1,44 @@
 {
   "OpenAI": {
-    "docs": ["https://developers.openai.com/api/docs/models"],
-    "notes": "Use official OpenAI model docs or authenticated model-list API if credentials are explicitly available."
+    "docs": [
+      "https://openrouter.ai/api/v1/models",
+      "https://developers.openai.com/api/docs/models"
+    ],
+    "notes": "Primary sync source is OpenRouter API (https://openrouter.ai/api/v1/models via pnpm sync:models:openrouter). Use official OpenAI model docs for capability verification if needed."
   },
   "Claude": {
     "docs": [
+      "https://openrouter.ai/api/v1/models",
       "https://platform.claude.com/docs/en/models/overview",
       "https://platform.claude.com/docs/en/release-notes/overview"
     ],
-    "notes": "Anthropic documents current model IDs and aliases on the models page; check release notes for newly launched models that may not yet appear throughout the catalog."
+    "notes": "Primary sync source is OpenRouter API (https://openrouter.ai/api/v1/models via pnpm sync:models:openrouter). Check Anthropic release notes for newly launched models."
   },
   "Gemini": {
     "docs": [
+      "https://openrouter.ai/api/v1/models",
       "https://ai.google.dev/gemini-api/docs/models",
       "https://ai.google.dev/gemini-api/docs/changelog",
       "https://ai.google.dev/gemini-api/docs/deprecations",
       "https://ai.google.dev/gemini-api/docs/pricing"
     ],
-    "notes": "Check the model catalog, release notes, deprecations, and pricing together because the catalog page can lag a newly released model. Use the official list-models API too when credentials are explicitly available."
+    "notes": "Primary sync source is OpenRouter API (https://openrouter.ai/api/v1/models via pnpm sync:models:openrouter). Use official Google Gemini docs for changelog and deprecations."
   },
   "Grok": {
     "docs": [
+      "https://openrouter.ai/api/v1/models",
       "https://docs.x.ai/developers/models",
       "https://docs.x.ai/developers/release-notes"
     ],
-    "notes": "Use xAI model docs and release notes together."
+    "notes": "Primary sync source is OpenRouter API (https://openrouter.ai/api/v1/models via pnpm sync:models:openrouter). Use xAI model docs and release notes for new releases."
   },
   "MistralAI": {
     "docs": [
+      "https://openrouter.ai/api/v1/models",
       "https://docs.mistral.ai/models",
       "https://docs.mistral.ai/resources/changelogs"
     ],
-    "notes": "Use Mistral model overview and changelog together."
+    "notes": "Primary sync source is OpenRouter API (https://openrouter.ai/api/v1/models via pnpm sync:models:openrouter). Use Mistral model overview and changelog for new releases."
   },
   "Qwen": {
     "docs": [

@@ -5,6 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 70, outputPrice: 350 }],
       model: 'claude-fable-5-1',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -17,6 +18,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 70, outputPrice: 350 }],
       model: 'claude-fable-5',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -29,6 +31,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 35, outputPrice: 175 }],
       model: 'claude-opus-4-8',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -41,6 +44,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 28, outputPrice: 140 }],
       model: 'claude-opus-5-5',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -53,6 +57,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 35, outputPrice: 175 }],
       model: 'claude-opus-5',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -65,6 +70,21 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 14, outputPrice: 70 }],
+      model: 'claude-sonnet-5.5',
+      maxContext: 1000000,
+      maxTokens: 128000,
+      quoteMaxToken: 200000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      showTopP: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 14, outputPrice: 70 }],
       model: 'claude-sonnet-5',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -77,6 +97,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 35, outputPrice: 175 }],
       model: 'claude-opus-4-7',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -89,6 +110,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 21, outputPrice: 105 }],
       model: 'claude-sonnet-4-6',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -101,6 +123,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 35, outputPrice: 175 }],
       model: 'claude-opus-4-6',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -113,6 +136,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 7, outputPrice: 35 }],
       model: 'claude-haiku-4-5',
       maxContext: 200000,
       maxTokens: 64000,
@@ -125,6 +149,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 35, outputPrice: 175 }],
       model: 'claude-opus-4-6-20260205',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -137,6 +162,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 21, outputPrice: 105 }],
       model: 'claude-sonnet-4-6-20260217',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -149,6 +175,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 7, outputPrice: 35 }],
       model: 'claude-haiku-4-5-20251001',
       maxContext: 200000,
       maxTokens: 64000,
@@ -161,6 +188,10 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [
+        { maxInputTokens: 200000, inputPrice: 21, outputPrice: 105 },
+        { minInputTokens: 200000, inputPrice: 42, outputPrice: 157.5 }
+      ],
       model: 'claude-sonnet-4-5-20250929',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -173,6 +204,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 35, outputPrice: 175 }],
       model: 'claude-opus-4-5-20251101',
       maxContext: 200000,
       maxTokens: 64000,
@@ -185,6 +217,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 105, outputPrice: 525 }],
       model: 'claude-opus-4-1-20250805',
       maxContext: 200000,
       maxTokens: 32000,

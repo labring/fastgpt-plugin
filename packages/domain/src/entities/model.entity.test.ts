@@ -1,6 +1,61 @@
 import { describe, expect, it } from 'vitest';
 
-import { EmbeddingModelItemSchema, LLMModelItemSchema, ModelTypeEnum } from './model.entity';
+import {
+  EmbeddingModelItemSchema,
+  LLMModelItemSchema,
+  ModelPriceBillingUnitSchema,
+  ModelPriceTierSchema,
+  ModelTypeEnum,
+  STTModelSchema
+} from './model.entity';
+
+describe('ModelPriceTierSchema', () => {
+  it('accepts an open-ended tier with non-negative prices', () => {
+    expect(
+      ModelPriceTierSchema.parse({
+        minInputTokens: 256,
+        inputPrice: 0.5,
+        outputPrice: 2
+      })
+    ).toEqual({
+      minInputTokens: 256,
+      inputPrice: 0.5,
+      outputPrice: 2
+    });
+  });
+
+  it('rejects negative token boundaries', () => {
+    expect(
+      ModelPriceTierSchema.safeParse({
+        maxInputTokens: -1,
+        inputPrice: 0.5,
+        outputPrice: 2
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe('ModelPriceBillingUnitSchema', () => {
+  it('supports token, character, and duration billing units', () => {
+    expect(ModelPriceBillingUnitSchema.options).toEqual([
+      'tokens_per_1m',
+      'characters_per_1m',
+      'seconds_per_60'
+    ]);
+  });
+
+  it('allows an STT model to override duration billing with token billing', () => {
+    expect(
+      STTModelSchema.parse({
+        provider: 'Test',
+        model: 'token-stt',
+        name: 'Token STT',
+        type: ModelTypeEnum.stt,
+        billingUnit: 'tokens_per_1m'
+      }).billingUnit
+    ).toBe('tokens_per_1m');
+  });
+});
 
 const baseLlmModel = {
   provider: 'Test',

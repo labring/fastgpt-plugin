@@ -5,6 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 14, outputPrice: 42 }],
       model: 'mistral-large-3-25-12',
       maxContext: 256000,
       maxTokens: 8000,
@@ -17,6 +18,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 3.5, outputPrice: 10.5 }],
       model: 'mistral-large-2512',
       maxContext: 256000,
       maxTokens: 8000,
@@ -29,6 +31,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.4, outputPrice: 4.2 }],
       model: 'mistral-small-4-0-26-03',
       maxContext: 256000,
       maxTokens: 32000,
@@ -41,6 +44,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.05, outputPrice: 4.2 }],
       model: 'mistral-small-2603',
       maxContext: 256000,
       maxTokens: 32000,
@@ -53,6 +57,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 4.2, outputPrice: 12.6 }],
       model: 'mistral-medium-3-5-26-04',
       maxContext: 256000,
       maxTokens: 32000,
@@ -65,6 +70,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 10.5, outputPrice: 52.5 }],
       model: 'mistral-medium-3-5',
       maxContext: 256000,
       maxTokens: 32000,
@@ -77,6 +83,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.4, outputPrice: 1.4 }],
       model: 'ministral-14b-2512',
       maxContext: 131000,
       maxTokens: 8000,
@@ -89,6 +96,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.05, outputPrice: 1.05 }],
       model: 'ministral-8b-2512',
       maxContext: 131000,
       maxTokens: 8000,
@@ -101,6 +109,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.7, outputPrice: 0.7 }],
       model: 'ministral-3b-2512',
       maxContext: 131000,
       maxTokens: 8000,
@@ -113,6 +122,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.28, outputPrice: 0.28 }],
       model: 'ministral-3b-latest',
       maxContext: 130000,
       maxTokens: 8000,
@@ -125,6 +135,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.7, outputPrice: 0.7 }],
       model: 'ministral-8b-latest',
       maxContext: 130000,
       maxTokens: 8000,
@@ -137,6 +148,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 14, outputPrice: 42 }],
       model: 'mistral-large-latest',
       maxContext: 130000,
       maxTokens: 8000,
@@ -149,6 +161,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.4, outputPrice: 4.2 }],
       model: 'mistral-small-latest',
       maxContext: 32000,
       maxTokens: 4000,

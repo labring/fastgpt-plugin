@@ -5,6 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 21, outputPrice: 105 }],
       model: 'kimi-k3',
       maxContext: 1048576,
       maxTokens: 1048576,
@@ -18,6 +19,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 6.65, outputPrice: 28 }],
       model: 'kimi-k2.7-code',
       maxContext: 262144,
       maxTokens: 32768,
@@ -31,6 +33,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 13.3, outputPrice: 56 }],
       model: 'kimi-k2.7-code-highspeed',
       maxContext: 262144,
       maxTokens: 32768,
@@ -44,6 +47,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 6.65, outputPrice: 28 }],
       model: 'kimi-k2.6',
       maxContext: 262144,
       maxTokens: 32000,
@@ -57,6 +61,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 6.65, outputPrice: 28 }],
       model: 'kimi-k2.5',
       maxContext: 262144,
       maxTokens: 32000,
@@ -70,6 +75,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 12, outputPrice: 12 }],
       model: 'moonshot-v1-8k',
       maxContext: 8000,
       maxTokens: 4000,
@@ -83,6 +89,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 24, outputPrice: 24 }],
       model: 'moonshot-v1-32k',
       maxContext: 32000,
       maxTokens: 4000,
@@ -96,6 +103,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 60, outputPrice: 60 }],
       model: 'moonshot-v1-128k',
       maxContext: 128000,
       maxTokens: 4000,
@@ -109,6 +117,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 60, outputPrice: 60 }],
       model: 'moonshot-v1-128k-vision-preview',
       maxContext: 128000,
       maxTokens: 4000,

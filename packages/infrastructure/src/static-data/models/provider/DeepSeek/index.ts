@@ -5,6 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2, outputPrice: 8 }],
       model: 'deepseek-flash',
       maxContext: 1000000,
       maxTokens: 384000,
@@ -19,6 +20,7 @@ const models: ProviderConfigType = {
 
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2, outputPrice: 8 }],
       model: 'deepseek-v4-flash',
       maxContext: 1000000,
       maxTokens: 384000,
@@ -32,6 +34,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 9, outputPrice: 27 }],
       model: 'deepseek-v4-pro',
       maxContext: 1000000,
       maxTokens: 384000,
@@ -45,6 +48,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2, outputPrice: 8 }],
       model: 'deepseek-chat',
       maxContext: 64000,
       maxTokens: 8000,
@@ -58,6 +62,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 4, outputPrice: 16 }],
       model: 'deepseek-reasoner',
       maxContext: 64000,
       maxTokens: 8000,

@@ -5,6 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 4.13, outputPrice: 4.13 }],
       model: 'Qwen/Qwen2.5-72B-Instruct',
       maxContext: 128000,
       maxTokens: 8000,
@@ -17,6 +18,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 4.13, outputPrice: 4.13 }],
       model: 'Qwen/Qwen2-VL-72B-Instruct',
       maxContext: 32000,
       maxTokens: 4000,
@@ -34,6 +36,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.33, outputPrice: 1.33 }],
       model: 'deepseek-ai/DeepSeek-V2.5',
       maxContext: 32000,
       maxTokens: 4000,
@@ -46,6 +49,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceTiers: [{ inputPrice: 0.16, outputPrice: 0 }],
       model: 'BAAI/bge-m3',
       defaultToken: 512,
       maxToken: 8000,
@@ -53,11 +57,13 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
+      priceTiers: [{ inputPrice: 0.2, outputPrice: 0 }],
       model: 'BAAI/bge-reranker-v2-m3',
       maxToken: 8192
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 10, outputPrice: 0 }],
       model: 'FunAudioLLM/CosyVoice2-0.5B',
       voices: [
         { label: 'alex', value: 'FunAudioLLM/CosyVoice2-0.5B:alex' },
@@ -72,6 +78,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 10, outputPrice: 0 }],
       model: 'RVC-Boss/GPT-SoVITS',
       voices: [
         { label: 'alex', value: 'RVC-Boss/GPT-SoVITS:alex' },
@@ -86,6 +93,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 15, outputPrice: 0 }],
       model: 'fishaudio/fish-speech-1.5',
       voices: [
         { label: 'alex', value: 'fishaudio/fish-speech-1.5:alex' },
@@ -100,6 +108,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.stt,
+      priceTiers: [{ inputPrice: 0.003, outputPrice: 0 }],
       model: 'FunAudioLLM/SenseVoiceSmall'
     }
   ]

@@ -5,6 +5,7 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 16, outputPrice: 60 }],
       model: 'qwen3.8-max-0902',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -19,6 +20,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 16, outputPrice: 60 }],
       model: 'qwen3.8-max',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -33,6 +35,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3.8-omni-flash',
       maxContext: 1000000,
       maxTokens: 131072,
@@ -48,6 +51,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3.8-flash',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -62,6 +66,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3.8-27b',
       maxContext: 1000000,
       maxTokens: 131072,
@@ -76,6 +81,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3.8-2.4t-a95b',
       maxContext: 1000000,
       maxTokens: 131072,
@@ -90,6 +96,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 16, outputPrice: 60 }],
       model: 'qwen3.7-max-2026-06-08',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -104,6 +111,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 16, outputPrice: 60 }],
       model: 'qwen3.7-max-2026-05-20',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -118,6 +126,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3.5-omni-plus',
       maxContext: 1000000,
       maxTokens: 131072,
@@ -133,6 +142,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3.5-omni-flash',
       maxContext: 1000000,
       maxTokens: 131072,
@@ -148,6 +158,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 16, outputPrice: 60 }],
       model: 'qwen3.7-max',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -162,6 +173,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3.7-plus-2026-05-26',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -176,6 +188,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3.7-plus',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -190,6 +203,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3.7-flash-2026-07-15',
       maxContext: 1000000,
       maxTokens: 131072,
@@ -204,6 +218,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3.7-flash',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -219,6 +234,7 @@ const models: ProviderConfigType = {
 
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3.6-plus',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -233,6 +249,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3.6-flash',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -247,6 +264,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3.5-flash',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -261,6 +279,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3.5-plus',
       maxContext: 1000000,
       maxTokens: 64000,
@@ -275,6 +294,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 16, outputPrice: 60 }],
       model: 'qwen3-max',
       maxContext: 256000,
       maxTokens: 64000,
@@ -288,6 +308,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3-vl-flash',
       maxContext: 25000,
       maxTokens: 8000,
@@ -302,6 +323,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3-vl-plus',
       maxContext: 25000,
       maxTokens: 8000,
@@ -316,6 +338,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 16, outputPrice: 60 }],
       model: 'qwen-max',
       maxContext: 128000,
       maxTokens: 8000,
@@ -329,6 +352,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 16, outputPrice: 60 }],
       model: 'qwen-vl-max',
       maxContext: 128000,
       maxTokens: 8000,
@@ -343,6 +367,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen-plus',
       maxContext: 1000000,
       maxTokens: 32000,
@@ -356,6 +381,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen-vl-plus',
       maxContext: 128000,
       maxTokens: 8000,
@@ -370,6 +396,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen-turbo',
       maxContext: 1000000,
       maxTokens: 16000,
@@ -383,6 +410,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen-flash',
       maxContext: 1000000,
       maxTokens: 32000,
@@ -396,6 +424,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3-235b-a22b',
       maxContext: 128000,
       maxTokens: 8000,
@@ -412,6 +441,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3-32b',
       maxContext: 128000,
       maxTokens: 8000,
@@ -428,6 +458,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3-30b-a3b',
       maxContext: 128000,
       maxTokens: 8000,
@@ -444,6 +475,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3-14b',
       maxContext: 128000,
       maxTokens: 8000,
@@ -460,6 +492,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3-8b',
       maxContext: 128000,
       maxTokens: 8000,
@@ -476,6 +509,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3-4b',
       maxContext: 128000,
       maxTokens: 8000,
@@ -492,6 +526,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3-1.7b',
       maxContext: 32000,
       maxTokens: 8000,
@@ -508,6 +543,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3-0.6b',
       maxContext: 32000,
       maxTokens: 8000,
@@ -524,6 +560,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 3, outputPrice: 12 }],
       model: 'qwq-plus',
       maxContext: 128000,
       maxTokens: 8000,
@@ -543,6 +580,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1, outputPrice: 4 }],
       model: 'qwq-32b',
       maxContext: 128000,
       maxTokens: 8000,
@@ -562,6 +600,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen-coder-turbo',
       maxContext: 128000,
       maxTokens: 8000,
@@ -574,6 +613,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen3-coder-plus',
       maxContext: 1024000,
       maxTokens: 64000,
@@ -587,6 +627,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.3, outputPrice: 0.6 }],
       model: 'qwen3-coder-flash',
       maxContext: 1024000,
       maxTokens: 64000,
@@ -600,6 +641,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.2, outputPrice: 3 }],
       model: 'qwen3-coder-next',
       maxContext: 256000,
       maxTokens: 64000,
@@ -613,6 +655,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.2, outputPrice: 0.5 }],
       model: 'qwen2.5-7b-instruct',
       maxContext: 128000,
       maxTokens: 8000,
@@ -626,6 +669,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.4, outputPrice: 1 }],
       model: 'qwen2.5-14b-instruct',
       maxContext: 128000,
       maxTokens: 8000,
@@ -639,6 +683,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2 }],
       model: 'qwen2.5-32b-instruct',
       maxContext: 128000,
       maxTokens: 8000,
@@ -652,6 +697,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1.6, outputPrice: 4 }],
       model: 'qwen2.5-72b-instruct',
       maxContext: 128000,
       maxTokens: 8000,
@@ -665,6 +711,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 2 }],
       model: 'qwen-long',
       maxContext: 10000000,
       maxTokens: 6000,
@@ -684,6 +731,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 0 }],
       model: 'qwen3-vl-embedding',
       defaultToken: 512,
       maxToken: 32000,
@@ -692,6 +740,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceTiers: [{ inputPrice: 0.2, outputPrice: 0 }],
       model: 'qwen3.7-text-embedding',
       defaultToken: 512,
       maxToken: 128000,
@@ -700,6 +749,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceTiers: [{ inputPrice: 0.1, outputPrice: 0 }],
       model: 'qwen3.7-text-embedding-flash',
       defaultToken: 512,
       maxToken: 128000,
@@ -708,6 +758,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceTiers: [{ inputPrice: 0.2, outputPrice: 0 }],
       model: 'text-embedding-v4',
       defaultToken: 512,
       maxToken: 8000,
@@ -718,6 +769,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceTiers: [{ inputPrice: 0.1, outputPrice: 0 }],
       model: 'text-embedding-v3',
       defaultToken: 512,
       maxToken: 8000,
@@ -725,21 +777,25 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
+      priceTiers: [{ inputPrice: 1.5, outputPrice: 0 }],
       model: 'qwen3-vl-rerank',
       maxToken: 8000
     },
     {
       type: ModelTypeEnum.rerank,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 0 }],
       model: 'qwen3.7-text-rerank',
       maxToken: 32768
     },
     {
       type: ModelTypeEnum.rerank,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 0 }],
       model: 'qwen3-rerank',
       maxToken: 32000
     },
     {
       type: ModelTypeEnum.rerank,
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 0 }],
       model: 'gte-rerank-v2',
       maxToken: 30000
     }

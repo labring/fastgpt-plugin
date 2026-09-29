@@ -6,11 +6,43 @@ import { I18nStringStrictSchema } from '../value-objects/i18n-string.vo';
 export const ModelTypeSchema = z.enum(['llm', 'embedding', 'rerank', 'tts', 'stt']);
 export const ModelTypeEnum = ModelTypeSchema.enum;
 
+// 价格单位。价格数字统一使用人民币（CNY）。
+// `tokens_per_1m` 表示元 / 1M tokens，`characters_per_1m` 表示元 / 1M 字符，
+// `seconds_per_60` 表示元 / 60 秒。具体模型可以覆盖默认单位，例如按 Token 计费的 STT。
+export const ModelPriceBillingUnitSchema = z.enum([
+  'tokens_per_1m',
+  'characters_per_1m',
+  'seconds_per_60'
+]);
+
+export type ModelPriceBillingUnitType = z.infer<typeof ModelPriceBillingUnitSchema>;
+
+// 价格梯度 schema
+// 保留 FastGPT 的字段命名和梯度规则：第一档从 0 开始，后续档位的下界由上一档
+// maxInputTokens 推导。对于非 Token 模型，边界字段表示对应 billingUnit 的数量，
+// 不是字面意义上的 Token 数量。inputPrice/outputPrice 是人民币单价，分母由
+// billingUnit 决定。
+export const ModelPriceTierSchema = z.object({
+  minInputTokens: z.number().min(0).optional(),
+  maxInputTokens: z.number().min(0).nullish(),
+  inputPrice: z.number().min(0),
+  outputPrice: z.number().min(0)
+});
+
+export type ModelPriceTierType = z.infer<typeof ModelPriceTierSchema>;
+
 // 价格类型 schema
 const PriceSchema = z.object({
-  charsPointsPrice: z.number().optional(), // 1k chars=n points; 60s=n points
-  inputPrice: z.number().optional(), // 1k tokens=n points
-  outputPrice: z.number().optional() // 1k tokens=n points
+  // 价格均为人民币；最终静态模型列表会补齐这两个字段。
+  priceCurrency: z.literal('CNY').optional(),
+  billingUnit: ModelPriceBillingUnitSchema.optional(),
+  charsPointsPrice: z.number().optional(), // legacy: 1k chars=n points; 60s=n points
+  // 新版梯度价格字段。空数组表示尚未配置价格，不代表免费。
+  priceTiers: z.array(ModelPriceTierSchema).optional(),
+  /** @deprecated 使用 priceTiers。 */
+  inputPrice: z.number().optional(), // legacy: 1k tokens=n points
+  /** @deprecated 使用 priceTiers。 */
+  outputPrice: z.number().optional() // legacy: 1k tokens=n points
 });
 
 // 基础模型项类型 schema

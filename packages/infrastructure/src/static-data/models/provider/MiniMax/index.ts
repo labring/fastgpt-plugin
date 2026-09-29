@@ -54,6 +54,10 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [
+        { maxInputTokens: 512000, inputPrice: 2.1, outputPrice: 8.4 },
+        { minInputTokens: 512000, inputPrice: 4.2, outputPrice: 16.8 }
+      ],
       model: 'MiniMax-M3',
       maxContext: 1000000,
       maxTokens: 100000,
@@ -66,6 +70,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2.1, outputPrice: 8.4 }],
       model: 'MiniMax-M2.7',
       maxContext: 204000,
       maxTokens: 100000,
@@ -78,6 +83,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 4.2, outputPrice: 16.8 }],
       model: 'MiniMax-M2.7-highspeed',
       maxContext: 204000,
       maxTokens: 100000,
@@ -90,6 +96,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2.1, outputPrice: 8.4 }],
       model: 'MiniMax-M2.5',
       maxContext: 204000,
       maxTokens: 100000,
@@ -102,6 +109,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 4.2, outputPrice: 16.8 }],
       model: 'MiniMax-M2.5-highspeed',
       maxContext: 204000,
       maxTokens: 100000,
@@ -114,6 +122,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2.1, outputPrice: 8.4 }],
       model: 'MiniMax-M2.1',
       maxContext: 204000,
       maxTokens: 100000,
@@ -126,6 +135,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 4.2, outputPrice: 16.8 }],
       model: 'MiniMax-M2.1-highspeed',
       maxContext: 204000,
       maxTokens: 100000,
@@ -138,6 +148,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2.1, outputPrice: 8.4 }],
       model: 'MiniMax-M2.1-lightning',
       maxContext: 204000,
       maxTokens: 100000,
@@ -150,6 +161,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2.1, outputPrice: 8.4 }],
       model: 'MiniMax-M2',
       maxContext: 196000,
       maxTokens: 100000,
@@ -162,6 +174,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2.1, outputPrice: 8.4 }],
       model: 'M2-her',
       maxContext: 64000,
       maxTokens: 2048,
@@ -174,6 +187,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 2.1, outputPrice: 8.4 }],
       model: 'MiniMax-M1',
       maxContext: 1000000,
       maxTokens: 40000,
@@ -186,6 +200,7 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceTiers: [{ inputPrice: 1, outputPrice: 1 }],
       model: 'MiniMax-Text-01',
       maxContext: 1000000,
       maxTokens: 40000,
@@ -198,31 +213,37 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 350, outputPrice: 0 }],
       model: 'speech-2.8-hd',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 200, outputPrice: 0 }],
       model: 'speech-2.8-turbo',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 350, outputPrice: 0 }],
       model: 'speech-02-hd',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 200, outputPrice: 0 }],
       model: 'speech-02-turbo',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 350, outputPrice: 0 }],
       model: 'speech-01-hd',
       voices: minimaxTtsVoices
     },
     {
       type: ModelTypeEnum.tts,
+      priceTiers: [{ inputPrice: 200, outputPrice: 0 }],
       model: 'speech-01-turbo',
       voices: minimaxTtsVoices
     }
