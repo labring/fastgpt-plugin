@@ -129,6 +129,30 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'hunyuan-role-latest',
+      maxContext: 32000,
+      maxTokens: 4000,
+      quoteMaxToken: 28000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'hy-role',
+      maxContext: 32000,
+      maxTokens: 4000,
+      quoteMaxToken: 28000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'hunyuan-turbos-latest',
       maxContext: 32000,
       maxTokens: 16000,
