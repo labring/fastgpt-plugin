@@ -5,6 +5,8 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 4.13, outputPrice: 4.13 }],
       model: 'Qwen/Qwen2.5-72B-Instruct',
       maxContext: 128000,
@@ -18,6 +20,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 4.13, outputPrice: 4.13 }],
       model: 'Qwen/Qwen2-VL-72B-Instruct',
       maxContext: 32000,
@@ -36,6 +40,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 1.33, outputPrice: 1.33 }],
       model: 'deepseek-ai/DeepSeek-V2.5',
       maxContext: 32000,
@@ -49,6 +55,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.16, outputPrice: 0 }],
       model: 'BAAI/bge-m3',
       defaultToken: 512,
@@ -57,12 +65,16 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.2, outputPrice: 0 }],
       model: 'BAAI/bge-reranker-v2-m3',
       maxToken: 8192
     },
     {
       type: ModelTypeEnum.tts,
+      priceCurrency: 'CNY',
+      billingUnit: 'characters_per_1m',
       priceTiers: [{ inputPrice: 10, outputPrice: 0 }],
       model: 'FunAudioLLM/CosyVoice2-0.5B',
       voices: [
@@ -78,6 +90,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
+      priceCurrency: 'CNY',
+      billingUnit: 'characters_per_1m',
       priceTiers: [{ inputPrice: 10, outputPrice: 0 }],
       model: 'RVC-Boss/GPT-SoVITS',
       voices: [
@@ -93,6 +107,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
+      priceCurrency: 'CNY',
+      billingUnit: 'characters_per_1m',
       priceTiers: [{ inputPrice: 15, outputPrice: 0 }],
       model: 'fishaudio/fish-speech-1.5',
       voices: [
@@ -108,6 +124,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.stt,
+      priceCurrency: 'CNY',
+      billingUnit: 'seconds_per_60',
       priceTiers: [{ inputPrice: 0.003, outputPrice: 0 }],
       model: 'FunAudioLLM/SenseVoiceSmall'
     }

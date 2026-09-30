@@ -5,6 +5,8 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-embeddings-v5-omni-small',
       defaultToken: 512,
@@ -13,6 +15,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-embeddings-v5-text-small',
       defaultToken: 512,
@@ -21,6 +25,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-embeddings-v5-omni-nano',
       defaultToken: 512,
@@ -29,6 +35,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-embeddings-v5-text-nano',
       defaultToken: 512,
@@ -37,6 +45,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-code-embeddings-1.5b',
       defaultToken: 512,
@@ -45,6 +55,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-code-embeddings-0.5b',
       defaultToken: 512,
@@ -53,6 +65,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-embeddings-v4',
       defaultToken: 512,
@@ -61,6 +75,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-clip-v2',
       defaultToken: 512,
@@ -69,6 +85,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.14, outputPrice: 0 }],
       model: 'jina-embeddings-v3',
       defaultToken: 512,
@@ -77,24 +95,32 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.rerank,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.35, outputPrice: 0 }],
       model: 'jina-reranker-v3',
       maxToken: 131072
     },
     {
       type: ModelTypeEnum.rerank,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.35, outputPrice: 0 }],
       model: 'jina-reranker-v3.5',
       maxToken: 131072
     },
     {
       type: ModelTypeEnum.rerank,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.35, outputPrice: 0 }],
       model: 'jina-reranker-v2-base-multilingual',
       maxToken: 1024
     },
     {
       type: ModelTypeEnum.rerank,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.35, outputPrice: 0 }],
       model: 'jina-reranker-m0',
       maxToken: 10240

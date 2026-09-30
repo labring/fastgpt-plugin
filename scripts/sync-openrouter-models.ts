@@ -50,6 +50,9 @@ export interface PriceTier {
   outputPrice: number;
 }
 
+const PRICE_CURRENCY = 'CNY' as const;
+const TOKEN_BILLING_UNIT = 'tokens_per_1m' as const;
+
 export function parseArgs() {
   const argv = process.argv.slice(2);
   const options = {
@@ -313,6 +316,9 @@ export async function syncOverseasModels() {
       if (!ts.isObjectLiteralExpression(elem)) continue;
 
       let modelId: string | null = null;
+      let typeProp: ts.PropertyAssignment | null = null;
+      let priceCurrencyProp: ts.PropertyAssignment | null = null;
+      let billingUnitProp: ts.PropertyAssignment | null = null;
       let priceTiersProp: ts.PropertyAssignment | null = null;
       let maxContextProp: ts.PropertyAssignment | null = null;
       let maxTokensProp: ts.PropertyAssignment | null = null;
@@ -322,7 +328,13 @@ export async function syncOverseasModels() {
       for (const prop of elem.properties) {
         if (!ts.isPropertyAssignment(prop)) continue;
         const name = prop.name.getText(sourceFile).replace(/['"]/g, '');
-        if (name === 'model' && ts.isStringLiteral(prop.initializer)) {
+        if (name === 'type') {
+          typeProp = prop;
+        } else if (name === 'priceCurrency') {
+          priceCurrencyProp = prop;
+        } else if (name === 'billingUnit') {
+          billingUnitProp = prop;
+        } else if (name === 'model' && ts.isStringLiteral(prop.initializer)) {
           modelId = prop.initializer.text;
           modelProp = prop;
         } else if (name === 'priceTiers') {
@@ -368,6 +380,58 @@ export async function syncOverseasModels() {
 
       const diffSummary: string[] = [];
       const infoSummary: string[] = [];
+      const metadataUpdates: typeof updates = [];
+      const missingMetadata: string[] = [];
+
+      if (priceCurrencyProp) {
+        const oldCurrency = priceCurrencyProp.initializer.getText(sourceFile).replace(/["']/g, '');
+        if (oldCurrency !== PRICE_CURRENCY) {
+          diffSummary.push(`priceCurrency: ${oldCurrency} -> ${PRICE_CURRENCY}`);
+          metadataUpdates.push({
+            modelId,
+            pos: priceCurrencyProp.getStart(sourceFile),
+            end: priceCurrencyProp.end,
+            newText: `priceCurrency: '${PRICE_CURRENCY}'`,
+            diffSummary: [`priceCurrency: ${oldCurrency} -> ${PRICE_CURRENCY}`]
+          });
+        }
+      } else {
+        diffSummary.push(`priceCurrency: missing -> ${PRICE_CURRENCY}`);
+        missingMetadata.push(`priceCurrency: '${PRICE_CURRENCY}'`);
+      }
+
+      if (billingUnitProp) {
+        const oldBillingUnit = billingUnitProp.initializer
+          .getText(sourceFile)
+          .replace(/["']/g, '');
+        if (oldBillingUnit !== TOKEN_BILLING_UNIT) {
+          diffSummary.push(`billingUnit: ${oldBillingUnit} -> ${TOKEN_BILLING_UNIT}`);
+          metadataUpdates.push({
+            modelId,
+            pos: billingUnitProp.getStart(sourceFile),
+            end: billingUnitProp.end,
+            newText: `billingUnit: '${TOKEN_BILLING_UNIT}'`,
+            diffSummary: [`billingUnit: ${oldBillingUnit} -> ${TOKEN_BILLING_UNIT}`]
+          });
+        }
+      } else {
+        diffSummary.push(`billingUnit: missing -> ${TOKEN_BILLING_UNIT}`);
+        missingMetadata.push(`billingUnit: '${TOKEN_BILLING_UNIT}'`);
+      }
+
+      if (missingMetadata.length > 0 && typeProp) {
+        const anchor = priceCurrencyProp ?? typeProp;
+        metadataUpdates.push({
+          modelId,
+          pos: anchor.end,
+          end: anchor.end,
+          // PropertyAssignment.end is before the existing comma. Prefixing a comma
+          // keeps the anchor valid whether it was the last property or not.
+          newText: `,\n    ${missingMetadata.join(',\n    ')}`,
+          diffSummary: missingMetadata
+        });
+      }
+
       const newTiers = calculatePriceTiers(orMatch, options.exchangeRate);
       const newTiersStr = formatTiers(newTiers);
 
@@ -380,7 +444,7 @@ export async function syncOverseasModels() {
           priceChanged = true;
         }
       } else {
-        diffSummary.push(`priceTiers: missing -> ${compactNewText}`);
+        diffSummary.push(`priceTiers: missing -> ${newTiersStr.replace(/\s+/g, ' ')}`);
         priceChanged = true;
       }
 
@@ -436,6 +500,8 @@ export async function syncOverseasModels() {
         for (const diff of diffSummary) {
           console.log(`      • ${diff}`);
         }
+
+        updates.push(...metadataUpdates);
 
         if (priceChanged && priceTiersProp) {
           updates.push({

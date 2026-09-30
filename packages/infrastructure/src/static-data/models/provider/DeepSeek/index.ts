@@ -5,6 +5,8 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 2, outputPrice: 8 }],
       model: 'deepseek-flash',
       maxContext: 1000000,
@@ -20,6 +22,8 @@ const models: ProviderConfigType = {
 
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 2, outputPrice: 8 }],
       model: 'deepseek-v4-flash',
       maxContext: 1000000,
@@ -34,6 +38,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 9, outputPrice: 27 }],
       model: 'deepseek-v4-pro',
       maxContext: 1000000,
@@ -48,6 +54,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 2, outputPrice: 8 }],
       model: 'deepseek-chat',
       maxContext: 64000,
@@ -62,6 +70,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 4, outputPrice: 16 }],
       model: 'deepseek-reasoner',
       maxContext: 64000,

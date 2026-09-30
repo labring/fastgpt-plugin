@@ -19,9 +19,8 @@ export type ModelPriceBillingUnitType = z.infer<typeof ModelPriceBillingUnitSche
 
 // 价格梯度 schema
 // 保留 FastGPT 的字段命名和梯度规则：第一档从 0 开始，后续档位的下界由上一档
-// maxInputTokens 推导。对于非 Token 模型，边界字段表示对应 billingUnit 的数量，
-// 不是字面意义上的 Token 数量。inputPrice/outputPrice 是人民币单价，分母由
-// billingUnit 决定。
+// maxInputTokens 推导。maxInputTokens 始终使用完整的 Token 数量（例如 200000），
+// 不做千 Token 缩写；inputPrice/outputPrice 是人民币单价，分母由 billingUnit 决定。
 export const ModelPriceTierSchema = z.object({
   minInputTokens: z.number().min(0).optional(),
   maxInputTokens: z.number().min(0).nullish(),

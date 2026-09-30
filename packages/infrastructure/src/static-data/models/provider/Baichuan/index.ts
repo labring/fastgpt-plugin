@@ -5,6 +5,8 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 100, outputPrice: 100 }],
       model: 'Baichuan4',
       maxContext: 32000,
@@ -19,6 +21,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 15, outputPrice: 15 }],
       model: 'Baichuan4-Turbo',
       maxContext: 32000,
@@ -33,6 +37,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.98, outputPrice: 0.98 }],
       model: 'Baichuan4-Air',
       maxContext: 32000,
@@ -47,6 +53,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 12, outputPrice: 12 }],
       model: 'Baichuan3-Turbo-128k',
       maxContext: 128000,
@@ -61,6 +69,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 12, outputPrice: 12 }],
       model: 'Baichuan3-Turbo',
       maxContext: 32000,
@@ -75,6 +85,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 15, outputPrice: 15 }],
       model: 'Baichuan-M2',
       maxContext: 32000,
@@ -89,6 +101,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 15, outputPrice: 15 }],
       model: 'Baichuan-M2-Plus',
       maxContext: 32000,
@@ -103,6 +117,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 30, outputPrice: 30 }],
       model: 'Baichuan-M3',
       maxContext: 32000,
@@ -116,6 +132,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 30, outputPrice: 30 }],
       model: 'Baichuan-M3-Plus',
       maxContext: 32000,
@@ -129,6 +147,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 8, outputPrice: 8 }],
       model: 'Baichuan2-Turbo',
       maxContext: 32000,

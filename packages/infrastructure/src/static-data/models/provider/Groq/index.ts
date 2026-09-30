@@ -5,6 +5,8 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 1.05, outputPrice: 4.2 }],
       model: 'openai/gpt-oss-120b',
       maxContext: 131072,
@@ -18,6 +20,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 2.1, outputPrice: 8.4 }],
       model: 'minimaxai/minimax-m2.7',
       maxContext: 196608,
@@ -32,6 +36,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.525, outputPrice: 2.1 }],
       model: 'openai/gpt-oss-20b',
       maxContext: 131072,
@@ -45,6 +51,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.77, outputPrice: 2.03 }],
       model: 'qwen/qwen3.8-27b',
       maxContext: 131042,
@@ -59,6 +67,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.77, outputPrice: 2.03 }],
       model: 'qwen/qwen3.6-27b',
       maxContext: 131072,
@@ -73,6 +83,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.77, outputPrice: 2.03 }],
       model: 'qwen/qwen3-32b',
       maxContext: 131072,
@@ -86,6 +98,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.35, outputPrice: 0.56 }],
       model: 'llama-3.1-8b-instant',
       maxContext: 131072,
@@ -99,6 +113,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 4.13, outputPrice: 5.53 }],
       model: 'llama-3.3-70b-versatile',
       maxContext: 131072,
@@ -112,6 +128,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 1.4, outputPrice: 4.2 }],
       model: 'meta-llama/llama-4-scout-17b-16e-instruct',
       maxContext: 131072,
@@ -125,11 +143,15 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.stt,
+      priceCurrency: 'CNY',
+      billingUnit: 'seconds_per_60',
       priceTiers: [{ inputPrice: 0.013, outputPrice: 0 }],
       model: 'whisper-large-v3'
     },
     {
       type: ModelTypeEnum.stt,
+      priceCurrency: 'CNY',
+      billingUnit: 'seconds_per_60',
       priceTiers: [{ inputPrice: 0.0047, outputPrice: 0 }],
       model: 'whisper-large-v3-turbo'
     }

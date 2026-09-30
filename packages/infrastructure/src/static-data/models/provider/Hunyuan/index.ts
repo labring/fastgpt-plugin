@@ -5,6 +5,8 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 8, outputPrice: 24 }],
       model: 'hy3',
       maxContext: 256000,
@@ -19,6 +21,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 8, outputPrice: 24 }],
       model: 'hy3-202608',
       maxContext: 256000,
@@ -33,6 +37,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 12, outputPrice: 36 }],
       model: 'hunyuan-large',
       maxContext: 28000,
@@ -46,6 +52,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'hunyuan-lite',
       maxContext: 250000,
@@ -59,6 +67,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 30, outputPrice: 90 }],
       model: 'hunyuan-pro',
       maxContext: 28000,
@@ -72,6 +82,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 4.5, outputPrice: 12 }],
       model: 'hunyuan-standard',
       maxContext: 32000,
@@ -85,6 +97,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 12, outputPrice: 36 }],
       model: 'hunyuan-turbo-vision',
       maxContext: 6000,
@@ -98,6 +112,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 15, outputPrice: 50 }],
       model: 'hunyuan-turbo',
       maxContext: 28000,
@@ -111,6 +127,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 1, outputPrice: 2 }],
       model: 'hunyuan-a13b',
       maxContext: 224000,
@@ -124,6 +142,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 12, outputPrice: 36 }],
       model: 'hunyuan-role-latest',
       maxContext: 32000,
@@ -137,6 +157,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 12, outputPrice: 36 }],
       model: 'hy-role',
       maxContext: 32000,
@@ -150,6 +172,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 15, outputPrice: 50 }],
       model: 'hunyuan-turbos-latest',
       maxContext: 32000,
@@ -163,6 +187,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 15, outputPrice: 50 }],
       model: 'hunyuan-t1-latest',
       maxContext: 32000,
@@ -176,6 +202,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 8, outputPrice: 24 }],
       model: 'hunyuan-2.0-instruct-20251111',
       maxContext: 128000,
@@ -189,6 +217,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 8, outputPrice: 24 }],
       model: 'hunyuan-2.0-thinking-20251109',
       maxContext: 128000,
@@ -202,6 +232,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 12, outputPrice: 36 }],
       model: 'hunyuan-vision',
       maxContext: 6000,
@@ -215,6 +247,8 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
       priceTiers: [{ inputPrice: 0.5, outputPrice: 0 }],
       model: 'hunyuan-embedding',
       defaultToken: 512,
