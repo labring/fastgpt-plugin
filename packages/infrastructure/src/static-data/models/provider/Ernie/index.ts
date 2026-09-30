@@ -165,13 +165,15 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.embedding,
       model: 'Embedding-V1',
       defaultToken: 512,
-      maxToken: 1000
+      maxToken: 1000,
+      vision: false
     },
     {
       type: ModelTypeEnum.embedding,
       model: 'tao-8k',
       defaultToken: 512,
-      maxToken: 8000
+      maxToken: 8000,
+      vision: false
     }
   ]
 };

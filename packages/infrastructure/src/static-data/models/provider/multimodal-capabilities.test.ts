@@ -11,11 +11,12 @@ import chatglm from './ChatGLM';
 import doubao from './Doubao';
 import gemini from './Gemini';
 import hunyuan from './Hunyuan';
+import jina from './Jina';
 import openai from './OpenAI';
 import qwen from './Qwen';
 import sparkdesk from './SparkDesk';
 
-const staticModelList = [antling, chatglm, doubao, gemini, hunyuan, openai, qwen, sparkdesk].flatMap((provider) =>
+const staticModelList = [antling, chatglm, doubao, gemini, hunyuan, jina, openai, qwen, sparkdesk].flatMap((provider) =>
   provider.list.map((model) =>
     ModelItemSchema.parse({
       ...model,
@@ -156,6 +157,56 @@ describe('static model multimodal capabilities', () => {
       reasoning: true,
       reasoningEffort: false,
       toolChoice: true
+    });
+  });
+
+  it('marks multimodal embedding models with vision capability', () => {
+    // Qwen
+    expect(getModel('Qwen', 'qwen3-vl-embedding')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: true
+    });
+    expect(getModel('Qwen', 'qwen3.7-text-embedding')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: false
+    });
+
+    // Gemini
+    expect(getModel('Gemini', 'gemini-embedding-2')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: true
+    });
+    expect(getModel('Gemini', 'gemini-embedding-001')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: false
+    });
+
+    // Jina
+    expect(getModel('Jina', 'jina-embeddings-v5-omni-small')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: true
+    });
+    expect(getModel('Jina', 'jina-embeddings-v5-omni-nano')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: true
+    });
+    expect(getModel('Jina', 'jina-embeddings-v4')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: true
+    });
+    expect(getModel('Jina', 'jina-clip-v2')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: true
+    });
+    expect(getModel('Jina', 'jina-embeddings-v5-text-small')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: false
+    });
+
+    // OpenAI text embeddings
+    expect(getModel('OpenAI', 'text-embedding-3-large')).toMatchObject({
+      type: ModelTypeEnum.embedding,
+      vision: false
     });
   });
 });

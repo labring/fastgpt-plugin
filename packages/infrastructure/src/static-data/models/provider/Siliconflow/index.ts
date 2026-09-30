@@ -48,7 +48,8 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.embedding,
       model: 'BAAI/bge-m3',
       defaultToken: 512,
-      maxToken: 8000
+      maxToken: 8000,
+      vision: false
     },
     {
       type: ModelTypeEnum.rerank,

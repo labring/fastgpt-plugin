@@ -370,6 +370,7 @@ const models: ProviderConfigType = {
       model: 'embedding-3',
       defaultToken: 512,
       maxToken: 8000,
+      vision: false,
       defaultConfig: {
         dimensions: 1024
       }

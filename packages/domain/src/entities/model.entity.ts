@@ -65,6 +65,7 @@ export const EmbeddingModelItemSchema = z.object({
   maxToken: z.number(), // model max token
   weight: z.number().optional(), // training weight
   hidden: z.boolean().optional(), // Disallow creation
+  vision: z.boolean().optional(),
   normalization: z.boolean().optional(), // normalization processing
   defaultConfig: z.record(z.string(), z.any()).optional(), // post request config
   dbConfig: z.record(z.string(), z.any()).optional(), // Custom parameters for storage

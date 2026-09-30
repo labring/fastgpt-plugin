@@ -687,6 +687,7 @@ const models: ProviderConfigType = {
       model: 'qwen3-vl-embedding',
       defaultToken: 512,
       maxToken: 32000,
+      vision: true,
       defaultConfig: { dimensions: 2560 }
     },
     {
@@ -694,6 +695,7 @@ const models: ProviderConfigType = {
       model: 'qwen3.7-text-embedding',
       defaultToken: 512,
       maxToken: 128000,
+      vision: false,
       defaultConfig: { dimensions: 1024 }
     },
     {
@@ -701,6 +703,7 @@ const models: ProviderConfigType = {
       model: 'qwen3.7-text-embedding-flash',
       defaultToken: 512,
       maxToken: 128000,
+      vision: false,
       defaultConfig: { dimensions: 1024 }
     },
     {
@@ -708,6 +711,7 @@ const models: ProviderConfigType = {
       model: 'text-embedding-v4',
       defaultToken: 512,
       maxToken: 8000,
+      vision: false,
       defaultConfig: {
         dimensions: 1536
       }
@@ -716,7 +720,8 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.embedding,
       model: 'text-embedding-v3',
       defaultToken: 512,
-      maxToken: 8000
+      maxToken: 8000,
+      vision: false
     },
     {
       type: ModelTypeEnum.rerank,
