@@ -5,6 +5,9 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 30, outputPrice: 90 }],
       model: 'ernie-5.1',
       maxContext: 128000,
       maxTokens: 65536,
@@ -17,6 +20,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 15, outputPrice: 60 }],
       model: 'ernie-x1.1',
       maxContext: 64000,
       maxTokens: 65536,
@@ -29,6 +35,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 20, outputPrice: 60 }],
       model: 'ernie-5.0',
       maxContext: 128000,
       maxTokens: 65536,
@@ -41,6 +50,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 20, outputPrice: 60 }],
       model: 'ernie-5.0-thinking-latest',
       maxContext: 128000,
       maxTokens: 65536,
@@ -53,6 +65,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 3, outputPrice: 9 }],
       model: 'ernie-4.5-turbo-20260402',
       maxContext: 128000,
       maxTokens: 12288,
@@ -65,6 +80,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 3, outputPrice: 9 }],
       model: 'ernie-4.5-turbo-128k',
       maxContext: 128000,
       maxTokens: 12288,
@@ -77,6 +95,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 3, outputPrice: 9 }],
       model: 'ernie-4.5-turbo-vl',
       maxContext: 128000,
       maxTokens: 16384,
@@ -90,6 +111,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 3, outputPrice: 9 }],
       model: 'ernie-4.5-turbo-32k',
       maxContext: 32000,
       maxTokens: 12288,
@@ -102,6 +126,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 3, outputPrice: 9 }],
       model: 'ernie-4.5-turbo-vl-32k',
       maxContext: 32000,
       maxTokens: 12288,
@@ -115,6 +142,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 30, outputPrice: 90 }],
       model: 'ERNIE-4.0-8K',
       maxContext: 8000,
       maxTokens: 2048,
@@ -127,6 +157,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 8, outputPrice: 24 }],
       model: 'ERNIE-4.0-Turbo-8K',
       maxContext: 8000,
       maxTokens: 2048,
@@ -139,6 +172,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'ERNIE-Lite-8K',
       maxContext: 8000,
       maxTokens: 2048,
@@ -151,6 +187,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'ERNIE-Speed-128K',
       maxContext: 128000,
       maxTokens: 4096,
@@ -163,6 +202,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 0 }],
       model: 'Embedding-V1',
       defaultToken: 512,
       maxToken: 1000,
@@ -170,6 +212,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 0 }],
       model: 'tao-8k',
       defaultToken: 512,
       maxToken: 8000,

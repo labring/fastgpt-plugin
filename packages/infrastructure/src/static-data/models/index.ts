@@ -91,6 +91,14 @@ const fallbackProviderName = (provider: string): I18nStringStrictType => ({
   'zh-Hant': provider
 });
 
+const defaultBillingUnitByModelType = {
+  [ModelTypeEnum.llm]: 'tokens_per_1m',
+  [ModelTypeEnum.embedding]: 'tokens_per_1m',
+  [ModelTypeEnum.rerank]: 'tokens_per_1m',
+  [ModelTypeEnum.tts]: 'characters_per_1m',
+  [ModelTypeEnum.stt]: 'seconds_per_60'
+} as const;
+
 const parsePriority = (priority: string) =>
   priority
     .split(',')
@@ -150,6 +158,11 @@ export const staticModelList: ModelItemType[] = staticModelProviderConfigs.flatM
         useInEvaluation: true
       }),
       ...model,
+      // Keep one pricing shape for every model type. Providers can fill this
+      // from their official catalog; an empty array means no price is configured.
+      priceCurrency: model.priceCurrency ?? 'CNY',
+      billingUnit: model.billingUnit ?? defaultBillingUnitByModelType[model.type],
+      priceTiers: model.priceTiers ?? [],
       provider: item.provider,
       name: model.name ?? model.model
     })

@@ -5,6 +5,9 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 1, outputPrice: 2 }],
       model: 'step-3.7-flash',
       maxContext: 256000,
       maxTokens: 8000,
@@ -17,6 +20,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 1, outputPrice: 2 }],
       model: 'step-3.5-flash-2603',
       maxContext: 256000,
       maxTokens: 8000,
@@ -29,6 +35,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 1, outputPrice: 2 }],
       model: 'step-3.5-flash',
       maxContext: 256000,
       maxTokens: 8000,
@@ -41,6 +50,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 8, outputPrice: 24 }],
       model: 'step-3',
       maxContext: 64000,
       maxTokens: 8000,
@@ -53,6 +65,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 1.5, outputPrice: 3 }],
       model: 'step-r1-v-mini',
       maxContext: 100000,
       maxTokens: 8000,
@@ -65,6 +80,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 4 }],
       model: 'step-1o-turbo-vision',
       maxContext: 32000,
       maxTokens: 8000,
@@ -77,6 +95,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 1, outputPrice: 2 }],
       model: 'step-1-flash',
       maxContext: 8000,
       maxTokens: 4000,
@@ -89,6 +110,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 5, outputPrice: 15 }],
       model: 'step-1-8k',
       maxContext: 8000,
       maxTokens: 8000,
@@ -101,6 +125,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 15, outputPrice: 45 }],
       model: 'step-1-32k',
       maxContext: 32000,
       maxTokens: 8000,
@@ -113,6 +140,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 40, outputPrice: 120 }],
       model: 'step-1-128k',
       maxContext: 128000,
       maxTokens: 8000,
@@ -125,6 +155,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 60, outputPrice: 180 }],
       model: 'step-1-256k',
       maxContext: 256000,
       maxTokens: 8000,
@@ -137,6 +170,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 15, outputPrice: 45 }],
       model: 'step-1o-vision-32k',
       maxContext: 32000,
       maxTokens: 8000,
@@ -149,6 +185,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 5, outputPrice: 15 }],
       model: 'step-1v-8k',
       maxContext: 8000,
       maxTokens: 8000,
@@ -161,6 +200,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 15, outputPrice: 45 }],
       model: 'step-1v-32k',
       maxContext: 32000,
       maxTokens: 8000,
@@ -173,6 +215,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 4 }],
       model: 'step-2-mini',
       maxContext: 8000,
       maxTokens: 4000,
@@ -185,6 +230,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 38, outputPrice: 120 }],
       model: 'step-2-16k',
       maxContext: 16000,
       maxTokens: 4000,
@@ -197,6 +245,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.tts,
+      priceCurrency: 'CNY',
+      billingUnit: 'characters_per_1m',
+      priceTiers: [{ inputPrice: 50, outputPrice: 0 }],
       model: 'step-tts-mini',
       voices: [
         { label: 'cixingnansheng', value: 'cixingnansheng' },

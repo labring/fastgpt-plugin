@@ -5,6 +5,9 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 7 }],
       model: 'glm-5.3-flashx',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -19,6 +22,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.8, outputPrice: 2.8 }],
       model: 'glm-5.3-flash',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -33,6 +39,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 8, outputPrice: 28 }],
       model: 'glm-5.3',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -46,6 +55,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 8, outputPrice: 28 }],
       model: 'glm-5.2',
       maxContext: 1000000,
       maxTokens: 128000,
@@ -59,6 +71,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [
+        { maxInputTokens: 32000, inputPrice: 6, outputPrice: 24 },
+        { minInputTokens: 32000, inputPrice: 8, outputPrice: 28 }
+      ],
       model: 'glm-5.1',
       maxContext: 200000,
       maxTokens: 128000,
@@ -72,6 +90,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [
+        { maxInputTokens: 32000, inputPrice: 4, outputPrice: 18 },
+        { minInputTokens: 32000, inputPrice: 6, outputPrice: 22 }
+      ],
       model: 'glm-5',
       maxContext: 200000,
       maxTokens: 128000,
@@ -85,6 +109,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [
+        { maxInputTokens: 32000, inputPrice: 5, outputPrice: 22 },
+        { minInputTokens: 32000, inputPrice: 7, outputPrice: 26 }
+      ],
       model: 'glm-5-turbo',
       maxContext: 200000,
       maxTokens: 128000,
@@ -98,6 +128,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [
+        { maxInputTokens: 32000, inputPrice: 5, outputPrice: 22 },
+        { minInputTokens: 32000, inputPrice: 7, outputPrice: 26 }
+      ],
       model: 'glm-5v-turbo',
       maxContext: 200000,
       maxTokens: 128000,
@@ -111,6 +147,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [
+        { maxInputTokens: 32000, inputPrice: 3, outputPrice: 14 },
+        { minInputTokens: 32000, inputPrice: 4, outputPrice: 16 }
+      ],
       model: 'glm-4.7',
       maxContext: 200000,
       maxTokens: 128000,
@@ -124,6 +166,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 3 }],
       model: 'glm-4.7-flashx',
       maxContext: 200000,
       maxTokens: 128000,
@@ -137,6 +182,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'glm-4.7-flash',
       maxContext: 200000,
       maxTokens: 128000,
@@ -150,6 +198,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 8 }],
       model: 'glm-4.6',
       maxContext: 200000,
       maxTokens: 128000,
@@ -163,6 +214,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [
+        { maxInputTokens: 32000, inputPrice: 1, outputPrice: 3 },
+        { minInputTokens: 32000, inputPrice: 2, outputPrice: 6 }
+      ],
       model: 'glm-4.6v',
       maxContext: 128000,
       maxTokens: 32000,
@@ -176,6 +233,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [
+        { maxInputTokens: 32000, inputPrice: 0.15, outputPrice: 1.5 },
+        { minInputTokens: 32000, inputPrice: 0.3, outputPrice: 3 }
+      ],
       model: 'glm-4.6v-flashx',
       maxContext: 128000,
       maxTokens: 16000,
@@ -189,6 +252,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'glm-4.6v-flash',
       maxContext: 128000,
       maxTokens: 32000,
@@ -202,6 +268,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 8 }],
       model: 'glm-4.5',
       maxContext: 128000,
       maxTokens: 96000,
@@ -215,6 +284,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 10, outputPrice: 10 }],
       model: 'glm-4.5-x',
       maxContext: 128000,
       maxTokens: 96000,
@@ -228,6 +300,12 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [
+        { maxInputTokens: 32000, inputPrice: 0.8, outputPrice: 2 },
+        { minInputTokens: 32000, inputPrice: 1.2, outputPrice: 8 }
+      ],
       model: 'glm-4.5-air',
       maxContext: 128000,
       maxTokens: 96000,
@@ -241,6 +319,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 10, outputPrice: 10 }],
       model: 'glm-4.5-airx',
       maxContext: 128000,
       maxTokens: 96000,
@@ -254,6 +335,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'glm-4.5-flash',
       maxContext: 128000,
       maxTokens: 96000,
@@ -267,6 +351,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 2 }],
       model: 'glm-4.1v-thinking-flashx',
       maxContext: 64000,
       maxTokens: 16000,
@@ -279,6 +366,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'glm-4.1v-thinking-flash',
       maxContext: 64000,
       maxTokens: 16000,
@@ -291,6 +381,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 0.5 }],
       model: 'glm-4-air',
       maxContext: 128000,
       maxTokens: 16000,
@@ -304,6 +397,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'glm-4-flash',
       maxContext: 128000,
       maxTokens: 16000,
@@ -317,6 +413,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 1, outputPrice: 1 }],
       model: 'glm-4-long',
       maxContext: 1000000,
       maxTokens: 4000,
@@ -330,6 +429,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 5, outputPrice: 5 }],
       model: 'glm-4-plus',
       maxContext: 128000,
       maxTokens: 4000,
@@ -343,6 +445,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0, outputPrice: 0 }],
       model: 'glm-4v-flash',
       maxContext: 8000,
       maxTokens: 1000,
@@ -355,6 +460,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 4, outputPrice: 4 }],
       model: 'glm-4v-plus',
       maxContext: 16000,
       maxTokens: 4000,
@@ -367,6 +475,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.embedding,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 0 }],
       model: 'embedding-3',
       defaultToken: 512,
       maxToken: 8000,

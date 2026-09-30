@@ -51,18 +51,27 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.tts,
+      priceCurrency: 'CNY',
+      billingUnit: 'characters_per_1m',
+      priceTiers: [{ inputPrice: 20, outputPrice: 0 }],
       model: 'sambert-v1',
       voices: sambertVoices
     },
     {
+      priceTiers: [{ inputPrice: 0.0036, outputPrice: 0 }],
       model: 'fun-asr',
       name: 'fun-asr',
-      type: ModelTypeEnum.stt
+      type: ModelTypeEnum.stt,
+      priceCurrency: 'CNY',
+      billingUnit: 'seconds_per_60',
     },
     {
+      priceTiers: [{ inputPrice: 0.0024, outputPrice: 0 }],
       model: 'SenseVoiceSmall',
       name: 'SenseVoiceSmall',
-      type: ModelTypeEnum.stt
+      type: ModelTypeEnum.stt,
+      priceCurrency: 'CNY',
+      billingUnit: 'seconds_per_60',
     }
   ]
 };

@@ -6,6 +6,9 @@ const models: ProviderConfigType = {
     // Ling series - general language models
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ling-3.0-flash-VL',
       maxContext: 256000,
       maxTokens: 102400,
@@ -20,6 +23,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ling-3.0-flash',
       maxContext: 256000,
       maxTokens: 16000,
@@ -33,6 +39,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 6 }],
       model: 'Ling-2.6-1T',
       maxContext: 256000,
       maxTokens: 16000,
@@ -46,6 +55,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 6 }],
       model: 'Ling-2.6-flash',
       maxContext: 256000,
       maxTokens: 16000,
@@ -59,6 +71,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ling-3.0-tiny',
       maxContext: 256000,
       maxTokens: 32000,
@@ -72,6 +87,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 6 }],
       model: 'Ling-1T',
       maxContext: 128000,
       maxTokens: 16000,
@@ -85,6 +103,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ling-flash-2.0',
       maxContext: 128000,
       maxTokens: 16000,
@@ -98,6 +119,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ling-mini-2.0',
       maxContext: 64000,
       maxTokens: 8000,
@@ -113,6 +137,9 @@ const models: ProviderConfigType = {
     // Ring series - reasoning models
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 6 }],
       model: 'Ring-2.6-1T',
       maxContext: 256000,
       maxTokens: 16000,
@@ -126,6 +153,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 2, outputPrice: 6 }],
       model: 'Ring-1T',
       maxContext: 128000,
       maxTokens: 16000,
@@ -139,6 +169,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ring-flash-2.0',
       maxContext: 128000,
       maxTokens: 16000,
@@ -152,6 +185,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ring-mini-2.0',
       maxContext: 64000,
       maxTokens: 8000,
@@ -167,6 +203,9 @@ const models: ProviderConfigType = {
     // Ming series - multimodal models
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ming-flash-omni-2.0',
       maxContext: 128000,
       maxTokens: 16000,
@@ -181,6 +220,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ming-flash-omni',
       maxContext: 128000,
       maxTokens: 16000,
@@ -193,6 +235,9 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      priceCurrency: 'CNY',
+      billingUnit: 'tokens_per_1m',
+      priceTiers: [{ inputPrice: 0.5, outputPrice: 1.5 }],
       model: 'Ming-lite-omni',
       maxContext: 64000,
       maxTokens: 8000,

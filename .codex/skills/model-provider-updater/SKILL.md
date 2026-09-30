@@ -10,11 +10,14 @@ Only work on providers already registered by `packages/infrastructure/src/static
 
 This skill was restored from the old `.codex/skills/model-provider-updater` layout. The plugin code has since moved from the legacy `modules/model/*` tree into the v1 `packages/infrastructure/src/static-data/models/*` tree, so use the paths and commands below rather than the old `modules/model` or `.agents/skills` paths.
 
-## Add-Only Policy
+## Active-Only Policy (Deprecation Pruning)
 
-This workflow is strictly additive. Never remove an existing provider preset, even when an official source marks it deprecated, retired, unavailable, superseded, or absent from the current catalog. Record such findings in the run summary when useful, but leave the registry entry unchanged.
+This workflow strictly retains active, currently supported models and prunes deprecated/retired models:
 
-Every executable update plan must keep each provider's `remove` array empty. The helper script retains removal support for legacy or explicitly separate workflows, but this skill must not populate or apply removal operations.
+- **Immediate Removal of Deprecated Models**: When an official source or OpenRouter marks a model as deprecated, retired, shut down, legacy, or end-of-life (such as `gpt-3.5-turbo-0613` or retired historical snapshots), the model must be **directly removed** from the provider preset file.
+- **Overseas Automated Pruning**: The OpenRouter sync script (`pnpm sync:models:openrouter --apply`) automatically identifies deprecated models (via OpenRouter status, name tags like `(older...)`, descriptions, and past expiration dates) and removes them from the provider files while updating prices.
+- **Domestic / Plan-based Pruning**: When auditing providers with `scripts/model_provider_presets.mjs`, populate the provider's `remove` array in the update plan with the model ID and reason (e.g. `{"model": "...", "reason": "Officially shut down on YYYY-MM-DD"}`). `apply-plan --write` will safely remove them from the preset array.
+- **Never Add Deprecated Candidates**: Candidate discovery filters out deprecated models, obsolete snapshot suffixes (e.g. `-0613`, `-0314`, `-1106`), and expired models, ensuring only active models enter the registry.
 
 ## Complete-Audit Invariant
 
@@ -32,6 +35,26 @@ Coverage alone is not sufficient. Each provider audit must also preserve a verif
 
 This candidate ledger is the completion proof. A reachable page, a search snippet, or an `auditStatus` marker by itself is never proof that the catalog was scanned.
 
+## Pricing Schema Standard (`priceTiers`)
+
+All models in `packages/infrastructure/src/static-data/models/provider/*/index.ts` must define a `priceTiers` array adhering to FastGPT gradient billing format:
+
+- **Currency**: `CNY` (人民币). Overseas models are converted from USD using an agreed exchange rate (default: 7.0).
+- **Billing Unit (`billingUnit`)**:
+  - `tokens_per_1m`: default for LLM, Embedding, and Rerank models (CNY per 1,000,000 tokens).
+  - `characters_per_1m`: default for TTS models (CNY per 1,000,000 characters).
+  - `seconds_per_60`: default for STT/audio models (CNY per 60 seconds). For token-billed STT models, set `billingUnit: 'tokens_per_1m'`.
+- **Tier Structure (`ModelPriceTierSchema`)**:
+  ```typescript
+  priceTiers: [
+    // Standard flat tier:
+    { inputPrice: 1.5, outputPrice: 6.0 },
+    // Tiered gradient (e.g. for long context):
+    { maxInputTokens: 200000, inputPrice: 1.5, outputPrice: 6.0 },
+    { minInputTokens: 200000, inputPrice: 3.0, outputPrice: 12.0 }
+  ]
+  ```
+
 ## Workflow
 
 1. Inventory the current registry.
@@ -43,6 +66,10 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
    Use `--json` when another script or a temporary comparison file needs structured output.
 
 2. Check every registered provider one by one against official sources.
+
+   For **Overseas Providers** (`OpenAI`, `Claude`, `Gemini`, `Grok`, `MistralAI`), use the OpenRouter API synchronization script `pnpm sync:models:openrouter` (see Overseas Provider Synchronization below) for fast and automated catalog and price alignment.
+
+   For **Domestic Providers** (`Qwen`, `DeepSeek`, `Doubao`, `ChatGLM`, `MiniMax`, `Moonshot`, `Hunyuan`, `Ernie`, `StepFun`, etc.), audit each provider individually using the steps below.
 
    Start from every URL listed for that provider in `references/provider_sources.json`, but verify the current official page/API during the run because model catalogs change often. When a provider publishes both a catalog and release notes/changelog, inspect both: catalog pages can lag a just-released model. Use official provider docs, official pricing/model pages, release notes, deprecation pages, or official model-list APIs. Do not use third-party blogs, search snippets, or aggregator pages as evidence unless the provider is that aggregator, such as OpenRouter.
 
@@ -58,7 +85,7 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
    If a missing candidate is intentionally excluded by the scope rules, put it in `skip` with its exact model ID and a specific reason. The plan is incomplete while any missing candidate is neither added nor skipped.
 
-   Keep every existing preset. Deprecated, retired, unavailable, superseded, preview, experimental, and dated candidate IDs may be noted in the audit summary, but must not be removed by this workflow.
+   Prune officially deprecated presets. When an official source or OpenRouter confirms that a model is retired, shut down, or deprecated, add it to the provider's `remove` list.
 
 4. Create and apply an update plan.
 
@@ -87,7 +114,7 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
    `insertBefore` accepts an exact existing model ID and places the cloned addition before it. Use it to preserve newest-or-most-capable-first ordering; otherwise additions are inserted after `cloneFrom` for backward compatibility.
 
-   The script only edits providers registered by `packages/infrastructure/src/static-data/models/index.ts`, validates the whole plan before writing any file, and errors on incomplete provider coverage, unchecked configured sources, pending states, missing audit notes, duplicate IDs, unaccounted catalog candidates, or missing addition evidence. Although the script can mechanically process removals for legacy workflows, this skill must always submit empty `remove` arrays.
+   The script only edits providers registered by `packages/infrastructure/src/static-data/models/index.ts`, validates the whole plan before writing any file, and errors on incomplete provider coverage, unchecked configured sources, pending states, missing audit notes, duplicate IDs, unaccounted catalog candidates, or missing addition evidence. Deprecated models should be listed in `remove` with a clear deprecation reason.
 
 5. Validate.
 
@@ -103,7 +130,7 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 - Record every official source URL checked, the check date, catalog status, exact candidate model IDs, and an audit note for every provider, including providers with no changes.
 - Do not mark a provider checked until all configured source URLs have been inspected and every missing candidate has an `add` or reasoned `skip` disposition.
 - Treat model catalogs and release notes as complementary evidence. If they conflict because a release is newer than the catalog page, use the newer official release/model page and record the discrepancy in `auditNote`.
-- Do not add removal entries to the plan. Record retirement or deprecation findings only in the run summary when they materially affect users.
+ - Add confirmed retired or deprecated models to the `remove` array in the plan so they are cleanly purged from presets.
 - Prefer primary API references over marketing pages when fields disagree.
 - When official docs group many modality-specific variants under one family, treat the main public chat/LLM model as the preset target and skip derivative IDs unless the request names that capability.
 - When official docs list both provider-hosted main model IDs and open-weight/checkpoint IDs in one table, target the main hosted IDs and skip parameter-scale checkpoint IDs unless the user explicitly asks to support open-source model names.
@@ -112,6 +139,29 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 - Preserve local compatibility fields unless official docs prove they are wrong.
 
 ## Helper Script
+
+### OpenRouter Overseas Model Synchronizer
+
+`scripts/sync-openrouter-models.ts` (npm script: `pnpm sync:models:openrouter`) connects directly to `https://openrouter.ai/api/v1/models` and performs:
+
+- Automated matching against overseas provider presets (`OpenAI`, `Claude`, `Gemini`, `Grok`, `MistralAI`).
+- USD to CNY pricing conversion at configured exchange rate (default: 7.0) per 1M tokens.
+- FastGPT `priceTiers` tiered pricing generation (handles overrides such as >200k/272k token thresholds).
+- Safe in-place code modification with TypeScript AST parsing and replacement (`--apply`).
+- Discovers new models available on OpenRouter not yet registered locally.
+
+```bash
+# Preview updates
+pnpm sync:models:openrouter
+
+# Apply price updates to provider files
+pnpm sync:models:openrouter --apply
+
+# Scope to specific providers or custom exchange rate
+pnpm sync:models:openrouter --provider=OpenAI,Claude --rate=7.0
+```
+
+### Model Provider Presets Tool
 
 `scripts/model_provider_presets.mjs` supports:
 
