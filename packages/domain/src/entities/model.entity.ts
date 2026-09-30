@@ -35,13 +35,8 @@ const PriceSchema = z.object({
   // 价格均为人民币；最终静态模型列表会补齐这两个字段。
   priceCurrency: z.literal('CNY').optional(),
   billingUnit: ModelPriceBillingUnitSchema.optional(),
-  charsPointsPrice: z.number().optional(), // legacy: 1k chars=n points; 60s=n points
-  // 新版梯度价格字段。空数组表示尚未配置价格，不代表免费。
-  priceTiers: z.array(ModelPriceTierSchema).optional(),
-  /** @deprecated 使用 priceTiers。 */
-  inputPrice: z.number().optional(), // legacy: 1k tokens=n points
-  /** @deprecated 使用 priceTiers。 */
-  outputPrice: z.number().optional() // legacy: 1k tokens=n points
+  // 梯度价格字段。空数组表示尚未配置价格，不代表免费。
+  priceTiers: z.array(ModelPriceTierSchema).optional()
 });
 
 // 基础模型项类型 schema
