@@ -15,7 +15,9 @@ import {
   defineTool,
   type InputSchemaMetaType,
   type OutputSchemaMetaType,
-  type SecretSchemaMetaType
+  type SecretSchemaMetaType,
+  ToolMessageContentPartSchema,
+  type ToolMessageContentPartType
 } from './index';
 
 describe('ToolFactory streaming', () => {
@@ -318,6 +320,309 @@ describe('ToolFactory streaming', () => {
         data: {
           ok: true
         }
+      }
+    ]);
+  });
+});
+
+describe('ToolFactory response content parts', () => {
+  const previousRuntimeMode = process.env.RUNTIME_MODE;
+
+  afterEach(() => {
+    setCurrentLocalDebugRuntime(undefined);
+    if (previousRuntimeMode === undefined) {
+      delete process.env.RUNTIME_MODE;
+    } else {
+      process.env.RUNTIME_MODE = previousRuntimeMode;
+    }
+  });
+
+  it('streams structured content parts in the response data', async () => {
+    const runtime = createLocalDebugRuntime();
+    setCurrentLocalDebugRuntime(runtime);
+    process.env.RUNTIME_MODE = 'dev';
+
+    defineTool({
+      manifest: {
+        pluginId: 'content-parts-test',
+        name: { en: 'Content Parts Test', 'zh-CN': '内容部分测试' },
+        description: { en: 'Content Parts Test', 'zh-CN': '内容部分测试' },
+        version: '0.0.1',
+        versionDescription: { en: 'Test version', 'zh-CN': '测试版本' },
+        tags: ['tools']
+      },
+      handler: createToolHandler({
+        inputSchema: z.object({}),
+        outputSchema: z.object({
+          content: z.array(ToolMessageContentPartSchema)
+        }),
+        handler: async () => {
+          const content: ToolMessageContentPartType[] = [
+            { type: 'text', text: 'generated image' },
+            { type: 'image_url', image_url: { url: 'https://example.com/a.png' } }
+          ];
+
+          return { content };
+        }
+      })
+    });
+
+    await runtime.waitUntilReady();
+
+    const response = await runtime.invokePlugin<
+      {
+        input: Record<string, unknown>;
+        systemVar: Record<string, unknown>;
+      },
+      void,
+      never,
+      ToolStreamMessageType
+    >('run', {
+      input: {},
+      systemVar: {}
+    });
+
+    const messages: ToolStreamMessageType[] = [];
+    await response.output!.stream.consume((chunk) => {
+      messages.push(chunk);
+    });
+
+    expect(messages).toEqual([
+      {
+        type: 'response',
+        data: {
+          content: [
+            { type: 'text', text: 'generated image' },
+            { type: 'image_url', image_url: { url: 'https://example.com/a.png' } }
+          ]
+        }
+      }
+    ]);
+  });
+
+  it('sends an error event when the handler returns invalid content parts', async () => {
+    const runtime = createLocalDebugRuntime();
+    setCurrentLocalDebugRuntime(runtime);
+    process.env.RUNTIME_MODE = 'dev';
+
+    defineTool({
+      manifest: {
+        pluginId: 'invalid-content-parts-test',
+        name: { en: 'Invalid Content Parts Test', 'zh-CN': '非法内容部分测试' },
+        description: { en: 'Invalid Content Parts Test', 'zh-CN': '非法内容部分测试' },
+        version: '0.0.1',
+        versionDescription: { en: 'Test version', 'zh-CN': '测试版本' },
+        tags: ['tools']
+      },
+      handler: createToolHandler({
+        inputSchema: z.object({}),
+        outputSchema: z.object({
+          content: z.string()
+        }),
+        handler: async () => ({
+          content: 'https://example.com/a.png'
+        })
+      })
+    });
+
+    await runtime.waitUntilReady();
+
+    const response = await runtime.invokePlugin<
+      {
+        input: Record<string, unknown>;
+        systemVar: Record<string, unknown>;
+      },
+      void,
+      never,
+      ToolStreamMessageType
+    >('run', {
+      input: {},
+      systemVar: {}
+    });
+
+    const messages: ToolStreamMessageType[] = [];
+    await response.output!.stream.consume((chunk) => {
+      messages.push(chunk);
+    });
+
+    expect(messages).toEqual([
+      {
+        type: 'error',
+        data: expect.stringContaining('content 字段必须是')
+      }
+    ]);
+  });
+
+  it('accepts an empty content array', async () => {
+    const runtime = createLocalDebugRuntime();
+    setCurrentLocalDebugRuntime(runtime);
+    process.env.RUNTIME_MODE = 'dev';
+
+    defineTool({
+      manifest: {
+        pluginId: 'empty-content-test',
+        name: { en: 'Empty Content Test', 'zh-CN': '空内容测试' },
+        description: { en: 'Empty Content Test', 'zh-CN': '空内容测试' },
+        version: '0.0.1',
+        versionDescription: { en: 'Test version', 'zh-CN': '测试版本' },
+        tags: ['tools']
+      },
+      handler: createToolHandler({
+        inputSchema: z.object({}),
+        outputSchema: z.object({
+          content: z.array(ToolMessageContentPartSchema)
+        }),
+        handler: async () => ({
+          content: []
+        })
+      })
+    });
+
+    await runtime.waitUntilReady();
+
+    const response = await runtime.invokePlugin<
+      {
+        input: Record<string, unknown>;
+        systemVar: Record<string, unknown>;
+      },
+      void,
+      never,
+      ToolStreamMessageType
+    >('run', {
+      input: {},
+      systemVar: {}
+    });
+
+    const messages: ToolStreamMessageType[] = [];
+    await response.output!.stream.consume((chunk) => {
+      messages.push(chunk);
+    });
+
+    expect(messages).toEqual([
+      {
+        type: 'response',
+        data: {
+          content: []
+        }
+      }
+    ]);
+  });
+
+  it('keeps unknown fields alongside valid content parts', async () => {
+    const runtime = createLocalDebugRuntime();
+    setCurrentLocalDebugRuntime(runtime);
+    process.env.RUNTIME_MODE = 'dev';
+
+    defineTool({
+      manifest: {
+        pluginId: 'extra-fields-test',
+        name: { en: 'Extra Fields Test', 'zh-CN': '附加字段测试' },
+        description: { en: 'Extra Fields Test', 'zh-CN': '附加字段测试' },
+        version: '0.0.1',
+        versionDescription: { en: 'Test version', 'zh-CN': '测试版本' },
+        tags: ['tools']
+      },
+      handler: createToolHandler({
+        inputSchema: z.object({}),
+        outputSchema: z.object({
+          content: z.array(ToolMessageContentPartSchema),
+          count: z.number(),
+          summary: z.string()
+        }),
+        handler: async () => {
+          const content: ToolMessageContentPartType[] = [{ type: 'text', text: 'see below' }];
+
+          return { content, count: 3, summary: 'done' };
+        }
+      })
+    });
+
+    await runtime.waitUntilReady();
+
+    const response = await runtime.invokePlugin<
+      {
+        input: Record<string, unknown>;
+        systemVar: Record<string, unknown>;
+      },
+      void,
+      never,
+      ToolStreamMessageType
+    >('run', {
+      input: {},
+      systemVar: {}
+    });
+
+    const messages: ToolStreamMessageType[] = [];
+    await response.output!.stream.consume((chunk) => {
+      messages.push(chunk);
+    });
+
+    expect(messages).toEqual([
+      {
+        type: 'response',
+        data: {
+          content: [{ type: 'text', text: 'see below' }],
+          count: 3,
+          summary: 'done'
+        }
+      }
+    ]);
+  });
+
+  it('sends a readable error for invalid content part details', async () => {
+    const runtime = createLocalDebugRuntime();
+    setCurrentLocalDebugRuntime(runtime);
+    process.env.RUNTIME_MODE = 'dev';
+
+    defineTool({
+      manifest: {
+        pluginId: 'invalid-detail-test',
+        name: { en: 'Invalid Detail Test', 'zh-CN': '非法详情测试' },
+        description: { en: 'Invalid Detail Test', 'zh-CN': '非法详情测试' },
+        version: '0.0.1',
+        versionDescription: { en: 'Test version', 'zh-CN': '测试版本' },
+        tags: ['tools']
+      },
+      handler: createToolHandler({
+        inputSchema: z.object({}),
+        outputSchema: z.object({
+          content: z.array(ToolMessageContentPartSchema)
+        }),
+        handler: async () => ({
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: 'https://example.com/a.png', detail: 'ultra' }
+            } as unknown as ToolMessageContentPartType
+          ]
+        })
+      })
+    });
+
+    await runtime.waitUntilReady();
+
+    const response = await runtime.invokePlugin<
+      {
+        input: Record<string, unknown>;
+        systemVar: Record<string, unknown>;
+      },
+      void,
+      never,
+      ToolStreamMessageType
+    >('run', {
+      input: {},
+      systemVar: {}
+    });
+
+    const messages: ToolStreamMessageType[] = [];
+    await response.output!.stream.consume((chunk) => {
+      messages.push(chunk);
+    });
+
+    expect(messages).toEqual([
+      {
+        type: 'error',
+        data: expect.stringContaining('content.0.image_url.detail')
       }
     ]);
   });

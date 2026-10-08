@@ -68,6 +68,7 @@ import type {
 } from '@domain/value-objects/plugin.vo';
 import type { PluginStreamAnswerType, PluginStreamMessageType,PluginStreamResponseDataType } from '@domain/value-objects/plugin-stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
+import type { ToolMessageContentPartType } from '@domain/value-objects/tool.vo';
 import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
 
 export type JsonObject = Record<string, unknown>;
@@ -89,6 +90,7 @@ export type {
   RerankModelItemType,
   STTModelItemType,
   SystemVarType,
+  ToolMessageContentPartType,
   TTSModelItemType
 };
 
@@ -178,3 +180,4 @@ export {
   PluginPermissionEnumSchema,
   type PluginPermissionEnumType
 } from '@domain/value-objects/permission.vo';
+export { ToolMessageContentPartSchema } from '@domain/value-objects/tool.vo';
