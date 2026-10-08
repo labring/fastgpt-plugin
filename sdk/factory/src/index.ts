@@ -21,6 +21,13 @@ export type I18nSchemaMetaType = {
   placeholder?: I18nStringType;
 };
 
+export {
+  ToolHandlerReturnSchema,
+  type ToolHandlerReturnType,
+  ToolMessageContentPartSchema,
+  type ToolMessageContentPartType
+} from '@domain/value-objects/tool.vo';
+
 export type InputSchemaMetaType = z.GlobalMeta & {
   /** Localized strings for the UI. */
   'x-i18n'?: I18nSchemaMetaType;
