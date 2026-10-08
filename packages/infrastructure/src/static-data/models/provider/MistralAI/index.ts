@@ -5,6 +5,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'zai-glm-5-3',
+      maxContext: 1000000,
+      maxTokens: 128000,
+      quoteMaxToken: 900000,
+      maxTemperature: 1.2,
+      vision: false,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'mistral-large-3-25-12',
       maxContext: 256000,
       maxTokens: 8000,
