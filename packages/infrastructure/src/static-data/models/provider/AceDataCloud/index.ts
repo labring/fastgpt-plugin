@@ -1188,6 +1188,21 @@ const models: ProviderConfigType = {
       reasoningEffort: false,
       toolChoice: true,
     },
+    // Text embeddings verified against the Ace Data Cloud OpenAI-compatible route.
+    {
+      type: ModelTypeEnum.embedding,
+      model: 'text-embedding-3-large',
+      defaultToken: 512,
+      maxToken: 8000,
+      vision: false,
+    },
+    {
+      type: ModelTypeEnum.embedding,
+      model: 'text-embedding-3-small',
+      defaultToken: 512,
+      maxToken: 8000,
+      vision: false,
+    },
   ]
 };
 
