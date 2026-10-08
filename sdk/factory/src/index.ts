@@ -10,6 +10,13 @@ import {
 
 export { createToolHandler };
 
+export {
+  ToolHandlerReturnSchema,
+  type ToolHandlerReturnType,
+  ToolMessageContentPartSchema,
+  type ToolMessageContentPartType
+} from '@domain/value-objects/tool.vo';
+
 export type InputSchemaMetaType = z.GlobalMeta & {
   /** 面向模型的参数说明 */
   toolDescription?: string;
