@@ -1,10 +1,11 @@
+import type { ModerationProviderContext } from '@fastgpt-plugin/sdk-factory';
 import { describe, expect, it } from 'vitest';
 
 import moderation from './index';
 
 const provider = moderation.getProvider();
 
-const context = (secrets: Record<string, unknown>) => ({
+const context = (secrets: Record<string, unknown>): ModerationProviderContext => ({
   secrets,
   systemVar: {
     app: { id: 'test-app', name: 'Test App' },
@@ -21,7 +22,7 @@ const context = (secrets: Record<string, unknown>) => ({
 });
 
 const check = (content: string, secrets: Record<string, unknown>) =>
-  provider.check({ content, modality: 'text' }, context(secrets));
+  provider.check({ content }, context(secrets));
 
 describe('moderation template', () => {
   it('blocks content that matches a blocked keyword', async () => {
@@ -29,7 +30,7 @@ describe('moderation template', () => {
 
     expect(result.verdict).toBe('block');
     expect(result.hits).toEqual([
-      { label: 'other', providerLabel: 'keyword', verdict: 'block', keywords: ['blocked-content'] }
+      { label: 'other', providerLabel: 'keyword', keywords: ['blocked-content'] }
     ]);
   });
 
@@ -39,7 +40,7 @@ describe('moderation template', () => {
     });
 
     expect(result.verdict).toBe('suspected');
-    expect(result.hits[0]?.verdict).toBe('suspected');
+    expect(result.hits).toHaveLength(1);
   });
 
   it('passes content without any keyword match', async () => {
@@ -55,6 +56,6 @@ describe('moderation template', () => {
     expect(manifest.pluginId).toBeTruthy();
     expect(manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(moderation.getPluginType()).toBe('moderation');
-    expect(manifest.meta.modalities).toContain('text');
+    expect(manifest.meta.provider).toBe('keyword');
   });
 });

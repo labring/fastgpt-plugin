@@ -466,7 +466,6 @@ function makePluginDebugMetadata(
         type: target.snapshot.type,
         name: target.snapshot.name,
         description: target.snapshot.description,
-        toolDescription: target.snapshot.toolDescription,
         author: target.snapshot.author,
         tags: target.snapshot.tags,
         permissions: target.snapshot.permissions,

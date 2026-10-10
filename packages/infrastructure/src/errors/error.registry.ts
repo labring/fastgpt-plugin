@@ -25,7 +25,6 @@ export const ErrorCode = {
   pluginInvokeFailed: 'plugin.invoke.failed',
   pluginInvokeTimeout: 'plugin.invoke.timeout',
   pluginInvokeQueueTimeout: 'plugin.invoke.queue_timeout',
-  moderationModalityNotSupported: 'plugin.moderation.modality_not_supported',
   connectionGatewayInvalidToken: 'connection_gateway.invalid_token',
   connectionGatewayTokenExpired: 'connection_gateway.token_expired',
   connectionGatewayTransportMismatch: 'connection_gateway.transport_mismatch',
@@ -180,12 +179,6 @@ registerErrors([
     message: 'Invoke failed',
     reason: { en: 'Invoke failed', 'zh-CN': '调用失败' },
     telemetryKind: 'invoke_failed'
-  },
-  {
-    code: ErrorCode.moderationModalityNotSupported,
-    message: 'Modality not supported',
-    reason: { en: 'Modality not supported', 'zh-CN': '不支持的审查模态' },
-    httpStatus: 400
   },
   {
     code: ErrorCode.pluginInvokeTimeout,

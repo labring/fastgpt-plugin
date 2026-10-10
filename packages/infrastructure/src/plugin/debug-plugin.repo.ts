@@ -22,6 +22,7 @@ import type {
 import { ToolListItemSchema } from '@domain/ports/plugin/tool.port';
 import { createError } from '@domain/value-objects/error.vo';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import type {
   PluginSourceType,
   PluginUniqueIdType,
@@ -51,28 +52,32 @@ type DebugPluginMetadata = DebugPluginMetadataPayload & {
   source?: string;
 };
 
+type DebugText = string | I18nStringType;
+
+type DebugToolMetadata = {
+  id: string;
+  name: DebugText;
+  description: DebugText;
+  toolDescription?: unknown;
+  inputSchema: Record<string, unknown>;
+  outputSchema: Record<string, unknown>;
+};
+
 type DebugPluginMetadataPayload = {
   pluginId: string;
   version: string;
   type: PluginTypeType;
-  name: string;
-  description: string;
-  toolDescription: string;
+  name: DebugText;
+  description: DebugText;
+  toolDescription?: unknown;
   author?: string;
   tags?: string[];
   permissions?: string[];
   secretSchema?: Record<string, unknown>;
-  /** moderation 插件的 provider / modalities / docUrl */
+  /** moderation 插件的 provider / docUrl */
   meta?: Record<string, unknown>;
   isToolSet: boolean;
-  tools: Array<{
-    id: string;
-    name: string;
-    description: string;
-    toolDescription: string;
-    inputSchema: Record<string, unknown>;
-    outputSchema: Record<string, unknown>;
-  }>;
+  tools: DebugToolMetadata[];
 };
 
 type DebugPluginMetadataBundle = {
@@ -511,11 +516,8 @@ function toToolListItem({ source, metadata }: { source: string; metadata: DebugP
   });
 }
 
-function toI18n(value: string) {
-  return {
-    en: value,
-    'zh-CN': value
-  };
+function toI18n(value: DebugText): I18nStringType {
+  return typeof value === 'string' ? { en: value, 'zh-CN': value } : value;
 }
 
 function toDebugEtag(source: string, metadata: DebugPluginMetadata): string {
@@ -528,14 +530,19 @@ function toDebugEtag(source: string, metadata: DebugPluginMetadata): string {
         type: metadata.type,
         name: metadata.name,
         description: metadata.description,
-        toolDescription: metadata.toolDescription,
         author: metadata.author,
         tags: metadata.tags,
         permissions: metadata.permissions,
         secretSchema: metadata.secretSchema,
         meta: metadata.meta,
         isToolSet: metadata.isToolSet,
-        tools: metadata.tools
+        tools: metadata.tools.map(({ id, name, description, inputSchema, outputSchema }) => ({
+          id,
+          name,
+          description,
+          inputSchema,
+          outputSchema
+        }))
       })
     )
     .digest('base64url')

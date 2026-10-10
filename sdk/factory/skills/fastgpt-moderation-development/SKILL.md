@@ -34,14 +34,12 @@ export default defineModeration({
     description: { en: '...', 'zh-CN': '...' },
     meta: {
       provider: 'baidu',      // 写入 result.provider
-      modalities: ['text'],   // 本 provider 实现的模态
       docUrl: 'https://...'   // 可选
     }
   }),
   secretSchema,
   provider: {
     name: 'baidu',
-    modalities: ['text'],
     check: async (input, ctx) => {
       // 调 provider HTTP 接口 + 映射结果
       return { verdict: 'pass', hits: [] };
@@ -111,6 +109,8 @@ try {
 
 - **声明了才校验**：声明了 `secretSchema`，SDK 会 `safeParse` 传入的 secrets，不符合则返回
   error 帧；**未声明**时 secrets 原样透传，不解析也不 strip。
+- **声明了就自动带上类型**：`ctx.secrets` 的类型由 `secretSchema` 推导，不用手动标注。未声明
+  `secretSchema` 时 `ctx.secrets` 是 `Record<string, unknown>`（与运行时「原样透传」一致）。
 - 厂商侧配置（接入凭据、策略 ID、词表）都放这里，用 `.meta({ title, isSecret })` 标注：
 
 ```ts
@@ -128,21 +128,18 @@ const secretSchema = z.object({
 （腾讯 `BizType`、百度 `strategyId`、易盾 `businessId`）作为 `secretSchema` 的一个配置项透传过去。
 `verdict` 是唯一输出，是否放行由 FastGPT 决定。
 
-## 模态：本版本只支持文本
+## 同步文本审查
 
-`meta.modalities` 可以声明尚未实现的模态（扩展点），但本版本框架只服务 `modality: 'text'`：
-
-- 框架侧（`ModerationManager`）与插件侧（`ModerationFactory`）都会拦下非文本请求，返回
-  `plugin.moderation.modality_not_supported`；
-- 宿主还会校验 `modality ∈ manifest.meta.modalities`，插件没实现的模态也不会被下发；
-- 非文本请求**不会**被静默当作文本处理，也不会降级成 `error` 档结果。
+本版本只支持同步文本审查：`input.content` 就是待审文本字符串，不需要 `modality` 字段。输入 schema
+会拒绝旧式 `modality` 字段，避免非文本内容被静默当作文本处理。`check` 同步返回 `ModerationResult`；
+异步提交、轮询等能力如有需要，另行设计异步接口，不给同步结果增加 `status` 或 `pending` 分支。
 
 ## 调试
 
 ```bash
-npx @fastgpt-plugin/cli debug . --run --input '{"content":"hello world","modality":"text"}'
-npx @fastgpt-plugin/cli debug . --run --secrets '{"blockedKeywords":"badword"}' --input '{"content":"badword","modality":"text"}'
+npx @fastgpt-plugin/cli debug . --run --input '{"content":"hello world"}'
+npx @fastgpt-plugin/cli debug . --run --secrets '{"blockedKeywords":"badword"}' --input '{"content":"badword"}'
 ```
 
-本地调试直接驱动插件进程，返回帧是 `{ status: 'done', result: { verdict, keywords, hits, provider } }`，
-CLI 会额外打印一份可读摘要。传非文本 `modality` 时预期得到 error 帧（插件侧守卫），不是审查结果。
+本地调试直接驱动插件进程，`response` 帧的 data 就是 `{ verdict, keywords, hits, provider }`，
+CLI 会额外打印一份可读摘要。

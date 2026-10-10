@@ -26,7 +26,7 @@ fastgpt-plugin dev . --watch --connect '<connection-key-or-connect-link>'
 `pnpm run debug` 打印插件 manifest、schema 与调试命令；`pnpm run debug:run` 用样例输入执行一次审查：
 
 ```bash
-npx @fastgpt-plugin/cli debug . --run --input '{"content":"hello world","modality":"text"}'
+npx @fastgpt-plugin/cli debug . --run --input '{"content":"hello world"}'
 ```
 
 ## 本模板做了什么
@@ -55,10 +55,10 @@ npx @fastgpt-plugin/cli debug . --run --input '{"content":"hello world","modalit
 严格度由 provider 自己的配置项表达（例如厂商控制台的策略 ID：腾讯 `BizType`、百度
 `strategyId`、易盾 `businessId`），框架不做归一化，也不提供全局审查级别开关。
 
-## 模态
+## 同步文本审查
 
-本版本框架只服务 `modality: 'text'`；`image` / `audio` / `video` 请求会得到明确的框架级错误，
-不会静默当作文本处理。
+本版本只提供同步文本审查。`input.content` 始终是待审文本字符串，不需要 `modality` 字段；旧式
+`modality` 字段会被拒绝，不会静默按文本处理。`check` 直接返回标准审查结果，不带 `status` 信封。
 
 ## Output
 

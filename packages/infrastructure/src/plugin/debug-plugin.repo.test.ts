@@ -149,6 +149,9 @@ describe('DebugPluginRepoOverlay', () => {
 
     expect(pluginErr).toBeNull();
     expect(listErr).toBeNull();
+    if (plugin?.type !== 'tool') {
+      throw new Error('Expected debug tool plugin');
+    }
     expect(plugin?.name).toEqual(localizedPluginText);
     expect(plugin?.description).toEqual(localizedPluginText);
     expect(plugin?.toolDescription).toEqual(localizedToolText);
@@ -398,8 +401,9 @@ type DebugTestMetadata = {
   source: string;
   pluginId: string;
   version: string;
-  name: DebugTestText;
   description: DebugTestText;
+  name: DebugTestText;
+  type: 'tool' | 'moderation';
   toolDescription: DebugTestText;
   tags: string[];
   permissions: string[];

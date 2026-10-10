@@ -116,7 +116,7 @@ describe('parsePkg', () => {
         name: { en: 'Keyword Moderation', 'zh-CN': '关键词审查' },
         icon: 'logo.svg',
         description: { en: 'Keyword Moderation', 'zh-CN': '关键词审查' },
-        meta: { provider: 'keyword', modalities: ['text'] },
+        meta: { provider: 'keyword' },
         secretSchema: { type: 'object', properties: {} }
       }
     });
@@ -131,7 +131,7 @@ describe('parsePkg', () => {
     const loaded = parsed?.info;
     expect(loaded?.type).toBe('moderation');
     if (loaded?.type !== 'moderation') throw new Error('expected a moderation plugin');
-    expect(loaded.meta).toEqual({ provider: 'keyword', modalities: ['text'] });
+    expect(loaded.meta).toEqual({ provider: 'keyword' });
     expect(loaded.icon).toBe('https://cdn.example.com/logo.svg');
     expect(loaded.readmeUrl).toBe('https://cdn.example.com/README.md');
   });

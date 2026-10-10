@@ -16,7 +16,7 @@ const plugin = (): ModerationType =>
     icon: 'logo.svg',
     readmeUrl: 'readme.md',
     description: { en: 'Moderation A', 'zh-CN': '审查 A' },
-    meta: { provider: 'keyword', modalities: ['text'] },
+    meta: { provider: 'keyword' },
     secretSchema: {}
   }) as ModerationType;
 

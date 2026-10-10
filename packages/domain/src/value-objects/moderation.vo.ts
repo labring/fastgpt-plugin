@@ -18,27 +18,6 @@ import { SystemVarSchema } from './system-var.vo';
  * 是否放行由调用方（FastGPT）决定，本层只输出档位与逐项命中，不实现决策，也不做阈值调档。
  */
 
-/** text | image | audio | video：枚举是契约扩展点，本版本框架只实现 text */
-export const ModerationModalitySchema = z.enum(['text', 'image', 'audio', 'video']);
-export const ModerationModalityEnum = ModerationModalitySchema.enum;
-export type ModerationModalityType = z.infer<typeof ModerationModalitySchema>;
-
-/**
- * 本版本框架实际支持的模态。与 `ModerationModalitySchema` 必须保持子集关系
- * （`satisfies` 保证）。宿主（ModerationManager）与插件（ModerationFactory）共用这一个支持集，
- * 非支持集内的模态一律显式失败，不静默透传给 provider。
- *
- * 多模态落地时：扩这个数组，并补 provider 侧异步任务实现（那会引入 pending / query 事件）。
- */
-export const SUPPORTED_MODERATION_MODALITIES = [
-  'text'
-] as const satisfies readonly ModerationModalityType[];
-
-/** 该模态在本版本框架是否可实现 */
-export function isModerationModalitySupported(modality: ModerationModalityType): boolean {
-  return (SUPPORTED_MODERATION_MODALITIES as readonly string[]).includes(modality);
-}
-
 export const ModerationVerdictSchema = z.enum(['pass', 'block', 'suspected', 'error']);
 export const ModerationVerdictEnum = ModerationVerdictSchema.enum;
 export type ModerationVerdictType = z.infer<typeof ModerationVerdictSchema>;
@@ -98,13 +77,12 @@ export const ModerationResultSchema = z.object({
    * 不得包含 secrets 或完整上游响应。
    */
   errorMessage: z.string().optional()
-});
+}).strict();
 export type ModerationResultType = z.infer<typeof ModerationResultSchema>;
 
 export const ModerationCheckInputSchema = z.object({
-  /** text 模态为待审文本；image/audio/video 为可访问 URL 或 data URI */
+  /** Text to review. */
   content: z.string().min(1),
-  modality: ModerationModalitySchema,
   /** provider 场景标识，如 comment / chat / profile */
   scene: z.string().optional(),
   userId: z.string().optional(),
@@ -112,20 +90,10 @@ export const ModerationCheckInputSchema = z.object({
   dataId: z.string().optional(),
   /** 上下文关联审核（对应腾讯 SessionId / 阿里云 AssociateId 语义） */
   sessionId: z.string().optional(),
-  /** true 表示 content 后续还会增长（调用方按窗口累积后重复 check）。框架只透传 */
+  /** True when content may grow; the caller can repeat the synchronous check. Passed through unchanged. */
   partial: z.boolean().optional()
-});
+}).strict();
 export type ModerationCheckInputType = z.infer<typeof ModerationCheckInputSchema>;
-
-/**
- * check 的返回信封。`status` 目前恒为 `'done'`：为将来接入异步 provider 预留的稳定分支位，
- * 届时新增 `'pending'` 取值属于纯增量（同一字段多一个取值）。
- */
-export const ModerationCheckResultSchema = z.object({
-  status: z.literal('done'),
-  result: ModerationResultSchema
-});
-export type ModerationCheckResultType = z.infer<typeof ModerationCheckResultSchema>;
 
 /** check 事件的 payload，形状与 PluginToolRunPayloadType 对齐 */
 export const ModerationCheckPayloadSchema = z.object({

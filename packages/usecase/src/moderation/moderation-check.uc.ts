@@ -7,8 +7,8 @@
 
 import type { ModerationManagerPort } from '@domain/ports/plugin/moderation.port';
 import type {
-  ModerationCheckResultType,
-  ModerationCheckRunInputType
+  ModerationCheckRunInputType,
+  ModerationResultType
 } from '@domain/value-objects/moderation.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import { toUsecaseErrorLog } from '@usecase/log-error';
@@ -20,7 +20,7 @@ export type ModerationCheckUCDeps = {
   logger: UsecaseLogger;
 };
 
-type Output = Promise<Result<ModerationCheckResultType>>;
+type Output = Promise<Result<ModerationResultType>>;
 
 export const makeModerationCheckUC =
   ({ moderationManager, logger }: ModerationCheckUCDeps) =>
@@ -35,13 +35,12 @@ export const makeModerationCheckUC =
       return failureResult(error);
     }
 
-    // verdict 仅在 done 分支存在；block / error 是运维需要被发现的信号。
-    // status 目前恒为 done，接入异步 provider 后再补 pending 分支。
+    // Block and provider errors should be visible operational signals.
     const logInput = {
       ...toModerationCheckLogInput(input),
-      verdict: result.result.verdict
+      verdict: result.verdict
     };
-    if (result.result.verdict === 'block' || result.result.verdict === 'error') {
+    if (result.verdict === 'block' || result.verdict === 'error') {
       logger.warn('Moderation Check Result', logInput);
     } else {
       logger.info('Moderation Check Result', logInput);
@@ -56,7 +55,6 @@ function toModerationCheckLogInput(input: ModerationCheckRunInputType): Record<s
     pluginId: input.pluginId,
     source: input.source ?? 'system',
     ...(input.version ? { version: input.version } : {}),
-    modality: input.input.modality,
     ...(input.input.partial === undefined ? {} : { partial: input.input.partial }),
     ...(input.input.scene ? { scene: input.input.scene } : {}),
     hasSecrets: Boolean(input.secrets && Object.keys(input.secrets).length > 0),

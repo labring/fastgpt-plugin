@@ -8,6 +8,7 @@ import z from 'zod';
 
 import type { PluginTypeType } from '@domain/entities/plugin-base.entity';
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
+import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
 import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginTypeEventNames } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginStreamMessageSchema, type PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
@@ -32,7 +33,6 @@ type PackableToolChild = {
   description: Record<string, unknown>;
   name: Record<string, unknown>;
   icon?: string;
-  toolDescription?: string;
 };
 
 type PackablePluginExport = {
@@ -44,11 +44,23 @@ type PackablePluginExport = {
   getChildManifests(): PackableToolChild[];
 };
 
+export type DebugText = string | Record<string, unknown>;
+
+export const DEFAULT_DEBUG_LOCALE: I18nLangType = 'en';
+
+export function selectDebugText(value: DebugText, locale: I18nLangType = DEFAULT_DEBUG_LOCALE): string {
+  if (typeof value === 'string') return value;
+
+  const preferred = [value[locale], value.en, ...Object.values(value)].find(
+    (item) => typeof item === 'string' && item.trim().length > 0
+  );
+  return typeof preferred === 'string' ? preferred : '';
+}
+
 export type DebugToolSnapshot = {
   id: string;
-  name: string;
-  description: string;
-  toolDescription: string;
+  name: DebugText;
+  description: DebugText;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -59,14 +71,13 @@ export type DebugPluginSnapshot = {
   type: PluginTypeType;
   pluginId: string;
   version: string;
-  name: string;
-  description: string;
-  toolDescription: string;
+  name: DebugText;
+  description: DebugText;
   author?: string;
   tags?: string[];
   permissions?: string[];
   secretSchema: Record<string, unknown>;
-  /** moderation 插件的 provider / modalities / docUrl */
+  /** moderation 插件的 provider / docUrl */
   meta?: Record<string, unknown>;
   isToolSet: boolean;
   tools: DebugToolSnapshot[];
@@ -276,7 +287,6 @@ function buildModerationSnapshot(
     version: getRequiredString(userManifest.version, '缺少 version'),
     name: pickLocalizedText(userManifest.name),
     description: pickLocalizedText(userManifest.description),
-    toolDescription: '',
     author: getOptionalString(userManifest.author),
     tags: toStringArray(userManifest.tags),
     permissions: toStringArray(userManifest.permission),
@@ -311,11 +321,6 @@ function buildToolSnapshot(
     version: getRequiredString(userManifest.version, '缺少 version'),
     name: pickLocalizedText(userManifest.name),
     description: pickLocalizedText(userManifest.description),
-    toolDescription: pickToolDescription(
-      getOptionalString(userManifest.toolDescription),
-      userManifest.description
-    ),
-    author: getOptionalString(userManifest.author),
     tags: toStringArray(userManifest.tags),
     permissions: toStringArray(userManifest.permission),
     secretSchema: ensurePlainObject(secretSchema),
@@ -337,10 +342,6 @@ function createSingleToolSnapshot(
     id: 'tool',
     name: pickLocalizedText(userManifest.name),
     description: pickLocalizedText(userManifest.description),
-    toolDescription: pickToolDescription(
-      getOptionalString(userManifest.toolDescription),
-      userManifest.description
-    ),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -359,7 +360,6 @@ function createChildToolSnapshot(
     id: child.id,
     name: pickLocalizedText(child.name),
     description: pickLocalizedText(child.description),
-    toolDescription: pickToolDescription(child.toolDescription, child.description),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -467,34 +467,13 @@ function isPackablePluginExport(value: unknown): value is PackablePluginExport {
   return Boolean(value && typeof value === 'object' && 'getPluginType' in value);
 }
 
-function pickLocalizedText(value: unknown): string {
-  if (typeof value === 'string') {
-    return value;
+
+function pickLocalizedText(value: unknown): DebugText {
+  if (typeof value === 'string') return value;
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
   }
-
-  if (value && typeof value === 'object') {
-    const localized = value as Record<string, unknown>;
-    const preferred = [localized['zh-CN'], localized.en, ...Object.values(localized)].find(
-      (item) => typeof item === 'string' && item.trim().length > 0
-    );
-
-    if (typeof preferred === 'string') {
-      return preferred;
-    }
-  }
-
   return '';
-}
-
-function pickToolDescription(
-  explicitDescription: string | undefined,
-  fallbackSource: unknown
-): string {
-  if (explicitDescription && explicitDescription.trim().length > 0) {
-    return explicitDescription;
-  }
-
-  return pickLocalizedText(fallbackSource);
 }
 
 function getRequiredString(value: unknown, message: string): string {

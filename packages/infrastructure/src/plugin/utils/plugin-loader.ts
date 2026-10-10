@@ -11,6 +11,7 @@ import {
   type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
 
 const parse = json5.parse;
 
@@ -64,6 +65,7 @@ const resolveCommonAssets = async ({
   Result<{
     icon: string;
     readmeUrl?: string;
+    readmeUrls?: Partial<Record<I18nLangType, string>>;
   }>
 > => {
   const availableFileSet = new Set(availableFiles);
@@ -88,20 +90,41 @@ const resolveCommonAssets = async ({
     icon = resolvedIcon;
   }
 
+  const readmeUrls: Partial<Record<I18nLangType, string>> = {};
+  if (getAccessURL) {
+    for (const locale of ['en', 'zh-CN', 'zh-Hant'] as const) {
+      const fileName = `README.${locale}.md`;
+      if (!availableFileSet.has(fileName)) continue;
+
+      const [readmeLocaleUrl, readmeLocaleErr] = await resolveAssetURL({
+        getAccessURL,
+        pluginId: manifest.pluginId,
+        version: manifest.version,
+        filePath: [fileName]
+      });
+      if (readmeLocaleErr) return failureResult(readmeLocaleErr);
+      if (readmeLocaleUrl) readmeUrls[locale] = readmeLocaleUrl;
+    }
+  }
+
   let readmeUrl: string | undefined;
   if (getAccessURL && availableFileSet.has('README.md')) {
-    const [resolvedReadmeUrl] = await resolveAssetURL({
+    const [resolvedReadmeUrl, readmeErr] = await resolveAssetURL({
       getAccessURL,
       pluginId: manifest.pluginId,
       version: manifest.version,
       filePath: ['README.md']
     });
+    if (readmeErr) return failureResult(readmeErr);
     readmeUrl = resolvedReadmeUrl ?? undefined;
+  } else {
+    readmeUrl = readmeUrls.en ?? readmeUrls['zh-CN'] ?? readmeUrls['zh-Hant'];
   }
 
   return successResult({
     icon,
-    ...(readmeUrl ? { readmeUrl } : {})
+    ...(readmeUrl ? { readmeUrl } : {}),
+    ...(Object.keys(readmeUrls).length > 0 ? { readmeUrls } : {})
   });
 };
 
@@ -207,6 +230,7 @@ const loadTool = async ({
       etag,
       icon,
       ...(readmeUrl ? { readmeUrl } : {}),
+      ...(assets.readmeUrls ? { readmeUrls: assets.readmeUrls } : {}),
       children,
       toolDescription: manifest.toolDescription,
       inputSchema: manifest.inputSchema,

@@ -7,17 +7,20 @@ import {
   runRemoteDebugSession
 } from '@fastgpt-plugin/cli/debug/remote-session';
 import {
+  DEFAULT_DEBUG_LOCALE,
   type DebugPluginSnapshot,
   type DebugToolSnapshot,
   loadDebugSession,
-  runDebugPlugin
+  runDebugPlugin,
+  selectDebugText
 } from '@fastgpt-plugin/cli/debug/session';
 import { logger } from '@fastgpt-plugin/cli/helpers';
-import type { Command } from 'commander';
+import { Option, type Command } from 'commander';
 
-import { ModerationCheckResultSchema } from '@domain/value-objects/moderation.vo';
+import { ModerationResultSchema } from '@domain/value-objects/moderation.vo';
 import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
+import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
 
 type DebugCommandOptions = RemoteDebugCommandOptions & {
   tool?: string;
@@ -28,6 +31,7 @@ type DebugCommandOptions = RemoteDebugCommandOptions & {
   secretsFile?: string;
   systemVar?: string;
   systemVarFile?: string;
+  lang?: I18nLangType;
 };
 
 export class DebugCommand extends BaseCommand {
@@ -45,6 +49,11 @@ export class DebugCommand extends BaseCommand {
         .option('--system-var <json>', 'systemVar JSON 字符串 / systemVar JSON string')
         .option('--system-var-file <path>', 'systemVar JSON 文件路径 / systemVar JSON file')
         .option('--upload-dir <path>', '虚拟 uploadFile 的输出目录 / virtual uploadFile output directory')
+        .addOption(
+          new Option('--lang <locale>', '本地化调试输出语言 / Debug output locale')
+            .choices(['en', 'zh-CN', 'zh-Hant'])
+            .default(DEFAULT_DEBUG_LOCALE)
+        )
         .option(
           '--connect <keyOrUrl>',
           '兼容入口：FastGPT debug connection key 或 connect link，建议改用 dev 命令'
@@ -98,8 +107,9 @@ export class DebugCommand extends BaseCommand {
       );
     }
 
+    const locale = options.lang ?? DEFAULT_DEBUG_LOCALE;
     sessions.forEach((session) => {
-      this.printSnapshot(session.snapshot, session.uploadDir);
+      this.printSnapshot(session.snapshot, session.uploadDir, locale);
     });
 
     const duplicatePluginIds = findDuplicateValues(
@@ -150,7 +160,7 @@ export class DebugCommand extends BaseCommand {
     }
   }
 
-  /** moderation 事件的返回结构是 { status, result }，单看原始 JSON 不易读 */
+  /** moderation 事件的返回结构较长，单看原始 JSON 不易读 */
   private printModerationResult(
     snapshot: DebugPluginSnapshot,
     messages: PluginStreamMessageType[]
@@ -160,12 +170,12 @@ export class DebugCommand extends BaseCommand {
     }
 
     const response = messages.find((message) => message.type === 'response');
-    const parsed = ModerationCheckResultSchema.safeParse(response?.data);
+    const parsed = ModerationResultSchema.safeParse(response?.data);
     if (!parsed.success) {
       return;
     }
 
-    const { verdict, hits, keywords, errorMessage } = parsed.data.result;
+    const { verdict, hits, keywords, errorMessage } = parsed.data;
     const summary = {
       verdict,
       hitCount: hits.length,
@@ -189,21 +199,24 @@ export class DebugCommand extends BaseCommand {
     }
   }
 
-  private printSnapshot(snapshot: DebugPluginSnapshot, uploadDir: string): void {
+  private printSnapshot(
+    snapshot: DebugPluginSnapshot,
+    uploadDir: string,
+    locale: I18nLangType
+  ): void {
     const lines = [
       '插件信息',
       `  entry: ${snapshot.entryDir}`,
       `  index: ${snapshot.indexPath}`,
       `  pluginId: ${snapshot.pluginId}`,
       `  version: ${snapshot.version}`,
-      `  name: ${snapshot.name || '-'}`,
-      `  description: ${snapshot.description || '-'}`,
-      `  toolDescription: ${snapshot.toolDescription || '-'}`,
+      `  name: ${selectDebugText(snapshot.name, locale) || '-'}`,
+      `  description: ${selectDebugText(snapshot.description, locale) || '-'}`,
       `  author: ${snapshot.author ?? '-'}`,
       `  tags: ${snapshot.tags?.join(', ') ?? '-'}`,
       `  permissions: ${snapshot.permissions?.join(', ') ?? '-'}`,
       `  uploadDir: ${uploadDir}`,
-      `  secretKeys: ${this.formatSchemaKeys(snapshot.secretSchema)}`
+      `  secretKeys: ${this.formatSchemaKeys(snapshot.secretSchema, locale)}`
     ];
 
     logger.info(lines.join('\n'));
@@ -211,10 +224,10 @@ export class DebugCommand extends BaseCommand {
     const toolLines = ['可调试工具'];
     snapshot.tools.forEach((tool) => {
       toolLines.push(`  - id: ${tool.id}`);
-      toolLines.push(`    name: ${tool.name || '-'}`);
-      toolLines.push(`    description: ${tool.description || '-'}`);
-      toolLines.push(`    inputKeys: ${this.formatSchemaKeys(tool.inputSchema)}`);
-      toolLines.push(`    command: ${this.buildCommand(snapshot, tool)}`);
+      toolLines.push(`    name: ${selectDebugText(tool.name, locale) || '-'}`);
+      toolLines.push(`    description: ${selectDebugText(tool.description, locale) || '-'}`);
+      toolLines.push(`    inputKeys: ${this.formatSchemaKeys(tool.inputSchema, locale)}`);
+      toolLines.push(`    command: ${this.buildCommand(snapshot, tool, locale)}`);
     });
     logger.info(toolLines.join('\n'));
   }
@@ -244,11 +257,17 @@ export class DebugCommand extends BaseCommand {
     logger.info(lines.join('\n'));
   }
 
-  private buildCommand(snapshot: DebugPluginSnapshot, tool: DebugToolSnapshot): string {
+  private buildCommand(
+    snapshot: DebugPluginSnapshot,
+    tool: DebugToolSnapshot,
+    locale: I18nLangType
+  ): string {
     const args = [
       'fastgpt-plugin',
       'debug',
       snapshot.entryDir,
+      '--lang',
+      locale,
       '--run',
       ...(snapshot.isToolSet ? ['--tool', tool.id] : []),
       '--input',
@@ -324,9 +343,14 @@ export class DebugCommand extends BaseCommand {
     }
   }
 
-  private formatSchemaKeys(schema: Record<string, unknown>): string {
+  private formatSchemaKeys(schema: Record<string, unknown>, locale: I18nLangType): string {
     const properties = asObject(schema.properties);
-    const keys = Object.keys(properties);
+    const keys = Object.entries(properties).map(([key, property]) => {
+      const propertySchema = asObject(property);
+      const title = asObject(asObject(propertySchema['x-i18n']).title);
+      const label = selectDebugText(title, locale);
+      return label ? `${key} (${label})` : key;
+    });
     return keys.length > 0 ? keys.join(', ') : '-';
   }
 

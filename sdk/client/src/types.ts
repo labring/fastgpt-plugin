@@ -6,7 +6,6 @@ import type {
 } from '@interface-adapter/contracts/dto/model.dto';
 import type {
   ModerationCheckInputDTOType,
-  ModerationCheckResultDTOType,
   ModerationDetailDTOType,
   ModerationGetParamsDTOType
 } from '@interface-adapter/contracts/dto/moderation.dto';
@@ -101,7 +100,6 @@ export type ToolListItemType = ToolListItemDTOType;
 export type ToolListParamsType = Partial<ToolListParamsDTOType>;
 
 export type ModerationCheckParamsType = ModerationCheckInputDTOType;
-export type ModerationCheckResultType = ModerationCheckResultDTOType;
 export type ModerationDetailType = ModerationDetailDTOType;
 export type ModerationGetParamsType = ModerationGetParamsDTOType;
 
@@ -109,7 +107,6 @@ export type {
   ModerationCheckInputType,
   ModerationHitType,
   ModerationLabelType,
-  ModerationModalityType,
   ModerationResultType,
   ModerationVerdictType
 } from '@domain/value-objects/moderation.vo';
