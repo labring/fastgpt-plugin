@@ -1,6 +1,5 @@
 import z from 'zod';
 
-import { ModerationModalitySchema } from '@domain/value-objects/moderation.vo';
 import {
   PluginManifestBaseSchema,
   ToolManifestSchema
@@ -38,9 +37,8 @@ export const defineToolManifest = <T extends UserToolManifestType>(manifest: T) 
 
 export const UserModerationMetaSchema = z.object({
   provider: z.string().min(1),
-  modalities: z.array(ModerationModalitySchema).min(1),
   docUrl: z.string().optional()
-});
+}).strict();
 
 export type UserModerationMetaType = z.infer<typeof UserModerationMetaSchema>;
 

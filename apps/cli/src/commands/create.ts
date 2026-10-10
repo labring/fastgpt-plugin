@@ -122,7 +122,7 @@ export class CreateCommand extends BaseCommand {
 
   private pickDebugRunInput(type: CreatePluginCommandOptions['type']): string {
     if (type === 'tool-suite') return '{"query":"select 1"}';
-    if (type === 'moderation') return '{"content":"hello world","modality":"text"}';
+    if (type === 'moderation') return '{"content":"hello world"}';
     return '{"delay":0}';
   }
 

@@ -2,8 +2,8 @@ import z from 'zod';
 
 import { ModerationSchema } from '../../entities/moderation.entity';
 import {
-  ModerationCheckResultSchema,
-  type ModerationCheckRunInputType
+  type ModerationCheckRunInputType,
+  type ModerationResultType
 } from '../../value-objects/moderation.vo';
 import { PluginSourceSchema, UserPluginIdSchema } from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
@@ -24,7 +24,5 @@ export type ModerationDetailInputType = z.infer<typeof ModerationDetailInputSche
 
 export interface ModerationManagerPort {
   detail(arg0: ModerationDetailInputType): Promise<Result<ModerationDetailType>>;
-  check(
-    arg0: ModerationCheckRunInputType
-  ): Promise<Result<z.infer<typeof ModerationCheckResultSchema>>>;
+  check(arg0: ModerationCheckRunInputType): Promise<Result<ModerationResultType>>;
 }

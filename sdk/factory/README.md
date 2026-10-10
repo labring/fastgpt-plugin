@@ -354,14 +354,12 @@ export default defineModeration({
     name: { en: 'My Moderation', 'zh-CN': '我的审查' },
     description: { en: 'Content moderation', 'zh-CN': '内容审查' },
     meta: {
-      provider: 'baidu',
-      modalities: ['text']
+      provider: 'baidu'
     }
   }),
   secretSchema,
   provider: {
     name: 'baidu',
-    modalities: ['text'],
     check: async (input, ctx) => {
       try {
         const flags = await callProvider(input.content, ctx.secrets);
@@ -413,13 +411,15 @@ export default defineModeration({
 uncaught error is treated as a framework-level failure (a plugin bug), which is indistinguishable from
 "provider temporarily unavailable".
 
-本版本框架只服务 `modality: 'text'`，其余模态会返回明确的框架级错误
-（`plugin.moderation.modality_not_supported`），不会被静默当作文本处理。严格度由 provider 自己控制
-（厂商控制台里的策略 ID / 分值），通过 `secretSchema` 透传，框架不做归一化。
+本版本只支持**同步文本审查**：`input.content` 就是待审字符串，不需要 `modality` 字段。
+`check` 直接返回 `ModerationResult`，不包装 `{ status, result }`；异步提交、轮询若将来需要，另行设计
+异步接口。严格度由 provider 自己控制（厂商控制台里的策略 ID / 分值），通过 `secretSchema` 透传，框架不做归一化。
 
-This version serves `modality: 'text'` only; other modalities return an explicit framework error
-(`plugin.moderation.modality_not_supported`). Strictness is owned by the provider (console-side policy id
-or score thresholds) and passed through `secretSchema`; the framework does not normalise it.
+This version supports **synchronous text moderation only**: `input.content` is the text to review, with no
+`modality` field. `check` returns `ModerationResult` directly, not a `{ status, result }` envelope. If async
+submission or polling is needed later, it will use a separate async interface. Strictness is owned by the
+provider (console-side policy id or score thresholds) and passed through `secretSchema`; the framework does
+not normalise it.
 
 ## 构建 / Build
 

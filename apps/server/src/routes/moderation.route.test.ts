@@ -15,19 +15,16 @@ const SYSTEM_VAR = {
 
 const checkBody = (overrides: Record<string, unknown> = {}) => ({
   pluginId: 'moderation-a',
-  input: { content: 'hello', modality: 'text' },
+  input: { content: 'hello' },
   systemVar: SYSTEM_VAR,
   ...overrides
 });
 
-const DONE_RESULT = {
-  status: 'done',
-  result: {
-    verdict: 'block',
-    keywords: ['bad'],
-    hits: [{ label: 'other', providerLabel: 'keyword', keywords: ['bad'] }],
-    provider: 'keyword'
-  }
+const MODERATION_RESULT = {
+  verdict: 'block',
+  keywords: ['bad'],
+  hits: [{ label: 'other', providerLabel: 'keyword', keywords: ['bad'] }],
+  provider: 'keyword'
 };
 
 function createManager(overrides: Record<string, unknown> = {}) {
@@ -47,7 +44,7 @@ function createRoute(check: Mock, detail: Mock = vi.fn()) {
 
 describe('moderation route', () => {
   it('returns the check result on success', async () => {
-    const app = createRoute(vi.fn().mockResolvedValue(successResult(DONE_RESULT)));
+    const app = createRoute(vi.fn().mockResolvedValue(successResult(MODERATION_RESULT)));
 
     const response = await app.request('/moderation/check', {
       method: 'POST',
@@ -56,18 +53,12 @@ describe('moderation route', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ data: DONE_RESULT });
+    expect(await response.json()).toEqual({ data: MODERATION_RESULT });
   });
 
   it('returns 400 with the error body when the manager fails', async () => {
     const app = createRoute(
-      vi
-        .fn()
-        .mockResolvedValue(
-          failureResult(
-            createError(ErrorCode.moderationModalityNotSupported, { data: { modality: 'audio' } })
-          )
-        )
+      vi.fn().mockResolvedValue(failureResult(createError(ErrorCode.pluginInvokeFailed)))
     );
 
     const response = await app.request('/moderation/check', {
@@ -78,31 +69,22 @@ describe('moderation route', () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({
-      error: { code: 'plugin.moderation.modality_not_supported' }
+      error: { code: ErrorCode.pluginInvokeFailed }
     });
   });
 
-  it('reports the modality error code for a non-text modality', async () => {
-    const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
-    const app = makeModerationRoute({
-      moderationManager: createManager({
-        check: vi
-          .fn()
-          .mockResolvedValue(failureResult(createError(ErrorCode.moderationModalityNotSupported)))
-      }),
-      logger
-    });
+  it('rejects non-text modality fields instead of silently treating them as text', async () => {
+    const check = vi.fn().mockResolvedValue(successResult(MODERATION_RESULT));
+    const app = createRoute(check);
 
     const response = await app.request('/moderation/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(checkBody({ input: { content: 'x', modality: 'audio' } }))
+      body: JSON.stringify(checkBody({ input: { content: 'x', modality: 'image' } }))
     });
 
     expect(response.status).toBe(400);
-    const body = (await response.json()) as { error: { code: string; reason: { en: string } } };
-    expect(body.error.code).toBe('plugin.moderation.modality_not_supported');
-    expect(body.error.reason.en).toBe('Modality not supported');
+    expect(check).not.toHaveBeenCalled();
   });
 
   it('returns the plugin detail on success', async () => {
@@ -115,7 +97,7 @@ describe('moderation route', () => {
         name: { en: 'Moderation A', 'zh-CN': '审查 A' },
         icon: '',
         description: { en: 'Moderation A', 'zh-CN': '审查 A' },
-        meta: { provider: 'keyword', modalities: ['text'] },
+        meta: { provider: 'keyword' },
         source: 'system',
         isLatestVersion: true
       })

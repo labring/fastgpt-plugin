@@ -62,7 +62,7 @@ type DebugPluginMetadataPayload = {
   tags?: string[];
   permissions?: string[];
   secretSchema?: Record<string, unknown>;
-  /** moderation 插件的 provider / modalities / docUrl */
+  /** moderation 插件的 provider / docUrl */
   meta?: Record<string, unknown>;
   isToolSet: boolean;
   tools: Array<{

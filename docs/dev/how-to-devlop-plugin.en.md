@@ -370,7 +370,7 @@ Use `tool` for a single capability. Use `tool-suite` for multiple capabilities t
 
 ### How do I write a content moderation plugin?
 
-Declare it with `defineModeration()`; authoring rules live in `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`. Three easy mistakes: return an `error` verdict result instead of throwing when the provider cannot decide; put per-item detail in `hits` and treat the top-level `verdict` as the only authoritative judgement; express strictness through the provider's own configuration, since the framework does not normalise it. This version serves `modality: 'text'` only.
+Declare it with `defineModeration()`; authoring rules live in `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`. Three easy mistakes: return an `error` verdict result instead of throwing when the provider cannot decide; put per-item detail in `hits` and treat the top-level `verdict` as the only authoritative judgement; express strictness through the provider's own configuration, since the framework does not normalise it. This version supports synchronous text moderation only, and `check` returns `ModerationResult` directly.
 
 ### How should plugin versions be managed?
 

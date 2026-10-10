@@ -251,6 +251,6 @@ describe('create command', () => {
     const packageJson = JSON.parse(
       await readFile(path.join(testCwd, 'keyword-moderation', 'package.json'), 'utf-8')
     ) as { scripts: Record<string, string> };
-    expect(packageJson.scripts['debug:run']).toContain('{"content":"hello world","modality":"text"}');
+    expect(packageJson.scripts['debug:run']).toContain('{"content":"hello world"}');
   });
 });

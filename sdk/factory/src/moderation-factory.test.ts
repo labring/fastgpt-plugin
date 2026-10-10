@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import z from 'zod';
 
-import { ModerationCheckResultSchema } from '@domain/value-objects/moderation.vo';
+import { ModerationResultSchema } from '@domain/value-objects/moderation.vo';
 import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 
 import {
@@ -13,7 +13,8 @@ import {
   defineModeration,
   defineModerationManifest,
   type ModerationProvider,
-  type ModerationProviderContext
+  type ModerationProviderContext,
+  type ModerationProviderResultType
 } from './index';
 
 const SYSTEM_VAR = {
@@ -35,14 +36,14 @@ describe('ModerationFactory', () => {
     }
   });
 
-  /** 起一次进程内调试运行时，把 check 事件跑完并收集输出帧 */
+  /** Start an in-process debug runtime and collect the check response frames. */
   async function runCheck({
     provider,
     secretSchema,
     payload,
     secrets
   }: {
-    provider: ModerationProvider;
+    provider: ModerationProvider<any>;
     secretSchema?: z.ZodObject<any>;
     payload: Record<string, unknown>;
     secrets?: Record<string, unknown>;
@@ -57,7 +58,7 @@ describe('ModerationFactory', () => {
         version: '1.0.0',
         name: { en: 'Moderation Test', 'zh-CN': '审查测试' },
         description: { en: 'Moderation Test', 'zh-CN': '审查测试' },
-        meta: { provider: provider.name, modalities: provider.modalities }
+        meta: { provider: provider.name }
       }),
       ...(secretSchema ? { secretSchema } : {}),
       provider
@@ -90,32 +91,25 @@ describe('ModerationFactory', () => {
 
   const blockProvider = (): ModerationProvider => ({
     name: 'keyword',
-    modalities: ['text'],
     check: async () => ({
       verdict: 'block',
       hits: [{ label: 'other', providerLabel: 'keyword', keywords: ['bad word'] }]
     })
   });
 
-  it('fills provider and derived keywords before validating the standard structure', async () => {
+  it('fills provider and derived keywords before validating the result', async () => {
     const messages = await runCheck({
       provider: blockProvider(),
-      payload: { content: 'bad word', modality: 'text' }
+      payload: { content: 'bad word' }
     });
 
     expect(messages).toHaveLength(1);
-    const message = messages[0];
-    expect(message?.type).toBe('response');
-
-    const parsed = ModerationCheckResultSchema.parse(message?.data);
-    expect(parsed).toEqual({
-      status: 'done',
-      result: {
-        verdict: 'block',
-        keywords: ['bad word'],
-        hits: [{ label: 'other', providerLabel: 'keyword', keywords: ['bad word'] }],
-        provider: 'keyword'
-      }
+    expect(messages[0]?.type).toBe('response');
+    expect(ModerationResultSchema.parse(messages[0]?.data)).toEqual({
+      verdict: 'block',
+      keywords: ['bad word'],
+      hits: [{ label: 'other', providerLabel: 'keyword', keywords: ['bad word'] }],
+      provider: 'keyword'
     });
   });
 
@@ -123,26 +117,54 @@ describe('ModerationFactory', () => {
     const messages = await runCheck({
       provider: {
         name: 'keyword',
-        modalities: ['text'],
         check: async () => ({ hits: [] }) as never
       },
-      payload: { content: 'x', modality: 'text' }
+      payload: { content: 'x' }
     });
 
     expect(messages[0]?.type).toBe('error');
     expect(String(messages[0]?.data)).toContain('verdict');
   });
 
+  it('rejects legacy modality fields rather than silently treating their content as text', async () => {
+    const check = vi.fn(async () => ({ verdict: 'pass' as const, hits: [] }));
+    const messages = await runCheck({
+      provider: { name: 'keyword', check },
+      payload: { content: 'x', modality: 'image' }
+    });
+
+    expect(messages[0]?.type).toBe('error');
+    expect(String(messages[0]?.data)).toContain('modality');
+    expect(check).not.toHaveBeenCalled();
+  });
+
+  it('rejects the obsolete status/result envelope from a provider', async () => {
+    const messages = await runCheck({
+      provider: {
+        name: 'keyword',
+        check: async () => ({
+          verdict: 'pass',
+          hits: [],
+          status: 'done',
+          result: { verdict: 'pass', hits: [] }
+        }) as never
+      },
+      payload: { content: 'x' }
+    });
+
+    expect(messages[0]?.type).toBe('error');
+    expect(String(messages[0]?.data)).toContain('Unrecognized keys');
+  });
+
   it('treats an uncaught provider exception as a framework failure, not an error verdict', async () => {
     const provider: ModerationProvider = {
       name: 'keyword',
-      modalities: ['text'],
       check: async () => {
         throw new Error('boom');
       }
     };
 
-    const messages = await runCheck({ provider, payload: { content: 'x', modality: 'text' } });
+    const messages = await runCheck({ provider, payload: { content: 'x' } });
 
     expect(messages[0]).toEqual({ type: 'error', data: 'boom' });
   });
@@ -151,7 +173,6 @@ describe('ModerationFactory', () => {
     const captured: Record<string, unknown>[] = [];
     const provider: ModerationProvider = {
       name: 'keyword',
-      modalities: ['text'],
       check: async (_input, ctx) => {
         captured.push(ctx.secrets);
         return { verdict: 'pass', hits: [] };
@@ -161,7 +182,7 @@ describe('ModerationFactory', () => {
     const mismatched = await runCheck({
       provider,
       secretSchema: z.object({ apiKey: z.string() }),
-      payload: { content: 'x', modality: 'text' },
+      payload: { content: 'x' },
       secrets: { apiKey: 123 }
     });
     expect(mismatched[0]?.type).toBe('error');
@@ -170,73 +191,65 @@ describe('ModerationFactory', () => {
     await runCheck({
       provider,
       secretSchema: z.object({ apiKey: z.string() }),
-      payload: { content: 'x', modality: 'text' },
+      payload: { content: 'x' },
       secrets: { apiKey: 'x', extra: 'y' }
     });
     expect(captured[0]).toEqual({ apiKey: 'x' });
 
     await runCheck({
       provider,
-      payload: { content: 'x', modality: 'text' },
+      payload: { content: 'x' },
       secrets: { anything: 1 }
     });
     expect(captured[1]).toEqual({ anything: 1 });
   });
 
-  it('rejects non-text modalities before calling the adapter', async () => {
-    const check = vi.fn(async () => ({ verdict: 'pass' as const, hits: [] }));
-    const provider: ModerationProvider = { name: 'keyword', modalities: ['text'], check };
-
-    const messages = await runCheck({
-      provider,
-      payload: { content: 'x', modality: 'audio' }
-    });
-
-    expect(messages[0]?.type).toBe('error');
-    expect(check).not.toHaveBeenCalled();
-  });
-
-  it('rejects modalities the provider does not implement', async () => {
-    const check = vi.fn(async () => ({ verdict: 'pass' as const, hits: [] }));
-    const provider: ModerationProvider = { name: 'keyword', modalities: ['image'], check };
-
-    const messages = await runCheck({
-      provider,
-      payload: { content: 'x', modality: 'text' }
-    });
-
-    expect(messages[0]?.type).toBe('error');
-    expect(check).not.toHaveBeenCalled();
-  });
-
-  it('rejects a provider that declares no modality', () => {
-    expect(() =>
-      defineModeration({
-        manifest: defineModerationManifest({
-          pluginId: 'moderation-test',
-          version: '1.0.0',
-          name: { en: 'Moderation Test', 'zh-CN': '审查测试' },
-          description: { en: 'Moderation Test', 'zh-CN': '审查测试' },
-          meta: { provider: 'keyword', modalities: ['text'] }
-        }),
-        provider: { name: 'keyword', modalities: [], check: async () => ({ verdict: 'pass', hits: [] }) }
-      })
-    ).toThrow(/at least one modality/);
-  });
-
   it('turns moderationError into a valid error verdict result', async () => {
     const provider: ModerationProvider = {
       name: 'keyword',
-      modalities: ['text'],
-      check: async (_input, ctx: ModerationProviderContext<Record<string, unknown>>) =>
+      check: async (_input, ctx: ModerationProviderContext) =>
         ctx.moderationError('upstream timeout')
     };
 
-    const messages = await runCheck({ provider, payload: { content: 'x', modality: 'text' } });
+    const messages = await runCheck({ provider, payload: { content: 'x' } });
+    const parsed = ModerationResultSchema.parse(messages[0]?.data);
 
-    const parsed = ModerationCheckResultSchema.parse(messages[0]?.data);
-    expect(parsed.result.verdict).toBe('error');
-    expect(parsed.result.errorMessage).toBe('upstream timeout');
-    expect(parsed.result.hits).toEqual([]);
+    expect(parsed.verdict).toBe('error');
+    expect(parsed.errorMessage).toBe('upstream timeout');
+    expect(parsed.hits).toEqual([]);
+  });
+
+  it('types ctx.secrets from the declared secretSchema, and as an untyped record otherwise', async () => {
+    const secretSchema = z.object({ apiKey: z.string() });
+    const fromSchema: ModerationProvider<typeof secretSchema> = {
+      name: 'keyword',
+      check: async (_input, ctx): Promise<ModerationProviderResultType> => {
+        const apiKey: string = ctx.secrets.apiKey;
+        return { verdict: apiKey ? 'pass' : 'block', hits: [] };
+      }
+    };
+
+    const messages = await runCheck({
+      provider: fromSchema,
+      secretSchema,
+      payload: { content: 'x' },
+      secrets: { apiKey: 'k' }
+    });
+    expect(ModerationResultSchema.parse(messages[0]?.data).verdict).toBe('pass');
+
+    const untyped: ModerationProvider = {
+      name: 'keyword',
+      check: async (_input, ctx) => ({
+        verdict: Object.keys(ctx.secrets).length > 0 ? 'pass' : 'block',
+        hits: []
+      })
+    };
+
+    const passthrough = await runCheck({
+      provider: untyped,
+      payload: { content: 'x' },
+      secrets: { anything: 1 }
+    });
+    expect(ModerationResultSchema.parse(passthrough[0]?.data).verdict).toBe('pass');
   });
 });

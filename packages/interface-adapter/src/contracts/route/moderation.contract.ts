@@ -2,9 +2,9 @@ import { defineContract, jsonResponse } from '../contract.type';
 import { ErrorResponseDTOSchema } from '../dto/common.dto';
 import {
   ModerationCheckInputDTOSchema,
-  ModerationCheckResultDTOSchema,
   ModerationDetailDTOSchema,
-  ModerationGetParamsDTOSchema
+  ModerationGetParamsDTOSchema,
+  ModerationResultDTOSchema
 } from '../dto/moderation.dto';
 
 import { authToken } from './auth';
@@ -38,7 +38,7 @@ export const ModerationContract = {
     },
     request: ModerationCheckInputDTOSchema,
     response: {
-      200: jsonResponse({ data: ModerationCheckResultDTOSchema }),
+      200: jsonResponse({ data: ModerationResultDTOSchema }),
       400: jsonResponse({ error: ErrorResponseDTOSchema })
     }
   })

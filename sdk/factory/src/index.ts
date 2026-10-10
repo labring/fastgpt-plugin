@@ -91,10 +91,8 @@ export {
 export type { ToolHandlerContext } from './tool-factory';
 export type {
   ModerationCheckInputType,
-  ModerationCheckResultType,
   ModerationHitType,
   ModerationLabelType,
-  ModerationModalityType,
   ModerationResultType,
   ModerationVerdictType
 } from '@domain/value-objects/moderation.vo';

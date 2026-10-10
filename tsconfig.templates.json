@@ -1,0 +1,11 @@
+{
+  // Typecheck template entry points separately because the root config excludes CLI templates.
+  // The CLI renames each entry (index.tool.ts, index.toolset.ts, index.moderation.ts) to index.ts.
+  // Specs are excluded because their ./index import only resolves after that rename.
+  "extends": "./tsconfig.json",
+  "include": [
+    "apps/cli/templates/*/index.*.ts",
+  ],
+  // Exclude specs because their ./index import only resolves after template generation.
+  "exclude": ["apps/cli/templates/*/*.spec.ts"],
+}

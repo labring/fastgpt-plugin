@@ -15,7 +15,7 @@ import {
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import type { Command } from 'commander';
 
-import { ModerationCheckResultSchema } from '@domain/value-objects/moderation.vo';
+import { ModerationResultSchema } from '@domain/value-objects/moderation.vo';
 import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 
@@ -150,7 +150,7 @@ export class DebugCommand extends BaseCommand {
     }
   }
 
-  /** moderation 事件的返回结构是 { status, result }，单看原始 JSON 不易读 */
+  /** moderation 事件的返回结构较长，单看原始 JSON 不易读 */
   private printModerationResult(
     snapshot: DebugPluginSnapshot,
     messages: PluginStreamMessageType[]
@@ -160,12 +160,12 @@ export class DebugCommand extends BaseCommand {
     }
 
     const response = messages.find((message) => message.type === 'response');
-    const parsed = ModerationCheckResultSchema.safeParse(response?.data);
+    const parsed = ModerationResultSchema.safeParse(response?.data);
     if (!parsed.success) {
       return;
     }
 
-    const { verdict, hits, keywords, errorMessage } = parsed.data.result;
+    const { verdict, hits, keywords, errorMessage } = parsed.data;
     const summary = {
       verdict,
       hitCount: hits.length,

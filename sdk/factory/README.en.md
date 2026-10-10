@@ -189,14 +189,12 @@ export default defineModeration({
     name: { en: 'My Moderation', 'zh-CN': 'My Moderation' },
     description: { en: 'Content moderation', 'zh-CN': 'Content moderation' },
     meta: {
-      provider: 'baidu',
-      modalities: ['text']
+      provider: 'baidu'
     }
   }),
   secretSchema,
   provider: {
     name: 'baidu',
-    modalities: ['text'],
     check: async (input, ctx) => {
       try {
         const flags = await callProvider(input.content, ctx.secrets);
@@ -238,10 +236,11 @@ export default defineModeration({
 uncaught error is treated as a framework-level failure (a plugin bug), which is indistinguishable from
 "provider temporarily unavailable".
 
-This version serves `modality: 'text'` only; other modalities return an explicit framework error
-(`plugin.moderation.modality_not_supported`) instead of being silently treated as text. Strictness is
-owned by the provider (console-side policy id or score thresholds) and passed through `secretSchema`; the
-framework does not normalise it.
+This version supports **synchronous text moderation only**: `input.content` is the text to review, with no
+`modality` field. `check` returns `ModerationResult` directly, not a `{ status, result }` envelope. If async
+submission or polling is needed later, it will use a separate async interface. Strictness is owned by the
+provider (console-side policy id or score thresholds) and passed through `secretSchema`; the framework does
+not normalise it.
 
 ## Build
 

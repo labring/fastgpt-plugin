@@ -28,15 +28,16 @@ function matchKeywords(content: string, keywords: string[]): string[] {
 }
 
 /**
- * 每条命中一个 hit，只给出「哪个词」「provider 对该项的判定」。
- * label 取归一化标签 `other`（关键词匹配无法映射到更细的类别），
- * providerLabel 保留 provider 自己的标签原文。
+ * Create one hit for each matched keyword.
+ * Use the normalised `other` label when keyword matching cannot identify a category,
+ * and preserve the provider's own label in `providerLabel`.
+ *
+ * Hits have no verdict: the top-level `verdict` is authoritative; hits are review details.
  */
-function toHit(keyword: string, verdict: ModerationHitType['verdict']): ModerationHitType {
+function toHit(keyword: string): ModerationHitType {
   return {
     label: 'other',
     providerLabel: 'keyword',
-    verdict,
     keywords: [keyword]
   };
 }
@@ -58,20 +59,18 @@ const moderation = defineModeration({
       'zh-CN': '初始版本'
     },
     meta: {
-      provider: 'keyword',
-      modalities: ['text']
+      provider: 'keyword'
     }
   }),
   secretSchema: SECRET_SCHEMA,
   provider: {
     name: 'keyword',
-    modalities: ['text'],
     check: async (input, ctx) => {
       const blocked = matchKeywords(input.content, splitKeywords(ctx.secrets.blockedKeywords));
       if (blocked.length > 0) {
         return {
           verdict: 'block',
-          hits: blocked.map((keyword) => toHit(keyword, 'block'))
+          hits: blocked.map((keyword) => toHit(keyword))
         };
       }
 
@@ -82,7 +81,7 @@ const moderation = defineModeration({
       if (suspicious.length > 0) {
         return {
           verdict: 'suspected',
-          hits: suspicious.map((keyword) => toHit(keyword, 'suspected'))
+          hits: suspicious.map((keyword) => toHit(keyword))
         };
       }
 

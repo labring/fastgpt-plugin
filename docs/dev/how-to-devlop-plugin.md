@@ -370,7 +370,7 @@ gh repo create --public --source=. --remote=origin --push
 
 ### 内容审查插件怎么写？
 
-使用 `defineModeration()` 声明，开发规范见 `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`。三点容易踩坑：provider 无法判定时要返回 `error` 档结果而不是抛异常；逐项命中放在 `hits`，顶层 `verdict` 才是唯一权威裁决；严格度由 provider 自己的配置项表达，框架不做归一化。本版本只服务 `modality: 'text'`。
+使用 `defineModeration()` 声明，开发规范见 `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`。三点容易踩坑：provider 无法判定时要返回 `error` 档结果而不是抛异常；逐项命中放在 `hits`，顶层 `verdict` 才是唯一权威裁决；严格度由 provider 自己的配置项表达，框架不做归一化。本版本仅提供同步文本审查，`check` 直接返回 `ModerationResult`。
 
 ### 插件版本如何管理？
 
