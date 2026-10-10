@@ -17,7 +17,9 @@ const PluginTagDTOSchema = z.enum([
   'scientific',
   'other'
 ]);
-const PluginTypeDTOSchema = z.enum(['tool']);
+// 必须与 @domain 的 PluginTypeSchema 保持同步：这是独立手抄的第二份插件类型枚举，
+// 漏改会让 GET /plugin/list?types=<新类型> 在参数校验阶段直接 400。
+const PluginTypeDTOSchema = z.enum(['tool', 'moderation']);
 
 const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => {

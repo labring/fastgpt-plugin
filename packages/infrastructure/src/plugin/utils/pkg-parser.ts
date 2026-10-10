@@ -11,7 +11,7 @@ import {
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
 import { bufferToReadable, readStreamToBuffer, unpkg } from './pkg';
-import { loadPlugin } from './tool-loader';
+import { loadPlugin } from './plugin-loader';
 
 const IMAGE_CONTENT_TYPES = new Set<MIMEType>([
   'image/svg+xml',

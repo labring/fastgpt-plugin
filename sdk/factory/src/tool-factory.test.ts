@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import z from 'zod';
 
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { failureResult } from '@domain/value-objects/result.vo';
-import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 import {
   createLocalDebugRuntime,
@@ -77,7 +77,7 @@ describe('ToolFactory streaming', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
@@ -91,7 +91,7 @@ describe('ToolFactory streaming', () => {
       const response = responseOrTimeout as Awaited<typeof responsePromise>;
       expect(response.output).toBeDefined();
 
-      const messages: ToolStreamMessageType[] = [];
+      const messages: PluginStreamMessageType[] = [];
       await response.output!.stream.consume(async (chunk) => {
         messages.push(chunk);
         if (messages.length === 1) {
@@ -174,13 +174,13 @@ describe('ToolFactory streaming', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -254,13 +254,13 @@ describe('ToolFactory streaming', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -278,7 +278,7 @@ describe('ToolFactory streaming', () => {
     setCurrentLocalDebugRuntime(runtime);
     process.env.RUNTIME_MODE = 'dev';
 
-    const streamLike = createStreamDataLike<ToolStreamMessageType>();
+    const streamLike = createStreamDataLike<PluginStreamMessageType>();
 
     runtime.pluginChannel.setRequestHandler(() =>
       runtime.pluginChannel.createReply(undefined, {
@@ -293,7 +293,7 @@ describe('ToolFactory streaming', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
@@ -307,7 +307,7 @@ describe('ToolFactory streaming', () => {
     });
     streamLike.end();
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });

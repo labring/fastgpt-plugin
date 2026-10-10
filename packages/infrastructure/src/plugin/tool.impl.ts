@@ -1,11 +1,6 @@
-import { randomUUID } from 'node:crypto';
-
 import type { ToolType } from '@domain/entities/tool.entity';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
-import type {
-  PluginRuntimeInvokeOptions,
-  PluginRuntimeManagerPort
-} from '@domain/ports/plugin/plugin-runtime-manager.port';
+import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import {
   type ToolDetailInputType,
   type ToolDetailType,
@@ -13,19 +8,16 @@ import {
   type ToolListOutputType,
   type ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
-import { createError, getErrorDefinition, type RegisteredError } from '@domain/value-objects/error.vo';
+import { createError } from '@domain/value-objects/error.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
-import {
-  isPluginDebugSource,
-  parsePluginDebugSessionSource
-} from '@domain/value-objects/plugin-debug-session.vo';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import type { ToolRunInputType } from '@domain/value-objects/tool.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
-import { InvokeManager } from './invoke/invoke.impl';
+import { createPluginInvokeOptions, toPluginInvokeError } from './utils/plugin-invoke';
 import { Semver } from './utils/semver';
 
 type JsonObject = Record<string, unknown>;
@@ -209,7 +201,7 @@ export class ToolManager implements ToolManagerPort {
           version: latestVersion.version
         });
 
-        if (!fallbackErr) {
+        if (!fallbackErr && fallbackTool.type === 'tool') {
           return successResult(
             this.toToolDetail({
               tool: fallbackTool,
@@ -226,6 +218,19 @@ export class ToolManager implements ToolManagerPort {
           'zh-CN': '获取工具详情失败'
         },
         detailErr
+      );
+    }
+
+    if (tool.type !== 'tool') {
+      return failureResult(
+        createError(ErrorCode.pluginRuntimePluginNotFound, {
+          message: 'Plugin type mismatch',
+          reason: {
+            en: 'Requested plugin is not a tool',
+            'zh-CN': '请求的插件不是工具类型'
+          },
+          data: { pluginId, source: normalizedSource, version: tool.version, type: tool.type }
+        })
       );
     }
 
@@ -246,7 +251,7 @@ export class ToolManager implements ToolManagerPort {
     childId,
     source,
     secrets
-  }: ToolRunInputType): Promise<Result<StreamData<ToolStreamMessageType>>> {
+  }: ToolRunInputType): Promise<Result<StreamData<PluginStreamMessageType>>> {
     const [res, err] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
       source: source ?? 'system',
@@ -282,24 +287,14 @@ export class ToolManager implements ToolManagerPort {
       secrets
     } satisfies PluginToolRunPayloadType;
 
-    const options: PluginRuntimeInvokeOptions = {
-      invocationId: randomUUID(),
-      invoke: new InvokeManager({
-        token: this.getInvokeToken(systemVar),
-        fastgptBaseUrl: this.deps.fastgptBaseUrl
-      }),
-      ...(isPluginDebugSource(source)
-        ? {
-            debug: {
-              ...getDebugIdentityFromSource(source),
-              source
-            }
-          }
-        : {})
-    };
+    const options = createPluginInvokeOptions({
+      systemVar,
+      source,
+      fastgptBaseUrl: this.deps.fastgptBaseUrl
+    });
 
     const [invokeRes, invokeErr] = await this.deps.pluginRuntimeManager.invoke<
-      ToolStreamMessageType,
+      PluginStreamMessageType,
       true
     >({
       uniqueId: {
@@ -329,69 +324,4 @@ export class ToolManager implements ToolManagerPort {
   }
 }
 
-function getDebugIdentityFromSource(source: string): { tmbId?: string; userId?: string } {
-  const debugSessionSource = parsePluginDebugSessionSource(source);
-  if (debugSessionSource) {
-    return debugSessionSource;
-  }
 
-  const parts = source.split(':');
-  const userIndex = parts.indexOf('user');
-  const userId = userIndex >= 0 ? parts[userIndex + 1] : undefined;
-  if (userId) {
-    return { userId };
-  }
-
-  throw createError(ErrorCode.pluginRuntimePluginNotFound, {
-    message: 'Debug source must include tmbId or user id',
-    data: { source }
-  });
-}
-
-type ToolRunErrorContext = {
-  pluginId: string;
-  source: PluginSourceType;
-  version: string;
-  childId?: string;
-  input: Record<string, unknown>;
-};
-
-function toPluginInvokeError(error: Error, context: ToolRunErrorContext): RegisteredError {
-  if (isRegisteredError(error)) {
-    return createError(error.code, {
-      message: error.message,
-      reason: error.reason,
-      cause: error.cause ?? error,
-      data: mergeErrorData(error.data, context)
-    });
-  }
-
-  return createError(ErrorCode.pluginInvokeFailed, {
-    message: error.message,
-    reason: {
-      en: `Invoke failed: ${error.message}`,
-      'zh-CN': `调用失败：${error.message}`
-    },
-    cause: error,
-    data: context
-  });
-}
-
-function isRegisteredError(error: Error): error is RegisteredError {
-  const code = (error as Partial<RegisteredError>).code;
-  return (
-    typeof code === 'string' &&
-    getErrorDefinition(code) !== undefined &&
-    typeof (error as Partial<RegisteredError>).reason === 'object'
-  );
-}
-
-function mergeErrorData(
-  data: Record<string, unknown> | undefined,
-  context: ToolRunErrorContext
-): Record<string, unknown> {
-  return {
-    ...(data ?? {}),
-    ...context
-  };
-}

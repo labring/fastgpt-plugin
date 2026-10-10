@@ -51,6 +51,7 @@ flowchart TB
     subgraph Usecase["Application Layer packages/usecase"]
         PluginUC["Plugin Use Cases"]
         ToolUC["Tool Use Cases"]
+        ModerationUC["Moderation Use Cases"]
         RuntimeUC["Runtime Use Cases"]
         ModelUC["Model Use Cases"]
     end
@@ -104,9 +105,9 @@ Core dependency direction:
 
 `packages/domain` stores stable business models:
 
-- `entities/`: core entities such as plugins, tools, models, datasets, and workflows.
-- `value-objects/`: immutable business values such as `Result`, errors, permissions, streaming responses, and i18n strings.
-- `ports/`: port interfaces for repositories, file storage, URL file fetching, plugin runtime, tool invocation, and more.
+- `entities/`: core entities such as plugins, tools, moderation plugins, models, datasets, and workflows.
+- `value-objects/`: immutable business values such as `Result`, errors, permissions, streaming responses, the moderation check contract, and i18n strings.
+- `ports/`: port interfaces for repositories, file storage, URL file fetching, plugin runtime, tool and moderation invocation, and more.
 
 Ports are defined in the domain layer, and concrete implementations live in `infrastructure`. Use cases depend only on ports, making it easy to replace Mongo, S3, runtime drivers, or external file-fetching policies.
 
@@ -116,6 +117,7 @@ Ports are defined in the domain layer, and concrete implementations live in `inf
 
 - `plugin/`: plugin upload, install, confirm, delete, configuration read/write, version list, tag list, active plugin replacement, and more.
 - `tool/`: tool list, tool detail, and tool execution.
+- `moderation/`: moderation plugin detail and content check.
 - `model/`: model list and model providers.
 - `runtime/`: runtime metrics snapshots.
 
@@ -141,7 +143,7 @@ Server routes register OpenAPI contracts from these definitions and call use cas
 - `storage/s3/`: S3 client and object storage capabilities.
 - `redis/`: Redis client.
 - `file-storage/`, `file-ttl/`: local and remote file storage plus temporary-file cleanup.
-- `plugin/`: plugin repository, `.pkg` parsing, invocation, runtime management, and drivers.
+- `plugin/`: plugin repository, `.pkg` parsing, invocation, runtime management, drivers, and the moderation manager.
 - `logger/`, `metrics/`: logging and OpenTelemetry metrics.
 - `utils/secure/`: security utilities such as SSRF protection.
 
@@ -155,7 +157,7 @@ Server routes register OpenAPI contracts from these definitions and call use cas
 
 1. Initialize logger and metrics.
 2. Create route dependencies.
-3. Register model, plugin, runtime, tool, and workflow routes.
+3. Register model, plugin, runtime, tool, moderation, and workflow routes.
 4. Initialize proxy, database, runtime, and other infrastructure.
 5. Listen on `env.PORT` with Hono Node Server.
 6. Handle `SIGTERM` and `SIGINT`, closing the HTTP server, metrics, and logger.
@@ -170,8 +172,8 @@ Server routes register OpenAPI contracts from these definitions and call use cas
 
 ## SDK
 
-- `sdk/client`: for FastGPT or other callers. It wraps FastGPT Plugin service requests, transport, and tool streaming responses.
-- `sdk/factory`: for plugin authors. It provides plugin manifest, tool factory, invoke client, runtime channel, and related declaration capabilities.
+- `sdk/client`: for FastGPT or other callers. It wraps FastGPT Plugin service requests, transport, tool streaming responses, and moderation checks.
+- `sdk/factory`: for plugin authors. It provides plugin manifest, tool factory, moderation factory, invoke client, runtime channel, and related declaration capabilities.
 
 SDK packages are published independently. The `apps/server` build first builds `sdk/factory` to ensure the types and artifacts required for loading plugins at runtime are available.
 
@@ -207,7 +209,7 @@ For plugin installation:
 4. The use case saves the temporary file through `LocalFileStoragePort`.
 5. The use case parses the `.pkg` or plugin packages inside a zip through `PluginPKGFilePort`.
 6. The use case writes plugin metadata and files through `PluginRepoPort`.
-7. If the plugin type is tool, the use case registers it with `PluginRuntimeManagerPort`.
+7. If the plugin type is runnable (`tool` or `moderation`), the use case registers it with `PluginRuntimeManagerPort`.
 
 ## Dependency Injection Conventions
 
@@ -256,7 +258,7 @@ Suggested tests for new capabilities:
 ## Extension Principles
 
 - Keep `domain` and `usecase` independent from infrastructure details such as Hono, Mongo, S3, and Redis.
-- When adding plugin types, update modeling in domain entities, package protocol parsing, runtime registration, and API contracts together.
+- When adding plugin types, update all of the following together: the domain `PluginTypeSchema` and the discriminated `PluginSchema`, the interface-adapter `PluginTypeDTOSchema` (a separate hand-maintained enum that gates list filters), the per-type event gate in `PluginTypeEventNames`, package loading and the codec registry, runtime registration, API contracts, the SDK factory, and the CLI's per-type dispatch.
 - When adding runtime drivers, implement `PluginRuntimeManagerPort` and switch assembly in `deps.ts`.
 - When adding storage backends, implement the corresponding file storage or repo port while keeping use cases unchanged.
 - When changing public SDKs, CLIs, HTTP APIs, or the `.pkg` package protocol, consider backward compatibility and update the upgrade docs.

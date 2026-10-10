@@ -1,5 +1,6 @@
 import z from 'zod';
 
+import { ModerationMetaSchema } from '../../entities/moderation.entity';
 import { PluginBaseSchema, PluginTypeEnum } from '../../entities/plugin.entity';
 import { I18nStringSchema } from '../i18n-string.vo';
 
@@ -39,4 +40,16 @@ export const ToolManifestSchema = z.object({
 
 export type ToolManifestType = z.infer<typeof ToolManifestSchema>;
 
-export type PluginManifestType = PluginManifestBaseType | ToolManifestType; // TODO: add more types
+export const ModerationManifestSchema = z.object({
+  ...PluginManifestBaseSchema.shape,
+  type: z.literal(PluginTypeEnum.moderation),
+  secretSchema: z.any(), // 总是存在
+  meta: ModerationMetaSchema
+});
+
+export type ModerationManifestType = z.infer<typeof ModerationManifestSchema>;
+
+export type PluginManifestType =
+  | PluginManifestBaseType
+  | ToolManifestType
+  | ModerationManifestType;

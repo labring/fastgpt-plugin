@@ -1,0 +1,25 @@
+{
+  "name": "{{name}}",
+  "version": "0.0.1",
+  "description": "{{description}}",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "npx @fastgpt-plugin/cli build --minify",
+    "build:dev": "npx @fastgpt-plugin/cli build",
+    "check": "npx @fastgpt-plugin/cli check --entry . --output ./dist",
+    "dev": "fastgpt-plugin dev . --watch",
+    "debug": "npx @fastgpt-plugin/cli debug .",
+    "debug:run": "npx @fastgpt-plugin/cli debug . --run{{debugRunToolOption}} --input '{{debugRunInputJson}}'",
+    "pack": "npx @fastgpt-plugin/cli pack",
+    "test": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@fastgpt-plugin/cli": "{{cliPackageVersion}}",
+    "@fastgpt-plugin/sdk-factory": "{{sdkFactoryPackageVersion}}",
+    "typescript": "{{typescriptPackageVersion}}",
+    "vitest": "{{vitestPackageVersion}}",
+    "zod": "{{zodPackageVersion}}"
+  }
+}

@@ -167,6 +167,81 @@ const handler = createToolHandler({
 });
 ```
 
+## Moderation Plugin
+
+`defineModeration()` builds a **content moderation** plugin: it maps a provider's moderation service onto
+the FastGPT standard structure. FastGPT decides whether to allow the content; the plugin only emits a
+verdict and the per-hit details.
+
+```ts
+import { defineModeration, defineModerationManifest } from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const secretSchema = z.object({
+  accessKeyId: z.string().meta({ title: 'AccessKey ID', isSecret: true }),
+  accessKeySecret: z.string().meta({ title: 'AccessKey Secret', isSecret: true })
+});
+
+export default defineModeration({
+  manifest: defineModerationManifest({
+    pluginId: 'my-moderation',
+    version: '1.0.0',
+    name: { en: 'My Moderation', 'zh-CN': 'My Moderation' },
+    description: { en: 'Content moderation', 'zh-CN': 'Content moderation' },
+    meta: {
+      provider: 'baidu'
+    }
+  }),
+  secretSchema,
+  provider: {
+    name: 'baidu',
+    check: async (input, ctx) => {
+      try {
+        const flags = await callProvider(input.content, ctx.secrets);
+        return {
+          verdict: flags.verdict, // pass | block | suspected | error
+          hits: flags.hits.map((hit) => ({
+            label: 'porn',                  // normalised label
+            providerLabel: hit.label,       // provider native label
+            score: hit.confidence,          // provider native confidence, 0-100
+            keywords: hit.words
+          }))
+        };
+      } catch (error) {
+        // provider could not decide -> error verdict result, do not throw
+        return ctx.moderationError(`upstream failed: ${String(error)}`);
+      }
+    }
+  }
+});
+```
+
+### `provider.check(input, ctx)`
+
+`ctx` exposes `secrets` (validated against `secretSchema`), `systemVar`, `invoke` (host capabilities) and
+`moderationError(message)` (builds a standard error-verdict result).
+
+| Field | Description |
+| --- | --- |
+| `verdict` | `pass` / `block` / `suspected` / `error`. `suspected` means the provider flags it but is not confident; `error` means the provider could **not** decide. |
+| `hits[].label` | Normalised label (`porn` / `politics` / `ad` / `other`, ...). |
+| `hits[].providerLabel` | Provider native label, so normalisation loses nothing. |
+| `hits[].score` | Provider **native** confidence, 0-100. Omit it when the provider has none; never encode enums or booleans as numbers. |
+| `hits[].keywords` | Sensitive words matched for that label. |
+| `errorMessage` | Required when `verdict === 'error'`. |
+
+`result.provider` and `result.keywords` (the union of hit keywords) are filled in by the SDK.
+
+**Return an `error` verdict result when the provider cannot decide; never let the exception escape**: an
+uncaught error is treated as a framework-level failure (a plugin bug), which is indistinguishable from
+"provider temporarily unavailable".
+
+This version supports **synchronous text moderation only**: `input.content` is the text to review, with no
+`modality` field. `check` returns `ModerationResult` directly, not a `{ status, result }` envelope. If async
+submission or polling is needed later, it will use a separate async interface. Strictness is owned by the
+provider (console-side policy id or score thresholds) and passed through `secretSchema`; the framework does
+not normalise it.
+
 ## Build
 
 ```bash

@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 
+import { ModerationSchema } from '@domain/entities/moderation.entity';
 import { type PluginType, PluginTypeEnum } from '@domain/entities/plugin.entity';
+import type { PluginTypeType } from '@domain/entities/plugin-base.entity';
 import { ToolSchema } from '@domain/entities/tool.entity';
 import type {
   PluginListInputType,
@@ -52,6 +54,7 @@ type DebugPluginMetadata = DebugPluginMetadataPayload & {
 type DebugPluginMetadataPayload = {
   pluginId: string;
   version: string;
+  type: PluginTypeType;
   name: string;
   description: string;
   toolDescription: string;
@@ -59,6 +62,8 @@ type DebugPluginMetadataPayload = {
   tags?: string[];
   permissions?: string[];
   secretSchema?: Record<string, unknown>;
+  /** moderation 插件的 provider / docUrl */
+  meta?: Record<string, unknown>;
   isToolSet: boolean;
   tools: Array<{
     id: string;
@@ -401,6 +406,24 @@ function truncateText(value: string, maxLength: number): string {
 }
 
 function toPlugin(metadata: DebugPluginMetadata, source: string): PluginType {
+  if (metadata.type === 'moderation') {
+    return ModerationSchema.parse({
+      pluginId: metadata.pluginId,
+      version: metadata.version,
+      etag: toDebugEtag(source, metadata),
+      type: PluginTypeEnum.moderation,
+      author: metadata.author,
+      name: toI18n(metadata.name),
+      icon: '',
+      description: toI18n(metadata.description),
+      tags: metadata.tags,
+      permission: metadata.permissions,
+      secretSchema: metadata.secretSchema,
+      // meta 缺失时 parse 报错，这正是想要的失败语义：调试会话没上报类型元信息就不该被当成可用插件
+      meta: metadata.meta
+    });
+  }
+
   return ToolSchema.parse({
     pluginId: metadata.pluginId,
     version: metadata.version,
@@ -445,7 +468,7 @@ function toPluginListItem({ source, metadata }: { source: string; metadata: Debu
     pluginId: metadata.pluginId,
     version: metadata.version,
     etag: toDebugEtag(source, metadata),
-    type: PluginTypeEnum.tool,
+    type: metadata.type,
     author: metadata.author,
     name: toI18n(metadata.name),
     icon: '',
@@ -456,6 +479,10 @@ function toPluginListItem({ source, metadata }: { source: string; metadata: Debu
 }
 
 function toToolListItem({ source, metadata }: { source: string; metadata: DebugPluginMetadata }) {
+  if (metadata.type !== 'tool') {
+    throw new Error(`Debug plugin is not a tool: ${metadata.pluginId}`);
+  }
+
   return ToolListItemSchema.parse({
     pluginId: metadata.pluginId,
     version: metadata.version,
@@ -498,6 +525,7 @@ function toDebugEtag(source: string, metadata: DebugPluginMetadata): string {
         source,
         pluginId: metadata.pluginId,
         version: metadata.version,
+        type: metadata.type,
         name: metadata.name,
         description: metadata.description,
         toolDescription: metadata.toolDescription,
@@ -505,6 +533,7 @@ function toDebugEtag(source: string, metadata: DebugPluginMetadata): string {
         tags: metadata.tags,
         permissions: metadata.permissions,
         secretSchema: metadata.secretSchema,
+        meta: metadata.meta,
         isToolSet: metadata.isToolSet,
         tools: metadata.tools
       })

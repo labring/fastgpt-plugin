@@ -53,6 +53,6 @@
   ],
   "exclude": [
     "packages/infrastructure/src/static-data/dataset-source/**/*.ts", // TODO: dataset-source 暂时隐藏
-    "apps/cli/templates/**/*.ts", // 忽略 CLI 模板文件
+    "apps/cli/templates/**/*.ts", // CLI templates are typechecked separately via tsconfig.templates.json
   ],
 }

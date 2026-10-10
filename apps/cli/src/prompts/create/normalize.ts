@@ -2,7 +2,8 @@ import type { DependencyMode, PluginType } from '@fastgpt-plugin/cli/prompts/cre
 
 export function normalizePluginType(type?: string): PluginType | undefined {
   if (!type) return undefined;
-  return type === 'tool-suite' ? 'tool-suite' : 'tool';
+  if (type === 'tool' || type === 'tool-suite' || type === 'moderation') return type;
+  throw new Error(`插件类型不支持: ${type}。可选值: tool | tool-suite | moderation`);
 }
 
 export function normalizeDependencyMode(mode?: string): DependencyMode {

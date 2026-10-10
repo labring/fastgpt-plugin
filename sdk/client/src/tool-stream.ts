@@ -1,25 +1,24 @@
 import { ToolRunInputDTOSchema } from '@interface-adapter/contracts/dto/tool.dto';
 import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 
-import { ToolStreamMessageSchema } from '@domain/value-objects/tool.vo';
+import { PluginStreamMessageSchema } from '@domain/value-objects/plugin-stream.vo';
 
 import { ClientTransport } from './transport';
 import type {
   ClientRequestOptions,
   FastGPTPluginClientOptions,
-  RunToolStreamParams,
-  ToolAnswerType,
-  ToolHandlerReturnType
-} from './types';
+  PluginStreamAnswerType,
+  PluginStreamResponseDataType,
+  RunToolStreamParams} from './types';
 
-type ParsedToolStreamMessage =
+type ParsedPluginStreamMessage =
   | {
       type: 'response';
-      data: ToolHandlerReturnType;
+      data: PluginStreamResponseDataType;
     }
   | {
       type: 'stream';
-      data: ToolAnswerType;
+      data: PluginStreamAnswerType;
     }
   | {
       type: 'error';
@@ -37,7 +36,7 @@ export class RunToolWithStream {
     params: RunToolStreamParams,
     requestOptions?: ClientRequestOptions
   ): Promise<{
-    output?: ToolHandlerReturnType;
+    output?: PluginStreamResponseDataType;
     error?: Error;
   }> {
     try {
@@ -60,7 +59,7 @@ export class RunToolWithStream {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      let finalResult: ToolHandlerReturnType | undefined;
+      let finalResult: PluginStreamResponseDataType | undefined;
       let finalError: Error | undefined;
 
       while (true) {
@@ -120,7 +119,7 @@ export class RunToolWithStream {
     }
   }
 
-  private parseStreamMessage(chunk: string): ParsedToolStreamMessage | null {
+  private parseStreamMessage(chunk: string): ParsedPluginStreamMessage | null {
     const normalized = chunk
       .split('\n')
       .map((line) => (line.startsWith('data:') ? line.slice(5).trimStart() : line))
@@ -133,7 +132,7 @@ export class RunToolWithStream {
 
     try {
       const parsed = JSON.parse(normalized);
-      return ToolStreamMessageSchema.parse(parsed) as ParsedToolStreamMessage;
+      return PluginStreamMessageSchema.parse(parsed) as ParsedPluginStreamMessage;
     } catch {
       return null;
     }

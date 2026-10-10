@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { BaseCommand } from '@fastgpt-plugin/cli/commands/base';
-import { DEFAULT_PLUGIN_DESCRIPTION, TOOL_TEMPLATES_DIR } from '@fastgpt-plugin/cli/constants';
+import { DEFAULT_PLUGIN_DESCRIPTION, TEMPLATES_DIR } from '@fastgpt-plugin/cli/constants';
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import type {
   CreatePluginCommandOptions,
@@ -14,7 +14,7 @@ import { kebabCase } from 'es-toolkit';
 
 const TEMPLATE_DEPENDENCY_VERSIONS = {
   '@fastgpt-plugin/cli': '^0.2.0',
-  '@fastgpt-plugin/sdk-factory': '^0.0.1',
+  '@fastgpt-plugin/sdk-factory': '^2.0.0',
   typescript: '^5.9.3',
   vitest: '^4.0.18',
   zod: '^4'
@@ -27,7 +27,7 @@ export class CreateCommand extends BaseCommand {
         .command('create')
         .description('Create a new FastGPT plugin project / 创建新的 FastGPT 插件项目')
         .argument('[name]', '插件名称 / Plugin name')
-        .option('-t, --type <type>', '插件类型 / Plugin type: tool | tool-suite')
+        .option('-t, --type <type>', '插件类型 / Plugin type: tool | tool-suite | moderation')
         .option('-d, --description <desc>', '插件描述 / Plugin description')
         .option('--cwd <path>', '工作目录 / Working directory', process.cwd())
         .option(
@@ -57,7 +57,7 @@ export class CreateCommand extends BaseCommand {
 
   public async run(options: CreatePluginCommandOptions): Promise<void> {
     const targetDir = path.resolve(options.cwd, options.name);
-    const templateDir = path.join(TOOL_TEMPLATES_DIR, 'tool');
+    const templateDir = path.join(TEMPLATES_DIR, options.type === 'moderation' ? 'moderation' : 'tool');
     const files = await this.collectTemplateFiles(templateDir);
     const description = options.description ?? DEFAULT_PLUGIN_DESCRIPTION;
 
@@ -121,7 +121,9 @@ export class CreateCommand extends BaseCommand {
   }
 
   private pickDebugRunInput(type: CreatePluginCommandOptions['type']): string {
-    return type === 'tool-suite' ? '{"query":"select 1"}' : '{"delay":0}';
+    if (type === 'tool-suite') return '{"query":"select 1"}';
+    if (type === 'moderation') return '{"content":"hello world"}';
+    return '{"delay":0}';
   }
 
   private pickDebugRunInputJson(type: CreatePluginCommandOptions['type']): string {
@@ -166,10 +168,16 @@ export class CreateCommand extends BaseCommand {
   ): Promise<void> {
     const toolIndexPath = path.join(targetDir, 'index.tool.ts');
     const toolSetIndexPath = path.join(targetDir, 'index.toolset.ts');
+    const moderationIndexPath = path.join(targetDir, 'index.moderation.ts');
     const finalIndexPath = path.join(targetDir, 'index.ts');
 
-    const sourcePath = type === 'tool-suite' ? toolSetIndexPath : toolIndexPath;
-    const cleanupTargets = [toolIndexPath, toolSetIndexPath];
+    const sourcePath =
+      type === 'tool-suite'
+        ? toolSetIndexPath
+        : type === 'moderation'
+          ? moderationIndexPath
+          : toolIndexPath;
+    const cleanupTargets = [toolIndexPath, toolSetIndexPath, moderationIndexPath];
 
     await fs.rename(sourcePath, finalIndexPath);
 

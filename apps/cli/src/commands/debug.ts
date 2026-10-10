@@ -10,13 +10,14 @@ import {
   type DebugPluginSnapshot,
   type DebugToolSnapshot,
   loadDebugSession,
-  runDebugTool
+  runDebugPlugin
 } from '@fastgpt-plugin/cli/debug/session';
 import { logger } from '@fastgpt-plugin/cli/helpers';
 import type { Command } from 'commander';
 
+import { ModerationResultSchema } from '@domain/value-objects/moderation.vo';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 type DebugCommandOptions = RemoteDebugCommandOptions & {
   tool?: string;
@@ -122,7 +123,7 @@ export class DebugCommand extends BaseCommand {
       'systemVar'
     )) as Partial<SystemVarType> | undefined;
 
-    const result = await runDebugTool({
+    const result = await runDebugPlugin({
       runtime: session.runtime,
       snapshot: session.snapshot,
       toolId: options.tool,
@@ -137,6 +138,7 @@ export class DebugCommand extends BaseCommand {
     logger.info(`虚拟时间: ${result.systemVar.time}`);
 
     this.printStreamMessages(result.streamMessages);
+    this.printModerationResult(session.snapshot, result.streamMessages);
 
     if (result.response) {
       logger.info(`返回结果:\n${JSON.stringify(result.response, null, 2)}`);
@@ -145,6 +147,45 @@ export class DebugCommand extends BaseCommand {
     if (result.error) {
       logger.error(result.error);
       process.exit(1);
+    }
+  }
+
+  /** moderation 事件的返回结构较长，单看原始 JSON 不易读 */
+  private printModerationResult(
+    snapshot: DebugPluginSnapshot,
+    messages: PluginStreamMessageType[]
+  ): void {
+    if (snapshot.type !== 'moderation') {
+      return;
+    }
+
+    const response = messages.find((message) => message.type === 'response');
+    const parsed = ModerationResultSchema.safeParse(response?.data);
+    if (!parsed.success) {
+      return;
+    }
+
+    const { verdict, hits, keywords, errorMessage } = parsed.data;
+    const summary = {
+      verdict,
+      hitCount: hits.length,
+      keywords,
+      hits: hits.map((hit) => ({
+        label: hit.label,
+        providerLabel: hit.providerLabel,
+        score: hit.score,
+        keywords: hit.keywords
+      }))
+    };
+
+    if (verdict === 'block' || verdict === 'error') {
+      logger.warn(`审查结果:\n${JSON.stringify(summary, null, 2)}`);
+    } else {
+      logger.info(`审查结果:\n${JSON.stringify(summary, null, 2)}`);
+    }
+
+    if (errorMessage) {
+      logger.warn(`provider 未能给出判定: ${errorMessage}`);
     }
   }
 
@@ -178,7 +219,7 @@ export class DebugCommand extends BaseCommand {
     logger.info(toolLines.join('\n'));
   }
 
-  private printStreamMessages(messages: ToolStreamMessageType[]): void {
+  private printStreamMessages(messages: PluginStreamMessageType[]): void {
     if (messages.length === 0) {
       logger.info('流式输出: 无');
       return;

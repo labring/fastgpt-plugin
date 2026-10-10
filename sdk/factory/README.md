@@ -329,6 +329,98 @@ const handler = createToolHandler({
 });
 ```
 
+## 内容审查插件 / Moderation Plugin
+
+`defineModeration()` 用于编写**内容审查**插件：把某个 provider 的审查服务映射成 FastGPT 的标准结构。
+是否放行由 FastGPT 决定，插件只输出裁决档位与逐项命中。
+
+`defineModeration()` builds a **content moderation** plugin: it maps a provider's moderation service onto
+the FastGPT standard structure. FastGPT decides whether to allow the content; the plugin only emits a
+verdict and the per-hit details.
+
+```ts
+import { defineModeration, defineModerationManifest } from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const secretSchema = z.object({
+  accessKeyId: z.string().meta({ title: 'AccessKey ID', isSecret: true }),
+  accessKeySecret: z.string().meta({ title: 'AccessKey Secret', isSecret: true })
+});
+
+export default defineModeration({
+  manifest: defineModerationManifest({
+    pluginId: 'my-moderation',
+    version: '1.0.0',
+    name: { en: 'My Moderation', 'zh-CN': '我的审查' },
+    description: { en: 'Content moderation', 'zh-CN': '内容审查' },
+    meta: {
+      provider: 'baidu'
+    }
+  }),
+  secretSchema,
+  provider: {
+    name: 'baidu',
+    check: async (input, ctx) => {
+      try {
+        const flags = await callProvider(input.content, ctx.secrets);
+        return {
+          verdict: flags.verdict, // pass | block | suspected | error
+          hits: flags.hits.map((hit) => ({
+            label: 'porn',                  // 归一化标签
+            providerLabel: hit.label,       // provider 原生标签
+            score: hit.confidence,          // provider 原生置信度 0-100
+            keywords: hit.words
+          }))
+        };
+      } catch (error) {
+        // provider 无法判定 → error 档结果，不要抛异常
+        return ctx.moderationError(`upstream failed: ${String(error)}`);
+      }
+    }
+  }
+});
+```
+
+### `provider.check(input, ctx)`
+
+`ctx` 提供 `secrets`（按 `secretSchema` 校验后的配置）、`systemVar`、`invoke`（反向调用宿主）与
+`moderationError(message)`（构造标准 error 档结果）。
+
+`ctx` exposes `secrets` (validated against `secretSchema`), `systemVar`, `invoke` (host capabilities) and
+`moderationError(message)` (builds a standard error-verdict result).
+
+返回值约定 / Return value:
+
+| 字段 / Field | 说明 / Description |
+| --- | --- |
+| `verdict` | `pass` / `block` / `suspected` / `error`。`suspected` 是 provider 判定疑似；`error` 是 provider **没能**给出判定。 |
+| `hits[].label` | 归一化标签（`porn` / `politics` / `ad` / `other` 等）。 |
+| `hits[].providerLabel` | provider 原生标签原文，归一化不丢信息。 |
+| `hits[].score` | provider **原生**置信度 0-100；没有就省略，不要把枚举或布尔编成数字。 |
+| `hits[].keywords` | 该标签命中的敏感词。 |
+| `errorMessage` | `verdict === 'error'` 时必填。 |
+
+`result.provider` 与 `result.keywords`（全部命中词并集）由 SDK 填充，适配器不用给。
+
+`result.provider` and `result.keywords` (the union of hit keywords) are filled in by the SDK.
+
+**provider 无法判定时返回 `verdict: 'error'` 的结果，不要抛异常**：未捕获异常会被当作框架级失败
+（插件缺陷），与「provider 暂时不可用」无法区分。
+
+**Return an `error` verdict result when the provider cannot decide; never let the exception escape**: an
+uncaught error is treated as a framework-level failure (a plugin bug), which is indistinguishable from
+"provider temporarily unavailable".
+
+本版本只支持**同步文本审查**：`input.content` 就是待审字符串，不需要 `modality` 字段。
+`check` 直接返回 `ModerationResult`，不包装 `{ status, result }`；异步提交、轮询若将来需要，另行设计
+异步接口。严格度由 provider 自己控制（厂商控制台里的策略 ID / 分值），通过 `secretSchema` 透传，框架不做归一化。
+
+This version supports **synchronous text moderation only**: `input.content` is the text to review, with no
+`modality` field. `check` returns `ModerationResult` directly, not a `{ status, result }` envelope. If async
+submission or polling is needed later, it will use a separate async interface. Strictness is owned by the
+provider (console-side policy id or score thresholds) and passed through `secretSchema`; the framework does
+not normalise it.
+
 ## 构建 / Build
 
 ```bash

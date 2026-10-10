@@ -76,4 +76,23 @@ export const defineToolSet = ({
   return toolSet;
 };
 
+export {
+  defineModerationManifest,
+  type UserModerationManifestType,
+  type UserModerationMetaType
+} from './manifest.type';
+export {
+  defineModeration,
+  ModerationFactory,
+  type ModerationProvider,
+  type ModerationProviderContext,
+  type ModerationProviderResultType
+} from './moderation-factory';
 export type { ToolHandlerContext } from './tool-factory';
+export type {
+  ModerationCheckInputType,
+  ModerationHitType,
+  ModerationLabelType,
+  ModerationResultType,
+  ModerationVerdictType
+} from '@domain/value-objects/moderation.vo';

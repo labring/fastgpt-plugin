@@ -19,6 +19,8 @@ FastGPT-Plugin v1.0.0 对插件项目进行了系统性重构，目标是让插�
 
 **工具**：一类插件，通常封装第三方服务、内部接口或本地计算逻辑，可被工作流和 Agent 调用。
 
+**内容审查**：一类插件，把不同 provider 的内容审核服务归一化成统一结构：输出四档裁决 `pass` / `block` / `suspected` / `error` 与逐项命中（归一化标签、provider 原生标签、置信度、命中词）。是否放行由 FastGPT 决定，本层不实现决策、也不做严格度归一化。
+
 **插件市场**：集中管理插件的平台，用户可以在其中搜索、下载和安装插件。
 
 **运行时**：负责执行插件代码的后端实现。当前默认生产运行时是本地进程池；Connection Gateway 调试运行时用于远程调试；Serverless 运行时为预留扩展。
@@ -114,6 +116,18 @@ FastGPT-Plugin 支持多种运行时：
 
 插件安装后会保存插件包文件、解析插件元信息，并在插件启用时注册到运行时。运行时配置按插件维度保存，没有配置记录时使用环境变量提供的默认值。
 
+## 内容审查插件
+
+`moderation` 是第二种可运行的插件类型。内容审查插件把某个 provider 的内容审核服务映射成统一结构，FastGPT 不需要为每个 provider 单独对接。插件服务通过 `GET /moderation`（插件详情）与 `POST /moderation/check`（内容审查）两个接口暴露它，二者与工具走完全相同的插件包、运行时和进程池链路；区别是调用的事件是 `check` 而不是 `run`。
+
+契约把 provider 信号归一化：
+
+- **裁决**取 `pass`、`block`、`suspected`、`error` 四档之一。`suspected` 与 `error` 刻意分开：`suspected` 是 provider 确实给出的判定（腾讯 `Review`、百度 `conclusionType=3`、易盾 `action=2`），通常意味着转人工复核；`error` 是 provider 完全没能给出判定（HTTP 错误、超时、未知标签、百度 `conclusionType=4`），通常意味着重试或兜底。无法判定的 provider 返回 `error` 档结果而不是让调用失败，调用方因此总是拿到同一种结构。
+- **命中明细**逐项携带归一化标签、provider 原生标签（`providerLabel`）、provider 原生置信度与命中的敏感词。命中明细供调用方定位与复核，顶层 `verdict` 才是权威裁决。契约刻意不含逐项档位，也不含聚合的 label 或 score：置信度是逐标签的，框架级的统一严重度刻度只会凭空造出 provider 并未给出的标准。
+- **处理范围**：本版本仅提供同步文本审查，`input.content` 是待审文本字符串，不设置 `modality` 字段。输入 schema 严格拒绝旧式 `modality` 字段，避免把非文本输入静默按文本处理。
+
+是否放行由 FastGPT 决定，本层只报告裁决与命中明细。**严格度**属于 provider：厂商控制台的策略标识或分值阈值通过插件自己的 `secretSchema` 传入，框架既不做审查级别归一化，也不按阈值改写裁决。`POST /moderation/check` 是同步接口，直接返回 `ModerationResult`；未来若需异步审查，应另行设计异步接口，不扩展同步结果信封。
+
 ## 远程调试设计
 
 远程调试用于让开发者在本地运行插件，并把它临时接入 FastGPT 测试环境。它是调试连接层，不是生产插件运行时。
@@ -126,7 +140,7 @@ FastGPT-Plugin 支持多种运行时：
 4. 本地 CLI 运行 `fastgpt-plugin dev`，用 `connectionKey` 调用 `POST /plugin/debug-sessions/connection-key:exchange`。
 5. Plugin Server 校验 connection key，签发短期 WebSocket `connectToken`，返回 `gatewayUrl`、`source`、`connectToken` 和 `expiresAt`。
 6. CLI 连接 Connection Gateway，发送 `bind` 和本地插件 metadata。
-7. Plugin Server 通过 Gateway status 读取 metadata，把本地插件临时合并进 debug source 下的插件列表和工具列表。
+7. Plugin Server 通过 Gateway status 读取 metadata，把本地插件临时合并进 debug source 下的插件列表，其中工具插件同时进入工具列表。
 8. FastGPT 调用 debug 插件时，Plugin Server 通过 Gateway internal API 发布 request envelope，CLI 执行本地插件并流式回传结果。
 
 ```mermaid
@@ -161,7 +175,7 @@ sequenceDiagram
 
 调试 source 的插件查询由 `DebugPluginRepoOverlay` 处理。它会把请求中的 debug sources 与普通 sources 分桶：debug sources 从 Gateway session metadata 中读取本地插件，普通 sources 继续从持久化插件仓储读取，最后合并结果。
 
-调试调用由 `ConnectionGatewayDebugRuntimeManager` 处理。它要求 Gateway session 处于 connected 且 ownerAlive，随后发送 `plugin-debug.run` envelope。CLI 只拿短期 connect token，不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
+调试调用由 `ConnectionGatewayDebugRuntimeManager` 处理。它要求 Gateway session 处于 connected 且 ownerAlive，随后发送 `plugin-debug.run` envelope，其中携带目标 `eventName`（工具为 `run`，内容审查插件为 `check`）。CLI 只拿短期 connect token，不需要 `CONNECTION_GATEWAY_AUTH_TOKEN` 或 `JWT_SECRET`。
 
 Connection Gateway 的长连接协议、session、mailbox、owner lease 和资源限制见 [Connection Gateway 设计文档](./connection-gateway-design.zh.md)。
 
@@ -183,7 +197,7 @@ Connection Gateway 的长连接协议、session、mailbox、owner lease 和资�
 
 ### 本地进程池参数配置
 
-每个工具插件可以单独配置 4 个运行参数。
+每个可运行插件（tool 或 moderation）都可以单独配置 4 个运行参数。
 
 ![config](../imgs/process-pool-runtime-config.png)
 

@@ -6,12 +6,13 @@
 
 本文面向 FastGPT v4.15.0 之后的系统插件开发。新版 FastGPT Plugin 服务把系统工具、模型预设等能力统一抽象为可安装、可更新、可运行隔离的插件包，插件最终以 `.pkg` 文件交付给 FastGPT Plugin 服务。
 
-当前已经稳定支持的插件类型是系统工具插件：
+当前已经稳定支持的插件类型是系统工具插件与内容审查插件：
 
 - 单工具：一个插件只暴露一个工具，使用 `defineTool()` 声明。
 - 工具集：一个插件暴露多个相关子工具，使用 `defineToolSet()` 声明。
+- 内容审查：一个插件把某个 provider 的内容审核服务映射成 FastGPT 的统一结构，使用 `defineModeration()` 声明。
 
-系统工具插件运行在 FastGPT Plugin 服务提供的运行时中。FastGPT 主服务通过插件服务调用工具，插件代码通过 `@fastgpt-plugin/sdk-factory` 描述输入、输出、密钥配置和执行逻辑。
+系统工具插件运行在 FastGPT Plugin 服务提供的运行时中。FastGPT 主服务通过插件服务调用工具，插件代码通过 `@fastgpt-plugin/sdk-factory` 描述输入、输出、密钥配置和执行逻辑。内容审查插件使用同一套运行时与插件包协议，但本文的端到端流程只覆盖系统工具；内容审查插件的开发规范见 `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`。
 
 ## 与旧版机制的区别
 
@@ -53,7 +54,7 @@ FastGPT Marketplace 是插件分发渠道，用于集中展示和分发官方及
 
 | 信息 | 说明 |
 | --- | --- |
-| 插件类型 | `tool` 或 `tool-suite`。 |
+| 插件类型 | `tool`、`tool-suite` 或 `moderation`。 |
 | 插件 ID | `pluginId`，全局稳定唯一，发布后保持不变。 |
 | 子工具 ID | 仅工具集需要，`children[].id` 发布后保持不变。 |
 | 中英文名称 | `name.en` 和 `name.zh-CN`。 |
@@ -144,7 +145,7 @@ CLI 会创建插件目录，并生成常见文件：
 
 | 文件 | 作用 |
 | --- | --- |
-| `index.ts` | 插件入口，默认导出 `defineTool()` 或 `defineToolSet()`。 |
+| `index.ts` | 插件入口，默认导出 `defineTool()`、`defineToolSet()` 或 `defineModeration()`。 |
 | `package.json` | 插件依赖和 `build`、`build:dev`、`pack`、`test` 脚本。 |
 | `tsconfig.json` | TypeScript 配置。 |
 | `vitest.config.ts` | 测试配置。 |
@@ -366,6 +367,10 @@ gh repo create --public --source=. --remote=origin --push
 ### `tool` 和 `tool-suite` 如何选择？
 
 单一能力使用 `tool`。多个共享鉴权、共享上游 API、业务上强相关的能力使用 `tool-suite`，例如搜索、详情、创建任务放在同一个插件中。
+
+### 内容审查插件怎么写？
+
+使用 `defineModeration()` 声明，开发规范见 `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`。三点容易踩坑：provider 无法判定时要返回 `error` 档结果而不是抛异常；逐项命中放在 `hits`，顶层 `verdict` 才是唯一权威裁决；严格度由 provider 自己的配置项表达，框架不做归一化。本版本仅提供同步文本审查，`check` 直接返回 `ModerationResult`。
 
 ### 插件版本如何管理？
 

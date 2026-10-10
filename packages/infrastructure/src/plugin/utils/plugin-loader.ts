@@ -1,8 +1,11 @@
 import json5 from 'json5';
 
+import { ModerationSchema, type ModerationType } from '@domain/entities/moderation.entity';
 import type { PluginType } from '@domain/entities/plugin.entity';
 import { ToolSchema, type ToolType } from '@domain/entities/tool.entity';
 import {
+  ModerationManifestSchema,
+  type ModerationManifestType,
   PluginManifestBaseSchema,
   ToolManifestSchema,
   type ToolManifestType
@@ -47,6 +50,98 @@ const resolveAssetURL = async ({
   });
 };
 
+/**
+ * 解析插件通用资源（根 icon 与 README.md）为可访问 URL。
+ * tool 与 moderation 共用；子工具 logo 只在 tool 侧存在，不在这里处理。
+ */
+const resolveCommonAssets = async ({
+  manifest,
+  availableFiles,
+  getAccessURL
+}: Omit<LoadPluginParams, 'manifest' | 'etag'> & {
+  manifest: ToolManifestType | ModerationManifestType;
+}): Promise<
+  Result<{
+    icon: string;
+    readmeUrl?: string;
+  }>
+> => {
+  const availableFileSet = new Set(availableFiles);
+  let icon = manifest.icon;
+  if (getAccessURL && availableFileSet.has(manifest.icon)) {
+    const [resolvedIcon, iconErr] = await resolveAssetURL({
+      getAccessURL,
+      pluginId: manifest.pluginId,
+      version: manifest.version,
+      filePath: [manifest.icon]
+    });
+
+    if (iconErr) {
+      return failureResult(
+        {
+          en: 'resolve plugin icon failed',
+          'zh-CN': '解析插件图标失败'
+        },
+        iconErr
+      );
+    }
+    icon = resolvedIcon;
+  }
+
+  let readmeUrl: string | undefined;
+  if (getAccessURL && availableFileSet.has('README.md')) {
+    const [resolvedReadmeUrl] = await resolveAssetURL({
+      getAccessURL,
+      pluginId: manifest.pluginId,
+      version: manifest.version,
+      filePath: ['README.md']
+    });
+    readmeUrl = resolvedReadmeUrl ?? undefined;
+  }
+
+  return successResult({
+    icon,
+    ...(readmeUrl ? { readmeUrl } : {})
+  });
+};
+
+const loadModeration = async ({
+  manifest,
+  etag,
+  availableFiles,
+  getAccessURL
+}: Omit<LoadPluginParams, 'manifest'> & {
+  manifest: ModerationManifestType;
+}): Promise<Result<ModerationType>> => {
+  try {
+    const [assets, assetsErr] = await resolveCommonAssets({
+      manifest,
+      availableFiles,
+      getAccessURL
+    });
+
+    if (assetsErr) {
+      return failureResult(
+        {
+          en: 'resolve moderation plugin assets failed',
+          'zh-CN': '解析审查插件资源失败'
+        },
+        assetsErr
+      );
+    }
+
+    return successResult(ModerationSchema.parse({ ...manifest, etag, ...assets }));
+  } catch (err) {
+    return failureResult(
+      {
+        en: 'parse moderation plugin failed',
+        'zh-CN': '解析审查插件失败'
+      },
+      err
+    );
+  }
+};
+
 const loadTool = async ({
   manifest,
   etag,
@@ -57,37 +152,23 @@ const loadTool = async ({
 }): Promise<Result<ToolType>> => {
   try {
     const availableFileSet = new Set(availableFiles);
-    let icon = manifest.icon;
-    if (getAccessURL && availableFileSet.has(manifest.icon)) {
-      const [resolvedIcon, iconErr] = await resolveAssetURL({
-        getAccessURL,
-        pluginId: manifest.pluginId,
-        version: manifest.version,
-        filePath: [manifest.icon]
-      });
+    const [assets, assetsErr] = await resolveCommonAssets({
+      manifest,
+      availableFiles,
+      getAccessURL
+    });
 
-      if (iconErr) {
-        return failureResult(
-          {
-            en: 'resolve plugin icon failed',
-            'zh-CN': '解析插件图标失败'
-          },
-          iconErr
-        );
-      }
-      icon = resolvedIcon;
+    if (assetsErr) {
+      return failureResult(
+        {
+          en: 'resolve plugin assets failed',
+          'zh-CN': '解析插件资源失败'
+        },
+        assetsErr
+      );
     }
 
-    let readmeUrl: string | undefined;
-    if (getAccessURL && availableFileSet.has('README.md')) {
-      const [resolvedReadmeUrl] = await resolveAssetURL({
-        getAccessURL,
-        pluginId: manifest.pluginId,
-        version: manifest.version,
-        filePath: ['README.md']
-      });
-      readmeUrl = resolvedReadmeUrl ?? undefined;
-    }
+    const { icon, readmeUrl } = assets;
 
     let children: ToolType['children'];
     if (manifest.children) {
@@ -164,6 +245,11 @@ export const loadPlugin = async (params: LoadPluginParams): Promise<Result<Plugi
         return await loadTool({
           ...params,
           manifest: ToolManifestSchema.parse(manifest)
+        });
+      case 'moderation':
+        return await loadModeration({
+          ...params,
+          manifest: ModerationManifestSchema.parse(manifest)
         });
       // case 'model':
       // case 'workflow':

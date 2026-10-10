@@ -5,6 +5,7 @@
  * Author：FinleyGe
  */
 
+import { isRunnablePluginType } from '@domain/entities/plugin.entity';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
@@ -88,7 +89,7 @@ export const makePluginConfirmUC =
       }
 
       // Register the plugin to runtime only when this source confirmed the first entity.
-      if (plugin.type === 'tool') {
+      if (isRunnablePluginType(plugin.type)) {
         if (plugin.idempotent) {
           return successResult({});
         }

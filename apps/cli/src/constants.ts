@@ -8,4 +8,4 @@ export const CLI_VERSION = packageJson.version;
 export const DEFAULT_PLUGIN_NAME = './packages/my-tool';
 export const DEFAULT_PLUGIN_DESCRIPTION = 'This is a FastGPT plugin';
 
-export const TOOL_TEMPLATES_DIR = path.join(import.meta.dirname, '../templates');
+export const TEMPLATES_DIR = path.join(import.meta.dirname, '../templates');
