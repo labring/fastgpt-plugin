@@ -65,6 +65,7 @@ import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import type {
   ToolAnswerType,
   ToolHandlerReturnType,
+  ToolMessageContentPartType,
   ToolStreamMessageType
 } from '@domain/value-objects/tool.vo';
 import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
@@ -87,6 +88,7 @@ export type {
   SystemVarType,
   ToolAnswerType,
   ToolHandlerReturnType,
+  ToolMessageContentPartType,
   ToolStreamMessageType,
   TTSModelItemType
 };
@@ -165,3 +167,4 @@ export {
   PluginPermissionEnumSchema,
   type PluginPermissionEnumType
 } from '@domain/value-objects/permission.vo';
+export { ToolMessageContentPartSchema } from '@domain/value-objects/tool.vo';
