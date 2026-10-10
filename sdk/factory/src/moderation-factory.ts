@@ -3,11 +3,9 @@ import z from 'zod';
 import { PluginTypeEnum, type PluginTypeType } from '@domain/entities/plugin-base.entity';
 import type { InvokePort } from '@domain/ports/invoke.port';
 import {
-  isModerationModalitySupported,
   type ModerationCheckInputType,
   ModerationCheckPayloadSchema,
-  ModerationCheckResultSchema,
-  type ModerationModalityType,
+  ModerationResultSchema,
   type ModerationResultType
 } from '@domain/value-objects/moderation.vo';
 import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
@@ -26,21 +24,28 @@ import { PluginFactory } from './plugin-factory';
  */
 export type ModerationProviderResultType = Omit<ModerationResultType, 'keywords' | 'provider'>;
 
-export type ModerationProviderContext<TSecret extends Record<string, unknown>> = {
-  secrets: TSecret;
+/** Author-declared flat secrets schema. Undefined means secrets pass through unchanged. */
+export type ModerationSecretSchema = z.ZodObject<any> | undefined;
+
+/**
+ * Derive `ctx.secrets` from the schema output type when declared; otherwise use a raw record.
+ * This matches runtime behavior: validate only when declared, and never parse or strip otherwise.
+ */
+type ModerationSecretValue<TSecret extends ModerationSecretSchema> = TSecret extends z.ZodTypeAny
+  ? z.output<NoInfer<TSecret>>
+  : Record<string, unknown>;
+
+export type ModerationProviderContext<TSecret extends ModerationSecretSchema = undefined> = {
+  secrets: ModerationSecretValue<TSecret>;
   systemVar: SystemVarType;
   invoke: InvokePort;
   /** 构造标准 error 档结果（provider 无法判定时由适配器主动调用） */
   moderationError: (message: string) => ModerationProviderResultType;
 };
 
-export type ModerationProvider<
-  TSecret extends Record<string, unknown> = Record<string, unknown>
-> = {
+export type ModerationProvider<TSecret extends ModerationSecretSchema = undefined> = {
   /** provider 标识，写入 manifest.meta.provider */
   name: string;
-  /** 支持的模态。本版本框架只服务 text，其余模态会被框架或宿主显式拒绝 */
-  modalities: ModerationModalityType[];
   /** provider 文档地址 */
   docUrl?: string;
   /**
@@ -62,7 +67,7 @@ export class ModerationFactory extends PluginFactory {
 
   private constructor(
     private userModerationManifest: UserModerationManifestType,
-    private provider: ModerationProvider
+    private provider: ModerationProvider<any>
   ) {
     super();
 
@@ -84,7 +89,7 @@ export class ModerationFactory extends PluginFactory {
 
   public static getInstance(
     userModerationManifest: UserModerationManifestType,
-    provider: ModerationProvider,
+    provider: ModerationProvider<any>,
     secretSchema?: z.ZodObject<any>
   ): ModerationFactory {
     const factory = new ModerationFactory(userModerationManifest, provider);
@@ -107,7 +112,7 @@ export class ModerationFactory extends PluginFactory {
     return this.userModerationManifest;
   }
 
-  public getProvider(): ModerationProvider {
+  public getProvider(): ModerationProvider<any> {
     return this.provider;
   }
 
@@ -126,18 +131,6 @@ export class ModerationFactory extends PluginFactory {
         }
 
         const { input, secrets, systemVar } = parsed.data;
-
-        // 模态守卫：宿主已拦过一遍，这里是给不经宿主的路径兜底（CLI 本地 debug 直连插件进程）
-        if (
-          !isModerationModalitySupported(input.modality) ||
-          !this.provider.modalities.includes(input.modality)
-        ) {
-          output.send({
-            type: 'error',
-            data: `Moderation modality not supported: ${input.modality}`
-          });
-          return;
-        }
 
         let resolvedSecrets: Record<string, unknown>;
         if (this.secretSchema) {
@@ -170,13 +163,10 @@ export class ModerationFactory extends PluginFactory {
         // provider 与 keywords 在 parse 之前由 factory 权威填充：
         // keywords 是 hits[].keywords 的派生投影，派生规则只有这一份。
         const keywords = [...new Set(raw.hits.flatMap((hit) => hit.keywords ?? []))];
-        const result = ModerationCheckResultSchema.parse({
-          status: 'done',
-          result: {
-            ...raw,
-            keywords,
-            provider: this.provider.name
-          }
+        const result = ModerationResultSchema.parse({
+          ...raw,
+          keywords,
+          provider: this.provider.name
         });
 
         output.send({ type: 'response', data: result });
@@ -194,18 +184,14 @@ export class ModerationFactory extends PluginFactory {
   }
 }
 
-export const defineModeration = ({
+export const defineModeration = <TSecretSchema extends ModerationSecretSchema = undefined>({
   manifest,
   secretSchema,
   provider
 }: {
   manifest: UserModerationManifestType;
-  secretSchema?: z.ZodObject<any>;
-  provider: ModerationProvider;
+  secretSchema?: TSecretSchema;
+  provider: ModerationProvider<TSecretSchema>;
 }): ModerationFactory => {
-  if (provider.modalities.length === 0) {
-    throw new Error('Moderation provider must declare at least one modality');
-  }
-
   return ModerationFactory.getInstance(manifest, provider, secretSchema);
 };

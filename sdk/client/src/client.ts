@@ -41,9 +41,9 @@ import type {
   ModelListType,
   ModelProviderListType,
   ModerationCheckParamsType,
-  ModerationCheckResultType,
   ModerationDetailType,
   ModerationGetParamsType,
+  ModerationResultType,
   PluginConfirmResultType,
   PluginDebugSessionConnectionKeyExchangeParamsType,
   PluginDebugSessionConnectionKeyExchangeResultType,
@@ -154,10 +154,10 @@ export class FastGPTPluginClient {
   async checkModeration(
     params: ModerationCheckParamsType,
     requestOptions?: ClientRequestOptions
-  ): Promise<ModerationCheckResultType> {
+  ): Promise<ModerationResultType> {
     const body = ModerationCheckInputDTOSchema.parse(params);
 
-    return this.transport.requestData<ModerationCheckResultType>({
+    return this.transport.requestData<ModerationResultType>({
       path: this.withApiPath(ModerationContract.Check.meta.path),
       method: ModerationContract.Check.meta.method,
       body,

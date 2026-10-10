@@ -30,7 +30,7 @@ const makeModeration = (overrides: Partial<ModerationType> = {}): ModerationType
     name: { en: 'Moderation A', 'zh-CN': '审查 A' },
     icon: 'https://example.com/icon.svg',
     description: { en: 'Moderation A', 'zh-CN': '审查 A' },
-    meta: { provider: 'keyword', modalities: ['text'] },
+    meta: { provider: 'keyword' },
     ...overrides
   }) as ModerationType;
 
@@ -61,7 +61,7 @@ function createManager(deps?: Partial<ModerationManagerDeps>): ModerationManager
 
 const checkInput = (overrides: Record<string, unknown> = {}) => ({
   pluginId: 'moderation-a',
-  input: { content: 'hello', modality: 'text' as const },
+  input: { content: 'hello' },
   systemVar: SYSTEM_VAR,
   ...overrides
 });
@@ -74,12 +74,12 @@ describe('ModerationManager.check', () => {
     getPluginByUserPluginId.mockResolvedValue(successResult(makeModeration()));
   });
 
-  it('returns the done result extracted from the response frame', async () => {
+  it('returns the moderation result from the response frame', async () => {
     invoke.mockResolvedValue(
       successResult(
         createStream({
           type: 'response',
-          data: { status: 'done', result: { verdict: 'pass', keywords: [], hits: [], provider: 'keyword' } }
+          data: { verdict: 'pass', keywords: [], hits: [], provider: 'keyword' }
         })
       )
     );
@@ -87,10 +87,7 @@ describe('ModerationManager.check', () => {
     const [result, err] = await createManager().check(checkInput());
 
     expect(err).toBeNull();
-    expect(result).toEqual({
-      status: 'done',
-      result: { verdict: 'pass', keywords: [], hits: [], provider: 'keyword' }
-    });
+    expect(result).toEqual({ verdict: 'pass', keywords: [], hits: [], provider: 'keyword' });
     expect(invoke).toHaveBeenCalledWith(
       expect.objectContaining({ eventName: 'check', returnStream: true })
     );
@@ -115,7 +112,7 @@ describe('ModerationManager.check', () => {
   });
 
   it('fails when the response frame does not match the standard structure', async () => {
-    invoke.mockResolvedValue(successResult(createStream({ type: 'response', data: { status: 'done' } })));
+    invoke.mockResolvedValue(successResult(createStream({ type: 'response', data: { verdict: 'pass' } })));
 
     const [, err] = await createManager().check(checkInput());
 
@@ -131,28 +128,6 @@ describe('ModerationManager.check', () => {
     expect(err?.reason.en).toBe('Plugin returned no result');
   });
 
-  it('rejects a modality outside the framework support set before resolving the plugin', async () => {
-    const [, err] = await createManager().check(
-      checkInput({ input: { content: 'x', modality: 'audio' } })
-    );
-
-    expect(err?.code).toBe('plugin.moderation.modality_not_supported');
-    expect(err?.data).toMatchObject({ modality: 'audio', frameworkSupported: ['text'] });
-    expect(invoke).not.toHaveBeenCalled();
-    expect(getPluginByUserPluginId).not.toHaveBeenCalled();
-  });
-
-  it('rejects a modality the plugin does not declare', async () => {
-    getPluginByUserPluginId.mockResolvedValue(
-      successResult(makeModeration({ meta: { provider: 'keyword', modalities: ['image'] } }))
-    );
-
-    const [, err] = await createManager().check(checkInput());
-
-    expect(err?.code).toBe('plugin.moderation.modality_not_supported');
-    expect(err?.data).toMatchObject({ pluginSupported: ['image'] });
-    expect(invoke).not.toHaveBeenCalled();
-  });
 
   it('rejects a plugin whose type is not moderation', async () => {
     getPluginByUserPluginId.mockResolvedValue(

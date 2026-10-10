@@ -124,9 +124,9 @@ FastGPT-Plugin 支持多种运行时：
 
 - **裁决**取 `pass`、`block`、`suspected`、`error` 四档之一。`suspected` 与 `error` 刻意分开：`suspected` 是 provider 确实给出的判定（腾讯 `Review`、百度 `conclusionType=3`、易盾 `action=2`），通常意味着转人工复核；`error` 是 provider 完全没能给出判定（HTTP 错误、超时、未知标签、百度 `conclusionType=4`），通常意味着重试或兜底。无法判定的 provider 返回 `error` 档结果而不是让调用失败，调用方因此总是拿到同一种结构。
 - **命中明细**逐项携带归一化标签、provider 原生标签（`providerLabel`）、provider 原生置信度与命中的敏感词。命中明细供调用方定位与复核，顶层 `verdict` 才是权威裁决。契约刻意不含逐项档位，也不含聚合的 label 或 score：置信度是逐标签的，框架级的统一严重度刻度只会凭空造出 provider 并未给出的标准。
-- **模态**在 schema 中保留 `text`、`image`、`audio`、`video`，但本版本只服务文本。其余模态以 `plugin.moderation.modality_not_supported` 失败，不会被静默当作文本审查。
+- **处理范围**：本版本仅提供同步文本审查，`input.content` 是待审文本字符串，不设置 `modality` 字段。输入 schema 严格拒绝旧式 `modality` 字段，避免把非文本输入静默按文本处理。
 
-是否放行由 FastGPT 决定，本层只报告裁决与命中明细。有两件事刻意不做。**严格度**属于 provider：厂商控制台的策略标识或分值阈值通过插件自己的 `secretSchema` 传入，框架既不做审查级别归一化，也不按阈值改写裁决。**异步 provider**（提交加轮询）随多模态一起到来，届时 check 信封的 `status` 字段会增加 `pending` 取值。
+是否放行由 FastGPT 决定，本层只报告裁决与命中明细。**严格度**属于 provider：厂商控制台的策略标识或分值阈值通过插件自己的 `secretSchema` 传入，框架既不做审查级别归一化，也不按阈值改写裁决。`POST /moderation/check` 是同步接口，直接返回 `ModerationResult`；未来若需异步审查，应另行设计异步接口，不扩展同步结果信封。
 
 ## 远程调试设计
 

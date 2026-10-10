@@ -13,6 +13,7 @@ import {
   ToolManifestSchema,
   type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
+import { findReadmeFiles, resolveReadmeFilePath } from '../helpers/readme-files';
 
 const SDK_FACTORY_PACKAGE = '@fastgpt-plugin/sdk-factory';
 
@@ -78,6 +79,8 @@ export async function buildPluginPackage(options: PluginBuildOptions): Promise<P
   await assertPathExists(entryDir, `入口目录不存在: ${entryDir}`);
   await assertPathExists(indexPath, `找不到 index.ts 文件: ${indexPath}`);
 
+  const readmeFiles = await findReadmeFiles(entryDir);
+
   const tStart = Date.now();
   let tCopy = 0;
   let tBuild = 0;
@@ -128,7 +131,7 @@ export async function buildPluginPackage(options: PluginBuildOptions): Promise<P
       'utf-8'
     );
     await copyLogoFiles(outputDir, plan.logoFiles);
-    await copyOptionalStaticFiles(entryDir, outputDir);
+    await copyOptionalStaticFiles(entryDir, outputDir, readmeFiles);
     tAssemble = Date.now() - tAssembleStart;
 
     const files = await collectRelativeFiles(outputDir);
@@ -188,7 +191,7 @@ async function createBuildPlan(entryDir: string, plugin: PackablePluginExport): 
       ...plugin.getUserModerationManifest(),
       type: 'moderation',
       icon: rootLogoName,
-      secretSchema: z.toJSONSchema(plugin.getSecretSchema())
+      secretSchema: toManifestJsonSchema(z.toJSONSchema(plugin.getSecretSchema()))
     };
 
     return {
@@ -200,19 +203,16 @@ async function createBuildPlan(entryDir: string, plugin: PackablePluginExport): 
     };
   }
 
-  const userManifest = plugin.getUserToolManifest();
-  const secretSchema = z.toJSONSchema(plugin.getSecretSchema());
-  const toolDescription = pickToolDescription(
-    getOptionalString(userManifest.toolDescription),
-    userManifest.description
-  );
+  const userManifest = { ...plugin.getUserToolManifest() };
+  delete userManifest.toolDescription;
+  const secretSchema = toManifestJsonSchema(z.toJSONSchema(plugin.getSecretSchema()));
+
   const childManifests = plugin.getChildManifests();
 
   const manifestCandidate: Record<string, unknown> = {
     ...userManifest,
     type: 'tool',
     icon: rootLogoName,
-    toolDescription,
     secretSchema
   };
 
@@ -222,8 +222,8 @@ async function createBuildPlan(entryDir: string, plugin: PackablePluginExport): 
       throw new Error('default export 未注册任何工具 handler');
     }
 
-    manifestCandidate.inputSchema = z.toJSONSchema(handler.inputSchema);
-    manifestCandidate.outputSchema = z.toJSONSchema(handler.outputSchema);
+    manifestCandidate.inputSchema = toManifestJsonSchema(z.toJSONSchema(handler.inputSchema));
+    manifestCandidate.outputSchema = toManifestJsonSchema(z.toJSONSchema(handler.outputSchema));
   } else {
     manifestCandidate.children = await Promise.all(
       childManifests.map(async (child) => {
@@ -241,9 +241,8 @@ async function createBuildPlan(entryDir: string, plugin: PackablePluginExport): 
           description: child.description,
           name: child.name,
           icon: childLogoName,
-          toolDescription: pickToolDescription(child.toolDescription, child.description),
-          inputSchema: z.toJSONSchema(handler.inputSchema),
-          outputSchema: z.toJSONSchema(handler.outputSchema)
+          inputSchema: toManifestJsonSchema(z.toJSONSchema(handler.inputSchema)),
+          outputSchema: toManifestJsonSchema(z.toJSONSchema(handler.outputSchema))
         };
       })
     );
@@ -269,11 +268,19 @@ async function copyLogoFiles(
   );
 }
 
-async function copyOptionalStaticFiles(entryDir: string, outputDir: string): Promise<void> {
-  const readmePath = path.join(entryDir, 'README.md');
-  if (await pathExists(readmePath)) {
-    await fs.copyFile(readmePath, path.join(outputDir, 'README.md'));
-  }
+async function copyOptionalStaticFiles(
+  entryDir: string,
+  outputDir: string,
+  readmeFiles: string[]
+): Promise<void> {
+  await Promise.all(
+    readmeFiles.map((fileName) =>
+      fs.copyFile(
+        resolveReadmeFilePath(entryDir, fileName),
+        resolveReadmeFilePath(outputDir, fileName)
+      )
+    )
+  );
 
   const assetsDir = path.join(entryDir, 'assets');
   if (await pathExists(assetsDir)) {
@@ -359,32 +366,81 @@ function isPackablePluginExport(value: unknown): value is PackablePluginExport {
   return Boolean(value && typeof value === 'object' && 'getPluginType' in value);
 }
 
-function pickToolDescription(
-  explicitDescription: string | undefined,
-  fallbackSource: unknown
-): string {
-  if (explicitDescription && explicitDescription.trim().length > 0) {
-    return explicitDescription;
+const JSON_SCHEMA_CHILD_KEYS = [
+  '$defs',
+  'definitions',
+  'properties',
+  'patternProperties',
+  'dependentSchemas'
+] as const;
+const JSON_SCHEMA_SINGLE_CHILD_KEYS = [
+  'additionalItems',
+  'additionalProperties',
+  'unevaluatedItems',
+  'unevaluatedProperties',
+  'propertyNames',
+  'items',
+  'contains',
+  'not',
+  'if',
+  'then',
+  'else',
+  'contentSchema'
+] as const;
+const JSON_SCHEMA_ARRAY_CHILD_KEYS = ['prefixItems', 'allOf', 'anyOf', 'oneOf'] as const;
+const I18N_UI_FIELDS = ['title', 'description', 'placeholder'] as const;
+
+/** Keeps JSON Schema's standard string fields compatible with older consumers. */
+export function toManifestJsonSchema(schema: unknown): unknown {
+  if (schema === null || typeof schema !== 'object' || Array.isArray(schema)) {
+    return schema;
   }
 
-  if (fallbackSource && typeof fallbackSource === 'object') {
-    const localized = fallbackSource as Record<string, unknown>;
-    const preferred = [localized['zh-CN'], localized.en, ...Object.values(localized)].find(
-      (value) => typeof value === 'string' && value.trim().length > 0
-    );
-
-    if (typeof preferred === 'string') {
-      return preferred;
+  const normalized = { ...(schema as Record<string, unknown>) };
+  delete normalized.toolDescription;
+  const localized = normalized['x-i18n'];
+  if (localized !== null && typeof localized === 'object' && !Array.isArray(localized)) {
+    for (const field of I18N_UI_FIELDS) {
+      const fieldI18n = (localized as Record<string, unknown>)[field];
+      if (
+        fieldI18n !== null &&
+        typeof fieldI18n === 'object' &&
+        !Array.isArray(fieldI18n) &&
+        typeof (fieldI18n as Record<string, unknown>).en === 'string'
+      ) {
+        normalized[field] = (fieldI18n as Record<string, string>).en;
+      }
     }
   }
 
-  return '';
-}
+  for (const key of JSON_SCHEMA_CHILD_KEYS) {
+    const schemas = normalized[key];
+    if (schemas !== null && typeof schemas === 'object' && !Array.isArray(schemas)) {
+      normalized[key] = Object.fromEntries(
+        Object.entries(schemas).map(([name, childSchema]) => [
+          name,
+          toManifestJsonSchema(childSchema)
+        ])
+      );
+    }
+  }
 
-function getOptionalString(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined;
-}
+  for (const key of JSON_SCHEMA_SINGLE_CHILD_KEYS) {
+    const childSchema = normalized[key];
+    if (childSchema !== null && typeof childSchema === 'object' && !Array.isArray(childSchema)) {
+      normalized[key] = toManifestJsonSchema(childSchema);
+    }
+  }
 
+  for (const key of JSON_SCHEMA_ARRAY_CHILD_KEYS) {
+    const schemas = normalized[key];
+    if (Array.isArray(schemas)) {
+      normalized[key] = schemas.map(toManifestJsonSchema);
+    }
+  }
+
+  return normalized;
+}
 function isSdkFactoryImport(id: string): boolean {
   return id === SDK_FACTORY_PACKAGE || id.startsWith(`${SDK_FACTORY_PACKAGE}/`);
 }

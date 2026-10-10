@@ -8,12 +8,10 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { createError } from '@domain/value-objects/error.vo';
 import {
-  isModerationModalitySupported,
   type ModerationCheckPayloadType,
-  ModerationCheckResultSchema,
-  type ModerationCheckResultType,
   type ModerationCheckRunInputType,
-  SUPPORTED_MODERATION_MODALITIES
+  ModerationResultSchema,
+  type ModerationResultType
 } from '@domain/value-objects/moderation.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
@@ -143,28 +141,9 @@ export class ModerationManager implements ModerationManagerPort {
     );
   }
 
-  async check(input: ModerationCheckRunInputType): Promise<Result<ModerationCheckResultType>> {
+  async check(input: ModerationCheckRunInputType): Promise<Result<ModerationResultType>> {
     const { pluginId, source, version, input: checkInput } = input;
     const normalizedSource = source ?? 'system';
-
-    // 框架能力守卫放在解析插件之前：本版本不可能服务该模态，不该 spawn 进程，
-    // 也不该因为插件不存在而给出误导性的 404。
-    if (!isModerationModalitySupported(checkInput.modality)) {
-      return failureResult(
-        createError(ErrorCode.moderationModalityNotSupported, {
-          message: 'Modality is not supported by this framework version',
-          reason: {
-            en: `This version only supports modalities: ${SUPPORTED_MODERATION_MODALITIES.join(', ')}`,
-            'zh-CN': `本版本仅支持以下模态：${SUPPORTED_MODERATION_MODALITIES.join('、')}`
-          },
-          data: {
-            pluginId,
-            modality: checkInput.modality,
-            frameworkSupported: [...SUPPORTED_MODERATION_MODALITIES]
-          }
-        })
-      );
-    }
 
     const [plugin, pluginErr] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
@@ -199,25 +178,6 @@ export class ModerationManager implements ModerationManagerPort {
             'zh-CN': '请求的插件不是审查类型'
           },
           data: { pluginId, source: normalizedSource, version: plugin.version, type: plugin.type }
-        })
-      );
-    }
-
-    // provider 能力交叉校验：框架支持集之外已被上面拦掉，这里挡的是「插件没实现该模态」
-    if (!plugin.meta.modalities.includes(checkInput.modality)) {
-      return failureResult(
-        createError(ErrorCode.moderationModalityNotSupported, {
-          message: 'Modality is not supported by this plugin',
-          reason: {
-            en: `This plugin supports modalities: ${plugin.meta.modalities.join(', ')}`,
-            'zh-CN': `该插件支持的模态：${plugin.meta.modalities.join('、')}`
-          },
-          data: {
-            pluginId,
-            modality: checkInput.modality,
-            frameworkSupported: [...SUPPORTED_MODERATION_MODALITIES],
-            pluginSupported: plugin.meta.modalities
-          }
         })
       );
     }
@@ -262,7 +222,7 @@ export class ModerationManager implements ModerationManagerPort {
 
     return consumePluginResult({
       stream,
-      schema: ModerationCheckResultSchema,
+      schema: ModerationResultSchema,
       context: {
         pluginId: plugin.pluginId,
         source: normalizedSource,
