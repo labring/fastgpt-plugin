@@ -23,6 +23,33 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'doubao-seed-2-1-pro-260915',
+      maxContext: 1024000,
+      maxTokens: 256000,
+      quoteMaxToken: 1024000,
+      maxTemperature: 1,
+      vision: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'doubao-seed-2-1-lite-260915',
+      maxContext: 1024000,
+      maxTokens: 256000,
+      quoteMaxToken: 1024000,
+      maxTemperature: 1,
+      vision: true,
+      audio: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'doubao-seed-2-1-pro-260628',
       maxContext: 256000,
       maxTokens: 256000,
