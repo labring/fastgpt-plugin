@@ -7,6 +7,11 @@ export type ModelProviderMapType = {
 };
 
 export const ModelProviderMap = {
+  AceDataCloud: {
+    en: "Ace Data Cloud",
+    "zh-CN": "Ace Data Cloud",
+    "zh-Hant": "Ace Data Cloud",
+  },
   OpenAI: {
     en: "OpenAI",
     "zh-CN": "OpenAI",

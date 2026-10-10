@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { ModelItemSchema, type ModelItemType, ModelTypeEnum } from '@domain/entities/model.entity';
 import type { I18nStringStrictType } from '@domain/value-objects/i18n-string.vo';
 
+import acedatacloud from './provider/AceDataCloud';
 import ai360 from './provider/ai360';
 import alicloud from './provider/AliCloud';
 import antling from './provider/AntLing';
@@ -48,6 +49,7 @@ export const staticModelChannelAvatarDir = fileURLToPath(
 );
 
 export const staticModelProviderConfigs: ProviderConfigType[] = [
+  acedatacloud,
   ai360,
   alicloud,
   antling,
