@@ -22,6 +22,16 @@ const typeRank: Record<string, number> = {
 };
 
 describe('static model provider ordering', () => {
+  it('keeps Ace Data Cloud capabilities within the public catalog snapshot', () => {
+    const ace = providerConfigs.find(({ provider }) => provider === 'AceDataCloud');
+    const models = new Map(ace?.list.map((model) => [model.model, model]) ?? []);
+
+    expect(models.get('gpt-5.6-sol')).toMatchObject({ reasoning: false, reasoningEffort: false, vision: true });
+    expect(models.get('o1-pro')).toMatchObject({ reasoning: true, vision: false });
+    expect(models.get('grok-4')).toMatchObject({ reasoning: true, vision: false });
+    expect(models.get('deepseek-v4.1-flash')).toMatchObject({ reasoning: false, reasoningEffort: false, vision: false });
+  });
+
   it.each(providerConfigs)(
     'groups $provider models by the configured type priority',
     ({ list }) => {
