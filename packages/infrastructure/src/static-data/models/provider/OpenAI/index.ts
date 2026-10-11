@@ -112,6 +112,18 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'gpt-5.6-cyber',
+      maxContext: 400000,
+      maxTokens: 128000,
+      quoteMaxToken: 400000,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5.6',
       maxContext: 1050000,
       maxTokens: 128000,
