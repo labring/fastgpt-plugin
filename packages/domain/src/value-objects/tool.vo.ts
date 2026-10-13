@@ -5,7 +5,8 @@ import { SystemVarSchema } from './system-var.vo';
 
 /**
  * 工具 handler 返回的结构化内容部分,与 FastGPT 主程序对齐:
- * text 为纯文本,image_url 为图片;主程序会把合法的 content 作为下一轮模型的视觉输入。
+ * text 为纯文本,image_url 为图片;主程序会把合法的 content parts 作为下一轮模型的视觉输入。
+ * 该 schema 供插件作者在 outputSchema 中声明使用,不参与 wire 层强校验。
  */
 export const ToolMessageContentPartSchema = z.discriminatedUnion('type', [
   z.object({
@@ -22,6 +23,7 @@ export const ToolMessageContentPartSchema = z.discriminatedUnion('type', [
 ]);
 
 export type ToolMessageContentPartType = z.infer<typeof ToolMessageContentPartSchema>;
+
 export const ToolRunInputSchema = z.object({
   pluginId: z.string(),
   version: z.preprocess((value) => {

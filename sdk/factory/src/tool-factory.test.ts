@@ -400,16 +400,16 @@ describe('ToolFactory response content parts', () => {
     ]);
   });
 
-  it('sends an error event when the handler returns invalid content parts', async () => {
+  it('passes legacy string content through the response data', async () => {
     const runtime = createLocalDebugRuntime();
     setCurrentLocalDebugRuntime(runtime);
     process.env.RUNTIME_MODE = 'dev';
 
     defineTool({
       manifest: {
-        pluginId: 'invalid-content-parts-test',
-        name: { en: 'Invalid Content Parts Test', 'zh-CN': '非法内容部分测试' },
-        description: { en: 'Invalid Content Parts Test', 'zh-CN': '非法内容部分测试' },
+        pluginId: 'legacy-string-content-test',
+        name: { en: 'Legacy String Content Test', 'zh-CN': '旧字符串内容测试' },
+        description: { en: 'Legacy String Content Test', 'zh-CN': '旧字符串内容测试' },
         version: '0.0.1',
         versionDescription: { en: 'Test version', 'zh-CN': '测试版本' },
         tags: ['tools']
@@ -417,10 +417,12 @@ describe('ToolFactory response content parts', () => {
       handler: createToolHandler({
         inputSchema: z.object({}),
         outputSchema: z.object({
-          content: z.string()
+          content: z.string(),
+          title: z.string()
         }),
         handler: async () => ({
-          content: 'https://example.com/a.png'
+          content: 'ordinary document text',
+          title: 'Result'
         })
       })
     });
@@ -447,8 +449,11 @@ describe('ToolFactory response content parts', () => {
 
     expect(messages).toEqual([
       {
-        type: 'error',
-        data: expect.stringContaining('content 字段必须是')
+        type: 'response',
+        data: {
+          content: 'ordinary document text',
+          title: 'Result'
+        }
       }
     ]);
   });
@@ -569,16 +574,16 @@ describe('ToolFactory response content parts', () => {
     ]);
   });
 
-  it('sends a readable error for invalid content part details', async () => {
+  it('passes malformed content parts through without wire validation', async () => {
     const runtime = createLocalDebugRuntime();
     setCurrentLocalDebugRuntime(runtime);
     process.env.RUNTIME_MODE = 'dev';
 
     defineTool({
       manifest: {
-        pluginId: 'invalid-detail-test',
-        name: { en: 'Invalid Detail Test', 'zh-CN': '非法详情测试' },
-        description: { en: 'Invalid Detail Test', 'zh-CN': '非法详情测试' },
+        pluginId: 'malformed-parts-test',
+        name: { en: 'Malformed Parts Test', 'zh-CN': '非法部分透传测试' },
+        description: { en: 'Malformed Parts Test', 'zh-CN': '非法部分透传测试' },
         version: '0.0.1',
         versionDescription: { en: 'Test version', 'zh-CN': '测试版本' },
         tags: ['tools']
@@ -588,13 +593,78 @@ describe('ToolFactory response content parts', () => {
         outputSchema: z.object({
           content: z.array(ToolMessageContentPartSchema)
         }),
-        handler: async () => ({
+        handler: async () =>
+          ({
+            content: [
+              {
+                type: 'image_url',
+                image_url: { url: 'https://example.com/a.png', detail: 'ultra' }
+              }
+            ]
+          }) as unknown as {
+            content: ToolMessageContentPartType[];
+          }
+      })
+    });
+
+    await runtime.waitUntilReady();
+
+    const response = await runtime.invokePlugin<
+      {
+        input: Record<string, unknown>;
+        systemVar: Record<string, unknown>;
+      },
+      void,
+      never,
+      ToolStreamMessageType
+    >('run', {
+      input: {},
+      systemVar: {}
+    });
+
+    const messages: ToolStreamMessageType[] = [];
+    await response.output!.stream.consume((chunk) => {
+      messages.push(chunk);
+    });
+
+    expect(messages).toEqual([
+      {
+        type: 'response',
+        data: {
           content: [
             {
               type: 'image_url',
               image_url: { url: 'https://example.com/a.png', detail: 'ultra' }
-            } as unknown as ToolMessageContentPartType
+            }
           ]
+        }
+      }
+    ]);
+  });
+
+  it('passes legacy object and array content through the response data', async () => {
+    const runtime = createLocalDebugRuntime();
+    setCurrentLocalDebugRuntime(runtime);
+    process.env.RUNTIME_MODE = 'dev';
+
+    defineTool({
+      manifest: {
+        pluginId: 'legacy-structured-content-test',
+        name: { en: 'Legacy Structured Content Test', 'zh-CN': '旧结构化内容测试' },
+        description: { en: 'Legacy Structured Content Test', 'zh-CN': '旧结构化内容测试' },
+        version: '0.0.1',
+        versionDescription: { en: 'Test version', 'zh-CN': '测试版本' },
+        tags: ['tools']
+      },
+      handler: createToolHandler({
+        inputSchema: z.object({}),
+        outputSchema: z.object({
+          content: z.unknown(),
+          items: z.unknown()
+        }),
+        handler: async () => ({
+          content: { text: 'business payload' },
+          items: [1, 'two', { three: true }]
         })
       })
     });
@@ -621,8 +691,11 @@ describe('ToolFactory response content parts', () => {
 
     expect(messages).toEqual([
       {
-        type: 'error',
-        data: expect.stringContaining('content.0.image_url.detail')
+        type: 'response',
+        data: {
+          content: { text: 'business payload' },
+          items: [1, 'two', { three: true }]
+        }
       }
     ]);
   });
