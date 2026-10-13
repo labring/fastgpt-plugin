@@ -147,6 +147,21 @@ describe('FastGPTPluginClient tool stream', () => {
     expect(result.output).toEqual({ content: 'still works' });
   });
 
+  it('skips frames that fail schema parsing and keeps reading the stream', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createSseResponse([
+        'data: {"type":"nope","data":{}}\n\n',
+        responseEvent({ content: 'still works' })
+      ])
+    );
+    const client = createClient(fetchMock);
+
+    const result = await client.runToolStream(runParams());
+
+    expect(result.error).toBeUndefined();
+    expect(result.output).toEqual({ content: 'still works' });
+  });
+
   it('returns an error when the stream reports one', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createSseResponse(['data: {"type":"error","data":"something went wrong"}\n\n'])
