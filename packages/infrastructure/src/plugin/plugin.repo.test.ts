@@ -5,11 +5,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { type PluginType } from '@domain/entities/plugin.entity';
 import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
+import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import { failureResult, successResult } from '@domain/value-objects/result.vo';
 
 import { PluginRepo, type PluginRepoDeps } from './plugin.repo';
+import { ToolManager } from './tool.impl';
 
 const plugin = (): PluginType =>
   ({
@@ -1626,5 +1628,153 @@ describe('PluginRepo.listToolSummaries', () => {
         hasSecret: true
       })
     ]);
+  });
+});
+
+describe('PluginRepo legacy i18n compatibility', () => {
+  it('reads legacy records through lookup, listings, and execution without rewriting Mongo data', async () => {
+    Reflect.set(PluginRepo, '_instance', undefined);
+    Reflect.set(ToolManager, 'instance', undefined);
+
+    const legacyRecord = {
+      pluginId: 'legacy-search',
+      version: '1.0.0',
+      etag: 'legacy-etag',
+      type: 'tool',
+      name: 'Legacy Search Tool',
+      description: 'Legacy tool description',
+      versionDescription: 'Initial version',
+      icon: 'https://example.com/logo.svg',
+      status: PluginStatusEnum.active,
+      data: {
+        toolDescription: 'Search query runner',
+        children: [
+          {
+            id: 'run',
+            name: 'Run Query',
+            description: 'Execute search query',
+            toolDescription: 'Execute query',
+            icon: 'https://example.com/logo.svg',
+            inputSchema: {},
+            outputSchema: {}
+          }
+        ]
+      }
+    };
+    const installation = {
+      source: 'system',
+      pluginId: 'legacy-search',
+      version: '1.0.0',
+      etag: 'legacy-etag'
+    };
+    const pluginModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(legacyRecord)
+      }),
+      find: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([legacyRecord])
+      }),
+      updateOne: vi.fn(),
+      updateMany: vi.fn()
+    };
+    const installationModel = {
+      findOne: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue(installation)
+      }),
+      find: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([installation])
+      }),
+      updateOne: vi.fn(),
+      updateMany: vi.fn()
+    };
+    const repo = PluginRepo.getInstance({
+      mongoClient: {
+        getModel: vi.fn((modelName: string) =>
+          modelName === 'pluginInstallation' ? installationModel : pluginModel
+        )
+      }
+    } as unknown as PluginRepoDeps);
+
+    const [plugin, lookupError] = await repo.getPluginByUserPluginId({
+      pluginId: 'legacy-search',
+      source: 'system',
+      version: '1.0.0'
+    });
+    expect(lookupError).toBeNull();
+    if (!plugin) {
+      throw new Error('Legacy plugin lookup returned no plugin');
+    }
+    expect(plugin.name).toEqual({ en: 'Legacy Search Tool', 'zh-CN': 'Legacy Search Tool' });
+    expect(plugin.description).toEqual({
+      en: 'Legacy tool description',
+      'zh-CN': 'Legacy tool description'
+    });
+    expect(plugin.children?.[0]).toMatchObject({
+      name: { en: 'Run Query', 'zh-CN': 'Run Query' },
+      description: { en: 'Execute search query', 'zh-CN': 'Execute search query' }
+    });
+
+    const [plugins, listError] = await repo.list({ sources: ['system'] });
+    expect(listError).toBeNull();
+    expect(plugins).toEqual([
+      expect.objectContaining({
+        pluginId: 'legacy-search',
+        name: { en: 'Legacy Search Tool', 'zh-CN': 'Legacy Search Tool' },
+        description: { en: 'Legacy tool description', 'zh-CN': 'Legacy tool description' }
+      })
+    ]);
+
+    const [tools, summaryError] = await repo.listToolSummaries({ sources: ['system'] });
+    expect(summaryError).toBeNull();
+    expect(tools).toEqual([
+      expect.objectContaining({
+        pluginId: 'legacy-search',
+        name: { en: 'Legacy Search Tool', 'zh-CN': 'Legacy Search Tool' },
+        children: [
+          expect.objectContaining({
+            name: { en: 'Run Query', 'zh-CN': 'Run Query' },
+            description: { en: 'Execute search query', 'zh-CN': 'Execute search query' }
+          })
+        ]
+      })
+    ]);
+
+    const invoke = vi.fn().mockResolvedValue(successResult({}));
+    const toolManager = ToolManager.getInstance({
+      pluginRepo: repo,
+      pluginRuntimeManager: { invoke } as unknown as PluginRuntimeManagerPort,
+      fastgptBaseUrl: 'https://fastgpt.example.com'
+    });
+    const [, runError] = await toolManager.run({
+      pluginId: 'legacy-search',
+      source: 'system',
+      version: '1.0.0',
+      childId: 'run',
+      input: { query: 'example' },
+      systemVar: {
+        app: { id: 'app-1', name: 'Demo' },
+        chat: { chatId: 'chat-1', uid: 'user-1' },
+        invokeToken: 'invoke-token',
+        time: '2026-06-05T00:00:00.000Z'
+      }
+    });
+    expect(runError).toBeNull();
+    expect(invoke).toHaveBeenCalledWith(
+      expect.objectContaining({
+        uniqueId: {
+          etag: 'legacy-etag',
+          pluginId: 'legacy-search',
+          version: '1.0.0'
+        },
+        eventName: 'run'
+      })
+    );
+
+    expect(legacyRecord.name).toBe('Legacy Search Tool');
+    expect(legacyRecord.description).toBe('Legacy tool description');
+    expect(pluginModel.updateOne).not.toHaveBeenCalled();
+    expect(pluginModel.updateMany).not.toHaveBeenCalled();
+    expect(installationModel.updateOne).not.toHaveBeenCalled();
+    expect(installationModel.updateMany).not.toHaveBeenCalled();
   });
 });

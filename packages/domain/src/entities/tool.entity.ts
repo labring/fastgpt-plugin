@@ -1,15 +1,15 @@
 import z from 'zod';
 
-import { I18nStringSchema } from '../value-objects/i18n-string.vo';
+import { TolerantI18nStringSchema } from '../value-objects/i18n-string.vo';
 
 import { PluginBaseSchema, PluginTypeEnum } from './plugin-base.entity';
 
-export const ToolDescriptionSchema = z.union([z.string(), I18nStringSchema]);
+export const ToolDescriptionSchema = z.union([z.string(), TolerantI18nStringSchema]);
 
 export const ToolSetChildItemSchema = z.object({
   id: z.string(),
-  name: I18nStringSchema,
-  description: I18nStringSchema.optional(),
+  name: TolerantI18nStringSchema,
+  description: TolerantI18nStringSchema.optional(),
   icon: z.string(),
   toolDescription: ToolDescriptionSchema,
   inputSchema: z.any(),

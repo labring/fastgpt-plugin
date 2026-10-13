@@ -1,12 +1,6 @@
 {
-  "name": {
-    "en": "Question Classification + Knowledge Base",
-    "zh-CN": "问题分类 + 知识库"
-  },
-  "intro": {
-    "en": "Classify the user's question, then take the appropriate action for its category.",
-    "zh-CN": "先对用户的问题进行分类，再根据不同类型问题，执行不同的操作"
-  },
+  "name": "问题分类 + 知识库",
+  "intro": "先对用户的问题进行分类，再根据不同类型问题，执行不同的操作",
   "author": "",
   "tags": ["office-services"],
   "type": "advanced",
@@ -14,14 +8,8 @@
     "nodes": [
       {
         "nodeId": "userGuide",
-        "name": {
-          "en": "System Configuration",
-          "zh-CN": "系统配置"
-        },
-        "intro": {
-          "en": "Configure the application's system settings.",
-          "zh-CN": "可以配置应用的系统参数"
-        },
+        "name": "系统配置",
+        "intro": "可以配置应用的系统参数",
         "avatar": "core/workflow/template/systemConfig",
         "flowNodeType": "userGuide",
         "position": {
@@ -34,14 +22,8 @@
       },
       {
         "nodeId": "workflowStartNodeId",
-        "name": {
-          "en": "Workflow Start",
-          "zh-CN": "流程开始"
-        },
-        "intro": {
-          "en": "",
-          "zh-CN": ""
-        },
+        "name": "流程开始",
+        "intro": "",
         "avatar": "core/workflow/template/workflowStart",
         "flowNodeType": "workflowStart",
         "position": {
@@ -54,25 +36,16 @@
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "label": "用户问题",
             "required": true,
-            "toolDescription": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            }
+            "toolDescription": "用户问题"
           }
         ],
         "outputs": [
           {
             "id": "userChatInput",
             "key": "userChatInput",
-            "label": {
-              "en": "core.module.input.label.user question",
-              "zh-CN": "core.module.input.label.user question"
-            },
+            "label": "core.module.input.label.user question",
             "valueType": "string",
             "type": "static"
           }
@@ -80,14 +53,8 @@
       },
       {
         "nodeId": "7BdojPlukIQw",
-        "name": {
-          "en": "AI Chat",
-          "zh-CN": "AI 对话"
-        },
-        "intro": {
-          "en": "Chat with a large language model.",
-          "zh-CN": "AI 大模型对话"
-        },
+        "name": "AI 对话",
+        "intro": "AI 大模型对话",
         "avatar": "core/workflow/template/aiChat",
         "flowNodeType": "chatNode",
         "showStatus": true,
@@ -100,20 +67,14 @@
           {
             "key": "model",
             "renderTypeList": ["settingLLMModel", "reference"],
-            "label": {
-              "en": "core.module.input.label.aiModel",
-              "zh-CN": "core.module.input.label.aiModel"
-            },
+            "label": "core.module.input.label.aiModel",
             "valueType": "string",
             "value": "gpt-5"
           },
           {
             "key": "temperature",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": 3,
             "valueType": "number",
             "min": 0,
@@ -123,10 +84,7 @@
           {
             "key": "maxToken",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": 1950,
             "valueType": "number",
             "min": 100,
@@ -136,29 +94,20 @@
           {
             "key": "isResponseAnswerText",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": true,
             "valueType": "boolean"
           },
           {
             "key": "quoteTemplate",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string"
           },
           {
             "key": "quotePrompt",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string"
           },
           {
@@ -166,28 +115,16 @@
             "renderTypeList": ["textarea", "reference"],
             "max": 3000,
             "valueType": "string",
-            "label": {
-              "en": "core.ai.Prompt",
-              "zh-CN": "core.ai.Prompt"
-            },
-            "description": {
-              "en": "core.app.tip.systemPromptTip",
-              "zh-CN": "core.app.tip.systemPromptTip"
-            },
-            "placeholder": {
-              "en": "core.app.tip.chatNodeSystemPromptTip",
-              "zh-CN": "core.app.tip.chatNodeSystemPromptTip"
-            },
+            "label": "core.ai.Prompt",
+            "description": "core.app.tip.systemPromptTip",
+            "placeholder": "core.app.tip.chatNodeSystemPromptTip",
             "value": ""
           },
           {
             "key": "history",
             "renderTypeList": ["numberInput", "reference"],
             "valueType": "chatHistory",
-            "label": {
-              "en": "core.module.input.label.chat history",
-              "zh-CN": "core.module.input.label.chat history"
-            },
+            "label": "core.module.input.label.chat history",
             "required": true,
             "min": 0,
             "max": 30,
@@ -197,32 +134,17 @@
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "label": "用户问题",
             "required": true,
-            "toolDescription": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "toolDescription": "用户问题",
             "value": ["workflowStartNodeId", "userChatInput"]
           },
           {
             "key": "quoteQA",
             "renderTypeList": ["settingDatasetQuotePrompt"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "Knowledge base reference",
-              "zh-CN": "知识库引用"
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
+            "debugLabel": "知识库引用",
+            "description": "",
             "valueType": "datasetQuote",
             "value": ["MNMMMIjjWyMU", "quoteQA"]
           }
@@ -231,28 +153,16 @@
           {
             "id": "history",
             "key": "history",
-            "label": {
-              "en": "core.module.output.label.New context",
-              "zh-CN": "core.module.output.label.New context"
-            },
-            "description": {
-              "en": "core.module.output.description.New context",
-              "zh-CN": "core.module.output.description.New context"
-            },
+            "label": "core.module.output.label.New context",
+            "description": "core.module.output.description.New context",
             "valueType": "chatHistory",
             "type": "static"
           },
           {
             "id": "answerText",
             "key": "answerText",
-            "label": {
-              "en": "core.module.output.label.Ai response content",
-              "zh-CN": "core.module.output.label.Ai response content"
-            },
-            "description": {
-              "en": "core.module.output.description.Ai response content",
-              "zh-CN": "core.module.output.description.Ai response content"
-            },
+            "label": "core.module.output.label.Ai response content",
+            "description": "core.module.output.description.Ai response content",
             "valueType": "string",
             "type": "static"
           }
@@ -260,14 +170,8 @@
       },
       {
         "nodeId": "rvbo634w3AYj",
-        "name": {
-          "en": "Question Classification",
-          "zh-CN": "问题分类"
-        },
-        "intro": {
-          "en": "Classify requests using the conversation history and current question. Add categories as needed, for example:\nType 1: Greetings\nType 2: Questions about product use\nType 3: Questions about product purchases\nType 4: Other questions",
-          "zh-CN": "根据用户的历史记录和当前问题判断该次提问的类型。可以添加多组问题类型，下面是一个模板例子：\n类型1: 打招呼\n类型2: 关于商品\"使用\"问题\n类型3: 关于商品\"购买\"问题\n类型4: 其他问题"
-        },
+        "name": "问题分类",
+        "intro": "根据用户的历史记录和当前问题判断该次提问的类型。可以添加多组问题类型，下面是一个模板例子：\n类型1: 打招呼\n类型2: 关于商品\"使用\"问题\n类型3: 关于商品\"购买\"问题\n类型4: 其他问题",
         "avatar": "core/workflow/template/questionClassify",
         "flowNodeType": "classifyQuestion",
         "showStatus": true,
@@ -280,10 +184,7 @@
           {
             "key": "model",
             "renderTypeList": ["selectLLMModel", "reference"],
-            "label": {
-              "en": "core.module.input.label.aiModel",
-              "zh-CN": "core.module.input.label.aiModel"
-            },
+            "label": "core.module.input.label.aiModel",
             "required": true,
             "valueType": "string",
             "llmModelType": "classify",
@@ -294,28 +195,16 @@
             "renderTypeList": ["textarea", "reference"],
             "max": 3000,
             "valueType": "string",
-            "label": {
-              "en": "core.module.input.label.Background",
-              "zh-CN": "core.module.input.label.Background"
-            },
-            "description": {
-              "en": "core.module.input.description.Background",
-              "zh-CN": "core.module.input.description.Background"
-            },
-            "placeholder": {
-              "en": "core.module.input.placeholder.Classify background",
-              "zh-CN": "core.module.input.placeholder.Classify background"
-            },
+            "label": "core.module.input.label.Background",
+            "description": "core.module.input.description.Background",
+            "placeholder": "core.module.input.placeholder.Classify background",
             "value": ""
           },
           {
             "key": "history",
             "renderTypeList": ["numberInput", "reference"],
             "valueType": "chatHistory",
-            "label": {
-              "en": "core.module.input.label.chat history",
-              "zh-CN": "core.module.input.label.chat history"
-            },
+            "label": "core.module.input.label.chat history",
             "required": true,
             "min": 0,
             "max": 30,
@@ -325,10 +214,7 @@
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "label": "用户问题",
             "required": true,
             "value": ["workflowStartNodeId", "userChatInput"]
           },
@@ -336,30 +222,18 @@
             "key": "agents",
             "renderTypeList": ["custom"],
             "valueType": "any",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": [
               {
-                "value": {
-                  "en": "Questions about the film Interstellar",
-                  "zh-CN": "关于电影《星际穿越》的问题"
-                },
+                "value": "关于电影《星际穿越》的问题",
                 "key": "wqre"
               },
               {
-                "value": {
-                  "en": "Greetings and salutations",
-                  "zh-CN": "打招呼、问候等问题"
-                },
+                "value": "打招呼、问候等问题",
                 "key": "sdfa"
               },
               {
-                "value": {
-                  "en": "Other questions",
-                  "zh-CN": "其他问题"
-                },
+                "value": "其他问题",
                 "key": "agex"
               }
             ]
@@ -369,10 +243,7 @@
           {
             "id": "cqResult",
             "key": "cqResult",
-            "label": {
-              "en": "Classification result",
-              "zh-CN": "分类结果"
-            },
+            "label": "分类结果",
             "valueType": "string",
             "type": "static"
           }
@@ -380,14 +251,8 @@
       },
       {
         "nodeId": "7kwgL1dVlwG6",
-        "name": {
-          "en": "Direct Reply",
-          "zh-CN": "指定回复"
-        },
-        "intro": {
-          "en": "Return specified content directly, often for guidance or notices. Non-string input is converted to a string.",
-          "zh-CN": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。"
-        },
+        "name": "指定回复",
+        "intro": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。",
         "avatar": "core/workflow/template/reply",
         "flowNodeType": "answerNode",
         "position": {
@@ -400,18 +265,9 @@
             "key": "text",
             "renderTypeList": ["textarea", "reference"],
             "valueType": "string",
-            "label": {
-              "en": "core.module.input.label.Response content",
-              "zh-CN": "core.module.input.label.Response content"
-            },
-            "description": {
-              "en": "core.module.input.description.Response content",
-              "zh-CN": "core.module.input.description.Response content"
-            },
-            "placeholder": {
-              "en": "core.module.input.description.Response content",
-              "zh-CN": "core.module.input.description.Response content"
-            },
+            "label": "core.module.input.label.Response content",
+            "description": "core.module.input.description.Response content",
+            "placeholder": "core.module.input.description.Response content",
             "selectedTypeIndex": 1,
             "value": ["rvbo634w3AYj", "cqResult"]
           }
@@ -420,14 +276,8 @@
       },
       {
         "nodeId": "MNMMMIjjWyMU",
-        "name": {
-          "en": "Knowledge Base Search",
-          "zh-CN": "知识库搜索"
-        },
-        "intro": {
-          "en": "Search the knowledge base with semantic and full-text retrieval for reference material relevant to the question.",
-          "zh-CN": "调用\"语义检索\"和\"全文检索\"能力，从\"知识库\"中查找可能与问题相关的参考内容"
-        },
+        "name": "知识库搜索",
+        "intro": "调用\"语义检索\"和\"全文检索\"能力，从\"知识库\"中查找可能与问题相关的参考内容",
         "avatar": "core/workflow/template/datasetSearch",
         "flowNodeType": "datasetSearchNode",
         "showStatus": true,
@@ -440,10 +290,7 @@
           {
             "key": "datasets",
             "renderTypeList": ["selectDataset", "reference"],
-            "label": {
-              "en": "core.module.input.label.Select dataset",
-              "zh-CN": "core.module.input.label.Select dataset"
-            },
+            "label": "core.module.input.label.Select dataset",
             "value": [],
             "valueType": "selectDataset",
             "list": [],
@@ -452,69 +299,48 @@
           {
             "key": "similarity",
             "renderTypeList": ["selectDatasetParamsModal"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": 0.4,
             "valueType": "number"
           },
           {
             "key": "limit",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": 5000,
             "valueType": "number"
           },
           {
             "key": "searchMode",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string",
             "value": "embedding"
           },
           {
             "key": "usingReRank",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "boolean",
             "value": false
           },
           {
             "key": "datasetSearchUsingExtensionQuery",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "boolean",
             "value": true
           },
           {
             "key": "datasetSearchExtensionModel",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string"
           },
           {
             "key": "datasetSearchExtensionBg",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string",
             "value": ""
           },
@@ -522,15 +348,9 @@
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "label": "用户问题",
             "required": true,
-            "toolDescription": {
-              "en": "Content to search for",
-              "zh-CN": "需要检索的内容"
-            },
+            "toolDescription": "需要检索的内容",
             "value": ["workflowStartNodeId", "userChatInput"]
           }
         ],
@@ -538,14 +358,8 @@
           {
             "id": "quoteQA",
             "key": "quoteQA",
-            "label": {
-              "en": "core.module.Dataset quote.label",
-              "zh-CN": "core.module.Dataset quote.label"
-            },
-            "description": {
-              "en": "A special array format; returns an empty array when there are no search results.",
-              "zh-CN": "特殊数组格式，搜索结果为空时，返回空数组。"
-            },
+            "label": "core.module.Dataset quote.label",
+            "description": "特殊数组格式，搜索结果为空时，返回空数组。",
             "type": "static",
             "valueType": "datasetQuote"
           }
@@ -590,10 +404,7 @@
         "timezone": "Asia/Shanghai",
         "defaultPrompt": ""
       },
-      "welcomeText": {
-        "en": "Hello! I am your knowledge-base assistant. Remember to select a knowledge base.\n[Who are you?]\n[How do I use this?]",
-        "zh-CN": "你好，我是知识库助手，请不要忘记选择知识库噢~\n[你是谁]\n[如何使用]"
-      }
+      "welcomeText": "你好，我是知识库助手，请不要忘记选择知识库噢~\n[你是谁]\n[如何使用]"
     }
   }
 }

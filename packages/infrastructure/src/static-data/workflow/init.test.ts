@@ -32,14 +32,11 @@ const s3Clients = {
   }
 };
 
-const localizedText = {
-  en: 'Workflow text',
-  'zh-CN': '工作流文案'
-};
+const workflowText = 'Workflow text';
 
-const localizedTemplateFields = {
-  name: localizedText,
-  intro: localizedText,
+const workflowTemplateFields = {
+  name: workflowText,
+  intro: 'Workflow introduction',
   tags: ['advanced'],
   type: 'advanced',
   userGuide: {
@@ -50,19 +47,19 @@ const localizedTemplateFields = {
     nodes: [
       {
         nodeId: 'node-1',
-        name: localizedText,
-        intro: localizedText,
+        name: 'Prompt',
+        intro: 'Collect a prompt',
         flowNodeType: 'chatNode',
         customNodeSetting: { mode: 'preserve' },
         inputs: [
           {
             key: 'prompt',
-            label: localizedText,
-            description: localizedText,
-            placeholder: localizedText,
-            toolDescription: localizedText,
-            debugLabel: localizedText,
-            valueDesc: localizedText,
+            label: workflowText,
+            description: 'Prompt description',
+            placeholder: 'Enter text',
+            toolDescription: 'Prompt for the model',
+            debugLabel: 'Prompt debug label',
+            valueDesc: 'Prompt value',
             value: 'machine-value',
             dynamicInputSetting: { enabled: true }
           }
@@ -71,9 +68,9 @@ const localizedTemplateFields = {
           {
             id: 'result',
             key: 'result',
-            label: localizedText,
-            description: localizedText,
-            valueDesc: localizedText,
+            label: 'Result',
+            description: 'Generated result',
+            valueDesc: 'Result value',
             valueType: 'string'
           }
         ]
@@ -85,29 +82,16 @@ const localizedTemplateFields = {
 } satisfies Pick<TemplateItemType, 'name' | 'intro' | 'tags' | 'type' | 'userGuide' | 'workflow'>;
 
 describe('workflow static data', () => {
-  it('accepts i18n template copy and keeps dynamic node configuration open', () => {
+  it('accepts plain-string template text and leaves node configuration open', () => {
     const template = {
-      templateId: 'localized-template',
+      templateId: 'sample-template',
       avatar: 'workflow-avatar',
-      ...localizedTemplateFields
+      ...workflowTemplateFields
     };
 
     expect(TemplateItemSchema.parse(template)).toEqual(template);
-    expect(
-      TemplateItemSchema.safeParse({
-        ...template,
-        workflow: {
-          ...template.workflow,
-          nodes: [
-            {
-              ...template.workflow.nodes[0],
-              inputs: [{ ...template.workflow.nodes[0]?.inputs?.[0], label: 'Legacy string' }]
-            }
-          ]
-        }
-      }).success
-    ).toBe(false);
   });
+
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -115,22 +99,22 @@ describe('workflow static data', () => {
     workflows.length = 0;
   });
 
-  it('loads localized template data without changing its copy or machine configuration', async () => {
+  it('loads plain-string template data without changing machine configuration', async () => {
     const templateDirectory = await mkdtemp(path.join(tmpdir(), 'workflow-templates-'));
 
     try {
-      const templatePath = path.join(templateDirectory, 'localized-template');
+      const templatePath = path.join(templateDirectory, 'sample-template');
       await mkdir(templatePath);
       await writeFile(
         path.join(templatePath, 'workflow.json'),
-        JSON.stringify(localizedTemplateFields)
+        JSON.stringify(workflowTemplateFields)
       );
       await initWorkflowTemplates(templateDirectory);
 
       expect(workflows).toHaveLength(1);
       expect(workflows[0]).toEqual({
-        ...localizedTemplateFields,
-        templateId: 'localized-template',
+        ...workflowTemplateFields,
+        templateId: 'sample-template',
         isActive: true
       });
       expect(workflows[0]?.workflow.nodes[0]?.inputs?.[0]?.value).toBe('machine-value');
@@ -149,6 +133,10 @@ describe('workflow static data', () => {
     const chinese = workflowTemplates.find((item) => item.templateId === 'Chinese');
 
     expect(workflowTemplates).toHaveLength(10);
+    for (const template of workflowTemplates) {
+      expect(typeof template.name).toBe('string');
+      expect(typeof template.intro).toBe('string');
+    }
     expect(chinese?.avatar).toBe('url:workflow/templates/Chinese/logo');
     expect(chinese?.workflow.nodes[0]?.avatar).toBe('core/workflow/template/systemConfig');
   });

@@ -13,29 +13,15 @@ const client = new FastGPTPluginClient({
 });
 ```
 
-## 工作流模板 i18n
+## 工作流模板
 
-`listWorkflows()` 不接收 locale 参数，返回的模板卡片及工作流节点文案保留 i18n 对象。应用 UI 应根据当前界面语言读取文案；缺少所选语言时先回退到 `zh-CN`，再回退到 `en`。`zh-Hant` 是可选语言。`common:`、`core.*` 等平台翻译 key 保持原值，需由 FastGPT UI 的平台翻译目录解析。
+`listWorkflows()` 不接收 locale 参数，也不会对工作流模板进行翻译；模板 `name`、`intro` 等字段按原字符串透传。工作流节点配置保持开放结构。
 
 ```ts
-import type { I18nStringType } from '@fastgpt-plugin/sdk-client';
-
-type Locale = 'en' | 'zh-CN' | 'zh-Hant';
-
-function selectText(text: I18nStringType, locale: Locale): string {
-  return text[locale] || text['zh-CN'] || text.en;
-}
-
 const templates = await client.listWorkflows();
-const templateName = templates[0]
-  ? selectText(templates[0].name, 'zh-CN')
-  : undefined;
-const firstNodeName = templates[0]?.workflow.nodes[0]
-  ? selectText(templates[0].workflow.nodes[0].name, 'zh-CN')
-  : undefined;
+const templateName = templates[0]?.name;
+const firstInputLabel = templates[0]?.workflow.nodes[0]?.inputs?.[0]?.label;
 ```
-
-SDK 透传嵌套节点的 `name`/`intro`、输入输出标签和说明等 i18n 字段；节点其余动态配置仍保持开放结构。客户端调用 `listWorkflows()` 时访问 `/api/workflow/list`，无需额外语言查询参数。
 
 ## 多语言插件 README URL
 

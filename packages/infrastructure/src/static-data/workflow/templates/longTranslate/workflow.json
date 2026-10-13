@@ -1,12 +1,6 @@
 {
-  "name": {
-    "en": "Long-Form Translation Expert",
-    "zh-CN": "长文翻译专家"
-  },
-  "intro": {
-    "en": "A long-form translation assistant that uses a terminology knowledge base.",
-    "zh-CN": "使用专有名词知识库协助翻译,更适合长文本的翻译机器人"
-  },
+  "name": "长文翻译专家",
+  "intro": "使用专有名词知识库协助翻译,更适合长文本的翻译机器人",
   "author": "",
   "tags": ["office-services"],
   "type": "advanced",
@@ -18,14 +12,8 @@
     "nodes": [
       {
         "nodeId": "userGuide",
-        "name": {
-          "en": "System Configuration",
-          "zh-CN": "系统配置"
-        },
-        "intro": {
-          "en": "Configure the application's system settings.",
-          "zh-CN": "可以配置应用的系统参数"
-        },
+        "name": "系统配置",
+        "intro": "可以配置应用的系统参数",
         "avatar": "core/workflow/template/systemConfig",
         "flowNodeType": "userGuide",
         "position": {
@@ -38,30 +26,21 @@
             "key": "welcomeText",
             "renderTypeList": ["hidden"],
             "valueType": "string",
-            "label": {
-              "en": "core.app.Welcome Text",
-              "zh-CN": "core.app.Welcome Text"
-            },
+            "label": "core.app.Welcome Text",
             "value": ""
           },
           {
             "key": "variables",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": {
-              "en": "core.app.Chat Variable",
-              "zh-CN": "core.app.Chat Variable"
-            },
+            "label": "core.app.Chat Variable",
             "value": []
           },
           {
             "key": "questionGuide",
             "valueType": "any",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "core.app.Question Guide",
-              "zh-CN": "core.app.Question Guide"
-            },
+            "label": "core.app.Question Guide",
             "value": {
               "open": false
             }
@@ -70,10 +49,7 @@
             "key": "tts",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": {
               "type": "web"
             }
@@ -82,10 +58,7 @@
             "key": "whisper",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": {
               "open": false,
               "autoSend": false,
@@ -96,10 +69,7 @@
             "key": "scheduleTrigger",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": null
           }
         ],
@@ -107,14 +77,8 @@
       },
       {
         "nodeId": "448745",
-        "name": {
-          "en": "Workflow Start",
-          "zh-CN": "流程开始"
-        },
-        "intro": {
-          "en": "",
-          "zh-CN": ""
-        },
+        "name": "流程开始",
+        "intro": "",
         "avatar": "core/workflow/template/workflowStart",
         "flowNodeType": "workflowStart",
         "position": {
@@ -127,47 +91,26 @@
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "label": "用户问题",
             "required": true,
-            "toolDescription": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "toolDescription": "用户问题",
+            "debugLabel": ""
           }
         ],
         "outputs": [
           {
             "id": "userChatInput",
             "key": "userChatInput",
-            "label": {
-              "en": "common:core.module.input.label.user question",
-              "zh-CN": "common:core.module.input.label.user question"
-            },
+            "label": "common:core.module.input.label.user question",
             "type": "static",
             "valueType": "string",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           },
           {
             "id": "userFiles",
             "key": "userFiles",
-            "label": {
-              "en": "app:workflow.user_file_input",
-              "zh-CN": "app:workflow.user_file_input"
-            },
-            "description": {
-              "en": "app:workflow.user_file_input_desc",
-              "zh-CN": "app:workflow.user_file_input_desc"
-            },
+            "label": "app:workflow.user_file_input",
+            "description": "app:workflow.user_file_input_desc",
             "type": "static",
             "valueType": "arrayString"
           }
@@ -175,14 +118,8 @@
       },
       {
         "nodeId": "yjFO3YcM7KG2",
-        "name": {
-          "en": "Translate Multiple Text Chunks",
-          "zh-CN": "多文本块翻译"
-        },
-        "intro": {
-          "en": "Chat with a large language model.",
-          "zh-CN": "AI 大模型对话"
-        },
+        "name": "多文本块翻译",
+        "intro": "AI 大模型对话",
         "avatar": "core/workflow/template/aiChat",
         "flowNodeType": "chatNode",
         "showStatus": true,
@@ -195,274 +132,136 @@
           {
             "key": "model",
             "renderTypeList": ["settingLLMModel", "reference"],
-            "label": {
-              "en": "core.module.input.label.aiModel",
-              "zh-CN": "core.module.input.label.aiModel"
-            },
+            "label": "core.module.input.label.aiModel",
             "valueType": "string",
             "selectedTypeIndex": 0,
             "value": "claude-3-5-sonnet-20240620",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "temperature",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": 3,
             "valueType": "number",
             "min": 0,
             "max": 10,
             "step": 1,
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "maxToken",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": 4000,
             "valueType": "number",
             "min": 100,
             "max": 4000,
             "step": 50,
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "isResponseAnswerText",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": false,
             "valueType": "boolean",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "aiChatQuoteRole",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string",
             "value": "system",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "quoteTemplate",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string",
             "value": "{{q}}\n{{a}}",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "quotePrompt",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string",
             "value": "使用 <Data></Data> 标记中的内容作为你的翻译词库:\n\n<Data>\n{{quote}}\n</Data>\n\n原文: \"\"\"{{question}}\"\"\"",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "aiChatVision",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "boolean",
             "value": false,
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "systemPrompt",
             "renderTypeList": ["textarea", "reference"],
             "max": 3000,
             "valueType": "string",
-            "label": {
-              "en": "core.ai.Prompt",
-              "zh-CN": "core.ai.Prompt"
-            },
-            "description": {
-              "en": "core.app.tip.systemPromptTip",
-              "zh-CN": "core.app.tip.systemPromptTip"
-            },
-            "placeholder": {
-              "en": "core.app.tip.chatNodeSystemPromptTip",
-              "zh-CN": "core.app.tip.chatNodeSystemPromptTip"
-            },
-            "value": {
-              "en": "# Role: Expert Translator\n\n## Background\nYou are an experienced translator, fluent in both {{source_lang}} and {{target_lang}}. You specialize in producing clear, natural {{target_lang}} translations of {{source_lang}} text and have led many successful large-scale translation projects.\n\n## Attention\n- Follow the principles of faithfulness, clarity, and elegance; prioritize clarity.\n- Use natural, fluent expressions appropriate for {{target_lang}}.\n- Avoid archaic phrasing and obscure allusions.\n- Preserve the original line breaks and rhythm of poetry and song lyrics.\n- Use the provided glossary appropriately for proper names and terminology.\n- Preserve the document's original lists and formatting markers.\n- Do not translate code blocks; leave them unchanged.\n\n## Constraints\n- Follow four rounds: literal translation, free translation, reflection, and refinement.\n- Preserve the source meaning accurately; do not omit or distort anything.\n- Use context to avoid translating repeated content more than once.\n- Present the final translation in a Markdown code block, but do not output the word \"markdown\".\n\n## Goals\n- Translate source text from {{source_lang}} into high-quality {{target_lang}} through four rounds.\n- Convey the meaning accurately in clear, accessible language.\n- Use idioms, colloquialisms, and current expressions moderately to make the translation engaging.\n\n## Skills\n- Strong command of {{source_lang}} and {{target_lang}}, with solid linguistic knowledge and translation experience.\n- Skilled at turning {{source_lang}} phrasing into natural {{target_lang}}.\n- Aware of developments in contemporary {{target_lang}} and current usage.\n\n## Workflow\n1. Literal translation: translate faithfully, sentence by sentence, without omissions; leave code blocks unchanged.\n2. Free translation: make the literal version fluent and natural in {{target_lang}}; leave code blocks unchanged.\n3. Reflection: review the translation and propose concrete improvements for every sentence from these six perspectives:\n   (i) Accuracy: fix redundancy, mistranslation, omissions, and untranslated text.\n   (ii) Fluency: apply {{target_lang}} grammar, spelling, and punctuation; remove needless repetition.\n   (iii) Style: reflect the source style and cultural context.\n   (iv) Terminology: follow the glossary consistently.\n   (v) Word order: use natural {{target_lang}} word order rather than copying {{source_lang}} structure.\n   (vi) Code protection: ensure all code blocks remain unchanged.\n4. Refinement: apply the review suggestions and produce concise, polished text suitable for a general audience.\n\n## Output Format\n- Begin each round with 【思考】 to explain its focus.\n- After rounds one and two, present the translation under 【翻译】.\n- In round three, present an actionable list under 【建议】, prefixing each item with its focus (for example, *风格*).\n- In round four, put the final translation in a code block; do not output the word \"markdown\".\n\n## Suggestions\n- Keep the literal version faithful without translating mechanically word for word.\n- Use plain, natural {{target_lang}} in the free translation.\n- Review fluency, readability, accuracy, and terminology consistency.\n- Apply review suggestions when refining; use colloquial expressions moderately.\n- Leave everything inside code blocks (\\`\\`\\`) unchanged.",
-              "zh-CN": "# Role: 资深翻译专家\n\n## Background:\n你是一位经验丰富的翻译专家,精通{{source_lang}}和{{target_lang}}互译,尤其擅长将{{source_lang}}文章译成流畅易懂的{{target_lang}}。你曾多次带领团队完成大型翻译项目,译文广受好评。\n\n## Attention:\n- 翻译过程中要始终坚持\"信、达、雅\"的原则,但\"达\"尤为重要\n- 翻译的译文要符合{{target_lang}}的表达习惯,通俗易懂,连贯流畅\n- 避免使用过于文绉绉的表达和晦涩难懂的典故引用 \n- 诗词歌词等内容需按原文换行和节奏分行,不破坏原排列格式 \n- 对于专有的名词或术语,按照给出的术语表进行合理替换 \n- 在翻译过程中,注意保留文档原有的列表项和格式标识\n- 不要翻译代码块中的内容，保持原样输出\n\n## Constraints:\n- 必须严格遵循四轮翻译流程:直译、意译、反思、提升\n- 译文要忠实原文,准确无误,不能遗漏或曲解原意\n- 注意判断上下文，避免重复翻译\n- 最终译文使用Markdown的代码块呈现,但是不用输出markdown这个单词\n\n## Goals:\n- 通过四轮翻译流程,将{{source_lang}}原文译成高质量的{{target_lang}}译文  \n- 译文要准确传达原文意思,语言表达力求浅显易懂,朗朗上口\n- 适度使用一些熟语俗语、流行网络用语等,增强译文的亲和力\n\n## Skills:\n- 精通{{source_lang}} {{target_lang}}两种语言,具有扎实的语言功底和丰富的翻译经验\n- 擅长将{{source_lang}}表达习惯转换为地道自然的{{target_lang}}\n- 对当代{{target_lang}}语言的发展变化有敏锐洞察,善于把握语言流行趋势\n\n## Workflow:\n1. 第一轮直译:逐字逐句忠实原文,不遗漏任何信息（代码块内容除外）\n2. 第二轮意译:在直译的基础上用通俗流畅的{{target_lang}}意译原文（代码块内容除外）\n3. 第三轮反思:仔细审视译文,分点列出一份建设性的批评和有用的建议清单以改进翻译，逐句提出建议，从以下6个角度展开\n    (i) 准确性（纠正冗余、误译、遗漏或未翻译的文本错误），\n    (ii) 流畅性（应用{{target_lang}}的语法、拼写和标点规则，并确保没有不必要的重复），\n    (iii) 风格（确保翻译反映源文本的风格并考虑其文化背景），\n    (iv) 术语（严格参考给出的术语表,确保术语使用一致）\n    (v) 语序（合理调整语序，不要生搬{{source_lang}}中的语序，注意调整为{{target_lang}}中的合理语序）\n    (vi) 代码保护（确保所有代码块内容保持原样，不被翻译）\n4. 第四轮提升:严格遵循第三轮提出的建议对翻译修改,定稿出一个简洁畅达、符合大众阅读习惯的译文\n\n## OutputFormat:\n- 每一轮前用【思考】说明该轮要点\n- 第一轮和第二轮翻译后用【翻译】呈现译文\n- 第三轮用【建议】输出建议清单，分点列出，在每一点前用*xxx*标识这条建议对应的要点，如*风格*;建议前用【思考】说明该轮要点，建议后用【建议】呈现建议\n- 第四轮在\\`\\`\\`代码块中展示最终译文内容，如\\`\\`\\`xxx\\`\\`\\`,不用输出markdown这个单词\n\n## Suggestions:\n- 直译时力求忠实原文,但不要过于拘泥逐字逐句\n- 意译时在准确表达原意的基础上,用最朴实无华的{{target_lang}}来表达\n- 反思环节重点关注译文是否符合{{target_lang}}表达习惯,是否通俗易懂,是否准确流畅,是否术语一致\n- 提升环节采用反思环节的建议对意译环节的翻译进行修改，适度采用一些口语化的表达、网络流行语等,增强译文的亲和力\n- 所有包含在代码块（\\`\\`\\`）中的内容都应保持原样，不进行翻译"
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "label": "core.ai.Prompt",
+            "description": "core.app.tip.systemPromptTip",
+            "placeholder": "core.app.tip.chatNodeSystemPromptTip",
+            "value": "# Role: 资深翻译专家\n\n## Background:\n你是一位经验丰富的翻译专家,精通{{source_lang}}和{{target_lang}}互译,尤其擅长将{{source_lang}}文章译成流畅易懂的{{target_lang}}。你曾多次带领团队完成大型翻译项目,译文广受好评。\n\n## Attention:\n- 翻译过程中要始终坚持\"信、达、雅\"的原则,但\"达\"尤为重要\n- 翻译的译文要符合{{target_lang}}的表达习惯,通俗易懂,连贯流畅\n- 避免使用过于文绉绉的表达和晦涩难懂的典故引用 \n- 诗词歌词等内容需按原文换行和节奏分行,不破坏原排列格式 \n- 对于专有的名词或术语,按照给出的术语表进行合理替换 \n- 在翻译过程中,注意保留文档原有的列表项和格式标识\n- 不要翻译代码块中的内容，保持原样输出\n\n## Constraints:\n- 必须严格遵循四轮翻译流程:直译、意译、反思、提升\n- 译文要忠实原文,准确无误,不能遗漏或曲解原意\n- 注意判断上下文，避免重复翻译\n- 最终译文使用Markdown的代码块呈现,但是不用输出markdown这个单词\n\n## Goals:\n- 通过四轮翻译流程,将{{source_lang}}原文译成高质量的{{target_lang}}译文  \n- 译文要准确传达原文意思,语言表达力求浅显易懂,朗朗上口\n- 适度使用一些熟语俗语、流行网络用语等,增强译文的亲和力\n\n## Skills:\n- 精通{{source_lang}} {{target_lang}}两种语言,具有扎实的语言功底和丰富的翻译经验\n- 擅长将{{source_lang}}表达习惯转换为地道自然的{{target_lang}}\n- 对当代{{target_lang}}语言的发展变化有敏锐洞察,善于把握语言流行趋势\n\n## Workflow:\n1. 第一轮直译:逐字逐句忠实原文,不遗漏任何信息（代码块内容除外）\n2. 第二轮意译:在直译的基础上用通俗流畅的{{target_lang}}意译原文（代码块内容除外）\n3. 第三轮反思:仔细审视译文,分点列出一份建设性的批评和有用的建议清单以改进翻译，逐句提出建议，从以下6个角度展开\n    (i) 准确性（纠正冗余、误译、遗漏或未翻译的文本错误），\n    (ii) 流畅性（应用{{target_lang}}的语法、拼写和标点规则，并确保没有不必要的重复），\n    (iii) 风格（确保翻译反映源文本的风格并考虑其文化背景），\n    (iv) 术语（严格参考给出的术语表,确保术语使用一致）\n    (v) 语序（合理调整语序，不要生搬{{source_lang}}中的语序，注意调整为{{target_lang}}中的合理语序）\n    (vi) 代码保护（确保所有代码块内容保持原样，不被翻译）\n4. 第四轮提升:严格遵循第三轮提出的建议对翻译修改,定稿出一个简洁畅达、符合大众阅读习惯的译文\n\n## OutputFormat:\n- 每一轮前用【思考】说明该轮要点\n- 第一轮和第二轮翻译后用【翻译】呈现译文\n- 第三轮用【建议】输出建议清单，分点列出，在每一点前用*xxx*标识这条建议对应的要点，如*风格*;建议前用【思考】说明该轮要点，建议后用【建议】呈现建议\n- 第四轮在\\`\\`\\`代码块中展示最终译文内容，如\\`\\`\\`xxx\\`\\`\\`,不用输出markdown这个单词\n\n## Suggestions:\n- 直译时力求忠实原文,但不要过于拘泥逐字逐句\n- 意译时在准确表达原意的基础上,用最朴实无华的{{target_lang}}来表达\n- 反思环节重点关注译文是否符合{{target_lang}}表达习惯,是否通俗易懂,是否准确流畅,是否术语一致\n- 提升环节采用反思环节的建议对意译环节的翻译进行修改，适度采用一些口语化的表达、网络流行语等,增强译文的亲和力\n- 所有包含在代码块（\\`\\`\\`）中的内容都应保持原样，不进行翻译",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "history",
             "renderTypeList": ["numberInput", "reference"],
             "valueType": "chatHistory",
-            "label": {
-              "en": "core.module.input.label.chat history",
-              "zh-CN": "core.module.input.label.chat history"
-            },
-            "description": {
-              "en": "workflow:max_dialog_rounds",
-              "zh-CN": "workflow:max_dialog_rounds"
-            },
+            "label": "core.module.input.label.chat history",
+            "description": "workflow:max_dialog_rounds",
             "required": true,
             "min": 0,
             "max": 50,
             "value": 6,
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "quoteQA",
             "renderTypeList": ["settingDatasetQuotePrompt"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "Knowledge base reference",
-              "zh-CN": "知识库引用"
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
+            "debugLabel": "知识库引用",
+            "description": "",
             "valueType": "datasetQuote",
             "value": ["nLBlOh6lWxkY", "quoteQA"],
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "toolDescription": ""
           },
           {
             "key": "stringQuoteText",
             "renderTypeList": ["reference", "textarea"],
-            "label": {
-              "en": "app:document_quote",
-              "zh-CN": "app:document_quote"
-            },
-            "debugLabel": {
-              "en": "Document reference",
-              "zh-CN": "文档引用"
-            },
-            "description": {
-              "en": "app:document_quote_tip",
-              "zh-CN": "app:document_quote_tip"
-            },
+            "label": "app:document_quote",
+            "debugLabel": "文档引用",
+            "description": "app:document_quote_tip",
             "valueType": "string",
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "toolDescription": ""
           },
           {
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "label": "用户问题",
             "required": true,
-            "toolDescription": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "toolDescription": "用户问题",
             "selectedTypeIndex": 1,
-            "value": {
-              "en": "Your task is to provide a professional translation from {{$VARIABLE_NODE_ID.source_lang$}} to {{$VARIABLE_NODE_ID.target_lang$}} of part of a text.\n\nThe source text is delimited by <SOURCE_TEXT> and </SOURCE_TEXT>. Translate only the portion inside <TRANSLATE_THIS> and </TRANSLATE_THIS>. You may use the rest of the source as context, but do not translate it. Output only the requested translation.\n\n<SOURCE_TEXT>\n{{$quYZgsW32ApA.xhXu6sdEWBnF$}}\n</SOURCE_TEXT>\n\nTranslate only the portion shown here:\n<TRANSLATE_THIS>\n{{$quYZgsW32ApA.eCp73lztAEGK$}}\n</TRANSLATE_THIS>\n\nOutput nothing except the translation.",
-              "zh-CN": "Your task is provide a professional translation from {{$VARIABLE_NODE_ID.source_lang$}} to  {{$VARIABLE_NODE_ID.target_lang$}} of PART of a text.\n\nThe source text is below, delimited by XML tags <SOURCE_TEXT> and </SOURCE_TEXT>. Translate only the part within the source text\ndelimited by <TRANSLATE_THIS> and </TRANSLATE_THIS>. You can use the rest of the source text as context, but do not translate any\nof the other text. Do not output anything other than the translation of the indicated part of the text.\n\n<SOURCE_TEXT>\n{{$quYZgsW32ApA.xhXu6sdEWBnF$}}\n</SOURCE_TEXT>\n\nTo reiterate, you should translate only this part of the text, shown here again between <TRANSLATE_THIS> and </TRANSLATE_THIS>:\n<TRANSLATE_THIS>\n{{$quYZgsW32ApA.eCp73lztAEGK$}}\n</TRANSLATE_THIS>\n\nOutput only the translation of the portion you are asked to translate, and nothing else"
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "value": "Your task is provide a professional translation from {{$VARIABLE_NODE_ID.source_lang$}} to  {{$VARIABLE_NODE_ID.target_lang$}} of PART of a text.\n\nThe source text is below, delimited by XML tags <SOURCE_TEXT> and </SOURCE_TEXT>. Translate only the part within the source text\ndelimited by <TRANSLATE_THIS> and </TRANSLATE_THIS>. You can use the rest of the source text as context, but do not translate any\nof the other text. Do not output anything other than the translation of the indicated part of the text.\n\n<SOURCE_TEXT>\n{{$quYZgsW32ApA.xhXu6sdEWBnF$}}\n</SOURCE_TEXT>\n\nTo reiterate, you should translate only this part of the text, shown here again between <TRANSLATE_THIS> and </TRANSLATE_THIS>:\n<TRANSLATE_THIS>\n{{$quYZgsW32ApA.eCp73lztAEGK$}}\n</TRANSLATE_THIS>\n\nOutput only the translation of the portion you are asked to translate, and nothing else",
+            "debugLabel": ""
           }
         ],
         "outputs": [
@@ -470,33 +269,18 @@
             "id": "history",
             "key": "history",
             "required": true,
-            "label": {
-              "en": "common:core.module.output.label.New context",
-              "zh-CN": "common:core.module.output.label.New context"
-            },
-            "description": {
-              "en": "Return the current response appended to the conversation history as the new context.",
-              "zh-CN": "将本次回复内容拼接上历史记录，作为新的上下文返回"
-            },
+            "label": "common:core.module.output.label.New context",
+            "description": "将本次回复内容拼接上历史记录，作为新的上下文返回",
             "valueType": "chatHistory",
-            "valueDesc": {
-              "en": "{\n  obj: System | Human | AI;\n  value: string;\n}[]",
-              "zh-CN": "{\n  obj: System | Human | AI;\n  value: string;\n}[]"
-            },
+            "valueDesc": "{\n  obj: System | Human | AI;\n  value: string;\n}[]",
             "type": "static"
           },
           {
             "id": "answerText",
             "key": "answerText",
             "required": true,
-            "label": {
-              "en": "common:core.module.output.label.Ai response content",
-              "zh-CN": "common:core.module.output.label.Ai response content"
-            },
-            "description": {
-              "en": "Emitted after the streamed response is complete.",
-              "zh-CN": "将在 stream 回复完毕后触发"
-            },
+            "label": "common:core.module.output.label.Ai response content",
+            "description": "将在 stream 回复完毕后触发",
             "valueType": "string",
             "type": "static"
           }
@@ -504,14 +288,8 @@
       },
       {
         "nodeId": "w4heEpNflz59",
-        "name": {
-          "en": "Check Whether Processing Is Complete",
-          "zh-CN": "判断是否执行结束"
-        },
-        "intro": {
-          "en": "Choose a branch based on a condition.",
-          "zh-CN": "根据一定的条件，执行不同的分支。"
-        },
+        "name": "判断是否执行结束",
+        "intro": "根据一定的条件，执行不同的分支。",
         "avatar": "core/workflow/template/ifelse",
         "flowNodeType": "ifElseNode",
         "showStatus": true,
@@ -525,10 +303,7 @@
             "key": "ifElseList",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": [
               {
                 "condition": "AND",
@@ -541,43 +316,25 @@
                 ]
               }
             ],
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           }
         ],
         "outputs": [
           {
             "id": "ifElseResult",
             "key": "ifElseResult",
-            "label": {
-              "en": "workflow:judgment_result",
-              "zh-CN": "workflow:judgment_result"
-            },
+            "label": "workflow:judgment_result",
             "valueType": "string",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           }
         ]
       },
       {
         "nodeId": "a2lqxASWi1vb",
-        "name": {
-          "en": "Check Whether Processing Is Complete",
-          "zh-CN": "判断是否执行结束"
-        },
-        "intro": {
-          "en": "Run a script, typically for more complex data processing.",
-          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
-        },
+        "name": "判断是否执行结束",
+        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -591,15 +348,9 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "required": false,
-            "description": {
-              "en": "workflow:these_variables_will_be_input_parameters_for_code_execution",
-              "zh-CN": "workflow:these_variables_will_be_input_parameters_for_code_execution"
-            },
+            "description": "workflow:these_variables_will_be_input_parameters_for_code_execution",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -621,58 +372,31 @@
               "showDescription": false,
               "showDefaultValue": true
             },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "js",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "function main({chunks, doc_chunks, currentChunk}){\n    let new_chunks = doc_chunks || chunks\n    const findIndex = new_chunks.findIndex((item) => item ===currentChunk)\n    \n    return {\n        isEnd: new_chunks.length-1 === findIndex,\n        i: findIndex + 1,\n    }\n}",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "renderTypeList": ["reference"],
             "valueType": "arrayString",
             "canEdit": true,
             "key": "chunks",
-            "label": {
-              "en": "Text chunks",
-              "zh-CN": "文本块"
-            },
+            "label": "chunks",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -702,10 +426,7 @@
             "valueType": "string",
             "canEdit": true,
             "key": "currentChunk",
-            "label": {
-              "en": "Current chunk",
-              "zh-CN": "当前文本块"
-            },
+            "label": "currentChunk",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -735,10 +456,7 @@
             "valueType": "arrayString",
             "canEdit": true,
             "key": "doc_chunks",
-            "label": {
-              "en": "Document chunks",
-              "zh-CN": "文档块"
-            },
+            "label": "doc_chunks",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -768,28 +486,16 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": {
-              "en": "workflow:full_response_data",
-              "zh-CN": "workflow:full_response_data"
-            },
+            "label": "workflow:full_response_data",
             "valueType": "object",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           },
           {
             "id": "error",
             "key": "error",
-            "label": {
-              "en": "workflow:execution_error",
-              "zh-CN": "workflow:execution_error"
-            },
-            "description": {
-              "en": "Code execution error; empty when execution succeeds.",
-              "zh-CN": "代码运行错误信息，成功时返回空"
-            },
+            "label": "workflow:execution_error",
+            "description": "代码运行错误信息，成功时返回空",
             "valueType": "object",
             "type": "static"
           },
@@ -798,10 +504,7 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -822,43 +525,28 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": {
-              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
-              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
-            }
+            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
           },
           {
             "id": "nmBmGaARbKkl",
             "valueType": "boolean",
             "type": "dynamic",
             "key": "isEnd",
-            "label": {
-              "en": "Is complete",
-              "zh-CN": "是否完成"
-            }
+            "label": "isEnd"
           },
           {
             "id": "nqB98uKpq6Ig",
             "valueType": "number",
             "type": "dynamic",
             "key": "i",
-            "label": {
-              "en": "Index",
-              "zh-CN": "索引"
-            }
+            "label": "i"
           }
         ]
       },
       {
         "nodeId": "quYZgsW32ApA",
-        "name": {
-          "en": "Format Source Text Chunk",
-          "zh-CN": "格式化源文本块"
-        },
-        "intro": {
-          "en": "Run a script, typically for more complex data processing.",
-          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
-        },
+        "name": "格式化源文本块",
+        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -872,15 +560,9 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "required": false,
-            "description": {
-              "en": "workflow:these_variables_will_be_input_parameters_for_code_execution",
-              "zh-CN": "workflow:these_variables_will_be_input_parameters_for_code_execution"
-            },
+            "description": "workflow:these_variables_will_be_input_parameters_for_code_execution",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -902,58 +584,31 @@
               "showDescription": false,
               "showDefaultValue": true
             },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "js",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "function main({source_text_chunks, source_doc_text_chunks, i=0}){\n    let chunks = source_doc_text_chunks || source_text_chunks;\n    let before = chunks.slice(0, i).join(\"\");\n    let current = \" <TRANSLATE_THIS>\" + chunks[i] + \"</TRANSLATE_THIS>\";\n    let after = chunks.slice(i + 1).join(\"\");\n    let tagged_text = before + current + after;\n\n    return {\n        tagged_text,\n        chunk_to_translate: chunks[i],\n    }\n}",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "renderTypeList": ["reference"],
             "valueType": "number",
             "canEdit": true,
             "key": "i",
-            "label": {
-              "en": "Index",
-              "zh-CN": "索引"
-            },
+            "label": "i",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -983,10 +638,7 @@
             "valueType": "arrayString",
             "canEdit": true,
             "key": "source_text_chunks",
-            "label": {
-              "en": "Source text chunks",
-              "zh-CN": "源文本块"
-            },
+            "label": "source_text_chunks",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1016,10 +668,7 @@
             "valueType": "arrayString",
             "canEdit": true,
             "key": "source_doc_text_chunks",
-            "label": {
-              "en": "Source document chunks",
-              "zh-CN": "源文档块"
-            },
+            "label": "source_doc_text_chunks",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1049,28 +698,16 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": {
-              "en": "workflow:full_response_data",
-              "zh-CN": "workflow:full_response_data"
-            },
+            "label": "workflow:full_response_data",
             "valueType": "object",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           },
           {
             "id": "error",
             "key": "error",
-            "label": {
-              "en": "workflow:execution_error",
-              "zh-CN": "workflow:execution_error"
-            },
-            "description": {
-              "en": "Code execution error; empty when execution succeeds.",
-              "zh-CN": "代码运行错误信息，成功时返回空"
-            },
+            "label": "workflow:execution_error",
+            "description": "代码运行错误信息，成功时返回空",
             "valueType": "object",
             "type": "static"
           },
@@ -1079,10 +716,7 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1103,43 +737,28 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": {
-              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
-              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
-            }
+            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
           },
           {
             "id": "xhXu6sdEWBnF",
             "valueType": "string",
             "type": "dynamic",
             "key": "tagged_text",
-            "label": {
-              "en": "Tagged text",
-              "zh-CN": "带标签文本"
-            }
+            "label": "tagged_text"
           },
           {
             "id": "eCp73lztAEGK",
             "valueType": "string",
             "type": "dynamic",
             "key": "chunk_to_translate",
-            "label": {
-              "en": "Text chunk to translate",
-              "zh-CN": "待翻译文本块"
-            }
+            "label": "chunk_to_translate"
           }
         ]
       },
       {
         "nodeId": "vlNHndpNuFXB",
-        "name": {
-          "en": "Extract Translated Text",
-          "zh-CN": "取出翻译文本"
-        },
-        "intro": {
-          "en": "Run a script, typically for more complex data processing.",
-          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
-        },
+        "name": "取出翻译文本",
+        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -1153,15 +772,9 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "required": false,
-            "description": {
-              "en": "workflow:these_variables_will_be_input_parameters_for_code_execution",
-              "zh-CN": "workflow:these_variables_will_be_input_parameters_for_code_execution"
-            },
+            "description": "workflow:these_variables_will_be_input_parameters_for_code_execution",
             "editField": {
               "key": true,
               "valueType": true
@@ -1187,61 +800,31 @@
               "showDescription": false,
               "showDefaultValue": true
             },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "js",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "function main({data1}){\n    const result = data1.split(\"```\").filter(item => !!item.trim())\n\n    if(result[result.length-1]) {\n        return {\n            result: result[result.length-1]\n        }\n    }\n\n    return {\n        result: '未截取到翻译内容'\n    }\n}",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "data1",
             "valueType": "string",
-            "label": {
-              "en": "Data 1",
-              "zh-CN": "数据 1"
-            },
+            "label": "data1",
             "renderTypeList": ["reference"],
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "description": "",
             "canEdit": true,
             "editField": {
               "key": true,
@@ -1275,28 +858,16 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": {
-              "en": "workflow:full_response_data",
-              "zh-CN": "workflow:full_response_data"
-            },
+            "label": "workflow:full_response_data",
             "valueType": "object",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           },
           {
             "id": "error",
             "key": "error",
-            "label": {
-              "en": "workflow:execution_error",
-              "zh-CN": "workflow:execution_error"
-            },
-            "description": {
-              "en": "Code execution error; empty when execution succeeds.",
-              "zh-CN": "代码运行错误信息，成功时返回空"
-            },
+            "label": "workflow:execution_error",
+            "description": "代码运行错误信息，成功时返回空",
             "valueType": "object",
             "type": "static"
           },
@@ -1305,10 +876,7 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1329,33 +897,21 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": {
-              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
-              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
-            }
+            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
           },
           {
             "id": "qLUQfhG0ILRX",
             "type": "dynamic",
             "key": "result",
             "valueType": "string",
-            "label": {
-              "en": "Result",
-              "zh-CN": "结果"
-            }
+            "label": "result"
           }
         ]
       },
       {
         "nodeId": "qlt9KJbbS9yJ",
-        "name": {
-          "en": "Check Source and Target Languages",
-          "zh-CN": "判断源语言和目标语言是否相同"
-        },
-        "intro": {
-          "en": "Choose a branch based on a condition.",
-          "zh-CN": "根据一定的条件，执行不同的分支。"
-        },
+        "name": "判断源语言和目标语言是否相同",
+        "intro": "根据一定的条件，执行不同的分支。",
         "avatar": "core/workflow/template/ifelse",
         "flowNodeType": "ifElseNode",
         "showStatus": true,
@@ -1369,10 +925,7 @@
             "key": "ifElseList",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": [
               {
                 "condition": "AND",
@@ -1385,43 +938,25 @@
                 ]
               }
             ],
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           }
         ],
         "outputs": [
           {
             "id": "ifElseResult",
             "key": "ifElseResult",
-            "label": {
-              "en": "workflow:judgment_result",
-              "zh-CN": "workflow:judgment_result"
-            },
+            "label": "workflow:judgment_result",
             "valueType": "string",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           }
         ]
       },
       {
         "nodeId": "frjbsrlnJJsR",
-        "name": {
-          "en": "Check Source and Target Languages",
-          "zh-CN": "判断源语言和目标语言是否相同"
-        },
-        "intro": {
-          "en": "Run a script, typically for more complex data processing.",
-          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
-        },
+        "name": "判断源语言和目标语言是否相同",
+        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -1435,15 +970,9 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "required": false,
-            "description": {
-              "en": "workflow:these_variables_will_be_input_parameters_for_code_execution",
-              "zh-CN": "workflow:these_variables_will_be_input_parameters_for_code_execution"
-            },
+            "description": "workflow:these_variables_will_be_input_parameters_for_code_execution",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1465,58 +994,31 @@
               "showDescription": false,
               "showDefaultValue": true
             },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "js",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "function main({source_lang, target_lang}){\n    \n    return {\n        result: source_lang === target_lang\n    }\n}",
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "renderTypeList": ["reference"],
             "valueType": "string",
             "canEdit": true,
             "key": "source_lang",
-            "label": {
-              "en": "Source language",
-              "zh-CN": "源语言"
-            },
+            "label": "source_lang",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1546,10 +1048,7 @@
             "valueType": "string",
             "canEdit": true,
             "key": "target_lang",
-            "label": {
-              "en": "Target language",
-              "zh-CN": "目标语言"
-            },
+            "label": "target_lang",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1579,28 +1078,16 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": {
-              "en": "workflow:full_response_data",
-              "zh-CN": "workflow:full_response_data"
-            },
+            "label": "workflow:full_response_data",
             "valueType": "object",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           },
           {
             "id": "error",
             "key": "error",
-            "label": {
-              "en": "workflow:execution_error",
-              "zh-CN": "workflow:execution_error"
-            },
-            "description": {
-              "en": "Code execution error; empty when execution succeeds.",
-              "zh-CN": "代码运行错误信息，成功时返回空"
-            },
+            "label": "workflow:execution_error",
+            "description": "代码运行错误信息，成功时返回空",
             "valueType": "object",
             "type": "static"
           },
@@ -1609,10 +1096,7 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1633,34 +1117,22 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": {
-              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
-              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
-            }
+            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
           },
           {
             "id": "qLUQfhG0ILRX",
             "type": "dynamic",
             "key": "result",
             "valueType": "string",
-            "label": {
-              "en": "Result",
-              "zh-CN": "结果"
-            }
+            "label": "result"
           }
         ],
         "isFolded": false
       },
       {
         "nodeId": "dFxrGZS3Wmnz",
-        "name": {
-          "en": "Notify When Source and Target Languages Match",
-          "zh-CN": "提示源语言与目标语言相同"
-        },
-        "intro": {
-          "en": "Return specified content directly, often for guidance or notices. Non-string input is converted to a string.",
-          "zh-CN": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。"
-        },
+        "name": "提示源语言与目标语言相同",
+        "intro": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。",
         "avatar": "core/workflow/template/reply",
         "flowNodeType": "answerNode",
         "position": {
@@ -1674,45 +1146,21 @@
             "renderTypeList": ["textarea", "reference"],
             "valueType": "any",
             "required": true,
-            "label": {
-              "en": "core.module.input.label.Response content",
-              "zh-CN": "core.module.input.label.Response content"
-            },
-            "description": {
-              "en": "common:core.module.input.description.Response content",
-              "zh-CN": "common:core.module.input.description.Response content"
-            },
-            "placeholder": {
-              "en": "common:core.module.input.description.Response content",
-              "zh-CN": "common:core.module.input.description.Response content"
-            },
+            "label": "core.module.input.label.Response content",
+            "description": "common:core.module.input.description.Response content",
+            "placeholder": "common:core.module.input.description.Response content",
             "selectedTypeIndex": 0,
-            "value": {
-              "en": "{{$source_lang}} does not need to be translated again into {{$target_lang}}.",
-              "zh-CN": "{{source_lang}} 无需再次翻译为 {{target_lang}} ~"
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "value": "{{source_lang}} 无需再次翻译为 {{target_lang}} ~",
+            "debugLabel": "",
+            "toolDescription": ""
           }
         ],
         "outputs": []
       },
       {
         "nodeId": "rDzA1VxdpPIz",
-        "name": {
-          "en": "Split Text",
-          "zh-CN": "切分文本"
-        },
-        "intro": {
-          "en": "Run a script, typically for more complex data processing.",
-          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
-        },
+        "name": "切分文本",
+        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -1726,15 +1174,9 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "required": false,
-            "description": {
-              "en": "workflow:these_variables_will_be_input_parameters_for_code_execution",
-              "zh-CN": "workflow:these_variables_will_be_input_parameters_for_code_execution"
-            },
+            "description": "workflow:these_variables_will_be_input_parameters_for_code_execution",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1756,78 +1198,36 @@
               "showDescription": false,
               "showDefaultValue": true
             },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "js",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "const MAX_HEADING_LENGTH = 7; // 最大标题长度\nconst MAX_HEADING_CONTENT_LENGTH = 200; // 最大标题内容长度\nconst MAX_HEADING_UNDERLINE_LENGTH = 200; // 最大标题下划线长度\nconst MAX_HTML_HEADING_ATTRIBUTES_LENGTH = 100; // 最大HTML标题属性长度\nconst MAX_LIST_ITEM_LENGTH = 200; // 最大列表项长度\nconst MAX_NESTED_LIST_ITEMS = 6; // 最大嵌套列表项数\nconst MAX_LIST_INDENT_SPACES = 7; // 最大列表缩进空格数\nconst MAX_BLOCKQUOTE_LINE_LENGTH = 200; // 最大块引用行长度\nconst MAX_BLOCKQUOTE_LINES = 15; // 最大块引用行数\nconst MAX_CODE_BLOCK_LENGTH = 1500; // 最大代码块长度\nconst MAX_CODE_LANGUAGE_LENGTH = 20; // 最大代码语言长度\nconst MAX_INDENTED_CODE_LINES = 20; // 最大缩进代码行数\nconst MAX_TABLE_CELL_LENGTH = 200; // 最大表格单元格长度\nconst MAX_TABLE_ROWS = 20; // 最大表格行数\nconst MAX_HTML_TABLE_LENGTH = 2000; // 最大HTML表格长度\nconst MIN_HORIZONTAL_RULE_LENGTH = 3; // 最小水平分隔线长度\nconst MAX_SENTENCE_LENGTH = 400; // 最大句子长度\nconst MAX_QUOTED_TEXT_LENGTH = 300; // 最大引用文本长度\nconst MAX_PARENTHETICAL_CONTENT_LENGTH = 200; // 最大括号内容长度\nconst MAX_NESTED_PARENTHESES = 5; // 最大嵌套括号数\nconst MAX_MATH_INLINE_LENGTH = 100; // 最大行内数学公式长度\nconst MAX_MATH_BLOCK_LENGTH = 500; // 最大数学公式块长度\nconst MAX_PARAGRAPH_LENGTH = 1000; // 最大段落长度\nconst MAX_STANDALONE_LINE_LENGTH = 800; // 最大独立行长度\nconst MAX_HTML_TAG_ATTRIBUTES_LENGTH = 100; // 最大HTML标签属性长度\nconst MAX_HTML_TAG_CONTENT_LENGTH = 1000; // 最大HTML标签内容长度\nconst LOOKAHEAD_RANGE = 100;  // 向前查找句子边界的字符数\n\nconst AVOID_AT_START = `[\\\\s\\\\]})>,']`; // 避免在开头匹配的字符\nconst PUNCTUATION = `[.!?…]|\\\\.{3}|[\\\\u2026\\\\u2047-\\\\u2049]|[\\\\p{Emoji_Presentation}\\\\p{Extended_Pictographic}]`; // 标点符号\nconst QUOTE_END = `(?:'(?=\\`)|''(?=\\`\\`))`; // 引号结束\nconst SENTENCE_END = `(?:${PUNCTUATION}(?<!${AVOID_AT_START}(?=${PUNCTUATION}))|${QUOTE_END})(?=\\\\S|$)`; // 句子结束\nconst SENTENCE_BOUNDARY = `(?:${SENTENCE_END}|(?=[\\\\r\\\\n]|$))`; // 句子边界\nconst LOOKAHEAD_PATTERN = `(?:(?!${SENTENCE_END}).){1,${LOOKAHEAD_RANGE}}${SENTENCE_END}`; // 向前查找句子结束的模式\nconst NOT_PUNCTUATION_SPACE = `(?!${PUNCTUATION}\\\\s)`; // 非标点符号空格\nconst SENTENCE_PATTERN = `${NOT_PUNCTUATION_SPACE}(?:[^\\\\r\\\\n]{1,{MAX_LENGTH}}${SENTENCE_BOUNDARY}|[^\\\\r\\\\n]{1,{MAX_LENGTH}}(?=${PUNCTUATION}|${QUOTE_END})(?:${LOOKAHEAD_PATTERN})?)${AVOID_AT_START}*`; // 句子模式\n\nconst regex = new RegExp(\n  \"(\" +\n  // 1. Headings (Setext-style, Markdown, and HTML-style, with length constraints)\n  `(?:^(?:[#*=-]{1,${MAX_HEADING_LENGTH}}|\\\\w[^\\\\r\\\\n]{0,${MAX_HEADING_CONTENT_LENGTH}}\\\\r?\\\\n[-=]{2,${MAX_HEADING_UNDERLINE_LENGTH}}|<h[1-6][^>]{0,${MAX_HTML_HEADING_ATTRIBUTES_LENGTH}}>)[^\\\\r\\\\n]{1,${MAX_HEADING_CONTENT_LENGTH}}(?:</h[1-6]>)?(?:\\\\r?\\\\n|$))` +\n  \"|\" +\n  // New pattern for citations\n  `(?:\\\\[[0-9]+\\\\][^\\\\r\\\\n]{1,${MAX_STANDALONE_LINE_LENGTH}})` +\n  \"|\" +\n  // 2. List items (bulleted, numbered, lettered, or task lists, including nested, up to three levels, with length constraints)\n  `(?:(?:^|\\\\r?\\\\n)[ \\\\t]{0,3}(?:[-*+•]|\\\\d{1,3}\\\\.\\\\w\\\\.|\\\\[[ xX]\\\\])[ \\\\t]+${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_LIST_ITEM_LENGTH))}` +\n  `(?:(?:\\\\r?\\\\n[ \\\\t]{2,5}(?:[-*+•]|\\\\d{1,3}\\\\.\\\\w\\\\.|\\\\[[ xX]\\\\])[ \\\\t]+${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_LIST_ITEM_LENGTH))}){0,${MAX_NESTED_LIST_ITEMS}}` +\n  `(?:\\\\r?\\\\n[ \\\\t]{4,${MAX_LIST_INDENT_SPACES}}(?:[-*+•]|\\\\d{1,3}\\\\.\\\\w\\\\.|\\\\[[ xX]\\\\])[ \\\\t]+${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_LIST_ITEM_LENGTH))}){0,${MAX_NESTED_LIST_ITEMS}})?)` +\n  \"|\" +\n  // 3. Block quotes (including nested quotes and citations, up to three levels, with length constraints)\n  `(?:(?:^>(?:>|\\\\s{2,}){0,2}${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_BLOCKQUOTE_LINE_LENGTH))}\\\\r?\\\\n?){1,${MAX_BLOCKQUOTE_LINES}})` +\n  \"|\" +\n  // 4. Code blocks (fenced, indented, or HTML pre/code tags, with length constraints)\n  `(?:(?:^|\\\\r?\\\\n)(?:\\`\\`\\`|~~~)(?:\\\\w{0,${MAX_CODE_LANGUAGE_LENGTH}})?\\\\r?\\\\n[\\\\s\\\\S]{0,${MAX_CODE_BLOCK_LENGTH}}?(?:\\`\\`\\`|~~~)\\\\r?\\\\n?` +\n  `|(?:(?:^|\\\\r?\\\\n)(?: {4}|\\\\t)[^\\\\r\\\\n]{0,${MAX_LIST_ITEM_LENGTH}}(?:\\\\r?\\\\n(?: {4}|\\\\t)[^\\\\r\\\\n]{0,${MAX_LIST_ITEM_LENGTH}}){0,${MAX_INDENTED_CODE_LINES}}\\\\r?\\\\n?)` +\n  `|(?:<pre>(?:<code>)?[\\\\s\\\\S]{0,${MAX_CODE_BLOCK_LENGTH}}?(?:</code>)?</pre>))` +\n  \"|\" +\n  // 5. Tables (Markdown, grid tables, and HTML tables, with length constraints)\n  `(?:(?:^|\\\\r?\\\\n)(?:\\\\|[^\\\\r\\\\n]{0,${MAX_TABLE_CELL_LENGTH}}\\\\|(?:\\\\r?\\\\n\\\\|[-:]{1,${MAX_TABLE_CELL_LENGTH}}\\\\|){0,1}(?:\\\\r?\\\\n\\\\|[^\\\\r\\\\n]{0,${MAX_TABLE_CELL_LENGTH}}\\\\|){0,${MAX_TABLE_ROWS}}` +\n  `|<table>[\\\\s\\\\S]{0,${MAX_HTML_TABLE_LENGTH}}?</table>))` +\n  \"|\" +\n  // 6. Horizontal rules (Markdown and HTML hr tag)\n  `(?:^(?:[-*_]){${MIN_HORIZONTAL_RULE_LENGTH},}\\\\s*$|<hr\\\\s*/?>)` +\n  \"|\" +\n  // 10. Standalone lines or phrases (including single-line blocks and HTML elements, with length constraints)\n  `(?!${AVOID_AT_START})(?:^(?:<[a-zA-Z][^>]{0,${MAX_HTML_TAG_ATTRIBUTES_LENGTH}}>)?${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_STANDALONE_LINE_LENGTH))}(?:</[a-zA-Z]+>)?(?:\\\\r?\\\\n|$))` +\n  \"|\" +\n  // 7. Sentences or phrases ending with punctuation (including ellipsis and Unicode punctuation)\n  `(?!${AVOID_AT_START})${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_SENTENCE_LENGTH))}` +\n  \"|\" +\n  // 8. Quoted text, parenthetical phrases, or bracketed content (with length constraints)\n  \"(?:\" +\n  `(?<!\\\\w)\\\"\\\"\\\"[^\\\"]{0,${MAX_QUOTED_TEXT_LENGTH}}\\\"\\\"\\\"(?!\\\\w)` +\n  `|(?<!\\\\w)(?:['\\\"\\`'\"])[^\\\\r\\\\n]{0,${MAX_QUOTED_TEXT_LENGTH}}\\\\1(?!\\\\w)` +\n  `|(?<!\\\\w)\\`[^\\\\r\\\\n]{0,${MAX_QUOTED_TEXT_LENGTH}}'(?!\\\\w)` +\n  `|(?<!\\\\w)\\`\\`[^\\\\r\\\\n]{0,${MAX_QUOTED_TEXT_LENGTH}}''(?!\\\\w)` +\n  `|\\\\([^\\\\r\\\\n()]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}(?:\\\\([^\\\\r\\\\n()]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}\\\\)[^\\\\r\\\\n()]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}){0,${MAX_NESTED_PARENTHESES}}\\\\)` +\n  `|\\\\[[^\\\\r\\\\n\\\\[\\\\]]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}(?:\\\\[[^\\\\r\\\\n\\\\[\\\\]]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}\\\\][^\\\\r\\\\n\\\\[\\\\]]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}){0,${MAX_NESTED_PARENTHESES}}\\\\]` +\n  `|\\\\$[^\\\\r\\\\n$]{0,${MAX_MATH_INLINE_LENGTH}}\\\\$` +\n  `|\\`[^\\`\\\\r\\\\n]{0,${MAX_MATH_INLINE_LENGTH}}\\`` +\n  \")\" +\n  \"|\" +\n  // 9. Paragraphs (with length constraints)\n  `(?!${AVOID_AT_START})(?:(?:^|\\\\r?\\\\n\\\\r?\\\\n)(?:<p>)?${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_PARAGRAPH_LENGTH))}(?:</p>)?(?=\\\\r?\\\\n\\\\r?\\\\n|$))` +\n  \"|\" +\n  // 11. HTML-like tags and their content (including self-closing tags and attributes, with length constraints)\n  `(?:<[a-zA-Z][^>]{0,${MAX_HTML_TAG_ATTRIBUTES_LENGTH}}(?:>[\\\\s\\\\S]{0,${MAX_HTML_TAG_CONTENT_LENGTH}}?</[a-zA-Z]+>|\\\\s*/>))` +\n  \"|\" +\n  // 12. LaTeX-style math expressions (inline and block, with length constraints)\n  `(?:(?:\\\\$\\\\$[\\\\s\\\\S]{0,${MAX_MATH_BLOCK_LENGTH}}?\\\\$\\\\$)|(?:\\\\$[^\\\\$\\\\r\\\\n]{0,${MAX_MATH_INLINE_LENGTH}}\\\\$))` +\n  \"|\" +\n  // 14. Fallback for any remaining content (with length constraints)\n  `(?!${AVOID_AT_START})${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_STANDALONE_LINE_LENGTH))}` +\n  \")\",\n  \"gmu\"\n);\n\nfunction main({text}){\n  const chunks = [];\n  let currentChunk = '';\n  const tokens = countToken(text)\n\n  const matches = text.match(regex);\n  if (matches) {\n    matches.forEach((match) => {\n      if (currentChunk.length + match.length <= 1000) {\n        currentChunk += match;\n      } else {\n        if (currentChunk) {\n          chunks.push(currentChunk);\n        }\n        currentChunk = match;\n      }\n    });\n    if (currentChunk) {\n      chunks.push(currentChunk);\n    }\n  }\n\n  return {chunks, tokens};\n}\n\n",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "renderTypeList": ["reference"],
             "valueType": "string",
             "canEdit": true,
             "key": "text",
-            "label": {
-              "en": "Text",
-              "zh-CN": "文本"
-            },
+            "label": "text",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1857,28 +1257,16 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": {
-              "en": "workflow:full_response_data",
-              "zh-CN": "workflow:full_response_data"
-            },
+            "label": "workflow:full_response_data",
             "valueType": "object",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           },
           {
             "id": "error",
             "key": "error",
-            "label": {
-              "en": "workflow:execution_error",
-              "zh-CN": "workflow:execution_error"
-            },
-            "description": {
-              "en": "Code execution error; empty when execution succeeds.",
-              "zh-CN": "代码运行错误信息，成功时返回空"
-            },
+            "label": "workflow:execution_error",
+            "description": "代码运行错误信息，成功时返回空",
             "valueType": "object",
             "type": "static"
           },
@@ -1887,10 +1275,7 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1911,45 +1296,24 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": {
-              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
-              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key",
+            "valueDesc": ""
           },
           {
             "id": "qLUQfhG0ILRX",
             "type": "dynamic",
             "key": "chunks",
             "valueType": "arrayString",
-            "label": {
-              "en": "Text chunks",
-              "zh-CN": "文本块"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "label": "chunks",
+            "valueDesc": "",
+            "description": ""
           }
         ]
       },
       {
         "nodeId": "qwKPaLWbYTLa",
-        "name": {
-          "en": "Output Translation Result",
-          "zh-CN": "输出翻译结果"
-        },
-        "intro": {
-          "en": "Return specified content directly, often for guidance or notices. Non-string input is converted to a string.",
-          "zh-CN": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。"
-        },
+        "name": "输出翻译结果",
+        "intro": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。",
         "avatar": "core/workflow/template/reply",
         "flowNodeType": "answerNode",
         "position": {
@@ -1963,48 +1327,21 @@
             "renderTypeList": ["textarea", "reference"],
             "valueType": "any",
             "required": true,
-            "label": {
-              "en": "Reply content",
-              "zh-CN": "回复的内容"
-            },
-            "description": {
-              "en": "common:core.module.input.description.Response content",
-              "zh-CN": "common:core.module.input.description.Response content"
-            },
-            "placeholder": {
-              "en": "common:core.module.input.description.Response content",
-              "zh-CN": "common:core.module.input.description.Response content"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "value": {
-              "en": "{{$uow83rLCI2pI.qLUQfhG0ILRX$}}",
-              "zh-CN": "{{$uow83rLCI2pI.qLUQfhG0ILRX$}}"
-            }
+            "label": "回复的内容",
+            "description": "common:core.module.input.description.Response content",
+            "placeholder": "common:core.module.input.description.Response content",
+            "valueDesc": "",
+            "debugLabel": "",
+            "toolDescription": "",
+            "value": "{{$uow83rLCI2pI.qLUQfhG0ILRX$}}"
           }
         ],
         "outputs": []
       },
       {
         "nodeId": "nLBlOh6lWxkY",
-        "name": {
-          "en": "Search Glossary",
-          "zh-CN": "搜索词库"
-        },
-        "intro": {
-          "en": "Search the knowledge base with semantic and full-text retrieval for reference material relevant to the question.",
-          "zh-CN": "调用“语义检索”和“全文检索”能力，从“知识库”中查找可能与问题相关的参考内容"
-        },
+        "name": "搜索词库",
+        "intro": "调用“语义检索”和“全文检索”能力，从“知识库”中查找可能与问题相关的参考内容",
         "avatar": "core/workflow/template/datasetSearch",
         "flowNodeType": "datasetSearchNode",
         "showStatus": true,
@@ -2017,301 +1354,133 @@
           {
             "key": "datasets",
             "renderTypeList": ["selectDataset", "reference"],
-            "label": {
-              "en": "Select a knowledge base",
-              "zh-CN": "选择知识库"
-            },
+            "label": "选择知识库",
             "value": [],
             "valueType": "selectDataset",
             "required": true,
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "similarity",
             "renderTypeList": ["selectDatasetParamsModal"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": 0.2,
             "valueType": "number",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "limit",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": 11000,
             "valueType": "number",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "searchMode",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string",
             "value": "embedding",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "usingReRank",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "boolean",
             "value": false,
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "datasetSearchUsingExtensionQuery",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "boolean",
             "value": true,
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "datasetSearchExtensionModel",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": "",
             "value": "gpt-5"
           },
           {
             "key": "datasetSearchExtensionBg",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "valueType": "string",
             "value": "需要翻译一段特定的文本，其中会使用到大量专有词汇，需要从词库中进行查询",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": {
-              "en": "User question",
-              "zh-CN": "用户问题"
-            },
+            "label": "用户问题",
             "required": true,
-            "toolDescription": {
-              "en": "Content to search for",
-              "zh-CN": "需要检索的内容"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "toolDescription": "需要检索的内容",
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
             "selectedTypeIndex": 1,
-            "value": {
-              "en": "The text between <TRANSLATE> and </TRANSLATE> is the source to translate and may contain specialized terms. Look up the corresponding translations in the glossary.\n\n<TRANSLATE>\n{{$quYZgsW32ApA.eCp73lztAEGK$}}\n</TRANSLATE>",
-              "zh-CN": "<TRANSLATE></TRANASLATE>中是你要翻译的原文，其中包含特定术语，请查找词库中术语对应的翻译\n\n<TRANSLATE>\n\n{{$quYZgsW32ApA.eCp73lztAEGK$}}\n\n</TRANASLATE>"
-            }
+            "value": "<TRANSLATE></TRANASLATE>中是你要翻译的原文，其中包含特定术语，请查找词库中术语对应的翻译\n\n<TRANSLATE>\n\n{{$quYZgsW32ApA.eCp73lztAEGK$}}\n\n</TRANASLATE>"
           },
           {
             "key": "collectionFilterMatch",
             "renderTypeList": ["JSONEditor", "reference"],
-            "label": {
-              "en": "Collection metadata filter",
-              "zh-CN": "集合元数据过滤"
-            },
+            "label": "集合元数据过滤",
             "valueType": "object",
             "isPro": true,
-            "description": {
-              "en": "workflow:filter_description",
-              "zh-CN": "workflow:filter_description"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": "workflow:filter_description",
+            "valueDesc": "",
+            "debugLabel": "",
+            "toolDescription": ""
           }
         ],
         "outputs": [
           {
             "id": "quoteQA",
             "key": "quoteQA",
-            "label": {
-              "en": "common:core.module.Dataset quote.label",
-              "zh-CN": "common:core.module.Dataset quote.label"
-            },
-            "description": {
-              "en": "A special array format; returns an empty array when there are no search results.",
-              "zh-CN": "特殊数组格式，搜索结果为空时，返回空数组。"
-            },
+            "label": "common:core.module.Dataset quote.label",
+            "description": "特殊数组格式，搜索结果为空时，返回空数组。",
             "type": "static",
             "valueType": "datasetQuote",
-            "valueDesc": {
-              "en": "{\n  id: string;\n  datasetId: string;\n  collectionId: string;\n  sourceName: string;\n  sourceId?: string;\n  q: string;\n  a: string\n}[]",
-              "zh-CN": "{\n  id: string;\n  datasetId: string;\n  collectionId: string;\n  sourceName: string;\n  sourceId?: string;\n  q: string;\n  a: string\n}[]"
-            }
+            "valueDesc": "{\n  id: string;\n  datasetId: string;\n  collectionId: string;\n  sourceName: string;\n  sourceId?: string;\n  q: string;\n  a: string\n}[]"
           }
         ]
       },
       {
         "nodeId": "bdjAb5B2U1DQ",
-        "name": {
-          "en": "Direct Reply #3",
-          "zh-CN": "指定回复#3"
-        },
-        "intro": {
-          "en": "Return specified content directly, often for guidance or notices. Non-string input is converted to a string.",
-          "zh-CN": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。"
-        },
+        "name": "指定回复#3",
+        "intro": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。",
         "avatar": "core/workflow/template/reply",
         "flowNodeType": "answerNode",
         "position": {
@@ -2325,48 +1494,21 @@
             "renderTypeList": ["textarea", "reference"],
             "valueType": "any",
             "required": true,
-            "label": {
-              "en": "Reply content",
-              "zh-CN": "回复的内容"
-            },
-            "description": {
-              "en": "common:core.module.input.description.Response content",
-              "zh-CN": "common:core.module.input.description.Response content"
-            },
-            "placeholder": {
-              "en": "common:core.module.input.description.Response content",
-              "zh-CN": "common:core.module.input.description.Response content"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "value": {
-              "en": "*** Document translation complete! ***",
-              "zh-CN": "*** 文档翻译完成！***"
-            }
+            "label": "回复的内容",
+            "description": "common:core.module.input.description.Response content",
+            "placeholder": "common:core.module.input.description.Response content",
+            "valueDesc": "",
+            "debugLabel": "",
+            "toolDescription": "",
+            "value": "*** 文档翻译完成！***"
           }
         ],
         "outputs": []
       },
       {
         "nodeId": "mt7GlCIwbO9I",
-        "name": {
-          "en": "Check Whether a File Was Uploaded",
-          "zh-CN": "判断是否上传了文件"
-        },
-        "intro": {
-          "en": "Choose a branch based on a condition.",
-          "zh-CN": "根据一定的条件，执行不同的分支。"
-        },
+        "name": "判断是否上传了文件",
+        "intro": "根据一定的条件，执行不同的分支。",
         "avatar": "core/workflow/template/ifelse",
         "flowNodeType": "ifElseNode",
         "showStatus": true,
@@ -2380,10 +1522,7 @@
             "key": "ifElseList",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": [
               {
                 "condition": "AND",
@@ -2395,51 +1534,27 @@
                 ]
               }
             ],
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           }
         ],
         "outputs": [
           {
             "id": "ifElseResult",
             "key": "ifElseResult",
-            "label": {
-              "en": "workflow:judgment_result",
-              "zh-CN": "workflow:judgment_result"
-            },
+            "label": "workflow:judgment_result",
             "valueType": "string",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           }
         ]
       },
       {
         "nodeId": "rhyUytTUBm19",
-        "name": {
-          "en": "Split Document Text",
-          "zh-CN": "切分文档文本"
-        },
-        "intro": {
-          "en": "Run a script, typically for more complex data processing.",
-          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
-        },
+        "name": "切分文档文本",
+        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -2453,15 +1568,9 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "required": false,
-            "description": {
-              "en": "workflow:these_variables_will_be_input_parameters_for_code_execution",
-              "zh-CN": "workflow:these_variables_will_be_input_parameters_for_code_execution"
-            },
+            "description": "workflow:these_variables_will_be_input_parameters_for_code_execution",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -2483,78 +1592,36 @@
               "showDescription": false,
               "showDefaultValue": true
             },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "js",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "const MAX_HEADING_LENGTH = 7; // 最大标题长度\nconst MAX_HEADING_CONTENT_LENGTH = 200; // 最大标题内容长度\nconst MAX_HEADING_UNDERLINE_LENGTH = 200; // 最大标题下划线长度\nconst MAX_HTML_HEADING_ATTRIBUTES_LENGTH = 100; // 最大HTML标题属性长度\nconst MAX_LIST_ITEM_LENGTH = 200; // 最大列表项长度\nconst MAX_NESTED_LIST_ITEMS = 6; // 最大嵌套列表项数\nconst MAX_LIST_INDENT_SPACES = 7; // 最大列表缩进空格数\nconst MAX_BLOCKQUOTE_LINE_LENGTH = 200; // 最大块引用行长度\nconst MAX_BLOCKQUOTE_LINES = 15; // 最大块引用行数\nconst MAX_CODE_BLOCK_LENGTH = 1500; // 最大代码块长度\nconst MAX_CODE_LANGUAGE_LENGTH = 20; // 最大代码语言长度\nconst MAX_INDENTED_CODE_LINES = 20; // 最大缩进代码行数\nconst MAX_TABLE_CELL_LENGTH = 200; // 最大表格单元格长度\nconst MAX_TABLE_ROWS = 20; // 最大表格行数\nconst MAX_HTML_TABLE_LENGTH = 2000; // 最大HTML表格长度\nconst MIN_HORIZONTAL_RULE_LENGTH = 3; // 最小水平分隔线长度\nconst MAX_SENTENCE_LENGTH = 400; // 最大句子长度\nconst MAX_QUOTED_TEXT_LENGTH = 300; // 最大引用文本长度\nconst MAX_PARENTHETICAL_CONTENT_LENGTH = 200; // 最大括号内容长度\nconst MAX_NESTED_PARENTHESES = 5; // 最大嵌套括号数\nconst MAX_MATH_INLINE_LENGTH = 100; // 最大行内数学公式长度\nconst MAX_MATH_BLOCK_LENGTH = 500; // 最大数学公式块长度\nconst MAX_PARAGRAPH_LENGTH = 1000; // 最大段落长度\nconst MAX_STANDALONE_LINE_LENGTH = 800; // 最大独立行长度\nconst MAX_HTML_TAG_ATTRIBUTES_LENGTH = 100; // 最大HTML标签属性长度\nconst MAX_HTML_TAG_CONTENT_LENGTH = 1000; // 最大HTML标签内容长度\nconst LOOKAHEAD_RANGE = 100;  // 向前查找句子边界的字符数\n\nconst AVOID_AT_START = `[\\\\s\\\\]})>,']`; // 避免在开头匹配的字符\nconst PUNCTUATION = `[.!?…]|\\\\.{3}|[\\\\u2026\\\\u2047-\\\\u2049]|[\\\\p{Emoji_Presentation}\\\\p{Extended_Pictographic}]`; // 标点符号\nconst QUOTE_END = `(?:'(?=\\`)|''(?=\\`\\`))`; // 引号结束\nconst SENTENCE_END = `(?:${PUNCTUATION}(?<!${AVOID_AT_START}(?=${PUNCTUATION}))|${QUOTE_END})(?=\\\\S|$)`; // 句子结束\nconst SENTENCE_BOUNDARY = `(?:${SENTENCE_END}|(?=[\\\\r\\\\n]|$))`; // 句子边界\nconst LOOKAHEAD_PATTERN = `(?:(?!${SENTENCE_END}).){1,${LOOKAHEAD_RANGE}}${SENTENCE_END}`; // 向前查找句子结束的模式\nconst NOT_PUNCTUATION_SPACE = `(?!${PUNCTUATION}\\\\s)`; // 非标点符号空格\nconst SENTENCE_PATTERN = `${NOT_PUNCTUATION_SPACE}(?:[^\\\\r\\\\n]{1,{MAX_LENGTH}}${SENTENCE_BOUNDARY}|[^\\\\r\\\\n]{1,{MAX_LENGTH}}(?=${PUNCTUATION}|${QUOTE_END})(?:${LOOKAHEAD_PATTERN})?)${AVOID_AT_START}*`; // 句子模式\n\nconst regex = new RegExp(\n  \"(\" +\n  // 1. Headings (Setext-style, Markdown, and HTML-style, with length constraints)\n  `(?:^(?:[#*=-]{1,${MAX_HEADING_LENGTH}}|\\\\w[^\\\\r\\\\n]{0,${MAX_HEADING_CONTENT_LENGTH}}\\\\r?\\\\n[-=]{2,${MAX_HEADING_UNDERLINE_LENGTH}}|<h[1-6][^>]{0,${MAX_HTML_HEADING_ATTRIBUTES_LENGTH}}>)[^\\\\r\\\\n]{1,${MAX_HEADING_CONTENT_LENGTH}}(?:</h[1-6]>)?(?:\\\\r?\\\\n|$))` +\n  \"|\" +\n  // New pattern for citations\n  `(?:\\\\[[0-9]+\\\\][^\\\\r\\\\n]{1,${MAX_STANDALONE_LINE_LENGTH}})` +\n  \"|\" +\n  // 2. List items (bulleted, numbered, lettered, or task lists, including nested, up to three levels, with length constraints)\n  `(?:(?:^|\\\\r?\\\\n)[ \\\\t]{0,3}(?:[-*+•]|\\\\d{1,3}\\\\.\\\\w\\\\.|\\\\[[ xX]\\\\])[ \\\\t]+${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_LIST_ITEM_LENGTH))}` +\n  `(?:(?:\\\\r?\\\\n[ \\\\t]{2,5}(?:[-*+•]|\\\\d{1,3}\\\\.\\\\w\\\\.|\\\\[[ xX]\\\\])[ \\\\t]+${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_LIST_ITEM_LENGTH))}){0,${MAX_NESTED_LIST_ITEMS}}` +\n  `(?:\\\\r?\\\\n[ \\\\t]{4,${MAX_LIST_INDENT_SPACES}}(?:[-*+•]|\\\\d{1,3}\\\\.\\\\w\\\\.|\\\\[[ xX]\\\\])[ \\\\t]+${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_LIST_ITEM_LENGTH))}){0,${MAX_NESTED_LIST_ITEMS}})?)` +\n  \"|\" +\n  // 3. Block quotes (including nested quotes and citations, up to three levels, with length constraints)\n  `(?:(?:^>(?:>|\\\\s{2,}){0,2}${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_BLOCKQUOTE_LINE_LENGTH))}\\\\r?\\\\n?){1,${MAX_BLOCKQUOTE_LINES}})` +\n  \"|\" +\n  // 4. Code blocks (fenced, indented, or HTML pre/code tags, with length constraints)\n  `(?:(?:^|\\\\r?\\\\n)(?:\\`\\`\\`|~~~)(?:\\\\w{0,${MAX_CODE_LANGUAGE_LENGTH}})?\\\\r?\\\\n[\\\\s\\\\S]{0,${MAX_CODE_BLOCK_LENGTH}}?(?:\\`\\`\\`|~~~)\\\\r?\\\\n?` +\n  `|(?:(?:^|\\\\r?\\\\n)(?: {4}|\\\\t)[^\\\\r\\\\n]{0,${MAX_LIST_ITEM_LENGTH}}(?:\\\\r?\\\\n(?: {4}|\\\\t)[^\\\\r\\\\n]{0,${MAX_LIST_ITEM_LENGTH}}){0,${MAX_INDENTED_CODE_LINES}}\\\\r?\\\\n?)` +\n  `|(?:<pre>(?:<code>)?[\\\\s\\\\S]{0,${MAX_CODE_BLOCK_LENGTH}}?(?:</code>)?</pre>))` +\n  \"|\" +\n  // 5. Tables (Markdown, grid tables, and HTML tables, with length constraints)\n  `(?:(?:^|\\\\r?\\\\n)(?:\\\\|[^\\\\r\\\\n]{0,${MAX_TABLE_CELL_LENGTH}}\\\\|(?:\\\\r?\\\\n\\\\|[-:]{1,${MAX_TABLE_CELL_LENGTH}}\\\\|){0,1}(?:\\\\r?\\\\n\\\\|[^\\\\r\\\\n]{0,${MAX_TABLE_CELL_LENGTH}}\\\\|){0,${MAX_TABLE_ROWS}}` +\n  `|<table>[\\\\s\\\\S]{0,${MAX_HTML_TABLE_LENGTH}}?</table>))` +\n  \"|\" +\n  // 6. Horizontal rules (Markdown and HTML hr tag)\n  `(?:^(?:[-*_]){${MIN_HORIZONTAL_RULE_LENGTH},}\\\\s*$|<hr\\\\s*/?>)` +\n  \"|\" +\n  // 10. Standalone lines or phrases (including single-line blocks and HTML elements, with length constraints)\n  `(?!${AVOID_AT_START})(?:^(?:<[a-zA-Z][^>]{0,${MAX_HTML_TAG_ATTRIBUTES_LENGTH}}>)?${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_STANDALONE_LINE_LENGTH))}(?:</[a-zA-Z]+>)?(?:\\\\r?\\\\n|$))` +\n  \"|\" +\n  // 7. Sentences or phrases ending with punctuation (including ellipsis and Unicode punctuation)\n  `(?!${AVOID_AT_START})${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_SENTENCE_LENGTH))}` +\n  \"|\" +\n  // 8. Quoted text, parenthetical phrases, or bracketed content (with length constraints)\n  \"(?:\" +\n  `(?<!\\\\w)\\\"\\\"\\\"[^\\\"]{0,${MAX_QUOTED_TEXT_LENGTH}}\\\"\\\"\\\"(?!\\\\w)` +\n  `|(?<!\\\\w)(?:['\\\"\\`'\"])[^\\\\r\\\\n]{0,${MAX_QUOTED_TEXT_LENGTH}}\\\\1(?!\\\\w)` +\n  `|(?<!\\\\w)\\`[^\\\\r\\\\n]{0,${MAX_QUOTED_TEXT_LENGTH}}'(?!\\\\w)` +\n  `|(?<!\\\\w)\\`\\`[^\\\\r\\\\n]{0,${MAX_QUOTED_TEXT_LENGTH}}''(?!\\\\w)` +\n  `|\\\\([^\\\\r\\\\n()]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}(?:\\\\([^\\\\r\\\\n()]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}\\\\)[^\\\\r\\\\n()]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}){0,${MAX_NESTED_PARENTHESES}}\\\\)` +\n  `|\\\\[[^\\\\r\\\\n\\\\[\\\\]]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}(?:\\\\[[^\\\\r\\\\n\\\\[\\\\]]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}\\\\][^\\\\r\\\\n\\\\[\\\\]]{0,${MAX_PARENTHETICAL_CONTENT_LENGTH}}){0,${MAX_NESTED_PARENTHESES}}\\\\]` +\n  `|\\\\$[^\\\\r\\\\n$]{0,${MAX_MATH_INLINE_LENGTH}}\\\\$` +\n  `|\\`[^\\`\\\\r\\\\n]{0,${MAX_MATH_INLINE_LENGTH}}\\`` +\n  \")\" +\n  \"|\" +\n  // 9. Paragraphs (with length constraints)\n  `(?!${AVOID_AT_START})(?:(?:^|\\\\r?\\\\n\\\\r?\\\\n)(?:<p>)?${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_PARAGRAPH_LENGTH))}(?:</p>)?(?=\\\\r?\\\\n\\\\r?\\\\n|$))` +\n  \"|\" +\n  // 11. HTML-like tags and their content (including self-closing tags and attributes, with length constraints)\n  `(?:<[a-zA-Z][^>]{0,${MAX_HTML_TAG_ATTRIBUTES_LENGTH}}(?:>[\\\\s\\\\S]{0,${MAX_HTML_TAG_CONTENT_LENGTH}}?</[a-zA-Z]+>|\\\\s*/>))` +\n  \"|\" +\n  // 12. LaTeX-style math expressions (inline and block, with length constraints)\n  `(?:(?:\\\\$\\\\$[\\\\s\\\\S]{0,${MAX_MATH_BLOCK_LENGTH}}?\\\\$\\\\$)|(?:\\\\$[^\\\\$\\\\r\\\\n]{0,${MAX_MATH_INLINE_LENGTH}}\\\\$))` +\n  \"|\" +\n  // 14. Fallback for any remaining content (with length constraints)\n  `(?!${AVOID_AT_START})${SENTENCE_PATTERN.replace(/{MAX_LENGTH}/g, String(MAX_STANDALONE_LINE_LENGTH))}` +\n  \")\",\n  \"gmu\"\n);\n\nfunction main({text}){\n  const chunks = [];\n  let currentChunk = '';\n  const tokens = countToken(text)\n\n  const matches = text.match(regex);\n  if (matches) {\n    matches.forEach((match) => {\n      if (currentChunk.length + match.length <= 1000) {\n        currentChunk += match;\n      } else {\n        if (currentChunk) {\n          chunks.push(currentChunk);\n        }\n        currentChunk = match;\n      }\n    });\n    if (currentChunk) {\n      chunks.push(currentChunk);\n    }\n  }\n\n  return {chunks, tokens};\n}\n\n",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "renderTypeList": ["reference"],
             "valueType": "string",
             "canEdit": true,
             "key": "text",
-            "label": {
-              "en": "Text",
-              "zh-CN": "文本"
-            },
+            "label": "text",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -2584,28 +1651,16 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": {
-              "en": "workflow:full_response_data",
-              "zh-CN": "workflow:full_response_data"
-            },
+            "label": "workflow:full_response_data",
             "valueType": "object",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           },
           {
             "id": "error",
             "key": "error",
-            "label": {
-              "en": "workflow:execution_error",
-              "zh-CN": "workflow:execution_error"
-            },
-            "description": {
-              "en": "Code execution error; empty when execution succeeds.",
-              "zh-CN": "代码运行错误信息，成功时返回空"
-            },
+            "label": "workflow:execution_error",
+            "description": "代码运行错误信息，成功时返回空",
             "valueType": "object",
             "type": "static"
           },
@@ -2614,10 +1669,7 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -2638,45 +1690,24 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": {
-              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
-              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key",
+            "valueDesc": ""
           },
           {
             "id": "qLUQfhG0ILRX",
             "type": "dynamic",
             "key": "chunks",
             "valueType": "arrayString",
-            "label": {
-              "en": "Text chunks",
-              "zh-CN": "文本块"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "label": "chunks",
+            "valueDesc": "",
+            "description": ""
           }
         ]
       },
       {
         "nodeId": "dtUmoUtTKfpM",
-        "name": {
-          "en": "Parse Documents",
-          "zh-CN": "文档解析"
-        },
-        "intro": {
-          "en": "Parse all documents uploaded in the conversation and return their content.",
-          "zh-CN": "解析对话中所有上传的文档，并返回对应文档内容"
-        },
+        "name": "文档解析",
+        "intro": "解析对话中所有上传的文档，并返回对应文档内容",
         "avatar": "core/workflow/template/readFiles",
         "flowNodeType": "readFiles",
         "showStatus": true,
@@ -2690,42 +1721,21 @@
             "key": "fileUrlList",
             "renderTypeList": ["reference"],
             "valueType": "arrayString",
-            "label": {
-              "en": "Document URL",
-              "zh-CN": "文档链接"
-            },
+            "label": "文档链接",
             "required": true,
             "value": ["448745", "userFiles"],
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           }
         ],
         "outputs": [
           {
             "id": "system_text",
             "key": "system_text",
-            "label": {
-              "en": "app:workflow.read_files_result",
-              "zh-CN": "app:workflow.read_files_result"
-            },
-            "description": {
-              "en": "Original document text, consisting of the filename and document content. Multiple files are separated by a horizontal rule.",
-              "zh-CN": "文档原文，由文件名和文档内容组成，多个文件之间通过横线隔开。"
-            },
+            "label": "app:workflow.read_files_result",
+            "description": "文档原文，由文件名和文档内容组成，多个文件之间通过横线隔开。",
             "valueType": "string",
             "type": "static"
           }
@@ -2733,14 +1743,8 @@
       },
       {
         "nodeId": "uow83rLCI2pI",
-        "name": {
-          "en": "Format Chinese Translation",
-          "zh-CN": "格式化中文翻译"
-        },
-        "intro": {
-          "en": "Run a script, typically for more complex data processing.",
-          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
-        },
+        "name": "格式化中文翻译",
+        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -2754,15 +1758,9 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "required": false,
-            "description": {
-              "en": "workflow:these_variables_will_be_input_parameters_for_code_execution",
-              "zh-CN": "workflow:these_variables_will_be_input_parameters_for_code_execution"
-            },
+            "description": "workflow:these_variables_will_be_input_parameters_for_code_execution",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -2784,78 +1782,36 @@
               "showDescription": false,
               "showDefaultValue": true
             },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "js",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "value": "function main({target_lang, source_text}) {\n  let text = source_text;\n\n  if (target_lang === '简体中文' || target_lang === '繁體中文') {\n    // 存储代码块内容\n    const codeBlocks = [];\n    let text = source_text.replace(/```[\\s\\S]*?```/g, (match) => {\n      codeBlocks.push(match);\n      return `__CODE_BLOCK_${codeBlocks.length - 1}__`;\n    });\n\n    // 替换成对的英文引号\n    text = text.replace(/\"(.*?)\"/g, '“$1”');\n\n    // 保护 Markdown 链接格式中的括号\n    text = text.replace(/\\[(.*?)\\]\\((.*?)\\)/g, function(match) {\n      return match.replace(/\\(/g, 'LEFTPAREN')\n                 .replace(/\\)/g, 'RIGHTPAREN');\n    });\n\n    // 替换成对的英文括号\n    text = text.replace(/\\((.*?)\\)/g, '（$1）');\n\n    // 恢复被保护的 Markdown 链接括号\n    text = text.replace(/LEFTPAREN/g, '(')\n             .replace(/RIGHTPAREN/g, ')');\n\n    // 更新句号替换逻辑，增加对版本号和URL的保护\n    text = text.replace(/(\\d+)\\.(\\d+)\\.(\\d+)/g, '$1DOT$2DOT$3') // 保护版本号 (如 16.2.1)\n               .replace(/(\\d)\\.(\\d)/g, '$1DOT$2') // 临时替换小数点\n               .replace(/([a-zA-Z])\\.([a-zA-Z])/g, '$1DOT$2') // 临时替换缩写中的句号\n               .replace(/([a-zA-Z])\\.(\\d)/g, '$1DOT$2') // 临时替换字母与数字之间的句号\n               .replace(/(\\d)\\.([a-zA-Z])/g, '$1DOT$2') // 临时替换数字与字母之间的句号\n               .replace(/([a-zA-Z])\\./g, '$1DOT') // 临时替换字母后面的句号（如 a.）\n               .replace(/https?:/g, 'HTTPCOLON') // 保护 URL 中的冒号\n               .replace(/\\./g, '。') // 替换其他句号\n               .replace(/DOT/g, '.') // 恢复被保护的句号\n               .replace(/HTTPCOLON/g, 'http:'); // 恢复 URL 中的冒号\n\n    // 替换英文逗号，但不替换数字中的逗号\n    text = text.replace(/(\\d),(\\d)/g, '$1COMMA$2') // 临时替换数字中的逗号\n               .replace(/,/g, '，') // 替换其他逗号\n               .replace(/COMMA/g, ','); // 恢复数字中的逗号\n\n    // 替换其他常见符号\n    const replacements = {\n      '!': '！',\n      '?': '？',\n      ';': '；',\n    };\n\n    for (const [key, value] of Object.entries(replacements)) {\n      text = text.replace(new RegExp(`\\\\${key}`, 'g'), value);\n    }\n\n    // 在中文和英文字符之间添加空格\n    // 中文字符范围: \\u4e00-\\u9fa5\n    // 英文字符范围: a-zA-Z0-9\n    text = text.replace(/([\\u4e00-\\u9fa5])([a-zA-Z0-9])/g, '$1 $2')\n               .replace(/([a-zA-Z0-9])([\\u4e00-\\u9fa5])/g, '$1 $2');\n\n    // 恢复代码块\n    text = text.replace(/__CODE_BLOCK_(\\d+)__/g, (_, index) => codeBlocks[index]);\n  }\n\n  return {\n    text\n  };\n}",
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": ""
           },
           {
             "renderTypeList": ["reference"],
             "valueType": "string",
             "canEdit": true,
             "key": "source_text",
-            "label": {
-              "en": "Source text",
-              "zh-CN": "源文本"
-            },
+            "label": "source_text",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -2878,22 +1834,10 @@
               "showDefaultValue": true
             },
             "required": true,
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "debugLabel": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "toolDescription": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "valueDesc": "",
+            "description": "",
+            "debugLabel": "",
+            "toolDescription": "",
             "value": ["vlNHndpNuFXB", "qLUQfhG0ILRX"]
           },
           {
@@ -2901,10 +1845,7 @@
             "valueType": "string",
             "canEdit": true,
             "key": "target_lang",
-            "label": {
-              "en": "Target language",
-              "zh-CN": "目标语言"
-            },
+            "label": "target_lang",
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -2934,28 +1875,16 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": {
-              "en": "workflow:full_response_data",
-              "zh-CN": "workflow:full_response_data"
-            },
+            "label": "workflow:full_response_data",
             "valueType": "object",
             "type": "static",
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": ""
           },
           {
             "id": "error",
             "key": "error",
-            "label": {
-              "en": "workflow:execution_error",
-              "zh-CN": "workflow:execution_error"
-            },
-            "description": {
-              "en": "Code execution error; empty when execution succeeds.",
-              "zh-CN": "代码运行错误信息，成功时返回空"
-            },
+            "label": "workflow:execution_error",
+            "description": "代码运行错误信息，成功时返回空",
             "valueType": "object",
             "type": "static"
           },
@@ -2964,10 +1893,7 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": {
-              "en": "",
-              "zh-CN": ""
-            },
+            "label": "",
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -2989,32 +1915,17 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": {
-              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
-              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key",
+            "valueDesc": ""
           },
           {
             "id": "qLUQfhG0ILRX",
             "type": "dynamic",
             "key": "text",
             "valueType": "string",
-            "label": {
-              "en": "Text",
-              "zh-CN": "文本"
-            },
-            "valueDesc": {
-              "en": "",
-              "zh-CN": ""
-            },
-            "description": {
-              "en": "",
-              "zh-CN": ""
-            }
+            "label": "text",
+            "valueDesc": "",
+            "description": ""
           }
         ]
       }
@@ -3130,10 +2041,7 @@
       }
     ],
     "chatConfig": {
-      "welcomeText": {
-        "en": "## Welcome to the document translation assistant\n1. Choose the source and target languages.\n2. Send the document you want translated.\n3. Wait for the translation.",
-        "zh-CN": "## 你好，欢迎使用文档翻译机器人\n1. 选择源语言和目标语言\n2. 发送你需要翻译的文档\n3. 等待翻译结果输出"
-      },
+      "welcomeText": "## 你好，欢迎使用文档翻译机器人\n1. 选择源语言和目标语言\n2. 发送你需要翻译的文档\n3. 等待翻译结果输出",
       "variables": [
         {
           "id": "v98n5b",

@@ -13,29 +13,15 @@ const client = new FastGPTPluginClient({
 });
 ```
 
-## Workflow Template i18n
+## Workflow Templates
 
-`listWorkflows()` takes no locale parameter and preserves i18n objects in template cards and workflow node text. Application UIs should select text using the current interface locale. When that locale is missing, fall back to `zh-CN`, then `en`; `zh-Hant` is optional. Platform translation keys such as `common:` and `core.*` are passed through unchanged and must be resolved using the FastGPT UI translation catalog.
+`listWorkflows()` takes no locale parameter and does not translate templates; fields such as `name` and `intro` pass through as strings. Workflow node configuration remains open-ended.
 
 ```ts
-import type { I18nStringType } from '@fastgpt-plugin/sdk-client';
-
-type Locale = 'en' | 'zh-CN' | 'zh-Hant';
-
-function selectText(text: I18nStringType, locale: Locale): string {
-  return text[locale] || text['zh-CN'] || text.en;
-}
-
 const templates = await client.listWorkflows();
-const templateName = templates[0]
-  ? selectText(templates[0].name, 'en')
-  : undefined;
-const firstNodeName = templates[0]?.workflow.nodes[0]
-  ? selectText(templates[0].workflow.nodes[0].name, 'en')
-  : undefined;
+const templateName = templates[0]?.name;
+const firstInputLabel = templates[0]?.workflow.nodes[0]?.inputs?.[0]?.label;
 ```
-
-The SDK passes through i18n fields for nested node `name`/`intro`, input/output labels and descriptions, while keeping other dynamic node configuration open. `listWorkflows()` calls `/api/workflow/list` without a locale query parameter.
 
 ## Localized Plugin README URLs
 

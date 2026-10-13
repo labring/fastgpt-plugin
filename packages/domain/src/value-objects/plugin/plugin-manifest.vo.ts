@@ -9,7 +9,10 @@ export const PluginManifestBaseSchema = z.object({
     etag: true, // 上传后在服务器内自动计算 md5
     readmeUrl: true, // 不需要手动指定, 自动处理
     readmeUrls: true // 不需要手动指定, 自动处理
-  }).shape
+  }).shape,
+  name: I18nStringSchema,
+  description: I18nStringSchema,
+  versionDescription: I18nStringSchema.optional()
 });
 
 export type PluginManifestBaseType = z.infer<typeof PluginManifestBaseSchema>;

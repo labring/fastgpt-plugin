@@ -213,7 +213,6 @@ export const initWorkflowTemplates = async (
     const fileContent = fileBuffer.toString();
     const templateData = JSON.parse(fileContent);
 
-    // Preserve raw template content; the static JSON files are migrated separately.
     const template = {
       ...templateData,
       templateId: item.name,

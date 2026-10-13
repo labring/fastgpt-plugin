@@ -42,10 +42,7 @@ import type {
   ToolRunInputDTOType
 } from '@interface-adapter/contracts/dto/tool.dto';
 import type {
-  WorkflowInputDTOType,
   WorkflowListDTOType,
-  WorkflowNodeDTOType,
-  WorkflowOutputDTOType,
   WorkflowTemplateDTOType
 } from '@interface-adapter/contracts/dto/workflow.dto';
 
@@ -138,9 +135,6 @@ export const pluginTagList: PluginTagListType = Object.entries(PluginTagsNameMap
 );
 
 export type ModelListType = ModelListDTOType;
-export type WorkflowInputType = WorkflowInputDTOType;
-export type WorkflowOutputType = WorkflowOutputDTOType;
-export type WorkflowNodeType = WorkflowNodeDTOType;
 export type WorkflowTemplateType = WorkflowTemplateDTOType;
 export type WorkflowListType = WorkflowListDTOType;
 

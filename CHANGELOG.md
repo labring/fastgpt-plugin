@@ -4,6 +4,8 @@ This file is the release-notes index for FastGPT Plugin.
 
 ## Unreleased
 
+- Plugin record reads normalize legacy plain-string or partial i18n metadata in memory without a database migration; new plugin manifests remain bilingual.
+
 - CLI scaffolding now generates standalone plugin projects with published npm
   semver dependencies by default.
 - CLI scaffolding keeps `--dependency-mode catalog` for official pnpm workspaces

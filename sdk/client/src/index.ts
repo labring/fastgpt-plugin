@@ -60,10 +60,7 @@ export type {
   ToolRunInputType,
   ToolStreamMessageType,
   TTSModelItemType,
-  WorkflowInputType,
   WorkflowListType,
-  WorkflowNodeType,
-  WorkflowOutputType,
   WorkflowTemplateType
 } from './types';
 export { PluginPermissionEnum, PluginPermissionEnumSchema } from './types';

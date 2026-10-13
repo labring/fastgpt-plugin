@@ -7,16 +7,10 @@ import { workflows } from '@infrastructure/static-data/workflow/init';
 
 import { makeWorkflowRoute } from './workflow.route';
 
-const localizedTemplate = {
-  templateId: 'localized-template',
-  name: {
-    en: 'Localized workflow',
-    'zh-CN': '本地化工作流'
-  },
-  intro: {
-    en: 'A workflow with localized text',
-    'zh-CN': '包含本地化文案的工作流'
-  },
+const workflowTemplate = {
+  templateId: 'sample-template',
+  name: 'Sample workflow',
+  intro: 'A workflow with ordinary string metadata',
   tags: ['advanced'],
   type: 'advanced',
   userGuide: {
@@ -27,43 +21,19 @@ const localizedTemplate = {
     nodes: [
       {
         nodeId: 'node-1',
-        name: {
-          en: 'Prompt',
-          'zh-CN': '提示词'
-        },
-        intro: {
-          en: 'Collect a prompt',
-          'zh-CN': '收集提示词'
-        },
+        name: 'Prompt',
+        intro: 'Collect a prompt',
         flowNodeType: 'chatNode',
         customNodeSetting: { mode: 'preserve' },
         inputs: [
           {
             key: 'prompt',
-            label: {
-              en: 'common:core.module.input.label.user question',
-              'zh-CN': 'common:core.module.input.label.user question'
-            },
-            description: {
-              en: 'Prompt description',
-              'zh-CN': '提示词说明'
-            },
-            placeholder: {
-              en: 'Enter text',
-              'zh-CN': '输入文本'
-            },
-            toolDescription: {
-              en: 'Prompt for the model',
-              'zh-CN': '提供给模型的提示词'
-            },
-            debugLabel: {
-              en: 'Prompt debug label',
-              'zh-CN': '提示词调试标签'
-            },
-            valueDesc: {
-              en: 'Prompt value',
-              'zh-CN': '提示词值'
-            },
+            label: 'Prompt',
+            description: 'Prompt description',
+            placeholder: 'Enter text',
+            toolDescription: 'Prompt for the model',
+            debugLabel: 'Prompt debug label',
+            valueDesc: 'Prompt value',
             value: 'Keep this machine value',
             dynamicInputSetting: { enabled: true }
           }
@@ -72,18 +42,9 @@ const localizedTemplate = {
           {
             id: 'result',
             key: 'result',
-            label: {
-              en: 'Result',
-              'zh-CN': '结果'
-            },
-            description: {
-              en: 'Generated result',
-              'zh-CN': '生成的结果'
-            },
-            valueDesc: {
-              en: 'Result value',
-              'zh-CN': '结果值'
-            },
+            label: 'Result',
+            description: 'Generated result',
+            valueDesc: 'Result value',
             valueType: 'string'
           }
         ]
@@ -99,8 +60,8 @@ afterEach(() => {
 });
 
 describe('workflow route', () => {
-  it('returns localized template text unchanged without a locale request parameter', async () => {
-    workflows.push(localizedTemplate);
+  it('returns workflow template text unchanged without a locale request parameter', async () => {
+    workflows.push(workflowTemplate);
     const app = createWorkflowApp();
 
     const response = await app.request('/api/workflow/list');
@@ -110,15 +71,15 @@ describe('workflow route', () => {
     expect(payload).toEqual({
       data: [
         {
-          ...localizedTemplate,
-          avatar: 'url:workflow/templates/localized-template/logo'
+          ...workflowTemplate,
+          avatar: 'url:workflow/templates/sample-template/logo'
         }
       ]
     });
     expect(WorkflowContract.List.meta.path).toBe('/workflow/list');
   });
 
-  it('documents localized response fields without query parameters in OpenAPI', async () => {
+  it('documents string response fields without query parameters in OpenAPI', async () => {
     const app = createWorkflowApp();
     app.doc31('/openapi.json', {
       openapi: '3.1.0',
@@ -139,7 +100,11 @@ describe('workflow route', () => {
 
     expect(response.status).toBe(200);
     expect(document).not.toHaveProperty([...listOperationPath, 'parameters']);
-    expect(document).toHaveProperty([
+    expect(document).toHaveProperty(
+      [...responseSchemaPath, 'properties', 'data', 'items', 'properties', 'name', 'type'],
+      'string'
+    );
+    expect(document).not.toHaveProperty([
       ...responseSchemaPath,
       'properties',
       'data',
@@ -148,24 +113,6 @@ describe('workflow route', () => {
       'name',
       'properties',
       'en'
-    ]);
-    expect(document).toHaveProperty([
-      ...responseSchemaPath,
-      'properties',
-      'data',
-      'items',
-      'properties',
-      'workflow',
-      'properties',
-      'nodes',
-      'items',
-      'properties',
-      'inputs',
-      'items',
-      'properties',
-      'label',
-      'properties',
-      'zh-CN'
     ]);
   });
 });

@@ -4,16 +4,13 @@ import { FastGPTPluginClient } from './client';
 import type { WorkflowListType } from './types';
 
 describe('FastGPTPluginClient workflows', () => {
-  it('returns localized workflow data unchanged without a locale request parameter', async () => {
-    const localizedText = {
-      en: 'Localized text',
-      'zh-CN': '本地化文案'
-    };
+  it('returns workflow templates unchanged without a locale parameter', async () => {
+    const workflowText = 'Workflow text';
     const workflowData: WorkflowListType = [
       {
-        templateId: 'localized-template',
-        name: localizedText,
-        intro: localizedText,
+        templateId: 'sample-template',
+        name: workflowText,
+        intro: 'Workflow introduction',
         avatar: 'workflow-avatar',
         tags: ['advanced'],
         type: 'advanced',
@@ -21,20 +18,20 @@ describe('FastGPTPluginClient workflows', () => {
           nodes: [
             {
               nodeId: 'node-1',
-              name: localizedText,
-              intro: localizedText,
+              name: 'Prompt',
+              intro: 'Collect a prompt',
               flowNodeType: 'chatNode',
               customNodeSetting: { mode: 'preserve' },
               inputs: [
                 {
                   key: 'prompt',
-                  label: localizedText,
-                  description: localizedText,
-                  placeholder: localizedText,
-                  toolDescription: localizedText,
-                  debugLabel: localizedText,
-                  valueDesc: localizedText,
-                  value: 'machine-value',
+                  label: 'Prompt',
+                  description: 'Prompt description',
+                  placeholder: 'Enter text',
+                  toolDescription: 'Prompt for the model',
+                  debugLabel: 'Prompt debug label',
+                  valueDesc: 'Prompt value',
+                  value: 'Keep this machine value',
                   dynamicInputSetting: { enabled: true }
                 }
               ],
@@ -42,9 +39,9 @@ describe('FastGPTPluginClient workflows', () => {
                 {
                   id: 'result',
                   key: 'result',
-                  label: localizedText,
-                  description: localizedText,
-                  valueDesc: localizedText,
+                  label: 'Result',
+                  description: 'Generated result',
+                  valueDesc: 'Result value',
                   valueType: 'string'
                 }
               ]
@@ -60,8 +57,9 @@ describe('FastGPTPluginClient workflows', () => {
     const result = await client.listWorkflows();
 
     expect(result).toEqual(workflowData);
-    expect(result[0]?.workflow.nodes[0]?.inputs?.[0]?.toolDescription?.en).toBe('Localized text');
-    expect(result[0]?.workflow.nodes[0]?.inputs?.[0]?.value).toBe('machine-value');
+    expect(result[0]?.name).toBe(workflowText);
+    expect(result[0]?.workflow.nodes[0]?.inputs?.[0]?.toolDescription).toBe('Prompt for the model');
+    expect(result[0]?.workflow.nodes[0]?.inputs?.[0]?.value).toBe('Keep this machine value');
     expect(result[0]?.workflow.nodes[0]?.inputs?.[0]?.dynamicInputSetting).toEqual({ enabled: true });
     expect(getRequest(fetchMock)).toMatchObject({
       url: 'https://plugin.local/api/workflow/list',
