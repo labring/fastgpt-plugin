@@ -3,11 +3,7 @@ import z from 'zod';
 import type { InvokePort } from '@domain/ports/invoke.port';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import {
-  type ToolAnswerType,
-  ToolHandlerReturnSchema,
-  type ToolStreamMessageType
-} from '@domain/value-objects/tool.vo';
+import type { ToolAnswerType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 import { PluginChannelHostMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
 import type { PluginToolRunPayloadType } from '@infrastructure/plugin/tool.impl';
 import { getErrText } from '@shared/utils/err';
@@ -16,23 +12,6 @@ import { InvokeClient } from './invoke.client';
 import type { UserToolManifestType } from './manifest.type';
 import { PluginFactory } from './plugin-factory';
 
-/**
- * 把 zod 校验错误整理成人类可读文本,避免默认的 JSON issues 大段回显。
- * 当错误发生在 content 字段时附上结构化内容契约提示,方便插件作者定位。
- */
-const formatZodError = (error: z.ZodError): string => {
-  const details = error.issues
-    .map((issue) => {
-      const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : '';
-      return `${path}${issue.message}`;
-    })
-    .join('; ');
-  const contentHint = error.issues.some((issue) => issue.path[0] === 'content')
-    ? '工具返回的 content 字段必须是结构化内容数组({type:"text",text} 或 {type:"image_url",image_url:{url}}),不能是字符串或其他结构。'
-    : '';
-
-  return contentHint ? `${contentHint} ${details}` : details;
-};
 export type ToolContextType<TSecret = Record<string, unknown>> = {
   systemVar: SystemVarType;
   secrets: TSecret;
@@ -133,17 +112,15 @@ export class ToolFactory extends PluginFactory {
                   }
                 });
 
-                // 校验 handler 返回值:content 字段(若存在)必须是合法的 content parts,否则视为工具错误
+                // handler 返回值原样透传:content 等业务字段保持旧插件的任意 JSON 语义,
+                // 结构化 content parts 由 outputSchema 声明约定,不在 wire 层强校验。
                 output.send({
                   type: 'response',
-                  data: ToolHandlerReturnSchema.parse(result)
+                  data: result
                 });
               } catch (err) {
                 output.send({
-                  data: getErrText(
-                    err instanceof z.ZodError ? formatZodError(err) : err,
-                    'Unknown error during tool execution'
-                  ),
+                  data: getErrText(err, 'Unknown error during tool execution'),
                   type: 'error'
                 });
               } finally {

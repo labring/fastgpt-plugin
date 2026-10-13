@@ -76,17 +76,26 @@ describe('ToolHandlerReturnSchema', () => {
     expect(ToolHandlerReturnSchema.parse(data)).toEqual(data);
   });
 
-  it('rejects content that is not a parts array', () => {
-    expect(() =>
-      ToolHandlerReturnSchema.parse({ content: 'https://example.com/a.png' })
-    ).toThrow();
+  it('keeps legacy string content untouched', () => {
+    const data = { content: 'https://example.com/a.png', title: 'Result' };
+
+    expect(ToolHandlerReturnSchema.parse(data)).toEqual(data);
   });
 
-  it('rejects invalid content parts', () => {
-    expect(() => ToolHandlerReturnSchema.parse({ content: [{ type: 'text', text: '' }] })).toThrow();
-    expect(() =>
+  it('keeps legacy object and array content untouched', () => {
+    expect(
+      ToolHandlerReturnSchema.parse({ content: { text: 'ordinary document text' } })
+    ).toEqual({ content: { text: 'ordinary document text' } });
+    expect(ToolHandlerReturnSchema.parse({ content: [1, 2, 3] })).toEqual({ content: [1, 2, 3] });
+  });
+
+  it('keeps malformed content parts untouched without wire validation', () => {
+    expect(ToolHandlerReturnSchema.parse({ content: [{ type: 'text', text: '' }] })).toEqual({
+      content: [{ type: 'text', text: '' }]
+    });
+    expect(
       ToolHandlerReturnSchema.parse({ content: [{ type: 'image_url', image_url: {} }] })
-    ).toThrow();
+    ).toEqual({ content: [{ type: 'image_url', image_url: {} }] });
   });
 
   it('accepts an empty content array', () => {
@@ -116,12 +125,12 @@ describe('ToolStreamMessageSchema', () => {
     expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
   });
 
-  it('rejects a response whose content is not structured', () => {
-    expect(() =>
-      ToolStreamMessageSchema.parse({
-        type: 'response',
-        data: { content: 'https://example.com/a.png' }
-      })
-    ).toThrow();
+  it('parses a legacy response whose content is a plain string', () => {
+    const message = {
+      type: 'response',
+      data: { content: 'https://example.com/a.png' }
+    };
+
+    expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
   });
 });
