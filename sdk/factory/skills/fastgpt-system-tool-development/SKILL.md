@@ -261,16 +261,14 @@ export default defineToolSet({
 
 ## 返回图片内容（可选）
 
-工具 handler 的返回对象里可以包含 `content` 字段，向 FastGPT 主程序返回结构化图片内容，作为下一轮模型的视觉输入。`content` 必须是内容部分数组，每项只能是以下两种之一：
+工具 handler 的返回对象里可以包含 `content` 字段，向 FastGPT 主程序返回结构化图片内容，作为下一轮模型的视觉输入。此时 `content` 应为内容部分数组，每项只能是以下两种之一：
 
 - `{ type: 'text', text: string }`：文本内容。
 - `{ type: 'image_url', image_url: { url: string, detail?: 'auto' | 'low' | 'high' } }`：图片内容，`url` 为图片地址。
 
-`content` 必须整体合法（是数组、每项符合上述结构），否则工具执行会报错；不要在普通字符串文本里猜测图片地址。普通文本结果仍放在其它输出字段中。
-
-> **契约优先级（重要）**：`content` 字段的合法性由 SDK 运行时按上述 wire 契约强校验，先于 `outputSchema` 的类型声明。因此 `outputSchema` 里的 `content` 也必须声明为 `z.array(ToolMessageContentPartSchema)`（而不是 `z.string()` 之类），否则类型声明与运行时行为不一致。
+> **向后兼容（重要）**：`content` 是普通业务字段，SDK 的 wire 层保持任意 JSON 透传，不做强校验。旧插件把字符串、对象或普通数组放在 `content` 里仍可正常工作，主程序会把这些值当作普通文本结果处理。
 >
-> 这是对旧版插件的破坏性变更：此前工具可以返回任意 JSON；现在只要顶层出现 `content` 字段且不是合法的内容部分数组，工具执行就会直接报错。存量工具若把图片地址以字符串形式放在 `content` 字段里，需要改成结构化 parts，或改用其它字段名。
+> 只有当你希望图片作为下一轮模型的视觉输入时，才按上述 parts 形状返回 `content`。主程序仅在 `content` 形状合法时把它作为视觉输入，否则回退到普通文本路径；因此不要只放一个孤立的图片链接字符串，也不要在普通文本里夹带图片地址。
 
 示例：
 
@@ -324,7 +322,7 @@ export default defineTool({
 - 使用 `ctx.invoke` 时已在 `manifest.permission` 声明对应权限，例如上传文件声明 `file-upload:allow`。
 - Zod schema 覆盖全部用户可见输入和输出；推荐由 AI 托管补充的输入字段设置 `isToolParam: true`。
 - handler 成功路径返回值与 `outputSchema` 一致。
-- 返回 `content` 时 `outputSchema` 声明为 `z.array(ToolMessageContentPartSchema)`，与运行时 wire 校验保持一致（运行时优先于类型声明）。
+- 返回结构化图片内容时 `outputSchema` 里的 `content` 声明为 `z.array(ToolMessageContentPartSchema)`；旧插件把 `content` 当普通业务字段（字符串/对象/数组）使用仍兼容，无需迁移。
 - 返回图片内容时使用结构化 `content` 字段（`ToolMessageContentPartSchema`），不在文本中夹带图片地址。
 - 外部调用失败、空响应、超时、鉴权失败都有明确错误。
 - 密钥配置只通过 `secretSchema` 和 `ctx.secrets` 处理。
