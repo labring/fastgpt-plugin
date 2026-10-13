@@ -7,6 +7,7 @@ import { ensureDebugImportHooks } from '@fastgpt-plugin/cli/debug/import-hooks';
 import z from 'zod';
 
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
+import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
 import { successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { SystemVarSchema, type SystemVarType } from '@domain/value-objects/system-var.vo';
@@ -26,10 +27,10 @@ type PackableToolHandler = {
 
 type PackableToolChild = {
   id: string;
-  description: Record<string, unknown>;
-  name: Record<string, unknown>;
+  description: unknown;
+  name: unknown;
   icon?: string;
-  toolDescription?: string;
+  toolDescription?: unknown;
 };
 
 type PackableToolExport = {
@@ -39,11 +40,13 @@ type PackableToolExport = {
   getChildManifests(): PackableToolChild[];
 };
 
+export type DebugText = string | Record<string, unknown>;
+
 export type DebugToolSnapshot = {
   id: string;
-  name: string;
-  description: string;
-  toolDescription: string;
+  name: DebugText;
+  description: DebugText;
+  toolDescription: DebugText;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -53,9 +56,9 @@ export type DebugPluginSnapshot = {
   indexPath: string;
   pluginId: string;
   version: string;
-  name: string;
-  description: string;
-  toolDescription: string;
+  name: DebugText;
+  description: DebugText;
+  toolDescription: DebugText;
   author?: string;
   tags?: string[];
   permissions?: string[];
@@ -256,12 +259,9 @@ function createDebugSnapshot(
     indexPath: location.indexPath,
     pluginId: getRequiredString(userManifest.pluginId, '缺少 pluginId'),
     version: getRequiredString(userManifest.version, '缺少 version'),
-    name: pickLocalizedText(userManifest.name),
-    description: pickLocalizedText(userManifest.description),
-    toolDescription: pickToolDescription(
-      getOptionalString(userManifest.toolDescription),
-      userManifest.description
-    ),
+    name: getDebugText(userManifest.name),
+    description: getDebugText(userManifest.description),
+    toolDescription: pickToolDescription(userManifest.toolDescription, userManifest.description),
     author: getOptionalString(userManifest.author),
     tags: toStringArray(userManifest.tags),
     permissions: toStringArray(userManifest.permission),
@@ -282,12 +282,9 @@ function createSingleToolSnapshot(
 
   return {
     id: 'tool',
-    name: pickLocalizedText(userManifest.name),
-    description: pickLocalizedText(userManifest.description),
-    toolDescription: pickToolDescription(
-      getOptionalString(userManifest.toolDescription),
-      userManifest.description
-    ),
+    name: getDebugText(userManifest.name),
+    description: getDebugText(userManifest.description),
+    toolDescription: pickToolDescription(userManifest.toolDescription, userManifest.description),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -304,8 +301,8 @@ function createChildToolSnapshot(
 
   return {
     id: child.id,
-    name: pickLocalizedText(child.name),
-    description: pickLocalizedText(child.description),
+    name: getDebugText(child.name),
+    description: getDebugText(child.description),
     toolDescription: pickToolDescription(child.toolDescription, child.description),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
@@ -425,34 +422,60 @@ function isPackableToolExport(value: unknown): value is PackableToolExport {
   );
 }
 
-function pickLocalizedText(value: unknown): string {
+export const DEFAULT_DEBUG_LOCALE: I18nLangType = 'zh-CN';
+
+function getDebugText(value: unknown): DebugText {
+  return getOptionalDebugText(value) ?? '';
+}
+
+function getOptionalDebugText(value: unknown): DebugText | undefined {
   if (typeof value === 'string') {
     return value;
   }
 
-  if (value && typeof value === 'object') {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
     const localized = value as Record<string, unknown>;
-    const preferred = [localized['zh-CN'], localized.en, ...Object.values(localized)].find(
-      (item) => typeof item === 'string' && item.trim().length > 0
-    );
-
-    if (typeof preferred === 'string') {
-      return preferred;
+    if (typeof localized.en === 'string' && typeof localized['zh-CN'] === 'string') {
+      return localized;
     }
   }
 
-  return '';
+  return undefined;
 }
 
-function pickToolDescription(
-  explicitDescription: string | undefined,
-  fallbackSource: unknown
-): string {
-  if (explicitDescription && explicitDescription.trim().length > 0) {
-    return explicitDescription;
+function hasDebugText(value: DebugText | undefined): value is DebugText {
+  if (typeof value === 'string') {
+    return value.trim().length > 0;
   }
 
-  return pickLocalizedText(fallbackSource);
+  return Boolean(
+    value && Object.values(value).some((item) => typeof item === 'string' && item.trim().length > 0)
+  );
+}
+
+function pickToolDescription(explicitDescription: unknown, fallbackSource: unknown): DebugText {
+  const description = getOptionalDebugText(explicitDescription);
+  if (hasDebugText(description)) {
+    return description;
+  }
+
+  return getDebugText(fallbackSource);
+}
+
+export function selectDebugText(value: unknown, locale: string = DEFAULT_DEBUG_LOCALE): string {
+  const text = getOptionalDebugText(value);
+  if (typeof text === 'string') {
+    return text;
+  }
+  if (!text) {
+    return '';
+  }
+
+  const preferred = [text[locale as I18nLangType], text['zh-CN'], text.en].find(
+    (item) => typeof item === 'string' && item.trim().length > 0
+  );
+
+  return typeof preferred === 'string' ? preferred : '';
 }
 
 function getRequiredString(value: unknown, message: string): string {

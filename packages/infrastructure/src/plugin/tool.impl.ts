@@ -14,6 +14,7 @@ import {
   type ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
 import { createError, getErrorDefinition, type RegisteredError } from '@domain/value-objects/error.vo';
+import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import {
   isPluginDebugSource,
@@ -22,7 +23,7 @@ import {
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import { type ToolRunInputType, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 import { InvokeManager } from './invoke/invoke.impl';
@@ -60,6 +61,13 @@ function getDescriptionFallback(description: unknown): string | undefined {
   return typeof en === 'string' && en.length > 0 ? en : undefined;
 }
 
+function hasToolDescription(value: unknown): boolean {
+  return (
+    (typeof value === 'string' && value.length > 0) ||
+    I18nStringSchema.safeParse(value).success
+  );
+}
+
 function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
   if (!isJsonObject(inputSchema) || !isJsonObject(inputSchema.properties)) {
     return inputSchema;
@@ -72,13 +80,11 @@ function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
       }
 
       const normalizedProperty = { ...property };
-      const hasToolDescription =
-        typeof normalizedProperty.toolDescription === 'string' &&
-        normalizedProperty.toolDescription.length > 0;
+      const hasExistingToolDescription = hasToolDescription(normalizedProperty.toolDescription);
       const hasIsToolParam = normalizedProperty.isToolParam !== undefined;
 
       if (hasIsToolParam) {
-        if (!hasToolDescription) {
+        if (!hasExistingToolDescription) {
           const fallback = getDescriptionFallback(normalizedProperty.description);
           if (fallback !== undefined) {
             normalizedProperty.toolDescription = fallback;
@@ -88,7 +94,7 @@ function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
         return [key, normalizedProperty];
       }
 
-      if (hasToolDescription) {
+      if (hasExistingToolDescription) {
         normalizedProperty.isToolParam = true;
         return [key, normalizedProperty];
       }

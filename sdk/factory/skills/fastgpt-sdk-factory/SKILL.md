@@ -1,6 +1,6 @@
 ---
 name: fastgpt-sdk-factory
-description: Use when creating, reviewing, or modifying FastGPT Tool Plugins with the @fastgpt-plugin/sdk-factory TypeScript SDK, including defineTool, defineToolSet, createToolHandler, Zod input/output schemas, secretSchema, ctx.invoke host calls, and streaming tool responses.
+description: Use when creating, reviewing, or modifying FastGPT Tool Plugins with the @fastgpt-plugin/sdk-factory TypeScript SDK, including defineTool, defineToolSet, createToolHandler, localized Zod schema metadata, model-facing toolDescription, secretSchema, ctx.invoke host calls, and streaming tool responses.
 ---
 
 # FastGPT SDK Factory
@@ -16,7 +16,8 @@ import {
   createToolHandler,
   defineTool,
   type InputSchemaMetaType,
-  type OutputSchemaMetaType
+  type OutputSchemaMetaType,
+  type SecretSchemaMetaType
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
@@ -64,8 +65,8 @@ export default defineTool({
 - Define handlers with `createToolHandler({ inputSchema, outputSchema, secretSchema?, handler })`.
 - Use `z.object(...)` for `inputSchema` and `outputSchema` so TypeScript can infer `input` and return types.
 - Import `InputSchemaMetaType`, `OutputSchemaMetaType`, and `SecretSchemaMetaType` from `@fastgpt-plugin/sdk-factory` when schema metadata is used.
-- Add `.meta({ ... } satisfies InputSchemaMetaType)` to input fields and `.meta({ ... } satisfies OutputSchemaMetaType)` to output fields that need UI/manifest metadata.
-- Set `isToolParam: true` in an input field's `.meta()` when that field is recommended to be managed by AI; use `toolDescription` for the model-facing parameter description.
+- Add `.meta({ ... } satisfies InputSchemaMetaType)` to input fields and `.meta({ ... } satisfies OutputSchemaMetaType)` to output fields that need UI/manifest metadata. Put localized `title`, `description`, and `placeholder` values in the `'x-i18n'` object, with `en` and `'zh-CN'` required and `'zh-Hant'` optional.
+- Set `isToolParam: true` in an input field's `.meta()` when that field is recommended to be managed by AI; use `toolDescription` for the separate model-facing parameter description and provide an i18n object with `en` and `'zh-CN'` for new plugins (`'zh-Hant'` is optional). The CLI preserves legacy string descriptions as-is and copies each `x-i18n` `zh-CN` value into its JSON Schema compatibility string field; the host selects model text for the request locale, falling back from the exact locale to `zh-CN`, then `en`.
 - Add `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)` to every `secretSchema` field; set `isSecret: true` for values that must be encrypted at rest.
 - Return an object that matches `outputSchema`; throw errors for failed operations.
 - Add `secretSchema` when plugin configuration needs secrets such as API keys.
@@ -77,6 +78,10 @@ export default defineTool({
 const secretSchema = z.object({
   apiKey: z.string().meta({
     title: 'API Key',
+    'x-i18n': {
+      title: { en: 'API key', 'zh-CN': 'API 密钥' },
+      placeholder: { en: 'Enter an API key', 'zh-CN': '输入 API 密钥' }
+    },
     isSecret: true
   } satisfies SecretSchemaMetaType)
 });
@@ -85,13 +90,25 @@ const handler = createToolHandler({
   inputSchema: z.object({
     query: z.string().meta({
       title: 'Query',
-      toolDescription: 'Search query',
+      'x-i18n': {
+        title: { en: 'Query', 'zh-CN': '查询' },
+        description: { en: 'Text to search for', 'zh-CN': '用于检索的文本' },
+        placeholder: { en: 'Enter a query', 'zh-CN': '输入查询文本' }
+      },
+      toolDescription: {
+        en: 'Search query used to find matching items.',
+        'zh-CN': '用于查找匹配项目的搜索查询。'
+      },
       isToolParam: true
     } satisfies InputSchemaMetaType)
   }),
   outputSchema: z.object({
     answer: z.string().meta({
-      title: 'Answer'
+      title: 'Answer',
+      'x-i18n': {
+        title: { en: 'Answer', 'zh-CN': '答案' },
+        description: { en: 'The search result', 'zh-CN': '搜索结果' }
+      }
     } satisfies OutputSchemaMetaType)
   }),
   secretSchema,
@@ -126,7 +143,7 @@ Common optional fields:
 - `tags`
 - `permission`
 - `icon`
-- `toolDescription`
+- `toolDescription`: model-facing description; use an i18n object for new plugins. Legacy strings remain supported and are preserved as-is.
 
 Use `permission` to declare host capabilities required by the plugin. It is an array of permission strings. Declare only the minimum permissions that the plugin actually uses. When using `ctx.invoke` to call host capabilities, declare the matching permission.
 
@@ -202,7 +219,10 @@ export default defineToolSet({
         en: 'Search text',
         'zh-CN': '搜索文本'
       },
-      toolDescription: 'Search text by query',
+      toolDescription: {
+        en: 'Search text by query',
+        'zh-CN': '根据查询搜索文本'
+      },
       handler: searchHandler
     }
   ]

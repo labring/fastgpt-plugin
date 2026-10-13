@@ -119,15 +119,38 @@ describe('ToolManager.detail', () => {
   it('normalizes input schema tool parameter metadata in tool detail', async () => {
     const toolManager = createToolManager();
     listVersions.mockResolvedValue(successResult([{ version: '1.0.0' }]));
+    const localizedToolDescription = {
+      en: 'Search public documentation',
+      'zh-CN': '搜索公开文档'
+    };
     getPluginByUserPluginId.mockResolvedValue(
       successResult({
         ...makeTool('1.0.0'),
+        toolDescription: localizedToolDescription,
         inputSchema: {
           type: 'object',
           properties: {
             withToolDescription: {
               type: 'string',
               toolDescription: 'Existing model-facing description'
+            },
+            localizedToolDescription: {
+              type: 'string',
+              toolDescription: {
+                en: 'Search by topic',
+                'zh-CN': '按主题搜索'
+              },
+              description: 'Legacy manual description',
+              'x-i18n': {
+                title: {
+                  en: 'Topic',
+                  'zh-CN': '主题'
+                },
+                description: {
+                  en: 'Enter a topic',
+                  'zh-CN': '输入主题'
+                }
+              }
             },
             manualByDefault: {
               type: 'string',
@@ -158,14 +181,28 @@ describe('ToolManager.detail', () => {
             name: { en: 'Child', 'zh-CN': '子工具' },
             description: { en: 'Child tool', 'zh-CN': '子工具' },
             icon: 'https://example.com/child.svg',
-            toolDescription: 'Child tool',
+            toolDescription: localizedToolDescription,
             inputSchema: {
               type: 'object',
               properties: {
                 childParam: {
                   type: 'string',
+                  toolDescription: {
+                    en: 'Search child records',
+                    'zh-CN': '搜索子记录'
+                  },
                   description: {
                     en: 'Child fallback'
+                  },
+                  'x-i18n': {
+                    title: {
+                      en: 'Child query',
+                      'zh-CN': '子查询'
+                    },
+                    placeholder: {
+                      en: 'Enter child query',
+                      'zh-CN': '输入子查询'
+                    }
                   }
                 }
               }
@@ -190,9 +227,29 @@ describe('ToolManager.detail', () => {
     }).properties;
 
     expect(err).toBeNull();
+    expect(result?.toolDescription).toEqual(localizedToolDescription);
+    expect(result?.children?.[0]?.toolDescription).toEqual(localizedToolDescription);
     expect(properties.withToolDescription).toMatchObject({
       toolDescription: 'Existing model-facing description',
       isToolParam: true
+    });
+    expect(properties.localizedToolDescription).toMatchObject({
+      toolDescription: {
+        en: 'Search by topic',
+        'zh-CN': '按主题搜索'
+      },
+      isToolParam: true,
+      description: 'Legacy manual description',
+      'x-i18n': {
+        title: {
+          en: 'Topic',
+          'zh-CN': '主题'
+        },
+        description: {
+          en: 'Enter a topic',
+          'zh-CN': '输入主题'
+        }
+      }
     });
     expect(properties.manualByDefault).toMatchObject({
       toolDescription: 'Fallback manual description',
@@ -207,8 +264,21 @@ describe('ToolManager.detail', () => {
       isToolParam: true
     });
     expect(childProperties.childParam).toMatchObject({
-      toolDescription: 'Child fallback',
-      isToolParam: false
+      toolDescription: {
+        en: 'Search child records',
+        'zh-CN': '搜索子记录'
+      },
+      isToolParam: true,
+      'x-i18n': {
+        title: {
+          en: 'Child query',
+          'zh-CN': '子查询'
+        },
+        placeholder: {
+          en: 'Enter child query',
+          'zh-CN': '输入子查询'
+        }
+      }
     });
   });
 });

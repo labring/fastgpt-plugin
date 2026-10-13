@@ -21,7 +21,7 @@ export type ToolChildManifestDefinition = {
   description: UserToolManifestType['description'];
   name: UserToolManifestType['name'];
   icon?: string;
-  toolDescription?: string;
+  toolDescription?: UserToolManifestType['toolDescription'];
 };
 
 type ToolInputSchema = z.ZodObject<any>;

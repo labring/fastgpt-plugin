@@ -65,9 +65,17 @@ const pkgFiles = () =>
   }) as PkgContentFileObjects;
 
 describe('PluginRepo.createPlugin', () => {
-  it('serializes JSON Schema fields before storing plugin records', () => {
+  it('serializes localized model descriptions and JSON Schema metadata before storing plugin records', () => {
     (PluginRepo as any)._instance = undefined;
 
+    const localizedDescription = {
+      en: 'Search public documentation',
+      'zh-CN': '搜索公开文档'
+    };
+    const localizedLabel = {
+      en: 'Search query',
+      'zh-CN': '搜索内容'
+    };
     const inputSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
       type: 'object',
@@ -81,58 +89,109 @@ describe('PluginRepo.createPlugin', () => {
           type: 'string'
         },
         query: {
-          $ref: '#/$defs/keyword'
+          $ref: '#/$defs/keyword',
+          title: 'Query',
+          description: 'Search query',
+          'x-i18n': {
+            title: localizedLabel,
+            description: localizedDescription,
+            placeholder: localizedLabel
+          }
         }
       }
     };
     const outputSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object'
+      type: 'object',
+      properties: {
+        answer: {
+          type: 'string',
+          title: 'Answer',
+          'x-i18n': {
+            title: localizedLabel,
+            description: localizedDescription
+          }
+        }
+      }
     };
     const secretSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object'
+      type: 'object',
+      properties: {
+        apiKey: {
+          type: 'string',
+          title: 'API key',
+          'x-i18n': {
+            title: localizedLabel,
+            description: localizedDescription,
+            placeholder: localizedLabel
+          }
+        }
+      }
     };
     const childInputSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
       properties: {
         query: {
-          $ref: '#/$defs/keyword'
+          $ref: '#/$defs/keyword',
+          'x-i18n': {
+            title: localizedLabel,
+            description: localizedDescription
+          }
         }
       }
     };
     const childOutputSchema = {
-      $schema: 'https://json-schema.org/draft/2020-12/schema'
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      properties: {
+        answer: {
+          type: 'string',
+          'x-i18n': {
+            title: localizedLabel
+          }
+        }
+      }
     };
     const repo = PluginRepo.getInstance({} as PluginRepoDeps);
     const record = (repo as any).toPluginRecord({
       ...plugin(),
+      toolDescription: localizedDescription,
       inputSchema,
       outputSchema,
       secretSchema,
       children: [
         {
           id: 'search',
-          name: { en: 'Search', 'zh-CN': 'Search' },
-          description: { en: 'Search', 'zh-CN': 'Search' },
+          name: { en: 'Search', 'zh-CN': '搜索' },
+          description: localizedDescription,
           icon: 'https://example.com/search.svg',
-          toolDescription: 'Search',
+          toolDescription: localizedDescription,
           inputSchema: childInputSchema,
           outputSchema: childOutputSchema
         }
       ]
     });
 
+    expect(record.data.toolDescription).toEqual(localizedDescription);
     expect(record.data.inputSchema).toBe(JSON.stringify(inputSchema));
     expect(record.data.outputSchema).toBe(JSON.stringify(outputSchema));
     expect(record.data.secretSchema).toBe(JSON.stringify(secretSchema));
+    expect(record.data.children[0].toolDescription).toEqual(localizedDescription);
     expect(record.data.children[0].inputSchema).toBe(JSON.stringify(childInputSchema));
     expect(record.data.children[0].outputSchema).toBe(JSON.stringify(childOutputSchema));
   });
 
-  it('deserializes stored JSON Schema fields when reading plugin records', () => {
+  it('deserializes localized model descriptions and JSON Schema metadata when reading plugin records', () => {
     (PluginRepo as any)._instance = undefined;
 
+    const localizedDescription = {
+      en: 'Search public documentation',
+      'zh-CN': '搜索公开文档'
+    };
+    const localizedLabel = {
+      en: 'Search query',
+      'zh-CN': '搜索内容'
+    };
     const inputSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
       type: 'object',
@@ -142,48 +201,85 @@ describe('PluginRepo.createPlugin', () => {
         }
       },
       properties: {
-        schema: {
-          type: 'string'
-        },
-        ref: {
-          type: 'string'
-        },
         query: {
-          $ref: '#/$defs/keyword'
+          $ref: '#/$defs/keyword',
+          description: 'Legacy query description',
+          'x-i18n': {
+            title: localizedLabel,
+            description: localizedDescription,
+            placeholder: localizedLabel
+          }
         }
       }
     };
     const outputSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object'
+      type: 'object',
+      properties: {
+        answer: {
+          type: 'string',
+          'x-i18n': {
+            title: localizedLabel,
+            description: localizedDescription
+          }
+        }
+      }
     };
     const secretSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object'
+      type: 'object',
+      properties: {
+        apiKey: {
+          type: 'string',
+          'x-i18n': {
+            title: localizedLabel,
+            description: localizedDescription,
+            placeholder: localizedLabel
+          }
+        }
+      }
     };
     const childInputSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object'
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          'x-i18n': {
+            title: localizedLabel,
+            description: localizedDescription
+          }
+        }
+      }
     };
     const childOutputSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
-      type: 'object'
+      type: 'object',
+      properties: {
+        answer: {
+          type: 'string',
+          'x-i18n': {
+            title: localizedLabel
+          }
+        }
+      }
     };
     const repo = PluginRepo.getInstance({} as PluginRepoDeps);
     const domainPlugin = (repo as any).toDomainPlugin({
       ...pluginRecord(),
       data: {
         ...pluginRecord().data,
+        toolDescription: localizedDescription,
         inputSchema: JSON.stringify(inputSchema),
         outputSchema: JSON.stringify(outputSchema),
         secretSchema: JSON.stringify(secretSchema),
         children: [
           {
             id: 'search',
-            name: { en: 'Search', 'zh-CN': 'Search' },
-            description: { en: 'Search', 'zh-CN': 'Search' },
+            name: { en: 'Search', 'zh-CN': '搜索' },
+            description: localizedDescription,
             icon: 'https://example.com/search.svg',
-            toolDescription: 'Search',
+            toolDescription: localizedDescription,
             inputSchema: JSON.stringify(childInputSchema),
             outputSchema: JSON.stringify(childOutputSchema)
           }
@@ -191,9 +287,11 @@ describe('PluginRepo.createPlugin', () => {
       }
     });
 
+    expect(domainPlugin.toolDescription).toEqual(localizedDescription);
     expect(domainPlugin.inputSchema).toEqual(inputSchema);
     expect(domainPlugin.outputSchema).toEqual(outputSchema);
     expect(domainPlugin.secretSchema).toEqual(secretSchema);
+    expect(domainPlugin.children?.[0].toolDescription).toEqual(localizedDescription);
     expect(domainPlugin.children?.[0].inputSchema).toEqual(childInputSchema);
     expect(domainPlugin.children?.[0].outputSchema).toEqual(childOutputSchema);
   });
@@ -1422,6 +1520,10 @@ describe('PluginRepo.listToolSummaries', () => {
         etag: 'etag-schema-only'
       }
     ];
+    const localizedToolDescription = {
+      en: 'Search public documentation',
+      'zh-CN': '搜索公开文档'
+    };
     const makePluginRecord = (pluginId: string, etag: string, secretSchema?: unknown) => ({
       pluginId,
       version: '1.0.0',
@@ -1433,7 +1535,19 @@ describe('PluginRepo.listToolSummaries', () => {
       tags: ['tools'],
       status: PluginStatusEnum.active,
       data: {
-        toolDescription: pluginId,
+        toolDescription: pluginId === 'with-secret' ? localizedToolDescription : pluginId,
+        ...(pluginId === 'with-secret'
+          ? {
+              children: [
+                {
+                  id: 'search',
+                  name: { en: 'Search', 'zh-CN': '搜索' },
+                  description: { en: 'Search tool', 'zh-CN': '搜索工具' },
+                  toolDescription: localizedToolDescription
+                }
+              ]
+            }
+          : {}),
         ...(secretSchema !== undefined ? { secretSchema: JSON.stringify(secretSchema) } : {})
       }
     });
@@ -1479,7 +1593,12 @@ describe('PluginRepo.listToolSummaries', () => {
     expect(pluginModel.find).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({
-        'data.secretSchema': 1
+        'data.secretSchema': 1,
+        'data.toolDescription': 1,
+        'data.children.id': 1,
+        'data.children.name': 1,
+        'data.children.description': 1,
+        'data.children.toolDescription': 1
       })
     );
     expect(tools).toEqual([
@@ -1497,6 +1616,13 @@ describe('PluginRepo.listToolSummaries', () => {
       }),
       expect.objectContaining({
         pluginId: 'with-secret',
+        toolDescription: localizedToolDescription,
+        children: [
+          expect.objectContaining({
+            id: 'search',
+            toolDescription: localizedToolDescription
+          })
+        ],
         hasSecret: true
       })
     ]);

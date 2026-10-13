@@ -21,7 +21,8 @@ import {
   createToolHandler,
   defineTool,
   type InputSchemaMetaType,
-  type OutputSchemaMetaType
+  type OutputSchemaMetaType,
+  type SecretSchemaMetaType
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
@@ -113,7 +114,63 @@ Defines a tool set with multiple child tools. All child tools share the top-leve
 | `tags` | No | Plugin tags. |
 | `permission` | No | Plugin permission declarations. |
 | `icon` | No | Plugin icon; the build pipeline can fill it automatically. |
-| `toolDescription` | No | Tool description for the model; the build pipeline can fill it automatically. |
+| `toolDescription` | No | Model-facing tool description; accepts a string or i18n object and can fall back to the tool description during build. |
+
+## Localized Schema Text and Model Instructions
+
+Add `'x-i18n'` metadata to input, output, and secret fields to provide English and Simplified Chinese UI text; Traditional Chinese is optional. The CLI build preserves the complete `'x-i18n'` object and copies its `'zh-CN'` values into the compatible plain-string `title`, `description`, and `placeholder` fields. Fields in older manifests without `'x-i18n'` keep their original values.
+
+```ts
+const handler = createToolHandler({
+  inputSchema: z.object({
+    query: z.string().meta({
+      title: 'Query',
+      description: 'Text to search for',
+      'x-i18n': {
+        title: { en: 'Query', 'zh-CN': '查询' },
+        description: { en: 'Text to search for', 'zh-CN': '用于检索的文本' },
+        placeholder: { en: 'Enter a query', 'zh-CN': '输入查询文本' }
+      },
+      toolDescription: {
+        en: 'The search text used to find matching items.',
+        'zh-CN': '用于查找匹配项目的搜索文本。'
+      },
+      isToolParam: true
+    } satisfies InputSchemaMetaType)
+  }),
+  outputSchema: z.object({
+    answer: z.string().meta({
+      title: 'Answer',
+      'x-i18n': {
+        title: { en: 'Answer', 'zh-CN': '答案' },
+        description: { en: 'The search result', 'zh-CN': '搜索结果' }
+      }
+    } satisfies OutputSchemaMetaType)
+  }),
+  secretSchema: z.object({
+    apiKey: z.string().meta({
+      title: 'API Key',
+      'x-i18n': {
+        title: { en: 'API key', 'zh-CN': 'API 密钥' },
+        placeholder: { en: 'Enter an API key', 'zh-CN': '输入 API 密钥' }
+      },
+      isSecret: true
+    } satisfies SecretSchemaMetaType)
+  }),
+  handler: async (input) => ({ answer: `Result for ${input.query}` })
+});
+```
+
+`toolDescription` is separate model-facing text and can be set on a plugin, a tool-set child, or an input parameter. New plugins should provide an i18n object with `en` and `'zh-CN'`; `'zh-Hant'` is optional. The host selects text for the model request locale and falls back from the exact locale to `'zh-CN'`, then `en`. String descriptions in older plugins remain valid and are preserved as-is; the CLI does not present them as bilingual translations. Schema field text is UI copy and does not replace the model-facing `toolDescription`.
+
+A tool or child-tool model description can also use:
+
+```ts
+toolDescription: {
+  en: 'Search for items that match the query.',
+  'zh-CN': '搜索与查询内容匹配的项目。'
+}
+```
 
 ## Secret Configuration
 

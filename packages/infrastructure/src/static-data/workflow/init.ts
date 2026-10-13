@@ -194,9 +194,9 @@ export async function initStaticWorkflowAssets({
   });
 }
 
-export const initWorkflowTemplates = async () => {
-  const publicWorkflowsPath = getWorkflowTemplateDir();
-
+export const initWorkflowTemplates = async (
+  publicWorkflowsPath = getWorkflowTemplateDir()
+) => {
   workflows.length = 0;
 
   // according to the environment to decide to read the way
@@ -213,6 +213,7 @@ export const initWorkflowTemplates = async () => {
     const fileContent = fileBuffer.toString();
     const templateData = JSON.parse(fileContent);
 
+    // Preserve raw template content; the static JSON files are migrated separately.
     const template = {
       ...templateData,
       templateId: item.name,

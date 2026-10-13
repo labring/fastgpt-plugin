@@ -1,6 +1,12 @@
 {
-  "name": "飞书 webhook 插件",
-  "intro": "通过 webhook 给飞书机器人发送一条消息",
+  "name": {
+    "en": "Feishu Webhook Plugin",
+    "zh-CN": "飞书 webhook 插件"
+  },
+  "intro": {
+    "en": "Send a message to a Feishu bot through a webhook.",
+    "zh-CN": "通过 webhook 给飞书机器人发送一条消息"
+  },
   "author": "",
   "type": "plugin",
   "tags": ["recommendation", "office-services"],
@@ -8,8 +14,14 @@
     "nodes": [
       {
         "nodeId": "pluginInput",
-        "name": "插件开始",
-        "intro": "自定义配置外部输入，使用插件时，仅暴露自定义配置的输入",
+        "name": {
+          "en": "Plugin Input",
+          "zh-CN": "插件开始"
+        },
+        "intro": {
+          "en": "Configure custom inputs exposed when using the plugin.",
+          "zh-CN": "自定义配置外部输入，使用插件时，仅暴露自定义配置的输入"
+        },
         "avatar": "core/workflow/template/workflowStart",
         "flowNodeType": "pluginInput",
         "showStatus": false,
@@ -23,8 +35,14 @@
             "inputType": "input",
             "valueType": "string",
             "key": "飞书机器人地址",
-            "label": "飞书机器人地址",
-            "description": "",
+            "label": {
+              "en": "Feishu bot URL",
+              "zh-CN": "飞书机器人地址"
+            },
+            "description": {
+              "en": "",
+              "zh-CN": ""
+            },
             "isToolInput": false,
             "defaultValue": "",
             "editField": {
@@ -43,10 +61,16 @@
           {
             "key": "发送的消息",
             "valueType": "string",
-            "label": "发送的消息",
+            "label": {
+              "en": "Message to send",
+              "zh-CN": "发送的消息"
+            },
             "renderTypeList": ["reference"],
             "required": true,
-            "description": "",
+            "description": {
+              "en": "",
+              "zh-CN": ""
+            },
             "canEdit": true,
             "value": "",
             "editField": {
@@ -64,22 +88,34 @@
             "id": "mv52BrPVE6bm",
             "key": "飞书机器人地址",
             "valueType": "string",
-            "label": "飞书机器人地址",
+            "label": {
+              "en": "Feishu bot URL",
+              "zh-CN": "飞书机器人地址"
+            },
             "type": "static"
           },
           {
             "id": "p0m68Dv5KaIp",
             "key": "发送的消息",
             "valueType": "string",
-            "label": "发送的消息",
+            "label": {
+              "en": "Message to send",
+              "zh-CN": "发送的消息"
+            },
             "type": "static"
           }
         ]
       },
       {
         "nodeId": "pluginOutput",
-        "name": "插件输出",
-        "intro": "自定义配置外部输出，使用插件时，仅暴露自定义配置的输出",
+        "name": {
+          "en": "Plugin Output",
+          "zh-CN": "插件输出"
+        },
+        "intro": {
+          "en": "Configure custom outputs exposed when using the plugin.",
+          "zh-CN": "自定义配置外部输出，使用插件时，仅暴露自定义配置的输出"
+        },
         "avatar": "core/workflow/template/pluginOutput",
         "flowNodeType": "pluginOutput",
         "showStatus": false,
@@ -93,8 +129,14 @@
       },
       {
         "nodeId": "rKBYGQuYefae",
-        "name": "HTTP 请求",
-        "intro": "可以发出一个 HTTP 请求，实现更为复杂的操作（联网搜索、数据库查询等）",
+        "name": {
+          "en": "HTTP Request",
+          "zh-CN": "HTTP 请求"
+        },
+        "intro": {
+          "en": "Send an HTTP request for advanced operations such as web searches and database queries.",
+          "zh-CN": "可以发出一个 HTTP 请求，实现更为复杂的操作（联网搜索、数据库查询等）"
+        },
         "avatar": "core/workflow/template/httpRequest",
         "flowNodeType": "httpRequest468",
         "showStatus": true,
@@ -108,9 +150,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "common:core.module.input.description.HTTP Dynamic Input",
+            "description": {
+              "en": "common:core.module.input.description.HTTP Dynamic Input",
+              "zh-CN": "common:core.module.input.description.HTTP Dynamic Input"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -132,101 +180,197 @@
               "showDescription": false,
               "showDefaultValue": true
             },
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "system_httpMethod",
             "renderTypeList": ["custom"],
             "valueType": "string",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "POST",
             "required": true,
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "system_httpTimeout",
             "renderTypeList": ["custom"],
             "valueType": "number",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": 30,
             "min": 5,
             "max": 600,
             "required": true,
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "system_httpReqUrl",
             "renderTypeList": ["hidden"],
             "valueType": "string",
-            "label": "",
-            "description": "common:core.module.input.description.Http Request Url",
-            "placeholder": "https://api.ai.com/getInventory",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "description": {
+              "en": "common:core.module.input.description.Http Request Url",
+              "zh-CN": "common:core.module.input.description.Http Request Url"
+            },
+            "placeholder": {
+              "en": "https://api.ai.com/getInventory",
+              "zh-CN": "https://api.ai.com/getInventory"
+            },
             "required": false,
             "value": "{{url}}",
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "system_httpHeader",
             "renderTypeList": ["custom"],
             "valueType": "any",
             "value": [],
-            "label": "",
-            "description": "common:core.module.input.description.Http Request Header",
-            "placeholder": "common:core.module.input.description.Http Request Header",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "description": {
+              "en": "common:core.module.input.description.Http Request Header",
+              "zh-CN": "common:core.module.input.description.Http Request Header"
+            },
+            "placeholder": {
+              "en": "common:core.module.input.description.Http Request Header",
+              "zh-CN": "common:core.module.input.description.Http Request Header"
+            },
             "required": false,
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "system_httpParams",
             "renderTypeList": ["hidden"],
             "valueType": "any",
             "value": [],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "system_httpJsonBody",
             "renderTypeList": ["hidden"],
             "valueType": "any",
             "value": "{\r\n    \"msg_type\": \"text\",\r\n    \"content\": {\r\n        \"text\": \"{{text}}\"\r\n    }\r\n}",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "system_httpFormBody",
             "renderTypeList": ["hidden"],
             "valueType": "any",
             "value": [],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "system_httpContentType",
             "renderTypeList": ["hidden"],
             "valueType": "string",
             "value": "json",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "debugLabel": "",
-            "toolDescription": ""
+            "debugLabel": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "toolDescription": {
+              "en": "",
+              "zh-CN": ""
+            }
           },
           {
             "key": "text",
             "valueType": "string",
-            "label": "text",
+            "label": {
+              "en": "Text",
+              "zh-CN": "文本"
+            },
             "renderTypeList": ["reference"],
-            "description": "",
+            "description": {
+              "en": "",
+              "zh-CN": ""
+            },
             "canEdit": true,
             "editField": {
               "key": true,
@@ -258,9 +402,15 @@
           {
             "key": "url",
             "valueType": "string",
-            "label": "url",
+            "label": {
+              "en": "URL",
+              "zh-CN": "URL"
+            },
             "renderTypeList": ["reference"],
-            "description": "",
+            "description": {
+              "en": "",
+              "zh-CN": ""
+            },
             "canEdit": true,
             "editField": {
               "key": true,
@@ -294,8 +444,14 @@
           {
             "id": "error",
             "key": "error",
-            "label": "workflow:request_error",
-            "description": "HTTP请求错误信息，成功时返回空",
+            "label": {
+              "en": "workflow:request_error",
+              "zh-CN": "workflow:request_error"
+            },
+            "description": {
+              "en": "HTTP request error; empty when the request succeeds.",
+              "zh-CN": "HTTP请求错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -303,8 +459,14 @@
             "id": "httpRawResponse",
             "key": "httpRawResponse",
             "required": true,
-            "label": "workflow:raw_response",
-            "description": "HTTP请求的原始响应。只能接受字符串或JSON类型响应数据。",
+            "label": {
+              "en": "workflow:raw_response",
+              "zh-CN": "workflow:raw_response"
+            },
+            "description": {
+              "en": "Raw HTTP response. Only string or JSON response data is supported.",
+              "zh-CN": "HTTP请求的原始响应。只能接受字符串或JSON类型响应数据。"
+            },
             "valueType": "any",
             "type": "static"
           },
@@ -313,7 +475,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "editField": {
               "key": true,
               "valueType": true
@@ -323,8 +488,14 @@
       },
       {
         "nodeId": "q3ccNXiZIHoS",
-        "name": "系统配置",
-        "intro": "",
+        "name": {
+          "en": "System Configuration",
+          "zh-CN": "系统配置"
+        },
+        "intro": {
+          "en": "",
+          "zh-CN": ""
+        },
         "avatar": "core/workflow/template/systemConfig",
         "flowNodeType": "pluginConfig",
         "position": {

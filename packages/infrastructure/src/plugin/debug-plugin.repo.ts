@@ -20,6 +20,7 @@ import type {
 import { ToolListItemSchema } from '@domain/ports/plugin/tool.port';
 import { createError } from '@domain/value-objects/error.vo';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import type {
   PluginSourceType,
   PluginUniqueIdType,
@@ -49,25 +50,29 @@ type DebugPluginMetadata = DebugPluginMetadataPayload & {
   source?: string;
 };
 
+type DebugText = string | I18nStringType;
+
+type DebugToolMetadata = {
+  id: string;
+  name: DebugText;
+  description: DebugText;
+  toolDescription: DebugText;
+  inputSchema: Record<string, unknown>;
+  outputSchema: Record<string, unknown>;
+};
+
 type DebugPluginMetadataPayload = {
   pluginId: string;
   version: string;
-  name: string;
-  description: string;
-  toolDescription: string;
+  name: DebugText;
+  description: DebugText;
+  toolDescription: DebugText;
   author?: string;
   tags?: string[];
   permissions?: string[];
   secretSchema?: Record<string, unknown>;
   isToolSet: boolean;
-  tools: Array<{
-    id: string;
-    name: string;
-    description: string;
-    toolDescription: string;
-    inputSchema: Record<string, unknown>;
-    outputSchema: Record<string, unknown>;
-  }>;
+  tools: DebugToolMetadata[];
 };
 
 type DebugPluginMetadataBundle = {
@@ -484,7 +489,11 @@ function toToolListItem({ source, metadata }: { source: string; metadata: DebugP
   });
 }
 
-function toI18n(value: string) {
+function toI18n(value: DebugText): I18nStringType {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
   return {
     en: value,
     'zh-CN': value

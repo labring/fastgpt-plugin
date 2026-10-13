@@ -4,12 +4,14 @@ import { I18nStringSchema } from '../value-objects/i18n-string.vo';
 
 import { PluginBaseSchema, PluginTypeEnum } from './plugin-base.entity';
 
+export const ToolDescriptionSchema = z.union([z.string(), I18nStringSchema]);
+
 export const ToolSetChildItemSchema = z.object({
   id: z.string(),
   name: I18nStringSchema,
   description: I18nStringSchema.optional(),
   icon: z.string(),
-  toolDescription: z.string(),
+  toolDescription: ToolDescriptionSchema,
   inputSchema: z.any(),
   outputSchema: z.any()
 });
@@ -19,7 +21,7 @@ export const ToolSchema = z.object({
   type: z.literal(PluginTypeEnum.tool),
 
   // in data
-  toolDescription: z.string(),
+  toolDescription: ToolDescriptionSchema,
   inputSchema: z.any().optional(),
   outputSchema: z.any().optional(),
   secretSchema: z.any().optional(),
@@ -32,7 +34,7 @@ export const ToolSetSchema = z.object({
 
   meta: z.object({
     secretSchema: z.any().optional(),
-    toolDescription: z.string()
+    toolDescription: ToolDescriptionSchema
   })
 });
 

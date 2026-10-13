@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { Readable } from 'node:stream';
 
 import { addMinutes } from 'date-fns';
 import type { ClientSession } from 'mongoose';
@@ -62,6 +63,7 @@ const PluginListViewProjection = {
     icon: 1,
     tutorialUrl: 1,
     readmeUrl: 1,
+    readmeUrls: 1,
     repoUrl: 1,
     description: 1,
     tags: 1
@@ -76,6 +78,7 @@ const PluginListViewProjection = {
     icon: 1,
     tutorialUrl: 1,
     readmeUrl: 1,
+    readmeUrls: 1,
     repoUrl: 1,
     description: 1,
     tags: 1,
@@ -967,6 +970,7 @@ export class PluginRepo implements PluginRepoPort {
           icon: plugin.icon,
           tutorialUrl: plugin.tutorialUrl ?? undefined,
           readmeUrl: plugin.readmeUrl ?? undefined,
+          readmeUrls: plugin.readmeUrls ?? undefined,
           repoUrl: plugin.repoUrl ?? undefined,
           description: plugin.description,
           tags: plugin.tags ?? undefined,
@@ -1019,6 +1023,7 @@ export class PluginRepo implements PluginRepoPort {
           icon: plugin.icon,
           tutorialUrl: plugin.tutorialUrl ?? undefined,
           readmeUrl: plugin.readmeUrl ?? undefined,
+          readmeUrls: plugin.readmeUrls ?? undefined,
           repoUrl: plugin.repoUrl ?? undefined,
           description: plugin.description,
           tags: plugin.tags ?? undefined,
@@ -1318,26 +1323,38 @@ export class PluginRepo implements PluginRepoPort {
     }
 
     const pluginRecord = this.toPluginRecord(plugin);
-    const [indexStream, err] = await files.index.fileStream;
-    const [READMEStream, READMEErr] = (await files.readme?.fileStream) ?? [];
-
-    if (err || READMEErr) {
+    const [indexStream, indexStreamError] = await files.index.fileStream;
+    if (indexStreamError) {
       return failureResult(
-        { en: 'get index.js stream error', 'zh-CN': '获取文件流错误' },
-        err || READMEErr
+        { en: 'get index.js stream error', 'zh-CN': '获取 index.js 文件流失败' },
+        indexStreamError
       );
     }
 
+    const readmeFiles = [
+      ...(files.readme ? [files.readme] : []),
+      ...Object.values(files.readmes ?? {}).filter((file): file is FileObject => file !== undefined)
+    ];
+    const readmesWithStreams: Array<{ file: FileObject; stream: Readable }> = [];
+    for (const readme of readmeFiles) {
+      const [stream, readmeStreamError] = await readme.fileStream;
+      if (readmeStreamError) {
+        return failureResult(
+          { en: 'get README file stream error', 'zh-CN': '获取 README 文件流失败' },
+          readmeStreamError
+        );
+      }
+      readmesWithStreams.push({ file: readme, stream });
+    }
+
     const publicSaveTasks = [
-      ...(files.readme && READMEStream
-        ? [
-          this.deps.publicRemoteFileStorageRepo.save({
-            ...files.readme.metaData,
-            fileKey: this.getFileKey(uniqueId, ['README.md'], false),
-            file: READMEStream
-          })
-        ]
-        : []),
+      ...readmesWithStreams.map(({ file, stream }) =>
+        this.deps.publicRemoteFileStorageRepo.save({
+          ...file.metaData,
+          fileKey: this.getFileKey(uniqueId, [file.metaData.fileName], false),
+          file: stream
+        })
+      ),
       ...(files.logos ?? []).map(async (logo) => {
         const [stream, err] = await logo.fileStream;
         if (err) {

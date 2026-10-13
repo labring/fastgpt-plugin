@@ -1,6 +1,12 @@
 {
-  "name": "谷歌搜索",
-  "intro": "通过请求谷歌搜索，查询相关内容作为模型的参考。",
+  "name": {
+    "en": "Google Search",
+    "zh-CN": "谷歌搜索"
+  },
+  "intro": {
+    "en": "Search Google and use relevant results as context for the model.",
+    "zh-CN": "通过请求谷歌搜索，查询相关内容作为模型的参考。"
+  },
   "author": "",
   "tags": ["recommendation", "web-search"],
   "type": "advanced",
@@ -8,8 +14,14 @@
     "nodes": [
       {
         "nodeId": "userGuide",
-        "name": "系统配置",
-        "intro": "可以配置应用的系统参数",
+        "name": {
+          "en": "System Configuration",
+          "zh-CN": "系统配置"
+        },
+        "intro": {
+          "en": "Configure the application's system settings.",
+          "zh-CN": "可以配置应用的系统参数"
+        },
         "avatar": "/imgs/workflow/userGuide.png",
         "flowNodeType": "userGuide",
         "position": {
@@ -22,21 +34,30 @@
             "key": "welcomeText",
             "renderTypeList": ["hidden"],
             "valueType": "string",
-            "label": "core.app.Welcome Text",
+            "label": {
+              "en": "core.app.Welcome Text",
+              "zh-CN": "core.app.Welcome Text"
+            },
             "value": ""
           },
           {
             "key": "variables",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "core.app.Chat Variable",
+            "label": {
+              "en": "core.app.Chat Variable",
+              "zh-CN": "core.app.Chat Variable"
+            },
             "value": []
           },
           {
             "key": "questionGuide",
             "valueType": "any",
             "renderTypeList": ["hidden"],
-            "label": "core.app.Question Guide",
+            "label": {
+              "en": "core.app.Question Guide",
+              "zh-CN": "core.app.Question Guide"
+            },
             "value": {
               "open": false
             }
@@ -45,7 +66,10 @@
             "key": "tts",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": {
               "type": "web"
             }
@@ -54,7 +78,10 @@
             "key": "whisper",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": {
               "open": false,
               "autoSend": false,
@@ -65,7 +92,10 @@
             "key": "scheduleTrigger",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": null
           }
         ],
@@ -73,8 +103,14 @@
       },
       {
         "nodeId": "448745",
-        "name": "流程开始",
-        "intro": "",
+        "name": {
+          "en": "Workflow Start",
+          "zh-CN": "流程开始"
+        },
+        "intro": {
+          "en": "",
+          "zh-CN": ""
+        },
         "avatar": "/imgs/workflow/userChatInput.svg",
         "flowNodeType": "workflowStart",
         "position": {
@@ -87,16 +123,25 @@
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": "用户问题",
+            "label": {
+              "en": "User question",
+              "zh-CN": "用户问题"
+            },
             "required": true,
-            "toolDescription": "用户问题"
+            "toolDescription": {
+              "en": "User question",
+              "zh-CN": "用户问题"
+            }
           }
         ],
         "outputs": [
           {
             "id": "userChatInput",
             "key": "userChatInput",
-            "label": "core.module.input.label.user question",
+            "label": {
+              "en": "core.module.input.label.user question",
+              "zh-CN": "core.module.input.label.user question"
+            },
             "valueType": "string",
             "type": "static"
           }
@@ -104,8 +149,14 @@
       },
       {
         "nodeId": "NOgbnBzUwDgT",
-        "name": "工具调用",
-        "intro": "通过AI模型自动选择一个或多个功能块进行调用，也可以对插件进行调用。",
+        "name": {
+          "en": "Tool Invocation",
+          "zh-CN": "工具调用"
+        },
+        "intro": {
+          "en": "Use an AI model to automatically select and invoke one or more functions or plugins.",
+          "zh-CN": "通过AI模型自动选择一个或多个功能块进行调用，也可以对插件进行调用。"
+        },
         "avatar": "/imgs/workflow/tool.svg",
         "flowNodeType": "tools",
         "showStatus": true,
@@ -118,7 +169,10 @@
           {
             "key": "model",
             "renderTypeList": ["settingLLMModel", "reference"],
-            "label": "core.module.input.label.aiModel",
+            "label": {
+              "en": "core.module.input.label.aiModel",
+              "zh-CN": "core.module.input.label.aiModel"
+            },
             "valueType": "string",
             "llmModelType": "all",
             "value": "FastAI-plus"
@@ -126,7 +180,10 @@
           {
             "key": "temperature",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": 0,
             "valueType": "number",
             "min": 0,
@@ -136,7 +193,10 @@
           {
             "key": "maxToken",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": 2000,
             "valueType": "number",
             "min": 100,
@@ -148,17 +208,32 @@
             "renderTypeList": ["textarea", "reference"],
             "max": 3000,
             "valueType": "string",
-            "label": "core.ai.Prompt",
-            "description": "core.app.tip.systemPromptTip",
-            "placeholder": "core.app.tip.chatNodeSystemPromptTip",
+            "label": {
+              "en": "core.ai.Prompt",
+              "zh-CN": "core.ai.Prompt"
+            },
+            "description": {
+              "en": "core.app.tip.systemPromptTip",
+              "zh-CN": "core.app.tip.systemPromptTip"
+            },
+            "placeholder": {
+              "en": "core.app.tip.chatNodeSystemPromptTip",
+              "zh-CN": "core.app.tip.chatNodeSystemPromptTip"
+            },
             "value": ""
           },
           {
             "key": "history",
             "renderTypeList": ["numberInput", "reference"],
             "valueType": "chatHistory",
-            "label": "core.module.input.label.chat history",
-            "description": "最多携带多少轮对话记录",
+            "label": {
+              "en": "core.module.input.label.chat history",
+              "zh-CN": "core.module.input.label.chat history"
+            },
+            "description": {
+              "en": "Maximum number of conversation turns to include.",
+              "zh-CN": "最多携带多少轮对话记录"
+            },
             "required": true,
             "min": 0,
             "max": 30,
@@ -168,7 +243,10 @@
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": "用户问题",
+            "label": {
+              "en": "User question",
+              "zh-CN": "用户问题"
+            },
             "required": true,
             "value": ["448745", "userChatInput"]
           }
@@ -177,8 +255,14 @@
           {
             "id": "answerText",
             "key": "answerText",
-            "label": "core.module.output.label.Ai response content",
-            "description": "core.module.output.description.Ai response content",
+            "label": {
+              "en": "core.module.output.label.Ai response content",
+              "zh-CN": "core.module.output.label.Ai response content"
+            },
+            "description": {
+              "en": "core.module.output.description.Ai response content",
+              "zh-CN": "core.module.output.description.Ai response content"
+            },
             "valueType": "string",
             "type": "static"
           }
@@ -186,8 +270,14 @@
       },
       {
         "nodeId": "GMELVPxHfpg5",
-        "name": "HTTP 请求",
-        "intro": "调用谷歌搜索，查询相关内容",
+        "name": {
+          "en": "HTTP Request",
+          "zh-CN": "HTTP 请求"
+        },
+        "intro": {
+          "en": "Search Google for relevant information.",
+          "zh-CN": "调用谷歌搜索，查询相关内容"
+        },
         "avatar": "/imgs/workflow/http.png",
         "flowNodeType": "httpRequest468",
         "showStatus": true,
@@ -201,16 +291,28 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "core.module.input.description.HTTP Dynamic Input"
+            "description": {
+              "en": "core.module.input.description.HTTP Dynamic Input",
+              "zh-CN": "core.module.input.description.HTTP Dynamic Input"
+            }
           },
           {
             "valueType": "string",
             "renderTypeList": ["reference"],
             "key": "query",
-            "label": "query",
-            "toolDescription": "谷歌搜索检索词",
+            "label": {
+              "en": "Query",
+              "zh-CN": "查询内容"
+            },
+            "toolDescription": {
+              "en": "Google Search Query",
+              "zh-CN": "谷歌搜索检索词"
+            },
             "required": true,
             "canEdit": true,
             "editField": {
@@ -222,7 +324,10 @@
             "key": "system_httpMethod",
             "renderTypeList": ["custom"],
             "valueType": "string",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "GET",
             "required": true
           },
@@ -230,9 +335,18 @@
             "key": "system_httpReqUrl",
             "renderTypeList": ["hidden"],
             "valueType": "string",
-            "label": "",
-            "description": "core.module.input.description.Http Request Url",
-            "placeholder": "https://api.ai.com/getInventory",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "description": {
+              "en": "core.module.input.description.Http Request Url",
+              "zh-CN": "core.module.input.description.Http Request Url"
+            },
+            "placeholder": {
+              "en": "https://api.ai.com/getInventory",
+              "zh-CN": "https://api.ai.com/getInventory"
+            },
             "required": false,
             "value": "https://www.googleapis.com/customsearch/v1"
           },
@@ -241,9 +355,18 @@
             "renderTypeList": ["custom"],
             "valueType": "any",
             "value": [],
-            "label": "",
-            "description": "core.module.input.description.Http Request Header",
-            "placeholder": "core.module.input.description.Http Request Header",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "description": {
+              "en": "core.module.input.description.Http Request Header",
+              "zh-CN": "core.module.input.description.Http Request Header"
+            },
+            "placeholder": {
+              "en": "core.module.input.description.Http Request Header",
+              "zh-CN": "core.module.input.description.Http Request Header"
+            },
             "required": false
           },
           {
@@ -287,7 +410,10 @@
                 "value": "m[1]"
               }
             ],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false
           },
           {
@@ -295,7 +421,10 @@
             "renderTypeList": ["hidden"],
             "valueType": "any",
             "value": "",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false
           }
         ],
@@ -305,7 +434,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "editField": {
               "key": true,
               "valueType": true
@@ -314,8 +446,14 @@
           {
             "id": "httpRawResponse",
             "key": "httpRawResponse",
-            "label": "原始响应",
-            "description": "HTTP请求的原始响应。只能接受字符串或JSON类型响应数据。",
+            "label": {
+              "en": "Raw response",
+              "zh-CN": "原始响应"
+            },
+            "description": {
+              "en": "Raw HTTP response. Only string or JSON response data is supported.",
+              "zh-CN": "HTTP请求的原始响应。只能接受字符串或JSON类型响应数据。"
+            },
             "valueType": "any",
             "type": "static",
             "required": true
@@ -325,14 +463,23 @@
             "type": "dynamic",
             "key": "prompt",
             "valueType": "string",
-            "label": "prompt"
+            "label": {
+              "en": "Prompt",
+              "zh-CN": "提示词"
+            }
           }
         ]
       },
       {
         "nodeId": "poIbrrA8aiR0",
-        "name": "代码运行",
-        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
+        "name": {
+          "en": "Run Code",
+          "zh-CN": "代码运行"
+        },
+        "intro": {
+          "en": "Run a script, typically for more complex data processing.",
+          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
+        },
         "avatar": "/imgs/workflow/code.svg",
         "flowNodeType": "code",
         "showStatus": true,
@@ -346,9 +493,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "这些变量会作为代码的运行的输入参数",
+            "description": {
+              "en": "These variables are passed to the code as input parameters.",
+              "zh-CN": "这些变量会作为代码的运行的输入参数"
+            },
             "editField": {
               "key": true,
               "valueType": true
@@ -357,9 +510,15 @@
           {
             "key": "data",
             "valueType": "object",
-            "label": "data",
+            "label": {
+              "en": "Data",
+              "zh-CN": "数据"
+            },
             "renderTypeList": ["reference"],
-            "description": "",
+            "description": {
+              "en": "",
+              "zh-CN": ""
+            },
             "canEdit": true,
             "editField": {
               "key": true,
@@ -370,13 +529,19 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "function main({data}){\n    const result = data.items.map((item) => ({\n      title: item.title,\n      link: item.link,\n      snippet: item.snippet\n    }))\n    return { prompt: JSON.stringify(result) }\n}"
           }
         ],
@@ -386,25 +551,40 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "editField": {
               "key": true,
               "valueType": true
             },
-            "description": "将代码中 return 的对象作为输出，传递给后续的节点"
+            "description": {
+              "en": "Pass the object returned by the code to downstream nodes.",
+              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点"
+            }
           },
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": "完整响应数据",
+            "label": {
+              "en": "Full response data",
+              "zh-CN": "完整响应数据"
+            },
             "valueType": "object",
             "type": "static"
           },
           {
             "id": "error",
             "key": "error",
-            "label": "运行错误",
-            "description": "代码运行错误信息，成功时返回空",
+            "label": {
+              "en": "Execution error",
+              "zh-CN": "运行错误"
+            },
+            "description": {
+              "en": "Code execution error; empty when execution succeeds.",
+              "zh-CN": "代码运行错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -413,7 +593,10 @@
             "type": "dynamic",
             "key": "prompt",
             "valueType": "string",
-            "label": "prompt"
+            "label": {
+              "en": "Prompt",
+              "zh-CN": "提示词"
+            }
           }
         ]
       }

@@ -104,6 +104,70 @@ describe('DebugPluginRepoOverlay', () => {
     );
   });
 
+  it('preserves localized plugin, child tool, and parameter metadata from the gateway', async () => {
+    const localizedPluginText = { en: 'Search plugin', 'zh-CN': '搜索插件' };
+    const localizedToolText = { en: 'Search documents', 'zh-CN': '搜索文档' };
+    const localizedParameterText = { en: 'Search query', 'zh-CN': '搜索内容' };
+    const localizedStatus = makeGatewayStatus({
+      metadataOverrides: {
+        dbops: {
+          name: localizedPluginText,
+          description: localizedPluginText,
+          toolDescription: localizedToolText,
+          isToolSet: true,
+          tools: [
+            {
+              id: 'search',
+              name: localizedToolText,
+              description: localizedToolText,
+              toolDescription: localizedToolText,
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  query: {
+                    title: 'Search query',
+                    toolDescription: localizedParameterText,
+                    'x-i18n': { title: localizedParameterText }
+                  }
+                }
+              },
+              outputSchema: { type: 'object' }
+            }
+          ]
+        }
+      }
+    });
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => jsonResponse(localizedStatus));
+    const repo = createRepo();
+
+    const [plugin, pluginErr] = await repo.getPluginByUserPluginId({
+      pluginId: 'dbops',
+      source: 'debug:user:u1'
+    });
+    const [tools, listErr] = await repo.listToolSummaries({ sources: ['debug:user:u1'] });
+
+    expect(pluginErr).toBeNull();
+    expect(listErr).toBeNull();
+    expect(plugin?.name).toEqual(localizedPluginText);
+    expect(plugin?.description).toEqual(localizedPluginText);
+    expect(plugin?.toolDescription).toEqual(localizedToolText);
+    expect(plugin?.children?.[0]?.toolDescription).toEqual(localizedToolText);
+    expect(plugin?.children?.[0]?.inputSchema).toMatchObject({
+      properties: {
+        query: {
+          toolDescription: localizedParameterText,
+          'x-i18n': { title: localizedParameterText }
+        }
+      }
+    });
+    expect(tools?.find((tool) => tool.pluginId === 'dbops')).toMatchObject({
+      name: localizedPluginText,
+      description: localizedPluginText,
+      toolDescription: localizedToolText,
+      children: [{ toolDescription: localizedToolText }]
+    });
+  });
+
   it('keeps debug etag stable when metadata key order changes', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(jsonResponse(makeGatewayStatus()))
@@ -323,6 +387,29 @@ function jsonResponse(payload: unknown): Response {
   });
 }
 
+type DebugTestText = string | { en: string; 'zh-CN': string };
+type DebugTestToolMetadata = {
+  id: string;
+  name: DebugTestText;
+  description: DebugTestText;
+  toolDescription: DebugTestText;
+  inputSchema: Record<string, unknown>;
+  outputSchema: Record<string, unknown>;
+};
+type DebugTestMetadata = {
+  source: string;
+  pluginId: string;
+  version: string;
+  name: DebugTestText;
+  description: DebugTestText;
+  toolDescription: DebugTestText;
+  tags: string[];
+  permissions: string[];
+  secretSchema: Record<string, unknown>;
+  isToolSet: boolean;
+  tools: DebugTestToolMetadata[];
+};
+
 function makeGatewayStatus({
   status = 'connected',
   ownerAlive = true,
@@ -331,7 +418,7 @@ function makeGatewayStatus({
 }: {
   status?: string;
   ownerAlive?: boolean;
-  metadataOverrides?: Record<string, Partial<ReturnType<typeof makeMetadata>>>;
+  metadataOverrides?: Record<string, Partial<DebugTestMetadata>>;
   reverseMetadataKeyOrder?: boolean;
 } = {}) {
   return {
@@ -374,9 +461,8 @@ function makeMetadata(
   {
     override = {},
     reverseKeyOrder = false
-  }: { override?: Partial<ReturnType<typeof makeMetadataBase>>; reverseKeyOrder?: boolean } = {}
-) {
-  const metadata = {
+  }: { override?: Partial<DebugTestMetadata>; reverseKeyOrder?: boolean } = {}) {
+  const metadata: DebugTestMetadata = {
     ...makeMetadataBase(pluginId, version),
     ...override
   };
@@ -385,12 +471,10 @@ function makeMetadata(
     return metadata;
   }
 
-  return Object.fromEntries(Object.entries(metadata).reverse()) as ReturnType<
-    typeof makeMetadataBase
-  >;
+  return Object.fromEntries(Object.entries(metadata).reverse()) as DebugTestMetadata;
 }
 
-function makeMetadataBase(pluginId: string, version: string) {
+function makeMetadataBase(pluginId: string, version: string): DebugTestMetadata {
   return {
     source: 'debug:user:u1',
     pluginId,

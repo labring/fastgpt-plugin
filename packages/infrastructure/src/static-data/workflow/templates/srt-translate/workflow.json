@@ -1,6 +1,12 @@
 {
-  "name": "长字幕反思翻译机器人",
-  "intro": "利用 AI 自我反思提升翻译质量，同时循环迭代执行 AI 工作流来突破 LLM tokens 限制，实现一个高效的长字幕翻译机器人",
+  "name": {
+    "en": "Long-Subtitle Reflection Translation Bot",
+    "zh-CN": "长字幕反思翻译机器人"
+  },
+  "intro": {
+    "en": "Improve translation quality through AI self-reflection and iterative workflow execution, overcoming LLM token limits for long subtitles.",
+    "zh-CN": "利用 AI 自我反思提升翻译质量，同时循环迭代执行 AI 工作流来突破 LLM tokens 限制，实现一个高效的长字幕翻译机器人"
+  },
   "author": "",
   "tags": ["office-services"],
   "type": "advanced",
@@ -12,8 +18,14 @@
     "nodes": [
       {
         "nodeId": "userGuide",
-        "name": "系统配置",
-        "intro": "可以配置应用的系统参数",
+        "name": {
+          "en": "System Configuration",
+          "zh-CN": "系统配置"
+        },
+        "intro": {
+          "en": "Configure the application's system settings.",
+          "zh-CN": "可以配置应用的系统参数"
+        },
         "avatar": "core/workflow/template/systemConfig",
         "flowNodeType": "userGuide",
         "position": {
@@ -26,21 +38,30 @@
             "key": "welcomeText",
             "renderTypeList": ["hidden"],
             "valueType": "string",
-            "label": "core.app.Welcome Text",
+            "label": {
+              "en": "core.app.Welcome Text",
+              "zh-CN": "core.app.Welcome Text"
+            },
             "value": ""
           },
           {
             "key": "variables",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "core.app.Chat Variable",
+            "label": {
+              "en": "core.app.Chat Variable",
+              "zh-CN": "core.app.Chat Variable"
+            },
             "value": []
           },
           {
             "key": "questionGuide",
             "valueType": "any",
             "renderTypeList": ["hidden"],
-            "label": "core.app.Question Guide",
+            "label": {
+              "en": "core.app.Question Guide",
+              "zh-CN": "core.app.Question Guide"
+            },
             "value": {
               "open": false
             }
@@ -49,7 +70,10 @@
             "key": "tts",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": {
               "type": "web"
             }
@@ -58,7 +82,10 @@
             "key": "whisper",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": {
               "open": false,
               "autoSend": false,
@@ -69,7 +96,10 @@
             "key": "scheduleTrigger",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": null
           }
         ],
@@ -77,8 +107,14 @@
       },
       {
         "nodeId": "448745",
-        "name": "流程开始",
-        "intro": "",
+        "name": {
+          "en": "Workflow Start",
+          "zh-CN": "流程开始"
+        },
+        "intro": {
+          "en": "",
+          "zh-CN": ""
+        },
         "avatar": "core/workflow/template/workflowStart",
         "flowNodeType": "workflowStart",
         "position": {
@@ -91,16 +127,25 @@
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": "用户问题",
+            "label": {
+              "en": "User question",
+              "zh-CN": "用户问题"
+            },
             "required": true,
-            "toolDescription": "用户问题"
+            "toolDescription": {
+              "en": "User question",
+              "zh-CN": "用户问题"
+            }
           }
         ],
         "outputs": [
           {
             "id": "userChatInput",
             "key": "userChatInput",
-            "label": "common:core.module.input.label.user question",
+            "label": {
+              "en": "common:core.module.input.label.user question",
+              "zh-CN": "common:core.module.input.label.user question"
+            },
             "type": "static",
             "valueType": "string"
           }
@@ -108,8 +153,14 @@
       },
       {
         "nodeId": "yjFO3YcM7KG2",
-        "name": "LLM 翻译",
-        "intro": "AI 大模型对话",
+        "name": {
+          "en": "LLM Translation",
+          "zh-CN": "LLM 翻译"
+        },
+        "intro": {
+          "en": "Chat with a large language model.",
+          "zh-CN": "AI 大模型对话"
+        },
         "avatar": "core/workflow/template/aiChat",
         "flowNodeType": "chatNode",
         "showStatus": true,
@@ -122,7 +173,10 @@
           {
             "key": "model",
             "renderTypeList": ["settingLLMModel", "reference"],
-            "label": "core.module.input.label.aiModel",
+            "label": {
+              "en": "core.module.input.label.aiModel",
+              "zh-CN": "core.module.input.label.aiModel"
+            },
             "valueType": "string",
             "selectedTypeIndex": 0,
             "value": "gpt-4o"
@@ -130,7 +184,10 @@
           {
             "key": "temperature",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": 3,
             "valueType": "number",
             "min": 0,
@@ -140,7 +197,10 @@
           {
             "key": "maxToken",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": 2000,
             "valueType": "number",
             "min": 100,
@@ -150,26 +210,38 @@
           {
             "key": "isResponseAnswerText",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": false,
             "valueType": "boolean"
           },
           {
             "key": "quoteTemplate",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "valueType": "string"
           },
           {
             "key": "quotePrompt",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "valueType": "string"
           },
           {
             "key": "aiChatVision",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "valueType": "boolean",
             "value": true
           },
@@ -178,17 +250,35 @@
             "renderTypeList": ["textarea", "reference"],
             "max": 3000,
             "valueType": "string",
-            "label": "core.ai.Prompt",
-            "description": "core.app.tip.systemPromptTip",
-            "placeholder": "core.app.tip.chatNodeSystemPromptTip",
-            "value": "# Role: 资深字幕翻译专家\n\n## Background:\n你是一位经验丰富的{{source_lang}}和{{target_lang}}字幕翻译专家,精通{{source_lang}}和{{target_lang}}互译,尤其擅长将{{source_lang}}字幕译成流畅易懂的{{target_lang}}字幕。你曾多次带领团队完成大型商业电影的字幕翻译项目,所翻译的字幕广受好评。\n\n## Attention:\n- 翻译过程中要始终坚持\"信、达、雅\"的原则,但\"达\"尤为重要\n- 翻译的字幕要符合{{target_lang}}的表达习惯,通俗易懂,连贯流畅\n- 避免使用过于文绉绉的表达和晦涩难懂的典故引用 \n- 诗词歌词等内容需按原文换行和节奏分行,不破坏原排列格式  \n- 翻译对象是字幕，请进入整段文本的语境中对需要翻译的文本段进行翻译\n- <T>是标识每一帧字幕的标签,请严格按照<T>对文本的分割逐帧翻译\n\n## Constraints:\n- 必须严格遵循四轮翻译流程:直译、意译、反思、提升\n- 译文要忠实原文,准确无误,不能遗漏或曲解原意\n- 最终译文使用Markdown的代码块呈现,但是不用输出markdown这个单词\n- <T>是标识每一帧字幕的标签,请严格按照<T>对文本的分割逐帧翻译，每一帧字幕末尾不要加\\n 回车标识，且第一帧字幕开头不需要加<T>标识\n\n## Goals:\n- 通过四轮翻译流程,将{{source_lang}}字幕译成高质量的{{target_lang}}字幕\n- 翻译的字幕要准确传达原字幕意思,语言表达力求浅显易懂,朗朗上口  \n\n## Workflow:\n1. 第一轮直译:严格按照<T>逐句翻译,不遗漏任何信息\n2. 第二轮意译:在直译的基础上用通俗流畅的{{target_lang}}意译原文,逐句翻译,保留<T>标识标签\n3. 第三轮反思:仔细审视译文,分点列出一份建设性的批评和有用的建议清单以改进翻译，对每一句话提出建议，从以下四个角度展开\n    (i) 准确性（纠正添加、误译、遗漏或未翻译的文本错误），\n    (ii) 流畅性（应用{{target_lang}}的语法、拼写和标点规则，并确保没有不必要的重复），\n    (iii) 风格（确保翻译反映源文本的风格并考虑其文化背景），\n    (iv) 术语（确保术语使用一致且反映源文本所在领域，注意确保使用{{target_lang}}中的等效习语）\n4. 第四轮提升:严格遵循第三轮提出的建议对翻译修改,定稿出一个简洁畅达、符合大众观影习惯的字幕译文,保留<T>标识标签\n\n## OutputFormat:\n- 每一轮前用【思考】说明该轮要点\n- 第一轮和第二轮翻译后用【翻译】呈现译文\n- 第三轮输出建议清单，分点列出，在每一点前用*xxx*标识这条建议对应的要点，如*风格*;建议前用【思考】说明该轮要点，建议后用【建议】呈现建议\n- 第四轮在\\`\\`\\`代码块中展示最终{{target_lang}}字幕文件内容，如\\`\\`\\`xxx\\`\\`\\`\n\n## Suggestions:\n- 直译时力求忠实原文,但注意控制每帧字幕的字数,必要时进行精简压缩\n- 意译时在准确表达原意的基础上,用最朴实无华的{{target_lang}}来表达\n- 反思环节重点关注译文是否符合{{target_lang}}表达习惯,是否通俗易懂,是否准确流畅,是否术语一致\n- 提升环节采用反思环节的建议对意译环节的翻译进行修改，适度采用一些口语化的表达、网络流行语等,增强字幕的亲和力\n- 注意<T>是很重要的标识标签，请确保标签能在正确位置输出"
+            "label": {
+              "en": "core.ai.Prompt",
+              "zh-CN": "core.ai.Prompt"
+            },
+            "description": {
+              "en": "core.app.tip.systemPromptTip",
+              "zh-CN": "core.app.tip.systemPromptTip"
+            },
+            "placeholder": {
+              "en": "core.app.tip.chatNodeSystemPromptTip",
+              "zh-CN": "core.app.tip.chatNodeSystemPromptTip"
+            },
+            "value": {
+              "en": "# Role: Expert Subtitle Translator\n\n## Background\nYou are an experienced subtitle translator fluent in {{source_lang}} and {{target_lang}}. You specialize in translating subtitles from {{source_lang}} into fluent, natural {{target_lang}}. Your work on major commercial film subtitle projects has been widely praised.\n\n## Attention\n- Follow the principles of faithfulness, clarity, and elegance; clarity is especially important.\n- Use natural, fluent expressions appropriate for {{target_lang}}.\n- Avoid archaic phrasing and obscure allusions.\n- Preserve the original line breaks and rhythm of poetry and lyrics.\n- Translate subtitle text in its full context.\n- <T> marks each subtitle frame. Translate frame by frame according to these tags.\n\n## Constraints\n- Follow four rounds: literal translation, free translation, reflection, and refinement.\n- Preserve the source meaning accurately; do not omit or distort anything.\n- Present the final subtitle in a Markdown code block, but do not output the word \"markdown\".\n- Keep each <T> frame boundary: do not add a literal \\n marker at frame ends, and do not add <T> before the first frame.\n\n## Goals\n- Translate subtitles from {{source_lang}} into high-quality {{target_lang}} through four rounds.\n- Convey the meaning accurately in clear, accessible language.\n\n## Workflow\n1. Literal translation: translate each <T>-delimited frame faithfully without omissions.\n2. Free translation: make each frame fluent and natural in {{target_lang}}, preserving <T> markers.\n3. Reflection: review every sentence and provide constructive suggestions from four perspectives:\n   (i) Accuracy: correct additions, mistranslations, omissions, and untranslated text.\n   (ii) Fluency: follow {{target_lang}} grammar, spelling, and punctuation; avoid unnecessary repetition.\n   (iii) Style: reflect the source style and cultural context.\n   (iv) Terminology: use consistent terms and equivalent idioms in {{target_lang}}.\n4. Refinement: apply the suggestions, produce concise subtitles suitable for general audiences, and preserve <T> markers.\n\n## Output Format\n- Begin each round with 【思考】 to explain its focus.\n- After rounds one and two, present the translation under 【翻译】.\n- For round three, list suggestions under 【建议】, prefixing each with its focus (such as *风格*).\n- In round four, put the final {{target_lang}} subtitle content in a code block.\n\n## Suggestions\n- Keep each frame concise when needed while preserving meaning.\n- Use plain, natural {{target_lang}}.\n- Review fluency, readability, accuracy, and terminology consistency.\n- Apply review suggestions during refinement; use colloquial language moderately.\n- Treat <T> as an important frame marker and keep it in the correct position.",
+              "zh-CN": "# Role: 资深字幕翻译专家\n\n## Background:\n你是一位经验丰富的{{source_lang}}和{{target_lang}}字幕翻译专家,精通{{source_lang}}和{{target_lang}}互译,尤其擅长将{{source_lang}}字幕译成流畅易懂的{{target_lang}}字幕。你曾多次带领团队完成大型商业电影的字幕翻译项目,所翻译的字幕广受好评。\n\n## Attention:\n- 翻译过程中要始终坚持\"信、达、雅\"的原则,但\"达\"尤为重要\n- 翻译的字幕要符合{{target_lang}}的表达习惯,通俗易懂,连贯流畅\n- 避免使用过于文绉绉的表达和晦涩难懂的典故引用 \n- 诗词歌词等内容需按原文换行和节奏分行,不破坏原排列格式  \n- 翻译对象是字幕，请进入整段文本的语境中对需要翻译的文本段进行翻译\n- <T>是标识每一帧字幕的标签,请严格按照<T>对文本的分割逐帧翻译\n\n## Constraints:\n- 必须严格遵循四轮翻译流程:直译、意译、反思、提升\n- 译文要忠实原文,准确无误,不能遗漏或曲解原意\n- 最终译文使用Markdown的代码块呈现,但是不用输出markdown这个单词\n- <T>是标识每一帧字幕的标签,请严格按照<T>对文本的分割逐帧翻译，每一帧字幕末尾不要加\\n 回车标识，且第一帧字幕开头不需要加<T>标识\n\n## Goals:\n- 通过四轮翻译流程,将{{source_lang}}字幕译成高质量的{{target_lang}}字幕\n- 翻译的字幕要准确传达原字幕意思,语言表达力求浅显易懂,朗朗上口  \n\n## Workflow:\n1. 第一轮直译:严格按照<T>逐句翻译,不遗漏任何信息\n2. 第二轮意译:在直译的基础上用通俗流畅的{{target_lang}}意译原文,逐句翻译,保留<T>标识标签\n3. 第三轮反思:仔细审视译文,分点列出一份建设性的批评和有用的建议清单以改进翻译，对每一句话提出建议，从以下四个角度展开\n    (i) 准确性（纠正添加、误译、遗漏或未翻译的文本错误），\n    (ii) 流畅性（应用{{target_lang}}的语法、拼写和标点规则，并确保没有不必要的重复），\n    (iii) 风格（确保翻译反映源文本的风格并考虑其文化背景），\n    (iv) 术语（确保术语使用一致且反映源文本所在领域，注意确保使用{{target_lang}}中的等效习语）\n4. 第四轮提升:严格遵循第三轮提出的建议对翻译修改,定稿出一个简洁畅达、符合大众观影习惯的字幕译文,保留<T>标识标签\n\n## OutputFormat:\n- 每一轮前用【思考】说明该轮要点\n- 第一轮和第二轮翻译后用【翻译】呈现译文\n- 第三轮输出建议清单，分点列出，在每一点前用*xxx*标识这条建议对应的要点，如*风格*;建议前用【思考】说明该轮要点，建议后用【建议】呈现建议\n- 第四轮在\\`\\`\\`代码块中展示最终{{target_lang}}字幕文件内容，如\\`\\`\\`xxx\\`\\`\\`\n\n## Suggestions:\n- 直译时力求忠实原文,但注意控制每帧字幕的字数,必要时进行精简压缩\n- 意译时在准确表达原意的基础上,用最朴实无华的{{target_lang}}来表达\n- 反思环节重点关注译文是否符合{{target_lang}}表达习惯,是否通俗易懂,是否准确流畅,是否术语一致\n- 提升环节采用反思环节的建议对意译环节的翻译进行修改，适度采用一些口语化的表达、网络流行语等,增强字幕的亲和力\n- 注意<T>是很重要的标识标签，请确保标签能在正确位置输出"
+            }
           },
           {
             "key": "history",
             "renderTypeList": ["numberInput", "reference"],
             "valueType": "chatHistory",
-            "label": "core.module.input.label.chat history",
-            "description": "最多携带多少轮对话记录",
+            "label": {
+              "en": "core.module.input.label.chat history",
+              "zh-CN": "core.module.input.label.chat history"
+            },
+            "description": {
+              "en": "Maximum number of conversation turns to include.",
+              "zh-CN": "最多携带多少轮对话记录"
+            },
             "required": true,
             "min": 0,
             "max": 50,
@@ -197,26 +287,50 @@
           {
             "key": "quoteQA",
             "renderTypeList": ["settingDatasetQuotePrompt"],
-            "label": "",
-            "debugLabel": "知识库引用",
-            "description": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
+            "debugLabel": {
+              "en": "Knowledge base reference",
+              "zh-CN": "知识库引用"
+            },
+            "description": {
+              "en": "",
+              "zh-CN": ""
+            },
             "valueType": "datasetQuote"
           },
           {
             "key": "stringQuoteText",
             "renderTypeList": ["reference", "textarea"],
-            "label": "app:document_quote",
-            "debugLabel": "app:document_quote",
-            "description": "app:document_quote_tip",
+            "label": {
+              "en": "app:document_quote",
+              "zh-CN": "app:document_quote"
+            },
+            "debugLabel": {
+              "en": "app:document_quote",
+              "zh-CN": "app:document_quote"
+            },
+            "description": {
+              "en": "app:document_quote_tip",
+              "zh-CN": "app:document_quote_tip"
+            },
             "valueType": "string"
           },
           {
             "key": "userChatInput",
             "renderTypeList": ["reference", "textarea"],
             "valueType": "string",
-            "label": "用户问题",
+            "label": {
+              "en": "User question",
+              "zh-CN": "用户问题"
+            },
             "required": true,
-            "toolDescription": "用户问题",
+            "toolDescription": {
+              "en": "User question",
+              "zh-CN": "用户问题"
+            },
             "value": ["bxz97Vg4Omux", "system_text"]
           }
         ],
@@ -225,8 +339,14 @@
             "id": "history",
             "key": "history",
             "required": true,
-            "label": "core.module.output.label.New context",
-            "description": "core.module.output.description.New context",
+            "label": {
+              "en": "core.module.output.label.New context",
+              "zh-CN": "core.module.output.label.New context"
+            },
+            "description": {
+              "en": "core.module.output.description.New context",
+              "zh-CN": "core.module.output.description.New context"
+            },
             "valueType": "chatHistory",
             "type": "static"
           },
@@ -234,8 +354,14 @@
             "id": "answerText",
             "key": "answerText",
             "required": true,
-            "label": "core.module.output.label.Ai response content",
-            "description": "core.module.output.description.Ai response content",
+            "label": {
+              "en": "core.module.output.label.Ai response content",
+              "zh-CN": "core.module.output.label.Ai response content"
+            },
+            "description": {
+              "en": "core.module.output.description.Ai response content",
+              "zh-CN": "core.module.output.description.Ai response content"
+            },
             "valueType": "string",
             "type": "static"
           }
@@ -243,8 +369,14 @@
       },
       {
         "nodeId": "bxz97Vg4Omux",
-        "name": "LLM 翻译提示词",
-        "intro": "可对固定或传入的文本进行加工后输出，非字符串类型数据最终会转成字符串类型。",
+        "name": {
+          "en": "LLM Translation Prompt",
+          "zh-CN": "LLM 翻译提示词"
+        },
+        "intro": {
+          "en": "Process fixed or supplied text and return the result. Non-string values are converted to strings.",
+          "zh-CN": "可对固定或传入的文本进行加工后输出，非字符串类型数据最终会转成字符串类型。"
+        },
         "avatar": "core/workflow/template/textConcat",
         "flowNodeType": "textEditor",
         "position": {
@@ -257,9 +389,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "可以引用其他节点的输出，作为文本拼接的变量，通过 {{字段名}} 来引用变量",
+            "description": {
+              "en": "Reference outputs from other nodes as text variables using {{field name}}.",
+              "zh-CN": "可以引用其他节点的输出，作为文本拼接的变量，通过 {{字段名}} 来引用变量"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -286,16 +424,28 @@
             "renderTypeList": ["textarea"],
             "valueType": "string",
             "required": true,
-            "label": "拼接文本",
-            "placeholder": "可通过 {{字段名}} 来引用变量",
-            "value": "你的任务是将文本从{{source_lang}}翻译成{{target_lang}}\n\n源文本如下,由XML标签<SOURCE_TEXT>和</SOURCE_TEXT>分隔:\n\n<SOURCE_TEXT>\n\n{{tagged_text}}\n\n</SOURCE_TEXT>\n\n仅翻译源文本中由<TRANSLATE_THIS>和</TRANSLATE_THIS>分隔的部分,将其余的源文本作为上下文\n\n重申一下,你应该只翻译文本的这一部分,这里再次显示在<TRANSLATE_THIS>和</TRANSLATE_THIS>之间:\n\n<TRANSLATE_THIS>\n\n{{chunk_to_translate}}\n\n</TRANSLATE_THIS>"
+            "label": {
+              "en": "Text to combine",
+              "zh-CN": "拼接文本"
+            },
+            "placeholder": {
+              "en": "可通过 {{字段名}} 来引用变量",
+              "zh-CN": "可通过 {{字段名}} 来引用变量"
+            },
+            "value": {
+              "en": "Translate the text from {{source_lang}} into {{target_lang}}.\n\nThe source text is delimited by the XML tags <SOURCE_TEXT> and </SOURCE_TEXT>.\n\n<SOURCE_TEXT>\n{{tagged_text}}\n</SOURCE_TEXT>\n\nTranslate only the part delimited by <TRANSLATE_THIS> and </TRANSLATE_THIS>. Treat the rest as context.\n\nTo reiterate, translate only this part:\n<TRANSLATE_THIS>\n{{chunk_to_translate}}\n</TRANSLATE_THIS>",
+              "zh-CN": "你的任务是将文本从{{source_lang}}翻译成{{target_lang}}\n\n源文本如下,由XML标签<SOURCE_TEXT>和</SOURCE_TEXT>分隔:\n\n<SOURCE_TEXT>\n\n{{tagged_text}}\n\n</SOURCE_TEXT>\n\n仅翻译源文本中由<TRANSLATE_THIS>和</TRANSLATE_THIS>分隔的部分,将其余的源文本作为上下文\n\n重申一下,你应该只翻译文本的这一部分,这里再次显示在<TRANSLATE_THIS>和</TRANSLATE_THIS>之间:\n\n<TRANSLATE_THIS>\n\n{{chunk_to_translate}}\n\n</TRANSLATE_THIS>"
+            }
           },
           {
             "renderTypeList": ["reference"],
             "valueType": "string",
             "canEdit": true,
             "key": "tagged_text",
-            "label": "tagged_text",
+            "label": {
+              "en": "Tagged text",
+              "zh-CN": "带标签文本"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -324,7 +474,10 @@
             "valueType": "string",
             "canEdit": true,
             "key": "chunk_to_translate",
-            "label": "chunk_to_translate",
+            "label": {
+              "en": "Text chunk to translate",
+              "zh-CN": "待翻译文本块"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -353,7 +506,10 @@
           {
             "id": "system_text",
             "key": "system_text",
-            "label": "拼接结果",
+            "label": {
+              "en": "Combined result",
+              "zh-CN": "拼接结果"
+            },
             "type": "static",
             "valueType": "string"
           }
@@ -361,8 +517,14 @@
       },
       {
         "nodeId": "w4heEpNflz59",
-        "name": "判断是否执行结束",
-        "intro": "根据一定的条件，执行不同的分支。",
+        "name": {
+          "en": "Check Whether Processing Is Complete",
+          "zh-CN": "判断是否执行结束"
+        },
+        "intro": {
+          "en": "Choose a branch based on a condition.",
+          "zh-CN": "根据一定的条件，执行不同的分支。"
+        },
         "avatar": "core/workflow/template/ifelse",
         "flowNodeType": "ifElseNode",
         "showStatus": true,
@@ -376,7 +538,10 @@
             "key": "ifElseList",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": [
               {
                 "condition": "AND",
@@ -395,7 +560,10 @@
           {
             "id": "ifElseResult",
             "key": "ifElseResult",
-            "label": "判断结果",
+            "label": {
+              "en": "Branch result",
+              "zh-CN": "判断结果"
+            },
             "valueType": "string",
             "type": "static"
           }
@@ -403,8 +571,14 @@
       },
       {
         "nodeId": "a2lqxASWi1vb",
-        "name": "判断是否执行结束",
-        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
+        "name": {
+          "en": "Check Whether Processing Is Complete",
+          "zh-CN": "判断是否执行结束"
+        },
+        "intro": {
+          "en": "Run a script, typically for more complex data processing.",
+          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
+        },
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -418,9 +592,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "这些变量会作为代码的运行的输入参数",
+            "description": {
+              "en": "These variables are passed to the code as input parameters.",
+              "zh-CN": "这些变量会作为代码的运行的输入参数"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -445,13 +625,19 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "function main({chunks, currentChunk}){\n    const findIndex = chunks.findIndex((item) => item === currentChunk)\n\n    return {\n        isEnd: chunks.length-1 === findIndex,\n        i: findIndex + 1,\n    }\n}"
           },
           {
@@ -459,7 +645,10 @@
             "valueType": "arrayString",
             "canEdit": true,
             "key": "chunks",
-            "label": "chunks",
+            "label": {
+              "en": "Text chunks",
+              "zh-CN": "文本块"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -488,7 +677,10 @@
             "valueType": "string",
             "canEdit": true,
             "key": "currentChunk",
-            "label": "currentChunk",
+            "label": {
+              "en": "Current chunk",
+              "zh-CN": "当前文本块"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -517,15 +709,24 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": "完整响应数据",
+            "label": {
+              "en": "Full response data",
+              "zh-CN": "完整响应数据"
+            },
             "valueType": "object",
             "type": "static"
           },
           {
             "id": "error",
             "key": "error",
-            "label": "运行错误",
-            "description": "代码运行错误信息，成功时返回空",
+            "label": {
+              "en": "Execution error",
+              "zh-CN": "运行错误"
+            },
+            "description": {
+              "en": "Code execution error; empty when execution succeeds.",
+              "zh-CN": "代码运行错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -534,7 +735,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -555,28 +759,43 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            "description": {
+              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
+              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            }
           },
           {
             "id": "nmBmGaARbKkl",
             "valueType": "boolean",
             "type": "dynamic",
             "key": "isEnd",
-            "label": "isEnd"
+            "label": {
+              "en": "Is complete",
+              "zh-CN": "是否完成"
+            }
           },
           {
             "id": "nqB98uKpq6Ig",
             "valueType": "number",
             "type": "dynamic",
             "key": "i",
-            "label": "i"
+            "label": {
+              "en": "Index",
+              "zh-CN": "索引"
+            }
           }
         ]
       },
       {
         "nodeId": "quYZgsW32ApA",
-        "name": "格式化源文本块",
-        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
+        "name": {
+          "en": "Format Source Text Chunk",
+          "zh-CN": "格式化源文本块"
+        },
+        "intro": {
+          "en": "Run a script, typically for more complex data processing.",
+          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
+        },
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -590,9 +809,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "这些变量会作为代码的运行的输入参数",
+            "description": {
+              "en": "These variables are passed to the code as input parameters.",
+              "zh-CN": "这些变量会作为代码的运行的输入参数"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -617,13 +842,19 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "function main({source_text_chunks, i=0}){\n    let before = source_text_chunks.slice(0, i).join(\"\");\n    let current = \" <TRANSLATE_THIS>\" + source_text_chunks[i] + \"</TRANSLATE_THIS>\";\n    let after = source_text_chunks.slice(i + 1).join(\"\");\n    let tagged_text = before + current + after;\n\n    return {\n        tagged_text,\n        chunk_to_translate: source_text_chunks[i],\n    }\n}"
           },
           {
@@ -631,7 +862,10 @@
             "valueType": "number",
             "canEdit": true,
             "key": "i",
-            "label": "i",
+            "label": {
+              "en": "Index",
+              "zh-CN": "索引"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -660,7 +894,10 @@
             "valueType": "arrayString",
             "canEdit": true,
             "key": "source_text_chunks",
-            "label": "source_text_chunks",
+            "label": {
+              "en": "Source text chunks",
+              "zh-CN": "源文本块"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -689,15 +926,24 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": "完整响应数据",
+            "label": {
+              "en": "Full response data",
+              "zh-CN": "完整响应数据"
+            },
             "valueType": "object",
             "type": "static"
           },
           {
             "id": "error",
             "key": "error",
-            "label": "运行错误",
-            "description": "代码运行错误信息，成功时返回空",
+            "label": {
+              "en": "Execution error",
+              "zh-CN": "运行错误"
+            },
+            "description": {
+              "en": "Code execution error; empty when execution succeeds.",
+              "zh-CN": "代码运行错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -706,7 +952,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -727,28 +976,43 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            "description": {
+              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
+              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            }
           },
           {
             "id": "xhXu6sdEWBnF",
             "valueType": "string",
             "type": "dynamic",
             "key": "tagged_text",
-            "label": "tagged_text"
+            "label": {
+              "en": "Tagged text",
+              "zh-CN": "带标签文本"
+            }
           },
           {
             "id": "eCp73lztAEGK",
             "valueType": "string",
             "type": "dynamic",
             "key": "chunk_to_translate",
-            "label": "chunk_to_translate"
+            "label": {
+              "en": "Text chunk to translate",
+              "zh-CN": "待翻译文本块"
+            }
           }
         ]
       },
       {
         "nodeId": "izsNX8FXGD1t",
-        "name": "指定回复",
-        "intro": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。",
+        "name": {
+          "en": "Direct Reply",
+          "zh-CN": "指定回复"
+        },
+        "intro": {
+          "en": "Return specified content directly, often for guidance or notices. Non-string input is converted to a string.",
+          "zh-CN": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。"
+        },
         "avatar": "core/workflow/template/reply",
         "flowNodeType": "answerNode",
         "position": {
@@ -762,18 +1026,36 @@
             "renderTypeList": ["textarea", "reference"],
             "valueType": "any",
             "required": true,
-            "label": "core.module.input.label.Response content",
-            "description": "core.module.input.description.Response content",
-            "placeholder": "core.module.input.description.Response content",
-            "value": "\n\n*** 字幕反思翻译完成！***"
+            "label": {
+              "en": "core.module.input.label.Response content",
+              "zh-CN": "core.module.input.label.Response content"
+            },
+            "description": {
+              "en": "core.module.input.description.Response content",
+              "zh-CN": "core.module.input.description.Response content"
+            },
+            "placeholder": {
+              "en": "core.module.input.description.Response content",
+              "zh-CN": "core.module.input.description.Response content"
+            },
+            "value": {
+              "en": "\n\n*** Subtitle reflection and translation complete! ***",
+              "zh-CN": "\n\n*** 字幕反思翻译完成！***"
+            }
           }
         ],
         "outputs": []
       },
       {
         "nodeId": "vlNHndpNuFXB",
-        "name": "取出 LLM 翻译第四轮文本",
-        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
+        "name": {
+          "en": "Extract Fourth-Round Translation",
+          "zh-CN": "取出 LLM 翻译第四轮文本"
+        },
+        "intro": {
+          "en": "Run a script, typically for more complex data processing.",
+          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
+        },
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -787,9 +1069,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "这些变量会作为代码的运行的输入参数",
+            "description": {
+              "en": "These variables are passed to the code as input parameters.",
+              "zh-CN": "这些变量会作为代码的运行的输入参数"
+            },
             "editField": {
               "key": true,
               "valueType": true
@@ -818,21 +1106,33 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "function main({data1}){\n    const result = data1.split(\"```\").filter(item => !!item.trim())\n\n    if(result[result.length-1]) {\n        return {\n            result: result[result.length-1].trim() \n        }\n    }\n\n    return {\n        result: '未截取到翻译内容'\n    }\n}"
           },
           {
             "key": "data1",
             "valueType": "string",
-            "label": "data1",
+            "label": {
+              "en": "Data 1",
+              "zh-CN": "数据 1"
+            },
             "renderTypeList": ["reference"],
-            "description": "",
+            "description": {
+              "en": "",
+              "zh-CN": ""
+            },
             "canEdit": true,
             "editField": {
               "key": true,
@@ -865,15 +1165,24 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": "完整响应数据",
+            "label": {
+              "en": "Full response data",
+              "zh-CN": "完整响应数据"
+            },
             "valueType": "object",
             "type": "static"
           },
           {
             "id": "error",
             "key": "error",
-            "label": "运行错误",
-            "description": "代码运行错误信息，成功时返回空",
+            "label": {
+              "en": "Execution error",
+              "zh-CN": "运行错误"
+            },
+            "description": {
+              "en": "Code execution error; empty when execution succeeds.",
+              "zh-CN": "代码运行错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -882,7 +1191,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -903,28 +1215,43 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            "description": {
+              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
+              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            }
           },
           {
             "id": "qLUQfhG0ILRX",
             "type": "dynamic",
             "key": "result",
             "valueType": "string",
-            "label": "result"
+            "label": {
+              "en": "Result",
+              "zh-CN": "结果"
+            }
           },
           {
             "id": "gR0mkQpJ4Og8",
             "type": "dynamic",
             "key": "data2",
             "valueType": "string",
-            "label": "data2"
+            "label": {
+              "en": "Data 2",
+              "zh-CN": "数据 2"
+            }
           }
         ]
       },
       {
         "nodeId": "qlt9KJbbS9yJ",
-        "name": "判断源语言和目标语言是否相同",
-        "intro": "根据一定的条件，执行不同的分支。",
+        "name": {
+          "en": "Check Source and Target Languages",
+          "zh-CN": "判断源语言和目标语言是否相同"
+        },
+        "intro": {
+          "en": "Choose a branch based on a condition.",
+          "zh-CN": "根据一定的条件，执行不同的分支。"
+        },
         "avatar": "core/workflow/template/ifelse",
         "flowNodeType": "ifElseNode",
         "showStatus": true,
@@ -938,7 +1265,10 @@
             "key": "ifElseList",
             "renderTypeList": ["hidden"],
             "valueType": "any",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": [
               {
                 "condition": "AND",
@@ -957,7 +1287,10 @@
           {
             "id": "ifElseResult",
             "key": "ifElseResult",
-            "label": "判断结果",
+            "label": {
+              "en": "Branch result",
+              "zh-CN": "判断结果"
+            },
             "valueType": "string",
             "type": "static"
           }
@@ -965,8 +1298,14 @@
       },
       {
         "nodeId": "frjbsrlnJJsR",
-        "name": "判断源语言和目标语言是否相同",
-        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
+        "name": {
+          "en": "Check Source and Target Languages",
+          "zh-CN": "判断源语言和目标语言是否相同"
+        },
+        "intro": {
+          "en": "Run a script, typically for more complex data processing.",
+          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
+        },
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -980,9 +1319,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "这些变量会作为代码的运行的输入参数",
+            "description": {
+              "en": "These variables are passed to the code as input parameters.",
+              "zh-CN": "这些变量会作为代码的运行的输入参数"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1007,13 +1352,19 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "function main({source_lang, target_lang}){\n    \n    return {\n        result: source_lang === target_lang\n    }\n}"
           },
           {
@@ -1021,7 +1372,10 @@
             "valueType": "string",
             "canEdit": true,
             "key": "source_lang",
-            "label": "source_lang",
+            "label": {
+              "en": "Source language",
+              "zh-CN": "源语言"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1050,7 +1404,10 @@
             "valueType": "string",
             "canEdit": true,
             "key": "target_lang",
-            "label": "target_lang",
+            "label": {
+              "en": "Target language",
+              "zh-CN": "目标语言"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1079,15 +1436,24 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": "完整响应数据",
+            "label": {
+              "en": "Full response data",
+              "zh-CN": "完整响应数据"
+            },
             "valueType": "object",
             "type": "static"
           },
           {
             "id": "error",
             "key": "error",
-            "label": "运行错误",
-            "description": "代码运行错误信息，成功时返回空",
+            "label": {
+              "en": "Execution error",
+              "zh-CN": "运行错误"
+            },
+            "description": {
+              "en": "Code execution error; empty when execution succeeds.",
+              "zh-CN": "代码运行错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -1096,7 +1462,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1117,21 +1486,33 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            "description": {
+              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
+              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            }
           },
           {
             "id": "qLUQfhG0ILRX",
             "type": "dynamic",
             "key": "result",
             "valueType": "boolean",
-            "label": "result"
+            "label": {
+              "en": "Result",
+              "zh-CN": "结果"
+            }
           }
         ]
       },
       {
         "nodeId": "dFxrGZS3Wmnz",
-        "name": "提示源语言与目标语言相同",
-        "intro": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。",
+        "name": {
+          "en": "Notify When Source and Target Languages Match",
+          "zh-CN": "提示源语言与目标语言相同"
+        },
+        "intro": {
+          "en": "Return specified content directly, often for guidance or notices. Non-string input is converted to a string.",
+          "zh-CN": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。"
+        },
         "avatar": "core/workflow/template/reply",
         "flowNodeType": "answerNode",
         "position": {
@@ -1145,19 +1526,37 @@
             "renderTypeList": ["textarea", "reference"],
             "valueType": "any",
             "required": true,
-            "label": "core.module.input.label.Response content",
-            "description": "core.module.input.description.Response content",
-            "placeholder": "core.module.input.description.Response content",
+            "label": {
+              "en": "core.module.input.label.Response content",
+              "zh-CN": "core.module.input.label.Response content"
+            },
+            "description": {
+              "en": "core.module.input.description.Response content",
+              "zh-CN": "core.module.input.description.Response content"
+            },
+            "placeholder": {
+              "en": "core.module.input.description.Response content",
+              "zh-CN": "core.module.input.description.Response content"
+            },
             "selectedTypeIndex": 0,
-            "value": "{{source_lang}} 无需再次翻译为 {{target_lang}} ~"
+            "value": {
+              "en": "{{$source_lang}} does not need to be translated again into {{$target_lang}}.",
+              "zh-CN": "{{source_lang}} 无需再次翻译为 {{target_lang}} ~"
+            }
           }
         ],
         "outputs": []
       },
       {
         "nodeId": "tqzmK5oPR9BA",
-        "name": "输出翻译",
-        "intro": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。",
+        "name": {
+          "en": "Output Translation",
+          "zh-CN": "输出翻译"
+        },
+        "intro": {
+          "en": "Return specified content directly, often for guidance or notices. Non-string input is converted to a string.",
+          "zh-CN": "该模块可以直接回复一段指定的内容。常用于引导、提示。非字符串内容传入时，会转成字符串进行输出。"
+        },
         "avatar": "core/workflow/template/reply",
         "flowNodeType": "answerNode",
         "position": {
@@ -1171,9 +1570,18 @@
             "renderTypeList": ["textarea", "reference"],
             "valueType": "any",
             "required": true,
-            "label": "core.module.input.label.Response content",
-            "description": "core.module.input.description.Response content",
-            "placeholder": "core.module.input.description.Response content",
+            "label": {
+              "en": "core.module.input.label.Response content",
+              "zh-CN": "core.module.input.label.Response content"
+            },
+            "description": {
+              "en": "core.module.input.description.Response content",
+              "zh-CN": "core.module.input.description.Response content"
+            },
+            "placeholder": {
+              "en": "core.module.input.description.Response content",
+              "zh-CN": "core.module.input.description.Response content"
+            },
             "selectedTypeIndex": 1,
             "value": ["ppPP6o7YYSTJ", "dYalXmYJ60bj"]
           }
@@ -1182,8 +1590,14 @@
       },
       {
         "nodeId": "kbr342XlxSZR",
-        "name": "提取字幕信息",
-        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
+        "name": {
+          "en": "Extract Subtitle Information",
+          "zh-CN": "提取字幕信息"
+        },
+        "intro": {
+          "en": "Run a script, typically for more complex data processing.",
+          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
+        },
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -1197,9 +1611,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "这些变量会作为代码的运行的输入参数",
+            "description": {
+              "en": "These variables are passed to the code as input parameters.",
+              "zh-CN": "这些变量会作为代码的运行的输入参数"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1224,13 +1644,19 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "function main({text}){\n  const lines = text.split('\\n');\n  const timePattern = /\\d{2}:\\d{2}:\\d{2},\\d{3} --> \\d{2}:\\d{2}:\\d{2},\\d{3}/;\n  const numberInfo = [];\n  const timeInfo = [];\n  const textInfo = [];\n  let currentText = [];\n\n  // 提取序号、时间戳和文本信息\n  lines.forEach(line => {\n    if (/^\\d+$/.test(line.trim())) {\n      numberInfo.push(line.trim());\n    } else if (timePattern.test(line)) {\n      timeInfo.push(line);\n      if (currentText.length > 0) {\n        textInfo.push(currentText.join(' '));\n        currentText = [];\n      }\n    } else if (line.trim() === '') {\n      // Skip empty lines\n    } else {\n      currentText.push(line.trim());\n    }\n  });\n\n  if (currentText.length > 0) {\n    textInfo.push(currentText.join(' '));\n  }\n\n  return { numberInfo, timeInfo, textInfo };\n}"
           },
           {
@@ -1238,7 +1664,10 @@
             "valueType": "string",
             "canEdit": true,
             "key": "text",
-            "label": "text",
+            "label": {
+              "en": "Text",
+              "zh-CN": "文本"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1267,15 +1696,24 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": "完整响应数据",
+            "label": {
+              "en": "Full response data",
+              "zh-CN": "完整响应数据"
+            },
             "valueType": "object",
             "type": "static"
           },
           {
             "id": "error",
             "key": "error",
-            "label": "运行错误",
-            "description": "代码运行错误信息，成功时返回空",
+            "label": {
+              "en": "Execution error",
+              "zh-CN": "运行错误"
+            },
+            "description": {
+              "en": "Code execution error; empty when execution succeeds.",
+              "zh-CN": "代码运行错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -1284,7 +1722,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1305,35 +1746,53 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            "description": {
+              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
+              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            }
           },
           {
             "id": "h3qVuGhV9HNm",
             "valueType": "arrayString",
             "type": "dynamic",
             "key": "timeInfo",
-            "label": "timeInfo"
+            "label": {
+              "en": "Timestamps",
+              "zh-CN": "时间戳"
+            }
           },
           {
             "id": "zGYRMNA9xGuI",
             "valueType": "arrayString",
             "type": "dynamic",
             "key": "textInfo",
-            "label": "textInfo"
+            "label": {
+              "en": "Subtitle text",
+              "zh-CN": "字幕文本"
+            }
           },
           {
             "id": "dhzTt6Riz8Dp",
             "valueType": "arrayString",
             "type": "dynamic",
             "key": "numberInfo",
-            "label": "numberInfo"
+            "label": {
+              "en": "Subtitle numbers",
+              "zh-CN": "字幕序号"
+            }
           }
         ]
       },
       {
         "nodeId": "ppPP6o7YYSTJ",
-        "name": "格式化字幕文件",
-        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
+        "name": {
+          "en": "Format Subtitle File",
+          "zh-CN": "格式化字幕文件"
+        },
+        "intro": {
+          "en": "Run a script, typically for more complex data processing.",
+          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
+        },
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -1347,9 +1806,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "这些变量会作为代码的运行的输入参数",
+            "description": {
+              "en": "These variables are passed to the code as input parameters.",
+              "zh-CN": "这些变量会作为代码的运行的输入参数"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1374,13 +1839,19 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "function main({combinedText, transedText, timeInfo, currentIndex=0,numberInfo}){\n  const textLines = combinedText.split('<T>');\n  const resultLines = transedText.split('<T>');\n  const combinedLines = [];\n\n  resultLines.forEach((line, index) => {\n    combinedLines.push(numberInfo[currentIndex+index]);\n    combinedLines.push(timeInfo[currentIndex+index]);\n    combinedLines.push(line)\n    combinedLines.push(textLines[index]);\n    combinedLines.push('');\n  });\n\n  const srtContent = combinedLines.join('\\n');\n  \n\n    return {\n        srtContent,\n        currentIndex: currentIndex+textLines.length\n    }\n}"
           },
           {
@@ -1388,7 +1859,10 @@
             "valueType": "string",
             "canEdit": true,
             "key": "combinedText",
-            "label": "combinedText",
+            "label": {
+              "en": "Combined text",
+              "zh-CN": "合并文本"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1417,7 +1891,10 @@
             "valueType": "string",
             "canEdit": true,
             "key": "transedText",
-            "label": "transedText",
+            "label": {
+              "en": "Translated text",
+              "zh-CN": "译文"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1446,7 +1923,10 @@
             "valueType": "arrayString",
             "canEdit": true,
             "key": "timeInfo",
-            "label": "timeInfo",
+            "label": {
+              "en": "Timestamps",
+              "zh-CN": "时间戳"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1475,7 +1955,10 @@
             "valueType": "number",
             "canEdit": true,
             "key": "currentIndex",
-            "label": "currentIndex",
+            "label": {
+              "en": "Current index",
+              "zh-CN": "当前索引"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1504,7 +1987,10 @@
             "valueType": "arrayString",
             "canEdit": true,
             "key": "numberInfo",
-            "label": "numberInfo",
+            "label": {
+              "en": "Subtitle numbers",
+              "zh-CN": "字幕序号"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1533,15 +2019,24 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": "完整响应数据",
+            "label": {
+              "en": "Full response data",
+              "zh-CN": "完整响应数据"
+            },
             "valueType": "object",
             "type": "static"
           },
           {
             "id": "error",
             "key": "error",
-            "label": "运行错误",
-            "description": "代码运行错误信息，成功时返回空",
+            "label": {
+              "en": "Execution error",
+              "zh-CN": "运行错误"
+            },
+            "description": {
+              "en": "Code execution error; empty when execution succeeds.",
+              "zh-CN": "代码运行错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -1550,7 +2045,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1571,28 +2069,43 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            "description": {
+              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
+              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            }
           },
           {
             "id": "dYalXmYJ60bj",
             "valueType": "string",
             "type": "dynamic",
             "key": "srtContent",
-            "label": "srtContent"
+            "label": {
+              "en": "SRT content",
+              "zh-CN": "SRT 内容"
+            }
           },
           {
             "id": "u6eqeC0pEPe0",
             "valueType": "number",
             "type": "dynamic",
             "key": "currentIndex",
-            "label": "currentIndex"
+            "label": {
+              "en": "Current index",
+              "zh-CN": "当前索引"
+            }
           }
         ]
       },
       {
         "nodeId": "y3WEYOQ09CGC",
-        "name": "切分文本",
-        "intro": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。",
+        "name": {
+          "en": "Split Text",
+          "zh-CN": "切分文本"
+        },
+        "intro": {
+          "en": "Run a script, typically for more complex data processing.",
+          "zh-CN": "执行一段简单的脚本代码，通常用于进行复杂的数据处理。"
+        },
         "avatar": "core/workflow/template/codeRun",
         "flowNodeType": "code",
         "showStatus": true,
@@ -1606,9 +2119,15 @@
             "key": "system_addInputParam",
             "renderTypeList": ["addInputParam"],
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "required": false,
-            "description": "这些变量会作为代码的运行的输入参数",
+            "description": {
+              "en": "These variables are passed to the code as input parameters.",
+              "zh-CN": "这些变量会作为代码的运行的输入参数"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1633,13 +2152,19 @@
           {
             "key": "codeType",
             "renderTypeList": ["hidden"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "js"
           },
           {
             "key": "code",
             "renderTypeList": ["custom"],
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "value": "function main({textArray}){\n const groupSize = 40\n const delimiter = '<T>'\n\n  const result = [];\n\n  for (let i = 0; i < textArray.length; i += groupSize) {\n    result.push(textArray.slice(i, i + groupSize).join(delimiter));\n  }\n\n  return {result};\n}"
           },
           {
@@ -1647,7 +2172,10 @@
             "valueType": "arrayString",
             "canEdit": true,
             "key": "textArray",
-            "label": "textArray",
+            "label": {
+              "en": "Text array",
+              "zh-CN": "文本数组"
+            },
             "customInputConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1676,15 +2204,24 @@
           {
             "id": "system_rawResponse",
             "key": "system_rawResponse",
-            "label": "完整响应数据",
+            "label": {
+              "en": "Full response data",
+              "zh-CN": "完整响应数据"
+            },
             "valueType": "object",
             "type": "static"
           },
           {
             "id": "error",
             "key": "error",
-            "label": "运行错误",
-            "description": "代码运行错误信息，成功时返回空",
+            "label": {
+              "en": "Execution error",
+              "zh-CN": "运行错误"
+            },
+            "description": {
+              "en": "Code execution error; empty when execution succeeds.",
+              "zh-CN": "代码运行错误信息，成功时返回空"
+            },
             "valueType": "object",
             "type": "static"
           },
@@ -1693,7 +2230,10 @@
             "key": "system_addOutputParam",
             "type": "dynamic",
             "valueType": "dynamic",
-            "label": "",
+            "label": {
+              "en": "",
+              "zh-CN": ""
+            },
             "customFieldConfig": {
               "selectValueTypeList": [
                 "string",
@@ -1714,14 +2254,20 @@
               "showDescription": false,
               "showDefaultValue": false
             },
-            "description": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            "description": {
+              "en": "Pass the object returned by the code to downstream nodes. Variable names must match the keys in the returned object.",
+              "zh-CN": "将代码中 return 的对象作为输出，传递给后续的节点。变量名需要对应 return 的 key"
+            }
           },
           {
             "id": "qLUQfhG0ILRX",
             "type": "dynamic",
             "key": "result",
             "valueType": "arrayString",
-            "label": "result"
+            "label": {
+              "en": "Result",
+              "zh-CN": "结果"
+            }
           }
         ]
       }
@@ -1819,7 +2365,10 @@
       }
     ],
     "chatConfig": {
-      "welcomeText": "你好，欢迎使用长字幕反思翻译机器人。\n\n在完成下方设置后，可以直接输入需要翻译的文本",
+      "welcomeText": {
+        "en": "Welcome to the long-subtitle reflection translation assistant.\n\nAfter completing the settings below, enter the text you want translated.",
+        "zh-CN": "你好，欢迎使用长字幕反思翻译机器人。\n\n在完成下方设置后，可以直接输入需要翻译的文本"
+      },
       "variables": [
         {
           "id": "v98n5b",

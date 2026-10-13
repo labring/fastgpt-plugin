@@ -38,6 +38,7 @@ export const PluginBaseDTOSchema = z.object({
   icon: z.string(),
   tutorialUrl: z.url().optional(),
   readmeUrl: z.url().optional(),
+  readmeUrls: z.partialRecord(z.enum(['en', 'zh-CN', 'zh-Hant']), z.url()).optional(),
   repoUrl: z.url().optional(),
   permission: z.array(z.string()).optional(),
   description: I18nStringDTOSchema.optional(),

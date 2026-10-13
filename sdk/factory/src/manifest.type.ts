@@ -1,5 +1,6 @@
 import z from 'zod';
 
+import { ToolDescriptionSchema } from '@domain/entities/tool.entity';
 import { ToolManifestSchema } from '@domain/value-objects/plugin/plugin-manifest.vo';
 
 export const UserToolManifestSchema = z.object({
@@ -10,7 +11,7 @@ export const UserToolManifestSchema = z.object({
     type: true,
     children: true
   }).shape,
-  toolDescription: z.string().optional(),
+  toolDescription: ToolDescriptionSchema.optional(),
   // children: z
   //   .array(
   //     z.object({
@@ -18,7 +19,7 @@ export const UserToolManifestSchema = z.object({
   //       description: I18nStringSchema,
   //       name: I18nStringSchema,
   //       icon: z.string().optional(),
-  //       toolDescription: z.string().optional()
+  //       toolDescription: ToolDescriptionSchema.optional()
   //     })
   //   )
   //   .min(1)

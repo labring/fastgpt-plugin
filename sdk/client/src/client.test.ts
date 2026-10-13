@@ -1,6 +1,75 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { FastGPTPluginClient } from './client';
+import type { WorkflowListType } from './types';
+
+describe('FastGPTPluginClient workflows', () => {
+  it('returns localized workflow data unchanged without a locale request parameter', async () => {
+    const localizedText = {
+      en: 'Localized text',
+      'zh-CN': '本地化文案'
+    };
+    const workflowData: WorkflowListType = [
+      {
+        templateId: 'localized-template',
+        name: localizedText,
+        intro: localizedText,
+        avatar: 'workflow-avatar',
+        tags: ['advanced'],
+        type: 'advanced',
+        workflow: {
+          nodes: [
+            {
+              nodeId: 'node-1',
+              name: localizedText,
+              intro: localizedText,
+              flowNodeType: 'chatNode',
+              customNodeSetting: { mode: 'preserve' },
+              inputs: [
+                {
+                  key: 'prompt',
+                  label: localizedText,
+                  description: localizedText,
+                  placeholder: localizedText,
+                  toolDescription: localizedText,
+                  debugLabel: localizedText,
+                  valueDesc: localizedText,
+                  value: 'machine-value',
+                  dynamicInputSetting: { enabled: true }
+                }
+              ],
+              outputs: [
+                {
+                  id: 'result',
+                  key: 'result',
+                  label: localizedText,
+                  description: localizedText,
+                  valueDesc: localizedText,
+                  valueType: 'string'
+                }
+              ]
+            }
+          ],
+          edges: [],
+          chatConfig: { model: 'machine-model' }
+        }
+      }
+    ];
+    const { client, fetchMock } = createClient(workflowData);
+
+    const result = await client.listWorkflows();
+
+    expect(result).toEqual(workflowData);
+    expect(result[0]?.workflow.nodes[0]?.inputs?.[0]?.toolDescription?.en).toBe('Localized text');
+    expect(result[0]?.workflow.nodes[0]?.inputs?.[0]?.value).toBe('machine-value');
+    expect(result[0]?.workflow.nodes[0]?.inputs?.[0]?.dynamicInputSetting).toEqual({ enabled: true });
+    expect(getRequest(fetchMock)).toMatchObject({
+      url: 'https://plugin.local/api/workflow/list',
+      method: 'GET'
+    });
+    expect(new URL(getRequest(fetchMock).url).search).toBe('');
+  });
+});
 
 describe('FastGPTPluginClient debug sessions', () => {
   it('gets enabled Plugin service features', async () => {
@@ -179,6 +248,43 @@ const makeJsonResponse = (payload: unknown) =>
 
 const readJsonBody = (request: RequestInit) =>
   JSON.parse(String(request.body)) as Record<string, unknown>;
+
+describe('FastGPTPluginClient plugin README localization', () => {
+  it('returns localized README URLs alongside the legacy URL from plugin lists', async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      makeJsonResponse({
+        data: [
+          {
+            pluginId: 'readme-demo',
+            version: '1.0.0',
+            etag: 'etag-1',
+            type: 'tool',
+            name: { en: 'README demo', 'zh-CN': 'README 示例' },
+            icon: 'https://cdn.example.com/logo.svg',
+            readmeUrl: 'https://cdn.example.com/README.md',
+            readmeUrls: {
+              en: 'https://cdn.example.com/README.en.md',
+              'zh-CN': 'https://cdn.example.com/README.zh-CN.md'
+            },
+            description: { en: 'README demo', 'zh-CN': 'README 示例' },
+            source: 'system'
+          }
+        ]
+      })
+    );
+    const client = new FastGPTPluginClient({
+      baseUrl: 'https://plugin.example.com',
+      fetch: fetch as unknown as typeof globalThis.fetch
+    });
+
+    const plugins = await client.listPlugins();
+
+    expect(plugins[0]?.readmeUrl).toBe('https://cdn.example.com/README.md');
+    expect(plugins[0]?.readmeUrls?.en).toBe('https://cdn.example.com/README.en.md');
+    expect(plugins[0]?.readmeUrls?.['zh-CN']).toBe('https://cdn.example.com/README.zh-CN.md');
+    expect(fetch.mock.calls[0]?.[0]).toBe('https://plugin.example.com/api/plugins');
+  });
+});
 
 describe('FastGPTPluginClient plugin source payloads', () => {
   it('passes source when uploading plugin packages', async () => {

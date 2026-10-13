@@ -2,7 +2,7 @@ import z from 'zod';
 
 import { PluginPermissionEnumSchema } from '@domain/value-objects/permission.vo';
 
-import { I18nStringSchema } from '../value-objects/i18n-string.vo';
+import { I18nLangSchema, I18nStringSchema } from '../value-objects/i18n-string.vo';
 
 export const PluginTagSchema = z.enum([
   'tools',
@@ -52,6 +52,7 @@ export const PluginBaseSchema = z.object({
   icon: z.string(),
   tutorialUrl: z.url().optional(),
   readmeUrl: z.url().optional(),
+  readmeUrls: z.partialRecord(I18nLangSchema, z.url()).optional(),
   description: I18nStringSchema,
   tags: z.array(PluginTagSchema).optional(),
   versionDescription: I18nStringSchema.optional(),
