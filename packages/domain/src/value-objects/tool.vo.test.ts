@@ -133,4 +133,36 @@ describe('ToolStreamMessageSchema', () => {
 
     expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
   });
+
+  it('parses a legacy response whose content is an object', () => {
+    const message = {
+      type: 'response',
+      data: { content: { summary: 'done', items: 2 } }
+    };
+
+    expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
+  });
+
+  it('parses a legacy response whose content is an array', () => {
+    const message = {
+      type: 'response',
+      data: { content: ['a.png', 'b.png'] }
+    };
+
+    expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
+  });
+
+  it('parses stream and error messages', () => {
+    const streamMessage = {
+      type: 'stream',
+      data: { type: 'answer', content: 'hello' }
+    };
+    const errorMessage = {
+      type: 'error',
+      data: 'something went wrong'
+    };
+
+    expect(ToolStreamMessageSchema.parse(streamMessage)).toEqual(streamMessage);
+    expect(ToolStreamMessageSchema.parse(errorMessage)).toEqual(errorMessage);
+  });
 });
