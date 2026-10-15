@@ -1,8 +1,8 @@
 import {
   createToolHandler,
+  defineInputSchema,
+  defineOutputSchema,
   defineToolSet,
-  type InputSchemaMetaType,
-  type OutputSchemaMetaType,
   type SecretSchemaMetaType
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
@@ -31,16 +31,18 @@ const secretSchema = z.object({
 });
 
 const mysqlHandler = createToolHandler({
-  inputSchema: z.object({
-    query: z.string().meta({
-      title: 'SQL Query',
+  inputSchema: defineInputSchema({
+    query: {
+      type: z.string(),
+      title: { en: 'SQL Query', 'zh-CN': 'SQL 查询' },
       isToolParam: true
-    } satisfies InputSchemaMetaType)
+    }
   }),
-  outputSchema: z.object({
-    results: z.array(z.record(z.string(), z.unknown())).meta({
-      title: 'Query Results'
-    } satisfies OutputSchemaMetaType)
+  outputSchema: defineOutputSchema({
+    results: {
+      type: z.array(z.record(z.string(), z.unknown())),
+      title: { en: 'Query Results', 'zh-CN': '查询结果' }
+    }
   }),
   secretSchema,
   handler: async (input, ctx) => {
@@ -61,16 +63,18 @@ const mysqlHandler = createToolHandler({
 });
 
 const pgsqlHandler = createToolHandler({
-  inputSchema: z.object({
-    query: z.string().meta({
-      title: 'SQL Query',
+  inputSchema: defineInputSchema({
+    query: {
+      type: z.string(),
+      title: { en: 'SQL Query', 'zh-CN': 'SQL 查询' },
       isToolParam: true
-    } satisfies InputSchemaMetaType)
+    }
   }),
-  outputSchema: z.object({
-    results: z.array(z.record(z.string(), z.unknown())).meta({
-      title: 'Query Results'
-    } satisfies OutputSchemaMetaType)
+  outputSchema: defineOutputSchema({
+    results: {
+      type: z.array(z.record(z.string(), z.unknown())),
+      title: { en: 'Query Results', 'zh-CN': '查询结果' }
+    }
   }),
   secretSchema,
   handler: async (input, ctx) => {
