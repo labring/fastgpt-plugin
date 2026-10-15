@@ -14,24 +14,26 @@ Plugin entry files default-export the instance returned by `defineTool()` or `de
 ```ts
 import {
   createToolHandler,
+  defineInputSchema,
+  defineOutputSchema,
   defineTool,
-  type InputSchemaMetaType,
-  type OutputSchemaMetaType,
   type SecretSchemaMetaType
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
 const handler = createToolHandler({
-  inputSchema: z.object({
-    text: z.string().meta({
-      title: 'Text',
+  inputSchema: defineInputSchema({
+    text: {
+      type: z.string(),
+      title: { en: 'Text', 'zh-CN': '文本' },
       isToolParam: true
-    } satisfies InputSchemaMetaType)
+    }
   }),
-  outputSchema: z.object({
-    result: z.string().meta({
-      title: 'Result'
-    } satisfies OutputSchemaMetaType)
+  outputSchema: defineOutputSchema({
+    result: {
+      type: z.string(),
+      title: { en: 'Result', 'zh-CN': '结果' }
+    }
   }),
   handler: async (input) => ({
     result: input.text.toUpperCase()
@@ -60,14 +62,50 @@ export default defineTool({
 });
 ```
 
+## Schema Helpers
+
+Use `defineInputSchema()` and `defineOutputSchema()` to build ordinary Zod object schemas from field descriptors. Each descriptor's `type` is a Zod schema instance and its required `title` includes `en` and `'zh-CN'` (`'zh-Hant'` is optional). Optional `description` is localized UI copy. Input descriptors additionally accept independent model-facing `toolDescription` (`string | I18nStringType`) and optional boolean `isToolParam`, including `false`; output descriptors accept neither option.
+
+```ts
+const inputSchema = defineInputSchema({
+  query: {
+    type: z.string(),
+    title: { en: 'Query', 'zh-CN': '查询' },
+    description: { en: 'Text to search for', 'zh-CN': '用于检索的文本' },
+    toolDescription: {
+      en: 'Search query used to find matching items.',
+      'zh-CN': '用于查找匹配项目的搜索查询。'
+    },
+    isToolParam: true
+  },
+  limit: {
+    type: z.number().int().optional(),
+    title: { en: 'Limit', 'zh-CN': '数量上限' },
+    isToolParam: false
+  }
+});
+
+const outputSchema = defineOutputSchema({
+  results: {
+    type: z.array(defineOutputSchema({
+      label: {
+        type: z.string(),
+        title: { en: 'Label', 'zh-CN': '标签' }
+      }
+    })),
+    title: { en: 'Results', 'zh-CN': '结果' }
+  }
+});
+```
+
+The helpers add plain Chinese compatibility strings and full `'x-i18n'` values, preserve other existing `.meta()` metadata, and return schema copies without mutating source schemas. Their results work with `createToolHandler`; Zod's default object behavior strips unknown keys, and `.strict()` is an optional author choice. Direct `.meta()` remains useful for secrets and advanced metadata.
+
 ## Handler Rules
 
-- Define handlers with `createToolHandler({ inputSchema, outputSchema, secretSchema?, handler })`.
-- Use `z.object(...)` for `inputSchema` and `outputSchema` so TypeScript can infer `input` and return types.
-- Import `InputSchemaMetaType`, `OutputSchemaMetaType`, and `SecretSchemaMetaType` from `@fastgpt-plugin/sdk-factory` when schema metadata is used.
-- Add `.meta({ ... } satisfies InputSchemaMetaType)` to input fields and `.meta({ ... } satisfies OutputSchemaMetaType)` to output fields that need UI/manifest metadata. Put localized `title`, `description`, and `placeholder` values in the `'x-i18n'` object, with `en` and `'zh-CN'` required and `'zh-Hant'` optional.
-- Set `isToolParam: true` in an input field's `.meta()` when that field is recommended to be managed by AI; use `toolDescription` for the separate model-facing parameter description and provide an i18n object with `en` and `'zh-CN'` for new plugins (`'zh-Hant'` is optional). The CLI preserves legacy string descriptions as-is and copies each `x-i18n` `zh-CN` value into its JSON Schema compatibility string field; the host selects model text for the request locale, falling back from the exact locale to `zh-CN`, then `en`.
-- Add `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)` to every `secretSchema` field; set `isSecret: true` for values that must be encrypted at rest.
+- Define handlers with `createToolHandler({ inputSchema, outputSchema, secretSchema?, handler })`; use ordinary Zod object schemas, including those returned by the schema helpers, so TypeScript infers `input` and return types.
+- Use `defineInputSchema()` and `defineOutputSchema()` for input/output field UI metadata. Descriptor titles require `en` and `'zh-CN'`; descriptions are optional localized UI copy. Input-only `toolDescription` is independent model-facing text, and `isToolParam` is an optional boolean.
+- `toolDescription` may be a string or localized object; the CLI preserves legacy strings and copies each `x-i18n` `'zh-CN'` value into its JSON Schema compatibility string field. The host selects model text for the request locale, falling back from the exact locale to `'zh-CN'`, then `en`.
+- Keep low-level `.meta()` for secrets and advanced metadata. When authoring `z.object()` schemas directly, `InputSchemaMetaType` and `OutputSchemaMetaType` remain available for field metadata. Import `SecretSchemaMetaType` for secrets and set `isSecret: true` for values that must be encrypted at rest.
 - Return an object that matches `outputSchema`; throw errors for failed operations.
 - Add `secretSchema` when plugin configuration needs secrets such as API keys.
 - Read secrets from `ctx.secrets`; the value is typed from `secretSchema`.
@@ -87,29 +125,24 @@ const secretSchema = z.object({
 });
 
 const handler = createToolHandler({
-  inputSchema: z.object({
-    query: z.string().meta({
-      title: 'Query',
-      'x-i18n': {
-        title: { en: 'Query', 'zh-CN': '查询' },
-        description: { en: 'Text to search for', 'zh-CN': '用于检索的文本' },
-        placeholder: { en: 'Enter a query', 'zh-CN': '输入查询文本' }
-      },
+  inputSchema: defineInputSchema({
+    query: {
+      type: z.string(),
+      title: { en: 'Query', 'zh-CN': '查询' },
+      description: { en: 'Text to search for', 'zh-CN': '用于检索的文本' },
       toolDescription: {
         en: 'Search query used to find matching items.',
         'zh-CN': '用于查找匹配项目的搜索查询。'
       },
       isToolParam: true
-    } satisfies InputSchemaMetaType)
+    }
   }),
-  outputSchema: z.object({
-    answer: z.string().meta({
-      title: 'Answer',
-      'x-i18n': {
-        title: { en: 'Answer', 'zh-CN': '答案' },
-        description: { en: 'The search result', 'zh-CN': '搜索结果' }
-      }
-    } satisfies OutputSchemaMetaType)
+  outputSchema: defineOutputSchema({
+    answer: {
+      type: z.string(),
+      title: { en: 'Answer', 'zh-CN': '答案' },
+      description: { en: 'The search result', 'zh-CN': '搜索结果' }
+    }
   }),
   secretSchema,
   handler: async (input, ctx) => {
@@ -164,9 +197,9 @@ Use `defineToolSet()` for one plugin with multiple child tools. Put shared metad
 ```ts
 import {
   createToolHandler,
+  defineInputSchema,
+  defineOutputSchema,
   defineToolSet,
-  type InputSchemaMetaType,
-  type OutputSchemaMetaType,
   type SecretSchemaMetaType
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
@@ -179,16 +212,18 @@ const secretSchema = z.object({
 });
 
 const searchHandler = createToolHandler({
-  inputSchema: z.object({
-    query: z.string().meta({
-      title: 'Query',
+  inputSchema: defineInputSchema({
+    query: {
+      type: z.string(),
+      title: { en: 'Query', 'zh-CN': '查询' },
       isToolParam: true
-    } satisfies InputSchemaMetaType)
+    }
   }),
-  outputSchema: z.object({
-    items: z.array(z.string()).meta({
-      title: 'Items'
-    } satisfies OutputSchemaMetaType)
+  outputSchema: defineOutputSchema({
+    items: {
+      type: z.array(z.string()),
+      title: { en: 'Items', 'zh-CN': '项目' }
+    }
   }),
   secretSchema,
   handler: async (input) => ({ items: [input.query] })
@@ -235,22 +270,26 @@ Use `ctx.invoke` for host capabilities. The SDK exposes `userInfo()` and `upload
 
 ```ts
 const uploadHandler = createToolHandler({
-  inputSchema: z.object({
-    content: z.string().meta({
-      title: 'Content',
+  inputSchema: defineInputSchema({
+    content: {
+      type: z.string(),
+      title: { en: 'Content', 'zh-CN': '内容' },
       isToolParam: true
-    } satisfies InputSchemaMetaType)
+    }
   }),
-  outputSchema: z.object({
-    accessURL: z.string().meta({
-      title: 'Access URL'
-    } satisfies OutputSchemaMetaType),
-    fileName: z.string().meta({
-      title: 'File Name'
-    } satisfies OutputSchemaMetaType),
-    size: z.number().meta({
-      title: 'Size'
-    } satisfies OutputSchemaMetaType)
+  outputSchema: defineOutputSchema({
+    accessURL: {
+      type: z.string(),
+      title: { en: 'Access URL', 'zh-CN': '访问地址' }
+    },
+    fileName: {
+      type: z.string(),
+      title: { en: 'File Name', 'zh-CN': '文件名' }
+    },
+    size: {
+      type: z.number(),
+      title: { en: 'Size', 'zh-CN': '大小' }
+    }
   }),
   handler: async (input, { invoke }) => {
     const [result, err] = await invoke.uploadFile({
