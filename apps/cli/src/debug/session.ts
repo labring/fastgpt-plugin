@@ -30,7 +30,6 @@ type PackableToolChild = {
   description: unknown;
   name: unknown;
   icon?: string;
-  toolDescription?: unknown;
 };
 
 type PackableToolExport = {
@@ -46,7 +45,6 @@ export type DebugToolSnapshot = {
   id: string;
   name: DebugText;
   description: DebugText;
-  toolDescription: DebugText;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -58,7 +56,6 @@ export type DebugPluginSnapshot = {
   version: string;
   name: DebugText;
   description: DebugText;
-  toolDescription: DebugText;
   author?: string;
   tags?: string[];
   permissions?: string[];
@@ -261,7 +258,6 @@ function createDebugSnapshot(
     version: getRequiredString(userManifest.version, '缺少 version'),
     name: getDebugText(userManifest.name),
     description: getDebugText(userManifest.description),
-    toolDescription: pickToolDescription(userManifest.toolDescription, userManifest.description),
     author: getOptionalString(userManifest.author),
     tags: toStringArray(userManifest.tags),
     permissions: toStringArray(userManifest.permission),
@@ -284,7 +280,6 @@ function createSingleToolSnapshot(
     id: 'tool',
     name: getDebugText(userManifest.name),
     description: getDebugText(userManifest.description),
-    toolDescription: pickToolDescription(userManifest.toolDescription, userManifest.description),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -303,7 +298,6 @@ function createChildToolSnapshot(
     id: child.id,
     name: getDebugText(child.name),
     description: getDebugText(child.description),
-    toolDescription: pickToolDescription(child.toolDescription, child.description),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -443,24 +437,6 @@ function getOptionalDebugText(value: unknown): DebugText | undefined {
   return undefined;
 }
 
-function hasDebugText(value: DebugText | undefined): value is DebugText {
-  if (typeof value === 'string') {
-    return value.trim().length > 0;
-  }
-
-  return Boolean(
-    value && Object.values(value).some((item) => typeof item === 'string' && item.trim().length > 0)
-  );
-}
-
-function pickToolDescription(explicitDescription: unknown, fallbackSource: unknown): DebugText {
-  const description = getOptionalDebugText(explicitDescription);
-  if (hasDebugText(description)) {
-    return description;
-  }
-
-  return getDebugText(fallbackSource);
-}
 
 export function selectDebugText(value: unknown, locale: string = DEFAULT_DEBUG_LOCALE): string {
   const text = getOptionalDebugText(value);

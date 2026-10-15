@@ -9,13 +9,11 @@ export const toolPluginCodec: PluginCodec<ToolType> = {
   type: 'tool',
   toRecord(plugin) {
     const parsedPlugin = ToolSchema.parse(plugin);
-    const { toolDescription, inputSchema, outputSchema, secretSchema, children, ...base } =
-      parsedPlugin;
+    const { inputSchema, outputSchema, secretSchema, children, ...base } = parsedPlugin;
 
     return PluginRecordPayloadSchema.parse({
       ...base,
       data: {
-        toolDescription,
         inputSchema,
         outputSchema,
         secretSchema,

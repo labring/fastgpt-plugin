@@ -26,7 +26,8 @@ const plugin = (): PluginType =>
   }) as PluginType;
 
 const pluginRecord = () => {
-  const { toolDescription, inputSchema, outputSchema, secretSchema, children, ...base } = plugin();
+  const legacyPlugin = plugin() as PluginType & { toolDescription?: unknown };
+  const { toolDescription, inputSchema, outputSchema, secretSchema, children, ...base } = legacyPlugin;
 
   return {
     ...base,
@@ -174,11 +175,11 @@ describe('PluginRepo.createPlugin', () => {
       ]
     });
 
-    expect(record.data.toolDescription).toEqual(localizedDescription);
+    expect(record.data).not.toHaveProperty('toolDescription');
     expect(record.data.inputSchema).toBe(JSON.stringify(inputSchema));
     expect(record.data.outputSchema).toBe(JSON.stringify(outputSchema));
     expect(record.data.secretSchema).toBe(JSON.stringify(secretSchema));
-    expect(record.data.children[0].toolDescription).toEqual(localizedDescription);
+    expect(record.data.children[0]).not.toHaveProperty('toolDescription');
     expect(record.data.children[0].inputSchema).toBe(JSON.stringify(childInputSchema));
     expect(record.data.children[0].outputSchema).toBe(JSON.stringify(childOutputSchema));
   });
@@ -289,11 +290,12 @@ describe('PluginRepo.createPlugin', () => {
       }
     });
 
-    expect(domainPlugin.toolDescription).toEqual(localizedDescription);
+    expect(domainPlugin).not.toHaveProperty('toolDescription');
+    expect(domainPlugin.description).toEqual({ en: 'Plugin A', 'zh-CN': 'Plugin A' });
     expect(domainPlugin.inputSchema).toEqual(inputSchema);
     expect(domainPlugin.outputSchema).toEqual(outputSchema);
     expect(domainPlugin.secretSchema).toEqual(secretSchema);
-    expect(domainPlugin.children?.[0].toolDescription).toEqual(localizedDescription);
+    expect(domainPlugin.children?.[0]).not.toHaveProperty('toolDescription');
     expect(domainPlugin.children?.[0].inputSchema).toEqual(childInputSchema);
     expect(domainPlugin.children?.[0].outputSchema).toEqual(childOutputSchema);
   });
@@ -1596,13 +1598,15 @@ describe('PluginRepo.listToolSummaries', () => {
       expect.any(Object),
       expect.objectContaining({
         'data.secretSchema': 1,
-        'data.toolDescription': 1,
         'data.children.id': 1,
         'data.children.name': 1,
-        'data.children.description': 1,
-        'data.children.toolDescription': 1
+        'data.children.description': 1
       })
     );
+    const withSecret = tools?.find((tool) => tool.pluginId === 'with-secret');
+    expect(withSecret?.description).toEqual({ en: 'with-secret', 'zh-CN': 'with-secret' });
+    expect(withSecret).not.toHaveProperty('toolDescription');
+    expect(withSecret?.children?.[0]).not.toHaveProperty('toolDescription');
     expect(tools).toEqual([
       expect.objectContaining({
         pluginId: 'empty-secret',
@@ -1618,13 +1622,7 @@ describe('PluginRepo.listToolSummaries', () => {
       }),
       expect.objectContaining({
         pluginId: 'with-secret',
-        toolDescription: localizedToolDescription,
-        children: [
-          expect.objectContaining({
-            id: 'search',
-            toolDescription: localizedToolDescription
-          })
-        ],
+        children: [expect.objectContaining({ id: 'search' })],
         hasSecret: true
       })
     ]);

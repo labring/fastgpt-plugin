@@ -113,7 +113,7 @@ The handler context includes:
 
 ### `defineInputSchema(fields)` and `defineOutputSchema(fields)`
 
-Both helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized UI copy in the same format. Input fields may independently set model-facing `toolDescription` (`string | I18nStringType`) and optional boolean `isToolParam` (including `false`); output fields have neither option.
+Both helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. Legacy `toolDescription` inputs are ignored and do not override or backfill `description`.
 
 ```ts
 const inputSchema = defineInputSchema({
@@ -121,10 +121,6 @@ const inputSchema = defineInputSchema({
     type: z.string(),
     title: { en: 'Query', 'zh-CN': '查询' },
     description: { en: 'Text to search for', 'zh-CN': '用于检索的文本' },
-    toolDescription: {
-      en: 'The search text used to find matching items.',
-      'zh-CN': '用于查找匹配项目的搜索文本。'
-    },
     isToolParam: true
   },
   limit: {
@@ -223,20 +219,12 @@ export default defineToolSet({
       id: 'search',
       name: { en: 'Search', 'zh-CN': '搜索' },
       description: { en: 'Search text', 'zh-CN': '搜索文本' },
-      toolDescription: {
-        en: 'Search text by query',
-        'zh-CN': '根据查询搜索文本'
-      },
       handler: searchHandler
     },
     {
       id: 'summary',
       name: { en: 'Summary', 'zh-CN': '总结' },
       description: { en: 'Summarize text', 'zh-CN': '总结文本' },
-      toolDescription: {
-        en: 'Summarize text content',
-        'zh-CN': '总结文本内容'
-      },
       handler: summaryHandler
     }
   ]
@@ -260,9 +248,8 @@ export default defineToolSet({
 | `tags` | No | Plugin tags. |
 | `permission` | No | Plugin permission declarations. |
 | `icon` | No | Plugin icon; the build pipeline can fill it automatically. |
-| `toolDescription` | No | Model-facing tool description; accepts a string or i18n object and can fall back to the tool description during build. |
 
-## Localized Schema Text and Model Instructions
+## Localized Schema Text and Tool Descriptions
 
 Use schema helpers to declare UI copy for input and output fields; they generate a plain-string `title` and, when a `description` is provided, its plain-string value, together with complete `'x-i18n'` objects. Secret fields and advanced metadata can still be declared with Zod `.meta()`. The CLI build preserves the complete `'x-i18n'` object and copies its `'zh-CN'` values into compatible plain-string `title`, `description`, and `placeholder` fields. Fields in older manifests without `'x-i18n'` keep their original values.
 
@@ -273,10 +260,6 @@ const handler = createToolHandler({
       type: z.string(),
       title: { en: 'Query', 'zh-CN': '查询' },
       description: { en: 'Text to search for', 'zh-CN': '用于检索的文本' },
-      toolDescription: {
-        en: 'The search text used to find matching items.',
-        'zh-CN': '用于查找匹配项目的搜索文本。'
-      },
       isToolParam: true
     }
   }),
@@ -301,16 +284,7 @@ const handler = createToolHandler({
 });
 ```
 
-`toolDescription` is separate model-facing text and can be set on a plugin, a tool-set child, or an input parameter. New plugins should provide an i18n object with `en` and `'zh-CN'`; `'zh-Hant'` is optional. The host selects text for the model request locale and falls back from the exact locale to `'zh-CN'`, then `en`. String descriptions in older plugins remain valid and are preserved as-is; the CLI does not present them as bilingual translations. Schema field text is UI copy and does not replace the model-facing `toolDescription`.
-
-A tool or child-tool model description can also use:
-
-```ts
-toolDescription: {
-  en: 'Search for items that match the query.',
-  'zh-CN': '搜索与查询内容匹配的项目。'
-}
-```
+Plugin and child-tool `description` is the only tool-description source; schema-field `description` describes fields. Legacy `toolDescription` values in manifests, children, and JSON Schema are ignored, do not override or backfill `description`, and are not emitted in new manifests.
 
 ## Secret Configuration
 

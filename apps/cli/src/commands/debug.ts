@@ -171,7 +171,6 @@ export class DebugCommand extends BaseCommand {
       `  version: ${snapshot.version}`,
       `  name: ${selectDebugText(snapshot.name, locale) || '-'}`,
       `  description: ${selectDebugText(snapshot.description, locale) || '-'}`,
-      `  toolDescription: ${selectDebugText(snapshot.toolDescription, locale) || '-'}`,
       `  author: ${snapshot.author ?? '-'}`,
       `  tags: ${snapshot.tags?.join(', ') ?? '-'}`,
       `  permissions: ${snapshot.permissions?.join(', ') ?? '-'}`,
@@ -186,7 +185,6 @@ export class DebugCommand extends BaseCommand {
       toolLines.push(`  - id: ${tool.id}`);
       toolLines.push(`    name: ${selectDebugText(tool.name, locale) || '-'}`);
       toolLines.push(`    description: ${selectDebugText(tool.description, locale) || '-'}`);
-      toolLines.push(`    toolDescription: ${selectDebugText(tool.toolDescription, locale) || '-'}`);
       toolLines.push(`    inputKeys: ${this.formatSchemaKeys(tool.inputSchema, locale)}`);
       toolLines.push(`    command: ${this.buildCommand(snapshot, tool, locale)}`);
     });

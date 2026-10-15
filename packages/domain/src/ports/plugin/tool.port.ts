@@ -15,7 +15,6 @@ export const ToolListChildItemSchema = z.object({
   id: ToolSetChildItemSchema.shape.id,
   name: ToolSetChildItemSchema.shape.name,
   description: ToolSetChildItemSchema.shape.description,
-  toolDescription: ToolSetChildItemSchema.shape.toolDescription
 });
 
 export type ToolListChildItemType = z.infer<typeof ToolListChildItemSchema>;

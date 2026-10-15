@@ -7,8 +7,12 @@ import {
 } from './tool.dto';
 
 describe('Tool metadata DTOs', () => {
-  it('preserves localized model descriptions and x-i18n schema metadata', () => {
-    const modelDescription = {
+  it('preserves localized descriptions and x-i18n metadata while dropping legacy tool descriptions', () => {
+    const description = {
+      en: 'Search docs',
+      'zh-CN': '搜索文档'
+    };
+    const legacyToolDescription = {
       en: 'Search public documentation',
       'zh-CN': '搜索公开文档'
     };
@@ -23,10 +27,10 @@ describe('Tool metadata DTOs', () => {
           type: 'string',
           title: 'Search query',
           description: 'Search terms',
-          toolDescription: modelDescription,
+          toolDescription: legacyToolDescription,
           'x-i18n': {
             title: fieldTitle,
-            description: modelDescription,
+            description: legacyToolDescription,
             placeholder: fieldTitle
           }
         }
@@ -40,7 +44,7 @@ describe('Tool metadata DTOs', () => {
           title: 'Results',
           'x-i18n': {
             title: fieldTitle,
-            description: modelDescription
+            description: legacyToolDescription
           }
         }
       }
@@ -63,7 +67,7 @@ describe('Tool metadata DTOs', () => {
       name: { en: 'Search', 'zh-CN': '搜索' },
       description: { en: 'Search tool', 'zh-CN': '搜索工具' },
       icon: 'https://example.com/search.svg',
-      toolDescription: modelDescription,
+      toolDescription: legacyToolDescription,
       inputSchema,
       outputSchema
     };
@@ -74,8 +78,8 @@ describe('Tool metadata DTOs', () => {
       type: 'tool',
       name: { en: 'Search Docs', 'zh-CN': '搜索文档' },
       icon: 'https://example.com/icon.svg',
-      description: { en: 'Search docs', 'zh-CN': '搜索文档' },
-      toolDescription: modelDescription,
+      description,
+      toolDescription: legacyToolDescription,
       inputSchema,
       outputSchema,
       secretSchema,
@@ -97,17 +101,13 @@ describe('Tool metadata DTOs', () => {
       isToolset: true
     });
 
-    expect(summary).toMatchObject({
-      toolDescription: modelDescription,
-      children: [{ toolDescription: modelDescription }]
-    });
-    expect(detail).toMatchObject({
-      toolDescription: modelDescription,
-      inputSchema,
-      outputSchema,
-      secretSchema,
-      children: [child]
-    });
+    expect(summary.description).toEqual(description);
+    expect(summary).not.toHaveProperty('toolDescription');
+    expect(summary.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(detail.description).toEqual(description);
+    expect(detail).not.toHaveProperty('toolDescription');
+    expect(detail.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(detail).toMatchObject({ inputSchema, outputSchema, secretSchema });
   });
 });
 

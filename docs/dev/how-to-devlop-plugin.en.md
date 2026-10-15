@@ -216,7 +216,7 @@ export default defineTool({
 });
 ```
 
-`defineInputSchema()` and `defineOutputSchema()` accept field descriptor objects and return ordinary Zod objects that can be passed directly to `createToolHandler()`. Each field's `type` is a Zod schema instance, and `title` must include `en` and `zh-CN`, with optional `zh-Hant`; `description` is optional UI copy. Input fields additionally support an independent `toolDescription` (`string` or an i18n object) and optional boolean `isToolParam`, including `false`. The helpers generate plain Chinese `title` / `description` and `x-i18n` language objects, preserve other `.meta()` metadata on the schema, and do not mutate the source schema. `createToolHandler()` still consumes ordinary Zod objects, whose default behavior strips unknown keys; call `.strict()` on the returned object when strict validation is desired.
+`defineInputSchema()` and `defineOutputSchema()` accept field descriptor objects and return ordinary Zod objects that can be passed directly to `createToolHandler()`. Each field's `type` is a Zod schema instance, and `title` must include `en` and `zh-CN`, with optional `zh-Hant`; `description` is optional localized UI and tool-description text. Input fields additionally support optional boolean `isToolParam`, including `false`. Legacy `toolDescription` fields are ignored and do not override or backfill `description`. The helpers generate plain Chinese `title` / `description` and `x-i18n` language objects, preserve other `.meta()` metadata on the schema, and do not mutate the source schema. `createToolHandler()` still consumes ordinary Zod objects, whose default behavior strips unknown keys; call `.strict()` on the returned object when strict validation is desired.
 
 Fields compose when nested or used as array elements:
 
@@ -236,7 +236,7 @@ const outputSchema = defineOutputSchema({
 
 Core rules:
 
-- Define input and output fields with `defineInputSchema()` and `defineOutputSchema()`. Each field's `type` is a Zod schema, and its required `title` includes `en` and `zh-CN`; optional `description` is UI copy. Input fields also support independent `toolDescription` and optional boolean `isToolParam`.
+- Define input and output fields with `defineInputSchema()` and `defineOutputSchema()`. Each field's `type` is a Zod schema, and its required `title` includes `en` and `zh-CN`; optional `description` is localized UI and tool-description text. Input fields also support optional boolean `isToolParam`.
 - Continue to define secret fields with `.meta({ ... } satisfies SecretSchemaMetaType)`; advanced metadata can also use Zod `.meta()`. Set `isSecret: true` for sensitive fields.
 - Convert external API errors into actionable messages and avoid exposing secrets, tokens, or complete sensitive responses.
 - Use `ctx.invoke.uploadFile()` when host file upload is needed, and prefer preserving the returned `err`.

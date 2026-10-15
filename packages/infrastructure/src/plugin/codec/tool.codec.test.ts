@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import z from 'zod';
 
 import type { ToolType } from '@domain/entities/tool.entity';
 import { successResult } from '@domain/value-objects/result.vo';
@@ -79,7 +80,8 @@ describe('toolPluginCodec', () => {
       en: 'Legacy tool description',
       'zh-CN': 'Legacy tool description'
     });
-    expect(plugin.versionDescription).toEqual({ en: 'Initial version', 'zh-CN': 'Initial version' });
+    expect(plugin).not.toHaveProperty('toolDescription');
+    expect(plugin.children?.[0]).not.toHaveProperty('toolDescription');
     expect(plugin.children?.[0]).toMatchObject({
       name: { en: 'Run Query', 'zh-CN': 'Run Query' },
       description: { en: 'Execute search query', 'zh-CN': 'Execute search query' }
@@ -91,6 +93,11 @@ describe('toolPluginCodec', () => {
       en: 'Legacy tool description',
       'zh-CN': 'Legacy tool description'
     });
+    expect(persistedRecord.data).not.toHaveProperty('toolDescription');
+    const persistedChildren = z
+      .object({ children: z.array(z.record(z.string(), z.unknown())) })
+      .parse(persistedRecord.data).children;
+    expect(persistedChildren[0]).not.toHaveProperty('toolDescription');
     expect(persistedRecord.data).toMatchObject({
       children: [
         {

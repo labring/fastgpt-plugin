@@ -72,7 +72,7 @@ describe('DebugPluginRepoOverlay', () => {
     expect(new Set(plugins?.map((plugin) => plugin.etag)).size).toBe(2);
   });
 
-  it('changes debug etag when mounted metadata changes without a version bump', async () => {
+  it('ignores legacy description changes in debug metadata etags', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(jsonResponse(makeGatewayStatus()))
       .mockResolvedValueOnce(
@@ -99,12 +99,12 @@ describe('DebugPluginRepoOverlay', () => {
     expect(afterErr).toBeNull();
     expect(before?.find((plugin) => plugin.pluginId === 'getTime')?.version).toBe('0.1.1');
     expect(after?.find((plugin) => plugin.pluginId === 'getTime')?.version).toBe('0.1.1');
-    expect(before?.find((plugin) => plugin.pluginId === 'getTime')?.etag).not.toBe(
+    expect(before?.find((plugin) => plugin.pluginId === 'getTime')?.etag).toBe(
       after?.find((plugin) => plugin.pluginId === 'getTime')?.etag
     );
   });
 
-  it('preserves localized plugin, child tool, and parameter metadata from the gateway', async () => {
+  it('ignores legacy descriptions and preserves canonical localized metadata', async () => {
     const localizedPluginText = { en: 'Search plugin', 'zh-CN': '搜索插件' };
     const localizedToolText = { en: 'Search documents', 'zh-CN': '搜索文档' };
     const localizedParameterText = { en: 'Search query', 'zh-CN': '搜索内容' };
@@ -145,28 +145,26 @@ describe('DebugPluginRepoOverlay', () => {
       source: 'debug:user:u1'
     });
     const [tools, listErr] = await repo.listToolSummaries({ sources: ['debug:user:u1'] });
+    const listedTool = tools?.find((tool) => tool.pluginId === 'dbops');
 
     expect(pluginErr).toBeNull();
     expect(listErr).toBeNull();
     expect(plugin?.name).toEqual(localizedPluginText);
     expect(plugin?.description).toEqual(localizedPluginText);
-    expect(plugin?.toolDescription).toEqual(localizedToolText);
-    expect(plugin?.children?.[0]?.toolDescription).toEqual(localizedToolText);
+    expect(plugin).not.toHaveProperty('toolDescription');
+    expect(plugin?.children?.[0]).not.toHaveProperty('toolDescription');
     expect(plugin?.children?.[0]?.inputSchema).toMatchObject({
       properties: {
         query: {
-          toolDescription: localizedParameterText,
           'x-i18n': { title: localizedParameterText }
         }
       }
     });
-    expect(tools?.find((tool) => tool.pluginId === 'dbops')).toMatchObject({
-      name: localizedPluginText,
-      description: localizedPluginText,
-      toolDescription: localizedToolText,
-      children: [{ toolDescription: localizedToolText }]
-    });
+    expect(listedTool?.description).toEqual(localizedPluginText);
+    expect(listedTool).not.toHaveProperty('toolDescription');
+    expect(listedTool?.children?.[0]).not.toHaveProperty('toolDescription');
   });
+
 
   it('keeps debug etag stable when metadata key order changes', async () => {
     vi.spyOn(globalThis, 'fetch')

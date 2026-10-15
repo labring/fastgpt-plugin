@@ -56,7 +56,6 @@ type DebugToolMetadata = {
   id: string;
   name: DebugText;
   description: DebugText;
-  toolDescription: DebugText;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -66,7 +65,6 @@ type DebugPluginMetadataPayload = {
   version: string;
   name: DebugText;
   description: DebugText;
-  toolDescription: DebugText;
   author?: string;
   tags?: string[];
   permissions?: string[];
@@ -417,7 +415,6 @@ function toPlugin(metadata: DebugPluginMetadata, source: string): PluginType {
     description: toI18n(metadata.description),
     tags: metadata.tags,
     permission: metadata.permissions,
-    toolDescription: metadata.toolDescription,
     secretSchema: metadata.secretSchema,
     inputSchema: metadata.isToolSet ? undefined : metadata.tools[0]?.inputSchema,
     outputSchema: metadata.isToolSet ? undefined : metadata.tools[0]?.outputSchema,
@@ -427,7 +424,6 @@ function toPlugin(metadata: DebugPluginMetadata, source: string): PluginType {
           name: toI18n(tool.name),
           description: toI18n(tool.description),
           icon: '',
-          toolDescription: tool.toolDescription,
           inputSchema: tool.inputSchema,
           outputSchema: tool.outputSchema
         }))
@@ -471,7 +467,6 @@ function toToolListItem({ source, metadata }: { source: string; metadata: DebugP
     icon: '',
     description: toI18n(metadata.description),
     tags: metadata.tags,
-    toolDescription: metadata.toolDescription,
     source,
     isToolset: metadata.isToolSet,
     hasSecret: Boolean(
@@ -483,7 +478,6 @@ function toToolListItem({ source, metadata }: { source: string; metadata: DebugP
           id: tool.id,
           name: toI18n(tool.name),
           description: toI18n(tool.description),
-          toolDescription: tool.toolDescription
         }))
       : undefined
   });
@@ -509,7 +503,6 @@ function toDebugEtag(source: string, metadata: DebugPluginMetadata): string {
         version: metadata.version,
         name: metadata.name,
         description: metadata.description,
-        toolDescription: metadata.toolDescription,
         author: metadata.author,
         tags: metadata.tags,
         permissions: metadata.permissions,

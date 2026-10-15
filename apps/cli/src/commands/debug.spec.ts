@@ -126,7 +126,7 @@ describe('debug command', () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
-  it('目标语言存在时应优先于简体中文和英文', async () => {
+  it('uses the selected locale for canonical names and descriptions only', async () => {
     const entryDir = await createDebugPluginFixture({
       name: {
         en: 'English name',
@@ -160,36 +160,16 @@ describe('debug command', () => {
         'zh-CN': '简体中文说明',
         'zh-Hant': '繁體中文說明'
       });
-      expect(snapshot.toolDescription).toEqual({
-        en: 'English tool description',
-        'zh-CN': '简体中文工具说明',
-        'zh-Hant': '繁體中文工具說明'
-      });
-      expect(snapshot.tools[0]).toMatchObject({
-        name: {
-          en: 'English name',
-          'zh-CN': '简体中文名称',
-          'zh-Hant': '繁體中文名稱'
-        },
-        description: {
-          en: 'English description',
-          'zh-CN': '简体中文说明',
-          'zh-Hant': '繁體中文說明'
-        },
-        toolDescription: {
-          en: 'English tool description',
-          'zh-CN': '简体中文工具说明',
-          'zh-Hant': '繁體中文工具說明'
-        }
-      });
+      expect(snapshot).not.toHaveProperty('toolDescription');
+      expect(snapshot.tools[0].description).toEqual(snapshot.description);
+      expect(snapshot.tools[0]).not.toHaveProperty('toolDescription');
 
       await run([process.execPath, 'cli', 'debug', entryDir, '--lang', 'zh-Hant']);
 
       const output = getLoggerOutput(loggerSpy.info);
-
       expect(output).toContain('name: 繁體中文名稱');
       expect(output).toContain('description: 繁體中文說明');
-      expect(output).toContain('toolDescription: 繁體中文工具說明');
+      expect(output).not.toContain('toolDescription');
       expect(output).not.toContain('简体中文');
       expect(loggerSpy.error).not.toHaveBeenCalled();
       expect(exitSpy).not.toHaveBeenCalled();
@@ -198,7 +178,7 @@ describe('debug command', () => {
     }
   });
 
-  it('简体中文缺失时回退到英文，并继续接受旧字符串 metadata', async () => {
+  it('ignores old string tool descriptions without overriding the canonical description', async () => {
     const entryDir = await createDebugPluginFixture({
       name: { en: 'English fallback name', 'zh-CN': '' },
       description: 'Legacy debug description',
@@ -212,14 +192,15 @@ describe('debug command', () => {
 
       expect(output).toContain('name: English fallback name');
       expect(output).toContain('description: Legacy debug description');
-      expect(output).toContain('toolDescription: Legacy model description');
-      expect(output).toContain('    toolDescription: Legacy model description');
+      expect(output).not.toContain('Legacy model description');
+      expect(output).not.toContain('toolDescription');
       expect(loggerSpy.error).not.toHaveBeenCalled();
       expect(exitSpy).not.toHaveBeenCalled();
     } finally {
       await rm(entryDir, { recursive: true, force: true });
     }
   });
+
 
   it('应能直接运行本地单工具调试', async () => {
     await run([process.execPath, 'cli', 'debug', GETTIME_TOOL_DIR, '--run', '--input', '{}']);

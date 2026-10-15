@@ -92,7 +92,6 @@ const plugin = (overrides: Partial<PluginType> = {}) =>
     name: { en: 'Plugin A', 'zh-CN': 'Plugin A' },
     icon: 'https://example.com/icon.svg',
     description: { en: 'Plugin A', 'zh-CN': 'Plugin A' },
-    toolDescription: 'Plugin A',
     ...overrides
   }) as PluginType;
 

@@ -1,7 +1,6 @@
 import z from 'zod';
 
 import { PluginBaseSchema, PluginTypeEnum } from '../../entities/plugin.entity';
-import { ToolDescriptionSchema } from '../../entities/tool.entity';
 import { I18nStringSchema } from '../i18n-string.vo';
 
 export const PluginManifestBaseSchema = z.object({
@@ -20,7 +19,6 @@ export type PluginManifestBaseType = z.infer<typeof PluginManifestBaseSchema>;
 export const ToolManifestSchema = z.object({
   ...PluginManifestBaseSchema.shape,
   type: z.literal(PluginTypeEnum.tool),
-  toolDescription: ToolDescriptionSchema, // 编译时自动补
 
   inputSchema: z.any().optional(),
   outputSchema: z.any().optional(),
@@ -32,7 +30,6 @@ export const ToolManifestSchema = z.object({
         id: z.string(),
         description: I18nStringSchema,
         name: I18nStringSchema,
-        toolDescription: ToolDescriptionSchema, // 编译时自动补
         icon: z.string(), // 必须提供 / 自动生成
         inputSchema: z.any(),
         outputSchema: z.any()

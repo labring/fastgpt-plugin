@@ -31,7 +31,20 @@ const load = (availableFiles: string[]) => {
 };
 
 describe('loadPlugin README URLs', () => {
-  it('maps only packaged locale variants and preserves the root README compatibility URL', async () => {
+  it('ignores legacy tool descriptions in plugin manifests', async () => {
+    const { plugin, error } = await load([
+      'logo.svg',
+      'README.md',
+      'README.en.md',
+      'README.zh-CN.md'
+    ]);
+
+    expect(error).toBeNull();
+    expect(plugin?.description).toEqual({ en: 'README demo', 'zh-CN': 'README 示例' });
+    expect(plugin).not.toHaveProperty('toolDescription');
+  });
+
+  it('maps only present localized README URLs while retaining the legacy URL', async () => {
     const { plugin, error, getAccessURL } = await load([
       'logo.svg',
       'README.md',

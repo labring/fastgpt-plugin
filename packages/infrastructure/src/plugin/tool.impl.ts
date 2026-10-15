@@ -14,7 +14,6 @@ import {
   type ToolManagerPort
 } from '@domain/ports/plugin/tool.port';
 import { createError, getErrorDefinition, type RegisteredError } from '@domain/value-objects/error.vo';
-import { I18nStringSchema } from '@domain/value-objects/i18n-string.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import {
   isPluginDebugSource,
@@ -48,70 +47,45 @@ function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function getDescriptionFallback(description: unknown): string | undefined {
-  if (typeof description === 'string' && description.length > 0) {
-    return description;
+function stripToolDescription(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripToolDescription);
   }
 
-  if (!isJsonObject(description)) {
-    return undefined;
+  if (!isJsonObject(value)) {
+    return value;
   }
 
-  const en = description.en;
-  return typeof en === 'string' && en.length > 0 ? en : undefined;
-}
-
-function hasToolDescription(value: unknown): boolean {
-  return (
-    (typeof value === 'string' && value.length > 0) ||
-    I18nStringSchema.safeParse(value).success
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key !== 'toolDescription')
+      .map(([key, nestedValue]) => [key, stripToolDescription(nestedValue)])
   );
 }
 
 function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
-  if (!isJsonObject(inputSchema) || !isJsonObject(inputSchema.properties)) {
-    return inputSchema;
+  const normalizedSchema = stripToolDescription(inputSchema);
+  if (!isJsonObject(normalizedSchema) || !isJsonObject(normalizedSchema.properties)) {
+    return normalizedSchema;
   }
 
-  const properties = Object.fromEntries(
-    Object.entries(inputSchema.properties).map(([key, property]) => {
-      if (!isJsonObject(property)) {
-        return [key, property];
-      }
-
-      const normalizedProperty = { ...property };
-      const hasExistingToolDescription = hasToolDescription(normalizedProperty.toolDescription);
-      const hasIsToolParam = normalizedProperty.isToolParam !== undefined;
-
-      if (hasIsToolParam) {
-        if (!hasExistingToolDescription) {
-          const fallback = getDescriptionFallback(normalizedProperty.description);
-          if (fallback !== undefined) {
-            normalizedProperty.toolDescription = fallback;
-          }
+  return {
+    ...normalizedSchema,
+    properties: Object.fromEntries(
+      Object.entries(normalizedSchema.properties).map(([key, property]) => {
+        if (!isJsonObject(property)) {
+          return [key, property];
         }
 
-        return [key, normalizedProperty];
-      }
-
-      if (hasExistingToolDescription) {
-        normalizedProperty.isToolParam = true;
-        return [key, normalizedProperty];
-      }
-
-      const fallback = getDescriptionFallback(normalizedProperty.description);
-      if (fallback !== undefined) {
-        normalizedProperty.toolDescription = fallback;
-      }
-      normalizedProperty.isToolParam = false;
-
-      return [key, normalizedProperty];
-    })
-  );
-
-  return {
-    ...inputSchema,
-    properties
+        return [
+          key,
+          {
+            ...property,
+            isToolParam: property.isToolParam !== undefined ? property.isToolParam : false
+          }
+        ];
+      })
+    )
   };
 }
 
@@ -133,13 +107,24 @@ export class ToolManager implements ToolManagerPort {
     source: PluginSourceType;
     isLatestVersion: boolean;
   }): ToolDetailType {
+    const normalizedTool = { ...tool } as ToolType & { toolDescription?: unknown };
+    delete normalizedTool.toolDescription;
+
     return {
-      ...tool,
+      ...normalizedTool,
       inputSchema: normalizeInputSchemaToolParams(tool.inputSchema),
-      children: tool.children?.map((child) => ({
-        ...child,
-        inputSchema: normalizeInputSchemaToolParams(child.inputSchema)
-      })),
+      outputSchema: stripToolDescription(tool.outputSchema),
+      secretSchema: stripToolDescription(tool.secretSchema),
+      children: tool.children?.map((child) => {
+        const normalizedChild = { ...child } as typeof child & { toolDescription?: unknown };
+        delete normalizedChild.toolDescription;
+
+        return {
+          ...normalizedChild,
+          inputSchema: normalizeInputSchemaToolParams(child.inputSchema),
+          outputSchema: stripToolDescription(child.outputSchema)
+        };
+      }),
       source,
       isToolset: Boolean(tool.children?.length),
       isLatestVersion

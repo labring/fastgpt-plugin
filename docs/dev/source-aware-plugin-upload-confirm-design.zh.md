@@ -49,7 +49,6 @@ plugin 表表示全局插件实体，不表示某个 source 的安装状态。
       icon: 'logo.svg',
       description: { en: '...', 'zh-CN': '...' },
       data: {
-        toolDescription: '...',
         inputSchema: '...',
         outputSchema: '...',
         secretSchema: '...',
@@ -59,6 +58,8 @@ plugin 表表示全局插件实体，不表示某个 source 的安装状态。
       createAt: Date,
       updatedAt: Date
     }
+
+历史记录中的 `data.toolDescription` 会被新插件 schema 忽略，`description` 是唯一描述来源；不执行数据迁移或读时回写。
 
 唯一索引：
 

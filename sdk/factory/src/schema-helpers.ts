@@ -10,17 +10,14 @@ type UiFieldDefinition<T extends z.ZodType> = {
 };
 
 export type InputFieldDefinition<T extends z.ZodType = z.ZodType> = UiFieldDefinition<T> & {
-  toolDescription?: string | I18nStringType;
   isToolParam?: boolean;
 };
 
 export type OutputFieldDefinition<T extends z.ZodType = z.ZodType> = UiFieldDefinition<T> & {
-  toolDescription?: never;
   isToolParam?: never;
 };
 
 type FieldDefinition = UiFieldDefinition<z.ZodType> & {
-  toolDescription?: string | I18nStringType;
   isToolParam?: boolean;
 };
 type FieldMap<T extends Record<string, FieldDefinition>> = {
@@ -62,6 +59,7 @@ function createSchemaFromFields<const T extends Record<string, FieldDefinition>>
       title: field.title['zh-CN'],
       'x-i18n': i18nMetadata
     };
+    mergedMetadata.toolDescription = undefined;
 
     i18nMetadata.title = field.title;
 
@@ -70,9 +68,6 @@ function createSchemaFromFields<const T extends Record<string, FieldDefinition>>
       i18nMetadata.description = field.description;
     }
 
-    if (field.toolDescription !== undefined) {
-      mergedMetadata.toolDescription = field.toolDescription;
-    }
 
     if (field.isToolParam !== undefined) {
       mergedMetadata.isToolParam = field.isToolParam;

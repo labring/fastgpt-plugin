@@ -153,7 +153,6 @@ const loadTool = async ({
       ...(readmeUrl ? { readmeUrl } : {}),
       ...(Object.keys(readmeFiles).length > 0 ? { readmeUrls: readmeFiles } : {}),
       children,
-      toolDescription: manifest.toolDescription,
       inputSchema: manifest.inputSchema,
       outputSchema: manifest.outputSchema,
       secretSchema: manifest.secretSchema

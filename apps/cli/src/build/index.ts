@@ -38,7 +38,6 @@ type PackableToolChild = {
   description: ToolManifestType['description'];
   name: ToolManifestType['name'];
   icon?: string;
-  toolDescription?: unknown;
 };
 
 type PackableToolExport = {
@@ -181,12 +180,9 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
   const rootLogoName = path.basename(rootLogoPath);
   const logoFiles = new Map<string, string>([[rootLogoName, rootLogoPath]]);
 
-  const userManifest = tool.getUserToolManifest();
+  const userManifest = { ...tool.getUserToolManifest() };
+  delete userManifest.toolDescription;
   const secretSchema = toManifestJsonSchema(z.toJSONSchema(tool.getSecretSchema()));
-  const toolDescription = pickToolDescription(
-    userManifest.toolDescription,
-    userManifest.description
-  );
 
   const childManifests = tool.getChildManifests();
 
@@ -194,7 +190,6 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
     ...userManifest,
     type: 'tool',
     icon: rootLogoName,
-    toolDescription,
     secretSchema
   };
 
@@ -223,7 +218,6 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
           description: child.description,
           name: child.name,
           icon: childLogoName,
-          toolDescription: pickToolDescription(child.toolDescription, child.description),
           inputSchema: toManifestJsonSchema(z.toJSONSchema(handler.inputSchema)),
           outputSchema: toManifestJsonSchema(z.toJSONSchema(handler.outputSchema))
         };
@@ -360,32 +354,6 @@ function isPackableToolExport(value: unknown): value is PackableToolExport {
   );
 }
 
-function pickToolDescription(explicitDescription: unknown, fallbackSource: unknown): unknown {
-  if (hasToolDescriptionValue(explicitDescription)) {
-    return explicitDescription;
-  }
-
-  if (hasToolDescriptionValue(fallbackSource)) {
-    return fallbackSource;
-  }
-
-  return '';
-}
-
-function hasToolDescriptionValue(value: unknown): boolean {
-  if (typeof value === 'string') {
-    return value.trim().length > 0;
-  }
-
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return ['en', 'zh-CN'].some((locale) => {
-    const localized = value[locale];
-    return typeof localized === 'string' && localized.trim().length > 0;
-  });
-}
 
 const JSON_SCHEMA_CHILD_KEYS = [
   '$defs',
@@ -418,6 +386,7 @@ export function toManifestJsonSchema(schema: unknown): unknown {
   }
 
   const normalized: Record<string, unknown> = { ...schema };
+  delete normalized.toolDescription;
   const localized = normalized['x-i18n'];
   if (isRecord(localized)) {
     for (const field of I18N_UI_FIELDS) {

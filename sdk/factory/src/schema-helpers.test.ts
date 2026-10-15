@@ -68,7 +68,6 @@ describe('schema definition helpers', () => {
         type: shared,
         title: text('First title', '第一标题', '第一標題'),
         description: text('First description', '第一描述'),
-        toolDescription: '',
         isToolParam: false
       }
     });
@@ -90,10 +89,10 @@ describe('schema definition helpers', () => {
         custom: { retained: true }
       }
     });
+    expect(first.shape.value.meta()?.toolDescription).toBeUndefined();
     expect(second.shape.value.meta()).toMatchObject({
       title: '第二标题',
       placeholder: 'Schema placeholder',
-      toolDescription: 'Old model description',
       isToolParam: true,
       'x-i18n': {
         title: text('Second title', '第二标题'),
@@ -102,11 +101,13 @@ describe('schema definition helpers', () => {
         custom: { retained: true }
       }
     });
+    expect(second.shape.value.meta()?.toolDescription).toBeUndefined();
     expect(shared.meta()).toMatchObject({
       title: 'Old title',
       description: 'Old description',
       'x-i18n': oldI18n
     });
+    expect(shared.meta()?.toolDescription).toBe('Old model description');
   });
 
   it('treats invalid x-i18n metadata as absent and preserves special field names', () => {
@@ -185,8 +186,6 @@ function assertDescriptorTypeRestrictions(): void {
   defineInputSchema({ value: { type: z.string(), title: text('Value', '值'), placeholder: text('Prompt', '提示') } });
   // @ts-expect-error Output descriptors do not support placeholder.
   defineOutputSchema({ value: { type: z.string(), title: text('Value', '值'), placeholder: text('Prompt', '提示') } });
-  // @ts-expect-error Output descriptors do not support model-facing descriptions.
-  defineOutputSchema({ value: { type: z.string(), title: text('Value', '值'), toolDescription: 'Model detail' } });
   // @ts-expect-error Output descriptors do not support AI parameter hints.
   defineOutputSchema({ value: { type: z.string(), title: text('Value', '值'), isToolParam: false } });
 }

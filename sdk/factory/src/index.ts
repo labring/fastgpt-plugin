@@ -24,8 +24,6 @@ export type I18nSchemaMetaType = {
 export type InputSchemaMetaType = z.GlobalMeta & {
   /** Localized strings for the UI. */
   'x-i18n'?: I18nSchemaMetaType;
-  /** Model-facing parameter description. */
-  toolDescription?: string | I18nStringType;
   /** Whether AI should be encouraged to fill this field. */
   isToolParam?: boolean;
 };
@@ -87,7 +85,6 @@ export const defineToolSet = ({
       description: child.description,
       name: child.name,
       ...(child.icon !== undefined ? { icon: child.icon } : {}),
-      ...(child.toolDescription !== undefined ? { toolDescription: child.toolDescription } : {})
     });
   });
   toolSet.setSecretSchema(secretSchema ?? z.object());

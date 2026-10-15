@@ -353,7 +353,6 @@ describe('ToolFactory schema metadata', () => {
         query: z.string().meta({
           title: 'Query',
           description: 'Search query',
-          toolDescription: 'Search query',
           isToolParam: true,
           'x-i18n': localizedMeta
         } satisfies InputSchemaMetaType)
@@ -378,7 +377,6 @@ describe('ToolFactory schema metadata', () => {
     expect(inputSchema.properties?.query).toMatchObject({
       title: 'Query',
       description: 'Search query',
-      toolDescription: 'Search query',
       isToolParam: true,
       'x-i18n': {
         title: localized,
@@ -386,6 +384,7 @@ describe('ToolFactory schema metadata', () => {
         placeholder: localized
       }
     });
+    expect(inputSchema.properties?.query).not.toHaveProperty('toolDescription');
     expect(outputSchema.properties?.answer).toMatchObject({
       title: 'Answer',
       description: 'Answer text',
@@ -406,7 +405,7 @@ describe('ToolFactory schema metadata', () => {
     });
   });
 
-  it('accepts localized model descriptions for tools, children, and input parameters', () => {
+  it('ignores localized legacy tool descriptions in manifests', () => {
     const toolDescription = {
       en: 'Find public documentation',
       'zh-CN': '查找公开文档'
@@ -472,8 +471,9 @@ describe('ToolFactory schema metadata', () => {
       ]
     });
 
-    expect(manifest.toolDescription).toEqual(toolDescription);
-    expect(manifest.children?.[0]?.toolDescription).toEqual(toolDescription);
+    expect(manifest.description).toEqual(description);
+    expect(manifest).not.toHaveProperty('toolDescription');
+    expect(manifest.children?.[0]).not.toHaveProperty('toolDescription');
     expect(manifest.children?.[0]?.inputSchema).toMatchObject({
       properties: {
         query: {
@@ -482,8 +482,8 @@ describe('ToolFactory schema metadata', () => {
         }
       }
     });
-    expect(legacyManifest.toolDescription).toBe('Legacy string description');
-    expect(legacyManifest.children?.[0]?.toolDescription).toBe('Legacy child description');
+    expect(legacyManifest).not.toHaveProperty('toolDescription');
+    expect(legacyManifest.children?.[0]).not.toHaveProperty('toolDescription');
 
     const tool = defineTool({
       manifest: {
@@ -492,12 +492,11 @@ describe('ToolFactory schema metadata', () => {
         description,
         version: '0.0.1',
         versionDescription: description,
-        tags: ['tools'],
-        toolDescription
+        tags: ['tools']
       },
       handler: createToolHandler({
         inputSchema: z.object({
-          query: z.string().meta({ toolDescription } satisfies InputSchemaMetaType)
+          query: z.string().meta({ description: 'Search public documentation' } satisfies InputSchemaMetaType)
         }),
         outputSchema: z.object({ result: z.string() }),
         handler: async () => ({ result: 'ok' })
@@ -507,7 +506,6 @@ describe('ToolFactory schema metadata', () => {
       inputSchema: z.object({
         query: z.string().meta({
           title: 'Child query',
-          toolDescription,
           'x-i18n': localizedMeta
         } satisfies InputSchemaMetaType)
       }),
@@ -543,7 +541,6 @@ describe('ToolFactory schema metadata', () => {
           id: 'search',
           name,
           description,
-          toolDescription,
           handler: childHandler
         }
       ]
@@ -554,16 +551,18 @@ describe('ToolFactory schema metadata', () => {
     const childOutputSchema = z.toJSONSchema(childHandler.outputSchema) as JsonSchemaObject;
     const childSecretJsonSchema = z.toJSONSchema(childSecretSchema) as JsonSchemaObject;
 
-    expect(tool.getUserToolManifest().toolDescription).toEqual(toolDescription);
-    expect(toolSet.getChildManifests()[0]?.toolDescription).toEqual(toolDescription);
+    expect(tool.getUserToolManifest().description).toEqual(description);
+    expect(tool.getUserToolManifest()).not.toHaveProperty('toolDescription');
+    expect(toolSet.getChildManifests()[0]).not.toHaveProperty('toolDescription');
     expect(toolInputSchema.properties?.query).toMatchObject({
-      toolDescription
+      description: 'Search public documentation'
     });
+    expect(toolInputSchema.properties?.query).not.toHaveProperty('toolDescription');
     expect(childInputSchema.properties?.query).toMatchObject({
       title: 'Child query',
-      toolDescription,
       'x-i18n': localizedMeta
     });
+    expect(childInputSchema.properties?.query).not.toHaveProperty('toolDescription');
     expect(childOutputSchema.properties?.result).toMatchObject({
       title: 'Child result',
       'x-i18n': localizedMeta
@@ -574,6 +573,68 @@ describe('ToolFactory schema metadata', () => {
       isSecret: true,
       'x-i18n': localizedMeta
     });
+  });
+  it('copies runtime manifests and registrations without legacy description getters', () => {
+    let manifestDescriptionReads = 0;
+    const manifest = {
+      pluginId: 'legacy-runtime-tool',
+      name: { en: 'Search', 'zh-CN': '搜索' },
+      description: { en: 'Canonical search', 'zh-CN': '唯一描述' },
+      version: '1.0.0',
+      tags: ['tools' as const]
+    };
+    Object.defineProperty(manifest, 'toolDescription', {
+      enumerable: true,
+      get: () => {
+        manifestDescriptionReads += 1;
+        return 'Legacy root description';
+      }
+    });
+    let handlerDescriptionReads = 0;
+    const handler = createToolHandler({
+      inputSchema: z.object({ query: z.string() }),
+      outputSchema: z.object({ result: z.string() }),
+      handler: async () => ({ result: 'ok' })
+    });
+    Object.defineProperty(handler, 'toolDescription', {
+      enumerable: true,
+      get: () => {
+        handlerDescriptionReads += 1;
+        return 'Legacy handler description';
+      }
+    });
+    const tool = defineTool({ manifest, handler });
+    let childDescriptionReads = 0;
+    const childManifest = {
+      id: 'search',
+      name: { en: 'Search', 'zh-CN': '搜索' },
+      description: { en: 'Canonical child', 'zh-CN': '唯一子工具说明' }
+    };
+    Object.defineProperty(childManifest, 'toolDescription', {
+      enumerable: true,
+      get: () => {
+        childDescriptionReads += 1;
+        return 'Legacy child description';
+      }
+    });
+
+    tool.registerTool(handler, 'search', childManifest);
+
+    expect(tool.getUserToolManifest().description).toEqual({
+      en: 'Canonical search',
+      'zh-CN': '唯一描述'
+    });
+    expect(tool.getUserToolManifest()).not.toHaveProperty('toolDescription');
+    expect(tool.getChildManifests()[0]).not.toHaveProperty('toolDescription');
+    expect(tool.getChildManifests()[0]?.description).toEqual({
+      en: 'Canonical child',
+      'zh-CN': '唯一子工具说明'
+    });
+    expect(tool.getToolHandler('search')).not.toHaveProperty('toolDescription');
+    expect(tool.getToolHandler('search')?.handler).toBe(handler.handler);
+    expect(manifestDescriptionReads).toBe(1);
+    expect(handlerDescriptionReads).toBe(2);
+    expect(childDescriptionReads).toBe(1);
   });
 });
 

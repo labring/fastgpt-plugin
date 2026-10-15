@@ -28,7 +28,6 @@ const makeTool = (version: string): ToolType => ({
     en: 'Get current time',
     'zh-CN': '获取当前时间'
   },
-  toolDescription: 'Get current time'
 });
 
 function createToolManager(deps?: Partial<ToolManagerDeps>): ToolManager {
@@ -116,7 +115,7 @@ describe('ToolManager.detail', () => {
     });
   });
 
-  it('normalizes input schema tool parameter metadata in tool detail', async () => {
+  it('drops legacy description metadata and preserves parameter selection in tool detail', async () => {
     const toolManager = createToolManager();
     listVersions.mockResolvedValue(successResult([{ version: '1.0.0' }]));
     const localizedToolDescription = {
@@ -127,6 +126,7 @@ describe('ToolManager.detail', () => {
       successResult({
         ...makeTool('1.0.0'),
         toolDescription: localizedToolDescription,
+        description: { en: 'canonical', 'zh-CN': '唯一描述' },
         inputSchema: {
           type: 'object',
           properties: {
@@ -136,21 +136,8 @@ describe('ToolManager.detail', () => {
             },
             localizedToolDescription: {
               type: 'string',
-              toolDescription: {
-                en: 'Search by topic',
-                'zh-CN': '按主题搜索'
-              },
-              description: 'Legacy manual description',
-              'x-i18n': {
-                title: {
-                  en: 'Topic',
-                  'zh-CN': '主题'
-                },
-                description: {
-                  en: 'Enter a topic',
-                  'zh-CN': '输入主题'
-                }
-              }
+              toolDescription: localizedToolDescription,
+              description: 'Canonical field description'
             },
             manualByDefault: {
               type: 'string',
@@ -161,18 +148,34 @@ describe('ToolManager.detail', () => {
             },
             explicitFalse: {
               type: 'string',
-              description: {
-                en: 'Explicit false fallback'
-              },
+              toolDescription: 'Legacy metadata must not override this flag',
               isToolParam: false
             },
             explicitTrue: {
               type: 'string',
-              description: {
-                en: 'Explicit true fallback'
-              },
+              description: { en: 'Explicit true' },
               isToolParam: true
             }
+          },
+          allOf: [
+            {
+              properties: {
+                nested: { type: 'string', toolDescription: 'Nested legacy metadata' }
+              }
+            }
+          ],
+          items: [{ type: 'string', toolDescription: 'Array legacy metadata' }]
+        },
+        outputSchema: {
+          type: 'object',
+          properties: {
+            result: { type: 'string', toolDescription: 'Output legacy metadata' }
+          }
+        },
+        secretSchema: {
+          type: 'object',
+          properties: {
+            token: { type: 'string', toolDescription: 'Secret legacy metadata' }
           }
         },
         children: [
@@ -187,32 +190,20 @@ describe('ToolManager.detail', () => {
               properties: {
                 childParam: {
                   type: 'string',
-                  toolDescription: {
-                    en: 'Search child records',
-                    'zh-CN': '搜索子记录'
-                  },
-                  description: {
-                    en: 'Child fallback'
-                  },
-                  'x-i18n': {
-                    title: {
-                      en: 'Child query',
-                      'zh-CN': '子查询'
-                    },
-                    placeholder: {
-                      en: 'Enter child query',
-                      'zh-CN': '输入子查询'
-                    }
-                  }
+                  toolDescription: localizedToolDescription,
+                  description: { en: 'Child canonical description' }
                 }
               }
             },
             outputSchema: {
-              type: 'object'
+              type: 'object',
+              properties: {
+                childResult: { type: 'string', toolDescription: 'Child output legacy metadata' }
+              }
             }
           }
         ]
-      } satisfies ToolType)
+      } as unknown as ToolType)
     );
 
     const [result, err] = await toolManager.detail({
@@ -221,64 +212,47 @@ describe('ToolManager.detail', () => {
       version: '1.0.0'
     });
 
-    const properties = (result?.inputSchema as { properties: Record<string, unknown> }).properties;
-    const childProperties = (result?.children?.[0]?.inputSchema as {
-      properties: Record<string, unknown>;
-    }).properties;
+    const inputSchema = result?.inputSchema as {
+      properties: Record<string, Record<string, unknown>>;
+      allOf: Array<{ properties: Record<string, Record<string, unknown>> }>;
+      items: Array<Record<string, unknown>>;
+    };
+    const childInputSchema = result?.children?.[0]?.inputSchema as {
+      properties: Record<string, Record<string, unknown>>;
+    };
 
     expect(err).toBeNull();
-    expect(result?.toolDescription).toEqual(localizedToolDescription);
-    expect(result?.children?.[0]?.toolDescription).toEqual(localizedToolDescription);
-    expect(properties.withToolDescription).toMatchObject({
-      toolDescription: 'Existing model-facing description',
-      isToolParam: true
-    });
-    expect(properties.localizedToolDescription).toMatchObject({
-      toolDescription: {
-        en: 'Search by topic',
-        'zh-CN': '按主题搜索'
-      },
-      isToolParam: true,
-      description: 'Legacy manual description',
-      'x-i18n': {
-        title: {
-          en: 'Topic',
-          'zh-CN': '主题'
-        },
-        description: {
-          en: 'Enter a topic',
-          'zh-CN': '输入主题'
-        }
-      }
-    });
-    expect(properties.manualByDefault).toMatchObject({
-      toolDescription: 'Fallback manual description',
+    expect(result?.description).toEqual({ en: 'canonical', 'zh-CN': '唯一描述' });
+    expect(result).not.toHaveProperty('toolDescription');
+    expect(result?.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(inputSchema.properties.withToolDescription).not.toHaveProperty('toolDescription');
+    expect(inputSchema.properties.withToolDescription.isToolParam).toBe(false);
+    expect(inputSchema.properties.localizedToolDescription).toMatchObject({
+      description: 'Canonical field description',
       isToolParam: false
     });
-    expect(properties.explicitFalse).toMatchObject({
-      toolDescription: 'Explicit false fallback',
+    expect(inputSchema.properties.localizedToolDescription).not.toHaveProperty('toolDescription');
+    expect(inputSchema.properties.manualByDefault).toMatchObject({ isToolParam: false });
+    expect(inputSchema.properties.explicitFalse.isToolParam).toBe(false);
+    expect(inputSchema.properties.explicitTrue.isToolParam).toBe(true);
+    expect(inputSchema.allOf[0].properties.nested).not.toHaveProperty('toolDescription');
+    expect(inputSchema.items[0]).not.toHaveProperty('toolDescription');
+    expect(result?.outputSchema).toEqual({
+      type: 'object',
+      properties: { result: { type: 'string' } }
+    });
+    expect(result?.secretSchema).toEqual({
+      type: 'object',
+      properties: { token: { type: 'string' } }
+    });
+    expect(childInputSchema.properties.childParam).toMatchObject({
+      description: { en: 'Child canonical description' },
       isToolParam: false
     });
-    expect(properties.explicitTrue).toMatchObject({
-      toolDescription: 'Explicit true fallback',
-      isToolParam: true
-    });
-    expect(childProperties.childParam).toMatchObject({
-      toolDescription: {
-        en: 'Search child records',
-        'zh-CN': '搜索子记录'
-      },
-      isToolParam: true,
-      'x-i18n': {
-        title: {
-          en: 'Child query',
-          'zh-CN': '子查询'
-        },
-        placeholder: {
-          en: 'Enter child query',
-          'zh-CN': '输入子查询'
-        }
-      }
+    expect(childInputSchema.properties.childParam).not.toHaveProperty('toolDescription');
+    expect(result?.children?.[0]?.outputSchema).toEqual({
+      type: 'object',
+      properties: { childResult: { type: 'string' } }
     });
   });
 });

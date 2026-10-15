@@ -216,7 +216,7 @@ export default defineTool({
 });
 ```
 
-`defineInputSchema()` 和 `defineOutputSchema()` 接收字段描述对象，并返回普通 Zod object，可直接传给 `createToolHandler()`。每个字段的 `type` 是 Zod schema 实例，`title` 必须提供 `en`、`zh-CN`，可选提供 `zh-Hant`；`description` 是可选 UI 文案。输入字段还可独立设置 `toolDescription`（`string` 或同样的多语言对象）和 `isToolParam`（可选 boolean，包括 `false`）。这些 helper 会生成中文普通 `title` / `description` 与 `x-i18n` 文案，同时保留 schema 上其他 `.meta()` metadata；不会修改原 schema。`createToolHandler()` 仍使用普通 Zod object，默认会剥离未知键，需要严格校验时可自行调用 `.strict()`。
+`defineInputSchema()` 和 `defineOutputSchema()` 接收字段描述对象，并返回普通 Zod object，可直接传给 `createToolHandler()`。每个字段的 `type` 是 Zod schema 实例，`title` 必须提供 `en`、`zh-CN`，可选提供 `zh-Hant`；`description` 是可选的本地化 UI 与工具说明。输入字段还可设置可选 boolean `isToolParam`（包括 `false`）。旧 `toolDescription` 字段会被忽略，不覆盖或回填 `description`。这些 helper 会生成中文普通 `title` / `description` 与 `x-i18n` 文案，同时保留 schema 上其他 `.meta()` metadata；不会修改原 schema。`createToolHandler()` 仍使用普通 Zod object，默认会剥离未知键，需要严格校验时可自行调用 `.strict()`。
 
 字段可以嵌套组合，也可以作为数组元素：
 
@@ -236,7 +236,7 @@ const outputSchema = defineOutputSchema({
 
 核心规则：
 
-- 输入、输出字段分别使用 `defineInputSchema()`、`defineOutputSchema()`，其字段 `type` 为 Zod schema，`title` 必填且包含 `en` 与 `zh-CN`；可选 `description` 为 UI 文案。输入还支持独立的 `toolDescription` 和可选 boolean `isToolParam`。
+- 输入、输出字段分别使用 `defineInputSchema()`、`defineOutputSchema()`，其字段 `type` 为 Zod schema，`title` 必填且包含 `en` 与 `zh-CN`；可选 `description` 为本地化 UI 与工具说明。输入还支持可选 boolean `isToolParam`。
 - 密钥字段继续使用 `.meta({ ... } satisfies SecretSchemaMetaType)`；高级 metadata 也可直接通过 Zod `.meta()` 设置，敏感字段设置 `isSecret: true`。
 - 外部 API 错误需要转成可定位的错误信息，同时避免输出密钥、令牌和完整敏感响应。
 - 需要调用宿主文件上传能力时，使用 `ctx.invoke.uploadFile()`，并优先保留返回的 `err`。

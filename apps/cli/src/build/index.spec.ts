@@ -39,7 +39,10 @@ const createToolExport = () => {
     legacy: z.string().meta({ title: 'Legacy-only title' }),
     nested: z.object({
       value: z.string().meta(localizedMeta('Nested'))
-    })
+    }),
+    nestedList: z.array(
+      z.object({ label: z.string().meta(localizedMeta('Nested list')) })
+    )
   });
   const outputSchema = z.object({
     result: z.string().meta(localizedMeta('Result'))
@@ -84,7 +87,7 @@ describe('buildToolPackage', () => {
     await rm(testDir, { recursive: true, force: true });
   });
 
-  it('writes localized schema metadata into legacy JSON Schema strings without flattening i18n', async () => {
+  it('keeps localized schema descriptions while removing legacy tool descriptions', async () => {
     await writeFile(path.join(entryDir, 'README.md'), '默认说明', 'utf-8');
     await buildToolPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' });
 
@@ -99,12 +102,42 @@ describe('buildToolPackage', () => {
       description: { en: 'Query description', 'zh-CN': 'Query 说明' },
       placeholder: { en: 'Query placeholder', 'zh-CN': 'Query 占位符' }
     });
-    expect(query.toolDescription).toEqual({ en: 'Query model hint', 'zh-CN': 'Query 模型说明' });
+    expect(query).not.toHaveProperty('toolDescription');
+    expect(manifest.description).toEqual({ en: 'A build test', 'zh-CN': '构建测试' });
+    expect(manifest).not.toHaveProperty('toolDescription');
     expect(manifest.inputSchema.properties.legacy.title).toBe('Legacy-only title');
     expect(manifest.inputSchema.properties.nested.properties.value.title).toBe('Nested 标题');
+    expect(manifest.inputSchema.properties.nested.properties.value).not.toHaveProperty('toolDescription');
+    expect(manifest.inputSchema.properties.nestedList.items.properties.label).not.toHaveProperty('toolDescription');
     expect(manifest.outputSchema.properties.result.description).toBe('Result 说明');
+    expect(manifest.outputSchema.properties.result).not.toHaveProperty('toolDescription');
     expect(manifest.secretSchema.properties.apiKey.placeholder).toBe('API key 占位符');
-    expect(manifest.toolDescription).toBe('Use the tool');
+    expect(manifest.secretSchema.properties.apiKey).not.toHaveProperty('toolDescription');
+  });
+
+  it('removes legacy root and child descriptions from built toolset manifests', async () => {
+    const rootTool = createToolExport();
+    const childDescription = { en: 'Search child', 'zh-CN': '搜索子工具' };
+    testGlobal.__fastgptPluginBuildTestTool = {
+      ...rootTool,
+      getChildManifests: () => [
+        {
+          id: 'search',
+          name: { en: 'Search', 'zh-CN': '搜索' },
+          description: childDescription,
+          toolDescription: 'Legacy child description'
+        }
+      ]
+    };
+
+    await buildToolPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' });
+
+    const manifest = JSON.parse(await readFile(path.join(outputDir, 'manifest.json'), 'utf-8'));
+    expect(manifest.description).toEqual({ en: 'A build test', 'zh-CN': '构建测试' });
+    expect(manifest).not.toHaveProperty('toolDescription');
+    expect(manifest.children[0].description).toEqual(childDescription);
+    expect(manifest.children[0]).not.toHaveProperty('toolDescription');
+    expect(manifest.children[0].inputSchema.properties.query).not.toHaveProperty('toolDescription');
   });
 
   it('copies every supported README variant and rejects unsupported or duplicate locales', async () => {

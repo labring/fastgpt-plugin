@@ -98,7 +98,7 @@ describe('create command', () => {
     expect(pkgJson.name).toBe(normalizedName);
     expect(pkgJson.description).toBe(description);
     expect(pkgJson.devDependencies['@fastgpt-plugin/cli']).toBe('^0.2.0');
-    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^0.0.1');
+    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-alpha.3');
     expect(Object.values(pkgJson.devDependencies)).not.toContain('catalog:');
     expect(pkgJson.scripts.dev).toBe('fastgpt-plugin dev . --watch');
     expect(pkgJson.scripts['debug:run']).toContain('{"delay":0}');
