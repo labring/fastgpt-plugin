@@ -68,11 +68,11 @@ function selectPluginText(value: I18nText | undefined, locale: Locale): string {
   if (typeof value === 'string') return value; // 旧响应/缓存兼容
   if (!value) return '';
 
-  return value[locale] ?? value['zh-CN'] ?? value.en ?? '';
+  return value[locale] ?? value.en ?? '';
 }
 ```
 
-选择规则：先精确匹配当前语言，再回退到简体中文，最后回退到英文。`zh-Hant` 为可选译文；缺失时按上述顺序回退。旧数据库中的字符串会由 Plugin 服务在读取时归一化，但前端保留字符串兼容可以覆盖旧缓存或旧服务响应。
+选择规则：先精确匹配当前语言，再回退到英文；不经过其他语言。旧数据库中的字符串会由 Plugin 服务在读取时归一化，但前端保留字符串兼容可以覆盖旧缓存或旧服务响应。
 
 ### 2. 使用唯一的 description 字段
 
@@ -84,7 +84,7 @@ function selectPluginText(value: I18nText | undefined, locale: Locale): string {
 
 ### 3. 选择 README URL
 
-按当前 locale 选 `readmeUrls`；缺失时回退到 `zh-CN`、`en`，最后使用兼容字段 `readmeUrl`。不要假设 `readmeUrls` 一定含有三种语言：它只记录包中实际提供的 README 文件。
+按当前 locale 选 `readmeUrls`；缺失时回退到 `en`，最后使用兼容字段 `readmeUrl`。不要假设 `readmeUrls` 一定含有三种语言：它只记录包中实际提供的 README 文件。
 
 ```ts
 function selectReadmeUrl(
@@ -92,7 +92,6 @@ function selectReadmeUrl(
   locale: Locale
 ): string | undefined {
   return plugin.readmeUrls?.[locale] ??
-    plugin.readmeUrls?.['zh-CN'] ??
     plugin.readmeUrls?.en ??
     plugin.readmeUrl;
 }

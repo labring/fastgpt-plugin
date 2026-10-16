@@ -416,7 +416,7 @@ function isPackableToolExport(value: unknown): value is PackableToolExport {
   );
 }
 
-export const DEFAULT_DEBUG_LOCALE: I18nLangType = 'zh-CN';
+export const DEFAULT_DEBUG_LOCALE: I18nLangType = 'en';
 
 function getDebugText(value: unknown): DebugText {
   return getOptionalDebugText(value) ?? '';
@@ -447,7 +447,7 @@ export function selectDebugText(value: unknown, locale: string = DEFAULT_DEBUG_L
     return '';
   }
 
-  const preferred = [text[locale as I18nLangType], text['zh-CN'], text.en].find(
+  const preferred = [text[locale as I18nLangType], text.en].find(
     (item) => typeof item === 'string' && item.trim().length > 0
   );
 

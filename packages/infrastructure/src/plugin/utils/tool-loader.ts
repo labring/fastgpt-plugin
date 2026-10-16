@@ -111,7 +111,7 @@ const loadTool = async ({
       }
       readmeUrl = resolvedReadmeUrl ?? undefined;
     } else {
-      readmeUrl = readmeFiles['zh-CN'] ?? readmeFiles.en ?? readmeFiles['zh-Hant'];
+      readmeUrl = readmeFiles.en ?? readmeFiles['zh-CN'] ?? readmeFiles['zh-Hant'];
     }
 
     let children: ToolType['children'];

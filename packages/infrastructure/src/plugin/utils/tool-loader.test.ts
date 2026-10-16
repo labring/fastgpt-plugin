@@ -70,7 +70,7 @@ describe('loadPlugin README URLs', () => {
     });
   });
 
-  it('uses zh-CN, then en, then zh-Hant for the legacy URL when README.md is absent', async () => {
+  it('uses en, then zh-CN, then zh-Hant for the legacy URL when README.md is absent', async () => {
     const { plugin, error } = await load([
       'logo.svg',
       'README.en.md',
@@ -84,7 +84,7 @@ describe('loadPlugin README URLs', () => {
       'zh-CN': 'https://example.com/README.zh-CN.md',
       'zh-Hant': 'https://example.com/README.zh-Hant.md'
     });
-    expect(plugin?.readmeUrl).toBe('https://example.com/README.zh-CN.md');
+    expect(plugin?.readmeUrl).toBe('https://example.com/README.en.md');
   });
 
   it('keeps old packages that have only README.md compatible', async () => {

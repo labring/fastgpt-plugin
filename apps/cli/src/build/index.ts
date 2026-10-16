@@ -391,8 +391,8 @@ export function toManifestJsonSchema(schema: unknown): unknown {
   if (isRecord(localized)) {
     for (const field of I18N_UI_FIELDS) {
       const fieldI18n = localized[field];
-      if (isRecord(fieldI18n) && typeof fieldI18n['zh-CN'] === 'string') {
-        normalized[field] = fieldI18n['zh-CN'];
+      if (isRecord(fieldI18n) && typeof fieldI18n.en === 'string') {
+        normalized[field] = fieldI18n.en;
       }
     }
   }

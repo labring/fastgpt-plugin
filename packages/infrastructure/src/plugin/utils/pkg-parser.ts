@@ -9,6 +9,7 @@ import {
   type MIMEType
 } from '@domain/value-objects/file/MIME.vo';
 import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
+import { validatePluginReadmeFilenames } from '@domain/value-objects/plugin/readme-filenames.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
 import { bufferToReadable, readStreamToBuffer, unpkg } from './pkg';
@@ -21,43 +22,20 @@ const IMAGE_CONTENT_TYPES = new Set<MIMEType>([
   'image/gif',
   'image/webp'
 ]);
-
-const README_FILE_LOCALE_BY_NAME: ReadonlyMap<string, I18nLangType> = new Map([
-  ['README.en.md', 'en'],
-  ['README.zh-CN.md', 'zh-CN'],
-  ['README.zh-Hant.md', 'zh-Hant']
-]);
-
-const isReadmeVariantFilename = (filename: string): boolean =>
-  /^README(?:[._-].*)?\.md$/i.test(path.posix.basename(filename));
+const README_FILE_LOCALE_BY_NAME: Record<string, I18nLangType> = {
+  'README.en.md': 'en',
+  'README.zh-CN.md': 'zh-CN',
+  'README.zh-Hant.md': 'zh-Hant'
+};
 
 const validateReadmeFilenames = (files: PkgFileEntry[]): Result => {
-  const filenames = new Set<string>();
-  const locales = new Set<I18nLangType>();
-
-  for (const { filename } of files) {
-    if (!isReadmeVariantFilename(filename)) continue;
-
-    const isRootFile = path.posix.dirname(filename) === '.';
-    const locale = README_FILE_LOCALE_BY_NAME.get(filename);
-    if (!isRootFile || (filename !== 'README.md' && !locale)) {
-      return failureResult({
-        en: `Unsupported or ambiguous README filename in plugin package: ${filename}`,
-        'zh-CN': `插件包中的 README 文件名不受支持或存在歧义: ${filename}`
-      });
-    }
-
-    if (filenames.has(filename) || (locale && locales.has(locale))) {
-      return failureResult({
-        en: `Conflicting README filenames in plugin package: ${filename}`,
-        'zh-CN': `插件包中的 README 文件名冲突: ${filename}`
-      });
-    }
-
-    filenames.add(filename);
-    if (locale) locales.add(locale);
+  const validation = validatePluginReadmeFilenames(files.map(({ filename }) => filename));
+  if (!validation.valid) {
+    return failureResult({
+      en: validation.error,
+      'zh-CN': `插件包中的 README 文件名无效: ${validation.error}`
+    });
   }
-
   return successResult(undefined);
 };
 
@@ -210,7 +188,7 @@ export const parsePkg = async ({
       continue;
     }
 
-    const readmeLocale = README_FILE_LOCALE_BY_NAME.get(entry.filename);
+    const readmeLocale = README_FILE_LOCALE_BY_NAME[entry.filename];
     if (readmeLocale) {
       readmes[readmeLocale] = file;
       continue;

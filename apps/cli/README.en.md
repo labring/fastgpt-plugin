@@ -70,9 +70,9 @@ A plugin project can provide these README files in its root directory. Build and
 - `README.zh-CN.md`: Simplified Chinese
 - `README.zh-Hant.md`: Traditional Chinese
 
-Use at most one canonical filename per language. Unknown README variant names, non-canonical casing, and duplicate locales are reported during build/package parsing. Existing projects with only `README.md` remain compatible; `check` warns when no README is present. The server lists only packaged variants in `readmeUrls` and continues to expose the compatibility field `readmeUrl`: it points to `README.md` when present, otherwise to the first available variant in Simplified Chinese, English, then Traditional Chinese order. A display client should select `readmeUrls` for the current locale, fall back to Simplified Chinese and then English, and use `readmeUrl` as the final compatibility fallback.
+Use at most one canonical filename per language. Unknown README variant names, non-canonical casing, and duplicate locales are reported during build/package parsing. Existing projects with only `README.md` remain compatible; `check` warns when no README is present. The server lists only packaged variants in `readmeUrls` and continues to expose the compatibility field `readmeUrl`: it points to `README.md` when present, otherwise to the first available variant in English, Simplified Chinese, then Traditional Chinese order. A display client should select `readmeUrls` for the current locale, fall back to English, and use `readmeUrl` as the final compatibility fallback.
 
-The local `debug` command displays localized plugin, tool, and schema labels in Simplified Chinese by default. Use `--lang` to select `en`, `zh-CN`, or `zh-Hant`; missing translations fall back to Simplified Chinese and then English. This option controls CLI debug output only; it does not change the plugin manifest or server API.
+The local `debug` command displays localized plugin, tool, and schema labels in English by default. Use `--lang` to select `en`, `zh-CN`, or `zh-Hant`; missing translations fall back to English. This option controls CLI debug output only; it does not change the plugin manifest or server API.
 
 ```bash
 fastgpt-plugin debug ./ --lang en

@@ -25,7 +25,7 @@ const firstInputLabel = templates[0]?.workflow.nodes[0]?.inputs?.[0]?.label;
 
 ## 多语言插件 README URL
 
-插件信息会同时保留兼容字段 `readmeUrl` 和实际存在的 README 语言映射 `readmeUrls`。UI 应先按当前语言查映射，然后回退到简体中文、英文；若新映射没有可用地址，最后可使用旧 `readmeUrl`。SDK 不解析 README 内容或做语言选择。
+插件信息会同时保留兼容字段 `readmeUrl` 和实际存在的 README 语言映射 `readmeUrls`。UI 应先按当前语言查映射，再回退到英文；若新映射没有可用地址，最后可使用旧 `readmeUrl`。SDK 不解析 README 内容或做语言选择。
 
 ```ts
 type Locale = 'en' | 'zh-CN' | 'zh-Hant';
@@ -34,14 +34,11 @@ const plugins = await client.listPlugins();
 const plugin = plugins[0];
 const locale: Locale = 'zh-Hant';
 const readmeUrl = plugin
-  ? plugin.readmeUrls?.[locale] ??
-    plugin.readmeUrls?.['zh-CN'] ??
-    plugin.readmeUrls?.en ??
-    plugin.readmeUrl
+  ? plugin.readmeUrls?.[locale] ?? plugin.readmeUrls?.en ?? plugin.readmeUrl
   : undefined;
 ```
 
-`readmeUrls` 只包含包内实际提供的语言版本。服务端在根目录存在 `README.md` 时让 `readmeUrl` 指向它；否则按 `zh-CN`、`en`、`zh-Hant` 顺序选择可用变体。上述 UI 回退逻辑适用于展示端的语言选择；旧客户端仍可只读取 `readmeUrl`。
+`readmeUrls` 只包含包内实际提供的语言版本。服务端在根目录存在 `README.md` 时让 `readmeUrl` 指向它；否则按英文、简体中文、繁体中文顺序选择可用变体。上述 UI 回退逻辑适用于展示端的语言选择；旧客户端仍可只读取 `readmeUrl`。
 
 `PluginListType` 是插件列表项数组；`PluginListItemType` 和 `PluginSourceType` 也从客户端 SDK 导出，供调用方处理插件来源字段。
 

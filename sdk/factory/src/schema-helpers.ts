@@ -6,7 +6,7 @@ type UiFieldDefinition<T extends z.ZodType> = {
   type: T;
   title: I18nStringType;
   description?: I18nStringType;
-  placeholder?: never;
+  placeholder?: I18nStringType;
 };
 
 export type InputFieldDefinition<T extends z.ZodType = z.ZodType> = UiFieldDefinition<T> & {
@@ -56,15 +56,20 @@ function createSchemaFromFields<const T extends Record<string, FieldDefinition>>
     const i18nMetadata: Record<string, unknown> = { ...existingI18n };
     const mergedMetadata: z.GlobalMeta = {
       ...existingMetadata,
-      title: field.title['zh-CN'],
+      title: field.title.en,
       'x-i18n': i18nMetadata
     };
     mergedMetadata.toolDescription = undefined;
 
     i18nMetadata.title = field.title;
+    if (field.placeholder !== undefined) {
+      mergedMetadata.placeholder = field.placeholder.en;
+      i18nMetadata.placeholder = field.placeholder;
+    }
+
 
     if (field.description !== undefined) {
-      mergedMetadata.description = field.description['zh-CN'];
+      mergedMetadata.description = field.description.en;
       i18nMetadata.description = field.description;
     }
 

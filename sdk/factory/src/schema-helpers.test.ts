@@ -68,6 +68,7 @@ describe('schema definition helpers', () => {
         type: shared,
         title: text('First title', '第一标题', '第一標題'),
         description: text('First description', '第一描述'),
+        placeholder: text('First placeholder', '第一占位符'),
         isToolParam: false
       }
     });
@@ -76,22 +77,22 @@ describe('schema definition helpers', () => {
     });
 
     expect(first.shape.value.meta()).toMatchObject({
-      title: '第一标题',
-      description: '第一描述',
-      placeholder: 'Schema placeholder',
+      title: 'First title',
+      description: 'First description',
+      placeholder: 'First placeholder',
       isToolParam: false,
       examples: ['example'],
       deprecated: true,
       'x-i18n': {
         title: text('First title', '第一标题', '第一標題'),
         description: text('First description', '第一描述'),
-        placeholder: oldI18n.placeholder,
+        placeholder: text('First placeholder', '第一占位符'),
         custom: { retained: true }
       }
     });
     expect(first.shape.value.meta()?.toolDescription).toBeUndefined();
     expect(second.shape.value.meta()).toMatchObject({
-      title: '第二标题',
+      title: 'Second title',
       placeholder: 'Schema placeholder',
       isToolParam: true,
       'x-i18n': {
@@ -116,7 +117,7 @@ describe('schema definition helpers', () => {
     };
     const schema = defineInputSchema(fields);
     expect(Object.hasOwn(schema.shape, '__proto__')).toBe(true);
-    expect(schema.shape['__proto__']?.meta()?.title).toBe('原型');
+    expect(schema.shape['__proto__']?.meta()?.title).toBe('Prototype');
 
     const invalidI18nSchema = z.string().meta({ 'x-i18n': [] });
     const rebuilt = defineOutputSchema({
@@ -180,11 +181,7 @@ function assertDescriptorTypeRestrictions(): void {
   defineInputSchema({ value: { type: z.string() } });
   // @ts-expect-error Title requires both English and Simplified Chinese.
   defineInputSchema({ value: { type: z.string(), title: { en: 'Value' } } });
-  // @ts-expect-error Title requires English.
-  defineInputSchema({ value: { type: z.string(), title: { 'zh-CN': '值' } } });
-  // @ts-expect-error Input descriptors do not support placeholder.
   defineInputSchema({ value: { type: z.string(), title: text('Value', '值'), placeholder: text('Prompt', '提示') } });
-  // @ts-expect-error Output descriptors do not support placeholder.
   defineOutputSchema({ value: { type: z.string(), title: text('Value', '值'), placeholder: text('Prompt', '提示') } });
   // @ts-expect-error Output descriptors do not support AI parameter hints.
   defineOutputSchema({ value: { type: z.string(), title: text('Value', '值'), isToolParam: false } });

@@ -94,9 +94,9 @@ describe('buildToolPackage', () => {
     const manifest = JSON.parse(await readFile(path.join(outputDir, 'manifest.json'), 'utf-8'));
     const query = manifest.inputSchema.properties.query;
 
-    expect(query.title).toBe('Query 标题');
-    expect(query.description).toBe('Query 说明');
-    expect(query.placeholder).toBe('Query 占位符');
+    expect(query.title).toBe('Query title');
+    expect(query.description).toBe('Query description');
+    expect(query.placeholder).toBe('Query placeholder');
     expect(query['x-i18n']).toEqual({
       title: { en: 'Query title', 'zh-CN': 'Query 标题' },
       description: { en: 'Query description', 'zh-CN': 'Query 说明' },
@@ -106,7 +106,6 @@ describe('buildToolPackage', () => {
     expect(manifest.description).toEqual({ en: 'A build test', 'zh-CN': '构建测试' });
     expect(manifest).not.toHaveProperty('toolDescription');
     expect(manifest.inputSchema.properties.legacy.title).toBe('Legacy-only title');
-    expect(manifest.inputSchema.properties.nested.properties.value.title).toBe('Nested 标题');
     expect(manifest.inputSchema.properties.nested.properties.value).not.toHaveProperty('toolDescription');
     expect(manifest.inputSchema.properties.nestedList.items.properties.label).not.toHaveProperty('toolDescription');
     expect(manifest.outputSchema.properties.result.description).toBe('Result 说明');

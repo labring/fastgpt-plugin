@@ -76,18 +76,18 @@ describe('debug command', () => {
     await rm(configHome, { recursive: true, force: true });
   });
 
-  it('应能输出单工具的本地调试信息和调用命令，默认使用简体中文', async () => {
+  it('应能输出单工具的本地调试信息和调用命令，默认使用英文', async () => {
     await run([process.execPath, 'cli', 'debug', GETTIME_TOOL_DIR]);
 
     const output = getLoggerOutput(loggerSpy.info);
 
     expect(output).toContain('pluginId: getTime');
-    expect(output).toContain('name: 获取当前时间');
-    expect(output).toContain('description: 获取当前时间');
+    expect(output).toContain('name: Get current time');
+    expect(output).toContain('description: Get current time');
     expect(output).toContain('可调试工具');
     expect(output).toContain('fastgpt-plugin debug');
     expect(output).toContain('--run');
-    expect(output).toContain('--lang zh-CN');
+    expect(output).toContain('--lang en');
     expect(output).toContain('--input');
     expect(loggerSpy.error).not.toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
@@ -115,13 +115,13 @@ describe('debug command', () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
-  it('指定语言缺失时应优先回退到简体中文', async () => {
+  it('指定语言缺失时回退到英文', async () => {
     await run([process.execPath, 'cli', 'debug', GETTIME_TOOL_DIR, '--lang', 'zh-Hant']);
 
     const output = getLoggerOutput(loggerSpy.info);
 
-    expect(output).toContain('name: 获取当前时间');
-    expect(output).not.toContain('name: Get current time');
+    expect(output).toContain('name: Get current time');
+    expect(output).not.toContain('name: 获取当前时间');
     expect(loggerSpy.error).not.toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
   });
