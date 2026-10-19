@@ -59,7 +59,7 @@ plugin 表表示全局插件实体，不表示某个 source 的安装状态。
       updatedAt: Date
     }
 
-历史记录中的 `data.toolDescription` 会被新插件 schema 忽略，`description` 是唯一描述来源；不执行数据迁移或读时回写。
+历史记录中的 `data.toolDescription` 不作为插件/工具的展示描述来源；服务端保留旧字段，不执行数据迁移或读时回写。旧 `inputSchema` 属性上的 `toolDescription` 仅在未显式设置 `isToolParam` 时用于推导为 `true`，显式值优先。
 
 唯一索引：
 

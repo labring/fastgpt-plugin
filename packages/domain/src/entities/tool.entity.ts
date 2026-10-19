@@ -9,6 +9,7 @@ export const ToolSetChildItemSchema = z.object({
   id: z.string(),
   name: TolerantI18nStringSchema,
   description: TolerantI18nStringSchema.optional(),
+  toolDescription: z.unknown().optional(),
   icon: z.string(),
   inputSchema: z.any(),
   outputSchema: z.any()

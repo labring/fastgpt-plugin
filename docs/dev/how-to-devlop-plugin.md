@@ -216,7 +216,7 @@ export default defineTool({
 });
 ```
 
-`defineInputSchema()` 和 `defineOutputSchema()` 接收字段描述对象，并返回普通 Zod object，可直接传给 `createToolHandler()`。每个字段的 `type` 是 Zod schema 实例，`title` 必须提供 `en`、`zh-CN`，可选提供 `zh-Hant`；`description` 是可选的本地化 UI 与工具说明。输入字段还可设置可选 boolean `isToolParam`（包括 `false`）。旧 `toolDescription` 字段会被忽略，不覆盖或回填 `description`。这些 helper 会生成中文普通 `title` / `description` 与 `x-i18n` 文案，同时保留 schema 上其他 `.meta()` metadata；不会修改原 schema。`createToolHandler()` 仍使用普通 Zod object，默认会剥离未知键，需要严格校验时可自行调用 `.strict()`。
+`defineInputSchema()` 和 `defineOutputSchema()` 接收字段描述对象，并返回普通 Zod object，可直接传给 `createToolHandler()`。每个字段的 `type` 是 Zod schema 实例，`title` 必须提供 `en`、`zh-CN`，可选提供 `zh-Hant`；`description` 是可选的本地化 UI 与工具说明。输入字段还可设置可选 boolean `isToolParam`（包括 `false`）。旧输入 Schema 字段上的 `toolDescription` 仅在未显式设置 `isToolParam` 时用于推导为 `true`，显式值优先；它不会覆盖 `description`，FastGPT 也不会将其作为文案使用。helper 生成英文普通 `title` / `description` 与完整 `x-i18n`，并保留 schema 上其他 `.meta()` metadata；不会修改原 schema。`createToolHandler()` 仍使用普通 Zod object，默认会剥离未知键，需要严格校验时可自行调用 `.strict()`。
 
 字段可以嵌套组合，也可以作为数组元素：
 

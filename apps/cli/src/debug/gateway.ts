@@ -452,22 +452,6 @@ function makeErrorEnvelope(
   };
 }
 
-function stripToolDescription(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(stripToolDescription);
-  }
-
-  if (typeof value !== 'object' || value === null) {
-    return value;
-  }
-
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([key]) => key !== 'toolDescription')
-      .map(([key, nestedValue]) => [key, stripToolDescription(nestedValue)])
-  );
-}
-
 function makePluginDebugMetadata(
   targets: DebugGatewayTarget[],
   source?: string
@@ -480,12 +464,13 @@ function makePluginDebugMetadata(
         version: target.snapshot.version,
         name: target.snapshot.name,
         description: target.snapshot.description,
+        toolDescription: target.snapshot.toolDescription,
         author: target.snapshot.author,
         tags: target.snapshot.tags,
         permissions: target.snapshot.permissions,
         secretSchema: target.snapshot.secretSchema,
         isToolSet: target.snapshot.isToolSet,
-        tools: target.snapshot.tools.map(stripToolDescription)
+        tools: target.snapshot.tools
       }))
     }
   };

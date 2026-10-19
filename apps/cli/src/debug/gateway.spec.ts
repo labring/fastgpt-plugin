@@ -50,13 +50,13 @@ describe('connectDebugGateway', () => {
       })
       .parse(bind.metadata);
     const wireTarget = wireMetadata.pluginDebug.targets[0];
-    expect(wireTarget).not.toHaveProperty('toolDescription');
+    expect(wireTarget.toolDescription).toBe('Get time');
     const wireTools = z.array(z.record(z.string(), z.unknown())).parse(wireTarget.tools);
-    expect(wireTools[0]).not.toHaveProperty('toolDescription');
+    expect(wireTools[0].toolDescription).toBe('Get time');
     const wireInputSchema = z
       .object({ properties: z.object({ query: z.record(z.string(), z.unknown()) }) })
       .parse(wireTools[0].inputSchema);
-    expect(wireInputSchema.properties.query).not.toHaveProperty('toolDescription');
+    expect(wireInputSchema.properties.query.toolDescription).toBe('legacy');
 
     socket.receive({
       protocol: 'connection-gateway.ws.v1',

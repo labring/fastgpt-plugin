@@ -130,9 +130,9 @@ The handler context includes:
 
 ### `defineInputSchema(fields)` 与 `defineOutputSchema(fields)`
 
-两个 helper 接收字段描述对象，返回普通 Zod object；`type` 是 Zod schema 实例。每个字段的 `title` 必须包含 `en` 和 `'zh-CN'`，`'zh-Hant'` 可选。`description` 是可选的本地化字段说明，也是唯一描述来源；输入字段还可设置可选布尔值 `isToolParam`（包括 `false`），输出字段不支持该选项。旧 `toolDescription` 输入会被忽略，不覆盖或回填 `description`。
+两个 helper 接收字段描述对象，返回普通 Zod object；`type` 是 Zod schema 实例。每个字段的 `title` 必须包含 `en` 和 `'zh-CN'`，`'zh-Hant'` 可选。`description` 是可选的本地化字段说明，也是唯一描述来源；输入字段还可设置可选布尔值 `isToolParam`（包括 `false`），输出字段不支持该选项。旧输入 Schema 字段上的 `toolDescription` 仅在未显式设置 `isToolParam` 时用于推导为 `true`，显式值优先；它不会覆盖 `description`，FastGPT 不会将其作为文案使用。
 
-Both helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. Legacy `toolDescription` inputs are ignored and do not override or backfill `description`.
+Both helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text.
 
 ```ts
 const inputSchema = defineInputSchema({
@@ -162,7 +162,7 @@ const outputSchema = defineOutputSchema({
 });
 ```
 
-The helpers add plain Chinese `title` and, when provided, `description` strings with complete `'x-i18n'` values. They preserve other existing `.meta()` metadata and return schema copies without mutating source schemas. Their results are ordinary Zod object schemas that work directly with `createToolHandler`. Zod's default object behavior still strips unknown keys; call `.strict()` on the returned object when strict validation is desired. Direct `.meta()` remains available for secrets and advanced metadata.
+The helpers add English plain `title` and, when provided, `description` strings with complete `'x-i18n'` values. They preserve other existing `.meta()` metadata and return schema copies without mutating source schemas. Their results are ordinary Zod object schemas that work directly with `createToolHandler`. Zod's default object behavior still strips unknown keys; call `.strict()` on the returned object when strict validation is desired. Direct `.meta()` remains available for secrets and advanced metadata.
 
 ### `defineTool(options)`
 
@@ -326,9 +326,9 @@ const handler = createToolHandler({
 });
 ```
 
-插件和子工具的 `description` 是唯一的工具说明来源；schema helper 的字段 `description` 用于字段说明。旧 manifest、子工具和 JSON Schema 中的 `toolDescription` 会被忽略，不覆盖或回填 `description`，也不会出现在新 manifest 中。
+插件和子工具的 `description` 是工具文案来源；schema helper 的字段 `description` 用于字段说明。旧输入 Schema 字段上的 `toolDescription` 会在缺少显式 `isToolParam` 时用于推导为 `true`，不会覆盖 `description`。新 schema 应显式使用 `isToolParam`；服务端保留旧字段供兼容读取，FastGPT 不用它作为文案。
 
-Plugin and child-tool `description` is the only tool-description source; schema-field `description` describes fields. Legacy `toolDescription` values in manifests, children, and JSON Schema are ignored, do not override or backfill `description`, and are not emitted in new manifests.
+Plugin and child-tool `description` is the tool-description source; schema-field `description` describes fields. On legacy input-schema fields, `toolDescription` infers `isToolParam: true` only when no explicit `isToolParam` is set, and never overrides `description`. New schemas should set `isToolParam` explicitly; the server retains the legacy field for compatibility, while FastGPT does not use it as display text.
 
 ## Secret 配置 / Secret Configuration
 

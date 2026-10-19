@@ -113,7 +113,7 @@ The handler context includes:
 
 ### `defineInputSchema(fields)` and `defineOutputSchema(fields)`
 
-Both helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. Legacy `toolDescription` inputs are ignored and do not override or backfill `description`.
+Both helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text.
 
 ```ts
 const inputSchema = defineInputSchema({
@@ -143,7 +143,7 @@ const outputSchema = defineOutputSchema({
 });
 ```
 
-The helpers add plain Chinese `title` and, when provided, `description` strings with complete `'x-i18n'` values. They preserve other existing `.meta()` metadata and return schema copies without mutating source schemas. Their results are ordinary Zod object schemas that work directly with `createToolHandler`. Zod's default object behavior still strips unknown keys; call `.strict()` on the returned object when strict validation is desired. Direct `.meta()` remains available for secrets and advanced metadata.
+The helpers add English plain `title` and, when provided, `description` strings with complete `'x-i18n'` values. They preserve other existing `.meta()` metadata and return schema copies without mutating source schemas. Their results are ordinary Zod object schemas that work directly with `createToolHandler`. Zod's default object behavior still strips unknown keys; call `.strict()` on the returned object when strict validation is desired. Direct `.meta()` remains available for secrets and advanced metadata.
 
 ### `defineTool(options)`
 
@@ -284,7 +284,7 @@ const handler = createToolHandler({
 });
 ```
 
-Plugin and child-tool `description` is the only tool-description source; schema-field `description` describes fields. Legacy `toolDescription` values in manifests, children, and JSON Schema are ignored, do not override or backfill `description`, and are not emitted in new manifests.
+Plugin and child-tool `description` is the tool-description source; schema-field `description` describes fields. On legacy input-schema fields, `toolDescription` infers `isToolParam: true` only when no explicit `isToolParam` is set, and never overrides `description`. New schemas should set `isToolParam` explicitly; the server retains the legacy field for compatibility, while FastGPT does not use it as display text.
 
 ## Secret Configuration
 

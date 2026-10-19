@@ -115,7 +115,7 @@ describe('ToolManager.detail', () => {
     });
   });
 
-  it('drops legacy description metadata and preserves parameter selection in tool detail', async () => {
+  it('retains legacy toolDescription and uses it to infer parameter selection', async () => {
     const toolManager = createToolManager();
     listVersions.mockResolvedValue(successResult([{ version: '1.0.0' }]));
     const localizedToolDescription = {
@@ -223,36 +223,38 @@ describe('ToolManager.detail', () => {
 
     expect(err).toBeNull();
     expect(result?.description).toEqual({ en: 'canonical', 'zh-CN': '唯一描述' });
-    expect(result).not.toHaveProperty('toolDescription');
-    expect(result?.children?.[0]).not.toHaveProperty('toolDescription');
-    expect(inputSchema.properties.withToolDescription).not.toHaveProperty('toolDescription');
-    expect(inputSchema.properties.withToolDescription.isToolParam).toBe(false);
+    expect(result).toMatchObject({ toolDescription: localizedToolDescription });
+    expect(result?.children?.[0]).toMatchObject({ toolDescription: localizedToolDescription });
+    expect(inputSchema.properties.withToolDescription.toolDescription).toBe(
+      'Existing model-facing description'
+    );
+    expect(inputSchema.properties.withToolDescription.isToolParam).toBe(true);
     expect(inputSchema.properties.localizedToolDescription).toMatchObject({
       description: 'Canonical field description',
-      isToolParam: false
+      isToolParam: true,
+      toolDescription: localizedToolDescription
     });
-    expect(inputSchema.properties.localizedToolDescription).not.toHaveProperty('toolDescription');
     expect(inputSchema.properties.manualByDefault).toMatchObject({ isToolParam: false });
     expect(inputSchema.properties.explicitFalse.isToolParam).toBe(false);
     expect(inputSchema.properties.explicitTrue.isToolParam).toBe(true);
-    expect(inputSchema.allOf[0].properties.nested).not.toHaveProperty('toolDescription');
-    expect(inputSchema.items[0]).not.toHaveProperty('toolDescription');
+    expect(inputSchema.allOf[0].properties.nested.toolDescription).toBe('Nested legacy metadata');
+    expect(inputSchema.items[0].toolDescription).toBe('Array legacy metadata');
     expect(result?.outputSchema).toEqual({
       type: 'object',
-      properties: { result: { type: 'string' } }
+      properties: { result: { type: 'string', toolDescription: 'Output legacy metadata' } }
     });
     expect(result?.secretSchema).toEqual({
       type: 'object',
-      properties: { token: { type: 'string' } }
+      properties: { token: { type: 'string', toolDescription: 'Secret legacy metadata' } }
     });
     expect(childInputSchema.properties.childParam).toMatchObject({
       description: { en: 'Child canonical description' },
-      isToolParam: false
+      isToolParam: true,
+      toolDescription: localizedToolDescription
     });
-    expect(childInputSchema.properties.childParam).not.toHaveProperty('toolDescription');
     expect(result?.children?.[0]?.outputSchema).toEqual({
       type: 'object',
-      properties: { childResult: { type: 'string' } }
+      properties: { childResult: { type: 'string', toolDescription: 'Child output legacy metadata' } }
     });
   });
 });

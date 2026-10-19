@@ -30,6 +30,7 @@ type PackableToolChild = {
   description: unknown;
   name: unknown;
   icon?: string;
+  toolDescription?: unknown;
 };
 
 type PackableToolExport = {
@@ -45,6 +46,7 @@ export type DebugToolSnapshot = {
   id: string;
   name: DebugText;
   description: DebugText;
+  toolDescription?: unknown;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -56,6 +58,7 @@ export type DebugPluginSnapshot = {
   version: string;
   name: DebugText;
   description: DebugText;
+  toolDescription?: unknown;
   author?: string;
   tags?: string[];
   permissions?: string[];
@@ -258,6 +261,7 @@ function createDebugSnapshot(
     version: getRequiredString(userManifest.version, '缺少 version'),
     name: getDebugText(userManifest.name),
     description: getDebugText(userManifest.description),
+    toolDescription: userManifest.toolDescription,
     author: getOptionalString(userManifest.author),
     tags: toStringArray(userManifest.tags),
     permissions: toStringArray(userManifest.permission),
@@ -280,6 +284,7 @@ function createSingleToolSnapshot(
     id: 'tool',
     name: getDebugText(userManifest.name),
     description: getDebugText(userManifest.description),
+    toolDescription: userManifest.toolDescription,
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -298,6 +303,7 @@ function createChildToolSnapshot(
     id: child.id,
     name: getDebugText(child.name),
     description: getDebugText(child.description),
+    toolDescription: child.toolDescription,
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };

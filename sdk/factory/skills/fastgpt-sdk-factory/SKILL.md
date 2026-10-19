@@ -64,7 +64,7 @@ export default defineTool({
 
 ## Schema Helpers
 
-Use `defineInputSchema()` and `defineOutputSchema()` to build ordinary Zod object schemas from field descriptors. Each descriptor's `type` is a Zod schema instance and its required `title` includes `en` and `'zh-CN'` (`'zh-Hant'` is optional). Optional `description` is localized UI and tool-description text. Input descriptors additionally accept optional boolean `isToolParam`, including `false`; output descriptors accept neither option. Legacy `toolDescription` inputs are ignored and do not override or backfill `description`.
+Use `defineInputSchema()` and `defineOutputSchema()` to build ordinary Zod object schemas from field descriptors. Each descriptor's `type` is a Zod schema instance and its required `title` includes `en` and `'zh-CN'` (`'zh-Hant'` is optional). Optional `description` is localized UI and tool-description text. Input descriptors additionally accept optional boolean `isToolParam`, including `false`; output descriptors accept neither option. On legacy input-schema properties, `toolDescription` infers `isToolParam: true` only when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text.
 
 ```ts
 const inputSchema = defineInputSchema({
@@ -94,13 +94,13 @@ const outputSchema = defineOutputSchema({
 });
 ```
 
-The helpers add plain Chinese compatibility strings and full `'x-i18n'` values, preserve other existing `.meta()` metadata, and return schema copies without mutating source schemas. Their results work with `createToolHandler`; Zod's default object behavior strips unknown keys, and `.strict()` is an optional author choice. Direct `.meta()` remains useful for secrets and advanced metadata.
+The helpers add English plain compatibility strings and full `'x-i18n'` values, preserve other existing `.meta()` metadata, and return schema copies without mutating source schemas. Their results work with `createToolHandler`; Zod's default object behavior strips unknown keys, and `.strict()` is an optional author choice. Direct `.meta()` remains useful for secrets and advanced metadata.
 
 ## Handler Rules
 
 - Define handlers with `createToolHandler({ inputSchema, outputSchema, secretSchema?, handler })`; use ordinary Zod object schemas, including those returned by the schema helpers, so TypeScript infers `input` and return types.
 - Use `defineInputSchema()` and `defineOutputSchema()` for input/output field metadata. Descriptor titles require `en` and `'zh-CN'`; `description` is the localized UI and tool-description source, and input-only `isToolParam` is an optional boolean.
-- Legacy `toolDescription` fields are ignored and are not emitted in built manifests or schema metadata.
+- Legacy input-schema `toolDescription` is retained for compatibility and infers `isToolParam: true` only when that field is absent. New schemas should set `isToolParam` explicitly; `toolDescription` does not override `description` or serve as FastGPT display text.
 - Keep low-level `.meta()` for secrets and advanced metadata. When authoring `z.object()` schemas directly, `InputSchemaMetaType` and `OutputSchemaMetaType` remain available for field metadata. Import `SecretSchemaMetaType` for secrets and set `isSecret: true` for values that must be encrypted at rest.
 - Return an object that matches `outputSchema`; throw errors for failed operations.
 - Add `secretSchema` when plugin configuration needs secrets such as API keys.
@@ -169,7 +169,7 @@ Common optional fields:
 - `permission`
 - `icon`
 
-The canonical `description` field supplies both UI and tool descriptions. Legacy `toolDescription` inputs are ignored; they do not override or backfill `description`.
+The canonical `description` field supplies UI and tool descriptions. Legacy input-schema `toolDescription` is retained for compatibility and infers `isToolParam: true` only when `isToolParam` is absent; it does not override or backfill `description`.
 
 Use `permission` to declare host capabilities required by the plugin. It is an array of permission strings. Declare only the minimum permissions that the plugin actually uses. When using `ctx.invoke` to call host capabilities, declare the matching permission.
 

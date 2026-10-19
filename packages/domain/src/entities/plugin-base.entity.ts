@@ -54,6 +54,7 @@ export const PluginBaseSchema = z.object({
   readmeUrl: z.url().optional(),
   readmeUrls: z.partialRecord(I18nLangSchema, z.url()).optional(),
   description: TolerantI18nStringSchema,
+  toolDescription: z.unknown().optional(), // Legacy field retained for compatibility.
   tags: z.array(PluginTagSchema).optional(),
   versionDescription: TolerantI18nStringSchema.optional(),
   permission: z.array(PluginPermissionEnumSchema).optional()
