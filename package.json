@@ -39,7 +39,7 @@
     "lint-staged": "^16.4.0",
     "tsx": "^4.19.2",
     "typescript-eslint": "^8.29.1",
-    "vitest": "3.2.7"
+    "vitest": "4.1.11"
   },
   "peerDependencies": {
     "typescript": "catalog:",
