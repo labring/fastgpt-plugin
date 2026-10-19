@@ -7,6 +7,7 @@ import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import { detectMimeTypeFromContent } from '@domain/value-objects/file/MIME.vo';
 import { type PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
+import { I18nLangSchema } from '@domain/value-objects/i18n-string.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
@@ -191,6 +192,28 @@ export class PluginPKFFileResolver implements PluginPKGFilePort {
         );
       }
       result.readme = readme;
+    }
+
+    if (parsed.files.readmes) {
+      const readmes: NonNullable<PkgContentFileObjects['readmes']> = {};
+
+      for (const locale of I18nLangSchema.options) {
+        const parsedReadme = parsed.files.readmes[locale];
+        if (!parsedReadme) continue;
+
+        const [savedReadme, readmeErr] = await this.saveParsedFile(parsedReadme);
+        if (readmeErr) {
+          return failureResult(
+            { en: 'save extracted file error', 'zh-CN': '保存提取文件错误' },
+            readmeErr
+          );
+        }
+        readmes[locale] = savedReadme;
+      }
+
+      if (Object.keys(readmes).length > 0) {
+        result.readmes = readmes;
+      }
     }
 
     if (parsed.files.assets?.length) {

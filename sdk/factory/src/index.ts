@@ -1,5 +1,7 @@
 import z from 'zod';
 
+import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
+
 import type { UserToolManifestType } from './manifest.type';
 import {
   createToolHandler,
@@ -10,17 +12,31 @@ import {
 
 export { createToolHandler };
 
+export { defineInputSchema, defineOutputSchema } from './schema-helpers';
+export type { InputFieldDefinition, OutputFieldDefinition } from './schema-helpers';
+
+export type I18nSchemaMetaType = {
+  title: I18nStringType;
+  description?: I18nStringType;
+  placeholder?: I18nStringType;
+};
+
 export type InputSchemaMetaType = z.GlobalMeta & {
-  /** 面向模型的参数说明 */
-  toolDescription?: string;
-  /** 标注该字段是否推荐由 AI 托管补充 */
+  /** Localized strings for the UI. */
+  'x-i18n'?: I18nSchemaMetaType;
+  /** Whether AI should be encouraged to fill this field. */
   isToolParam?: boolean;
 };
 
-export type OutputSchemaMetaType = z.GlobalMeta;
+export type OutputSchemaMetaType = z.GlobalMeta & {
+  /** Localized strings for the UI. */
+  'x-i18n'?: I18nSchemaMetaType;
+};
 
 export type SecretSchemaMetaType = z.GlobalMeta & {
-  /** 标注该字段是否需要加密存储 */
+  /** Localized strings for the UI. */
+  'x-i18n'?: I18nSchemaMetaType;
+  /** Whether this field should be stored encrypted. */
   isSecret: boolean;
 };
 
@@ -69,7 +85,6 @@ export const defineToolSet = ({
       description: child.description,
       name: child.name,
       ...(child.icon !== undefined ? { icon: child.icon } : {}),
-      ...(child.toolDescription !== undefined ? { toolDescription: child.toolDescription } : {})
     });
   });
   toolSet.setSecretSchema(secretSchema ?? z.object());

@@ -2,6 +2,7 @@ import json5 from 'json5';
 
 import type { PluginType } from '@domain/entities/plugin.entity';
 import { ToolSchema, type ToolType } from '@domain/entities/tool.entity';
+import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
 import {
   PluginManifestBaseSchema,
   ToolManifestSchema,
@@ -78,15 +79,39 @@ const loadTool = async ({
       icon = resolvedIcon;
     }
 
+    const readmeFiles: Partial<Record<I18nLangType, string>> = {};
+    if (getAccessURL) {
+      for (const locale of ['en', 'zh-CN', 'zh-Hant'] as const) {
+        const fileName = `README.${locale}.md`;
+        if (!availableFileSet.has(fileName)) continue;
+
+        const [readmeUrl, readmeErr] = await resolveAssetURL({
+          getAccessURL,
+          pluginId: manifest.pluginId,
+          version: manifest.version,
+          filePath: [fileName]
+        });
+        if (readmeErr) {
+          return failureResult(readmeErr);
+        }
+        if (readmeUrl) readmeFiles[locale] = readmeUrl;
+      }
+    }
+
     let readmeUrl: string | undefined;
     if (getAccessURL && availableFileSet.has('README.md')) {
-      const [resolvedReadmeUrl] = await resolveAssetURL({
+      const [resolvedReadmeUrl, readmeErr] = await resolveAssetURL({
         getAccessURL,
         pluginId: manifest.pluginId,
         version: manifest.version,
         filePath: ['README.md']
       });
+      if (readmeErr) {
+        return failureResult(readmeErr);
+      }
       readmeUrl = resolvedReadmeUrl ?? undefined;
+    } else {
+      readmeUrl = readmeFiles.en ?? readmeFiles['zh-CN'] ?? readmeFiles['zh-Hant'];
     }
 
     let children: ToolType['children'];
@@ -126,8 +151,8 @@ const loadTool = async ({
       etag,
       icon,
       ...(readmeUrl ? { readmeUrl } : {}),
+      ...(Object.keys(readmeFiles).length > 0 ? { readmeUrls: readmeFiles } : {}),
       children,
-      toolDescription: manifest.toolDescription,
       inputSchema: manifest.inputSchema,
       outputSchema: manifest.outputSchema,
       secretSchema: manifest.secretSchema

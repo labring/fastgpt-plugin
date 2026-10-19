@@ -1,5 +1,7 @@
 import z from 'zod';
 
+import type { I18nLangType } from '../i18n-string.vo';
+
 import { FileMetaSchema } from './file.vo';
 import type { FileObject } from './file-object.vo';
 import type { MIMEType } from './MIME.vo';
@@ -77,5 +79,6 @@ export type PkgContentFileObjects = {
   manifest: FileObject;
   assets?: FileObject[];
   readme?: FileObject;
+  readmes?: Partial<Record<I18nLangType, FileObject>>;
   logos?: FileObject[];
 };

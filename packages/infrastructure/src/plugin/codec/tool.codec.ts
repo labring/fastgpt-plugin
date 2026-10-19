@@ -1,4 +1,5 @@
 import { ToolSchema, type ToolType } from '@domain/entities/tool.entity';
+import { I18nLangSchema } from '@domain/value-objects/i18n-string.vo';
 import { failureResult, successResult } from '@domain/value-objects/result.vo';
 
 import { PluginRecordPayloadSchema, type PluginRecordType } from './plugin.record';
@@ -8,16 +9,16 @@ export const toolPluginCodec: PluginCodec<ToolType> = {
   type: 'tool',
   toRecord(plugin) {
     const parsedPlugin = ToolSchema.parse(plugin);
-    const { toolDescription, inputSchema, outputSchema, secretSchema, children, ...base } =
+    const { inputSchema, outputSchema, secretSchema, children, toolDescription, ...base } =
       parsedPlugin;
 
     return PluginRecordPayloadSchema.parse({
       ...base,
       data: {
-        toolDescription,
         inputSchema,
         outputSchema,
         secretSchema,
+        ...(toolDescription !== undefined ? { toolDescription } : {}),
         ...(children !== undefined ? { children } : {})
       }
     });
@@ -43,6 +44,20 @@ export const toolPluginCodec: PluginCodec<ToolType> = {
       return failureResult(readmeErr);
     }
 
+    const readmeUrls: NonNullable<ToolType['readmeUrls']> = {};
+    for (const locale of I18nLangSchema.options) {
+      const existingUrl = plugin.readmeUrls?.[locale];
+      if (!existingUrl) continue;
+
+      const [url, readmeLocaleErr] = await resolvePublicFileURL(existingUrl);
+      if (readmeLocaleErr) {
+        return failureResult(readmeLocaleErr);
+      }
+      if (url) {
+        readmeUrls[locale] = url;
+      }
+    }
+
     let children: ToolType['children'];
     if (plugin.children) {
       children = [];
@@ -62,6 +77,7 @@ export const toolPluginCodec: PluginCodec<ToolType> = {
       ...plugin,
       icon: icon ?? plugin.icon,
       ...(readmeUrl !== undefined ? { readmeUrl } : {}),
+      ...(Object.keys(readmeUrls).length > 0 ? { readmeUrls } : {}),
       children
     });
   }

@@ -194,9 +194,9 @@ export async function initStaticWorkflowAssets({
   });
 }
 
-export const initWorkflowTemplates = async () => {
-  const publicWorkflowsPath = getWorkflowTemplateDir();
-
+export const initWorkflowTemplates = async (
+  publicWorkflowsPath = getWorkflowTemplateDir()
+) => {
   workflows.length = 0;
 
   // according to the environment to decide to read the way

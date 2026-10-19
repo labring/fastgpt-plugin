@@ -61,6 +61,23 @@ npx @fastgpt-plugin/cli --verbose check --entry . --output ./dist
 - **Packaging**
   - Provides the `pack` command to package `dist` artifacts into an uploadable `.pkg`.
 
+### Localized READMEs and Debug Output
+
+A plugin project can provide these README files in its root directory. Build and `.pkg` packaging copy each variant that exists:
+
+- `README.md`: default/compatibility documentation
+- `README.en.md`: English
+- `README.zh-CN.md`: Simplified Chinese
+- `README.zh-Hant.md`: Traditional Chinese
+
+Use at most one canonical filename per language. Unknown README variant names, non-canonical casing, and duplicate locales are reported during build/package parsing. Existing projects with only `README.md` remain compatible; `check` warns when no README is present. The server lists only packaged variants in `readmeUrls` and continues to expose the compatibility field `readmeUrl`: it points to `README.md` when present, otherwise to the first available variant in English, Simplified Chinese, then Traditional Chinese order. A display client should select the current locale first, fall back to Simplified Chinese and English, and use `readmeUrl` as the final compatibility fallback.
+
+The local `debug` command displays localized plugin, tool, and schema labels in English by default. Use `--lang` to select `en`, `zh-CN`, or `zh-Hant`; missing translations fall back to English. This option controls CLI debug output only; it does not change the plugin manifest or server API.
+
+```bash
+fastgpt-plugin debug ./ --lang en
+```
+
 ### Remote Debugging
 
 Local plugins can connect to a test-environment plugin-server through a long-lived FastGPT connection key. The recommended path is for FastGPT to authenticate the user and enable the debug channel, while the CLI exchanges the connection key for a short-lived WSS connect token.

@@ -20,6 +20,7 @@ const schema = new Schema({
 
   tutorialUrl: { type: String, required: false },
   readmeUrl: { type: String, required: false },
+  readmeUrls: { type: Object, required: false },
   description: { type: Object, required: true },
   tags: { type: [String], required: false },
   versionDescription: { type: Object, required: false },

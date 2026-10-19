@@ -1,15 +1,16 @@
 import z from 'zod';
 
-import { I18nStringSchema } from '../value-objects/i18n-string.vo';
+import { TolerantI18nStringSchema } from '../value-objects/i18n-string.vo';
 
 import { PluginBaseSchema, PluginTypeEnum } from './plugin-base.entity';
 
+
 export const ToolSetChildItemSchema = z.object({
   id: z.string(),
-  name: I18nStringSchema,
-  description: I18nStringSchema.optional(),
+  name: TolerantI18nStringSchema,
+  description: TolerantI18nStringSchema.optional(),
+  toolDescription: z.unknown().optional(),
   icon: z.string(),
-  toolDescription: z.string(),
   inputSchema: z.any(),
   outputSchema: z.any()
 });
@@ -19,7 +20,6 @@ export const ToolSchema = z.object({
   type: z.literal(PluginTypeEnum.tool),
 
   // in data
-  toolDescription: z.string(),
   inputSchema: z.any().optional(),
   outputSchema: z.any().optional(),
   secretSchema: z.any().optional(),
@@ -32,7 +32,6 @@ export const ToolSetSchema = z.object({
 
   meta: z.object({
     secretSchema: z.any().optional(),
-    toolDescription: z.string()
   })
 });
 

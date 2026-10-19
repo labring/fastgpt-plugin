@@ -2,7 +2,7 @@ import z from 'zod';
 
 import { PluginPermissionEnumSchema } from '@domain/value-objects/permission.vo';
 
-import { I18nStringSchema } from '../value-objects/i18n-string.vo';
+import { I18nLangSchema, TolerantI18nStringSchema } from '../value-objects/i18n-string.vo';
 
 export const PluginTagSchema = z.enum([
   'tools',
@@ -48,13 +48,15 @@ export const PluginBaseSchema = z.object({
 
   author: z.string().optional(),
   repoUrl: z.string().optional(), // github 仓库地址
-  name: I18nStringSchema,
+  name: TolerantI18nStringSchema,
   icon: z.string(),
   tutorialUrl: z.url().optional(),
   readmeUrl: z.url().optional(),
-  description: I18nStringSchema,
+  readmeUrls: z.partialRecord(I18nLangSchema, z.url()).optional(),
+  description: TolerantI18nStringSchema,
+  toolDescription: z.unknown().optional(), // Legacy field retained for compatibility.
   tags: z.array(PluginTagSchema).optional(),
-  versionDescription: I18nStringSchema.optional(),
+  versionDescription: TolerantI18nStringSchema.optional(),
   permission: z.array(PluginPermissionEnumSchema).optional()
 });
 

@@ -60,7 +60,6 @@ const tool = defineTool({
     repoUrl: 'https://git.example.com/some/repo',
     tutorialUrl: 'https://docs.example.com/some/tutorial',
     tags: ['tools']
-    // toolDescription: 'This is a test tool for demonstration purposes.',
     // icon: 'icon',
   }
 });

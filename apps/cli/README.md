@@ -59,6 +59,23 @@ npx @fastgpt-plugin/cli --verbose check --entry . --output ./dist
 - **打包**
   - 提供 `pack` 命令把 `dist` 产物打成可上传的 `.pkg`
 
+### README 多语言与本地调试语言
+
+插件项目可在根目录提供以下 README 文件；构建和 `.pkg` 打包会复制实际存在的变体：
+
+- `README.md`：默认/兼容文档
+- `README.en.md`：英文
+- `README.zh-CN.md`：简体中文
+- `README.zh-Hant.md`：繁体中文
+
+每种语言最多提供一个规范文件名。未知 README 变体名、大小写不规范名称或重复语言会在构建/解析时报告错误。旧项目仅有 `README.md` 仍然兼容；没有任何 README 时，`check` 会给出警告。服务端只在 `readmeUrls` 中列出包内实际存在的语言版本，并继续提供兼容字段 `readmeUrl`：存在 `README.md` 时它指向该文件，否则按英文、简体中文、繁体中文的顺序选择首个存在的版本。展示端先按当前语言选择 `readmeUrls`，缺失时依次回退到简体中文、英文，最后使用 `readmeUrl`。
+
+本地 `debug` 命令默认以英文展示本地化的插件、工具和 Schema 标签。可以用 `--lang` 选择 `en`、`zh-CN` 或 `zh-Hant`；缺少对应译文时回退到英文。该选项只控制 CLI 本地调试输出，不会改变插件 manifest 或服务端 API。
+
+```bash
+fastgpt-plugin debug ./ --lang en
+```
+
 ### 远程调试
 
 本地插件可以通过 FastGPT 生成的长期 connection key 接入测试环境的 plugin-server。推荐路径是由 FastGPT 完成用户鉴权并开启 debug channel，CLI 使用 connection key 换取短期 WSS connect token。

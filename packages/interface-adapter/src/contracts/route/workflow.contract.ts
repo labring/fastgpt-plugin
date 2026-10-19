@@ -8,7 +8,7 @@ export const WorkflowContract = {
   List: defineContract({
     meta: {
       method: 'get',
-      path: '/list',
+      path: '/workflow/list',
       operationId: 'workflow.list',
       description: 'Get a list of all available workflow templates',
       summary: 'List workflow templates',

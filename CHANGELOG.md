@@ -4,6 +4,12 @@ This file is the release-notes index for FastGPT Plugin.
 
 ## Unreleased
 
+- Removed plugin-level and schema-field `toolDescription`; legacy inputs are ignored without overwriting `description`, and no database migration is required.
+
+- SDK factory now exports `defineInputSchema()` and `defineOutputSchema()` to build typed Zod objects from localized field descriptors.
+
+- Plugin record reads normalize legacy plain-string or partial i18n metadata in memory without a database migration; new plugin manifests remain bilingual.
+
 - CLI scaffolding now generates standalone plugin projects with published npm
   semver dependencies by default.
 - CLI scaffolding keeps `--dependency-mode catalog` for official pnpm workspaces

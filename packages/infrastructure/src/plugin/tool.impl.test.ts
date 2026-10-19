@@ -28,7 +28,6 @@ const makeTool = (version: string): ToolType => ({
     en: 'Get current time',
     'zh-CN': '获取当前时间'
   },
-  toolDescription: 'Get current time'
 });
 
 function createToolManager(deps?: Partial<ToolManagerDeps>): ToolManager {
@@ -116,18 +115,29 @@ describe('ToolManager.detail', () => {
     });
   });
 
-  it('normalizes input schema tool parameter metadata in tool detail', async () => {
+  it('retains legacy toolDescription and uses it to infer parameter selection', async () => {
     const toolManager = createToolManager();
     listVersions.mockResolvedValue(successResult([{ version: '1.0.0' }]));
+    const localizedToolDescription = {
+      en: 'Search public documentation',
+      'zh-CN': '搜索公开文档'
+    };
     getPluginByUserPluginId.mockResolvedValue(
       successResult({
         ...makeTool('1.0.0'),
+        toolDescription: localizedToolDescription,
+        description: { en: 'canonical', 'zh-CN': '唯一描述' },
         inputSchema: {
           type: 'object',
           properties: {
             withToolDescription: {
               type: 'string',
               toolDescription: 'Existing model-facing description'
+            },
+            localizedToolDescription: {
+              type: 'string',
+              toolDescription: localizedToolDescription,
+              description: 'Canonical field description'
             },
             manualByDefault: {
               type: 'string',
@@ -138,18 +148,34 @@ describe('ToolManager.detail', () => {
             },
             explicitFalse: {
               type: 'string',
-              description: {
-                en: 'Explicit false fallback'
-              },
+              toolDescription: 'Legacy metadata must not override this flag',
               isToolParam: false
             },
             explicitTrue: {
               type: 'string',
-              description: {
-                en: 'Explicit true fallback'
-              },
+              description: { en: 'Explicit true' },
               isToolParam: true
             }
+          },
+          allOf: [
+            {
+              properties: {
+                nested: { type: 'string', toolDescription: 'Nested legacy metadata' }
+              }
+            }
+          ],
+          items: [{ type: 'string', toolDescription: 'Array legacy metadata' }]
+        },
+        outputSchema: {
+          type: 'object',
+          properties: {
+            result: { type: 'string', toolDescription: 'Output legacy metadata' }
+          }
+        },
+        secretSchema: {
+          type: 'object',
+          properties: {
+            token: { type: 'string', toolDescription: 'Secret legacy metadata' }
           }
         },
         children: [
@@ -158,24 +184,26 @@ describe('ToolManager.detail', () => {
             name: { en: 'Child', 'zh-CN': '子工具' },
             description: { en: 'Child tool', 'zh-CN': '子工具' },
             icon: 'https://example.com/child.svg',
-            toolDescription: 'Child tool',
+            toolDescription: localizedToolDescription,
             inputSchema: {
               type: 'object',
               properties: {
                 childParam: {
                   type: 'string',
-                  description: {
-                    en: 'Child fallback'
-                  }
+                  toolDescription: localizedToolDescription,
+                  description: { en: 'Child canonical description' }
                 }
               }
             },
             outputSchema: {
-              type: 'object'
+              type: 'object',
+              properties: {
+                childResult: { type: 'string', toolDescription: 'Child output legacy metadata' }
+              }
             }
           }
         ]
-      } satisfies ToolType)
+      } as unknown as ToolType)
     );
 
     const [result, err] = await toolManager.detail({
@@ -184,31 +212,49 @@ describe('ToolManager.detail', () => {
       version: '1.0.0'
     });
 
-    const properties = (result?.inputSchema as { properties: Record<string, unknown> }).properties;
-    const childProperties = (result?.children?.[0]?.inputSchema as {
-      properties: Record<string, unknown>;
-    }).properties;
+    const inputSchema = result?.inputSchema as {
+      properties: Record<string, Record<string, unknown>>;
+      allOf: Array<{ properties: Record<string, Record<string, unknown>> }>;
+      items: Array<Record<string, unknown>>;
+    };
+    const childInputSchema = result?.children?.[0]?.inputSchema as {
+      properties: Record<string, Record<string, unknown>>;
+    };
 
     expect(err).toBeNull();
-    expect(properties.withToolDescription).toMatchObject({
-      toolDescription: 'Existing model-facing description',
-      isToolParam: true
+    expect(result?.description).toEqual({ en: 'canonical', 'zh-CN': '唯一描述' });
+    expect(result).toMatchObject({ toolDescription: localizedToolDescription });
+    expect(result?.children?.[0]).toMatchObject({ toolDescription: localizedToolDescription });
+    expect(inputSchema.properties.withToolDescription.toolDescription).toBe(
+      'Existing model-facing description'
+    );
+    expect(inputSchema.properties.withToolDescription.isToolParam).toBe(true);
+    expect(inputSchema.properties.localizedToolDescription).toMatchObject({
+      description: 'Canonical field description',
+      isToolParam: true,
+      toolDescription: localizedToolDescription
     });
-    expect(properties.manualByDefault).toMatchObject({
-      toolDescription: 'Fallback manual description',
-      isToolParam: false
+    expect(inputSchema.properties.manualByDefault).toMatchObject({ isToolParam: false });
+    expect(inputSchema.properties.explicitFalse.isToolParam).toBe(false);
+    expect(inputSchema.properties.explicitTrue.isToolParam).toBe(true);
+    expect(inputSchema.allOf[0].properties.nested.toolDescription).toBe('Nested legacy metadata');
+    expect(inputSchema.items[0].toolDescription).toBe('Array legacy metadata');
+    expect(result?.outputSchema).toEqual({
+      type: 'object',
+      properties: { result: { type: 'string', toolDescription: 'Output legacy metadata' } }
     });
-    expect(properties.explicitFalse).toMatchObject({
-      toolDescription: 'Explicit false fallback',
-      isToolParam: false
+    expect(result?.secretSchema).toEqual({
+      type: 'object',
+      properties: { token: { type: 'string', toolDescription: 'Secret legacy metadata' } }
     });
-    expect(properties.explicitTrue).toMatchObject({
-      toolDescription: 'Explicit true fallback',
-      isToolParam: true
+    expect(childInputSchema.properties.childParam).toMatchObject({
+      description: { en: 'Child canonical description' },
+      isToolParam: true,
+      toolDescription: localizedToolDescription
     });
-    expect(childProperties.childParam).toMatchObject({
-      toolDescription: 'Child fallback',
-      isToolParam: false
+    expect(result?.children?.[0]?.outputSchema).toEqual({
+      type: 'object',
+      properties: { childResult: { type: 'string', toolDescription: 'Child output legacy metadata' } }
     });
   });
 });
