@@ -83,9 +83,11 @@ const PluginListViewProjection = {
     description: 1,
     tags: 1,
     'data.secretSchema': 1,
+    'data.toolDescription': 1,
     'data.children.id': 1,
     'data.children.name': 1,
     'data.children.description': 1,
+    'data.children.toolDescription': 1,
   }
 } satisfies Record<PluginListView, Record<string, 1>>;
 
@@ -1001,10 +1003,12 @@ export class PluginRepo implements PluginRepoPort {
         const data = deserializePluginDataJsonSchemaFields(plugin.data) as
           | {
             secretSchema?: unknown;
+            toolDescription?: unknown;
             children?: Array<{
               id?: unknown;
               name?: unknown;
               description?: unknown;
+              toolDescription?: unknown;
             }>;
           }
           | undefined;
@@ -1022,6 +1026,7 @@ export class PluginRepo implements PluginRepoPort {
           readmeUrls: plugin.readmeUrls ?? undefined,
           repoUrl: plugin.repoUrl ?? undefined,
           description: plugin.description,
+          toolDescription: data?.toolDescription,
           tags: plugin.tags ?? undefined,
           source,
           isToolset: Boolean(data?.children?.length),
@@ -1030,6 +1035,7 @@ export class PluginRepo implements PluginRepoPort {
             id: child.id,
             name: child.name,
             description: child.description,
+            toolDescription: child.toolDescription,
           }))
         });
       });

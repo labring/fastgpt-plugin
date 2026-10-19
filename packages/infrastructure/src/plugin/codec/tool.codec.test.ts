@@ -48,7 +48,7 @@ describe('toolPluginCodec', () => {
     expect(resolvePublicFileURL).not.toHaveBeenCalledWith('README.zh-Hant.md');
   });
 
-  it('normalizes legacy plugin and child metadata on read and writes normalized metadata', () => {
+  it('normalizes localized metadata while retaining legacy tool descriptions on read and write', () => {
     const record = PluginRecordSchema.parse({
       pluginId: 'legacy-search',
       version: '1.0.0',
@@ -80,8 +80,8 @@ describe('toolPluginCodec', () => {
       en: 'Legacy tool description',
       'zh-CN': 'Legacy tool description'
     });
-    expect(plugin).not.toHaveProperty('toolDescription');
-    expect(plugin.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(plugin.toolDescription).toBe('Search query runner');
+    expect(plugin.children?.[0].toolDescription).toBe('Execute query');
     expect(plugin.children?.[0]).toMatchObject({
       name: { en: 'Run Query', 'zh-CN': 'Run Query' },
       description: { en: 'Execute search query', 'zh-CN': 'Execute search query' }
@@ -93,11 +93,11 @@ describe('toolPluginCodec', () => {
       en: 'Legacy tool description',
       'zh-CN': 'Legacy tool description'
     });
-    expect(persistedRecord.data).not.toHaveProperty('toolDescription');
+    expect(persistedRecord.data.toolDescription).toBe('Search query runner');
     const persistedChildren = z
       .object({ children: z.array(z.record(z.string(), z.unknown())) })
       .parse(persistedRecord.data).children;
-    expect(persistedChildren[0]).not.toHaveProperty('toolDescription');
+    expect(persistedChildren[0].toolDescription).toBe('Execute query');
     expect(persistedRecord.data).toMatchObject({
       children: [
         {

@@ -21,6 +21,7 @@ export type ToolChildManifestDefinition = {
   description: UserToolManifestType['description'];
   name: UserToolManifestType['name'];
   icon?: string;
+  toolDescription?: unknown;
 };
 
 type ToolInputSchema = z.ZodObject<any>;
@@ -56,6 +57,7 @@ export type ToolHandlerDefinition<
   outputSchema: TOutput;
   secretSchema?: TSecret;
   handler: ToolHandlerFn<TInput, TOutput, TSecret>;
+  toolDescription?: unknown;
 };
 
 export function createToolHandler<
@@ -68,12 +70,6 @@ export function createToolHandler<
   return def;
 }
 
-function copyWithoutToolDescription<T extends object>(value: T): Omit<T, 'toolDescription'> {
-  const copy = { ...value } as T & { toolDescription?: unknown };
-  delete copy.toolDescription;
-  return copy as Omit<T, 'toolDescription'>;
-}
-
 export class ToolFactory extends PluginFactory {
   private toolHandlers: Map<string, ToolHandlerDefinition<any, any, any>> = new Map();
   private childManifests: Map<string, ToolChildManifestDefinition> = new Map();
@@ -82,7 +78,7 @@ export class ToolFactory extends PluginFactory {
 
   private constructor(userToolManifest: UserToolManifestType) {
     super();
-    this.userToolManifest = copyWithoutToolDescription(userToolManifest);
+    this.userToolManifest = userToolManifest;
 
     if (this.mode)
       this.getChannel().setRequestHandler(async (msg) => {
@@ -159,9 +155,9 @@ export class ToolFactory extends PluginFactory {
     id: string = 'tool',
     childManifest?: ToolChildManifestDefinition
   ): void {
-    this.toolHandlers.set(id, copyWithoutToolDescription(definition));
+    this.toolHandlers.set(id, definition);
     if (childManifest) {
-      this.childManifests.set(id, copyWithoutToolDescription(childManifest));
+      this.childManifests.set(id, childManifest);
     }
   }
 

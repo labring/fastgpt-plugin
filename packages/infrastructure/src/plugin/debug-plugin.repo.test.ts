@@ -151,8 +151,8 @@ describe('DebugPluginRepoOverlay', () => {
     expect(listErr).toBeNull();
     expect(plugin?.name).toEqual(localizedPluginText);
     expect(plugin?.description).toEqual(localizedPluginText);
-    expect(plugin).not.toHaveProperty('toolDescription');
-    expect(plugin?.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(plugin?.toolDescription).toEqual(localizedToolText);
+    expect(plugin?.children?.[0]?.toolDescription).toEqual(localizedToolText);
     expect(plugin?.children?.[0]?.inputSchema).toMatchObject({
       properties: {
         query: {
@@ -161,8 +161,8 @@ describe('DebugPluginRepoOverlay', () => {
       }
     });
     expect(listedTool?.description).toEqual(localizedPluginText);
-    expect(listedTool).not.toHaveProperty('toolDescription');
-    expect(listedTool?.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(listedTool?.toolDescription).toEqual(localizedToolText);
+    expect(listedTool?.children?.[0]?.toolDescription).toEqual(localizedToolText);
   });
 
 

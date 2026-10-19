@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ToolManifestSchema } from './plugin-manifest.vo';
 
 describe('ToolManifestSchema', () => {
-  it('ignores legacy tool descriptions and preserves the canonical description', () => {
+  it('preserves legacy tool descriptions and the canonical description', () => {
     const description = { en: 'Search the web', 'zh-CN': '搜索网页' };
     const manifest = ToolManifestSchema.parse({
       pluginId: 'search',
@@ -28,8 +28,8 @@ describe('ToolManifestSchema', () => {
     });
 
     expect(manifest.description).toEqual(description);
-    expect(manifest).not.toHaveProperty('toolDescription');
-    expect(manifest.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(manifest.toolDescription).toBe('Legacy model-facing description');
+    expect(manifest.children?.[0].toolDescription).toBe('Legacy child description');
   });
 
   it('keeps newly-authored plugin metadata bilingual and strict', () => {

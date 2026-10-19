@@ -175,11 +175,11 @@ describe('PluginRepo.createPlugin', () => {
       ]
     });
 
-    expect(record.data).not.toHaveProperty('toolDescription');
+    expect(record.data.toolDescription).toEqual(localizedDescription);
     expect(record.data.inputSchema).toBe(JSON.stringify(inputSchema));
     expect(record.data.outputSchema).toBe(JSON.stringify(outputSchema));
     expect(record.data.secretSchema).toBe(JSON.stringify(secretSchema));
-    expect(record.data.children[0]).not.toHaveProperty('toolDescription');
+    expect(record.data.children[0].toolDescription).toEqual(localizedDescription);
     expect(record.data.children[0].inputSchema).toBe(JSON.stringify(childInputSchema));
     expect(record.data.children[0].outputSchema).toBe(JSON.stringify(childOutputSchema));
   });
@@ -290,12 +290,12 @@ describe('PluginRepo.createPlugin', () => {
       }
     });
 
-    expect(domainPlugin).not.toHaveProperty('toolDescription');
+    expect(domainPlugin.toolDescription).toEqual(localizedDescription);
     expect(domainPlugin.description).toEqual({ en: 'Plugin A', 'zh-CN': 'Plugin A' });
     expect(domainPlugin.inputSchema).toEqual(inputSchema);
     expect(domainPlugin.outputSchema).toEqual(outputSchema);
     expect(domainPlugin.secretSchema).toEqual(secretSchema);
-    expect(domainPlugin.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(domainPlugin.children?.[0].toolDescription).toEqual(localizedDescription);
     expect(domainPlugin.children?.[0].inputSchema).toEqual(childInputSchema);
     expect(domainPlugin.children?.[0].outputSchema).toEqual(childOutputSchema);
   });
@@ -1605,8 +1605,8 @@ describe('PluginRepo.listToolSummaries', () => {
     );
     const withSecret = tools?.find((tool) => tool.pluginId === 'with-secret');
     expect(withSecret?.description).toEqual({ en: 'with-secret', 'zh-CN': 'with-secret' });
-    expect(withSecret).not.toHaveProperty('toolDescription');
-    expect(withSecret?.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(withSecret?.toolDescription).toEqual(localizedToolDescription);
+    expect(withSecret?.children?.[0]?.toolDescription).toEqual(localizedToolDescription);
     expect(tools).toEqual([
       expect.objectContaining({
         pluginId: 'empty-secret',

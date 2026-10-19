@@ -30,6 +30,7 @@ export const ToolManifestSchema = z.object({
         id: z.string(),
         description: I18nStringSchema,
         name: I18nStringSchema,
+        toolDescription: z.unknown().optional(),
         icon: z.string(), // 必须提供 / 自动生成
         inputSchema: z.any(),
         outputSchema: z.any()

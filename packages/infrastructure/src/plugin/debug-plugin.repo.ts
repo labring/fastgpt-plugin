@@ -56,6 +56,7 @@ type DebugToolMetadata = {
   id: string;
   name: DebugText;
   description: DebugText;
+  toolDescription?: unknown;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -65,6 +66,7 @@ type DebugPluginMetadataPayload = {
   version: string;
   name: DebugText;
   description: DebugText;
+  toolDescription?: unknown;
   author?: string;
   tags?: string[];
   permissions?: string[];
@@ -413,6 +415,7 @@ function toPlugin(metadata: DebugPluginMetadata, source: string): PluginType {
     name: toI18n(metadata.name),
     icon: '',
     description: toI18n(metadata.description),
+    toolDescription: metadata.toolDescription,
     tags: metadata.tags,
     permission: metadata.permissions,
     secretSchema: metadata.secretSchema,
@@ -423,6 +426,7 @@ function toPlugin(metadata: DebugPluginMetadata, source: string): PluginType {
           id: tool.id,
           name: toI18n(tool.name),
           description: toI18n(tool.description),
+          toolDescription: tool.toolDescription,
           icon: '',
           inputSchema: tool.inputSchema,
           outputSchema: tool.outputSchema
@@ -451,6 +455,7 @@ function toPluginListItem({ source, metadata }: { source: string; metadata: Debu
     name: toI18n(metadata.name),
     icon: '',
     description: toI18n(metadata.description),
+    toolDescription: metadata.toolDescription,
     tags: metadata.tags,
     source
   });
@@ -466,6 +471,7 @@ function toToolListItem({ source, metadata }: { source: string; metadata: DebugP
     name: toI18n(metadata.name),
     icon: '',
     description: toI18n(metadata.description),
+    toolDescription: metadata.toolDescription,
     tags: metadata.tags,
     source,
     isToolset: metadata.isToolSet,
@@ -478,6 +484,7 @@ function toToolListItem({ source, metadata }: { source: string; metadata: DebugP
           id: tool.id,
           name: toI18n(tool.name),
           description: toI18n(tool.description),
+          toolDescription: tool.toolDescription,
         }))
       : undefined
   });

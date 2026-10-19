@@ -31,7 +31,7 @@ const load = (availableFiles: string[]) => {
 };
 
 describe('loadPlugin README URLs', () => {
-  it('ignores legacy tool descriptions in plugin manifests', async () => {
+  it('retains legacy tool descriptions in plugin manifests', async () => {
     const { plugin, error } = await load([
       'logo.svg',
       'README.md',
@@ -41,7 +41,7 @@ describe('loadPlugin README URLs', () => {
 
     expect(error).toBeNull();
     expect(plugin?.description).toEqual({ en: 'README demo', 'zh-CN': 'README 示例' });
-    expect(plugin).not.toHaveProperty('toolDescription');
+    expect(plugin?.toolDescription).toBe('README demo');
   });
 
   it('maps only present localized README URLs while retaining the legacy URL', async () => {

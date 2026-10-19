@@ -7,7 +7,7 @@ import {
 } from './tool.dto';
 
 describe('Tool metadata DTOs', () => {
-  it('preserves localized descriptions and x-i18n metadata while dropping legacy tool descriptions', () => {
+  it('preserves localized descriptions, x-i18n metadata, and legacy tool descriptions', () => {
     const description = {
       en: 'Search docs',
       'zh-CN': '搜索文档'
@@ -102,11 +102,11 @@ describe('Tool metadata DTOs', () => {
     });
 
     expect(summary.description).toEqual(description);
-    expect(summary).not.toHaveProperty('toolDescription');
-    expect(summary.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(summary.toolDescription).toEqual(legacyToolDescription);
+    expect(summary.children?.[0].toolDescription).toEqual(legacyToolDescription);
     expect(detail.description).toEqual(description);
-    expect(detail).not.toHaveProperty('toolDescription');
-    expect(detail.children?.[0]).not.toHaveProperty('toolDescription');
+    expect(detail.toolDescription).toEqual(legacyToolDescription);
+    expect(detail.children?.[0].toolDescription).toEqual(legacyToolDescription);
     expect(detail).toMatchObject({ inputSchema, outputSchema, secretSchema });
   });
 });
