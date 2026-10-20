@@ -61,7 +61,6 @@ export const toolset = defineToolSet({
     repoUrl: 'https://git.example.com/some/repo',
     tutorialUrl: 'https://docs.example.com/some/tutorial',
     tags: ['tools']
-    // toolDescription: 'This is a test tool for demonstration purposes.',
     // icon: 'icon',
   },
   children: [
@@ -75,7 +74,6 @@ export const toolset = defineToolSet({
         en: 'Child Tool 1',
         'zh-CN': '子工具1'
       },
-      toolDescription: 'This is child tool 1',
       handler
     }
     // icon

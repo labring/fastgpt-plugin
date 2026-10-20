@@ -10,7 +10,6 @@ export const UserToolManifestSchema = z.object({
     type: true,
     children: true
   }).shape,
-  toolDescription: z.string().optional(),
   // children: z
   //   .array(
   //     z.object({
@@ -18,7 +17,6 @@ export const UserToolManifestSchema = z.object({
   //       description: I18nStringSchema,
   //       name: I18nStringSchema,
   //       icon: z.string().optional(),
-  //       toolDescription: z.string().optional()
   //     })
   //   )
   //   .min(1)

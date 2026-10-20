@@ -11,6 +11,8 @@ import {
   type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
 
+import { findReadmeFiles, resolveReadmeFilePath } from '../helpers/readme-files';
+
 const SDK_FACTORY_PACKAGE = '@fastgpt-plugin/sdk-factory';
 
 export interface ToolBuildOptions {
@@ -36,7 +38,6 @@ type PackableToolChild = {
   description: ToolManifestType['description'];
   name: ToolManifestType['name'];
   icon?: string;
-  toolDescription?: string;
 };
 
 type PackableToolExport = {
@@ -72,6 +73,7 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
 
   await assertPathExists(entryDir, `入口目录不存在: ${entryDir}`);
   await assertPathExists(indexPath, `找不到 index.ts 文件: ${indexPath}`);
+  const readmeFiles = await findReadmeFiles(entryDir);
 
   const tStart = Date.now();
   let tCopy = 0;
@@ -123,7 +125,7 @@ export async function buildToolPackage(options: ToolBuildOptions): Promise<ToolB
       'utf-8'
     );
     await copyLogoFiles(outputDir, plan.logoFiles);
-    await copyOptionalStaticFiles(entryDir, outputDir);
+    await copyOptionalStaticFiles(entryDir, outputDir, readmeFiles);
     tAssemble = Date.now() - tAssembleStart;
 
     const files = await collectRelativeFiles(outputDir);
@@ -178,19 +180,16 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
   const rootLogoName = path.basename(rootLogoPath);
   const logoFiles = new Map<string, string>([[rootLogoName, rootLogoPath]]);
 
-  const userManifest = tool.getUserToolManifest();
-  const secretSchema = z.toJSONSchema(tool.getSecretSchema());
-  const toolDescription = pickToolDescription(
-    getOptionalString(userManifest.toolDescription),
-    userManifest.description
-  );
+  const userManifest = { ...tool.getUserToolManifest() };
+  delete userManifest.toolDescription;
+  const secretSchema = toManifestJsonSchema(z.toJSONSchema(tool.getSecretSchema()));
+
   const childManifests = tool.getChildManifests();
 
   const manifestCandidate: Record<string, unknown> = {
     ...userManifest,
     type: 'tool',
     icon: rootLogoName,
-    toolDescription,
     secretSchema
   };
 
@@ -200,8 +199,8 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
       throw new Error('default export 未注册任何工具 handler');
     }
 
-    manifestCandidate.inputSchema = z.toJSONSchema(handler.inputSchema);
-    manifestCandidate.outputSchema = z.toJSONSchema(handler.outputSchema);
+    manifestCandidate.inputSchema = toManifestJsonSchema(z.toJSONSchema(handler.inputSchema));
+    manifestCandidate.outputSchema = toManifestJsonSchema(z.toJSONSchema(handler.outputSchema));
   } else {
     manifestCandidate.children = await Promise.all(
       childManifests.map(async (child) => {
@@ -219,9 +218,8 @@ async function createBuildPlan(entryDir: string, tool: PackableToolExport): Prom
           description: child.description,
           name: child.name,
           icon: childLogoName,
-          toolDescription: pickToolDescription(child.toolDescription, child.description),
-          inputSchema: z.toJSONSchema(handler.inputSchema),
-          outputSchema: z.toJSONSchema(handler.outputSchema)
+          inputSchema: toManifestJsonSchema(z.toJSONSchema(handler.inputSchema)),
+          outputSchema: toManifestJsonSchema(z.toJSONSchema(handler.outputSchema))
         };
       })
     );
@@ -247,11 +245,19 @@ async function copyLogoFiles(
   );
 }
 
-async function copyOptionalStaticFiles(entryDir: string, outputDir: string): Promise<void> {
-  const readmePath = path.join(entryDir, 'README.md');
-  if (await pathExists(readmePath)) {
-    await fs.copyFile(readmePath, path.join(outputDir, 'README.md'));
-  }
+async function copyOptionalStaticFiles(
+  entryDir: string,
+  outputDir: string,
+  readmeFiles: string[]
+): Promise<void> {
+  await Promise.all(
+    readmeFiles.map((fileName) =>
+      fs.copyFile(
+        resolveReadmeFilePath(entryDir, fileName),
+        resolveReadmeFilePath(outputDir, fileName)
+      )
+    )
+  );
 
   const assetsDir = path.join(entryDir, 'assets');
   if (await pathExists(assetsDir)) {
@@ -348,30 +354,79 @@ function isPackableToolExport(value: unknown): value is PackableToolExport {
   );
 }
 
-function pickToolDescription(
-  explicitDescription: string | undefined,
-  fallbackSource: unknown
-): string {
-  if (explicitDescription && explicitDescription.trim().length > 0) {
-    return explicitDescription;
+
+const JSON_SCHEMA_CHILD_KEYS = [
+  '$defs',
+  'definitions',
+  'properties',
+  'patternProperties',
+  'dependentSchemas'
+] as const;
+const JSON_SCHEMA_SINGLE_CHILD_KEYS = [
+  'additionalItems',
+  'additionalProperties',
+  'unevaluatedItems',
+  'unevaluatedProperties',
+  'propertyNames',
+  'items',
+  'contains',
+  'not',
+  'if',
+  'then',
+  'else',
+  'contentSchema'
+] as const;
+const JSON_SCHEMA_ARRAY_CHILD_KEYS = ['prefixItems', 'allOf', 'anyOf', 'oneOf'] as const;
+const I18N_UI_FIELDS = ['title', 'description', 'placeholder'] as const;
+
+/** Keeps JSON Schema's standard string fields compatible with older consumers. */
+export function toManifestJsonSchema(schema: unknown): unknown {
+  if (!isRecord(schema)) {
+    return schema;
   }
 
-  if (fallbackSource && typeof fallbackSource === 'object') {
-    const localized = fallbackSource as Record<string, unknown>;
-    const preferred = [localized['zh-CN'], localized.en, ...Object.values(localized)].find(
-      (value) => typeof value === 'string' && value.trim().length > 0
-    );
-
-    if (typeof preferred === 'string') {
-      return preferred;
+  const normalized: Record<string, unknown> = { ...schema };
+  delete normalized.toolDescription;
+  const localized = normalized['x-i18n'];
+  if (isRecord(localized)) {
+    for (const field of I18N_UI_FIELDS) {
+      const fieldI18n = localized[field];
+      if (isRecord(fieldI18n) && typeof fieldI18n.en === 'string') {
+        normalized[field] = fieldI18n.en;
+      }
     }
   }
 
-  return '';
+  for (const key of JSON_SCHEMA_CHILD_KEYS) {
+    const schemas = normalized[key];
+    if (isRecord(schemas)) {
+      normalized[key] = Object.fromEntries(
+        Object.entries(schemas).map(([name, childSchema]) => [
+          name,
+          toManifestJsonSchema(childSchema)
+        ])
+      );
+    }
+  }
+
+  for (const key of JSON_SCHEMA_SINGLE_CHILD_KEYS) {
+    if (isRecord(normalized[key])) {
+      normalized[key] = toManifestJsonSchema(normalized[key]);
+    }
+  }
+
+  for (const key of JSON_SCHEMA_ARRAY_CHILD_KEYS) {
+    const schemas = normalized[key];
+    if (Array.isArray(schemas)) {
+      normalized[key] = schemas.map(toManifestJsonSchema);
+    }
+  }
+
+  return normalized;
 }
 
-function getOptionalString(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isSdkFactoryImport(id: string): boolean {

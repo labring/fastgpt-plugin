@@ -98,7 +98,7 @@ describe('create command', () => {
     expect(pkgJson.name).toBe(normalizedName);
     expect(pkgJson.description).toBe(description);
     expect(pkgJson.devDependencies['@fastgpt-plugin/cli']).toBe('^0.2.0');
-    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^0.0.1');
+    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-alpha.3');
     expect(Object.values(pkgJson.devDependencies)).not.toContain('catalog:');
     expect(pkgJson.scripts.dev).toBe('fastgpt-plugin dev . --watch');
     expect(pkgJson.scripts['debug:run']).toContain('{"delay":0}');
@@ -168,6 +168,14 @@ describe('create command', () => {
 
     const indexContent = await readFile(path.join(testCwd, 'my-tool', 'index.ts'), 'utf-8');
     expect(indexContent).toContain('defineToolSet');
+    expect(indexContent).toContain('inputSchema: defineInputSchema({');
+    expect(indexContent).toContain('outputSchema: defineOutputSchema({');
+    expect(indexContent).toContain("title: { en: 'SQL Query', 'zh-CN': 'SQL 查询' }");
+    expect(indexContent).toContain("title: { en: 'Query Results', 'zh-CN': '查询结果' }");
+    expect(indexContent).not.toContain('InputSchemaMetaType');
+    expect(indexContent).not.toContain('OutputSchemaMetaType');
+    expect(indexContent).toContain('type SecretSchemaMetaType');
+    expect(indexContent).toContain('isSecret: true');
 
     const packageJson = JSON.parse(
       await readFile(path.join(testCwd, 'my-tool', 'package.json'), 'utf-8')
@@ -213,5 +221,10 @@ describe('create command', () => {
     const indexContent = await readFile(path.join(testCwd, 'delay-tool', 'index.ts'), 'utf-8');
     expect(indexContent).toContain('defineTool');
     expect(indexContent).not.toContain('defineToolSet');
+    expect(indexContent).toContain('inputSchema: defineInputSchema({');
+    expect(indexContent).toContain('outputSchema: defineOutputSchema({');
+    expect(indexContent).toContain("title: { en: 'Delay', 'zh-CN': '延迟' }");
+    expect(indexContent).not.toContain('InputSchemaMetaType');
+    expect(indexContent).not.toContain('OutputSchemaMetaType');
   });
 });

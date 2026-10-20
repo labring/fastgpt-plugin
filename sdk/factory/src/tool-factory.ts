@@ -21,7 +21,7 @@ export type ToolChildManifestDefinition = {
   description: UserToolManifestType['description'];
   name: UserToolManifestType['name'];
   icon?: string;
-  toolDescription?: string;
+  toolDescription?: unknown;
 };
 
 type ToolInputSchema = z.ZodObject<any>;
@@ -57,6 +57,7 @@ export type ToolHandlerDefinition<
   outputSchema: TOutput;
   secretSchema?: TSecret;
   handler: ToolHandlerFn<TInput, TOutput, TSecret>;
+  toolDescription?: unknown;
 };
 
 export function createToolHandler<
@@ -73,9 +74,11 @@ export class ToolFactory extends PluginFactory {
   private toolHandlers: Map<string, ToolHandlerDefinition<any, any, any>> = new Map();
   private childManifests: Map<string, ToolChildManifestDefinition> = new Map();
   private secretSchema: z.ZodType<any> = z.record(z.string(), z.unknown());
+  private userToolManifest: UserToolManifestType;
 
-  private constructor(private userToolManifest: UserToolManifestType) {
+  private constructor(userToolManifest: UserToolManifestType) {
     super();
+    this.userToolManifest = userToolManifest;
 
     if (this.mode)
       this.getChannel().setRequestHandler(async (msg) => {

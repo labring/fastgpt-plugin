@@ -8,6 +8,8 @@ import {
   getMimeTypeFromFilename,
   type MIMEType
 } from '@domain/value-objects/file/MIME.vo';
+import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
+import { validatePluginReadmeFilenames } from '@domain/value-objects/plugin/readme-filenames.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 
 import { bufferToReadable, readStreamToBuffer, unpkg } from './pkg';
@@ -20,6 +22,22 @@ const IMAGE_CONTENT_TYPES = new Set<MIMEType>([
   'image/gif',
   'image/webp'
 ]);
+const README_FILE_LOCALE_BY_NAME: Record<string, I18nLangType> = {
+  'README.en.md': 'en',
+  'README.zh-CN.md': 'zh-CN',
+  'README.zh-Hant.md': 'zh-Hant'
+};
+
+const validateReadmeFilenames = (files: PkgFileEntry[]): Result => {
+  const validation = validatePluginReadmeFilenames(files.map(({ filename }) => filename));
+  if (!validation.valid) {
+    return failureResult({
+      en: validation.error,
+      'zh-CN': `插件包中的 README 文件名无效: ${validation.error}`
+    });
+  }
+  return successResult(undefined);
+};
 
 export type ParsedPkgFile = {
   filename: string;
@@ -32,6 +50,7 @@ export type ParsedPkgFiles = {
   index: ParsedPkgFile;
   manifest: ParsedPkgFile;
   readme?: ParsedPkgFile;
+  readmes?: Partial<Record<I18nLangType, ParsedPkgFile>>;
   assets?: ParsedPkgFile[];
   logos?: ParsedPkgFile[];
 };
@@ -134,6 +153,11 @@ export const parsePkg = async ({
     });
   }
 
+  const [, readmeFilenameErr] = validateReadmeFilenames(fileEntries);
+  if (readmeFilenameErr) {
+    return failureResult(readmeFilenameErr);
+  }
+
   const etag = getPkgEtag(fileEntries);
   const availableFiles = fileEntries.map((entry) => entry.filename);
 
@@ -141,6 +165,7 @@ export const parsePkg = async ({
   let manifest: ParsedPkgFile | undefined;
   let manifestText: string | undefined;
   let readme: ParsedPkgFile | undefined;
+  const readmes: Partial<Record<I18nLangType, ParsedPkgFile>> = {};
   const assets: ParsedPkgFile[] = [];
   const logos: ParsedPkgFile[] = [];
 
@@ -163,7 +188,13 @@ export const parsePkg = async ({
       continue;
     }
 
-    if (path.dirname(entry.filename) === 'assets' && IMAGE_CONTENT_TYPES.has(file.contentType)) {
+    const readmeLocale = README_FILE_LOCALE_BY_NAME[entry.filename];
+    if (readmeLocale) {
+      readmes[readmeLocale] = file;
+      continue;
+    }
+
+    if (path.posix.dirname(entry.filename) === 'assets' && IMAGE_CONTENT_TYPES.has(file.contentType)) {
       assets.push(file);
       continue;
     }
@@ -222,6 +253,7 @@ export const parsePkg = async ({
       index,
       manifest,
       ...(readme ? { readme } : {}),
+      ...(Object.keys(readmes).length > 0 ? { readmes } : {}),
       ...(assets.length ? { assets } : {}),
       ...(logos.length ? { logos } : {})
     }

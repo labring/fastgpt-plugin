@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { connectDebugGateway } from '@fastgpt-plugin/cli/debug/gateway';
+import { loadDebugSession } from '@fastgpt-plugin/cli/debug/session';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from '../cmd';
@@ -75,33 +76,131 @@ describe('debug command', () => {
     await rm(configHome, { recursive: true, force: true });
   });
 
-  it('应能输出单工具的本地调试信息和调用命令', async () => {
+  it('应能输出单工具的本地调试信息和调用命令，默认使用英文', async () => {
     await run([process.execPath, 'cli', 'debug', GETTIME_TOOL_DIR]);
 
     const output = getLoggerOutput(loggerSpy.info);
 
     expect(output).toContain('pluginId: getTime');
+    expect(output).toContain('name: Get current time');
+    expect(output).toContain('description: Get current time');
     expect(output).toContain('可调试工具');
     expect(output).toContain('fastgpt-plugin debug');
     expect(output).toContain('--run');
+    expect(output).toContain('--lang en');
     expect(output).toContain('--input');
     expect(loggerSpy.error).not.toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
-  it('应能输出工具集的子工具调试命令', async () => {
-    await run([process.execPath, 'cli', 'debug', DBOPS_SUITE_DIR]);
+  it('应能按 --lang 选择工具和插件调试元数据语言', async () => {
+    await run([process.execPath, 'cli', 'debug', GETTIME_TOOL_DIR, '--lang', 'en']);
 
-    const output = getLoggerOutput(loggerSpy.info);
+    const englishOutput = getLoggerOutput(loggerSpy.info);
+    expect(englishOutput).toContain('name: Get current time');
+    expect(englishOutput).toContain('description: Get current time');
+    expect(englishOutput).toContain('--lang en');
 
-    expect(output).toContain('pluginId: dbops');
-    expect(output).toContain('id: mysql');
-    expect(output).toContain('id: pgsql');
-    expect(output).toContain('--tool mysql');
-    expect(output).toContain('--tool pgsql');
+    loggerSpy.info.mockClear();
+    await run([process.execPath, 'cli', 'debug', DBOPS_SUITE_DIR, '--lang', 'en']);
+
+    const toolsetOutput = getLoggerOutput(loggerSpy.info);
+    expect(toolsetOutput).toContain('name: DB Operations');
+    expect(toolsetOutput).toContain('name: MySQL Tool');
+    expect(toolsetOutput).toContain('description: MySQL database operation tool');
+    expect(toolsetOutput).toContain('--tool mysql');
+    expect(toolsetOutput).toContain('--tool pgsql');
+    expect(toolsetOutput).toContain('--lang en');
     expect(loggerSpy.error).not.toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
   });
+
+  it('指定语言缺失时回退到英文', async () => {
+    await run([process.execPath, 'cli', 'debug', GETTIME_TOOL_DIR, '--lang', 'zh-Hant']);
+
+    const output = getLoggerOutput(loggerSpy.info);
+
+    expect(output).toContain('name: Get current time');
+    expect(output).not.toContain('name: 获取当前时间');
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses the selected locale for canonical names and descriptions only', async () => {
+    const entryDir = await createDebugPluginFixture({
+      name: {
+        en: 'English name',
+        'zh-CN': '简体中文名称',
+        'zh-Hant': '繁體中文名稱'
+      },
+      description: {
+        en: 'English description',
+        'zh-CN': '简体中文说明',
+        'zh-Hant': '繁體中文說明'
+      },
+      toolDescription: {
+        en: 'English tool description',
+        'zh-CN': '简体中文工具说明',
+        'zh-Hant': '繁體中文工具說明'
+      }
+    });
+
+    try {
+      const { snapshot } = await loadDebugSession({
+        entryDir,
+        uploadDir: tempUploadDir
+      });
+      expect(snapshot.name).toEqual({
+        en: 'English name',
+        'zh-CN': '简体中文名称',
+        'zh-Hant': '繁體中文名稱'
+      });
+      expect(snapshot.description).toEqual({
+        en: 'English description',
+        'zh-CN': '简体中文说明',
+        'zh-Hant': '繁體中文說明'
+      });
+      expect(snapshot).not.toHaveProperty('toolDescription');
+      expect(snapshot.tools[0].description).toEqual(snapshot.description);
+      expect(snapshot.tools[0]).not.toHaveProperty('toolDescription');
+
+      await run([process.execPath, 'cli', 'debug', entryDir, '--lang', 'zh-Hant']);
+
+      const output = getLoggerOutput(loggerSpy.info);
+      expect(output).toContain('name: 繁體中文名稱');
+      expect(output).toContain('description: 繁體中文說明');
+      expect(output).not.toContain('toolDescription');
+      expect(output).not.toContain('简体中文');
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+    } finally {
+      await rm(entryDir, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores old string tool descriptions without overriding the canonical description', async () => {
+    const entryDir = await createDebugPluginFixture({
+      name: { en: 'English fallback name', 'zh-CN': '' },
+      description: 'Legacy debug description',
+      toolDescription: 'Legacy model description'
+    });
+
+    try {
+      await run([process.execPath, 'cli', 'debug', entryDir, '--lang', 'zh-Hant']);
+
+      const output = getLoggerOutput(loggerSpy.info);
+
+      expect(output).toContain('name: English fallback name');
+      expect(output).toContain('description: Legacy debug description');
+      expect(output).not.toContain('Legacy model description');
+      expect(output).not.toContain('toolDescription');
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+    } finally {
+      await rm(entryDir, { recursive: true, force: true });
+    }
+  });
+
 
   it('应能直接运行本地单工具调试', async () => {
     await run([process.execPath, 'cli', 'debug', GETTIME_TOOL_DIR, '--run', '--input', '{}']);
@@ -966,6 +1065,41 @@ function makeConnectedSession(options: {
     lastSeenAt: Date.now(),
     expiresAt: Date.now() + 60_000
   };
+}
+
+async function createDebugPluginFixture({
+  name,
+  description,
+  toolDescription
+}: {
+  name: Record<string, string>;
+  description: string | Record<string, string>;
+  toolDescription: string | Record<string, string>;
+}): Promise<string> {
+  const entryDir = await mkdtemp(path.join(FIXTURE_ROOT, 'debug-i18n-'));
+  const source = `
+import { createToolHandler, defineTool } from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const handler = createToolHandler({
+  inputSchema: z.object({}),
+  outputSchema: z.object({}),
+  handler: async () => ({})
+});
+
+export default defineTool({
+  manifest: {
+    pluginId: 'debug-i18n-fixture',
+    name: ${JSON.stringify(name)},
+    description: ${JSON.stringify(description)},
+    toolDescription: ${JSON.stringify(toolDescription)},
+    version: '1.0.0'
+  },
+  handler
+});
+`;
+  await writeFile(path.join(entryDir, 'index.ts'), source);
+  return entryDir;
 }
 
 async function copyDebugFixture(sourceDir: string, targetDir: string): Promise<void> {

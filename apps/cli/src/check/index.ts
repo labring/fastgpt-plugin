@@ -6,6 +6,8 @@ import {
   type ToolManifestType
 } from '@domain/value-objects/plugin/plugin-manifest.vo';
 
+import { findReadmeFiles } from '../helpers/readme-files';
+
 export interface CheckOptions {
   entry: string;
   output: string;
@@ -115,9 +117,13 @@ async function validateManifestAssets(
     }
   }
 
-  const readmePath = path.join(outputDir, 'README.md');
-  if (!(await pathExists(readmePath))) {
-    warnings.push('dist/README.md 不存在');
+  try {
+    const readmeFiles = await findReadmeFiles(outputDir);
+    if (readmeFiles.length === 0) {
+      warnings.push('dist/README.md 或语言变体不存在');
+    }
+  } catch (error) {
+    errors.push((error as Error).message);
   }
 }
 

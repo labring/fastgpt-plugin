@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import type { ConnectionGatewayWsServerMessage } from '@domain/value-objects/connection-gateway.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
@@ -43,6 +44,19 @@ describe('connectDebugGateway', () => {
         }
       }
     });
+    const wireMetadata = z
+      .object({
+        pluginDebug: z.object({ targets: z.array(z.record(z.string(), z.unknown())) })
+      })
+      .parse(bind.metadata);
+    const wireTarget = wireMetadata.pluginDebug.targets[0];
+    expect(wireTarget.toolDescription).toBe('Get time');
+    const wireTools = z.array(z.record(z.string(), z.unknown())).parse(wireTarget.tools);
+    expect(wireTools[0].toolDescription).toBe('Get time');
+    const wireInputSchema = z
+      .object({ properties: z.object({ query: z.record(z.string(), z.unknown()) }) })
+      .parse(wireTools[0].inputSchema);
+    expect(wireInputSchema.properties.query.toolDescription).toBe('legacy');
 
     socket.receive({
       protocol: 'connection-gateway.ws.v1',
@@ -733,7 +747,7 @@ function makeSnapshot() {
         name: 'getTime',
         description: 'Get time',
         toolDescription: 'Get time',
-        inputSchema: {},
+        inputSchema: { properties: { query: { type: 'string', toolDescription: 'legacy' } } },
         outputSchema: {}
       }
     ]

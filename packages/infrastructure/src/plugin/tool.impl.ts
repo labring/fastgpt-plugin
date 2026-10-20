@@ -22,7 +22,7 @@ import {
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type { ToolRunInputType, ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import { type ToolRunInputType, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
 import { InvokeManager } from './invoke/invoke.impl';
@@ -47,65 +47,31 @@ function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function getDescriptionFallback(description: unknown): string | undefined {
-  if (typeof description === 'string' && description.length > 0) {
-    return description;
-  }
-
-  if (!isJsonObject(description)) {
-    return undefined;
-  }
-
-  const en = description.en;
-  return typeof en === 'string' && en.length > 0 ? en : undefined;
-}
-
 function normalizeInputSchemaToolParams(inputSchema: unknown): unknown {
   if (!isJsonObject(inputSchema) || !isJsonObject(inputSchema.properties)) {
     return inputSchema;
   }
 
-  const properties = Object.fromEntries(
-    Object.entries(inputSchema.properties).map(([key, property]) => {
-      if (!isJsonObject(property)) {
-        return [key, property];
-      }
-
-      const normalizedProperty = { ...property };
-      const hasToolDescription =
-        typeof normalizedProperty.toolDescription === 'string' &&
-        normalizedProperty.toolDescription.length > 0;
-      const hasIsToolParam = normalizedProperty.isToolParam !== undefined;
-
-      if (hasIsToolParam) {
-        if (!hasToolDescription) {
-          const fallback = getDescriptionFallback(normalizedProperty.description);
-          if (fallback !== undefined) {
-            normalizedProperty.toolDescription = fallback;
-          }
-        }
-
-        return [key, normalizedProperty];
-      }
-
-      if (hasToolDescription) {
-        normalizedProperty.isToolParam = true;
-        return [key, normalizedProperty];
-      }
-
-      const fallback = getDescriptionFallback(normalizedProperty.description);
-      if (fallback !== undefined) {
-        normalizedProperty.toolDescription = fallback;
-      }
-      normalizedProperty.isToolParam = false;
-
-      return [key, normalizedProperty];
-    })
-  );
-
   return {
     ...inputSchema,
-    properties
+    properties: Object.fromEntries(
+      Object.entries(inputSchema.properties).map(([key, property]) => {
+        if (!isJsonObject(property)) {
+          return [key, property];
+        }
+
+        return [
+          key,
+          {
+            ...property,
+            isToolParam:
+              property.isToolParam !== undefined
+                ? property.isToolParam
+                : property.toolDescription !== undefined
+          }
+        ];
+      })
+    )
   };
 }
 
@@ -130,10 +96,15 @@ export class ToolManager implements ToolManagerPort {
     return {
       ...tool,
       inputSchema: normalizeInputSchemaToolParams(tool.inputSchema),
-      children: tool.children?.map((child) => ({
-        ...child,
-        inputSchema: normalizeInputSchemaToolParams(child.inputSchema)
-      })),
+      outputSchema: tool.outputSchema,
+      secretSchema: tool.secretSchema,
+      children: tool.children?.map((child) => {
+        return {
+          ...child,
+          inputSchema: normalizeInputSchemaToolParams(child.inputSchema),
+          outputSchema: child.outputSchema
+        };
+      }),
       source,
       isToolset: Boolean(tool.children?.length),
       isLatestVersion

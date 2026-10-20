@@ -158,9 +158,9 @@ The system tool entry must default-export an SDK factory instance:
 ```ts
 import {
   createToolHandler,
+  defineInputSchema,
+  defineOutputSchema,
   defineTool,
-  type InputSchemaMetaType,
-  type OutputSchemaMetaType,
   type SecretSchemaMetaType
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
@@ -173,17 +173,19 @@ const secretSchema = z.object({
 });
 
 const handler = createToolHandler({
-  inputSchema: z.object({
-    query: z.string().min(1).meta({
-      title: 'Query',
-      description: 'Search keyword',
+  inputSchema: defineInputSchema({
+    query: {
+      type: z.string().min(1),
+      title: { en: 'Query', 'zh-CN': '查询' },
+      description: { en: 'Search keyword', 'zh-CN': '搜索关键词' },
       isToolParam: true
-    } satisfies InputSchemaMetaType)
+    }
   }),
-  outputSchema: z.object({
-    result: z.string().meta({
-      title: 'Result'
-    } satisfies OutputSchemaMetaType)
+  outputSchema: defineOutputSchema({
+    result: {
+      type: z.string(),
+      title: { en: 'Result', 'zh-CN': '结果' }
+    }
   }),
   secretSchema,
   handler: async (input, ctx) => {
@@ -214,14 +216,28 @@ export default defineTool({
 });
 ```
 
+`defineInputSchema()` and `defineOutputSchema()` accept field descriptor objects and return ordinary Zod objects that can be passed directly to `createToolHandler()`. Each field's `type` is a Zod schema instance, and `title` must include `en` and `zh-CN`, with optional `zh-Hant`; `description` is optional localized UI and tool-description text. Input fields additionally support optional boolean `isToolParam`, including `false`. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text. The helpers generate English plain `title` / `description` values and full `x-i18n` metadata, preserve other `.meta()` metadata on the schema, and do not mutate the source schema. `createToolHandler()` still consumes ordinary Zod objects, whose default behavior strips unknown keys; call `.strict()` on the returned object when strict validation is desired.
+
+Fields compose when nested or used as array elements:
+
+```ts
+const outputSchema = defineOutputSchema({
+  labels: {
+    type: z.array(defineOutputSchema({
+      label: {
+        type: z.string(),
+        title: { en: 'Label', 'zh-CN': '标签' }
+      }
+    })),
+    title: { en: 'Labels', 'zh-CN': '标签列表' }
+  }
+});
+```
+
 Core rules:
 
-- Keep `pluginId`, child tool `id`, input field names, and output field names stable after publishing.
-- Use `{ en, 'zh-CN' }` for `manifest.name`, `manifest.description`, and `versionDescription`.
-- Describe inputs, outputs, and secrets with Zod schemas.
-- Add `InputSchemaMetaType` to input fields and set `isToolParam: true` for parameters recommended to be managed by AI; add `OutputSchemaMetaType` to output fields.
-- Add `SecretSchemaMetaType` to secret fields and set `isSecret: true` for sensitive fields.
-- Handler return values must match `outputSchema`.
+- Define input and output fields with `defineInputSchema()` and `defineOutputSchema()`. Each field's `type` is a Zod schema, and its required `title` includes `en` and `zh-CN`; optional `description` is localized UI and tool-description text. Input fields also support optional boolean `isToolParam`.
+- Continue to define secret fields with `.meta({ ... } satisfies SecretSchemaMetaType)`; advanced metadata can also use Zod `.meta()`. Set `isSecret: true` for sensitive fields.
 - Convert external API errors into actionable messages and avoid exposing secrets, tokens, or complete sensitive responses.
 - Use `ctx.invoke.uploadFile()` when host file upload is needed, and prefer preserving the returned `err`.
 - Use `ctx.streamResponse()` when progress should be shown to users.
