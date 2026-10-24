@@ -44,19 +44,20 @@ describe('static model provider ordering', () => {
     expect(firstQwen37Index).toBeGreaterThan(lastQwen38Index);
   });
 
-  it('keeps Qwen snapshots and specialized models ahead of their aliases', () => {
+  it('excludes dated Qwen snapshots and US-region presets', () => {
     const qwen = providerConfigs.find(({ provider }) => provider === 'Qwen');
     const modelIds = qwen?.list.map((model) => model.model) ?? [];
 
-    expect(modelIds.indexOf('qwen3.8-max-0902')).toBeLessThan(modelIds.indexOf('qwen3.8-max'));
+    expect(modelIds).toContain('qwen3.8-max');
+    expect(modelIds.filter((model) => /-(?:\d{4}(?:-\d{2}-\d{2})?|us)$/.test(model))).toEqual([]);
+  });
+
+  it('keeps Qwen specialized models ahead of older families and aliases', () => {
+    const qwen = providerConfigs.find(({ provider }) => provider === 'Qwen');
+    const modelIds = qwen?.list.map((model) => model.model) ?? [];
+
     expect(modelIds.indexOf('qwen3.8-27b')).toBeLessThan(modelIds.indexOf('qwen3.7-max'));
     expect(modelIds.indexOf('qwen3.8-2.4t-a95b')).toBeLessThan(modelIds.indexOf('qwen3.7-max'));
-    expect(modelIds.indexOf('qwen3.7-max-2026-05-20')).toBeLessThan(
-      modelIds.indexOf('qwen3.7-max')
-    );
-    expect(modelIds.indexOf('qwen3.7-flash-2026-07-15')).toBeLessThan(
-      modelIds.indexOf('qwen3.7-flash')
-    );
     expect(modelIds.indexOf('qwen3-vl-embedding')).toBeLessThan(
       modelIds.indexOf('qwen3.7-text-embedding')
     );
