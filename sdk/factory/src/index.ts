@@ -12,8 +12,8 @@ import {
 
 export { createToolHandler };
 
-export { defineInputSchema, defineOutputSchema } from './schema-helpers';
 export type { InputFieldDefinition, OutputFieldDefinition } from './schema-helpers';
+export { defineInputSchema, defineOutputSchema } from './schema-helpers';
 
 export type I18nSchemaMetaType = {
   title: I18nStringType;
