@@ -40,12 +40,7 @@
           }
         }
       ],
-      "remove": [
-        {
-          "model": "example-retired-model",
-          "reason": "Official deprecation notice marks this exact model as retired."
-        }
-      ]
+      "remove": []
     }
   }
 }
