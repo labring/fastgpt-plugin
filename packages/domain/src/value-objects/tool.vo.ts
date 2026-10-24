@@ -3,6 +3,35 @@ import z from 'zod';
 import { PluginSourceSchema } from './plugin.vo';
 import { SystemVarSchema } from './system-var.vo';
 
+/**
+ * 工具 handler 返回的结构化内容部分,与 FastGPT 主程序对齐:
+ * text 为纯文本,image_url 为图片;主程序会把合法的 content parts 作为下一轮模型的视觉输入。
+ * 该 schema 供插件作者在 outputSchema 中声明使用,不参与 wire 层强校验。
+ */
+export const ToolMessageContentPartSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('text'),
+    text: z.string().min(1)
+  }),
+  z.object({
+    type: z.literal('image_url'),
+    image_url: z.object({
+      url: z.string().min(1),
+      detail: z.enum(['auto', 'low', 'high']).optional()
+    })
+  })
+]);
+
+export type ToolMessageContentPartType = z.infer<typeof ToolMessageContentPartSchema>;
+
+/**
+ * 工具 handler 返回对象的 wire 契约:保持任意 JSON 透传,与历史版本一致。
+ *
+ * content 字段不做结构化强校验,插件返回的 content 可以是任意业务值
+ * (字符串、对象、数组等),旧插件输出不受影响。需要向模型传递结构化内容时,
+ * 按约定将 content 声明并返回为 ToolMessageContentPartType[](text / image_url parts);
+ * FastGPT 主程序仅在 content 形状合法时把它作为视觉输入,否则回退到普通文本路径。
+ */
 export const ToolHandlerReturnSchema = z.record(z.string(), z.unknown());
 export type ToolHandlerReturnType = z.infer<typeof ToolHandlerReturnSchema>;
 

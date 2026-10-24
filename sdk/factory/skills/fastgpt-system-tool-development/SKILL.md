@@ -67,6 +67,7 @@ npx @fastgpt-plugin/cli pack --entry <plugin-directory> --dist <plugin-directory
 - 字段可嵌套组合或作为数组元素，例如 `type: z.array(defineOutputSchema({ label: { type: z.string(), title: { en: 'Label', 'zh-CN': '标签' } } }))`。
 - secret 和高级 metadata 仍可使用 `.meta()`；`secretSchema` 字段使用 `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)`，需要加密存储的字段标记为 `isSecret: true`。
 - handler 返回值必须匹配 `outputSchema`。
+- 需要向模型返回图片时，在 `outputSchema` 中使用结构化 `content` 字段（`z.array(ToolMessageContentPartSchema)`，从 SDK 导入），返回 text / image_url 内容部分；不要把图片地址混在普通文本里。
 
 manifest 至少包含：
 
@@ -258,6 +259,61 @@ export default defineToolSet({
 });
 ```
 
+## 返回图片内容（可选）
+
+工具 handler 的返回对象里可以包含 `content` 字段，向 FastGPT 主程序返回结构化图片内容，作为下一轮模型的视觉输入。此时 `content` 应为内容部分数组，每项只能是以下两种之一：
+
+- `{ type: 'text', text: string }`：文本内容。
+- `{ type: 'image_url', image_url: { url: string, detail?: 'auto' | 'low' | 'high' } }`：图片内容，`url` 为图片地址。
+
+> **向后兼容（重要）**：`content` 是普通业务字段，SDK 的 wire 层保持任意 JSON 透传，不做强校验。旧插件把字符串、对象或普通数组放在 `content` 里仍可正常工作，主程序会把这些值当作普通文本结果处理。
+>
+> 只有当你希望图片作为下一轮模型的视觉输入时，才按上述 parts 形状返回 `content`。主程序仅在 `content` 形状合法时把它作为视觉输入，否则回退到普通文本路径；因此不要只放一个孤立的图片链接字符串，也不要在普通文本里夹带图片地址。
+
+示例：
+
+```ts
+import {
+  createToolHandler,
+  defineTool,
+  ToolMessageContentPartSchema,
+  type ToolMessageContentPartType
+} from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const handler = createToolHandler({
+  inputSchema: z.object({
+    prompt: z.string().min(1)
+  }),
+  outputSchema: z.object({
+    message: z.string(),
+    content: z.array(ToolMessageContentPartSchema)
+  }),
+  handler: async (input) => {
+    const imageUrl = 'https://example.com/result.png';
+    const content: ToolMessageContentPartType[] = [
+      { type: 'image_url', image_url: { url: imageUrl } }
+    ];
+
+    return {
+      message: `Generated image for: ${input.prompt}`,
+      content
+    };
+  }
+});
+
+export default defineTool({
+  manifest: {
+    pluginId: 'image-generator',
+    version: '1.0.0',
+    name: { en: 'Image Generator', 'zh-CN': '图片生成' },
+    description: { en: 'Generate an image', 'zh-CN': '生成图片' },
+    permission: []
+  },
+  handler
+});
+```
+
 ## 验证重点
 
 - `index.ts` 默认导出正确。
@@ -266,6 +322,8 @@ export default defineToolSet({
 - 使用 `ctx.invoke` 时已在 `manifest.permission` 声明对应权限，例如上传文件声明 `file-upload:allow`。
 - Zod schema 覆盖全部用户可见输入和输出；推荐由 AI 托管补充的输入字段设置 `isToolParam: true`。
 - handler 成功路径返回值与 `outputSchema` 一致。
+- 返回结构化图片内容时 `outputSchema` 里的 `content` 声明为 `z.array(ToolMessageContentPartSchema)`；旧插件把 `content` 当普通业务字段（字符串/对象/数组）使用仍兼容，无需迁移。
+- 返回图片内容时使用结构化 `content` 字段（`ToolMessageContentPartSchema`），不在文本中夹带图片地址。
 - 外部调用失败、空响应、超时、鉴权失败都有明确错误。
 - 密钥配置只通过 `secretSchema` 和 `ctx.secrets` 处理。
 - 系统工具根目录存在 `logo.<ext>`。
