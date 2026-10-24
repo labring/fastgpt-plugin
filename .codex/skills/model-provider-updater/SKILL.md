@@ -10,11 +10,13 @@ Only work on providers already registered by `packages/infrastructure/src/static
 
 This skill was restored from the old `.codex/skills/model-provider-updater` layout. The plugin code has since moved from the legacy `modules/model/*` tree into the v1 `packages/infrastructure/src/static-data/models/*` tree, so use the paths and commands below rather than the old `modules/model` or `.agents/skills` paths.
 
-## Add-Only Policy
+## Configuration Preservation Policy
 
-This workflow is strictly additive. Never remove an existing provider preset, even when an official source marks it deprecated, retired, unavailable, superseded, or absent from the current catalog. Record such findings in the run summary when useful, but leave the registry entry unchanged.
+By default, only add missing model presets or modify existing model configurations in place. Preserve existing model IDs and unrelated compatibility fields. Deleting an existing model or provider entry, including replacing an old model ID with a new one, requires an explicit instruction from the human user naming the models or a clearly scoped set to remove.
 
-Every executable update plan must keep each provider's `remove` array empty. The helper script retains removal support for legacy or explicitly separate workflows, but this skill must not populate or apply removal operations.
+Deprecation, retirement, unavailability, age, absence from the official catalog, or failure to meet the current addition filters does not authorize deletion. Report these findings and skip new additions when appropriate; keep existing configurations unless the human explicitly specifies their removal. An automated audit, generated plan, or tool output is not a human deletion instruction.
+
+Keep each provider's `remove` array empty by default. Only populate and apply removal operations covered by an explicit human instruction, and record the requested scope and reason for each deletion. Do not remove and recreate an entry merely to correct its fields.
 
 ## Complete-Audit Invariant
 
@@ -52,21 +54,19 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
    Primary models must serve general-purpose chat or reasoning; text output support or general availability alone does not establish that scope. For OpenAI, exclude purpose-built cybersecurity models such as `gpt-5.6-cyber` and dedicated life-sciences models such as `gpt-rosalind-research` and `gpt-rosalind-discovery`, unless the user explicitly requests that specialist family. Record them in `skip` with the reason `domain-specialized model`, noting separate access approval when documented. Do not copy undocumented context limits or capabilities from an unrelated model merely to add a catalog entry.
 
-   For the Qwen provider, exclude dated or snapshot IDs (such as `qwen3.7-max-2026-05-17` and `qwen3.8-max-0902`) and IDs ending in `-us` from additions. Prefer the corresponding public IDs without those suffixes, such as `qwen3.7-max` and `qwen3.8-max`; family versions remain valid. Record missing excluded candidates in `skip` with the reason `dated/snapshot variant` or `US-region variant`. An explicit user request to clean up existing entries takes precedence over the add-only refresh policy.
+   For the Qwen provider, exclude dated or snapshot IDs (such as `qwen3.7-max-2026-05-17` and `qwen3.8-max-0902`) and IDs ending in `-us` from additions. Prefer the corresponding public IDs without those suffixes, such as `qwen3.7-max` and `qwen3.8-max`; family versions remain valid. Record missing excluded candidates in `skip` with the reason `dated/snapshot variant` or `US-region variant`. Apply these filters only to additions; preserve existing variants unless the human explicitly requests their removal.
 
    For a general model refresh, add only primary LLM/chat/reasoning models. Do not add derived or specialized non-LLM variants just because the provider docs list them, such as TTS, STT, transcription, audio, image, video, realtime, moderation, or batch-only model IDs (`gpt-4o-transcribe`, `gpt-4o-mini-tts`, and similar). Also skip open-weight/checkpoint style IDs that encode parameter scale or architecture details when the provider has productized main model IDs, such as Qwen `qwen3.6-27b`, `qwen3.5-397b-a17b`, `qwen3.5-122b-a10b`, or `qwen3.5-35b-a3b`; prefer `max`, `plus`, `flash`, or other documented main product model IDs instead. Handle those only when the user explicitly asks for that modality/model class or when the provider itself is a modality-specific or open-model provider already maintained for that type.
 
-   Exclude experimental, preview, beta, alpha, test, and similarly unstable model IDs from additions. Exclude models whose official release date is more than one year before the current run date; record each excluded candidate in `skip` with a reason such as `experimental/preview` or `released more than one year ago`. This applies even when the provider still lists the model as available (for example, skip `deepseek-v4-flash-vision-exp`, `hy3-preview`, and `gemini-embedding-001` during a current refresh). Do not remove such models if they already exist locally because this workflow is add-only.
+   Exclude experimental, preview, beta, alpha, test, and similarly unstable model IDs from additions. Exclude models whose official release date is more than one year before the current run date; record each excluded candidate in `skip` with a reason such as `experimental/preview` or `released more than one year ago`. This applies even when the provider still lists the model as available (for example, skip `deepseek-v4-flash-vision-exp`, `hy3-preview`, and `gemini-embedding-001` during a current refresh). Preserve such models if they already exist locally unless the human explicitly requests their removal.
 
    Transcribe exact official model IDs into `candidateModelIds`; do not rely on prose such as "latest models checked." Compare that list mechanically with the local inventory. Add a preset when an official source lists an in-scope model that is absent locally and it belongs to an existing provider. Clone the closest existing preset in the same provider and family, then adjust context, output limit, vision, reasoning, tool calling, response-format, and field-map fields from official docs or the closest local pattern. When the new model is newer or more capable than its clone source, set `insertBefore` to the existing model that it must precede; cloning and display placement are separate decisions.
 
    If a missing candidate is intentionally excluded by the scope rules, put it in `skip` with its exact model ID and a specific reason. The plan is incomplete while any missing candidate is neither added nor skipped.
 
-   Keep every existing preset. Deprecated, retired, unavailable, superseded, preview, experimental, and dated candidate IDs may be noted in the audit summary, but must not be removed by this workflow.
-
 4. Create and apply an update plan.
 
-   For a full refresh, generate the all-provider template without `--provider`, then fill the audit evidence and confirmed additions. Keep every `remove` array empty:
+   For a full refresh, generate the all-provider template without `--provider`, then fill the audit evidence and confirmed changes. Keep every `remove` array empty unless the human explicitly specifies deletions:
 
    ```bash
    node .codex/skills/model-provider-updater/scripts/model_provider_presets.mjs plan-template > /tmp/model-provider-plan.json
@@ -82,16 +82,16 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
    ```
 
    The plan format is documented in `references/plan.example.json`. That file includes an intentionally unregistered `ExampleProvider` shape example, so use `plan-template` for executable plans instead of applying the example file directly. Keep every audited provider in the plan:
-   - Use `auditStatus: "checked"` with empty `add` and `remove` when the provider was checked and no registry change is needed.
-   - Use `auditStatus: "changed"` when adding presets.
+   - Use `auditStatus: "checked"` with empty `add` and `remove` when no helper-managed operation is needed; record any direct configuration edits in `auditNote`.
+   - Use `auditStatus: "changed"` when the plan adds presets or includes human-specified deletions.
    - `auditStatus: "pending"` is template state only and cannot be applied.
    - Fill `catalogStatus`, `auditNote`, `candidateModelIds`, and `skip` for every provider, even when nothing changes.
 
-   `replace` supports top-level provider-model fields only, such as `maxContext`, `maxTokens`, `vision`, `reasoning`, `responseFormatList`, or `fieldMap`. Do not use dotted paths such as `fieldMap.max_tokens`; replace the full top-level object instead.
+   `replace` customizes top-level fields on cloned additions only, such as `maxContext`, `maxTokens`, `vision`, `reasoning`, `responseFormatList`, or `fieldMap`. Do not use dotted paths such as `fieldMap.max_tokens`; replace the full top-level object instead. To correct an existing preset, edit its fields directly in the provider file and record the changes and evidence in `auditNote`; the helper has no update operation for existing entries.
 
    `insertBefore` accepts an exact existing model ID and places the cloned addition before it. Use it to preserve newest-or-most-capable-first ordering; otherwise additions are inserted after `cloneFrom` for backward compatibility.
 
-   The script only edits providers registered by `packages/infrastructure/src/static-data/models/index.ts`, validates the whole plan before writing any file, and errors on incomplete provider coverage, unchecked configured sources, pending states, missing audit notes, duplicate IDs, unaccounted catalog candidates, or missing addition evidence. Although the script can mechanically process removals for legacy workflows, this skill must always submit empty `remove` arrays.
+   The script only edits providers registered by `packages/infrastructure/src/static-data/models/index.ts`, validates the whole plan before writing any file, and errors on incomplete provider coverage, unchecked configured sources, pending states, missing audit notes, duplicate IDs, unaccounted catalog candidates, or missing addition evidence. Its removal capability may be used only for the human-specified deletions allowed by the configuration preservation policy.
 
 5. Validate.
 
@@ -102,12 +102,20 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
    If the full suite is too broad for the change, run the model inventory plus targeted TypeScript validation and state the skipped coverage clearly.
 
+## Pull Request Workflow
+
+For repeated runs, inspect the existing PR for the same model update work before choosing a branch or creating a PR. Reuse its branch and update the same PR while it is open and unmerged; do not create duplicate PRs for follow-up additions or corrections.
+
+If the previous PR has merged or closed, start a fresh branch from the latest upstream default branch and create one new PR only when there are actual file changes. Do not push new work to an old branch as though it updates a merged or closed PR. When an audit produces no file changes, do not create empty commits or duplicate PRs.
+
+Keep the PR title and description aligned with the final changes and validation. Distinguish additions, in-place configuration corrections, and any deletions explicitly requested by the human.
+
 ## Evidence Rules
 
 - Record every official source URL checked, the check date, catalog status, exact candidate model IDs, and an audit note for every provider, including providers with no changes.
 - Do not mark a provider checked until all configured source URLs have been inspected and every missing candidate has an `add` or reasoned `skip` disposition.
 - Treat model catalogs and release notes as complementary evidence. If they conflict because a release is newer than the catalog page, use the newer official release/model page and record the discrepancy in `auditNote`.
-- Do not add removal entries to the plan. Record retirement or deprecation findings only in the run summary when they materially affect users.
+- Add removal entries only for models covered by an explicit human deletion instruction. Record that instruction's scope and the reason; official retirement or deprecation evidence alone is not authorization.
 - Prefer primary API references over marketing pages when fields disagree.
 - When official docs group many modality-specific variants under one family, treat the main public chat/LLM model as the preset target and skip derivative IDs unless the request names that capability.
 - When official docs list both provider-hosted main model IDs and open-weight/checkpoint IDs in one table, target the main hosted IDs and skip parameter-scale checkpoint IDs unless the user explicitly asks to support open-source model names.
@@ -121,7 +129,7 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
 - `inventory`: list registered providers, provider files, model counts, and type counts.
 - `plan-template`: create a JSON update plan skeleton for all or selected providers.
-- `apply-plan`: validate complete provider/source/candidate coverage and mechanically apply cloned additions. Its legacy removal capability is out of scope for this skill.
+- `apply-plan`: validate complete provider/source/candidate coverage and mechanically apply cloned additions or human-specified deletions. Existing configuration fields are edited directly in the provider file.
 - `check-sources`: sanity-check source hint URLs from `references/provider_sources.json`.
 
 Use the script for repeatable mechanics, then review the diff manually before final validation.
