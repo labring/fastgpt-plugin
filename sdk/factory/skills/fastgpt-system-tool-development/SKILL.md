@@ -261,14 +261,17 @@ export default defineToolSet({
 
 ## 返回图片内容（可选）
 
-工具 handler 的返回对象里可以包含 `content` 字段，向 FastGPT 主程序返回结构化图片内容，作为下一轮模型的视觉输入。此时 `content` 应为内容部分数组，每项只能是以下两种之一：
+工具 handler 的返回对象里可以包含 `content` 字段，向 FastGPT 主程序返回结构化图片内容，作为下一轮模型的视觉输入。此时 `content` 应为非空内容部分数组，每项只能是以下两种之一：
 
 - `{ type: 'text', text: string }`：文本内容。
 - `{ type: 'image_url', image_url: { url: string, detail?: 'auto' | 'low' | 'high' } }`：图片内容，`url` 为图片地址。
 
-> **向后兼容（重要）**：`content` 是普通业务字段，SDK 的 wire 层保持任意 JSON 透传，不做强校验。旧插件把字符串、对象或普通数组放在 `content` 里仍可正常工作，主程序会把这些值当作普通文本结果处理。
+> **主程序如何使用 `content`（重要）**：发给模型的 tool 文本始终是 handler 返回值的完整序列化结果，`content` 里的 `text` part **不会**替换这段文本（FastGPT 只取其中的图片 part）。所以业务字段直接放在返回对象顶层即可，不要指望靠 `text` part 给模型讲一句话；`content` 的用途就是携带图片。
 >
-> 只有当你希望图片作为下一轮模型的视觉输入时，才按上述 parts 形状返回 `content`。主程序仅在 `content` 形状合法时把它作为视觉输入，否则回退到普通文本路径；因此不要只放一个孤立的图片链接字符串，也不要在普通文本里夹带图片地址。
+> **向后兼容**：`content` 是普通业务字段，SDK 的 wire 层保持任意 JSON 透传，不做强校验。旧插件把字符串、对象或普通数组放在 `content` 里仍可正常工作，主程序会把这些值当作普通文本结果处理。
+>
+> 只有当你希望图片作为下一轮模型的视觉输入时，才按上述 parts 形状返回 `content`。主程序仅在 `content` 是非空数组且每项都合法时把它作为视觉输入（`detail` 只能是 `auto` / `low` / `high`），否则整组回退到普通文本路径；因此不要只放一个孤立的图片链接字符串，也不要在普通文本里夹带图片地址，更不要混入无法解析的 part（例如自定义对象）——那会让整组图片一起失效。
+
 
 示例：
 
@@ -324,6 +327,7 @@ export default defineTool({
 - handler 成功路径返回值与 `outputSchema` 一致。
 - 返回结构化图片内容时 `outputSchema` 里的 `content` 声明为 `z.array(ToolMessageContentPartSchema)`；旧插件把 `content` 当普通业务字段（字符串/对象/数组）使用仍兼容，无需迁移。
 - 返回图片内容时使用结构化 `content` 字段（`ToolMessageContentPartSchema`），不在文本中夹带图片地址。
+- `content` 数组里不要混入非 text / image_url 的项：主程序按整组校验，任一项不合法会让这组图片一起失效，只回退成文本。
 - 外部调用失败、空响应、超时、鉴权失败都有明确错误。
 - 密钥配置只通过 `secretSchema` 和 `ctx.secrets` 处理。
 - 系统工具根目录存在 `logo.<ext>`。
