@@ -3,21 +3,23 @@ import { z } from 'zod';
 import { I18nStringDTOSchema } from './common.dto';
 
 const PluginSourceDTOSchema = z.string();
-const PluginTagDTOSchema = z.enum([
-  'tools',
-  'search',
-  'multimodal',
-  'communication',
-  'finance',
-  'design',
-  'productivity',
-  'news',
-  'entertainment',
-  'social',
-  'scientific',
-  'other'
-]);
-const PluginTypeDTOSchema = z.enum(['tool']);
+const PluginTagDTOSchema = z
+  .enum([
+    'tools',
+    'search',
+    'multimodal',
+    'communication',
+    'finance',
+    'design',
+    'productivity',
+    'news',
+    'entertainment',
+    'social',
+    'scientific',
+    'other'
+  ])
+  .catch('other');
+const PluginTypeDTOSchema = z.enum(['tool', 'unknown']).catch('unknown');
 
 const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => {

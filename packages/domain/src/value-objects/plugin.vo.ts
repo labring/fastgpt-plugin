@@ -21,9 +21,12 @@ export const PluginTagListSchema = z.array(PluginTagListItemSchema);
 export type PluginTagListItemType = z.infer<typeof PluginTagListItemSchema>;
 export type PluginTagListType = z.infer<typeof PluginTagListSchema>;
 
-export const PluginRuntimeModeSchema = z.enum(['localPool', 'serverless']);
+const rawPluginRuntimeModeSchema = z.enum(['localPool', 'serverless', 'unknown']);
+export const PluginRuntimeModeEnum = rawPluginRuntimeModeSchema.enum;
+export const PluginRuntimeModeSchema = rawPluginRuntimeModeSchema.catch(
+  PluginRuntimeModeEnum.unknown
+);
 export type PluginRuntimeModeType = z.infer<typeof PluginRuntimeModeSchema>;
-export const PluginRuntimeModeEnum = PluginRuntimeModeSchema.enum;
 
 // 用户视角能看到的 Plugin ID，去掉了 etag，因为用户不需要关心 etag，通过 source 来定位唯一插件
 export const UserPluginIdSchema = z.object({

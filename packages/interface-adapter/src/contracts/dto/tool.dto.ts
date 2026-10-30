@@ -8,20 +8,22 @@ import {
 import { SystemVarSchema } from '@domain/value-objects/system-var.vo';
 
 const PluginSourceDTOSchema = z.string();
-const PluginTagDTOSchema = z.enum([
-  'tools',
-  'search',
-  'multimodal',
-  'communication',
-  'finance',
-  'design',
-  'productivity',
-  'news',
-  'entertainment',
-  'social',
-  'scientific',
-  'other'
-]);
+const PluginTagDTOSchema = z
+  .enum([
+    'tools',
+    'search',
+    'multimodal',
+    'communication',
+    'finance',
+    'design',
+    'productivity',
+    'news',
+    'entertainment',
+    'social',
+    'scientific',
+    'other'
+  ])
+  .catch('other');
 
 const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => {

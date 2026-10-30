@@ -2,12 +2,15 @@ import z from 'zod';
 
 import { PluginListItemDTOSchema } from './plugin.dto';
 
-export const PluginDebugSessionStatusDTOSchema = z.enum([
-  'enabled',
-  'connected',
-  'disconnected',
-  'revoked'
-]);
+export const PluginDebugSessionStatusDTOSchema = z
+  .enum([
+    'enabled',
+    'connected',
+    'disconnected',
+    'revoked',
+    'unknown'
+  ])
+  .catch('unknown');
 export type PluginDebugSessionStatusDTO = z.infer<typeof PluginDebugSessionStatusDTOSchema>;
 
 export const PluginDebugSessionCreateRequestDTOSchema = z.object({
