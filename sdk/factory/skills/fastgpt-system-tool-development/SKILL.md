@@ -270,7 +270,7 @@ export default defineToolSet({
 
 > **主程序如何使用 `content`（重要）**：发给模型的 tool 文本始终是 handler 返回值的完整序列化结果，`content` 里的 `text` part **不会**替换这段文本（FastGPT 只取其中的图片 part）。所以业务字段直接放在返回对象顶层即可，不要指望靠 `text` part 给模型讲一句话；`content` 的用途就是携带图片。
 >
-> **图片数量与格式**：单次工具结果只有前 4 张图片会作为视觉输入，超出的部分仍保留在文本里；建议使用 `png` / `jpg` / `jpeg` / `gif` / `webp` / `bmp` 等主流栅格格式，`svg`、`psd` 等格式供应商通常会拒绝，反而让整轮请求失败。
+> **图片数量与格式**：单次工具结果只有前 4 张图片会作为视觉输入，超出的部分仍保留在文本里；只支持 `png` / `jpg` / `jpeg` / `gif` / `webp`（OpenAI 与 Claude 的图片契约），`svg`、`psd`、`bmp` 等格式会被供应商拒绝，反而让整轮请求失败，请先自行转成上面的格式。
 >
 > **内联 data URI**：如果 `image_url.url` 是 `data:<mime>;base64,...`，主程序在把文本发给模型时会把这段 base64 换成占位（图片本身仍通过视觉通道发送），因此不必担心同一张图在上下文里出现两份。
 >
@@ -334,7 +334,7 @@ export default defineTool({
 - 返回结构化图片内容时 `outputSchema` 里的 `content` 声明为 `z.array(ToolMessageContentPartSchema)`；旧插件把 `content` 当普通业务字段（字符串/对象/数组）使用仍兼容，无需迁移。
 - 返回图片内容时使用结构化 `content` 字段（`ToolMessageContentPartSchema`），不在文本中夹带图片地址。
 - `content` 数组里不要混入非 text / image_url 的项：主程序按整组校验，任一项不合法会让这组图片一起失效，只回退成文本。
-- `content` 里的图片不超过 4 张（超出部分只留在文本里），并使用主流栅格格式（png/jpg/jpeg/gif/webp/bmp）；svg / psd 等格式会让供应商拒绝整轮请求。
+- `content` 里的图片不超过 4 张（超出部分只留在文本里），且只支持 png/jpg/jpeg/gif/webp；svg / psd / bmp 等格式会让供应商拒绝整轮请求。
 - 外部调用失败、空响应、超时、鉴权失败都有明确错误。
 - 密钥配置只通过 `secretSchema` 和 `ctx.secrets` 处理。
 - 系统工具根目录存在 `logo.<ext>`。
