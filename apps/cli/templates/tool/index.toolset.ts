@@ -2,32 +2,37 @@ import {
   createToolHandler,
   defineInputSchema,
   defineOutputSchema,
-  defineToolSet,
-  type SecretSchemaMetaType
+  defineSecretSchema,
+  defineToolSet
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
-const secretSchema = z.object({
-  host: z.string().meta({
-    title: 'Host',
+const secretSchema = defineSecretSchema({
+  host: {
+    type: z.string(),
+    title: { en: 'Host', 'zh-CN': '主机' },
     isSecret: false
-  } satisfies SecretSchemaMetaType),
-  port: z.number().meta({
-    title: 'Port',
+  },
+  port: {
+    type: z.number(),
+    title: { en: 'Port', 'zh-CN': '端口' },
     isSecret: false
-  } satisfies SecretSchemaMetaType),
-  username: z.string().meta({
-    title: 'Username',
+  },
+  username: {
+    type: z.string(),
+    title: { en: 'Username', 'zh-CN': '用户名' },
     isSecret: false
-  } satisfies SecretSchemaMetaType),
-  password: z.string().meta({
-    title: 'Password',
+  },
+  password: {
+    type: z.string(),
+    title: { en: 'Password', 'zh-CN': '密码' },
     isSecret: true
-  } satisfies SecretSchemaMetaType),
-  database: z.string().meta({
-    title: 'Database',
+  },
+  database: {
+    type: z.string(),
+    title: { en: 'Database', 'zh-CN': '数据库' },
     isSecret: false
-  } satisfies SecretSchemaMetaType)
+  }
 });
 
 const mysqlHandler = createToolHandler({

@@ -17,8 +17,14 @@ export type OutputFieldDefinition<T extends z.ZodType = z.ZodType> = UiFieldDefi
   isToolParam?: never;
 };
 
+export type SecretFieldDefinition<T extends z.ZodType = z.ZodType> = UiFieldDefinition<T> & {
+  isSecret: boolean;
+  isToolParam?: never;
+};
+
 type FieldDefinition = UiFieldDefinition<z.ZodType> & {
   isToolParam?: boolean;
+  isSecret?: boolean;
 };
 type FieldMap<T extends Record<string, FieldDefinition>> = {
   -readonly [K in keyof T]: T[K]['type'];
@@ -78,6 +84,10 @@ function createSchemaFromFields<const T extends Record<string, FieldDefinition>>
       mergedMetadata.isToolParam = field.isToolParam;
     }
 
+    if (field.isSecret !== undefined) {
+      mergedMetadata.isSecret = field.isSecret;
+    }
+
     shape[key] = field.type.meta(mergedMetadata);
   }
 
@@ -91,6 +101,12 @@ export function defineInputSchema<const T extends Record<string, InputFieldDefin
 }
 
 export function defineOutputSchema<const T extends Record<string, OutputFieldDefinition>>(
+  fields: T
+): z.ZodObject<{ -readonly [K in keyof T]: T[K]['type'] }> {
+  return createSchemaFromFields(fields);
+}
+
+export function defineSecretSchema<const T extends Record<string, SecretFieldDefinition>>(
   fields: T
 ): z.ZodObject<{ -readonly [K in keyof T]: T[K]['type'] }> {
   return createSchemaFromFields(fields);
