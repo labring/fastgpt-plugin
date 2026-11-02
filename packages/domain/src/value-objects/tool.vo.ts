@@ -12,7 +12,8 @@ import { SystemVarSchema } from './system-var.vo';
  * 需要模型看到业务字段时,把字段放在返回对象顶层;content 主要用于携带图片。
  *
  * 主程序消费规则:单次结果最多取前 4 张图片作为视觉输入,超出部分仅保留在文本里;
- * 建议只使用 png/jpg/jpeg/gif/webp/bmp 等主流栅格格式,其它格式供应商通常会拒绝;
+ * 只支持 png/jpg/jpeg/gif/webp(OpenAI 与 Claude 的图片契约),svg/psd/bmp 等格式
+ * 会被供应商拒绝,需要插件自己先转码;
  * `data:` 内联图片在把文本发给模型时会被主程序替换成占位,图片本身仍照常发送。
  *
  * 该 schema 供插件作者在 outputSchema 中声明使用,不参与 wire 层强校验。
