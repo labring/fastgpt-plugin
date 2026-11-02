@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { PluginTagSchema } from '@domain/entities/plugin-base.entity';
 import {
   ToolDetailSchema,
   ToolListChildItemSchema,
@@ -8,20 +9,7 @@ import {
 import { SystemVarSchema } from '@domain/value-objects/system-var.vo';
 
 const PluginSourceDTOSchema = z.string();
-const PluginTagDTOSchema = z.enum([
-  'tools',
-  'search',
-  'multimodal',
-  'communication',
-  'finance',
-  'design',
-  'productivity',
-  'news',
-  'entertainment',
-  'social',
-  'scientific',
-  'other'
-]);
+const PluginTagDTOSchema = PluginTagSchema;
 
 const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => {
