@@ -172,9 +172,10 @@ describe('create command', () => {
     expect(indexContent).toContain('outputSchema: defineOutputSchema({');
     expect(indexContent).toContain("title: { en: 'SQL Query', 'zh-CN': 'SQL 查询' }");
     expect(indexContent).toContain("title: { en: 'Query Results', 'zh-CN': '查询结果' }");
+    expect(indexContent).toContain('secretSchema = defineSecretSchema({');
     expect(indexContent).not.toContain('InputSchemaMetaType');
     expect(indexContent).not.toContain('OutputSchemaMetaType');
-    expect(indexContent).toContain('type SecretSchemaMetaType');
+    expect(indexContent).not.toContain('SecretSchemaMetaType');
     expect(indexContent).toContain('isSecret: true');
 
     const packageJson = JSON.parse(

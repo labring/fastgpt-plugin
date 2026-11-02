@@ -6,7 +6,7 @@ This file is the release-notes index for FastGPT Plugin.
 
 - Removed plugin-level and schema-field `toolDescription`; legacy inputs are ignored without overwriting `description`, and no database migration is required.
 
-- SDK factory now exports `defineInputSchema()` and `defineOutputSchema()` to build typed Zod objects from localized field descriptors.
+- SDK factory now exports `defineInputSchema()`, `defineOutputSchema()`, and `defineSecretSchema()` to build typed Zod objects from localized field descriptors.
 
 - Plugin record reads normalize legacy plain-string or partial i18n metadata in memory without a database migration; new plugin manifests remain bilingual.
 
