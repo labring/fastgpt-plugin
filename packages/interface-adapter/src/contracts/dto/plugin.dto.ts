@@ -1,25 +1,12 @@
 import { z } from 'zod';
 
+import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin-base.entity';
+
 import { I18nStringDTOSchema } from './common.dto';
 
 const PluginSourceDTOSchema = z.string();
-const PluginTagDTOSchema = z
-  .enum([
-    'tools',
-    'search',
-    'multimodal',
-    'communication',
-    'finance',
-    'design',
-    'productivity',
-    'news',
-    'entertainment',
-    'social',
-    'scientific',
-    'other'
-  ])
-  .catch('other');
-const PluginTypeDTOSchema = z.enum(['tool', 'unknown']).catch('unknown');
+const PluginTagDTOSchema = PluginTagSchema;
+const PluginTypeDTOSchema = PluginTypeSchema;
 
 const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => {
