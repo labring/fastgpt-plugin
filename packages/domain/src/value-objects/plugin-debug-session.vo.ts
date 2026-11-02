@@ -21,12 +21,17 @@ export const PluginDebugSessionSourceSchema = z
   });
 export type PluginDebugSessionSource = z.infer<typeof PluginDebugSessionSourceSchema>;
 
-export const PluginDebugSessionStatusSchema = z.enum([
+const rawPluginDebugSessionStatusSchema = z.enum([
   'enabled',
   'connected',
   'disconnected',
-  'revoked'
+  'revoked',
+  'unknown'
 ]);
+export const PluginDebugSessionStatusEnum = rawPluginDebugSessionStatusSchema.enum;
+export const PluginDebugSessionStatusSchema = rawPluginDebugSessionStatusSchema.catch(
+  PluginDebugSessionStatusEnum.unknown
+);
 export type PluginDebugSessionStatus = z.infer<typeof PluginDebugSessionStatusSchema>;
 
 export const PluginDebugSessionSchema = z.object({
