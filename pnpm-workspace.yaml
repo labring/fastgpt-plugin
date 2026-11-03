@@ -11,5 +11,5 @@ catalog:
   "@fastgpt-sdk/invoke": ^0.0.1-alpha.2
   "@fastgpt-sdk/storage": ^0.9.1
   "typescript": "^5.9.3"
-  "zod": "^4"
+  "zod": "4.1.12"
   "tsdown": "^0.21.10"

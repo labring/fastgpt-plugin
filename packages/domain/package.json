@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "zod": "^4"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:"
