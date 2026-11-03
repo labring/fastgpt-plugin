@@ -8,9 +8,9 @@ import z from 'zod';
 
 import type { PluginTypeType } from '@domain/entities/plugin-base.entity';
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
-import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
 import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { PluginTypeEventNames } from '@domain/ports/plugin/plugin-runtime-manager.port';
+import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
 import { PluginStreamMessageSchema, type PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
@@ -173,6 +173,9 @@ export async function runDebugPlugin({
   const targetTool = snapshot.type === 'tool' ? pickTargetTool(snapshot, toolId) : undefined;
   const mergedSystemVar = createDebugSystemVar(snapshot, targetTool?.id ?? '', systemVar);
   const resolvedEventName = eventName ?? PluginTypeEventNames[snapshot.type][0];
+  if (!resolvedEventName) {
+    throw new Error(`Unsupported plugin type for local debugging: ${snapshot.type}`);
+  }
 
   const response = await runtime.invokePlugin<
     {

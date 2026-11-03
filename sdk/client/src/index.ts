@@ -79,6 +79,8 @@ export { pluginTagList } from './types';
  * 这里额外导出 schema（而不只是 type），是因为宿主（FastGPT）需要在 API 边界用 `parse` 做运行时
  * 校验；只导出 type 会让宿主不得不手写一份同构 schema，两份契约会漂移。
  */
+export { ModerationDetailSchema } from '@domain/ports/plugin/moderation.port';
+export type { ModerationCheckInputType } from '@domain/value-objects/moderation.vo';
 export {
   ModerationCheckInputSchema,
   ModerationCheckPayloadSchema,
@@ -88,14 +90,6 @@ export {
   ModerationResultSchema,
   ModerationVerdictSchema
 } from '@domain/value-objects/moderation.vo';
-export type {
-  ModerationCheckInputType,
-  ModerationHitType,
-  ModerationLabelType,
-  ModerationResultType,
-  ModerationVerdictType
-} from '@domain/value-objects/moderation.vo';
-export { ModerationDetailSchema } from '@domain/ports/plugin/moderation.port';
 
 // PKG 解析
 export type {
