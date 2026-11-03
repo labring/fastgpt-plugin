@@ -10,6 +10,7 @@ import {
   type ToolHandlerDefinition
 } from './tool-factory';
 
+export { configurePluginProxy, hasProxyEnv } from './proxy';
 export { createToolHandler };
 
 export type {

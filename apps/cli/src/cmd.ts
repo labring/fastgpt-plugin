@@ -5,6 +5,7 @@ import { DebugCommand } from '@fastgpt-plugin/cli/commands/debug';
 import { DevCommand } from '@fastgpt-plugin/cli/commands/dev';
 import { PackCommand } from '@fastgpt-plugin/cli/commands/pack';
 import { CLI_NAME, CLI_VERSION } from '@fastgpt-plugin/cli/constants';
+import { configureCliProxy } from '@fastgpt-plugin/cli/proxy';
 import { Command } from 'commander';
 
 function createProgram(): Command {
@@ -31,6 +32,7 @@ function createProgram(): Command {
  * @param argv 可选，用于测试时注入参数（如 ['node', 'cli', '--version']）
  */
 export async function run(argv?: string[]): Promise<void> {
+  configureCliProxy();
   await createProgram().parseAsync(argv ?? process.argv);
 
   return;

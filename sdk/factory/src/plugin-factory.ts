@@ -2,6 +2,7 @@ import { PluginRuntimeModeEnum, type PluginRuntimeModeType } from '@domain/value
 import { createCurrentProcessPluginChannel } from '@infrastructure/plugin/plugin-runtime/drivers/channel/ipc';
 import { PluginChannelClientMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
 
+import { configurePluginProxy } from './proxy';
 import {
   LOCAL_DEBUG_RUNTIME_GLOBAL_KEY,
   type LocalDebugRuntimeLike,
@@ -37,6 +38,7 @@ export class PluginFactory {
 
   protected async init() {
     this.checkRuntimeMode();
+    configurePluginProxy();
     // 1. 注册监听
     // 2. 发送 ready 信号
     if (this.mode === 'localPool') {

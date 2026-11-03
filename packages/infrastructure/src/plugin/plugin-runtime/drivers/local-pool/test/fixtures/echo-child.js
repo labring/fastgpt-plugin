@@ -63,6 +63,10 @@ process.on('message', (message) => {
         home: process.env.HOME,
         tmpdir: process.env.TMPDIR,
         parentSecret: process.env.LOCAL_POOL_PARENT_SECRET,
+        httpProxy: process.env.HTTP_PROXY,
+        httpsProxy: process.env.HTTPS_PROXY,
+        noProxy: process.env.NO_PROXY,
+        allProxy: process.env.ALL_PROXY,
         scratchWrite,
         deniedReadErrorCode,
         childProcessErrorCode
