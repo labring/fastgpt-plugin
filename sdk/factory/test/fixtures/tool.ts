@@ -64,5 +64,5 @@ const tool = defineTool({
   }
 });
 
-console.log(tool.getSecretSchema().toJSONSchema());
+console.log(z.toJSONSchema(tool.getSecretSchema()));
 console.log(tool.getToolHandler());

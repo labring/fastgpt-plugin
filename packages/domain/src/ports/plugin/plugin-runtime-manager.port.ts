@@ -102,7 +102,8 @@ export interface PluginRuntimeManagerPort<
 /** 各插件类型允许调用的事件。新增插件类型时必须在这里补一行 */
 export const PluginTypeEventNames = {
   tool: ['run'],
-  moderation: ['check']
+  moderation: ['check'],
+  unknown: []
 } as const satisfies Record<PluginTypeType, readonly PluginInvokeEventNameType[]>;
 
 /** 该插件类型是否允许调用该事件（运行时门禁的唯一来源） */
