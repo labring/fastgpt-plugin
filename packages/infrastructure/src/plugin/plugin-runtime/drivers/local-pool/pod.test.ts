@@ -433,6 +433,48 @@ describe('PluginPod', () => {
       expect(onStderr).toHaveBeenCalledWith('stderr-first\nstderr-second\n');
     });
   });
+
+  it('forwards proxy environment variables to the child process', async () => {
+    process.env.HTTP_PROXY = 'http://127.0.0.1:8080';
+    process.env.HTTPS_PROXY = 'https://127.0.0.1:8443';
+    process.env.NO_PROXY = 'localhost,127.0.0.1';
+    process.env.ALL_PROXY = 'socks5://127.0.0.1:1080';
+
+    try {
+      const pod = createPod();
+      await pod.start();
+
+      const result = await pod.invoke<
+        {
+          mode: string;
+        },
+        {
+          httpProxy?: string;
+          httpsProxy?: string;
+          noProxy?: string;
+          allProxy?: string;
+        },
+        false
+      >({
+        eventName: 'run',
+        payload: {
+          mode: 'security-context'
+        },
+        returnStream: false,
+        options: { timeout: 1000 }
+      });
+
+      expect(result.httpProxy).toBe('http://127.0.0.1:8080');
+      expect(result.httpsProxy).toBe('https://127.0.0.1:8443');
+      expect(result.noProxy).toBe('localhost,127.0.0.1');
+      expect(result.allProxy).toBe('socks5://127.0.0.1:1080');
+    } finally {
+      delete process.env.HTTP_PROXY;
+      delete process.env.HTTPS_PROXY;
+      delete process.env.NO_PROXY;
+      delete process.env.ALL_PROXY;
+    }
+  });
 });
 
 function getBufferedIncomingStreamCount(pod: PluginPod): number {

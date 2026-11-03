@@ -127,6 +127,9 @@ importers:
       tsdown:
         specifier: 'catalog:'
         version: 0.21.10(typescript@5.9.3)
+      undici:
+        specifier: ^7.29.0
+        version: 7.29.0
       yaml:
         specifier: ^2.8.3
         version: 2.9.0
@@ -340,6 +343,9 @@ importers:
 
   packages/shared:
     dependencies:
+      undici:
+        specifier: ^7.29.0
+        version: 7.29.0
       zod:
         specifier: 'catalog:'
         version: 4.3.6
@@ -379,6 +385,9 @@ importers:
 
   sdk/factory:
     dependencies:
+      undici:
+        specifier: ^7.29.0
+        version: 7.29.0
       zod:
         specifier: 'catalog:'
         version: 4.3.6
