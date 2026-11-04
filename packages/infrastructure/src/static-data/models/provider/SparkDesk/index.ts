@@ -77,6 +77,19 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'spark-x2.6',
+      maxContext: 1000000,
+      maxTokens: 256000,
+      quoteMaxToken: 250000,
+      maxTemperature: 1,
+      vision: false,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      responseFormatList: ['text', 'json_object', 'json_schema']
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'spark-x2.5',
       maxContext: 256000,
       maxTokens: 256000,
