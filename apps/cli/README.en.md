@@ -51,7 +51,7 @@ npx @fastgpt-plugin/cli --verbose check --entry . --output ./dist
   - Skips bundling some dependencies in the test environment, making builds faster and more stable.
 - **Plugin scaffolding**
   - Provides the `create` command for generating single-tool or tool-suite projects.
-  - Templates include `index.ts`, `package.json`, `tsconfig.json`, `vitest.config.ts`, `README.md`, and `logo.svg`.
+  - Templates include `index.ts`, `package.json`, `tsconfig.json`, `vitest.config.ts`, `README.md`, localized README samples (`README.en.md`, `README.zh-CN.md`), and `logo.svg`.
 - **Local debugging**
   - Provides the `debug` command to inspect plugin and child-tool information.
   - Supports running tools directly, passing input/secrets/systemVar files, and simulating `uploadFile` with a local directory.

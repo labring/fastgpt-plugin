@@ -49,7 +49,7 @@ npx @fastgpt-plugin/cli --verbose check --entry . --output ./dist
   - 在测试环境下跳过对部分依赖的打包，构建更快更稳定
 - **插件脚手架**
   - 提供 `create` 命令生成单工具或工具集项目
-  - 模板包含 `index.ts`、`package.json`、`tsconfig.json`、`vitest.config.ts`、`README.md` 和 `logo.svg`
+  - 模板包含 `index.ts`、`package.json`、`tsconfig.json`、`vitest.config.ts`、`README.md`、多语言 README 样例（`README.zh-CN.md`、`README.en.md`）和 `logo.svg`
 - **本地调试**
   - 提供 `debug` 命令查看插件和子工具信息
   - 支持直接运行工具、传入 input/secrets/systemVar 文件，并用本地目录模拟 `uploadFile`
