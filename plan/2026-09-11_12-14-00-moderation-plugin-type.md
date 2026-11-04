@@ -275,9 +275,8 @@ const secretSchema = z.object({
 - **provider 原始响应不进标准结构**：排障由 provider 插件自己打日志（日志不得包含 content 全文与
   secrets），避免把大响应体跨进程复制。
 - **不新增 `PluginTagSchema` 取值**：审查插件通过 `GET /plugins?types=moderation` 发现，不依赖 tag。
-- **A1 的流帧改名是对外 breaking change（已按此落地）**：`sdk/client` 与 `sdk/factory` 的公开类型名
-  由 `Tool*` 改为 `Plugin*`，线格式不变，两个包按 breaking 升到 `2.0.0`，CLI 模板依赖随之指向
-  `^2.0.0`。
+- **A1 的流帧改名是对外 breaking change（延续预发布版本线）**：`sdk/client` 与 `sdk/factory` 的公开类型名
+  由 `Tool*` 改为 `Plugin*`，线格式不变，两个包按当前预发布线发布为 `1.2.0-alpha.4`，CLI 发布为 `0.2.2-alpha.5`（模板依赖随之同步）。
 
 ## 另开计划的范围
 

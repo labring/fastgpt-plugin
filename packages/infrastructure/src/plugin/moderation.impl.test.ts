@@ -149,6 +149,34 @@ describe('ModerationManager.check', () => {
 
     expect(err?.code).toBe('plugin.runtime.plugin_not_found');
   });
+
+  it('redacts raw content when plugin runtime invocation fails', async () => {
+    invoke.mockResolvedValue(
+      failureResult(new Error('runtime crashed'))
+    );
+
+    const [, err] = await createManager().check(
+      checkInput({
+        input: {
+          content: 'sensitive secret text',
+          sessionId: 'session-1',
+          partial: true
+        }
+      })
+    );
+
+    expect(err?.data).toMatchObject({
+      pluginId: 'moderation-a',
+      source: 'system',
+      version: '1.0.0',
+      input: {
+        sessionId: 'session-1',
+        partial: true,
+        contentLength: 21
+      }
+    });
+    expect((err?.data as { input?: Record<string, unknown> })?.input).not.toHaveProperty('content');
+  });
 });
 
 describe('ModerationManager.detail', () => {

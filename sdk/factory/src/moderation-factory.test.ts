@@ -1,13 +1,12 @@
+import {
+  createLocalDebugRuntime,
+  setCurrentLocalDebugRuntime
+} from '@fastgpt-plugin/cli/debug/runtime';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import z from 'zod';
 
 import { ModerationResultSchema } from '@domain/value-objects/moderation.vo';
 import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
-
-import {
-  createLocalDebugRuntime,
-  setCurrentLocalDebugRuntime
-} from '../../../apps/cli/src/debug/runtime';
 
 import {
   defineModeration,
@@ -217,6 +216,22 @@ describe('ModerationFactory', () => {
     expect(parsed.verdict).toBe('error');
     expect(parsed.errorMessage).toBe('upstream timeout');
     expect(parsed.hits).toEqual([]);
+  });
+
+  it('rejects an error verdict without errorMessage', async () => {
+    const messages = await runCheck({
+      provider: {
+        name: 'keyword',
+        check: async () => ({
+          verdict: 'error',
+          hits: []
+        })
+      },
+      payload: { content: 'x' }
+    });
+
+    expect(messages[0]?.type).toBe('error');
+    expect(String(messages[0]?.data)).toContain('errorMessage');
   });
 
   it('types ctx.secrets from the declared secretSchema, and as an untyped record otherwise', async () => {
