@@ -59,25 +59,36 @@ export const ModerationHitSchema = z.object({
 });
 export type ModerationHitType = z.infer<typeof ModerationHitSchema>;
 
-export const ModerationResultSchema = z.object({
-  /** 唯一的权威裁决。`hits` 是明细，不含逐项档位 */
-  verdict: ModerationVerdictSchema,
-  /**
-   * 全部命中词的并集去重（保持首次出现顺序），由 factory 从 `hits[].keywords` 派生后覆盖填写。
-   * 语义无歧义，因此由框架统一派生，避免不同适配器有的给有的不给。
-   */
-  keywords: z.array(z.string()),
-  /** 逐项命中明细。本层不消费，交调用方定位与人工复核 */
-  hits: z.array(ModerationHitSchema),
-  /** `manifest.meta.provider` 回声，由 factory 权威填充 */
-  provider: z.string(),
-  requestId: z.string().optional(),
-  /**
-   * `verdict === 'error'` 时必填：provider 无法判定的原因。
-   * 不得包含 secrets 或完整上游响应。
-   */
-  errorMessage: z.string().optional()
-}).strict();
+export const ModerationResultSchema = z
+  .object({
+    /** 唯一的权威裁决。`hits` 是明细，不含逐项档位 */
+    verdict: ModerationVerdictSchema,
+    /**
+     * 全部命中词的并集去重（保持首次出现顺序），由 factory 从 `hits[].keywords` 派生后覆盖填写。
+     * 语义无歧义，因此由框架统一派生，避免不同适配器有的给有的不给。
+     */
+    keywords: z.array(z.string()),
+    /** 逐项命中明细。本层不消费，交调用方定位与人工复核 */
+    hits: z.array(ModerationHitSchema),
+    /** `manifest.meta.provider` 回声，由 factory 权威填充 */
+    provider: z.string(),
+    requestId: z.string().optional(),
+    /**
+     * `verdict === 'error'` 时必填：provider 无法判定的原因。
+     * 不得包含 secrets 或完整上游响应。
+     */
+    errorMessage: z.string().optional()
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.verdict === 'error' && (!value.errorMessage || value.errorMessage.trim().length === 0)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['errorMessage'],
+        message: 'errorMessage is required when verdict is error'
+      });
+    }
+  });
 export type ModerationResultType = z.infer<typeof ModerationResultSchema>;
 
 export const ModerationCheckInputSchema = z.object({

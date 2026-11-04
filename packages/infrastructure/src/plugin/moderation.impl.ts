@@ -210,9 +210,13 @@ export class ModerationManager implements ModerationManagerPort {
     });
 
     if (invokeErr) {
+      const { content: _content, ...redactedInput } = checkInput;
       return failureResult(
         toPluginInvokeError(invokeErr.error, {
-          input: checkInput,
+          input: {
+            ...redactedInput,
+            contentLength: checkInput.content.length
+          },
           pluginId: plugin.pluginId,
           source: normalizedSource,
           version: plugin.version
