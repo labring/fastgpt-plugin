@@ -160,16 +160,17 @@ import {
   createToolHandler,
   defineInputSchema,
   defineOutputSchema,
-  defineTool,
-  type SecretSchemaMetaType
+  defineSecretSchema,
+  defineTool
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
-const secretSchema = z.object({
-  apiKey: z.string().min(1).meta({
-    title: 'API Key',
+const secretSchema = defineSecretSchema({
+  apiKey: {
+    type: z.string().min(1),
+    title: { en: 'API Key', 'zh-CN': 'API 密钥' },
     isSecret: true
-  } satisfies SecretSchemaMetaType)
+  }
 });
 
 const handler = createToolHandler({
@@ -216,7 +217,7 @@ export default defineTool({
 });
 ```
 
-`defineInputSchema()` 和 `defineOutputSchema()` 接收字段描述对象，并返回普通 Zod object，可直接传给 `createToolHandler()`。每个字段的 `type` 是 Zod schema 实例，`title` 必须提供 `en`、`zh-CN`，可选提供 `zh-Hant`；`description` 是可选的本地化 UI 与工具说明。输入字段还可设置可选 boolean `isToolParam`（包括 `false`）。旧输入 Schema 字段上的 `toolDescription` 仅在未显式设置 `isToolParam` 时用于推导为 `true`，显式值优先；它不会覆盖 `description`，FastGPT 也不会将其作为文案使用。helper 生成英文普通 `title` / `description` 与完整 `x-i18n`，并保留 schema 上其他 `.meta()` metadata；不会修改原 schema。`createToolHandler()` 仍使用普通 Zod object，默认会剥离未知键，需要严格校验时可自行调用 `.strict()`。
+`defineInputSchema()`、`defineOutputSchema()` 和 `defineSecretSchema()` 接收字段描述对象，并返回普通 Zod object，可直接传给 `createToolHandler()`。每个字段的 `type` 是 Zod schema 实例，`title` 必须提供 `en`、`zh-CN`，可选提供 `zh-Hant`；`description` 是可选的本地化 UI 与工具说明。输入字段还可设置可选 boolean `isToolParam`（包括 `false`）。密钥字段必须设置 boolean `isSecret`（加密存储标记为 `true`），不支持 `isToolParam`。旧输入 Schema 字段上的 `toolDescription` 仅在未显式设置 `isToolParam` 时用于推导为 `true`，显式值优先；它不会覆盖 `description`，FastGPT 也不会将其作为文案使用。helper 生成英文普通 `title` / `description` 与完整 `x-i18n`，并保留 schema 上其他 `.meta()` metadata；不会修改原 schema。`createToolHandler()` 仍使用普通 Zod object，默认会剥离未知键，需要严格校验时可自行调用 `.strict()`。
 
 字段可以嵌套组合，也可以作为数组元素：
 
@@ -236,8 +237,8 @@ const outputSchema = defineOutputSchema({
 
 核心规则：
 
-- 输入、输出字段分别使用 `defineInputSchema()`、`defineOutputSchema()`，其字段 `type` 为 Zod schema，`title` 必填且包含 `en` 与 `zh-CN`；可选 `description` 为本地化 UI 与工具说明。输入还支持可选 boolean `isToolParam`。
-- 密钥字段继续使用 `.meta({ ... } satisfies SecretSchemaMetaType)`；高级 metadata 也可直接通过 Zod `.meta()` 设置，敏感字段设置 `isSecret: true`。
+- 输入、输出和密钥字段优先分别使用 `defineInputSchema()`、`defineOutputSchema()` 和 `defineSecretSchema()`，其字段 `type` 为 Zod schema，`title` 必填且包含 `en` 与 `zh-CN`；可选 `description` 为本地化 UI 与工具说明。输入支持可选 boolean `isToolParam`；密钥字段必须包含 boolean `isSecret`。
+- 高级 metadata 可直接通过 Zod `.meta()` 设置；手写 `z.object()` 密钥时使用 `SecretSchemaMetaType`。
 - 外部 API 错误需要转成可定位的错误信息，同时避免输出密钥、令牌和完整敏感响应。
 - 需要调用宿主文件上传能力时，使用 `ctx.invoke.uploadFile()`，并优先保留返回的 `err`。
 - 需要向用户展示进度时，使用 `ctx.streamResponse()`。

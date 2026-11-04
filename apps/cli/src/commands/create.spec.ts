@@ -102,7 +102,7 @@ describe('create command', () => {
     expect(pkgJson.name).toBe(normalizedName);
     expect(pkgJson.description).toBe(description);
     expect(pkgJson.devDependencies['@fastgpt-plugin/cli']).toBe('^0.2.0');
-    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-alpha.3');
+    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-alpha.4');
     expect(Object.values(pkgJson.devDependencies)).not.toContain('catalog:');
     expect(pkgJson.scripts.dev).toBe('fastgpt-plugin dev . --watch');
     expect(pkgJson.scripts['debug:run']).toContain('{"delay":0}');
@@ -182,9 +182,10 @@ describe('create command', () => {
     expect(indexContent).toContain('outputSchema: defineOutputSchema({');
     expect(indexContent).toContain("title: { en: 'SQL Query', 'zh-CN': 'SQL 查询' }");
     expect(indexContent).toContain("title: { en: 'Query Results', 'zh-CN': '查询结果' }");
+    expect(indexContent).toContain('secretSchema = defineSecretSchema({');
     expect(indexContent).not.toContain('InputSchemaMetaType');
     expect(indexContent).not.toContain('OutputSchemaMetaType');
-    expect(indexContent).toContain('type SecretSchemaMetaType');
+    expect(indexContent).not.toContain('SecretSchemaMetaType');
     expect(indexContent).toContain('isSecret: true');
 
     const packageJson = JSON.parse(

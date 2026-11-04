@@ -160,16 +160,17 @@ import {
   createToolHandler,
   defineInputSchema,
   defineOutputSchema,
-  defineTool,
-  type SecretSchemaMetaType
+  defineSecretSchema,
+  defineTool
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
-const secretSchema = z.object({
-  apiKey: z.string().min(1).meta({
-    title: 'API Key',
+const secretSchema = defineSecretSchema({
+  apiKey: {
+    type: z.string().min(1),
+    title: { en: 'API Key', 'zh-CN': 'API 密钥' },
     isSecret: true
-  } satisfies SecretSchemaMetaType)
+  }
 });
 
 const handler = createToolHandler({
@@ -216,7 +217,7 @@ export default defineTool({
 });
 ```
 
-`defineInputSchema()` and `defineOutputSchema()` accept field descriptor objects and return ordinary Zod objects that can be passed directly to `createToolHandler()`. Each field's `type` is a Zod schema instance, and `title` must include `en` and `zh-CN`, with optional `zh-Hant`; `description` is optional localized UI and tool-description text. Input fields additionally support optional boolean `isToolParam`, including `false`. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text. The helpers generate English plain `title` / `description` values and full `x-i18n` metadata, preserve other `.meta()` metadata on the schema, and do not mutate the source schema. `createToolHandler()` still consumes ordinary Zod objects, whose default behavior strips unknown keys; call `.strict()` on the returned object when strict validation is desired.
+`defineInputSchema()`, `defineOutputSchema()`, and `defineSecretSchema()` accept field descriptor objects and return ordinary Zod objects that can be passed directly to `createToolHandler()`. Each field's `type` is a Zod schema instance, and `title` must include `en` and `zh-CN`, with optional `zh-Hant`; `description` is optional localized UI and tool-description text. Input fields additionally support optional boolean `isToolParam`, including `false`. Secret fields require boolean `isSecret` (set to `true` for encrypted storage) and do not support `isToolParam`. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text. The helpers generate English plain `title` / `description` values and full `x-i18n` metadata, preserve other `.meta()` metadata on the schema, and do not mutate the source schema. `createToolHandler()` still consumes ordinary Zod objects, whose default behavior strips unknown keys; call `.strict()` on the returned object when strict validation is desired.
 
 Fields compose when nested or used as array elements:
 
@@ -236,8 +237,8 @@ const outputSchema = defineOutputSchema({
 
 Core rules:
 
-- Define input and output fields with `defineInputSchema()` and `defineOutputSchema()`. Each field's `type` is a Zod schema, and its required `title` includes `en` and `zh-CN`; optional `description` is localized UI and tool-description text. Input fields also support optional boolean `isToolParam`.
-- Continue to define secret fields with `.meta({ ... } satisfies SecretSchemaMetaType)`; advanced metadata can also use Zod `.meta()`. Set `isSecret: true` for sensitive fields.
+- Define input, output, and secret fields with `defineInputSchema()`, `defineOutputSchema()`, and `defineSecretSchema()`. Each field's `type` is a Zod schema, and its required `title` includes `en` and `zh-CN`; optional `description` is localized UI and tool-description text. Input fields support optional boolean `isToolParam`; secret fields require boolean `isSecret`.
+- Advanced metadata can use Zod `.meta()` directly. Low-level `SecretSchemaMetaType` remains available when authoring `z.object()` schemas manually.
 - Convert external API errors into actionable messages and avoid exposing secrets, tokens, or complete sensitive responses.
 - Use `ctx.invoke.uploadFile()` when host file upload is needed, and prefer preserving the returned `err`.
 - Use `ctx.streamResponse()` when progress should be shown to users.

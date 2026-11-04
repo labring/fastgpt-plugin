@@ -60,12 +60,13 @@ npx @fastgpt-plugin/cli pack --entry <plugin-directory> --dist <plugin-directory
 - 单工具使用 `defineTool()`。
 - 多个相关工具组成一个插件时使用 `defineToolSet()`。
 - 每个 handler 用 `createToolHandler()` 定义。
-- `inputSchema` 和 `outputSchema` 分别使用 `defineInputSchema()`、`defineOutputSchema()`，返回可直接交给 `createToolHandler()` 的普通 Zod object。
+- `inputSchema`、`outputSchema` 和 `secretSchema` 分别使用 `defineInputSchema()`、`defineOutputSchema()` 和 `defineSecretSchema()`，返回可直接交给 `createToolHandler()` 的普通 Zod object。
 - 每个字段 descriptor 的 `type` 是 Zod schema 实例；`title` 必须包含 `en`、`zh-CN`，可选包含 `zh-Hant`；`description` 是可选 UI 文案。
 - 输入 descriptor 额外支持可选 boolean `isToolParam`（包括 `false`）；`description` 是字段 UI 与工具说明的唯一来源。旧输入 Schema 属性上的 `toolDescription` 仅在未显式设置 `isToolParam` 时推导为 `true`，显式值优先；它不会覆盖 `description`，FastGPT 不会将其作为文案使用。
+- 密钥 descriptor 必须提供 boolean `isSecret`（需要加密存储的字段标记为 `true`），不支持 `isToolParam`。
 - helper 生成英文普通 `title` / `description` 和完整 `x-i18n` 多语言对象，保留 schema 其他 `.meta()` metadata，不修改源 schema。未知键默认 strip；需要严格校验时可对返回对象调用 `.strict()`。
 - 字段可嵌套组合或作为数组元素，例如 `type: z.array(defineOutputSchema({ label: { type: z.string(), title: { en: 'Label', 'zh-CN': '标签' } } }))`。
-- secret 和高级 metadata 仍可使用 `.meta()`；`secretSchema` 字段使用 `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)`，需要加密存储的字段标记为 `isSecret: true`。
+- 高级 metadata 仍可使用低层 `.meta()`；手动书写 `z.object()` 时，密钥字段使用 `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)`。
 - handler 返回值必须匹配 `outputSchema`。
 
 manifest 至少包含：
@@ -186,16 +187,17 @@ import {
   createToolHandler,
   defineInputSchema,
   defineOutputSchema,
-  defineToolSet,
-  type SecretSchemaMetaType
+  defineSecretSchema,
+  defineToolSet
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
-const secretSchema = z.object({
-  apiKey: z.string().min(1).meta({
-    title: 'API Key',
+const secretSchema = defineSecretSchema({
+  apiKey: {
+    type: z.string().min(1),
+    title: { en: 'API Key', 'zh-CN': 'API 密钥' },
     isSecret: true
-  } satisfies SecretSchemaMetaType)
+  }
 });
 
 const searchHandler = createToolHandler({

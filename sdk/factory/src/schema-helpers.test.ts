@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import z from 'zod';
 
-import { createToolHandler, defineInputSchema, defineOutputSchema } from './index';
+import { createToolHandler, defineInputSchema, defineOutputSchema, defineSecretSchema } from './index';
 
 const text = (en: string, zhCN: string, zhHant?: string) => ({
   en,
@@ -147,6 +147,10 @@ describe('schema definition helpers', () => {
     const outputSchema = defineOutputSchema({
       count: { type: z.number(), title: text('Count', '计数') }
     });
+    const secretSchema = defineSecretSchema({
+      apiKey: { type: z.string().min(1), title: text('API Key', '密钥'), isSecret: true },
+      endpoint: { type: z.string().url().optional(), title: text('Endpoint', '端点'), isSecret: false }
+    });
 
     expectTypeOf<z.input<typeof inputSchema>>().toEqualTypeOf<{
       query: string;
@@ -164,15 +168,75 @@ describe('schema definition helpers', () => {
     }>();
     expectTypeOf<z.input<typeof outputSchema>>().toEqualTypeOf<{ count: number }>();
     expectTypeOf<z.output<typeof outputSchema>>().toEqualTypeOf<{ count: number }>();
+    expectTypeOf<z.input<typeof secretSchema>>().toEqualTypeOf<{
+      apiKey: string;
+      endpoint?: string | undefined;
+    }>();
+    expectTypeOf<z.output<typeof secretSchema>>().toEqualTypeOf<{
+      apiKey: string;
+      endpoint?: string | undefined;
+    }>();
 
     const handler = createToolHandler({
       inputSchema,
       outputSchema,
-      handler: async (input) => ({ count: input.parsed + input.page })
+      secretSchema,
+      handler: async (input, ctx) => {
+        expectTypeOf(ctx.secrets).toEqualTypeOf<
+          | {
+              apiKey: string;
+              endpoint?: string | undefined;
+            }
+          | undefined
+        >();
+        return { count: input.parsed + input.page };
+      }
     });
     expectTypeOf<Parameters<typeof handler.handler>[0]>().toEqualTypeOf<z.output<typeof inputSchema>>();
     // @ts-expect-error Handler results must satisfy the output schema.
     createToolHandler({ inputSchema, outputSchema, handler: async () => ({ count: 'not a number' }) });
+  });
+
+  it('supports defineSecretSchema with isSecret flag and localized metadata', () => {
+    const secretSchema = defineSecretSchema({
+      apiKey: {
+        type: z.string().min(1),
+        title: text('API Key', 'API 密钥'),
+        description: text('API Key for service', '服务 API 密钥'),
+        placeholder: text('Enter API Key', '请输入 API 密钥'),
+        isSecret: true
+      },
+      baseURL: {
+        type: z.string().url().default('https://api.example.com'),
+        title: text('Base URL', '服务地址'),
+        isSecret: false
+      }
+    });
+
+    expect(secretSchema.shape.apiKey.meta()).toMatchObject({
+      title: 'API Key',
+      description: 'API Key for service',
+      placeholder: 'Enter API Key',
+      isSecret: true,
+      'x-i18n': {
+        title: text('API Key', 'API 密钥'),
+        description: text('API Key for service', '服务 API 密钥'),
+        placeholder: text('Enter API Key', '请输入 API 密钥')
+      }
+    });
+    expect(secretSchema.shape.baseURL.meta()).toMatchObject({
+      title: 'Base URL',
+      isSecret: false,
+      'x-i18n': {
+        title: text('Base URL', '服务地址')
+      }
+    });
+
+    expect(secretSchema.parse({ apiKey: 'sk-123' })).toEqual({
+      apiKey: 'sk-123',
+      baseURL: 'https://api.example.com'
+    });
+    expect(secretSchema.safeParse({ apiKey: '' }).success).toBe(false);
   });
 });
 
@@ -185,4 +249,10 @@ function assertDescriptorTypeRestrictions(): void {
   defineOutputSchema({ value: { type: z.string(), title: text('Value', '值'), placeholder: text('Prompt', '提示') } });
   // @ts-expect-error Output descriptors do not support AI parameter hints.
   defineOutputSchema({ value: { type: z.string(), title: text('Value', '值'), isToolParam: false } });
+  // @ts-expect-error Secret descriptors require isSecret.
+  defineSecretSchema({ value: { type: z.string(), title: text('Value', '值') } });
+  // @ts-expect-error Secret descriptors do not support AI parameter hints.
+  defineSecretSchema({ value: { type: z.string(), title: text('Value', '值'), isSecret: true, isToolParam: true } });
+  // @ts-expect-error Secret descriptors require a title.
+  defineSecretSchema({ value: { type: z.string(), isSecret: true } });
 }

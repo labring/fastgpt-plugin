@@ -10,10 +10,15 @@ import {
   type ToolHandlerDefinition
 } from './tool-factory';
 
+export { configurePluginProxy, hasProxyEnv } from './proxy';
 export { createToolHandler };
 
-export type { InputFieldDefinition, OutputFieldDefinition } from './schema-helpers';
-export { defineInputSchema, defineOutputSchema } from './schema-helpers';
+export type {
+  InputFieldDefinition,
+  OutputFieldDefinition,
+  SecretFieldDefinition
+} from './schema-helpers';
+export { defineInputSchema, defineOutputSchema, defineSecretSchema } from './schema-helpers';
 
 export type I18nSchemaMetaType = {
   title: I18nStringType;

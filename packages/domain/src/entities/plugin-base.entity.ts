@@ -4,7 +4,7 @@ import { PluginPermissionEnumSchema } from '@domain/value-objects/permission.vo'
 
 import { I18nLangSchema, TolerantI18nStringSchema } from '../value-objects/i18n-string.vo';
 
-export const PluginTagSchema = z.enum([
+const rawPluginTagSchema = z.enum([
   'tools',
   'search',
   'multimodal',
@@ -19,24 +19,26 @@ export const PluginTagSchema = z.enum([
   'other'
 ]);
 
-export const PluginTagEnum = PluginTagSchema.enum;
-
+export const PluginTagEnum = rawPluginTagSchema.enum;
+export const PluginTagSchema = rawPluginTagSchema.catch(PluginTagEnum.other);
 export type PluginTagType = z.infer<typeof PluginTagSchema>;
 
-export const PluginTypeSchema = z.enum([
-  'tool'
+const rawPluginTypeSchema = z.enum([
+  'tool',
+  'unknown'
   /** unimplemented */
   // 'model',
   // 'workflow',
   // 'dataset'
 ]);
 
+export const PluginTypeEnum = rawPluginTypeSchema.enum;
+export const PluginTypeSchema = rawPluginTypeSchema.catch(PluginTypeEnum.unknown);
 export type PluginTypeType = z.infer<typeof PluginTypeSchema>;
 
-export const PluginTypeEnum = PluginTypeSchema.enum;
-
-export const PluginStatusEnumSchema = z.enum(['active', 'pending', 'disabled']);
-export const PluginStatusEnum = PluginStatusEnumSchema.enum;
+const rawPluginStatusEnumSchema = z.enum(['active', 'pending', 'disabled', 'unknown']);
+export const PluginStatusEnum = rawPluginStatusEnumSchema.enum;
+export const PluginStatusEnumSchema = rawPluginStatusEnumSchema.catch(PluginStatusEnum.unknown);
 export type PluginStatusEnumType = z.infer<typeof PluginStatusEnumSchema>;
 
 export const PluginBaseSchema = z.object({

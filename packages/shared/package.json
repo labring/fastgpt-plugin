@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "undici": "^7.29.0",
     "zod": "catalog:"
   },
   "devDependencies": {

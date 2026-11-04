@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PluginRuntimeConfigSchema } from './plugin.dto';
+import { PluginListParamsSchema, PluginRuntimeConfigSchema } from './plugin.dto';
 
 describe('PluginRuntimeConfigSchema', () => {
   it('rejects global local-pool fields from plugin runtime config API', () => {
@@ -15,5 +15,16 @@ describe('PluginRuntimeConfigSchema', () => {
         startupRetryMaxDelay: 10000
       })
     ).toThrow();
+  });
+});
+
+describe('PluginListParamsSchema', () => {
+  it('falls back unknown tags to other and unknown types to unknown', () => {
+    const parsed = PluginListParamsSchema.parse({
+      types: 'custom_type',
+      tags: ['new_tag', 'tools']
+    });
+    expect(parsed.types).toEqual(['unknown']);
+    expect(parsed.tags).toEqual(['other', 'tools']);
   });
 });
