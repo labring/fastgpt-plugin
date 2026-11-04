@@ -61,6 +61,8 @@ describe('create command', () => {
     expect(files).toContain('index.spec.ts');
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
+    expect(files).toContain('README.zh-CN.md');
+    expect(files).toContain('README.en.md');
     expect(files).toContain('logo.svg');
     expect(files).toContain('tsconfig.json');
     expect(files).toContain('vitest.config.ts');
@@ -94,6 +96,8 @@ describe('create command', () => {
       devDependencies: Record<string, string>;
     };
     const readme = await readFile(path.join(projectDir, 'README.md'), 'utf-8');
+    const readmeZh = await readFile(path.join(projectDir, 'README.zh-CN.md'), 'utf-8');
+    const readmeEn = await readFile(path.join(projectDir, 'README.en.md'), 'utf-8');
 
     expect(pkgJson.name).toBe(normalizedName);
     expect(pkgJson.description).toBe(description);
@@ -107,6 +111,10 @@ describe('create command', () => {
     expect(readme).toContain('pnpm run dev');
     expect(readme).toContain('pnpm run debug');
     expect(readme).toContain('pnpm run check');
+    expect(readmeZh).toContain(normalizedName);
+    expect(readmeZh).toContain(description);
+    expect(readmeEn).toContain(normalizedName);
+    expect(readmeEn).toContain(description);
   });
 
   it('默认生成 standalone semver 依赖，并保留 catalog 依赖模式入口', async () => {
@@ -160,6 +168,8 @@ describe('create command', () => {
     expect(files).toContain('index.spec.ts');
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
+    expect(files).toContain('README.zh-CN.md');
+    expect(files).toContain('README.en.md');
     expect(files).toContain('logo.svg');
     expect(files).toContain('tsconfig.json');
     expect(files).toContain('vitest.config.ts');
