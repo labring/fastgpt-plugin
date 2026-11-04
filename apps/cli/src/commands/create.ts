@@ -13,7 +13,7 @@ import type { Command } from 'commander';
 import { kebabCase } from 'es-toolkit';
 
 const TEMPLATE_DEPENDENCY_VERSIONS = {
-  '@fastgpt-plugin/cli': '^0.2.0',
+  '@fastgpt-plugin/cli': '0.2.2-alpha.5',
   '@fastgpt-plugin/sdk-factory': '^1.2.0-alpha.4',
   typescript: '^5.9.3',
   vitest: '^4.0.18',
