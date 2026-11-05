@@ -33,6 +33,7 @@ export const ModerationDetailDTOSchema = z.object({
 export type ModerationDetailDTOType = z.infer<typeof ModerationDetailDTOSchema>;
 
 export const ModerationGetParamsDTOSchema = z.object({
+  includeDisabled: booleanQueryParam(z.boolean().optional()),
   pluginId: z.string(),
   version: z.string().optional(),
   source: PluginSourceDTOSchema.optional(),

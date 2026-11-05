@@ -25,12 +25,14 @@ export const PluginListItemSchema = z.object({
     versionDescription: true,
     permission: true
   }).shape,
-  source: PluginSourceSchema
+  source: PluginSourceSchema,
+  installationStatus: z.enum(['active', 'disabled']).optional(),
 });
 
 export type PluginListItemType = z.infer<typeof PluginListItemSchema>;
 
 export type PluginListInputType = {
+  includeDisabled?: boolean;
   /** 筛选类型 */
   types?: PluginTypeType[]; // 筛选 type
   /** 筛选标签 */
@@ -97,12 +99,14 @@ export interface PluginRepoPort {
   /** 移除某个插件的 pending 状态 */
   confirmPlugin(
     uniqueId: PluginUniqueIdType,
-    source?: PluginSourceType
+    source?: PluginSourceType,
+    restore?: boolean
   ): Promise<Result<PluginConfirmResultType>>;
   rollbackPluginConfirmation(
     uniqueId: PluginUniqueIdType,
     source?: PluginSourceType,
-    replacedInstallationIds?: PluginUniqueIdType[]
+    replacedInstallationIds?: PluginUniqueIdType[],
+    restored?: boolean
   ): Promise<Result>;
   /** 删除 pending 插件及其临时文件 */
   deletePendingPlugin(uniqueId: PluginUniqueIdType, source?: PluginSourceType): Promise<Result>;

@@ -69,7 +69,8 @@ export class ModerationManager implements ModerationManagerPort {
     pluginId,
     source,
     version,
-    fallbackLatestVersion
+    fallbackLatestVersion,
+    includeDisabled
   }: ModerationDetailInputType): Promise<Result<ModerationDetailType>> {
     const normalizedSource = source ?? 'system';
     const normalizedVersion = version?.trim();
@@ -86,7 +87,8 @@ export class ModerationManager implements ModerationManagerPort {
     const [plugin, detailErr] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
       source: normalizedSource,
-      version: normalizedVersion
+      version: normalizedVersion,
+      ...(includeDisabled ? { includeDisabled } : {})
     });
 
     if (detailErr) {

@@ -30,6 +30,7 @@ export type PluginConfirmUCDeps = {
 type Input = {
   uniqueIds: PluginUniqueIdType[];
   source?: PluginSourceType;
+  restore?: boolean;
 };
 
 /** Output Type */
@@ -45,7 +46,7 @@ type Output = Promise<Result<PluginConfirmUCOutput>>;
 
 export const makePluginConfirmUC =
   (deps: PluginConfirmUCDeps) =>
-  async ({ uniqueIds, source: inputSource }: Input): Output => {
+  async ({ uniqueIds, source: inputSource, restore }: Input): Output => {
     const source = inputSource ?? 'system';
     deps.logger.debug('Plugin Confirm', { uniqueIds, source });
 
@@ -71,8 +72,14 @@ export const makePluginConfirmUC =
         );
       }
 
+      // Verify retained files before changing installation state after an uninstall.
+      if (restore) {
+        const [, fileErr] = await deps.pluginRepo.getPluginById(uniqueId);
+        if (fileErr) return failureResult(fileErr);
+      }
+
       // confirmPlugin performs the source-scoped pending lookup atomically with confirmation.
-      const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId, source);
+      const [plugin, err] = await deps.pluginRepo.confirmPlugin(uniqueId, source, ...(restore ? [true] as const : []));
 
       if (err) {
         deps.logger.error('Plugin Confirm One Error', {
@@ -101,7 +108,8 @@ export const makePluginConfirmUC =
               const [, rollbackErr] = await deps.pluginRepo.rollbackPluginConfirmation(
                 uniqueId,
                 source,
-                plugin.replacedInstallationIds
+                plugin.replacedInstallationIds,
+                ...(restore ? [true] as const : [])
               );
               if (rollbackErr) {
                 deps.logger.error('Plugin Confirm Rollback Error', {

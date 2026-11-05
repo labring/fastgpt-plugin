@@ -115,11 +115,12 @@ export class ToolManager implements ToolManagerPort {
     return ToolManager.instance;
   }
 
-  async list({ tags, op, sources }: ToolListInputType): Promise<Result<ToolListOutputType>> {
+  async list({ tags, op, sources, includeDisabled }: ToolListInputType): Promise<Result<ToolListOutputType>> {
     const [tools, listErr] = await this.deps.pluginRepo.listToolSummaries({
       tags,
       op,
-      sources
+      sources,
+      ...(includeDisabled ? { includeDisabled } : {})
     });
 
     if (listErr) {
@@ -139,7 +140,8 @@ export class ToolManager implements ToolManagerPort {
     pluginId,
     source,
     version,
-    fallbackLatestVersion
+    fallbackLatestVersion,
+    includeDisabled
   }: ToolDetailInputType): Promise<Result<ToolDetailType>> {
     const normalizedSource = source ?? 'system';
     const normalizedVersion = version?.trim();
@@ -156,7 +158,8 @@ export class ToolManager implements ToolManagerPort {
     const [tool, detailErr] = await this.deps.pluginRepo.getPluginByUserPluginId({
       pluginId,
       source: normalizedSource,
-      version: normalizedVersion
+      version: normalizedVersion,
+      ...(includeDisabled ? { includeDisabled } : {})
     });
 
     if (detailErr) {
