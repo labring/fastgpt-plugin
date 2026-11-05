@@ -7,6 +7,7 @@ import {
   PluginDeleteParamsSchema,
   PluginInstallDTOSchema,
   PluginListParamsSchema,
+  PluginRestoreParamsSchema,
   PluginRuntimeConfigGetParamsSchema,
   PluginRuntimeConfigResetParamsSchema,
   PluginRuntimeConfigSetParamsSchema,
@@ -233,6 +234,12 @@ export class FastGPTPluginClient {
       body: payload,
       signal: requestOptions?.signal
     });
+  }
+
+  /** Restore retained files and runtime registration, scoped to one installation source. */
+  async restorePlugin(params: { pluginId: string; version: string; etag: string; source?: string }, requestOptions?: ClientRequestOptions): Promise<void> {
+    const body = PluginRestoreParamsSchema.parse(params);
+    await this.transport.requestEmpty({ path: this.withApiPath(PluginContract.Restore.meta.path), method: PluginContract.Restore.meta.method, body, signal: requestOptions?.signal });
   }
 
   async deletePlugin(

@@ -53,6 +53,7 @@ export const ToolDetailDTOSchema = z.object({
 export type ToolDetailDTOType = z.infer<typeof ToolDetailDTOSchema>;
 
 export const ToolGetParamsDTOSchema = z.object({
+  includeDisabled: booleanQueryParam(z.boolean().optional()),
   pluginId: z.string(),
   version: z.string().optional(),
   source: PluginSourceDTOSchema.optional().default('system'),
@@ -62,6 +63,7 @@ export const ToolGetParamsDTOSchema = z.object({
 export type ToolGetParamsDTOType = z.infer<typeof ToolGetParamsDTOSchema>;
 
 export const ToolListParamsDTOSchema = z.object({
+  includeDisabled: booleanQueryParam(z.boolean().optional()),
   tags: arrayQueryParam(PluginTagDTOSchema),
   op: z.enum(['or', 'and']).optional(),
   sources: arrayQueryParam(PluginSourceDTOSchema)

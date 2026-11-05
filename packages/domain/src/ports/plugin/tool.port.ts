@@ -31,6 +31,7 @@ export const ToolListItemSchema = z.object({
     permission: true
   }).shape,
   source: PluginSourceSchema,
+  installationStatus: z.enum(['active', 'disabled']).optional(),
   isToolset: z.boolean(),
   hasSecret: z.boolean(),
   children: z.array(ToolListChildItemSchema).optional()
@@ -39,6 +40,7 @@ export const ToolListItemSchema = z.object({
 export type ToolListItemType = z.infer<typeof ToolListItemSchema>;
 
 export type ToolListInputType = {
+  includeDisabled?: boolean;
   tags?: PluginTagType[];
   op?: 'or' | 'and';
   sources?: PluginSourceType[];

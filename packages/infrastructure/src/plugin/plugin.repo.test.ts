@@ -488,7 +488,7 @@ describe('PluginRepo.createPlugin', () => {
     expect(installationModel.updateOne).not.toHaveBeenCalled();
   });
 
-  it('reports same version and etag when uploading an already installed plugin', async () => {
+  it('accepts an already active upload without changing its state', async () => {
     (PluginRepo as any)._instance = undefined;
 
     const pluginModel = {
@@ -518,19 +518,18 @@ describe('PluginRepo.createPlugin', () => {
       }
     } as unknown as PluginRepoDeps);
 
-    const [, err] = await repo.createPlugin({
+    const [result, err] = await repo.createPlugin({
       plugin: plugin(),
       files: {} as PkgContentFileObjects,
       pending: true
     });
 
-    expect(err?.reason).toEqual({
-      en: 'Plugin installation already exists for this source',
-      'zh-CN': '该来源下已存在相同插件安装'
-    });
+    expect(err).toBeNull();
+    expect(result).toEqual({ runtimeRegistrationRequired: false });
+    expect(pluginModel.findOne).not.toHaveBeenCalled();
   });
 
-  it('rejects an installation with the same source and complete plugin identity', async () => {
+  it('accepts a legacy active installation with the same identity', async () => {
     (PluginRepo as any)._instance = undefined;
 
     const pluginModel = {
@@ -557,17 +556,15 @@ describe('PluginRepo.createPlugin', () => {
       }
     } as unknown as PluginRepoDeps);
 
-    const [, err] = await repo.createPlugin({
+    const [result, err] = await repo.createPlugin({
       plugin: plugin(),
       files: {} as PkgContentFileObjects,
       pending: false,
       source: 'team-a'
     });
 
-    expect(err?.reason).toEqual({
-      en: 'Plugin installation already exists for this source',
-      'zh-CN': '该来源下已存在相同插件安装'
-    });
+    expect(err).toBeNull();
+    expect(result).toEqual({ runtimeRegistrationRequired: false });
     expect(pluginInstallationModel.findOne).toHaveBeenCalledWith({
       source: 'team-a',
       pluginId: 'plugin-a',
@@ -577,7 +574,7 @@ describe('PluginRepo.createPlugin', () => {
     expect(pluginModel.findOne).not.toHaveBeenCalled();
   });
 
-  it('rejects a duplicate installation detected inside the final transaction', async () => {
+  it('accepts a concurrently activated identical installation without rewriting it', async () => {
     (PluginRepo as any)._instance = undefined;
 
     const pluginModel = {
@@ -612,17 +609,15 @@ describe('PluginRepo.createPlugin', () => {
       }
     } as unknown as PluginRepoDeps);
 
-    const [, err] = await repo.createPlugin({
+    const [result, err] = await repo.createPlugin({
       plugin: plugin(),
       files: pkgFiles(),
       pending: false,
       source: 'team-a'
     });
 
-    expect(err?.reason).toEqual({
-      en: 'Plugin installation already exists for this source',
-      'zh-CN': '该来源下已存在相同插件安装'
-    });
+    expect(err).toBeNull();
+    expect(result).toEqual({ runtimeRegistrationRequired: false });
     expect(pluginInstallationModel.updateOne).not.toHaveBeenCalled();
   });
 
@@ -1137,7 +1132,7 @@ describe('PluginRepo.confirmPlugin', () => {
     );
   });
 
-  it('atomically replaces the active etag for one source', async () => {
+  it.each([false, true])('atomically activates the installation (restore=%s)', async (restore) => {
     (PluginRepo as any)._instance = undefined;
 
     const session = { id: 'session' };
@@ -1150,7 +1145,7 @@ describe('PluginRepo.confirmPlugin', () => {
             _id: 'pending-installation',
             source: 'team-a',
             ...plugin(),
-            status: 'pending'
+            status: restore ? 'disabled' : 'pending'
           })
         }),
       find: vi.fn()
@@ -1164,7 +1159,7 @@ describe('PluginRepo.confirmPlugin', () => {
         })
         .mockReturnValueOnce({ lean: vi.fn().mockResolvedValue([]) }),
       findOneAndUpdate: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ source: 'team-a', ...plugin(), status: 'pending' })
+        lean: vi.fn().mockResolvedValue({ source: 'team-a', ...plugin(), status: restore ? 'disabled' : 'pending' })
       }),
       countDocuments: vi.fn().mockResolvedValue(1),
       updateMany: vi.fn()
@@ -1191,7 +1186,7 @@ describe('PluginRepo.confirmPlugin', () => {
       }
     } as unknown as PluginRepoDeps);
 
-    const [result, err] = await repo.confirmPlugin(plugin(), 'team-a');
+    const [result, err] = await repo.confirmPlugin(plugin(), 'team-a', restore);
 
     expect(err).toBeNull();
     expect(result).toMatchObject({
@@ -1208,7 +1203,7 @@ describe('PluginRepo.confirmPlugin', () => {
       { session }
     );
     expect(installationModel.findOneAndUpdate).toHaveBeenCalledWith(
-      { source: 'team-a', ...plugin(), status: 'pending' },
+      { source: 'team-a', ...plugin(), status: restore ? { $in: ['pending', 'disabled'] } : 'pending' },
       { $set: { status: 'active', updatedAt: expect.any(Date) }, $unset: { expiredAt: 1 } },
       { session, new: false }
     );
