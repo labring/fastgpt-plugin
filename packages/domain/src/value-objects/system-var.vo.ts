@@ -7,10 +7,12 @@ export const SystemVarSchema = z.object({
   }),
   chat: z.object({
     chatId: z.string(),
-    uid: z.string().optional()
+    uid: z.string().optional(),
+    usageId: z.string().optional()
   }),
   invokeToken: z.string(),
-  time: z.string()
+  time: z.string(),
+  usageId: z.string().optional()
 });
 
 export type SystemVarType = z.infer<typeof SystemVarSchema>;
