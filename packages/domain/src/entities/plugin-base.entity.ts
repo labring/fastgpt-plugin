@@ -25,6 +25,7 @@ export type PluginTagType = z.infer<typeof PluginTagSchema>;
 
 const rawPluginTypeSchema = z.enum([
   'tool',
+  'moderation',
   'unknown'
   /** unimplemented */
   // 'model',

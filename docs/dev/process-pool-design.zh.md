@@ -179,7 +179,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Caller as ToolManager / Usecase
+    participant Caller as ToolManager / ModerationManager / Usecase
     participant M as Manager
     participant S as PluginService
     participant F as PodFleet
@@ -359,6 +359,8 @@ local-pool 使用 Node.js IPC channel。宿主侧和插件侧通过 `PluginRunti
 ```text
 host.request(eventName, payload, returnStream)
 ```
+
+host 的事件名按插件类型门禁（`PluginTypeEventNames`）：工具接受 `run`，内容审查插件接受 `check`。不匹配的组合会在触达 Pod 之前以 `plugin.runtime.event_not_supported` 失败。调试通道不知道挂载的插件类型，因此只校验事件名是否已知，最终门禁仍由运行时执行。
 
 插件需要宿主能力时，client 发送：
 

@@ -2,9 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import z from 'zod';
 
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
-import { ToolManifestSchema } from '@domain/value-objects/plugin/plugin-manifest.vo';
+import type { PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { failureResult } from '@domain/value-objects/result.vo';
-import type { ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 import {
   createLocalDebugRuntime,
@@ -14,8 +13,6 @@ import {
 import {
   createToolHandler,
   defineTool,
-  defineToolSet,
-  type I18nSchemaMetaType,
   type InputSchemaMetaType,
   type OutputSchemaMetaType,
   type SecretSchemaMetaType
@@ -80,7 +77,7 @@ describe('ToolFactory streaming', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
@@ -94,7 +91,7 @@ describe('ToolFactory streaming', () => {
       const response = responseOrTimeout as Awaited<typeof responsePromise>;
       expect(response.output).toBeDefined();
 
-      const messages: ToolStreamMessageType[] = [];
+      const messages: PluginStreamMessageType[] = [];
       await response.output!.stream.consume(async (chunk) => {
         messages.push(chunk);
         if (messages.length === 1) {
@@ -177,13 +174,13 @@ describe('ToolFactory streaming', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -257,13 +254,13 @@ describe('ToolFactory streaming', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -281,7 +278,7 @@ describe('ToolFactory streaming', () => {
     setCurrentLocalDebugRuntime(runtime);
     process.env.RUNTIME_MODE = 'dev';
 
-    const streamLike = createStreamDataLike<ToolStreamMessageType>();
+    const streamLike = createStreamDataLike<PluginStreamMessageType>();
 
     runtime.pluginChannel.setRequestHandler(() =>
       runtime.pluginChannel.createReply(undefined, {
@@ -296,7 +293,7 @@ describe('ToolFactory streaming', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
@@ -310,7 +307,7 @@ describe('ToolFactory streaming', () => {
     });
     streamLike.end();
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -327,24 +324,11 @@ describe('ToolFactory streaming', () => {
 });
 
 describe('ToolFactory schema metadata', () => {
-  const localized = {
-    en: 'Localized text',
-    'zh-CN': '本地化文案',
-    'zh-Hant': '本地化文案'
-  };
-  const localizedMeta: I18nSchemaMetaType = {
-    title: localized,
-    description: localized,
-    placeholder: localized
-  };
-
-  it('keeps x-i18n alongside legacy string metadata in generated JSON Schema', () => {
+  it('keeps sdk schema metadata in generated JSON Schema', () => {
     const secretSchema = z.object({
       apiKey: z.string().meta({
         title: 'API Key',
-        description: 'API authentication key',
-        isSecret: true,
-        'x-i18n': localizedMeta
+        isSecret: true
       } satisfies SecretSchemaMetaType)
     });
 
@@ -352,16 +336,13 @@ describe('ToolFactory schema metadata', () => {
       inputSchema: z.object({
         query: z.string().meta({
           title: 'Query',
-          description: 'Search query',
-          isToolParam: true,
-          'x-i18n': localizedMeta
+          toolDescription: 'Search query',
+          isToolParam: true
         } satisfies InputSchemaMetaType)
       }),
       outputSchema: z.object({
         answer: z.string().meta({
-          title: 'Answer',
-          description: 'Answer text',
-          'x-i18n': localizedMeta
+          title: 'Answer'
         } satisfies OutputSchemaMetaType)
       }),
       secretSchema,
@@ -376,241 +357,16 @@ describe('ToolFactory schema metadata', () => {
 
     expect(inputSchema.properties?.query).toMatchObject({
       title: 'Query',
-      description: 'Search query',
-      isToolParam: true,
-      'x-i18n': {
-        title: localized,
-        description: localized,
-        placeholder: localized
-      }
+      toolDescription: 'Search query',
+      isToolParam: true
     });
-    expect(inputSchema.properties?.query).not.toHaveProperty('toolDescription');
     expect(outputSchema.properties?.answer).toMatchObject({
-      title: 'Answer',
-      description: 'Answer text',
-      'x-i18n': {
-        title: localized,
-        description: localized
-      }
+      title: 'Answer'
     });
     expect(secretJsonSchema.properties?.apiKey).toMatchObject({
       title: 'API Key',
-      description: 'API authentication key',
-      isSecret: true,
-      'x-i18n': {
-        title: localized,
-        description: localized,
-        placeholder: localized
-      }
+      isSecret: true
     });
-  });
-
-  it('preserves legacy tool descriptions in manifests', () => {
-    const toolDescription = {
-      en: 'Find public documentation',
-      'zh-CN': '查找公开文档'
-    };
-    const name = {
-      en: 'Search',
-      'zh-CN': '搜索'
-    };
-    const description = {
-      en: 'Search public documentation',
-      'zh-CN': '搜索公开文档'
-    };
-
-    const manifestBase = {
-      pluginId: 'localized-description-tool',
-      name,
-      description,
-      version: '0.0.1',
-      versionDescription: description,
-      icon: 'plugin.svg',
-      tags: ['tools'] as const,
-      secretSchema: {}
-    };
-    const manifest = ToolManifestSchema.parse({
-      ...manifestBase,
-      type: 'tool',
-      toolDescription,
-      children: [
-        {
-          id: 'search',
-          name,
-          description,
-          toolDescription,
-          icon: 'search.svg',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              query: {
-                type: 'string',
-                title: 'Query',
-                'x-i18n': localizedMeta
-              }
-            }
-          },
-          outputSchema: {}
-        }
-      ]
-    });
-    const legacyManifest = ToolManifestSchema.parse({
-      ...manifestBase,
-      type: 'tool',
-      toolDescription: 'Legacy string description',
-      children: [
-        {
-          id: 'legacy-search',
-          name,
-          description,
-          toolDescription: 'Legacy child description',
-          icon: 'legacy-search.svg',
-          inputSchema: {},
-          outputSchema: {}
-        }
-      ]
-    });
-
-    expect(manifest.description).toEqual(description);
-    expect(manifest.toolDescription).toEqual(toolDescription);
-    expect(manifest.children?.[0].toolDescription).toEqual(toolDescription);
-    expect(manifest.children?.[0]?.inputSchema).toMatchObject({
-      properties: {
-        query: {
-          title: 'Query',
-          'x-i18n': localizedMeta
-        }
-      }
-    });
-    expect(legacyManifest.toolDescription).toBe('Legacy string description');
-    expect(legacyManifest.children?.[0].toolDescription).toBe('Legacy child description');
-
-    const tool = defineTool({
-      manifest: {
-        pluginId: 'localized-description-tool',
-        name,
-        description,
-        version: '0.0.1',
-        versionDescription: description,
-        tags: ['tools']
-      },
-      handler: createToolHandler({
-        inputSchema: z.object({
-          query: z.string().meta({ description: 'Search public documentation' } satisfies InputSchemaMetaType)
-        }),
-        outputSchema: z.object({ result: z.string() }),
-        handler: async () => ({ result: 'ok' })
-      })
-    });
-    const childHandler = createToolHandler({
-      inputSchema: z.object({
-        query: z.string().meta({
-          title: 'Child query',
-          'x-i18n': localizedMeta
-        } satisfies InputSchemaMetaType)
-      }),
-      outputSchema: z.object({
-        result: z.string().meta({
-          title: 'Child result',
-          'x-i18n': localizedMeta
-        } satisfies OutputSchemaMetaType)
-      }),
-      secretSchema: z.object({
-        apiKey: z.string().meta({
-          title: 'Child API key',
-          description: 'Child API authentication key',
-          isSecret: true,
-          'x-i18n': localizedMeta
-        } satisfies SecretSchemaMetaType)
-      }),
-      handler: async (input) => ({ result: input.query })
-    });
-    const childSecretSchema = childHandler.secretSchema ?? z.object();
-    const toolSet = defineToolSet({
-      manifest: {
-        pluginId: 'localized-description-toolset',
-        name,
-        description,
-        version: '0.0.1',
-        versionDescription: description,
-        tags: ['tools']
-      },
-      secretSchema: childSecretSchema,
-      children: [
-        {
-          id: 'search',
-          name,
-          description,
-          handler: childHandler
-        }
-      ]
-    });
-
-    const toolInputSchema = z.toJSONSchema(tool.getToolHandler().inputSchema) as JsonSchemaObject;
-    const childInputSchema = z.toJSONSchema(childHandler.inputSchema) as JsonSchemaObject;
-    const childOutputSchema = z.toJSONSchema(childHandler.outputSchema) as JsonSchemaObject;
-    const childSecretJsonSchema = z.toJSONSchema(childSecretSchema) as JsonSchemaObject;
-
-    expect(tool.getUserToolManifest().description).toEqual(description);
-    expect(tool.getUserToolManifest()).not.toHaveProperty('toolDescription');
-    expect(toolSet.getChildManifests()[0]).not.toHaveProperty('toolDescription');
-    expect(toolInputSchema.properties?.query).toMatchObject({
-      description: 'Search public documentation'
-    });
-    expect(toolInputSchema.properties?.query).not.toHaveProperty('toolDescription');
-    expect(childInputSchema.properties?.query).toMatchObject({
-      title: 'Child query',
-      'x-i18n': localizedMeta
-    });
-    expect(childInputSchema.properties?.query).not.toHaveProperty('toolDescription');
-    expect(childOutputSchema.properties?.result).toMatchObject({
-      title: 'Child result',
-      'x-i18n': localizedMeta
-    });
-    expect(childSecretJsonSchema.properties?.apiKey).toMatchObject({
-      title: 'Child API key',
-      description: 'Child API authentication key',
-      isSecret: true,
-      'x-i18n': localizedMeta
-    });
-  });
-  it('retains runtime manifests and registrations with legacy descriptions', () => {
-    const manifest = {
-      pluginId: 'legacy-runtime-tool',
-      name: { en: 'Search', 'zh-CN': '搜索' },
-      description: { en: 'Canonical search', 'zh-CN': '唯一描述' },
-      version: '1.0.0',
-      toolDescription: 'Legacy root description',
-      tags: ['tools' as const]
-    };
-    const handler = createToolHandler({
-      inputSchema: z.object({ query: z.string() }),
-      outputSchema: z.object({ result: z.string() }),
-      handler: async () => ({ result: 'ok' })
-    });
-    handler.toolDescription = 'Legacy handler description';
-    const tool = defineTool({ manifest, handler });
-    const childManifest = {
-      id: 'search',
-      name: { en: 'Search', 'zh-CN': '搜索' },
-      description: { en: 'Canonical child', 'zh-CN': '唯一子工具说明' },
-      toolDescription: 'Legacy child description'
-    };
-
-    tool.registerTool(handler, 'search', childManifest);
-
-    expect(tool.getUserToolManifest().description).toEqual({
-      en: 'Canonical search',
-      'zh-CN': '唯一描述'
-    });
-    expect(tool.getUserToolManifest().toolDescription).toBe('Legacy root description');
-    expect(tool.getChildManifests()[0].toolDescription).toBe('Legacy child description');
-    expect(tool.getChildManifests()[0]?.description).toEqual({
-      en: 'Canonical child',
-      'zh-CN': '唯一子工具说明'
-    });
-    expect(tool.getToolHandler('search')?.toolDescription).toBe('Legacy handler description');
-    expect(tool.getToolHandler('search')?.handler).toBe(handler.handler);
   });
 });
 

@@ -13,6 +13,13 @@ export type {
   ModelListType,
   ModelProviderItemType,
   ModelProviderListType,
+  ModerationCheckParamsType,
+  ModerationDetailType,
+  ModerationGetParamsType,
+  ModerationHitType,
+  ModerationLabelType,
+  ModerationResultType,
+  ModerationVerdictType,
   PluginConfirmResultType,
   PluginDebugSessionConnectionKeyExchangeParamsType,
   PluginDebugSessionConnectionKeyExchangeResultType,
@@ -35,6 +42,9 @@ export type {
   PluginServiceFeaturesType,
   PluginSourceRequestOptions,
   PluginSourceType,
+  PluginStreamAnswerType,
+  PluginStreamMessageType,
+  PluginStreamResponseDataType,
   PluginSummaryType,
   PluginTagListItemType,
   PluginTagListType,
@@ -50,21 +60,36 @@ export type {
   RunToolStreamParams,
   STTModelItemType,
   SystemVarType,
-  ToolAnswerType,
   ToolDetailType,
   ToolGetParamsType,
-  ToolHandlerReturnType,
   ToolListItemType,
   ToolListParamsType,
   ToolListType,
   ToolRunInputType,
-  ToolStreamMessageType,
   TTSModelItemType,
   WorkflowListType,
   WorkflowTemplateType
 } from './types';
 export { PluginPermissionEnum, PluginPermissionEnumSchema } from './types';
 export { pluginTagList } from './types';
+
+/**
+ * 内容审查（moderation）标准结构的运行时 zod schema。
+ *
+ * 这里额外导出 schema（而不只是 type），是因为宿主（FastGPT）需要在 API 边界用 `parse` 做运行时
+ * 校验；只导出 type 会让宿主不得不手写一份同构 schema，两份契约会漂移。
+ */
+export { ModerationDetailSchema } from '@domain/ports/plugin/moderation.port';
+export type { ModerationCheckInputType } from '@domain/value-objects/moderation.vo';
+export {
+  ModerationCheckInputSchema,
+  ModerationCheckPayloadSchema,
+  ModerationCheckRunInputSchema,
+  ModerationHitSchema,
+  ModerationLabelSchema,
+  ModerationResultSchema,
+  ModerationVerdictSchema
+} from '@domain/value-objects/moderation.vo';
 
 // PKG 解析
 export type {

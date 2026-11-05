@@ -13,6 +13,7 @@ export const middleware = {
 
 export const mod = {
   tool: ['mod', 'tool'],
+  moderation: ['mod', 'moderation'],
   model: ['mod', 'model'],
   workflow: ['mod', 'workflow'],
   dataset: ['mod', 'dataset'],
