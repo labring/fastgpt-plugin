@@ -36,16 +36,20 @@ export const InvokeUserInfoOutputSchema = z.object({
 
 export type InvokeUserInfoOutputType = z.infer<typeof InvokeUserInfoOutputSchema>;
 
-export const InvokeMethodEnumSchema = z.enum([
+const rawInvokeMethodEnumSchema = z.enum([
   'uploadFile',
   'userInfo',
-  'wecomCorpToken'
+  'wecomCorpToken',
+  'unknown'
   // 'chatCompletion',
   // 'datasetQuery',
   // 'teamInfo'
 ]);
 
-export const InvokeMethodEnum = InvokeMethodEnumSchema.enum;
+export const InvokeMethodEnum = rawInvokeMethodEnumSchema.enum;
+export const InvokeMethodEnumSchema = rawInvokeMethodEnumSchema.catch(
+  InvokeMethodEnum.unknown
+);
 export type InvokeMethodType = z.infer<typeof InvokeMethodEnumSchema>;
 
 export type InvokeWecomCorpTokenOutputType = {

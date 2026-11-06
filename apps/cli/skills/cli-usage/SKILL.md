@@ -102,7 +102,23 @@ npx @fastgpt-plugin/cli pack --entry ./path/to/plugin --dist ./dist --output ./o
 说明：
 
 - `pack` 会先执行构建，再把构建产物打成 `.pkg`
-- `.pkg` 里按约定包含 `index.js`、`manifest.json`、logo、可选 `README.md` 和 `assets/**`
+- `.pkg` 里按约定包含 `index.js`、`manifest.json`、logo、可选的 `README.md` 及其多语言变体（`README.en.md`、`README.zh-CN.md`、`README.zh-Hant.md`）和 `assets/**`
+
+### 5. README 多语言规范
+
+插件项目可在根目录下提供多语言说明文档。构建 (`build`) 与打包 (`pack`) 会自动校验、收集并打入所有合法的变体：
+
+- `README.md`：默认 / 兼容旧版本文档
+- `README.en.md`：英文说明
+- `README.zh-CN.md`：简体中文说明
+- `README.zh-Hant.md`：繁体中文说明
+
+规范与要求：
+
+- **命名规范**：文件名严格区分大小写，且仅支持以上标准文件名。不支持的语言代码或非规范命名（如 `README.fr.md`、`README.zh-cn.md`）会在构建与打包时报错拦截。
+- **排他性**：每种语言变体最多提供一个文件，不可重复定义同一语言。
+- **兼容性**：仅有 `README.md` 的旧项目完全兼容；没有任何 README 时，`check` 命令会输出警告。
+- **展示与回退**：服务端会将各语言版本分别托管至 `readmeUrls`，展示端通常优先按当前用户语言展示，缺失时依次回退到简体中文、英文，最终回退到 `readmeUrl`（默认 `README.md`）。
 
 ## 选择建议
 

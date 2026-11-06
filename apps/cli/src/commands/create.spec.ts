@@ -61,6 +61,8 @@ describe('create command', () => {
     expect(files).toContain('index.spec.ts');
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
+    expect(files).toContain('README.zh-CN.md');
+    expect(files).toContain('README.en.md');
     expect(files).toContain('logo.svg');
     expect(files).toContain('tsconfig.json');
     expect(files).toContain('vitest.config.ts');
@@ -94,11 +96,13 @@ describe('create command', () => {
       devDependencies: Record<string, string>;
     };
     const readme = await readFile(path.join(projectDir, 'README.md'), 'utf-8');
+    const readmeZh = await readFile(path.join(projectDir, 'README.zh-CN.md'), 'utf-8');
+    const readmeEn = await readFile(path.join(projectDir, 'README.en.md'), 'utf-8');
 
     expect(pkgJson.name).toBe(normalizedName);
     expect(pkgJson.description).toBe(description);
     expect(pkgJson.devDependencies['@fastgpt-plugin/cli']).toBe('^0.2.0');
-    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-alpha.3');
+    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-alpha.4');
     expect(Object.values(pkgJson.devDependencies)).not.toContain('catalog:');
     expect(pkgJson.scripts.dev).toBe('fastgpt-plugin dev . --watch');
     expect(pkgJson.scripts['debug:run']).toContain('{"delay":0}');
@@ -107,6 +111,10 @@ describe('create command', () => {
     expect(readme).toContain('pnpm run dev');
     expect(readme).toContain('pnpm run debug');
     expect(readme).toContain('pnpm run check');
+    expect(readmeZh).toContain(normalizedName);
+    expect(readmeZh).toContain(description);
+    expect(readmeEn).toContain(normalizedName);
+    expect(readmeEn).toContain(description);
   });
 
   it('默认生成 standalone semver 依赖，并保留 catalog 依赖模式入口', async () => {
@@ -160,6 +168,8 @@ describe('create command', () => {
     expect(files).toContain('index.spec.ts');
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
+    expect(files).toContain('README.zh-CN.md');
+    expect(files).toContain('README.en.md');
     expect(files).toContain('logo.svg');
     expect(files).toContain('tsconfig.json');
     expect(files).toContain('vitest.config.ts');
@@ -172,9 +182,10 @@ describe('create command', () => {
     expect(indexContent).toContain('outputSchema: defineOutputSchema({');
     expect(indexContent).toContain("title: { en: 'SQL Query', 'zh-CN': 'SQL 查询' }");
     expect(indexContent).toContain("title: { en: 'Query Results', 'zh-CN': '查询结果' }");
+    expect(indexContent).toContain('secretSchema = defineSecretSchema({');
     expect(indexContent).not.toContain('InputSchemaMetaType');
     expect(indexContent).not.toContain('OutputSchemaMetaType');
-    expect(indexContent).toContain('type SecretSchemaMetaType');
+    expect(indexContent).not.toContain('SecretSchemaMetaType');
     expect(indexContent).toContain('isSecret: true');
 
     const packageJson = JSON.parse(

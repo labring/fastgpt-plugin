@@ -9,6 +9,7 @@ import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
 import { failureResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { env } from '@infrastructure/env';
+import { getProxyEnv } from '@shared/utils/proxy';
 
 import {
   PluginChannelClientMethod,
@@ -52,6 +53,10 @@ export function isPodStartupTimeoutError(error: unknown): error is PodStartupTim
   );
 }
 
+export function collectProxyEnv(): Record<string, string> {
+  return getProxyEnv();
+}
+
 export class PluginPod {
   private process: ChildProcess | null = null;
   private channel: PluginRuntimeChannelPort<'host'> | null = null;
@@ -86,7 +91,8 @@ export class PluginPod {
             RUNTIME_MODE: PluginRuntimeModeEnum.localPool,
             TEMP: runtime.tempDirectory,
             TMP: runtime.tempDirectory,
-            TMPDIR: runtime.tempDirectory
+            TMPDIR: runtime.tempDirectory,
+            ...collectProxyEnv()
           }
         });
 

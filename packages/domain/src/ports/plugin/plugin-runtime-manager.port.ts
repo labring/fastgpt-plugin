@@ -7,9 +7,12 @@ import type { PluginRuntimeConfigType } from '../../entities/plugin.entity';
 import type { PluginUniqueIdType } from '../../value-objects/plugin.vo';
 import type { Result } from '../../value-objects/result.vo';
 
-export const PluginInvokeEventnameSchema = z.enum(['run']);
+const rawPluginInvokeEventnameSchema = z.enum(['run', 'unknown']);
+export const PluginInvokeEventnameEnum = rawPluginInvokeEventnameSchema.enum;
+export const PluginInvokeEventnameSchema = rawPluginInvokeEventnameSchema.catch(
+  PluginInvokeEventnameEnum.unknown
+);
 export type PluginInvokeEventNameType = z.infer<typeof PluginInvokeEventnameSchema>;
-export const PluginInvokeEventnameEnum = PluginInvokeEventnameSchema.enum;
 
 export type PluginRuntimeInvokeOptions = {
   invocationId?: string;
