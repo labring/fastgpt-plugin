@@ -5,6 +5,19 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'hy4',
+      maxContext: 1000000,
+      maxTokens: 64000,
+      quoteMaxToken: 960000,
+      maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'hy3',
       maxContext: 256000,
       maxTokens: 128000,

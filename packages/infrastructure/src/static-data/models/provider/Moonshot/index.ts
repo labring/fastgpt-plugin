@@ -5,6 +5,32 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'kimi-k3.1-pro',
+      maxContext: 1048576,
+      maxTokens: 1048576,
+      quoteMaxToken: 1000000,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      showTopP: false
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'kimi-k3.1-pro-highspeed',
+      maxContext: 1048576,
+      maxTokens: 1048576,
+      quoteMaxToken: 1000000,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      showTopP: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'kimi-k3',
       maxContext: 1048576,
       maxTokens: 1048576,
