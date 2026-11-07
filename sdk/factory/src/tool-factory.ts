@@ -11,6 +11,7 @@ import { getErrText } from '@shared/utils/err';
 import { InvokeClient } from './invoke.client';
 import type { UserToolManifestType } from './manifest.type';
 import { PluginFactory } from './plugin-factory';
+
 export type ToolContextType<TSecret = Record<string, unknown>> = {
   systemVar: SystemVarType;
   secrets: TSecret;
@@ -111,6 +112,8 @@ export class ToolFactory extends PluginFactory {
                   }
                 });
 
+                // handler 返回值原样透传:content 等业务字段保持旧插件的任意 JSON 语义,
+                // 结构化 content parts 由 outputSchema 声明约定,不在 wire 层强校验。
                 output.send({
                   type: 'response',
                   data: result
