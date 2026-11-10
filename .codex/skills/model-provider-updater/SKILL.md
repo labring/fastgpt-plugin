@@ -18,11 +18,19 @@ Deprecation, retirement, unavailability, age, absence from the official catalog,
 
 Keep each provider's `remove` array empty by default. Only populate and apply removal operations covered by an explicit human instruction, and record the requested scope and reason for each deletion. Do not remove and recreate an entry merely to correct its fields.
 
+## Provider Allowlist
+
+`references/provider_allowlist.json` is the single source of truth for the audit scope. Its keys are exact registry provider IDs; its values are human-readable vendor names. Start with `inventory --json`: audit only entries with `auditScope: "included"`. Do not expand the scope based on the registry, source-hint file, existing model count, or a previous run's plan.
+
+The allowlist maintains direct vendor static presets. OpenRouter, Ollama, Hugging Face and every other unlisted provider are out of scope, including unlisted providers that already contain static presets. Do not enumerate their catalogs or report their unverified models as blockers. Preserve their existing entries. Adding a registered provider or source hint does not automatically opt it into audits; changing the allowlist requires an explicit human scope decision.
+
 ## Complete-Audit Invariant
 
-A repository-wide refresh is complete only when every provider currently registered by `packages/infrastructure/src/static-data/models/index.ts` appears exactly once in the plan and has a non-pending audit result. Never infer coverage from the number of changed files: providers with no additions must still be recorded as checked.
+A refresh is complete only when every registered **allowlisted** provider appears exactly once in the plan and has a non-pending audit result. Providers with no additions must still be checked. Excluded providers are not applicable, rather than pending or failed.
 
-`apply-plan` enforces this invariant by default and rejects missing providers, duplicate aliases, or `auditStatus: "pending"`. Use `--allow-partial` only when the user explicitly scopes the request to named providers; never use it to make an incomplete full refresh pass.
+`plan-template` and `check-sources` select only allowlisted providers. `apply-plan` rejects excluded providers (also with `--allow-partial`), duplicate aliases, missing allowlisted providers, or pending audit results. Use `--allow-partial` only when the user explicitly scopes the request to a subset of the allowlist; never use it to hide an incomplete full refresh.
+
+Report the audited allowlist and genuine in-scope blockers separately. Deliberate, evidenced skips do not make a run partial. Unreachable or incompletely checked in-scope catalogs, or an eligible addition lacking required configuration evidence, remain partial; never invent metadata to obtain complete status.
 
 Coverage alone is not sufficient. Each provider audit must also preserve a verifiable catalog diff:
 
@@ -44,9 +52,9 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
    Use `--json` when another script or a temporary comparison file needs structured output.
 
-2. Check every registered provider one by one against official sources.
+2. Check every allowlisted provider one by one against official sources.
 
-   Start from every URL listed for that provider in `references/provider_sources.json`, but verify the current official page/API during the run because model catalogs change often. When a provider publishes both a catalog and release notes/changelog, inspect both: catalog pages can lag a just-released model. Use official provider docs, official pricing/model pages, release notes, deprecation pages, or official model-list APIs. Do not use third-party blogs, search snippets, or aggregator pages as evidence unless the provider is that aggregator, such as OpenRouter.
+   Start from every URL listed for that provider in `references/provider_sources.json`, but verify the current official page/API during the run because model catalogs change often. When a provider publishes both a catalog and release notes/changelog, inspect both: catalog pages can lag a just-released model. Use official provider docs, official pricing/model pages, release notes, deprecation pages, or official model-list APIs. Do not use third-party blogs, search snippets, or aggregator catalogs as evidence for a direct vendor preset.
 
    `check-sources` only checks whether source-hint URLs are reachable enough to use as starting points. A 403 access-limited result can still be acceptable for docs that block automated requests, and a passing source check is not evidence that the provider catalog was audited.
 
@@ -66,7 +74,7 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
 4. Create and apply an update plan.
 
-   For a full refresh, generate the all-provider template without `--provider`, then fill the audit evidence and confirmed changes. Keep every `remove` array empty unless the human explicitly specifies deletions:
+   For a full refresh, generate the allowlisted-provider template without `--provider`, then fill the audit evidence and confirmed changes. Keep every `remove` array empty unless the human explicitly specifies deletions:
 
    ```bash
    node .codex/skills/model-provider-updater/scripts/model_provider_presets.mjs plan-template > /tmp/model-provider-plan.json
@@ -91,7 +99,7 @@ This candidate ledger is the completion proof. A reachable page, a search snippe
 
    `insertBefore` accepts an exact existing model ID and places the cloned addition before it. Use it to preserve newest-or-most-capable-first ordering; otherwise additions are inserted after `cloneFrom` for backward compatibility.
 
-   The script only edits providers registered by `packages/infrastructure/src/static-data/models/index.ts`, validates the whole plan before writing any file, and errors on incomplete provider coverage, unchecked configured sources, pending states, missing audit notes, duplicate IDs, unaccounted catalog candidates, or missing addition evidence. Its removal capability may be used only for the human-specified deletions allowed by the configuration preservation policy.
+   The script only edits allowlisted providers registered by `packages/infrastructure/src/static-data/models/index.ts`, validates the whole plan before writing any file, and errors on incomplete provider coverage, unchecked configured sources, pending states, missing audit notes, duplicate IDs, unaccounted catalog candidates, or missing addition evidence. Its removal capability may be used only for the human-specified deletions allowed by the configuration preservation policy.
 
 5. Validate.
 
@@ -112,7 +120,7 @@ Keep the PR title and description aligned with the final changes and validation.
 
 ## Evidence Rules
 
-- Record every official source URL checked, the check date, catalog status, exact candidate model IDs, and an audit note for every provider, including providers with no changes.
+- Record every official source URL checked, the check date, catalog status, exact candidate model IDs, and an audit note for every allowlisted provider, including those with no changes.
 - Do not mark a provider checked until all configured source URLs have been inspected and every missing candidate has an `add` or reasoned `skip` disposition.
 - Treat model catalogs and release notes as complementary evidence. If they conflict because a release is newer than the catalog page, use the newer official release/model page and record the discrepancy in `auditNote`.
 - Add removal entries only for models covered by an explicit human deletion instruction. Record that instruction's scope and the reason; official retirement or deprecation evidence alone is not authorization.
@@ -127,8 +135,8 @@ Keep the PR title and description aligned with the final changes and validation.
 
 `scripts/model_provider_presets.mjs` supports:
 
-- `inventory`: list registered providers, provider files, model counts, and type counts.
-- `plan-template`: create a JSON update plan skeleton for all or selected providers.
+- `inventory`: list all registered providers, their allowlist inclusion/exclusion, provider files, model counts, and type counts.
+- `plan-template`: create a JSON update plan skeleton for all or selected allowlisted providers.
 - `apply-plan`: validate complete provider/source/candidate coverage and mechanically apply cloned additions or human-specified deletions. Existing configuration fields are edited directly in the provider file.
 - `check-sources`: sanity-check source hint URLs from `references/provider_sources.json`.
 
