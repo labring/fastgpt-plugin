@@ -60,7 +60,7 @@ describe('create command', () => {
     expect(files).toContain('index.ts');
     expect(files).toContain('index.spec.ts');
     expect(files).toContain('package.json');
-    expect(files).toContain('README.md');
+    expect(files).not.toContain('README.md');
     expect(files).toContain('README.zh-CN.md');
     expect(files).toContain('README.en.md');
     expect(files).toContain('logo.svg');
@@ -95,26 +95,24 @@ describe('create command', () => {
       scripts: Record<string, string>;
       devDependencies: Record<string, string>;
     };
-    const readme = await readFile(path.join(projectDir, 'README.md'), 'utf-8');
     const readmeZh = await readFile(path.join(projectDir, 'README.zh-CN.md'), 'utf-8');
     const readmeEn = await readFile(path.join(projectDir, 'README.en.md'), 'utf-8');
 
     expect(pkgJson.name).toBe(normalizedName);
     expect(pkgJson.description).toBe(description);
-    expect(pkgJson.devDependencies['@fastgpt-plugin/cli']).toBe('^0.2.0');
-    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-alpha.4');
+    expect(pkgJson.devDependencies['@fastgpt-plugin/cli']).toBe('0.2.2-alpha.6');
+    expect(pkgJson.devDependencies['@fastgpt-plugin/sdk-factory']).toBe('^1.2.0-beta.1');
+    expect(pkgJson.devDependencies.typescript).toBe('^5.9.3');
     expect(Object.values(pkgJson.devDependencies)).not.toContain('catalog:');
     expect(pkgJson.scripts.dev).toBe('fastgpt-plugin dev . --watch');
     expect(pkgJson.scripts['debug:run']).toContain('{"delay":0}');
-    expect(readme).toContain(normalizedName);
-    expect(readme).toContain(description);
-    expect(readme).toContain('pnpm run dev');
-    expect(readme).toContain('pnpm run debug');
-    expect(readme).toContain('pnpm run check');
-    expect(readmeZh).toContain(normalizedName);
-    expect(readmeZh).toContain(description);
     expect(readmeEn).toContain(normalizedName);
     expect(readmeEn).toContain(description);
+    expect(readmeEn).toContain('pnpm run dev');
+    expect(readmeEn).toContain('pnpm run debug');
+    expect(readmeEn).toContain('pnpm run check');
+    expect(readmeZh).toContain(normalizedName);
+    expect(readmeZh).toContain(description);
   });
 
   it('默认生成 standalone semver 依赖，并保留 catalog 依赖模式入口', async () => {
@@ -138,7 +136,7 @@ describe('create command', () => {
     ) as {
       devDependencies: Record<string, string>;
     };
-    const readme = await readFile(path.join(testCwd, 'catalog-tool', 'README.md'), 'utf-8');
+    const readme = await readFile(path.join(testCwd, 'catalog-tool', 'README.en.md'), 'utf-8');
 
     expect(Object.values(packageJson.devDependencies)).toEqual(
       expect.arrayContaining(['catalog:'])
@@ -167,7 +165,7 @@ describe('create command', () => {
     expect(files).toContain('index.ts');
     expect(files).toContain('index.spec.ts');
     expect(files).toContain('package.json');
-    expect(files).toContain('README.md');
+    expect(files).not.toContain('README.md');
     expect(files).toContain('README.zh-CN.md');
     expect(files).toContain('README.en.md');
     expect(files).toContain('logo.svg');
@@ -204,7 +202,7 @@ describe('create command', () => {
       'create',
       'foo',
       '--type',
-      'single-tool',
+      'tool',
       '--description',
       'Test',
       '--cwd',
@@ -232,10 +230,48 @@ describe('create command', () => {
     const indexContent = await readFile(path.join(testCwd, 'delay-tool', 'index.ts'), 'utf-8');
     expect(indexContent).toContain('defineTool');
     expect(indexContent).not.toContain('defineToolSet');
-    expect(indexContent).toContain('inputSchema: defineInputSchema({');
-    expect(indexContent).toContain('outputSchema: defineOutputSchema({');
-    expect(indexContent).toContain("title: { en: 'Delay', 'zh-CN': '延迟' }");
-    expect(indexContent).not.toContain('InputSchemaMetaType');
-    expect(indexContent).not.toContain('OutputSchemaMetaType');
+  });
+
+  it('应能生成 moderation 模板项目', async () => {
+    await run([
+      process.execPath,
+      'cli',
+      'create',
+      'keyword-moderation',
+      '--type',
+      'moderation',
+      '--description',
+      'Keyword moderation',
+      '--cwd',
+      testCwd
+    ]);
+
+    expect(loggerSpy.success).toHaveBeenLastCalledWith(
+      '创建插件项目: keyword-moderation (moderation)',
+      { cwd: testCwd }
+    );
+
+    const files = await listCreatedFiles('keyword-moderation');
+    expect(files).toContain('index.ts');
+    expect(files).toContain('index.spec.ts');
+    expect(files).not.toContain('README.md');
+    expect(files).toContain('README.en.md');
+    expect(files).toContain('README.zh-CN.md');
+    expect(files).not.toContain('index.moderation.ts');
+    expect(files).not.toContain('index.tool.ts');
+    expect(files).not.toContain('index.toolset.ts');
+
+    const indexContent = await readFile(
+      path.join(testCwd, 'keyword-moderation', 'index.ts'),
+      'utf-8'
+    );
+    expect(indexContent).toContain('defineModeration');
+    expect(indexContent).toContain('defineSecretSchema');
+    expect(indexContent).not.toContain('defineTool');
+
+    const packageJson = JSON.parse(
+      await readFile(path.join(testCwd, 'keyword-moderation', 'package.json'), 'utf-8')
+    ) as { scripts: Record<string, string> };
+    expect(packageJson.scripts['debug:run']).toContain('{"content":"hello world"}');
   });
 });

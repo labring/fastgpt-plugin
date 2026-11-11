@@ -1,7 +1,9 @@
 import z from 'zod';
 
+import { PluginInvokeEventnameSchema } from '../ports/plugin/plugin-runtime-manager.port';
+
+import { PluginStreamMessageSchema } from './plugin-stream.vo';
 import { SystemVarSchema } from './system-var.vo';
-import { ToolStreamMessageSchema } from './tool.vo';
 
 export const CONNECTION_GATEWAY_PLUGIN_DEBUG_CONSUMER_TYPE = 'plugin-debug';
 export const CONNECTION_GATEWAY_PLUGIN_DEBUG_INVOKE_CAPABILITY = 'invoke';
@@ -9,7 +11,7 @@ export const CONNECTION_GATEWAY_BIND_CAPABILITY = 'gateway.bind';
 
 export const ConnectionGatewayPluginDebugRequestPayloadSchema = z.object({
   kind: z.literal('plugin-debug.run'),
-  eventName: z.literal('run'),
+  eventName: PluginInvokeEventnameSchema,
   payload: z.object({
     pluginId: z.string().min(1).optional(),
     input: z.record(z.string(), z.unknown()),
@@ -42,7 +44,7 @@ export const ConnectionGatewayPluginDebugStreamPayloadSchema = z.discriminatedUn
   z.object({
     kind: z.literal('plugin-debug.stream'),
     event: z.literal('chunk'),
-    data: ToolStreamMessageSchema
+    data: PluginStreamMessageSchema
   }),
   z.object({
     kind: z.literal('plugin-debug.stream'),

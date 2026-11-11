@@ -137,7 +137,7 @@ importers:
         specifier: ^3.3.1
         version: 3.3.1
       zod:
-        specifier: ^4
+        specifier: 'catalog:'
         version: 4.3.6
     devDependencies:
       '@types/react':
@@ -241,7 +241,7 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
       zod:
-        specifier: ^4
+        specifier: 'catalog:'
         version: 4.3.6
     devDependencies:
       '@types/express':
@@ -263,7 +263,7 @@ importers:
   packages/domain:
     dependencies:
       zod:
-        specifier: ^4
+        specifier: 'catalog:'
         version: 4.3.6
     devDependencies:
       typescript:
@@ -376,7 +376,7 @@ importers:
   sdk/client:
     dependencies:
       zod:
-        specifier: ^4
+        specifier: 'catalog:'
         version: 4.3.6
     devDependencies:
       tsdown:

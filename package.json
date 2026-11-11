@@ -8,7 +8,7 @@
     "prepare": "node scripts/prepare-husky.mjs",
     "postinstall": "pnpm build:sdk-factory",
     "lint": "eslint --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.templates.json",
     "build:pkg": "pnpm tsc && pnpm --filter modules/tool build",
     "build:sdk-client": "pnpm --filter @fastgpt-plugin/sdk-client build",
     "build:sdk-factory": "pnpm --filter @fastgpt-plugin/sdk-factory build",

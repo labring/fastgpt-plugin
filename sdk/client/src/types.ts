@@ -5,6 +5,11 @@ import type {
   ModelProviderListDTOType
 } from '@interface-adapter/contracts/dto/model.dto';
 import type {
+  ModerationCheckInputDTOType,
+  ModerationDetailDTOType,
+  ModerationGetParamsDTOType
+} from '@interface-adapter/contracts/dto/moderation.dto';
+import type {
   PluginConfirmResultDTOType,
   PluginDeleteParamsDTOType,
   PluginDTOType,
@@ -61,12 +66,8 @@ import type {
   PluginTagListType,
   PluginUniqueIdType
 } from '@domain/value-objects/plugin.vo';
+import type { PluginStreamAnswerType, PluginStreamMessageType,PluginStreamResponseDataType } from '@domain/value-objects/plugin-stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
-import type {
-  ToolAnswerType,
-  ToolHandlerReturnType,
-  ToolStreamMessageType
-} from '@domain/value-objects/tool.vo';
 import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
 
 export type JsonObject = Record<string, unknown>;
@@ -78,6 +79,9 @@ export type {
   LLMModelItemType,
   ModelItemType,
   PluginSourceType,
+  PluginStreamAnswerType,
+  PluginStreamMessageType,
+  PluginStreamResponseDataType,
   PluginTagListType,
   PluginTagType,
   PluginTypeType,
@@ -85,9 +89,6 @@ export type {
   RerankModelItemType,
   STTModelItemType,
   SystemVarType,
-  ToolAnswerType,
-  ToolHandlerReturnType,
-  ToolStreamMessageType,
   TTSModelItemType
 };
 
@@ -97,6 +98,18 @@ export type ToolGetParamsType = ToolGetParamsDTOType;
 export type ToolListType = ToolListDTOType;
 export type ToolListItemType = ToolListItemDTOType;
 export type ToolListParamsType = Partial<ToolListParamsDTOType>;
+
+export type ModerationCheckParamsType = ModerationCheckInputDTOType;
+export type ModerationDetailType = ModerationDetailDTOType;
+export type ModerationGetParamsType = ModerationGetParamsDTOType;
+
+export type {
+  ModerationCheckInputType,
+  ModerationHitType,
+  ModerationLabelType,
+  ModerationResultType,
+  ModerationVerdictType
+} from '@domain/value-objects/moderation.vo';
 
 export type PluginSummaryType = PluginDTOType;
 export type PluginUploadResultType = PluginUploadResponseDTOType;
@@ -143,7 +156,7 @@ export type AIProxyChannelItemType = AIProxyChannelItemDTOType;
 export type ModelProviderListType = ModelProviderListDTOType;
 
 export type RunToolStreamParams = ToolRunInputType & {
-  onMessage?: (message: ToolAnswerType) => void;
+  onMessage?: (message: PluginStreamAnswerType) => void;
 };
 
 export type FastGPTPluginClientOptions = {

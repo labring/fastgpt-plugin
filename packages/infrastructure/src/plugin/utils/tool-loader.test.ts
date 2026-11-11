@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { successResult } from '@domain/value-objects/result.vo';
 
-import { loadPlugin } from './tool-loader';
+import { loadPlugin } from './plugin-loader';
 
 const manifest = JSON.stringify({
   pluginId: 'readme-demo',
