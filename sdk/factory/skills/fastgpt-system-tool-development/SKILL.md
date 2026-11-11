@@ -68,6 +68,7 @@ npx @fastgpt-plugin/cli pack --entry <plugin-directory> --dist <plugin-directory
 - 字段可嵌套组合或作为数组元素，例如 `type: z.array(defineOutputSchema({ label: { type: z.string(), title: { en: 'Label', 'zh-CN': '标签' } } }))`。
 - 高级 metadata 仍可使用低层 `.meta()`；手动书写 `z.object()` 时，密钥字段使用 `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)`。
 - handler 返回值必须匹配 `outputSchema`。
+- 需要向模型返回图片时，在 `outputSchema` 中使用结构化 `content` 字段（`z.array(ToolMessageContentPartSchema)`，从 SDK 导入），返回 text / image_url 内容部分；不要把图片地址混在普通文本里。
 
 manifest 至少包含：
 
@@ -260,6 +261,68 @@ export default defineToolSet({
 });
 ```
 
+## 返回图片内容（可选）
+
+工具 handler 的返回对象里可以包含 `content` 字段，向 FastGPT 主程序返回结构化图片内容，作为下一轮模型的视觉输入。此时 `content` 应为非空内容部分数组，每项只能是以下两种之一：
+
+- `{ type: 'text', text: string }`：文本内容。
+- `{ type: 'image_url', image_url: { url: string, detail?: 'auto' | 'low' | 'high' } }`：图片内容，`url` 为图片地址。
+
+> **主程序如何使用 `content`（重要）**：发给模型的 tool 文本始终是 handler 返回值的完整序列化结果，`content` 里的 `text` part **不会**替换这段文本（FastGPT 只取其中的图片 part）。所以业务字段直接放在返回对象顶层即可，不要指望靠 `text` part 给模型讲一句话；`content` 的用途就是携带图片。
+>
+> **图片数量与格式**：单次工具结果只有前 4 张图片会作为视觉输入，超出的部分仍保留在文本里；只支持 `png` / `jpg` / `jpeg` / `gif` / `webp`（OpenAI 与 Claude 的图片契约），`svg`、`psd`、`bmp` 等格式会被供应商拒绝，反而让整轮请求失败，请先自行转成上面的格式。
+>
+> **内联 data URI**：如果 `image_url.url` 是 `data:<mime>;base64,...`，主程序在把文本发给模型时会把这段 base64 换成占位（图片本身仍通过视觉通道发送），因此不必担心同一张图在上下文里出现两份。
+>
+> **向后兼容**：`content` 是普通业务字段，SDK 的 wire 层保持任意 JSON 透传，不做强校验。旧插件把字符串、对象或普通数组放在 `content` 里仍可正常工作，主程序会把这些值当作普通文本结果处理。
+>
+> 只有当你希望图片作为下一轮模型的视觉输入时，才按上述 parts 形状返回 `content`。主程序仅在 `content` 是非空数组且每项都合法时把它作为视觉输入（`detail` 只能是 `auto` / `low` / `high`），否则整组回退到普通文本路径；因此不要只放一个孤立的图片链接字符串，也不要在普通文本里夹带图片地址，更不要混入无法解析的 part（例如自定义对象）——那会让整组图片一起失效。
+
+
+示例：
+
+```ts
+import {
+  createToolHandler,
+  defineTool,
+  ToolMessageContentPartSchema,
+  type ToolMessageContentPartType
+} from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const handler = createToolHandler({
+  inputSchema: z.object({
+    prompt: z.string().min(1)
+  }),
+  outputSchema: z.object({
+    message: z.string(),
+    content: z.array(ToolMessageContentPartSchema)
+  }),
+  handler: async (input) => {
+    const imageUrl = 'https://example.com/result.png';
+    const content: ToolMessageContentPartType[] = [
+      { type: 'image_url', image_url: { url: imageUrl } }
+    ];
+
+    return {
+      message: `Generated image for: ${input.prompt}`,
+      content
+    };
+  }
+});
+
+export default defineTool({
+  manifest: {
+    pluginId: 'image-generator',
+    version: '1.0.0',
+    name: { en: 'Image Generator', 'zh-CN': '图片生成' },
+    description: { en: 'Generate an image', 'zh-CN': '生成图片' },
+    permission: []
+  },
+  handler
+});
+```
+
 ## 验证重点
 
 - `index.ts` 默认导出正确。
@@ -268,6 +331,10 @@ export default defineToolSet({
 - 使用 `ctx.invoke` 时已在 `manifest.permission` 声明对应权限，例如上传文件声明 `file-upload:allow`。
 - Zod schema 覆盖全部用户可见输入和输出；推荐由 AI 托管补充的输入字段设置 `isToolParam: true`。
 - handler 成功路径返回值与 `outputSchema` 一致。
+- 返回结构化图片内容时 `outputSchema` 里的 `content` 声明为 `z.array(ToolMessageContentPartSchema)`；旧插件把 `content` 当普通业务字段（字符串/对象/数组）使用仍兼容，无需迁移。
+- 返回图片内容时使用结构化 `content` 字段（`ToolMessageContentPartSchema`），不在文本中夹带图片地址。
+- `content` 数组里不要混入非 text / image_url 的项：主程序按整组校验，任一项不合法会让这组图片一起失效，只回退成文本。
+- `content` 里的图片不超过 4 张（超出部分只留在文本里），且只支持 png/jpg/jpeg/gif/webp；svg / psd / bmp 等格式会让供应商拒绝整轮请求。
 - 外部调用失败、空响应、超时、鉴权失败都有明确错误。
 - 密钥配置只通过 `secretSchema` 和 `ctx.secrets` 处理。
 - 系统工具根目录存在 `logo.<ext>`。
