@@ -14,7 +14,7 @@ import { kebabCase } from 'es-toolkit';
 
 const TEMPLATE_DEPENDENCY_VERSIONS = {
   '@fastgpt-plugin/cli': '0.2.2-alpha.6',
-  '@fastgpt-plugin/sdk-factory': '^1.3.0-alpha.1',
+  '@fastgpt-plugin/sdk-factory': '^1.2.0-beta.1',
   typescript: '^5.9.3',
   vitest: '^4.0.18',
   zod: '^4'
