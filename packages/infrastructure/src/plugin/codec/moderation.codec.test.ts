@@ -15,6 +15,10 @@ const plugin = (): ModerationType =>
     name: { en: 'Moderation A', 'zh-CN': '审查 A' },
     icon: 'logo.svg',
     readmeUrl: 'readme.md',
+    readmeUrls: {
+      en: 'README.en.md',
+      'zh-CN': 'README.zh-CN.md'
+    },
     description: { en: 'Moderation A', 'zh-CN': '审查 A' },
     meta: { provider: 'keyword' },
     secretSchema: {}
@@ -29,7 +33,11 @@ describe('moderationPluginCodec.refreshConfirmedAssets', () => {
     expect(err).toBeNull();
     expect(result).toMatchObject({
       icon: 'https://cdn.example.com/logo.svg',
-      readmeUrl: 'https://cdn.example.com/readme.md'
+      readmeUrl: 'https://cdn.example.com/readme.md',
+      readmeUrls: {
+        en: 'https://cdn.example.com/README.en.md',
+        'zh-CN': 'https://cdn.example.com/README.zh-CN.md'
+      }
     });
   });
 

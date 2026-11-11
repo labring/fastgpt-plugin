@@ -1,4 +1,5 @@
 import { ModerationSchema, type ModerationType } from '@domain/entities/moderation.entity';
+import { I18nLangSchema } from '@domain/value-objects/i18n-string.vo';
 import { failureResult, successResult } from '@domain/value-objects/result.vo';
 
 import { PluginRecordPayloadSchema, type PluginRecordType } from './plugin.record';
@@ -34,10 +35,25 @@ export const moderationPluginCodec: PluginCodec<ModerationType> = {
       return failureResult(readmeErr);
     }
 
+    const readmeUrls: NonNullable<ModerationType['readmeUrls']> = {};
+    for (const locale of I18nLangSchema.options) {
+      const existingUrl = plugin.readmeUrls?.[locale];
+      if (!existingUrl) continue;
+
+      const [url, readmeLocaleErr] = await resolvePublicFileURL(existingUrl);
+      if (readmeLocaleErr) {
+        return failureResult(readmeLocaleErr);
+      }
+      if (url) {
+        readmeUrls[locale] = url;
+      }
+    }
+
     return successResult({
       ...plugin,
       icon: icon ?? plugin.icon,
-      ...(readmeUrl !== undefined ? { readmeUrl } : {})
+      ...(readmeUrl !== undefined ? { readmeUrl } : {}),
+      ...(Object.keys(readmeUrls).length > 0 ? { readmeUrls } : {})
     });
   }
 };

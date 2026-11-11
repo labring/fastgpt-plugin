@@ -1,18 +1,30 @@
 import type { ModerationHitType } from '@fastgpt-plugin/sdk-factory';
-import { defineModeration, defineModerationManifest } from '@fastgpt-plugin/sdk-factory';
+import {
+  defineModeration,
+  defineModerationManifest,
+  defineSecretSchema
+} from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
-const SECRET_SCHEMA = z.object({
-  blockedKeywords: z.string().optional().meta({
-    title: 'Blocked keywords',
-    description: 'Comma separated keywords that always block',
+const SECRET_SCHEMA = defineSecretSchema({
+  blockedKeywords: {
+    type: z.string().optional(),
+    title: { en: 'Blocked keywords', 'zh-CN': '拦截关键词' },
+    description: {
+      en: 'Comma separated keywords that always block',
+      'zh-CN': '逗号分隔，命中即直接拦截'
+    },
     isSecret: true
-  }),
-  suspiciousKeywords: z.string().optional().meta({
-    title: 'Suspicious keywords',
-    description: 'Comma separated keywords that make content suspected',
+  },
+  suspiciousKeywords: {
+    type: z.string().optional(),
+    title: { en: 'Suspicious keywords', 'zh-CN': '疑似关键词' },
+    description: {
+      en: 'Comma separated keywords that make content suspected',
+      'zh-CN': '逗号分隔，命中记为疑似风险'
+    },
     isSecret: true
-  })
+  }
 });
 
 function splitKeywords(value: string | undefined): string[] {

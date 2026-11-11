@@ -111,16 +111,42 @@ try {
   error 帧；**未声明**时 secrets 原样透传，不解析也不 strip。
 - **声明了就自动带上类型**：`ctx.secrets` 的类型由 `secretSchema` 推导，不用手动标注。未声明
   `secretSchema` 时 `ctx.secrets` 是 `Record<string, unknown>`（与运行时「原样透传」一致）。
-- 厂商侧配置（接入凭据、策略 ID、词表）都放这里，用 `.meta({ title, isSecret })` 标注：
+- 厂商侧配置（接入凭据、策略 ID、词表）都放这里，优先使用 `defineSecretSchema()` 声明多语言标题与描述（`title: { en, 'zh-CN' }`、`description`、`isSecret: true | false`）：
 
 ```ts
-const secretSchema = z.object({
-  accessKeyId: z.string().meta({ title: 'AccessKey ID', isSecret: true }),
-  accessKeySecret: z.string().meta({ title: 'AccessKey Secret', isSecret: true }),
+import { defineSecretSchema } from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const secretSchema = defineSecretSchema({
+  accessKeyId: {
+    type: z.string().min(1),
+    title: { en: 'AccessKey ID', 'zh-CN': 'AccessKey ID' },
+    isSecret: true
+  },
+  accessKeySecret: {
+    type: z.string().min(1),
+    title: { en: 'AccessKey Secret', 'zh-CN': 'AccessKey Secret' },
+    isSecret: true
+  },
   // 厂商控制台里配好的策略 ID：严格度由 provider 自己控制，框架不做归一化
-  strategyId: z.string().optional().meta({ title: 'Strategy ID', isSecret: false })
+  strategyId: {
+    type: z.string().optional(),
+    title: { en: 'Strategy ID', 'zh-CN': '策略 ID' },
+    isSecret: false
+  }
 });
 ```
+
+## 多语言 README
+
+与系统工具一致，moderation 插件在根目录提供多语言 README（`README.en.md`、`README.zh-CN.md`，可选 `README.zh-Hant.md`），CLI 在 `build` / `pack` 时会自动发现并打包：
+
+- `README.en.md`：英文说明
+- `README.zh-CN.md`：简体中文说明
+- `README.zh-Hant.md`：繁体中文说明（可选）
+- `README.md`：旧版本兼容兜底文档（新插件直接提供 `README.en.md` 与 `README.zh-CN.md` 即可，无需额外保留 `README.md`）
+
+文件名严格区分大小写；服务端会在 `readmeUrls` 中暴露实际存在的语言版本，并自动将兼容字段 `readmeUrl` 回退指向首个可用语言版本。
 
 ## 严格度由 provider 自己控制
 
