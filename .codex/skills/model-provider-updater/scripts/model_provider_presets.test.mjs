@@ -51,14 +51,14 @@ function geminiPlan(overrides = {}) {
   };
 }
 
-test('complete audits reject a plan that omits registered providers', () => {
+test('complete audits reject a plan that omits allowlisted providers', () => {
   const plan = writePlan('partial', geminiPlan());
   const result = run(['apply-plan', '--plan', plan, '--dry-run']);
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /Complete audit required/);
 });
 
-test('an all-provider plan can prove complete registry coverage', () => {
+test('an allowlisted-provider plan can prove complete audit coverage', () => {
   const templateResult = run(['plan-template']);
   assert.equal(templateResult.status, 0, templateResult.stderr);
   const inventoryResult = run(['inventory', '--json']);
@@ -66,13 +66,13 @@ test('an all-provider plan can prove complete registry coverage', () => {
 
   const plan = JSON.parse(templateResult.stdout);
   const inventory = JSON.parse(inventoryResult.stdout);
-  for (const provider of inventory.providers) {
+  for (const provider of inventory.providers.filter((item) => item.auditScope === 'included')) {
     const providerPlan = plan.providers[provider.provider];
     providerPlan.auditStatus = 'checked';
     providerPlan.auditNote = 'Test audit reconciled every exact candidate with the local inventory.';
     if (provider.modelIds.length > 0) {
       providerPlan.catalogStatus = 'reviewed';
-      providerPlan.candidateModelIds = provider.modelIds;
+      providerPlan.candidateModelIds = [...new Set(provider.modelIds)];
     } else if (providerPlan.sources.length > 0) {
       providerPlan.catalogStatus = 'no-in-scope-models';
     } else {
@@ -84,14 +84,16 @@ test('an all-provider plan can prove complete registry coverage', () => {
   writeFileSync(planPath, JSON.stringify(plan, null, 2));
   const result = run(['apply-plan', '--plan', planPath, '--dry-run']);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /34\/34 providers audited/);
+  const count = Object.keys(plan.providers).length;
+  assert.ok(result.stdout.includes(`${count}/${count} allowlisted providers audited`));
 });
 
 test('explicit partial audits accept fully evidenced checked providers', () => {
   const plan = writePlan('valid-partial', geminiPlan());
   const result = run(['apply-plan', '--plan', plan, '--dry-run', '--allow-partial']);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /1\/34 providers audited, partial mode/);
+  const count = Object.keys(JSON.parse(run(['plan-template']).stdout).providers).length;
+  assert.ok(result.stdout.includes(`1/${count} allowlisted providers audited, partial mode`));
 });
 
 test('pending providers cannot be marked complete by apply-plan', () => {
@@ -188,4 +190,35 @@ test('insertBefore separates clone source from display placement', () => {
   assert.equal(result.status, 0, result.stderr);
   const providerFile = readFileSync(join(providerDir, 'index.ts'), 'utf8');
   assert.ok(providerFile.indexOf('gemini-future-test-model') < providerFile.indexOf('gemini-3.7-flash'));
+});
+
+test('inventory exposes exclusions and template exactly follows the checked-in allowlist', () => {
+  const inventory = JSON.parse(run(['inventory', '--json']).stdout).providers;
+  const template = JSON.parse(run(['plan-template']).stdout).providers;
+  const allowlist = JSON.parse(readFileSync(join(dirname(scriptPath), '../references/provider_allowlist.json'), 'utf8')).providers;
+  assert.deepEqual(Object.keys(template).sort(), Object.keys(allowlist).sort());
+  for (const provider of inventory) {
+    assert.equal(provider.auditScope, Object.hasOwn(allowlist, provider.provider) ? 'included' : 'excluded');
+  }
+  assert.equal(inventory.find((item) => item.provider === 'OpenRouter').auditScope, 'excluded');
+  assert.equal(inventory.find((item) => item.provider === 'Baichuan').auditScope, 'excluded');
+});
+
+test('excluded providers cannot be audited through scoped commands or partial plans', () => {
+  for (const command of ['plan-template', 'check-sources']) {
+    const result = run([command, '--provider', 'OpenRouter']);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /outside the audit allowlist/);
+  }
+  const planPath = join(tempDir, 'excluded.json');
+  writeFileSync(planPath, JSON.stringify({ providers: { OpenRouter: geminiPlan() } }));
+  const result = run(['apply-plan', '--plan', planPath, '--write', '--allow-partial']);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /outside the audit allowlist/);
+});
+
+test('unknown scoped provider names fail instead of producing empty success', () => {
+  const result = run(['plan-template', '--provider', 'UnknownVendor']);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Unknown registered provider/);
 });

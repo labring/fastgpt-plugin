@@ -1,0 +1,19 @@
+{
+  "providers": {
+    "OpenAI": "OpenAI",
+    "Claude": "Anthropic",
+    "Gemini": "Google Gemini",
+    "Meta": "Meta",
+    "Qwen": "千问",
+    "Doubao": "豆包",
+    "DeepSeek": "DeepSeek",
+    "ChatGLM": "智谱",
+    "Moonshot": "Kimi",
+    "MiniMax": "MiniMax",
+    "AntLing": "蚂蚁百灵",
+    "Hunyuan": "混元",
+    "Grok": "xAI（Grok）",
+    "MistralAI": "Mistral",
+    "StepFun": "阶跃星辰"
+  }
+}

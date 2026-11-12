@@ -87,13 +87,13 @@ describe('static model provider ordering', () => {
     const hunyuan = providerConfigs.find(({ provider }) => provider === 'Hunyuan');
 
     expect(openai?.list[0]?.model).toBe('gpt-6-astra');
-    expect(hunyuan?.list[0]?.model).toBe('hy3');
+    expect(hunyuan?.list[0]?.model).toBe('hy4');
   });
 
   it('places the newest Ant Ling model first', () => {
     const antling = providerConfigs.find(({ provider }) => provider === 'AntLing');
 
-    expect(antling?.list[0]?.model).toBe('Ling-3.0-flash-VL');
+    expect(antling?.list[0]?.model).toBe('Ling-3.2-flash');
   });
 
   it('places Groq-hosted Qwen models in descending version order', () => {
