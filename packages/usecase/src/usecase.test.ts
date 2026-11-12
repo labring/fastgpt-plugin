@@ -1151,7 +1151,7 @@ describe('makePluginInstallUC', () => {
     });
 
     expect(err).toBeNull();
-    expect(result).toEqual({});
+    expect(result).toEqual({ installed: [{ ...uniqueId, pluginId: 'first' }, { ...uniqueId, pluginId: 'second' }] });
     expect(deps.localFileStorageRepo.save).toHaveBeenCalledWith({
       file: expect.any(Readable),
       fileKey: expect.any(String),
@@ -1182,7 +1182,7 @@ describe('makePluginInstallUC', () => {
     });
 
     expect(err).toBeNull();
-    expect(result).toEqual({});
+    expect(result).toEqual({ installed: [uniqueId] });
     expect(deps.pluginRepo.createPlugin).toHaveBeenCalledWith({
       files: files(),
       plugin: plugin(),
@@ -1215,7 +1215,7 @@ describe('makePluginInstallUC', () => {
     });
 
     expect(err).toBeNull();
-    expect(result).toEqual({});
+    expect(result).toEqual({ installed: [uniqueId] });
     expect(deps.pluginRuntimeManager.register).not.toHaveBeenCalled();
     expect(deps.pluginRuntimeManager.unregister).toHaveBeenCalledWith(
       {
@@ -1431,7 +1431,7 @@ describe('makePluginInstallUC', () => {
     });
 
     expect(err).toBeNull();
-    expect(result).toEqual({});
+    expect(result).toEqual({ installed: [uniqueId, { ...uniqueId, pluginId: 'flow' }] });
     expect(deps.pluginRuntimeManager.register).toHaveBeenCalledTimes(1);
     expect(deps.pluginRepo.disablePlugins).not.toHaveBeenCalled();
     expect(deps.pluginRepo.disableUnreferencedPlugins).toHaveBeenCalledTimes(1);
@@ -1644,6 +1644,26 @@ describe('makePluginConfirmUC', () => {
     expect(err).toBeNull();
     expect(result).toEqual({ confirmed: [uniqueId], failed: [] });
     expect(deps.pluginRepo.confirmPlugin).toHaveBeenCalledWith(uniqueId, 'team-a');
+  });
+
+  it('restores retained files before confirming and registering the runtime', async () => {
+    const deps = makeDeps();
+    deps.pluginRepo.getPluginById = vi.fn().mockResolvedValue(successResult({ info: plugin() }));
+    const [result, err] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId], restore: true });
+    expect(err).toBeNull();
+    expect(result?.failed).toEqual([]);
+    expect(deps.pluginRepo.getPluginById).toHaveBeenCalledWith(uniqueId);
+    expect(deps.pluginRepo.confirmPlugin).toHaveBeenCalledWith(uniqueId, 'system', true);
+    expect(deps.pluginRuntimeManager.register).toHaveBeenCalledWith(uniqueId);
+  });
+
+  it('does not activate a pruned package when retained files cannot be read', async () => {
+    const deps = makeDeps();
+    deps.pluginRepo.getPluginById = vi.fn().mockResolvedValue(failureResult({ en: 'Missing files', 'zh-CN': '文件已清理' }));
+    const [result] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId], restore: true });
+    expect(result?.failed).toHaveLength(1);
+    expect(deps.pluginRepo.confirmPlugin).not.toHaveBeenCalled();
+    expect(deps.pluginRuntimeManager.register).not.toHaveBeenCalled();
   });
 
   it('does not register or replace an already active plugin on retry', async () => {

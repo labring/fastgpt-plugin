@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   ToolDetailDTOSchema,
   ToolGetParamsDTOSchema,
-  ToolListDTOSchema
+  ToolListDTOSchema,
+  ToolListParamsDTOSchema
 } from './tool.dto';
 
 describe('Tool metadata DTOs', () => {
@@ -135,5 +136,14 @@ describe('ToolGetParamsDTOSchema', () => {
     });
 
     expect(query.fallbackLatestVersion).toBe(true);
+  });
+});
+
+describe('ToolListParamsDTOSchema', () => {
+  it('falls back unknown tags to other in tool query parameters', () => {
+    const query = ToolListParamsDTOSchema.parse({
+      tags: ['unknown_tag', 'tools']
+    });
+    expect(query.tags).toEqual(['other', 'tools']);
   });
 });

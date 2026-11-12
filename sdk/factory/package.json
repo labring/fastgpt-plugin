@@ -1,19 +1,21 @@
 {
   "name": "@fastgpt-plugin/sdk-factory",
-  "version": "1.2.0-alpha.3",
-  "description": "TypeScript factory SDK for authoring FastGPT Plugin tools and tool suites.",
+  "version": "1.2.0-beta.2",
+  "description": "TypeScript factory SDK for authoring FastGPT Plugin tools, tool suites and moderation plugins.",
   "keywords": [
     "fastgpt",
     "fastgpt-plugin",
     "sdk",
     "tool",
+    "moderation",
     "typescript"
   ],
   "scripts": {
     "build": "tsdown"
   },
   "devDependencies": {
-    "tsdown": "catalog:"
+    "tsdown": "catalog:",
+    "undici": "^7.29.0"
   },
   "peerDependencies": {
     "zod": "catalog:"
@@ -22,7 +24,6 @@
   "files": [
     "dist",
     "README.md",
-    "README.en.md",
     "skills"
   ],
   "exports": {

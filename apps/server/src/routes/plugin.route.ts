@@ -37,6 +37,18 @@ export const makePluginRoute = (deps: PluginRouteDeps) => {
   const logger = getLogger(mod.plugin);
   const usecaseDeps = { ...deps, logger };
 
+  route.openapi(createRoute({
+    ...PluginContract.Restore.meta,
+    request: { body: { content: { 'application/json': { schema: PluginContract.Restore.request } } } },
+    responses: { 200: { description: 'Restored' }, 500: { description: 'Restore failed' } }
+  }), async (c) => {
+    const { source, ...uniqueId } = c.req.valid('json');
+    const [result, err] = await makePluginConfirmUC(usecaseDeps)({ uniqueIds: [uniqueId], source, restore: true });
+    if (err) return R.fail(c, 500, err.error);
+    if (result.failed.length) return R.fail(c, 500, result.failed[0]!.reason);
+    return R.empty(c);
+  });
+
   const handleUpload = async (c: Context) => {
     const pluginUploadUC = makePluginUploadUC(usecaseDeps);
     const formData = await c.req.formData();

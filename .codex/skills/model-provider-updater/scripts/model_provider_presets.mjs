@@ -88,6 +88,8 @@ function commandInventory(parsedArgs) {
       file: relative(repoRoot, provider.filePath),
       models: entries.length,
       typeCounts,
+      auditScope: isAllowedProvider(provider) ? 'included' : 'excluded',
+      exclusionReason: isAllowedProvider(provider) ? null : 'not in provider allowlist',
       modelIds: entries.map((entry) => entry.model)
     };
   });
@@ -102,13 +104,13 @@ function commandInventory(parsedArgs) {
     const counts = Object.entries(item.typeCounts)
       .map(([type, count]) => `${type}:${count}`)
       .join(', ');
-    console.log(`- ${item.provider} (${item.file}): ${item.models} models${counts ? ` [${counts}]` : ''}`);
+    console.log(`- ${item.provider} (${item.file}): ${item.models} models (${item.auditScope})${counts ? ` [${counts}]` : ''}`);
   }
 }
 
 function commandPlanTemplate(parsedArgs) {
   const repoRoot = getRepoRoot(parsedArgs);
-  const providers = filterProviders(getRegisteredProviders(repoRoot), parsedArgs.provider);
+  const providers = selectAuditProviders(getRegisteredProviders(repoRoot), parsedArgs.provider);
   const sourceHints = getSourceHints();
   const plan = { providers: {} };
   for (const provider of providers) {
@@ -147,6 +149,7 @@ async function commandApplyPlan(parsedArgs) {
     throw new Error('Plan must contain an object at providers');
   }
   const registeredProviders = getRegisteredProviders(repoRoot);
+  const auditProviders = registeredProviders.filter(isAllowedProvider);
   const sourceHints = getSourceHints();
   const allowPartial = Boolean(parsedArgs['allow-partial']);
   const resolvedPlans = resolveAndValidatePlanCoverage(repoRoot, providerPlans, registeredProviders, allowPartial);
@@ -213,12 +216,12 @@ async function commandApplyPlan(parsedArgs) {
   }
 
   if (parsedArgs.json) {
-    console.log(JSON.stringify({ mode: write ? 'write' : 'dry-run', results }, null, 2));
+    console.log(JSON.stringify({ mode: write ? 'write' : 'dry-run', coverage: { audited: results.length, required: auditProviders.length }, results }, null, 2));
     return;
   }
 
   console.log(
-    `apply-plan ${write ? 'write' : 'dry-run'} complete (${results.length}/${registeredProviders.length} providers audited${allowPartial ? ', partial mode' : ''})`
+    `apply-plan ${write ? 'write' : 'dry-run'} complete (${results.length}/${auditProviders.length} allowlisted providers audited${allowPartial ? ', partial mode' : ''})`
   );
   for (const result of results) {
     console.log(`- ${result.provider} (${result.file}): ${result.changed ? 'changed' : 'unchanged'}`);
@@ -231,7 +234,7 @@ async function commandApplyPlan(parsedArgs) {
 
 async function commandCheckSources(parsedArgs) {
   const repoRoot = getRepoRoot(parsedArgs);
-  const providers = filterProviders(getRegisteredProviders(repoRoot), parsedArgs.provider);
+  const providers = selectAuditProviders(getRegisteredProviders(repoRoot), parsedArgs.provider);
   const sourceHints = getSourceHints();
   const results = [];
   const tasks = [];
@@ -331,6 +334,31 @@ function getRegisteredProviders(repoRoot) {
   return imports.filter((item) => existsSync(item.filePath));
 }
 
+/** The checked-in allowlist is the audit boundary; new registered providers never opt in automatically. */
+function isAllowedProvider(provider) {
+  const { providers } = JSON.parse(readFileSync(join(skillDir, 'references/provider_allowlist.json'), 'utf8'));
+  if (!isPlainObject(providers) || Object.keys(providers).length === 0) {
+    throw new Error('Provider allowlist must contain a non-empty providers object');
+  }
+  const content = readFileSync(provider.filePath, 'utf8');
+  return Object.hasOwn(providers, readDeclaredProvider(content) || provider.dirName);
+}
+
+/** Reject explicit out-of-scope requests instead of silently succeeding with an empty audit. */
+function selectAuditProviders(providers, providerFilter) {
+  if (providerFilter) {
+    for (const name of String(providerFilter).split(',').map((item) => item.trim()).filter(Boolean)) {
+      const provider = providers.find((item) => {
+        const declared = readDeclaredProvider(readFileSync(item.filePath, 'utf8')) || item.dirName;
+        return item.dirName === name || declared === name;
+      });
+      if (!provider) throw new Error(`Unknown registered provider: ${name}`);
+      if (!isAllowedProvider(provider)) throw new Error(`Provider is outside the audit allowlist: ${name}`);
+    }
+  }
+  return filterProviders(providers.filter(isAllowedProvider), providerFilter);
+}
+
 function filterProviders(providers, providerFilter) {
   if (!providerFilter) return providers;
   const requested = new Set(
@@ -376,6 +404,9 @@ function resolveAndValidatePlanCoverage(repoRoot, providerPlans, registeredProvi
 
   for (const [providerName, providerPlan] of Object.entries(providerPlans)) {
     const providerFile = resolveProviderFile(repoRoot, providerName, registeredProviders);
+    if (!isAllowedProvider(providerFile)) {
+      throw new Error(`Provider is outside the audit allowlist: ${providerFile.provider}`);
+    }
     if (seenProviders.has(providerFile.provider)) {
       throw new Error(
         `Plan contains the same registered provider more than once through aliases: ${providerFile.provider}`
@@ -387,6 +418,7 @@ function resolveAndValidatePlanCoverage(repoRoot, providerPlans, registeredProvi
 
   if (!allowPartial) {
     const missing = registeredProviders
+      .filter(isAllowedProvider)
       .map((provider) => {
         const content = readFileSync(provider.filePath, 'utf8');
         return readDeclaredProvider(content) || provider.dirName;
@@ -394,7 +426,7 @@ function resolveAndValidatePlanCoverage(repoRoot, providerPlans, registeredProvi
       .filter((providerName) => !seenProviders.has(providerName));
     if (missing.length > 0) {
       throw new Error(
-        `Complete audit required: ${missing.length} registered provider(s) missing from plan: ${missing.join(', ')}. Use --allow-partial only for an explicitly scoped provider request.`
+        `Complete audit required: ${missing.length} allowlisted provider(s) missing from plan: ${missing.join(', ')}. Use --allow-partial only for an explicitly scoped provider request.`
       );
     }
   }
@@ -1076,8 +1108,8 @@ function printUsage() {
 
 Options:
   --repo-root <path>  Override the FastGPT plugin repository root.
-  --provider <name>   Limit to one provider or a comma-separated list.
-  --allow-partial     Permit a scoped plan that omits registered providers; never use for a full refresh.
+  --provider <name>   Limit to one allowlisted provider or a comma-separated list (inventory also shows excluded providers).
+  --allow-partial     Permit a scoped plan that omits allowlisted providers; never use for a full refresh.
   --concurrency <n>   Limit concurrent source URL checks.
 `);
 }

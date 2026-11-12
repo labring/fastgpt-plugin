@@ -1,3 +1,4 @@
+import { isRunnablePluginType } from '@domain/entities/plugin.entity';
 import type {
   PluginDeleteInputType,
   PluginRepoPort
@@ -36,7 +37,7 @@ export const makePluginDeleteUC =
     }
 
     for (const { plugin, disabled } of deleteResult.plugins) {
-      if (!disabled || plugin.type !== 'tool') continue;
+      if (!disabled || !isRunnablePluginType(plugin.type)) continue;
       const uniqueId = PluginUniqueIdSchema.parse(plugin);
       let unregisterErr;
 

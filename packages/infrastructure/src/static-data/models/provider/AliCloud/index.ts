@@ -50,6 +50,20 @@ const models: ProviderConfigType = {
   provider: 'AliCloud',
   list: [
     {
+      type: ModelTypeEnum.llm,
+      model: 'xiaomi/mimo-v2.6-pro-ultraspeed',
+      maxContext: 1048576,
+      maxTokens: 131072,
+      quoteMaxToken: 1048576,
+      vision: true,
+      video: true,
+      audio: true,
+      reasoning: true,
+      reasoningEffort: false,
+      toolChoice: true,
+      responseFormatList: ['text', 'json_object']
+    },
+    {
       type: ModelTypeEnum.tts,
       model: 'sambert-v1',
       voices: sambertVoices

@@ -5,6 +5,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'zai-glm-5-3-flash',
+      maxContext: 1000000,
+      maxTokens: 128000,
+      quoteMaxToken: 900000,
+      maxTemperature: 1.2,
+      vision: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'zai-glm-5-3',
       maxContext: 1000000,
       maxTokens: 128000,

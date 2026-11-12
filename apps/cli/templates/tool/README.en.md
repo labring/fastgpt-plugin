@@ -2,6 +2,8 @@
 
 {{description}}
 
+Language: [English](./README.en.md) | [简体中文](./README.zh-CN.md)
+
 ## Quick Start
 
 ```bash
@@ -34,9 +36,20 @@ npx @fastgpt-plugin/cli debug . --run{{debugRunToolOption}} --input '{{debugRunI
 ## Output
 
 - `pnpm run build` writes `dist/index.js`, `dist/manifest.json`, copied logos,
-  and optional static files.
+  and optional static files (including localized README files).
 - `pnpm run check` validates the build output before upload.
 - `pnpm run pack` creates a `.pkg` file that can be uploaded to FastGPT Plugin.
+
+## Documentation & I18n
+
+Plugins support multi-language README documentation. FastGPT Plugin CLI automatically discovers, validates, and packages all canonical README files in the project root:
+
+- `README.md`: Default / fallback documentation.
+- `README.en.md`: English documentation.
+- `README.zh-CN.md`: Simplified Chinese documentation.
+- `README.zh-Hant.md`: Traditional Chinese documentation.
+
+Filenames are strictly case-sensitive. The display client prioritizes the current user locale, falling back to Simplified Chinese (`zh-CN`), English (`en`), and finally the default `README.md`.
 
 ## Dependency Mode
 

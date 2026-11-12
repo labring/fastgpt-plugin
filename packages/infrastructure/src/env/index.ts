@@ -4,7 +4,11 @@ import path from 'node:path';
 import { z } from 'zod';
 
 import { BoolStringSchema, PositiveIntSchema } from '@domain/value-objects/baisc.vo';
-import { PluginRuntimeModeEnum, PluginRuntimeModeSchema } from '@domain/value-objects/plugin.vo';
+import {
+  PluginRuntimeModeEnum,
+  PluginRuntimeModeSchema,
+  type PluginRuntimeModeType
+} from '@domain/value-objects/plugin.vo';
 
 const DEV_AUTH_TOKEN = 'token';
 const MIN_PRODUCTION_AUTH_TOKEN_LENGTH = 32;
@@ -304,7 +308,7 @@ export type ServerEnv = {
   DEPLOYMENT_ENVIRONMENT?: string;
   ALLOWED_INSTALL_HOSTS?: string;
   DISABLE_SSRF_CHECK: boolean;
-  PLUGIN_RUNTIME_MODE: 'localPool' | 'serverless';
+  PLUGIN_RUNTIME_MODE: PluginRuntimeModeType;
   PLUGIN_REGISTER_CONCURRENCY: number;
   POOL_HEALTH_CHECK_INTERVAL: number;
   POOL_MAX_TOTAL_PODS: number;

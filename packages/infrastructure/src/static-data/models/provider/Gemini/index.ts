@@ -5,6 +5,19 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'gemini-4-argon',
+      maxContext: 1048576,
+      maxTokens: 65536,
+      quoteMaxToken: 1000000,
+      vision: true,
+      audio: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gemini-3.8-flash',
       maxContext: 1048576,
       maxTokens: 65536,

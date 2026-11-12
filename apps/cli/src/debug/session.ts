@@ -6,12 +6,15 @@ import { pathToFileURL } from 'node:url';
 import { ensureDebugImportHooks } from '@fastgpt-plugin/cli/debug/import-hooks';
 import z from 'zod';
 
+import type { PluginTypeType } from '@domain/entities/plugin-base.entity';
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
+import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
+import { PluginTypeEventNames } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { I18nLangType } from '@domain/value-objects/i18n-string.vo';
+import { PluginStreamMessageSchema, type PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { SystemVarSchema, type SystemVarType } from '@domain/value-objects/system-var.vo';
-import { ToolStreamMessageSchema, type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
 
 import {
   createLocalDebugRuntime,
@@ -27,14 +30,15 @@ type PackableToolHandler = {
 
 type PackableToolChild = {
   id: string;
-  description: unknown;
-  name: unknown;
+  description: Record<string, unknown>;
+  name: Record<string, unknown>;
   icon?: string;
-  toolDescription?: unknown;
 };
 
-type PackableToolExport = {
+type PackablePluginExport = {
+  getPluginType(): PluginTypeType;
   getUserToolManifest(): Record<string, unknown>;
+  getUserModerationManifest(): Record<string, unknown>;
   getSecretSchema(): z.ZodType<any>;
   getToolHandler(childId?: string): PackableToolHandler | undefined;
   getChildManifests(): PackableToolChild[];
@@ -42,11 +46,21 @@ type PackableToolExport = {
 
 export type DebugText = string | Record<string, unknown>;
 
+export const DEFAULT_DEBUG_LOCALE: I18nLangType = 'en';
+
+export function selectDebugText(value: DebugText, locale: I18nLangType = DEFAULT_DEBUG_LOCALE): string {
+  if (typeof value === 'string') return value;
+
+  const preferred = [value[locale], value.en, ...Object.values(value)].find(
+    (item) => typeof item === 'string' && item.trim().length > 0
+  );
+  return typeof preferred === 'string' ? preferred : '';
+}
+
 export type DebugToolSnapshot = {
   id: string;
   name: DebugText;
   description: DebugText;
-  toolDescription?: unknown;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -54,15 +68,17 @@ export type DebugToolSnapshot = {
 export type DebugPluginSnapshot = {
   entryDir: string;
   indexPath: string;
+  type: PluginTypeType;
   pluginId: string;
   version: string;
   name: DebugText;
   description: DebugText;
-  toolDescription?: unknown;
   author?: string;
   tags?: string[];
   permissions?: string[];
   secretSchema: Record<string, unknown>;
+  /** moderation 插件的 provider / docUrl */
+  meta?: Record<string, unknown>;
   isToolSet: boolean;
   tools: DebugToolSnapshot[];
 };
@@ -73,11 +89,11 @@ export type LoadDebugSessionResult = {
   uploadDir: string;
 };
 
-export type DebugToolRunResult = {
+export type DebugPluginRunResult = {
   systemVar: SystemVarType;
   response?: Record<string, unknown>;
   error?: string;
-  streamMessages: ToolStreamMessageType[];
+  streamMessages: PluginStreamMessageType[];
 };
 
 export async function loadDebugSession({
@@ -109,9 +125,9 @@ export async function loadDebugSession({
     const mod = await import(moduleUrl);
     const tool = mod.default;
 
-    if (!isPackableToolExport(tool)) {
+    if (!isPackablePluginExport(tool)) {
       throw new Error(
-        'index.ts 的 default export 必须是 defineTool()/defineToolSet() 返回的 factory-sdk 实例'
+        'index.ts 的 default export 必须是 defineTool()/defineToolSet()/defineModeration() 返回的 factory-sdk 实例；若为旧版本 SDK 构建的产物，请升级 @fastgpt-plugin/sdk-factory 到 2.x'
       );
     }
 
@@ -135,10 +151,11 @@ export async function loadDebugSession({
   }
 }
 
-export async function runDebugTool({
+export async function runDebugPlugin({
   runtime,
   snapshot,
   toolId,
+  eventName,
   input,
   secrets,
   systemVar,
@@ -147,13 +164,18 @@ export async function runDebugTool({
   runtime: LocalDebugRuntime;
   snapshot: DebugPluginSnapshot;
   toolId?: string;
+  eventName?: PluginInvokeEventNameType;
   input: Record<string, unknown>;
   secrets?: Record<string, unknown>;
   systemVar?: Partial<SystemVarType>;
   traceId?: string;
-}): Promise<DebugToolRunResult> {
-  const targetTool = pickTargetTool(snapshot, toolId);
-  const mergedSystemVar = createDebugSystemVar(snapshot, targetTool.id, systemVar);
+}): Promise<DebugPluginRunResult> {
+  const targetTool = snapshot.type === 'tool' ? pickTargetTool(snapshot, toolId) : undefined;
+  const mergedSystemVar = createDebugSystemVar(snapshot, targetTool?.id ?? '', systemVar);
+  const resolvedEventName = eventName ?? PluginTypeEventNames[snapshot.type][0];
+  if (!resolvedEventName) {
+    throw new Error(`Unsupported plugin type for local debugging: ${snapshot.type}`);
+  }
 
   const response = await runtime.invokePlugin<
     {
@@ -164,13 +186,13 @@ export async function runDebugTool({
     },
     void,
     never,
-    ToolStreamMessageType
+    PluginStreamMessageType
   >(
-    'run',
+    resolvedEventName,
     {
       input,
       systemVar: mergedSystemVar,
-      ...(snapshot.isToolSet ? { childId: targetTool.id } : {}),
+      ...(snapshot.isToolSet && targetTool ? { childId: targetTool.id } : {}),
       ...(secrets ? { secrets } : {})
     },
     {
@@ -182,12 +204,12 @@ export async function runDebugTool({
     throw new Error('调试运行未返回输出流。');
   }
 
-  const streamMessages: ToolStreamMessageType[] = [];
+  const streamMessages: PluginStreamMessageType[] = [];
   let finalResponse: Record<string, unknown> | undefined;
   let finalError: string | undefined;
 
   await response.output.stream.consume(async (chunk) => {
-    const parsed = ToolStreamMessageSchema.parse(chunk);
+    const parsed = PluginStreamMessageSchema.parse(chunk);
     streamMessages.push(parsed);
 
     if (parsed.type === 'response') {
@@ -239,7 +261,47 @@ export function createDebugSystemVar(
 }
 
 function createDebugSnapshot(
-  tool: PackableToolExport,
+  plugin: PackablePluginExport,
+  location: {
+    entryDir: string;
+    indexPath: string;
+  }
+): DebugPluginSnapshot {
+  return plugin.getPluginType() === 'moderation'
+    ? buildModerationSnapshot(plugin, location)
+    : buildToolSnapshot(plugin, location);
+}
+
+function buildModerationSnapshot(
+  plugin: PackablePluginExport,
+  location: {
+    entryDir: string;
+    indexPath: string;
+  }
+): DebugPluginSnapshot {
+  const userManifest = plugin.getUserModerationManifest();
+  const meta = ensurePlainObject(userManifest.meta);
+
+  return {
+    entryDir: location.entryDir,
+    indexPath: location.indexPath,
+    type: 'moderation',
+    pluginId: getRequiredString(userManifest.pluginId, '缺少 pluginId'),
+    version: getRequiredString(userManifest.version, '缺少 version'),
+    name: pickLocalizedText(userManifest.name),
+    description: pickLocalizedText(userManifest.description),
+    author: getOptionalString(userManifest.author),
+    tags: toStringArray(userManifest.tags),
+    permissions: toStringArray(userManifest.permission),
+    secretSchema: ensurePlainObject(z.toJSONSchema(plugin.getSecretSchema())),
+    meta,
+    isToolSet: false,
+    tools: []
+  };
+}
+
+function buildToolSnapshot(
+  tool: PackablePluginExport,
   location: {
     entryDir: string;
     indexPath: string;
@@ -257,12 +319,11 @@ function createDebugSnapshot(
   return {
     entryDir: location.entryDir,
     indexPath: location.indexPath,
+    type: 'tool',
     pluginId: getRequiredString(userManifest.pluginId, '缺少 pluginId'),
     version: getRequiredString(userManifest.version, '缺少 version'),
-    name: getDebugText(userManifest.name),
-    description: getDebugText(userManifest.description),
-    toolDescription: userManifest.toolDescription,
-    author: getOptionalString(userManifest.author),
+    name: pickLocalizedText(userManifest.name),
+    description: pickLocalizedText(userManifest.description),
     tags: toStringArray(userManifest.tags),
     permissions: toStringArray(userManifest.permission),
     secretSchema: ensurePlainObject(secretSchema),
@@ -272,7 +333,7 @@ function createDebugSnapshot(
 }
 
 function createSingleToolSnapshot(
-  tool: PackableToolExport,
+  tool: PackablePluginExport,
   userManifest: Record<string, unknown>
 ): DebugToolSnapshot {
   const handler = tool.getToolHandler();
@@ -282,16 +343,15 @@ function createSingleToolSnapshot(
 
   return {
     id: 'tool',
-    name: getDebugText(userManifest.name),
-    description: getDebugText(userManifest.description),
-    toolDescription: userManifest.toolDescription,
+    name: pickLocalizedText(userManifest.name),
+    description: pickLocalizedText(userManifest.description),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
 }
 
 function createChildToolSnapshot(
-  tool: PackableToolExport,
+  tool: PackablePluginExport,
   child: PackableToolChild
 ): DebugToolSnapshot {
   const handler = tool.getToolHandler(child.id);
@@ -301,9 +361,8 @@ function createChildToolSnapshot(
 
   return {
     id: child.id,
-    name: getDebugText(child.name),
-    description: getDebugText(child.description),
-    toolDescription: child.toolDescription,
+    name: pickLocalizedText(child.name),
+    description: pickLocalizedText(child.description),
     inputSchema: ensurePlainObject(z.toJSONSchema(handler.inputSchema)),
     outputSchema: ensurePlainObject(z.toJSONSchema(handler.outputSchema))
   };
@@ -407,57 +466,17 @@ function toBuffer(value: unknown): Buffer {
   return Buffer.from(JSON.stringify(value));
 }
 
-function isPackableToolExport(value: unknown): value is PackableToolExport {
-  return Boolean(
-    value &&
-      typeof value === 'object' &&
-      'getUserToolManifest' in value &&
-      typeof value.getUserToolManifest === 'function' &&
-      'getSecretSchema' in value &&
-      typeof value.getSecretSchema === 'function' &&
-      'getToolHandler' in value &&
-      typeof value.getToolHandler === 'function' &&
-      'getChildManifests' in value &&
-      typeof value.getChildManifests === 'function'
-  );
-}
-
-export const DEFAULT_DEBUG_LOCALE: I18nLangType = 'en';
-
-function getDebugText(value: unknown): DebugText {
-  return getOptionalDebugText(value) ?? '';
-}
-
-function getOptionalDebugText(value: unknown): DebugText | undefined {
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const localized = value as Record<string, unknown>;
-    if (typeof localized.en === 'string' && typeof localized['zh-CN'] === 'string') {
-      return localized;
-    }
-  }
-
-  return undefined;
+function isPackablePluginExport(value: unknown): value is PackablePluginExport {
+  return Boolean(value && typeof value === 'object' && 'getPluginType' in value);
 }
 
 
-export function selectDebugText(value: unknown, locale: string = DEFAULT_DEBUG_LOCALE): string {
-  const text = getOptionalDebugText(value);
-  if (typeof text === 'string') {
-    return text;
+function pickLocalizedText(value: unknown): DebugText {
+  if (typeof value === 'string') return value;
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
   }
-  if (!text) {
-    return '';
-  }
-
-  const preferred = [text[locale as I18nLangType], text.en].find(
-    (item) => typeof item === 'string' && item.trim().length > 0
-  );
-
-  return typeof preferred === 'string' ? preferred : '';
+  return '';
 }
 
 function getRequiredString(value: unknown, message: string): string {

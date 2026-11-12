@@ -54,6 +54,18 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'MiniMax-M3.1-Flash',
+      maxContext: 1000000,
+      maxTokens: 100000,
+      quoteMaxToken: 900000,
+      maxTemperature: 1,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'MiniMax-M3',
       maxContext: 1000000,
       maxTokens: 100000,

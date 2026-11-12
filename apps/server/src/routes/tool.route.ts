@@ -1,6 +1,6 @@
 import { ToolContract } from '@interface-adapter/contracts/route/tool.contract';
 
-import { type ToolStreamMessageType } from '@domain/value-objects/tool.vo';
+import { type PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { makeToolDetailUC, type ToolDetailUCDeps } from '@usecase/tool/tool-detail.uc';
 import { makeToolListUC, type ToolListUCDeps } from '@usecase/tool/tool-list.uc';
 import { makeToolRunUC, type ToolRunUCDeps } from '@usecase/tool/tool-run.uc';
@@ -150,7 +150,7 @@ export const makeToolRoute = (deps: ToolRouteDeps) => {
               controller.enqueue(encoder.encode(`${JSON.stringify(message)}\n\n`));
             });
           } catch (streamErr) {
-            const errorMessage: ToolStreamMessageType = {
+            const errorMessage: PluginStreamMessageType = {
               type: 'error',
               data: getErrText(streamErr, 'Tool stream failed')
             };

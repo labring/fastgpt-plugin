@@ -90,11 +90,12 @@ const handler = createToolHandler({
       title: { en: 'Answer', 'zh-CN': '答案' }
     }
   }),
-  secretSchema: z.object({
-    apiKey: z.string().meta({
-      title: 'API Key',
+  secretSchema: defineSecretSchema({
+    apiKey: {
+      type: z.string().min(1),
+      title: { en: 'API Key', 'zh-CN': 'API 密钥' },
       isSecret: true
-    } satisfies SecretSchemaMetaType)
+    }
   }),
   handler: async (input, ctx) => ({
     answer: `Result for ${input.query} with ${ctx.secrets?.apiKey}`
@@ -111,9 +112,9 @@ The handler context includes:
 | `invoke` | Client for invoking host capabilities, such as file upload. |
 | `streamResponse` | Sends streaming tool answers. |
 
-### `defineInputSchema(fields)` and `defineOutputSchema(fields)`
+### `defineInputSchema(fields)`, `defineOutputSchema(fields)`, and `defineSecretSchema(fields)`
 
-Both helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text.
+These helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. Secret fields require boolean `isSecret` (set to `true` for values that need encrypted storage); they do not support `isToolParam`. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text.
 
 ```ts
 const inputSchema = defineInputSchema({
@@ -270,15 +271,13 @@ const handler = createToolHandler({
       description: { en: 'The search result', 'zh-CN': '搜索结果' }
     }
   }),
-  secretSchema: z.object({
-    apiKey: z.string().meta({
-      title: 'API Key',
-      'x-i18n': {
-        title: { en: 'API key', 'zh-CN': 'API 密钥' },
-        placeholder: { en: 'Enter an API key', 'zh-CN': '输入 API 密钥' }
-      },
+  secretSchema: defineSecretSchema({
+    apiKey: {
+      type: z.string().min(1),
+      title: { en: 'API Key', 'zh-CN': 'API 密钥' },
+      placeholder: { en: 'Enter an API key', 'zh-CN': '输入 API 密钥' },
       isSecret: true
-    } satisfies SecretSchemaMetaType)
+    }
   }),
   handler: async (input) => ({ answer: `Result for ${input.query}` })
 });
@@ -290,9 +289,9 @@ Plugin and child-tool `description` is the tool-description source; schema-field
 
 A single tool can declare `secretSchema` in its handler. A tool set can declare a shared `secretSchema` at the top level of `defineToolSet()`.
 
-New input/output fields should use the schema helpers. Direct `.meta()` remains valid for advanced low-level metadata, while secret fields use `SecretSchemaMetaType`. Every `secretSchema` field must include `isSecret`; set it to `true` for values that need encrypted storage.
+New input, output, and secret fields should use the schema helpers (`defineInputSchema()`, `defineOutputSchema()`, and `defineSecretSchema()`). Direct `.meta()` remains valid for advanced low-level metadata. Every `secretSchema` field must include `isSecret`; set it to `true` for values that need encrypted storage.
 
-For directly authored `z.object()` schemas or advanced field metadata, the low-level `.meta()` path remains available with `InputSchemaMetaType` and `OutputSchemaMetaType`; use the helpers for ordinary UI copy. Secret fields continue to use `SecretSchemaMetaType`.
+For directly authored `z.object()` schemas or advanced field metadata, the low-level `.meta()` path remains available with `InputSchemaMetaType`, `OutputSchemaMetaType`, and `SecretSchemaMetaType`; use the helpers for ordinary UI copy.
 
 ## Host Invocation
 
@@ -343,6 +342,81 @@ const handler = createToolHandler({
   }
 });
 ```
+
+## Moderation Plugin
+
+`defineModeration()` builds a **content moderation** plugin: it maps a provider's moderation service onto
+the FastGPT standard structure. FastGPT decides whether to allow the content; the plugin only emits a
+verdict and the per-hit details.
+
+```ts
+import { defineModeration, defineModerationManifest } from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const secretSchema = z.object({
+  accessKeyId: z.string().meta({ title: 'AccessKey ID', isSecret: true }),
+  accessKeySecret: z.string().meta({ title: 'AccessKey Secret', isSecret: true })
+});
+
+export default defineModeration({
+  manifest: defineModerationManifest({
+    pluginId: 'my-moderation',
+    version: '1.0.0',
+    name: { en: 'My Moderation', 'zh-CN': 'My Moderation' },
+    description: { en: 'Content moderation', 'zh-CN': 'Content moderation' },
+    meta: {
+      provider: 'baidu'
+    }
+  }),
+  secretSchema,
+  provider: {
+    name: 'baidu',
+    check: async (input, ctx) => {
+      try {
+        const flags = await callProvider(input.content, ctx.secrets);
+        return {
+          verdict: flags.verdict, // pass | block | suspected | error
+          hits: flags.hits.map((hit) => ({
+            label: 'porn',                  // normalised label
+            providerLabel: hit.label,       // provider native label
+            score: hit.confidence,          // provider native confidence, 0-100
+            keywords: hit.words
+          }))
+        };
+      } catch (error) {
+        // provider could not decide -> error verdict result, do not throw
+        return ctx.moderationError(`upstream failed: ${String(error)}`);
+      }
+    }
+  }
+});
+```
+
+### `provider.check(input, ctx)`
+
+`ctx` exposes `secrets` (validated against `secretSchema`), `systemVar`, `invoke` (host capabilities) and
+`moderationError(message)` (builds a standard error-verdict result).
+
+| Field | Description |
+| --- | --- |
+| `verdict` | `pass` / `block` / `suspected` / `error`. `suspected` means the provider flags it but is not confident; `error` means the provider could **not** decide. |
+| `hits[].label` | Normalised label (`porn` / `politics` / `ad` / `other`, ...). |
+| `hits[].providerLabel` | Provider native label, so normalisation loses nothing. |
+| `hits[].score` | Provider **native** confidence, 0-100. Omit it when the provider has none; never encode enums or booleans as numbers. |
+| `hits[].keywords` | Sensitive words matched for that label. |
+| `errorMessage` | Required when `verdict === 'error'`. |
+
+`result.provider` and `result.keywords` (the union of hit keywords) are filled in by the SDK.
+
+**Return an `error` verdict result when the provider cannot decide; never let the exception escape**: an
+uncaught error is treated as a framework-level failure (a plugin bug), which is indistinguishable from
+"provider temporarily unavailable".
+
+This version supports **synchronous text moderation only**: `input.content` is the text to review, with no
+`modality` field. `check` returns `ModerationResult` directly, not a `{ status, result }` envelope. If async
+submission or polling is needed later, it will use a separate async interface. Strictness is owned by the
+provider (console-side policy id or score thresholds) and passed through `secretSchema`; the framework does
+not normalise it.
 
 ## Build
 

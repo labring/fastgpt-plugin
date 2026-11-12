@@ -203,8 +203,8 @@ sequenceDiagram
 
 1. 通过 source 查询 Gateway session。
 2. 要求 session 存在、`consumerType=plugin-debug`、`status=connected`、`ownerAlive=true`。
-3. 通过 `/requests:stream` 发布 `plugin-debug.run` payload。
-4. 把 CLI 返回的 `plugin-debug.accepted`、`plugin-debug.stream` 转成工具调用的流式结果。
+3. 通过 `/requests:stream` 发布 `plugin-debug.run` payload，其中携带目标 `eventName`（工具为 `run`，内容审查插件为 `check`）与事件 payload。
+4. 把 CLI 返回的 `plugin-debug.accepted`、`plugin-debug.stream` 转成插件调用的流式结果。
 
 调试插件列表由 `DebugPluginRepoOverlay` 完成：
 

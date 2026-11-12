@@ -1,9 +1,46 @@
 import { z } from 'zod';
 
 import { I18nStringSchema, I18nStringStrictSchema } from '@domain/value-objects/i18n-string.vo';
+import { SystemVarSchema } from '@domain/value-objects/system-var.vo';
 
 export const I18nStringDTOSchema = z.object(I18nStringSchema.shape);
 export const I18nStringStrictDTOSchema = z.object(I18nStringStrictSchema.shape);
+
+export const SystemVarDTOSchema = z.object({
+  ...SystemVarSchema.shape
+});
+
+export const PluginSourceDTOSchema = z.string();
+
+export const arrayQueryParam = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => {
+    if (value == null) {
+      return undefined;
+    }
+
+    return Array.isArray(value) ? value : [value];
+  }, z.array(schema).optional());
+
+export const booleanQueryParam = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    if (value === 'true') {
+      return true;
+    }
+
+    if (value === 'false') {
+      return false;
+    }
+
+    return value;
+  }, schema);
 
 export type ErrorResponseDTOType = {
   code: string;

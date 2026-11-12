@@ -6,12 +6,13 @@ Language: [简体中文](./how-to-devlop-plugin.md) | [English](./how-to-devlop-
 
 This document targets system plugin development after FastGPT v4.15.0. The new FastGPT Plugin service unifies system tools, model presets, and similar capabilities as installable, updatable, runtime-isolated plugin packages. A plugin is eventually delivered to the FastGPT Plugin service as a `.pkg` file.
 
-The currently stable plugin type is system tool plugins:
+The currently stable plugin types are system tool plugins and content moderation plugins:
 
 - Single tool: one plugin exposes one tool and is declared with `defineTool()`.
 - Tool suite: one plugin exposes multiple related child tools and is declared with `defineToolSet()`.
+- Content moderation: one plugin maps a provider's content review service onto the FastGPT standard structure and is declared with `defineModeration()`.
 
-System tool plugins run in the runtime provided by the FastGPT Plugin service. The FastGPT main service invokes tools through the plugin service, and plugin code uses `@fastgpt-plugin/sdk-factory` to describe input, output, secret configuration, and execution logic.
+System tool plugins run in the runtime provided by the FastGPT Plugin service. The FastGPT main service invokes tools through the plugin service, and plugin code uses `@fastgpt-plugin/sdk-factory` to describe input, output, secret configuration, and execution logic. Content moderation plugins use the same runtime and package protocol, but the end-to-end flow in this document covers system tools only; for moderation authoring rules see `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`.
 
 ## Differences From The Legacy Mechanism
 
@@ -53,7 +54,7 @@ Clarify these items before coding:
 
 | Information | Description |
 | --- | --- |
-| Plugin type | `tool` or `tool-suite`. |
+| Plugin type | `tool`, `tool-suite`, or `moderation`. |
 | Plugin ID | `pluginId`, globally stable and unique. Keep it unchanged after release. |
 | Child tool ID | Required only for tool suites. `children[].id` stays unchanged after release. |
 | Chinese and English names | `name.en` and `name.zh-CN`. |
@@ -144,7 +145,7 @@ The CLI creates the plugin directory and common files:
 
 | File | Purpose |
 | --- | --- |
-| `index.ts` | Plugin entry, default-exporting `defineTool()` or `defineToolSet()`. |
+| `index.ts` | Plugin entry, default-exporting `defineTool()`, `defineToolSet()`, or `defineModeration()`. |
 | `package.json` | Plugin dependencies and `build`, `build:dev`, `pack`, and `test` scripts. |
 | `tsconfig.json` | TypeScript config. |
 | `vitest.config.ts` | Test config. |
@@ -160,16 +161,17 @@ import {
   createToolHandler,
   defineInputSchema,
   defineOutputSchema,
-  defineTool,
-  type SecretSchemaMetaType
+  defineSecretSchema,
+  defineTool
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
-const secretSchema = z.object({
-  apiKey: z.string().min(1).meta({
-    title: 'API Key',
+const secretSchema = defineSecretSchema({
+  apiKey: {
+    type: z.string().min(1),
+    title: { en: 'API Key', 'zh-CN': 'API 密钥' },
     isSecret: true
-  } satisfies SecretSchemaMetaType)
+  }
 });
 
 const handler = createToolHandler({
@@ -216,7 +218,7 @@ export default defineTool({
 });
 ```
 
-`defineInputSchema()` and `defineOutputSchema()` accept field descriptor objects and return ordinary Zod objects that can be passed directly to `createToolHandler()`. Each field's `type` is a Zod schema instance, and `title` must include `en` and `zh-CN`, with optional `zh-Hant`; `description` is optional localized UI and tool-description text. Input fields additionally support optional boolean `isToolParam`, including `false`. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text. The helpers generate English plain `title` / `description` values and full `x-i18n` metadata, preserve other `.meta()` metadata on the schema, and do not mutate the source schema. `createToolHandler()` still consumes ordinary Zod objects, whose default behavior strips unknown keys; call `.strict()` on the returned object when strict validation is desired.
+`defineInputSchema()`, `defineOutputSchema()`, and `defineSecretSchema()` accept field descriptor objects and return ordinary Zod objects that can be passed directly to `createToolHandler()`. Each field's `type` is a Zod schema instance, and `title` must include `en` and `zh-CN`, with optional `zh-Hant`; `description` is optional localized UI and tool-description text. Input fields additionally support optional boolean `isToolParam`, including `false`. Secret fields require boolean `isSecret` (set to `true` for encrypted storage) and do not support `isToolParam`. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text. The helpers generate English plain `title` / `description` values and full `x-i18n` metadata, preserve other `.meta()` metadata on the schema, and do not mutate the source schema. `createToolHandler()` still consumes ordinary Zod objects, whose default behavior strips unknown keys; call `.strict()` on the returned object when strict validation is desired.
 
 Fields compose when nested or used as array elements:
 
@@ -236,8 +238,8 @@ const outputSchema = defineOutputSchema({
 
 Core rules:
 
-- Define input and output fields with `defineInputSchema()` and `defineOutputSchema()`. Each field's `type` is a Zod schema, and its required `title` includes `en` and `zh-CN`; optional `description` is localized UI and tool-description text. Input fields also support optional boolean `isToolParam`.
-- Continue to define secret fields with `.meta({ ... } satisfies SecretSchemaMetaType)`; advanced metadata can also use Zod `.meta()`. Set `isSecret: true` for sensitive fields.
+- Define input, output, and secret fields with `defineInputSchema()`, `defineOutputSchema()`, and `defineSecretSchema()`. Each field's `type` is a Zod schema, and its required `title` includes `en` and `zh-CN`; optional `description` is localized UI and tool-description text. Input fields support optional boolean `isToolParam`; secret fields require boolean `isSecret`.
+- Advanced metadata can use Zod `.meta()` directly. Low-level `SecretSchemaMetaType` remains available when authoring `z.object()` schemas manually.
 - Convert external API errors into actionable messages and avoid exposing secrets, tokens, or complete sensitive responses.
 - Use `ctx.invoke.uploadFile()` when host file upload is needed, and prefer preserving the returned `err`.
 - Use `ctx.streamResponse()` when progress should be shown to users.
@@ -382,6 +384,10 @@ Business plugins are released to private repositories. Manage versions, secrets,
 ### How should I choose between `tool` and `tool-suite`?
 
 Use `tool` for a single capability. Use `tool-suite` for multiple capabilities that share authentication, the same upstream API, and strong business relevance, such as search, detail, and task creation in one plugin.
+
+### How do I write a content moderation plugin?
+
+Declare it with `defineModeration()`; authoring rules live in `sdk/factory/skills/fastgpt-moderation-development/SKILL.md`. Three easy mistakes: return an `error` verdict result instead of throwing when the provider cannot decide; put per-item detail in `hits` and treat the top-level `verdict` as the only authoritative judgement; express strictness through the provider's own configuration, since the framework does not normalise it. This version supports synchronous text moderation only, and `check` returns `ModerationResult` directly.
 
 ### How should plugin versions be managed?
 

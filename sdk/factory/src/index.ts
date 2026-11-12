@@ -10,10 +10,15 @@ import {
   type ToolHandlerDefinition
 } from './tool-factory';
 
+export { configurePluginProxy, hasProxyEnv } from './proxy';
 export { createToolHandler };
 
-export { defineInputSchema, defineOutputSchema } from './schema-helpers';
-export type { InputFieldDefinition, OutputFieldDefinition } from './schema-helpers';
+export type {
+  InputFieldDefinition,
+  OutputFieldDefinition,
+  SecretFieldDefinition
+} from './schema-helpers';
+export { defineInputSchema, defineOutputSchema, defineSecretSchema } from './schema-helpers';
 
 export type I18nSchemaMetaType = {
   title: I18nStringType;
@@ -91,4 +96,23 @@ export const defineToolSet = ({
   return toolSet;
 };
 
+export {
+  defineModerationManifest,
+  type UserModerationManifestType,
+  type UserModerationMetaType
+} from './manifest.type';
+export {
+  defineModeration,
+  ModerationFactory,
+  type ModerationProvider,
+  type ModerationProviderContext,
+  type ModerationProviderResultType
+} from './moderation-factory';
 export type { ToolHandlerContext } from './tool-factory';
+export type {
+  ModerationCheckInputType,
+  ModerationHitType,
+  ModerationLabelType,
+  ModerationResultType,
+  ModerationVerdictType
+} from '@domain/value-objects/moderation.vo';

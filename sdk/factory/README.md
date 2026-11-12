@@ -98,11 +98,12 @@ const handler = createToolHandler({
       title: { en: 'Answer', 'zh-CN': '答案' }
     }
   }),
-  secretSchema: z.object({
-    apiKey: z.string().meta({
-      title: 'API Key',
+  secretSchema: defineSecretSchema({
+    apiKey: {
+      type: z.string().min(1),
+      title: { en: 'API Key', 'zh-CN': 'API 密钥' },
       isSecret: true
-    } satisfies SecretSchemaMetaType)
+    }
   }),
   handler: async (input, ctx) => {
     ctx.streamResponse({
@@ -128,11 +129,11 @@ The handler context includes:
 | `invoke` | 反向调用宿主能力的客户端，例如上传文件。Client for invoking host capabilities, such as file upload. |
 | `streamResponse` | 发送流式工具回答。Sends streaming tool answers. |
 
-### `defineInputSchema(fields)` 与 `defineOutputSchema(fields)`
+### `defineInputSchema(fields)`、`defineOutputSchema(fields)` 与 `defineSecretSchema(fields)`
 
-两个 helper 接收字段描述对象，返回普通 Zod object；`type` 是 Zod schema 实例。每个字段的 `title` 必须包含 `en` 和 `'zh-CN'`，`'zh-Hant'` 可选。`description` 是可选的本地化字段说明，也是唯一描述来源；输入字段还可设置可选布尔值 `isToolParam`（包括 `false`），输出字段不支持该选项。旧输入 Schema 字段上的 `toolDescription` 仅在未显式设置 `isToolParam` 时用于推导为 `true`，显式值优先；它不会覆盖 `description`，FastGPT 不会将其作为文案使用。
+这些 helper 接收字段描述对象，返回普通 Zod object；`type` 是 Zod schema 实例。每个字段的 `title` 必须包含 `en` 和 `'zh-CN'`，`'zh-Hant'` 可选。`description` 是可选的本地化字段说明，也是唯一描述来源；输入字段还可设置可选布尔值 `isToolParam`（包括 `false`），输出字段不支持该选项。密钥字段必须设置布尔值 `isSecret`（需要加密存储时设为 `true`），不支持 `isToolParam`。旧输入 Schema 字段上的 `toolDescription` 仅在未显式设置 `isToolParam` 时用于推导为 `true`，显式值优先；它不会覆盖 `description`，FastGPT 不会将其作为文案使用。
 
-Both helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text.
+These helpers accept field descriptors and return ordinary Zod objects; `type` is a Zod schema instance. Every field `title` requires `en` and `'zh-CN'`, with optional `'zh-Hant'`. Optional `description` is localized field text and the only description source. Input fields may also set optional boolean `isToolParam` (including `false`); output fields do not support it. Secret fields require boolean `isSecret` (set to `true` for values requiring encrypted storage); they do not support `isToolParam`. On legacy input-schema fields, `toolDescription` is used only to infer `isToolParam: true` when `isToolParam` is absent; an explicit value takes precedence. It does not override `description`, and FastGPT does not use it as display text.
 
 ```ts
 const inputSchema = defineInputSchema({
@@ -336,23 +337,25 @@ Plugin and child-tool `description` is the tool-description source; schema-field
 
 A single tool can declare `secretSchema` in its handler. A tool set can declare a shared `secretSchema` at the top level of `defineToolSet()`.
 
-输入和输出字段优先使用 `defineInputSchema()` 与 `defineOutputSchema()`；它们生成普通文案及 `'x-i18n'`，并保留 schema 上已有的其他 `.meta()` 元数据。低层 `.meta()` 仍可用于密钥字段和高级 metadata。密钥字段使用 `SecretSchemaMetaType`；`secretSchema` 的每个字段都要包含 `isSecret`，需要加密存储时设为 `true`。
+输入、输出和密钥字段优先使用 `defineInputSchema()`、`defineOutputSchema()` 与 `defineSecretSchema()`；它们生成普通文案及 `'x-i18n'`，并保留 schema 上已有的其他 `.meta()` 元数据。低层 `.meta()` 仍可用于高级 metadata。编写 `secretSchema` 时设置 `isSecret: true` 标记需要加密存储的字段。
 
-Use `defineInputSchema()` and `defineOutputSchema()` for input and output fields; they generate plain compatibility text and `'x-i18n'` while preserving other `.meta()` metadata on the schema. Low-level `.meta()` remains available for secret fields and advanced metadata. Use `SecretSchemaMetaType` for secret fields; every `secretSchema` field must include `isSecret`, set to `true` for values that need encrypted storage.
-对于直接编写 `z.object()` 或需要高级字段 metadata 的场景，低层 `.meta()` 路径仍可使用 `InputSchemaMetaType` 和 `OutputSchemaMetaType`；常规 UI 文案优先使用上述 helper。密钥字段继续使用 `SecretSchemaMetaType`。
+Use `defineInputSchema()`, `defineOutputSchema()`, and `defineSecretSchema()` for input, output, and secret fields; they generate plain compatibility text and `'x-i18n'` while preserving other `.meta()` metadata on the schema. Low-level `.meta()` remains available for advanced metadata. Set `isSecret: true` on secret fields that need encrypted storage.
+对于直接编写 `z.object()` 或需要高级字段 metadata 的场景，低层 `.meta()` 路径仍可使用 `InputSchemaMetaType`、`OutputSchemaMetaType` 和 `SecretSchemaMetaType`；常规 UI 文案优先使用上述 helper。
 
-For directly authored `z.object()` schemas or advanced field metadata, the low-level `.meta()` path remains available with `InputSchemaMetaType` and `OutputSchemaMetaType`; use the helpers for ordinary UI copy. Secret fields continue to use `SecretSchemaMetaType`.
+For directly authored `z.object()` schemas or advanced field metadata, the low-level `.meta()` path remains available with `InputSchemaMetaType`, `OutputSchemaMetaType`, and `SecretSchemaMetaType`; use the helpers for ordinary UI copy.
 
 ```ts
-const secretSchema = z.object({
-  apiKey: z.string().meta({
-    title: 'API Key',
+const secretSchema = defineSecretSchema({
+  apiKey: {
+    type: z.string().min(1),
+    title: { en: 'API Key', 'zh-CN': 'API 密钥' },
     isSecret: true
-  } satisfies SecretSchemaMetaType),
-  baseURL: z.url().meta({
-    title: 'Base URL',
+  },
+  baseURL: {
+    type: z.string().url().optional(),
+    title: { en: 'Base URL', 'zh-CN': '服务地址' },
     isSecret: false
-  } satisfies SecretSchemaMetaType)
+  }
 });
 
 const handler = createToolHandler({
@@ -429,6 +432,98 @@ const handler = createToolHandler({
   }
 });
 ```
+
+## 内容审查插件 / Moderation Plugin
+
+`defineModeration()` 用于编写**内容审查**插件：把某个 provider 的审查服务映射成 FastGPT 的标准结构。
+是否放行由 FastGPT 决定，插件只输出裁决档位与逐项命中。
+
+`defineModeration()` builds a **content moderation** plugin: it maps a provider's moderation service onto
+the FastGPT standard structure. FastGPT decides whether to allow the content; the plugin only emits a
+verdict and the per-hit details.
+
+```ts
+import { defineModeration, defineModerationManifest } from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const secretSchema = z.object({
+  accessKeyId: z.string().meta({ title: 'AccessKey ID', isSecret: true }),
+  accessKeySecret: z.string().meta({ title: 'AccessKey Secret', isSecret: true })
+});
+
+export default defineModeration({
+  manifest: defineModerationManifest({
+    pluginId: 'my-moderation',
+    version: '1.0.0',
+    name: { en: 'My Moderation', 'zh-CN': '我的审查' },
+    description: { en: 'Content moderation', 'zh-CN': '内容审查' },
+    meta: {
+      provider: 'baidu'
+    }
+  }),
+  secretSchema,
+  provider: {
+    name: 'baidu',
+    check: async (input, ctx) => {
+      try {
+        const flags = await callProvider(input.content, ctx.secrets);
+        return {
+          verdict: flags.verdict, // pass | block | suspected | error
+          hits: flags.hits.map((hit) => ({
+            label: 'porn',                  // 归一化标签
+            providerLabel: hit.label,       // provider 原生标签
+            score: hit.confidence,          // provider 原生置信度 0-100
+            keywords: hit.words
+          }))
+        };
+      } catch (error) {
+        // provider 无法判定 → error 档结果，不要抛异常
+        return ctx.moderationError(`upstream failed: ${String(error)}`);
+      }
+    }
+  }
+});
+```
+
+### `provider.check(input, ctx)`
+
+`ctx` 提供 `secrets`（按 `secretSchema` 校验后的配置）、`systemVar`、`invoke`（反向调用宿主）与
+`moderationError(message)`（构造标准 error 档结果）。
+
+`ctx` exposes `secrets` (validated against `secretSchema`), `systemVar`, `invoke` (host capabilities) and
+`moderationError(message)` (builds a standard error-verdict result).
+
+返回值约定 / Return value:
+
+| 字段 / Field | 说明 / Description |
+| --- | --- |
+| `verdict` | `pass` / `block` / `suspected` / `error`。`suspected` 是 provider 判定疑似；`error` 是 provider **没能**给出判定。 |
+| `hits[].label` | 归一化标签（`porn` / `politics` / `ad` / `other` 等）。 |
+| `hits[].providerLabel` | provider 原生标签原文，归一化不丢信息。 |
+| `hits[].score` | provider **原生**置信度 0-100；没有就省略，不要把枚举或布尔编成数字。 |
+| `hits[].keywords` | 该标签命中的敏感词。 |
+| `errorMessage` | `verdict === 'error'` 时必填。 |
+
+`result.provider` 与 `result.keywords`（全部命中词并集）由 SDK 填充，适配器不用给。
+
+`result.provider` and `result.keywords` (the union of hit keywords) are filled in by the SDK.
+
+**provider 无法判定时返回 `verdict: 'error'` 的结果，不要抛异常**：未捕获异常会被当作框架级失败
+（插件缺陷），与「provider 暂时不可用」无法区分。
+
+**Return an `error` verdict result when the provider cannot decide; never let the exception escape**: an
+uncaught error is treated as a framework-level failure (a plugin bug), which is indistinguishable from
+"provider temporarily unavailable".
+
+本版本只支持**同步文本审查**：`input.content` 就是待审字符串，不需要 `modality` 字段。
+`check` 直接返回 `ModerationResult`，不包装 `{ status, result }`；异步提交、轮询若将来需要，另行设计
+异步接口。严格度由 provider 自己控制（厂商控制台里的策略 ID / 分值），通过 `secretSchema` 透传，框架不做归一化。
+
+This version supports **synchronous text moderation only**: `input.content` is the text to review, with no
+`modality` field. `check` returns `ModerationResult` directly, not a `{ status, result }` envelope. If async
+submission or polling is needed later, it will use a separate async interface. Strictness is owned by the
+provider (console-side policy id or score thresholds) and passed through `secretSchema`; the framework does
+not normalise it.
 
 ## 构建 / Build
 
