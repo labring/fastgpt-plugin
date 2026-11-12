@@ -7,6 +7,7 @@
 
 import { randomUUID } from 'node:crypto';
 
+import { isRunnablePluginType } from '@domain/entities/plugin.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { PluginPKGFilePort } from '@domain/ports/plugin/plugin-pkg-file.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
@@ -14,7 +15,7 @@ import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runti
 import type { URLFileFetcherPort } from '@domain/ports/url-file-fetcher.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
-import { type PluginSourceType,PluginUniqueIdSchema } from '@domain/value-objects/plugin.vo';
+import { type PluginSourceType, PluginUniqueIdSchema,type PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { type Result, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 import { batch } from '@shared/utils/fn';
@@ -47,6 +48,7 @@ const isZipFile = (file: FileObject) => file.metaData.fileName.toLowerCase().end
 /** Output Type */
 type Output = Promise<
   Result<{
+    installed?: { pluginId: string; version: string; etag: string }[];
     failed?: {
       url: string;
       reason: I18nStringType;
@@ -108,6 +110,7 @@ export const makePluginInstallUC =
     const successDownloadedFiles = results.filter((result) => !result.err);
     const failedDownloadFiles = results.filter((result) => result.err);
 
+    const installed: PluginUniqueIdType[] = [];
     const failToInstalled: { fileKey: string; reason: I18nStringType }[] = [];
     const installableFiles: DownloadedFile[] = [];
 
@@ -170,7 +173,7 @@ export const makePluginInstallUC =
         continue;
       }
 
-      if (info.info.type === 'tool') {
+      if (isRunnablePluginType(info.info.type)) {
         if (createResult.runtimeRegistrationRequired) {
           const [, registerErr] = await pluginRuntimeManager.register(uniqueId);
 
@@ -196,8 +199,10 @@ export const makePluginInstallUC =
             fileKey: file.metaData.fileKey,
             reason: replaceErr.reason
           });
+          continue;
         }
       }
+      installed.push(uniqueId);
     }
 
     const failed = [
@@ -223,8 +228,8 @@ export const makePluginInstallUC =
       successDownloadedFiles,
       installableFiles
     });
-    if (failed.length) return successResult({ failed }); // partial success
+    if (failed.length) return successResult({ failed, installed }); // partial success
 
     // fully success
-    return successResult({});
+    return successResult({ installed });
   };

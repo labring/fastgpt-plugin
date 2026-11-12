@@ -43,7 +43,7 @@ npx @fastgpt-plugin/cli pack --entry <plugin-directory> --dist <plugin-directory
 - `index.ts`: 系统工具入口，默认导出 `defineTool()` 或 `defineToolSet()` 的返回值。
 - `package.json`: 声明依赖和 `build`、`build:dev`、`pack`、`test` 脚本。
 - `logo.<ext>`: 主工具头像，必须放在工具根目录。
-- `README.md`: 工具用途、输入、输出、密钥配置和使用说明。
+- `README.en.md`、`README.zh-CN.md`（及可选 `README.zh-Hant.md`）：根目录下的多语言说明文档（描述工具用途、输入、输出、密钥配置和使用说明）；文件名严格区分大小写，构建与打包会自动识别并写入 `readmeUrls`，展示端优先按当前用户语言展示并依次回退到 `zh-CN`、`en`（旧插件仅保留 `README.md` 仍兼容）。
 - `assets/`: 可选资源目录，例如图标或示例资源。
 - `dist/`: CLI 构建输出目录，包含 `index.js`、`manifest.json` 和必要资源。
 - `out/`: CLI 打包输出目录，通常包含 `.pkg` 文件。

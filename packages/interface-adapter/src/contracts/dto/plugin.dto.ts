@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin-base.entity';
 
-import { I18nStringDTOSchema } from './common.dto';
+import { booleanQueryParam, I18nStringDTOSchema } from './common.dto';
 
 const PluginSourceDTOSchema = z.string();
 const PluginTagDTOSchema = PluginTagSchema;
@@ -39,7 +39,8 @@ export const PluginListItemDTOSchema = PluginBaseDTOSchema.omit({
   versionDescription: true,
   permission: true
 }).extend({
-  source: z.string()
+  source: z.string(),
+  installationStatus: z.enum(['active', 'disabled']).optional()
 });
 
 export const PluginListDTOSchema = z.array(PluginListItemDTOSchema);
@@ -113,11 +114,13 @@ export const PluginInstallDTOSchema = {
     source: PluginSourceDTOSchema.optional().default('system')
   }),
   response: z.object({
+    installed: z.array(PluginUniqueIdDTOSchema).optional(),
     failed: z.array(PluginInstallFailureDTOSchema).optional()
   })
 };
 
 export const PluginListParamsSchema = z.object({
+  includeDisabled: booleanQueryParam(z.boolean().optional()),
   types: arrayQueryParam(PluginTypeDTOSchema),
   tags: arrayQueryParam(PluginTagDTOSchema),
   op: z.enum(['or', 'and']).optional(),
@@ -202,3 +205,7 @@ export type PluginRuntimeConfigSetParamsDTOType = z.infer<
 export type PluginRuntimeConfigResetParamsDTOType = z.infer<
   typeof PluginRuntimeConfigResetParamsSchema
 >;
+
+export const PluginRestoreParamsSchema = PluginUniqueIdDTOSchema.extend({
+  source: PluginSourceDTOSchema.optional().default('system')
+});

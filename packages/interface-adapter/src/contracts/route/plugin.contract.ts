@@ -15,6 +15,7 @@ import {
   PluginListDTOSchema,
   PluginListParamsSchema,
   PluginPruneDisabledResponseDTOSchema,
+  PluginRestoreParamsSchema,
   PluginRuntimeConfigGetParamsSchema,
   PluginRuntimeConfigResetParamsSchema,
   PluginRuntimeConfigSchema,
@@ -45,6 +46,11 @@ const uploadResponse = {
 };
 
 export const PluginContract = {
+  Restore: defineContract({
+    meta: { method: 'post', path: '/plugin/restore', operationId: 'plugin.restore', description: 'Reactivate retained plugin files without uploading', summary: 'Restore a plugin', tags: ['plugin'], security: authToken },
+    request: PluginRestoreParamsSchema,
+    response: { 200: emptyResponse(), 500: jsonResponse({ error: ErrorResponseDTOSchema }) }
+  }),
   Upload: defineContract({
     meta: uploadMeta,
     request: PluginUploadParamsSchema,

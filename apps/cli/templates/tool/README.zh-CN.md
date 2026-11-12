@@ -2,7 +2,7 @@
 
 {{description}}
 
-语言：[简体中文](./README.zh-CN.md) | [English](./README.en.md) | [默认](./README.md)
+语言：[简体中文](./README.zh-CN.md) | [English](./README.en.md)
 
 ## 快速开始
 

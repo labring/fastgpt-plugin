@@ -114,6 +114,7 @@ type ReplaceInstalledPluginInput = {
 };
 
 type InstalledPluginRecord = {
+  installationStatus?: 'active' | 'disabled';
   source: PluginSourceType;
   plugin: ListedMongoPlugin;
 };
@@ -428,6 +429,9 @@ export class PluginRepo implements PluginRepoPort {
           )
           .lean();
 
+        if (existingInstallation?.etag === uniqueId.etag && (existingInstallation.status === 'active' || existingInstallation.status === undefined)) {
+          return false;
+        }
         if (existingInstallation?.etag === uniqueId.etag && existingInstallation.status !== 'disabled') {
           throw new DuplicatePluginInstallationError();
         }
@@ -506,7 +510,8 @@ export class PluginRepo implements PluginRepoPort {
   async getPluginByUserPluginId({
     pluginId,
     source,
-    version
+    version,
+    includeDisabled
   }: UserPluginIdType): Promise<Result<PluginType>> {
     const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
     const pluginModel = this.deps.mongoClient.getModel('plugin');
@@ -516,17 +521,13 @@ export class PluginRepo implements PluginRepoPort {
     const installation = normalizedVersion
       ? await installationModel
         .findOne(
-          this.getActiveInstallationFilter({
-            source: normalizedSource,
-            version: normalizedVersion,
-            pluginId
-          }),
+          includeDisabled ? { source: normalizedSource, version: normalizedVersion, pluginId, status: { $in: ['active', 'disabled'] } } : this.getActiveInstallationFilter({ source: normalizedSource, version: normalizedVersion, pluginId }),
           { _id: 0, pluginId: 1, version: 1, etag: 1 }
         )
         .lean()
       : await installationModel
         .find(
-          this.getActiveInstallationFilter({ source: normalizedSource, pluginId }),
+          includeDisabled ? { source: normalizedSource, pluginId, status: { $in: ['active', 'disabled'] } } : this.getActiveInstallationFilter({ source: normalizedSource, pluginId }),
           { _id: 0, pluginId: 1, version: 1, etag: 1 }
         )
         .lean()
@@ -538,7 +539,7 @@ export class PluginRepo implements PluginRepoPort {
           pluginId: installation.pluginId,
           version: installation.version,
           etag: installation.etag,
-          $or: [{ status: PluginStatusEnum.active }, { status: { $exists: false } }]
+          ...(includeDisabled ? {} : { $or: [{ status: PluginStatusEnum.active }, { status: { $exists: false } }] })
         })
         .lean();
 
@@ -624,7 +625,8 @@ export class PluginRepo implements PluginRepoPort {
 
   async confirmPlugin(
     pluginId: PluginUniqueIdType,
-    source: PluginSourceType = 'system'
+    source: PluginSourceType = 'system',
+    restore = false
   ): Promise<Result<PluginConfirmResultType>> {
     try {
       const pluginModel = this.deps.mongoClient.getModel('plugin');
@@ -648,7 +650,7 @@ export class PluginRepo implements PluginRepoPort {
         }
 
         const pendingInstallation = await installationModel
-          .findOne({ source, ...pluginId, status: 'pending' }, undefined, { session })
+          .findOne({ source, ...pluginId, status: restore ? { $in: ['pending', 'disabled'] } : 'pending' }, undefined, { session })
           .lean();
         if (!pendingInstallation) return undefined;
 
@@ -658,7 +660,7 @@ export class PluginRepo implements PluginRepoPort {
           session
         );
         const pending = await installationModel.findOneAndUpdate(
-          { source, ...pluginId, status: 'pending' },
+          { source, ...pluginId, status: restore ? { $in: ['pending', 'disabled'] } : 'pending' },
           { $set: { status: 'active', updatedAt: new Date() }, $unset: { expiredAt: 1 } },
           { session, new: false }
         ).lean();
@@ -709,7 +711,8 @@ export class PluginRepo implements PluginRepoPort {
   async rollbackPluginConfirmation(
     uniqueId: PluginUniqueIdType,
     source: PluginSourceType = 'system',
-    replacedInstallationIds: PluginUniqueIdType[] = []
+    replacedInstallationIds: PluginUniqueIdType[] = [],
+    restored = false
   ): Promise<Result> {
     try {
       await this.deps.mongoClient.sessionRun(async (session) => {
@@ -718,10 +721,11 @@ export class PluginRepo implements PluginRepoPort {
           { source, ...uniqueId, status: 'active' },
           {
             $set: {
-              status: 'pending',
-              expiredAt: addMinutes(Date.now(), PluginRepo.ExpiresMinutes),
+              status: restored ? 'disabled' : 'pending',
+              ...(restored ? {} : { expiredAt: addMinutes(Date.now(), PluginRepo.ExpiresMinutes) }),
               updatedAt: new Date()
-            }
+            },
+            ...(restored ? { $unset: { expiredAt: 1 } } : {})
           },
           { session }
         );
@@ -845,7 +849,7 @@ export class PluginRepo implements PluginRepoPort {
   }
 
   private async listInstalledPluginsByView(
-    { op, types, tags, sources }: PluginListInputType,
+    { op, types, tags, sources, includeDisabled }: PluginListInputType,
     view: PluginListView
   ): Promise<InstalledPluginRecord[]> {
     const normalizedSources = sources && sources.length > 0 ? sources : ['system'];
@@ -853,10 +857,13 @@ export class PluginRepo implements PluginRepoPort {
     const pluginModel = this.deps.mongoClient.getModel('plugin');
     const installations = await pluginInstallationModel
       .find(
-        this.getActiveInstallationFilter({ source: { $in: normalizedSources } }),
+        includeDisabled
+          ? { source: { $in: normalizedSources }, status: { $in: ['active', 'disabled'] } }
+          : this.getActiveInstallationFilter({ source: { $in: normalizedSources } }),
         {
           _id: 0,
           source: 1,
+          status: 1,
           pluginId: 1,
           version: 1,
           etag: 1,
@@ -869,6 +876,7 @@ export class PluginRepo implements PluginRepoPort {
       string,
       {
         source: string;
+        status?: string;
         pluginId: string;
         version: string;
         etag: string;
@@ -882,7 +890,8 @@ export class PluginRepo implements PluginRepoPort {
 
       if (
         !existingInstallation ||
-        this.compareVersions(installation.version, existingInstallation.version) > 0
+        (existingInstallation.status === 'disabled' && installation.status !== 'disabled') ||
+        (existingInstallation.status === installation.status && this.compareVersions(installation.version, existingInstallation.version) > 0)
       ) {
         latestInstallationMap.set(key, installation);
       }
@@ -915,14 +924,14 @@ export class PluginRepo implements PluginRepoPort {
       version: item.version,
       etag: item.etag
     }));
-    const query: Record<string, unknown> = this.getActivePluginFilter({
-      $or: installedPluginConditions
-    });
+    const query: Record<string, unknown> = includeDisabled
+      ? { $or: installedPluginConditions }
+      : this.getActivePluginFilter({ $or: installedPluginConditions });
 
     if (filterConditions.length > 0) {
       if (op === 'or') {
         query.$and = [
-          { $or: [{ status: PluginStatusEnum.active }, { status: { $exists: false } }] },
+          ...(includeDisabled ? [] : [{ $or: [{ status: PluginStatusEnum.active }, { status: { $exists: false } }] }]),
           { $or: installedPluginConditions },
           { $or: filterConditions }
         ];
@@ -950,6 +959,7 @@ export class PluginRepo implements PluginRepoPort {
       return [
         {
           source: installation.source,
+          installationStatus: installation.status === 'disabled' ? 'disabled' : 'active',
           plugin
         }
       ];
@@ -959,7 +969,7 @@ export class PluginRepo implements PluginRepoPort {
   async list(input: PluginListInputType): Promise<Result<PluginListOutputType>> {
     try {
       const installedPlugins = await this.listInstalledPluginsByView(input, 'summary');
-      const items = installedPlugins.map<PluginListItemType>(({ source, plugin }) =>
+      const items = installedPlugins.map<PluginListItemType>(({ source, plugin, installationStatus }) =>
         PluginListItemSchema.parse({
           pluginId: plugin.pluginId,
           version: plugin.version,
@@ -974,7 +984,8 @@ export class PluginRepo implements PluginRepoPort {
           repoUrl: plugin.repoUrl ?? undefined,
           description: plugin.description,
           tags: plugin.tags ?? undefined,
-          source
+          source,
+          ...(input.includeDisabled ? { installationStatus } : {})
         })
       );
 
@@ -987,19 +998,21 @@ export class PluginRepo implements PluginRepoPort {
   async listToolSummaries({
     tags,
     op,
-    sources
+    sources,
+    includeDisabled
   }: ToolListInputType): Promise<Result<ToolListOutputType>> {
     try {
       const installedPlugins = await this.listInstalledPluginsByView(
         {
           types: ['tool'],
+          includeDisabled,
           tags,
           op,
           sources
         },
         'toolSummary'
       );
-      const tools = installedPlugins.map(({ source, plugin }) => {
+      const tools = installedPlugins.map(({ source, plugin, installationStatus }) => {
         const data = deserializePluginDataJsonSchemaFields(plugin.data) as
           | {
             secretSchema?: unknown;
@@ -1029,6 +1042,7 @@ export class PluginRepo implements PluginRepoPort {
           toolDescription: data?.toolDescription,
           tags: plugin.tags ?? undefined,
           source,
+          ...(includeDisabled ? { installationStatus } : {}),
           isToolset: Boolean(data?.children?.length),
           hasSecret: this.hasSecretSchema(data?.secretSchema),
           children: data?.children?.map((child) => ({
@@ -1270,6 +1284,9 @@ export class PluginRepo implements PluginRepoPort {
         .findOne({ source, ...uniqueId })
         .lean();
       if (existingInstallation?.etag === uniqueId.etag && existingInstallation.status !== 'disabled') {
+        if (existingInstallation.status === 'active' || existingInstallation.status === undefined) {
+          return successResult({ runtimeRegistrationRequired: false });
+        }
         if (!pending) {
           return failureResult({
             en: 'Plugin installation already exists for this source',

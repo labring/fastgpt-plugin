@@ -14,7 +14,7 @@ vi.mock('tsdown', () => ({
 
 import { validateReadmeFileNames } from '../helpers/readme-files';
 
-import { buildToolPackage } from './index';
+import { buildPluginPackage } from './index';
 
 type BuildTestGlobal = typeof globalThis & {
   __fastgptPluginBuildTestTool?: unknown;
@@ -52,6 +52,8 @@ const createToolExport = () => {
   });
 
   return {
+    getPluginType: () => 'tool' as const,
+    getUserModerationManifest: () => ({}),
     getUserToolManifest: () => ({
       pluginId: 'i18n-build-test',
       version: '1.0.0',
@@ -66,7 +68,7 @@ const createToolExport = () => {
   };
 };
 
-describe('buildToolPackage', () => {
+describe('buildPluginPackage', () => {
   let testDir: string;
   let entryDir: string;
   let outputDir: string;
@@ -89,7 +91,7 @@ describe('buildToolPackage', () => {
 
   it('keeps localized schema descriptions while removing legacy tool descriptions', async () => {
     await writeFile(path.join(entryDir, 'README.md'), '默认说明', 'utf-8');
-    await buildToolPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' });
+    await buildPluginPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' });
 
     const manifest = JSON.parse(await readFile(path.join(outputDir, 'manifest.json'), 'utf-8'));
     const query = manifest.inputSchema.properties.query;
@@ -129,7 +131,7 @@ describe('buildToolPackage', () => {
       ]
     };
 
-    await buildToolPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' });
+    await buildPluginPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' });
 
     const manifest = JSON.parse(await readFile(path.join(outputDir, 'manifest.json'), 'utf-8'));
     expect(manifest.description).toEqual({ en: 'A build test', 'zh-CN': '构建测试' });
@@ -148,7 +150,7 @@ describe('buildToolPackage', () => {
       ].map(([name, contents]) => writeFile(path.join(entryDir, name), contents, 'utf-8'))
     );
 
-    await buildToolPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' });
+    await buildPluginPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' });
 
     await expect(readFile(path.join(outputDir, 'README.en.md'), 'utf-8')).resolves.toBe('English');
     await expect(readFile(path.join(outputDir, 'README.zh-CN.md'), 'utf-8')).resolves.toBe('简体中文');
@@ -159,7 +161,7 @@ describe('buildToolPackage', () => {
     await writeFile(path.join(entryDir, 'README.fr.md'), 'Unsupported language', 'utf-8');
 
     await expect(
-      buildToolPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' })
+      buildPluginPackage({ entry: entryDir, output: outputDir, minify: false, format: 'esm' })
     ).rejects.toThrow(/README\.fr\.md/);
   });
 

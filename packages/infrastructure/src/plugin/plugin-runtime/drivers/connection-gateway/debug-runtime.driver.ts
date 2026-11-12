@@ -1,8 +1,9 @@
 import type { PluginRuntimeConfigType } from '@domain/entities/plugin.entity';
-import type {
-  PluginInvokeEventNameType,
-  PluginRuntimeInvokeOptions,
-  PluginRuntimeManagerPort
+import {
+  isKnownPluginEvent,
+  type PluginInvokeEventNameType,
+  type PluginRuntimeInvokeOptions,
+  type PluginRuntimeManagerPort
 } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { ConnectionGatewayEnvelope } from '@domain/value-objects/connection-gateway.vo';
 import {
@@ -89,7 +90,7 @@ export class ConnectionGatewayDebugRuntimeManager
     returnStream: S;
     options?: ConnectionGatewayDebugRuntimeInvokeOptions;
   }): Promise<Result<S extends true ? StreamData<R> : R>> {
-    if (eventName !== 'run' || !returnStream) {
+    if (!isKnownPluginEvent(eventName) || !returnStream) {
       return failureResult(createError(ErrorCode.pluginRuntimeEventNotSupported));
     }
 
@@ -114,6 +115,7 @@ export class ConnectionGatewayDebugRuntimeManager
         timeoutMs: options?.timeout ?? this.options.requestTimeoutMs,
         source,
         pluginId: uniqueId.pluginId,
+        eventName,
         payload
       });
 
@@ -163,6 +165,7 @@ export class ConnectionGatewayDebugRuntimeManager
     timeoutMs,
     source,
     pluginId,
+    eventName,
     payload
   }: {
     session: GatewayDebugSession;
@@ -170,6 +173,7 @@ export class ConnectionGatewayDebugRuntimeManager
     timeoutMs: number;
     source: string;
     pluginId: string;
+    eventName: PluginInvokeEventNameType;
     payload: unknown;
   }): AsyncIterable<ConnectionGatewayEnvelope> {
     const response = await fetch(
@@ -193,7 +197,7 @@ export class ConnectionGatewayDebugRuntimeManager
             createdAt: Date.now(),
             payload: {
               kind: 'plugin-debug.run',
-              eventName: 'run',
+              eventName,
               payload: {
                 ...toObjectPayload(payload),
                 pluginId,
