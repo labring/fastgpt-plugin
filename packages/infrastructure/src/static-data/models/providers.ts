@@ -152,6 +152,11 @@ export const ModelProviderMap = {
     "zh-CN": "词元跳动",
     "zh-Hant": "詞元跳動",
   },
+  Voyage: {
+    en: "Voyage AI",
+    "zh-CN": "Voyage AI",
+    "zh-Hant": "Voyage AI",
+  },
   vertexai: {
     en: "vertexai",
     "zh-CN": "vertexai",
@@ -362,6 +367,12 @@ export const aiproxyChannels: AIProxyChannelsType = [
     name: { en: "TokenDance", "zh-CN": "词元跳动", "zh-Hant": "詞元跳動" },
     avatar: "tokendance",
     website: "https://tokendance.space",
+  },
+  {
+    channelId: 60,
+    name: { en: "Voyage AI", "zh-CN": "Voyage AI", "zh-Hant": "Voyage AI" },
+    avatar: "voyage",
+    website: "https://www.voyageai.com",
   },
   {
     channelId: 20,

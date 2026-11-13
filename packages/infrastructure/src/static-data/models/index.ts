@@ -37,6 +37,7 @@ import siliconflow from './provider/Siliconflow';
 import sparkdesk from './provider/SparkDesk';
 import stepfun from './provider/StepFun';
 import tokendance from './provider/TokenDance';
+import voyage from './provider/Voyage';
 import yi from './provider/Yi';
 import { aiproxyChannels, ModelProviderMap, ModelProviders } from './providers';
 import type { ProviderConfigType } from './type';
@@ -82,6 +83,7 @@ export const staticModelProviderConfigs: ProviderConfigType[] = [
   sparkdesk,
   stepfun,
   tokendance,
+  voyage,
   yi
 ];
 
