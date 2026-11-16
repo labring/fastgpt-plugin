@@ -21,6 +21,7 @@ import huggingface from './provider/HuggingFace';
 import hunyuan from './provider/Hunyuan';
 import internlm from './provider/InternLM';
 import jina from './provider/Jina';
+import llmtr from './provider/LLMTR';
 import meta from './provider/Meta';
 import minimax from './provider/MiniMax';
 import mistralai from './provider/MistralAI';
@@ -66,6 +67,7 @@ export const staticModelProviderConfigs: ProviderConfigType[] = [
   hunyuan,
   internlm,
   jina,
+  llmtr,
   meta,
   minimax,
   mistralai,

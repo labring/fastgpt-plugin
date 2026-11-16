@@ -152,6 +152,11 @@ export const ModelProviderMap = {
     "zh-CN": "词元跳动",
     "zh-Hant": "詞元跳動",
   },
+  LLMTR: {
+    en: "LLMTR",
+    "zh-CN": "LLMTR",
+    "zh-Hant": "LLMTR",
+  },
   vertexai: {
     en: "vertexai",
     "zh-CN": "vertexai",
