@@ -78,7 +78,8 @@ describe('static model provider ordering', () => {
     const modelIds = gemini?.list.map((model) => model.model) ?? [];
     const flashModels = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
 
-    expect(modelIds[0]).toBe('gemini-4-argon');
+    expect(modelIds[0]).toBe('gemini-4-carbon');
+    expect(modelIds.indexOf('gemini-4-carbon')).toBeLessThan(modelIds.indexOf('gemini-4-argon'));
     expect(modelIds.filter((model) => flashModels.includes(model))).toEqual(flashModels);
   });
 
