@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+﻿import { afterEach, describe, expect, it } from 'vitest';
 import z from 'zod';
 
 import { InvokeMethodEnum } from '@domain/ports/invoke.port';
@@ -376,13 +376,13 @@ describe('ToolFactory response content parts', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -436,13 +436,13 @@ describe('ToolFactory response content parts', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -492,13 +492,13 @@ describe('ToolFactory response content parts', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -551,13 +551,13 @@ describe('ToolFactory response content parts', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -616,13 +616,13 @@ describe('ToolFactory response content parts', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });
@@ -678,13 +678,13 @@ describe('ToolFactory response content parts', () => {
       },
       void,
       never,
-      ToolStreamMessageType
+      PluginStreamMessageType
     >('run', {
       input: {},
       systemVar: {}
     });
 
-    const messages: ToolStreamMessageType[] = [];
+    const messages: PluginStreamMessageType[] = [];
     await response.output!.stream.consume((chunk) => {
       messages.push(chunk);
     });

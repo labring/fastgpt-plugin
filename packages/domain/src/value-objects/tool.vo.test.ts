@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 
 import {
-  ToolHandlerReturnSchema,
-  ToolMessageContentPartSchema,
-  ToolStreamMessageSchema
-} from './tool.vo';
+  PluginStreamMessageSchema,
+  PluginStreamResponseDataSchema
+} from './plugin-stream.vo';
+import { ToolMessageContentPartSchema } from './tool.vo';
 
 describe('ToolMessageContentPartSchema', () => {
   it('accepts text parts', () => {
@@ -53,15 +53,15 @@ describe('ToolMessageContentPartSchema', () => {
   });
 });
 
-describe('ToolHandlerReturnSchema', () => {
+describe('PluginStreamResponseDataSchema', () => {
   it('keeps plain tool outputs as before', () => {
     const data = { answer: 'ok', list: [1, 2] };
 
-    expect(ToolHandlerReturnSchema.parse(data)).toEqual(data);
+    expect(PluginStreamResponseDataSchema.parse(data)).toEqual(data);
   });
 
   it('accepts empty output objects', () => {
-    expect(ToolHandlerReturnSchema.parse({})).toEqual({});
+    expect(PluginStreamResponseDataSchema.parse({})).toEqual({});
   });
 
   it('accepts structured content parts', () => {
@@ -73,33 +73,33 @@ describe('ToolHandlerReturnSchema', () => {
       ]
     };
 
-    expect(ToolHandlerReturnSchema.parse(data)).toEqual(data);
+    expect(PluginStreamResponseDataSchema.parse(data)).toEqual(data);
   });
 
   it('keeps legacy string content untouched', () => {
     const data = { content: 'https://example.com/a.png', title: 'Result' };
 
-    expect(ToolHandlerReturnSchema.parse(data)).toEqual(data);
+    expect(PluginStreamResponseDataSchema.parse(data)).toEqual(data);
   });
 
   it('keeps legacy object and array content untouched', () => {
     expect(
-      ToolHandlerReturnSchema.parse({ content: { text: 'ordinary document text' } })
+      PluginStreamResponseDataSchema.parse({ content: { text: 'ordinary document text' } })
     ).toEqual({ content: { text: 'ordinary document text' } });
-    expect(ToolHandlerReturnSchema.parse({ content: [1, 2, 3] })).toEqual({ content: [1, 2, 3] });
+    expect(PluginStreamResponseDataSchema.parse({ content: [1, 2, 3] })).toEqual({ content: [1, 2, 3] });
   });
 
   it('keeps malformed content parts untouched without wire validation', () => {
-    expect(ToolHandlerReturnSchema.parse({ content: [{ type: 'text', text: '' }] })).toEqual({
+    expect(PluginStreamResponseDataSchema.parse({ content: [{ type: 'text', text: '' }] })).toEqual({
       content: [{ type: 'text', text: '' }]
     });
     expect(
-      ToolHandlerReturnSchema.parse({ content: [{ type: 'image_url', image_url: {} }] })
+      PluginStreamResponseDataSchema.parse({ content: [{ type: 'image_url', image_url: {} }] })
     ).toEqual({ content: [{ type: 'image_url', image_url: {} }] });
   });
 
   it('accepts an empty content array', () => {
-    expect(ToolHandlerReturnSchema.parse({ content: [] })).toEqual({ content: [] });
+    expect(PluginStreamResponseDataSchema.parse({ content: [] })).toEqual({ content: [] });
   });
 
   it('keeps unknown top-level fields', () => {
@@ -109,11 +109,11 @@ describe('ToolHandlerReturnSchema', () => {
       count: 3
     };
 
-    expect(ToolHandlerReturnSchema.parse(data)).toEqual(data);
+    expect(PluginStreamResponseDataSchema.parse(data)).toEqual(data);
   });
 });
 
-describe('ToolStreamMessageSchema', () => {
+describe('PluginStreamMessageSchema', () => {
   it('parses a response carrying image content parts', () => {
     const message = {
       type: 'response',
@@ -122,7 +122,7 @@ describe('ToolStreamMessageSchema', () => {
       }
     };
 
-    expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
+    expect(PluginStreamMessageSchema.parse(message)).toEqual(message);
   });
 
   it('parses a legacy response whose content is a plain string', () => {
@@ -131,7 +131,7 @@ describe('ToolStreamMessageSchema', () => {
       data: { content: 'https://example.com/a.png' }
     };
 
-    expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
+    expect(PluginStreamMessageSchema.parse(message)).toEqual(message);
   });
 
   it('parses a legacy response whose content is an object', () => {
@@ -140,7 +140,7 @@ describe('ToolStreamMessageSchema', () => {
       data: { content: { summary: 'done', items: 2 } }
     };
 
-    expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
+    expect(PluginStreamMessageSchema.parse(message)).toEqual(message);
   });
 
   it('parses a legacy response whose content is an array', () => {
@@ -149,7 +149,7 @@ describe('ToolStreamMessageSchema', () => {
       data: { content: ['a.png', 'b.png'] }
     };
 
-    expect(ToolStreamMessageSchema.parse(message)).toEqual(message);
+    expect(PluginStreamMessageSchema.parse(message)).toEqual(message);
   });
 
   it('parses stream and error messages', () => {
@@ -162,7 +162,7 @@ describe('ToolStreamMessageSchema', () => {
       data: 'something went wrong'
     };
 
-    expect(ToolStreamMessageSchema.parse(streamMessage)).toEqual(streamMessage);
-    expect(ToolStreamMessageSchema.parse(errorMessage)).toEqual(errorMessage);
+    expect(PluginStreamMessageSchema.parse(streamMessage)).toEqual(streamMessage);
+    expect(PluginStreamMessageSchema.parse(errorMessage)).toEqual(errorMessage);
   });
 });

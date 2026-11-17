@@ -27,8 +27,10 @@ export type I18nSchemaMetaType = {
 };
 
 export {
-  ToolHandlerReturnSchema,
-  type ToolHandlerReturnType,
+  PluginStreamResponseDataSchema,
+  type PluginStreamResponseDataType
+} from '@domain/value-objects/plugin-stream.vo';
+export {
   ToolMessageContentPartSchema,
   type ToolMessageContentPartType
 } from '@domain/value-objects/tool.vo';
