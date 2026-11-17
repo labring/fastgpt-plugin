@@ -31,6 +31,13 @@ export {
   type PluginStreamResponseDataType
 } from '@domain/value-objects/plugin-stream.vo';
 export {
+  type ContentPart,
+  ContentPartSchema,
+  defineContentSchema,
+  MODEL_CONTENT_SCHEMA_KIND,
+  MODEL_CONTENT_SCHEMA_META_KEY,
+  ToolHandlerReturnSchema,
+  type ToolHandlerReturnType,
   ToolMessageContentPartSchema,
   type ToolMessageContentPartType
 } from '@domain/value-objects/tool.vo';

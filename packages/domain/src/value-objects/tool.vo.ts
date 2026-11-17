@@ -3,36 +3,77 @@ import z from 'zod';
 import { PluginSourceSchema } from './plugin.vo';
 import { SystemVarSchema } from './system-var.vo';
 
-/**
- * 工具 handler 返回的结构化内容部分,与 FastGPT 主程序对齐:
- * text 为纯文本,image_url 为图片;主程序会把合法的 content parts 作为下一轮模型的视觉输入。
- *
- * 注意:发给模型的 tool 文本始终是 handler 返回值的完整序列化结果,
- * content 里的 text part 不会替换这段文本(主程序只取其中的图片 part)。
- * 需要模型看到业务字段时,把字段放在返回对象顶层;content 主要用于携带图片。
- *
- * 主程序消费规则:单次结果最多取前 4 张图片作为视觉输入,超出部分仅保留在文本里;
- * 只支持 png/jpg/jpeg/gif/webp(OpenAI 与 Claude 的图片契约),svg/psd/bmp 等格式
- * 会被供应商拒绝,需要插件自己先转码;
- * `data:` 内联图片在把文本发给模型时会被主程序替换成占位,图片本身仍照常发送。
- *
- * 该 schema 供插件作者在 outputSchema 中声明使用,不参与 wire 层强校验。
- */
+export const MODEL_CONTENT_SCHEMA_KIND = 'model-content' as const;
+export const MODEL_CONTENT_SCHEMA_META_KEY = 'x-fastgpt-output-kind' as const;
+
+export const ContentPartSchema = z.object({
+  type: z.literal('image_url'),
+  image_url: z.object({
+    url: z.string().min(1).refine((url) => {
+      if (/^data:image\/[^;,]+;base64,[^,]+$/i.test(url)) return true;
+      try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    }, 'Tool image url must be an http(s) URL or base64 image data URI'),
+    detail: z.enum(['auto', 'low', 'high']).optional()
+  })
+});
+
+/** 定义模型可消费图片、工作流可直接消费 value 的输出字段。 */
+export const defineContentSchema = <T extends z.ZodType>(valueType: T) =>
+  z.object({ value: valueType, images: z.array(ContentPartSchema) }).meta({
+    [MODEL_CONTENT_SCHEMA_META_KEY]: MODEL_CONTENT_SCHEMA_KIND
+  });
+
+export type ContentPart = z.infer<typeof ContentPartSchema>;
+
+/** @deprecated 旧 content 数组格式；新工具请使用 defineContentSchema。 */
 export const ToolMessageContentPartSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('text'),
     text: z.string().min(1)
   }),
-  z.object({
-    type: z.literal('image_url'),
-    image_url: z.object({
-      url: z.string().min(1),
-      detail: z.enum(['auto', 'low', 'high']).optional()
-    })
-  })
+  ContentPartSchema
 ]);
 
 export type ToolMessageContentPartType = z.infer<typeof ToolMessageContentPartSchema>;
+
+/** 工具返回值在 wire 层按普通业务对象透传。 */
+export const ToolHandlerReturnSchema = z.record(z.string(), z.unknown());
+export type ToolHandlerReturnType = z.infer<typeof ToolHandlerReturnSchema>;
+
+export const StreamMessageTypeSchema = z.enum(['response', 'error', 'stream']);
+export const StreamMessageTypeEnum = StreamMessageTypeSchema.enum;
+
+export const StreamDataAnswerTypeSchema = z.enum(['answer', 'fastAnswer']);
+export const StreamDataAnswerTypeEnum = StreamDataAnswerTypeSchema.enum;
+
+export const ToolAnswerSchema = z.object({
+  type: StreamDataAnswerTypeSchema,
+  content: z.string()
+});
+
+export type ToolAnswerType = z.infer<typeof ToolAnswerSchema>;
+
+export const ToolStreamMessageSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal(StreamMessageTypeEnum.response),
+    data: ToolHandlerReturnSchema
+  }),
+  z.object({
+    type: z.literal(StreamMessageTypeEnum.stream),
+    data: ToolAnswerSchema
+  }),
+  z.object({
+    type: z.literal(StreamMessageTypeEnum.error),
+    data: z.string()
+  })
+]);
+
+export type ToolStreamMessageType = z.infer<typeof ToolStreamMessageSchema>;
 
 export const ToolRunInputSchema = z.object({
   pluginId: z.string(),

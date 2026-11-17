@@ -1,10 +1,39 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import z from 'zod';
 
+import { PluginStreamMessageSchema, PluginStreamResponseDataSchema } from './plugin-stream.vo';
 import {
-  PluginStreamMessageSchema,
-  PluginStreamResponseDataSchema
-} from './plugin-stream.vo';
-import { ToolMessageContentPartSchema } from './tool.vo';
+  ContentPartSchema,
+  defineContentSchema,
+  ToolHandlerReturnSchema,
+  ToolMessageContentPartSchema,
+  ToolStreamMessageSchema
+} from './tool.vo';
+
+describe('defineContentSchema', () => {
+  it.each([
+    ['http://example.com/a.png', true],
+    ['https://example.com/a.png', true],
+    ['data:image/png;base64,AAAA', true],
+    ['data:image/png;base64,', false],
+    ['javascript:alert(1)', false],
+    ['ftp://example.com/a.png', false],
+    ['not-a-url', false]
+  ])('validates image URL %s consistently for both schemas', (url, valid) => {
+    const part = { type: 'image_url', image_url: { url } };
+    expect(ContentPartSchema.safeParse(part).success).toBe(valid);
+    expect(ToolMessageContentPartSchema.safeParse(part).success).toBe(valid);
+  });
+
+  it('validates the supplied value and OpenAI image parts', () => {
+    const schema = defineContentSchema(z.array(z.object({ id: z.string() })));
+    const value = { value: [{ id: '1' }], images: [{ type: 'image_url', image_url: { url: 'https://example.com/a.png', detail: 'high' } }] };
+    expect(schema.parse(value)).toEqual(value);
+    expect(schema.safeParse({ value: [{ id: 1 }], images: [] }).success).toBe(false);
+    expect(schema.safeParse({ value: [], images: [{ type: 'text', text: 'no' }] }).success).toBe(false);
+    expect(ContentPartSchema.safeParse({ type: 'image_url', image_url: { url: '' } }).success).toBe(false);
+  });
+});
 
 describe('ToolMessageContentPartSchema', () => {
   it('accepts text parts', () => {
