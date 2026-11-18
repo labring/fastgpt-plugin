@@ -138,6 +138,21 @@ describe('static model multimodal capabilities', () => {
     });
   });
 
+  it.each(['gpt-6.2-astra', 'gpt-6.2-sol'])('configures %s for Chat Completions', (model) => {
+    expect(getModel('OpenAI', model)).toMatchObject({
+      maxContext: 1050000,
+      maxTokens: 128000,
+      quoteMaxToken: 922000,
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: false,
+      showTopP: false,
+      responseFormatList: ['text', 'json_schema'],
+      fieldMap: { max_tokens: 'max_completion_tokens' }
+    });
+  });
+
   it('marks GPT-5.3 Codex with its documented limits and coding capabilities', () => {
     expect(getModel('OpenAI', 'gpt-5.3-codex')).toMatchObject({
       maxContext: 400000,
