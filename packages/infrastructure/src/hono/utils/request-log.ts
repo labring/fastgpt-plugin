@@ -73,6 +73,11 @@ export async function buildHttpRequestLogContext(
 }
 
 function createBodySnapshot(request: Request): BodySnapshot {
+  // Reverse invocations may carry raw private files, even with a text/JSON MIME type.
+  // Do not clone/tee these streams: that would also bypass the gateway's memory bound.
+  if (new URL(request.url).pathname.startsWith('/internal/plugin-invoke/')) {
+    return { kind: 'omitted', reason: 'internal_invoke_body_omitted' };
+  }
   if (!methodCanHaveBody(request.method)) {
     return { kind: 'empty' };
   }

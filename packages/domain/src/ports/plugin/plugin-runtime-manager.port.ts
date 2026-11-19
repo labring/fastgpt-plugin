@@ -20,6 +20,11 @@ export type PluginRuntimeInvokeOptions = {
   invoke?: InvokePort;
   timeout?: number;
   priority?: number;
+  /** Host-only callback: the selected remote driver supplies its resolved tenant. Never serialize it. */
+  internalInvoke?: {
+    gatewayUrl: string;
+    issueToken: (tenantId: string) => string;
+  };
   debug?: {
     tmbId?: string;
     userId?: string;

@@ -25,6 +25,11 @@ export const ErrorCode = {
   pluginInvokeFailed: 'plugin.invoke.failed',
   pluginInvokeTimeout: 'plugin.invoke.timeout',
   pluginInvokeQueueTimeout: 'plugin.invoke.queue_timeout',
+  pluginInvokeCpuLimitExceeded: 'plugin.invoke.cpu_limit_exceeded',
+  pluginInvokeMemoryLimitExceeded: 'plugin.invoke.memory_limit_exceeded',
+  pluginRuntimeArtifactBuildFailed: 'plugin.runtime.artifact_build_failed',
+  pluginRuntimeTrialLoadFailed: 'plugin.runtime.trial_load_failed',
+  pluginRuntimeClusterUnavailable: 'plugin.runtime.cluster_unavailable',
   connectionGatewayInvalidToken: 'connection_gateway.invalid_token',
   connectionGatewayTokenExpired: 'connection_gateway.token_expired',
   connectionGatewayTransportMismatch: 'connection_gateway.transport_mismatch',
@@ -196,6 +201,56 @@ registerErrors([
     },
     httpStatus: 503,
     telemetryKind: 'queue_timeout'
+  },
+  {
+    code: ErrorCode.pluginInvokeCpuLimitExceeded,
+    message: 'Plugin exceeded CPU time limit',
+    reason: {
+      en: 'Plugin exceeded CPU time limit',
+      'zh-CN': '插件执行超出 CPU 时间限制'
+    },
+    httpStatus: 504,
+    telemetryKind: 'cpu_limit_exceeded'
+  },
+  {
+    code: ErrorCode.pluginInvokeMemoryLimitExceeded,
+    message: 'Plugin exceeded memory limit',
+    reason: {
+      en: 'Plugin exceeded memory limit',
+      'zh-CN': '插件执行超出内存配额'
+    },
+    httpStatus: 503,
+    telemetryKind: 'memory_limit_exceeded'
+  },
+  {
+    code: ErrorCode.pluginRuntimeArtifactBuildFailed,
+    message: 'Worker artifact build failed',
+    reason: {
+      en: 'Worker artifact build failed',
+      'zh-CN': 'Worker 产物构建失败'
+    },
+    httpStatus: 422,
+    telemetryKind: 'artifact_build_failed'
+  },
+  {
+    code: ErrorCode.pluginRuntimeTrialLoadFailed,
+    message: 'Worker trial load failed',
+    reason: {
+      en: 'Worker trial load failed',
+      'zh-CN': '插件代码试加载失败'
+    },
+    httpStatus: 422,
+    telemetryKind: 'trial_load_failed'
+  },
+  {
+    code: ErrorCode.pluginRuntimeClusterUnavailable,
+    message: 'Coworkerd cluster is currently unavailable',
+    reason: {
+      en: 'Coworkerd cluster is currently unavailable',
+      'zh-CN': 'Coworkerd 集群当前不可用（断路器熔断）'
+    },
+    httpStatus: 503,
+    telemetryKind: 'cluster_unavailable'
   },
   {
     code: ErrorCode.connectionGatewayInvalidToken,

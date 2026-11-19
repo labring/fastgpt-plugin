@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { PluginTagSchema, PluginTypeSchema } from '@domain/entities/plugin-base.entity';
+import { CoworkerdPluginConfigSchema } from '@domain/entities/plugin-coworkerd.entity';
 
 import { booleanQueryParam, I18nStringDTOSchema } from './common.dto';
 
@@ -155,12 +156,17 @@ const PluginRuntimeConfigObjectSchema = z
     maxConcurrentRequestsPerPod: z.number().int().positive()
   });
 
-export const PluginRuntimeConfigSchema = PluginRuntimeConfigObjectSchema
+export const LocalPoolRuntimeConfigSchema = PluginRuntimeConfigObjectSchema
   .strict()
   .refine((config) => config.minPods <= config.maxPods, {
     message: 'minPods cannot be greater than maxPods',
     path: ['minPods']
   });
+
+export const PluginRuntimeConfigSchema = z.union([
+  LocalPoolRuntimeConfigSchema,
+  CoworkerdPluginConfigSchema
+]);
 
 export const PluginRuntimeConfigGetParamsSchema = z.object({
   pluginId: z.string()

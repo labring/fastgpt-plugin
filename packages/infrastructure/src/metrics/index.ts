@@ -206,6 +206,7 @@ function unregisterFrom<T>(items: T[], item: T): () => void {
 export type {
   ConnectionGatewayGaugeSource,
   RuntimeFailureKind,
+  RuntimeFallbackReason,
   RuntimeGaugeSource,
   RuntimeMetricAttributes,
   RuntimeMetricsRecorder

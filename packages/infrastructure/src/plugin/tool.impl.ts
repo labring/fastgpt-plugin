@@ -1,4 +1,5 @@
 import type { ToolType } from '@domain/entities/tool.entity';
+import type { InternalPluginInvokeTokenIssuerPort } from '@domain/ports/plugin/internal-plugin-invoke-token.port';
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
 import type { PluginRuntimeManagerPort } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import {
@@ -26,6 +27,8 @@ export type ToolManagerDeps = {
   pluginRepo: PluginRepoPort;
   pluginRuntimeManager: PluginRuntimeManagerPort;
   fastgptBaseUrl: string;
+  internalInvokeGatewayUrl?: string;
+  internalInvokeTokenService?: InternalPluginInvokeTokenIssuerPort;
 };
 
 export type PluginToolRunPayloadType = {
@@ -259,7 +262,10 @@ export class ToolManager implements ToolManagerPort {
     const options = createPluginInvokeOptions({
       systemVar,
       source,
-      fastgptBaseUrl: this.deps.fastgptBaseUrl
+      fastgptBaseUrl: this.deps.fastgptBaseUrl,
+      pluginId: plugin.pluginId,
+      internalInvokeTokenService: this.deps.internalInvokeTokenService,
+      internalInvokeGatewayUrl: this.deps.internalInvokeGatewayUrl
     });
 
     const [invokeRes, invokeErr] = await this.deps.pluginRuntimeManager.invoke<

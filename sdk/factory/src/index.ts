@@ -1,116 +1,10 @@
-import z from 'zod';
+import { bindNodeTool } from './node-tool-runtime';
+import { defineTool as definePortableTool, defineToolSet as definePortableToolSet } from './tool-definition';
 
-import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
+export * from './tool-definition';
 
-import type { UserToolManifestType } from './manifest.type';
-import {
-  createToolHandler,
-  type ToolChildManifestDefinition,
-  ToolFactory,
-  type ToolHandlerDefinition
-} from './tool-factory';
-
-export { configurePluginProxy, hasProxyEnv } from './proxy';
-export { createToolHandler };
-
-export type {
-  InputFieldDefinition,
-  OutputFieldDefinition,
-  SecretFieldDefinition
-} from './schema-helpers';
-export { defineInputSchema, defineOutputSchema, defineSecretSchema } from './schema-helpers';
-
-export type I18nSchemaMetaType = {
-  title: I18nStringType;
-  description?: I18nStringType;
-  placeholder?: I18nStringType;
-};
-
-export {
-  PluginStreamResponseDataSchema,
-  type PluginStreamResponseDataType
-} from '@domain/value-objects/plugin-stream.vo';
-export {
-  type ContentPart,
-  ContentPartSchema,
-  defineContentSchema,
-  MODEL_CONTENT_SCHEMA_KIND,
-  MODEL_CONTENT_SCHEMA_META_KEY,
-  ToolHandlerReturnSchema,
-  type ToolHandlerReturnType,
-  ToolMessageContentPartSchema,
-  type ToolMessageContentPartType
-} from '@domain/value-objects/tool.vo';
-
-export type InputSchemaMetaType = z.GlobalMeta & {
-  /** Localized strings for the UI. */
-  'x-i18n'?: I18nSchemaMetaType;
-  /** Whether AI should be encouraged to fill this field. */
-  isToolParam?: boolean;
-};
-
-export type OutputSchemaMetaType = z.GlobalMeta & {
-  /** Localized strings for the UI. */
-  'x-i18n'?: I18nSchemaMetaType;
-};
-
-export type SecretSchemaMetaType = z.GlobalMeta & {
-  /** Localized strings for the UI. */
-  'x-i18n'?: I18nSchemaMetaType;
-  /** Whether this field should be stored encrypted. */
-  isSecret: boolean;
-};
-
-export interface DefinedToolFactory {
-  setSecretSchema<TSecret extends Record<string, unknown>>(schema: z.ZodType<TSecret>): void;
-  registerTool(
-    definition: ToolHandlerDefinition,
-    id?: string,
-    childManifest?: ToolChildManifestDefinition
-  ): void;
-  getSecretSchema(): z.ZodType<any>;
-  getToolHandler(): ToolHandlerDefinition;
-  getToolHandler(childId: string): ToolHandlerDefinition | undefined;
-  getUserToolManifest(): UserToolManifestType;
-  getChildManifests(): ToolChildManifestDefinition[];
-}
-
-export const defineTool = ({
-  manifest,
-  handler
-}: {
-  manifest: UserToolManifestType;
-  handler: ToolHandlerDefinition<any, any, any>;
-}): DefinedToolFactory => {
-  const tool = ToolFactory.getInstance(manifest);
-  tool.setSecretSchema(handler.secretSchema ?? z.object());
-  tool.registerTool(handler);
-  return tool;
-};
-
-export const defineToolSet = ({
-  manifest,
-  children,
-  secretSchema
-}: {
-  manifest: UserToolManifestType;
-  secretSchema?: z.ZodObject<any>;
-  children: (ToolChildManifestDefinition & {
-    handler: ToolHandlerDefinition<any, any, any>;
-  })[];
-}): DefinedToolFactory => {
-  const toolSet = ToolFactory.getInstance(manifest);
-  children.forEach((child) => {
-    toolSet.registerTool(child.handler, child.id, {
-      id: child.id,
-      description: child.description,
-      name: child.name,
-      ...(child.icon !== undefined ? { icon: child.icon } : {}),
-    });
-  });
-  toolSet.setSecretSchema(secretSchema ?? z.object());
-  return toolSet;
-};
+export const defineTool: typeof definePortableTool = (options) => bindNodeTool(definePortableTool(options));
+export const defineToolSet: typeof definePortableToolSet = (options) => bindNodeTool(definePortableToolSet(options));
 
 export {
   defineModerationManifest,
@@ -124,7 +18,7 @@ export {
   type ModerationProviderContext,
   type ModerationProviderResultType
 } from './moderation-factory';
-export type { ToolHandlerContext } from './tool-factory';
+export { configurePluginProxy, hasProxyEnv } from './proxy';
 export type {
   ModerationCheckInputType,
   ModerationHitType,

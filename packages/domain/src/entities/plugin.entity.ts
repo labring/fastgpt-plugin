@@ -15,7 +15,7 @@ export {
 } from './plugin-base.entity';
 
 // 插件配置类型, 抽象类型，由具体运行时实现
-export type PluginRuntimeConfigType = object;
+export type PluginRuntimeConfigType = Record<string, unknown>;
 
 // 不能用「PluginBaseSchema 在前 + 具体 schema」的普通 union：PluginBaseSchema 在前会把具体
 // 类型的扩展字段 strip 掉。discriminatedUnion 要求每个成员自带 `type` 的 z.literal 判别符，

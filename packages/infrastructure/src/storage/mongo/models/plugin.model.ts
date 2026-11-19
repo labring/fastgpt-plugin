@@ -41,7 +41,13 @@ const schema = new Schema({
     default: PluginStatusEnum.active
   },
   // 过期时间，过期后会被自动删除，适用于 pending 状态的插件, 自动删除记录
-  expiredAt: { type: Date, required: false }
+  expiredAt: { type: Date, required: false },
+  // Non-TTL marker: files must be reclaimed before deleting the plugin record.
+  uploadExpiresAt: { type: Date, required: false },
+  uploadCleanupPending: { type: Boolean, required: false },
+  uploadCleanupLeaseUntil: { type: Date, required: false },
+  workerArtifactHash: { type: String, required: false },
+  workerUploadIncomplete: { type: Boolean, required: false }
 })
   .index({ pluginId: 1, version: 1, etag: 1 }, { unique: true }) // unique index for plugin version
   .index({ expiredAt: 1 }, { expireAfterSeconds: 0 }); // for cleaning the pending plugins automatically

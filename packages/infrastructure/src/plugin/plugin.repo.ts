@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import type { Readable } from 'node:stream';
 
@@ -9,6 +10,7 @@ import { PluginStatusEnum } from '@domain/entities/plugin-base.entity';
 import type { LocalFileStoragePort } from '@domain/ports/file-storage/local-file-storage.port';
 import type { RemoteFileStoragePort } from '@domain/ports/file-storage/remote-file-storage.port';
 import type { FileTTLPort } from '@domain/ports/file-ttl.port';
+import type { PluginArtifactBuilderPort } from '@domain/ports/plugin/plugin-artifact-builder.port';
 import type {
   PluginConfirmResultType,
   PluginCreateResultType,
@@ -37,6 +39,8 @@ import {
   type UserPluginIdType
 } from '@domain/value-objects/plugin.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { ErrorCode } from '@infrastructure/errors/error.registry';
+import { getLogger, mod } from '@infrastructure/logger';
 import { PluginTagsNameMap } from '@infrastructure/static-data/plugin-tag';
 import type { MongoPluginSchemaType } from '@infrastructure/storage/mongo/models/plugin.model';
 
@@ -130,11 +134,15 @@ export type PluginRepoDeps = {
   privateRemoteFileStorageRepo: RemoteFileStoragePort;
   publicRemoteFileStorageRepo: RemoteFileStoragePort;
   fileTTLManager: FileTTLPort;
+  artifactBuilder?: PluginArtifactBuilderPort;
+  /** When true, static Worker artifact build failures warn and keep raw index.js for localPool fallback. */
+  allowArtifactBuildFallback?: boolean;
 };
 
 export class PluginRepo implements PluginRepoPort {
   private static _instance: PluginRepo;
   private static ExpiresMinutes: number = 120;
+  private jitArtifactBuilds = new Map<string, Promise<Result<Buffer>>>();
 
   private escapeRegex(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -201,6 +209,14 @@ export class PluginRepo implements PluginRepoPort {
     }
 
     return Object.keys(schema).length > 0;
+  }
+
+  private async reserveWorkerUpload(uniqueId: PluginUniqueIdType, expiresAt: Date): Promise<void> {
+    const reserved = await this.deps.mongoClient.getModel('plugin').findOneAndUpdate(
+      { ...uniqueId, uploadCleanupPending: { $ne: true } },
+      { $set: { uploadExpiresAt: expiresAt } }, { new: true }
+    ).lean();
+    if (!reserved) throw new Error('Plugin upload is being cleaned; retry uploading after cleanup');
   }
 
   private async updateInstallation(
@@ -652,7 +668,7 @@ export class PluginRepo implements PluginRepoPort {
         const pendingInstallation = await installationModel
           .findOne({ source, ...pluginId, status: restore ? { $in: ['pending', 'disabled'] } : 'pending' }, undefined, { session })
           .lean();
-        if (!pendingInstallation) return undefined;
+        if (!pendingInstallation || (pendingInstallation.expiredAt && pendingInstallation.expiredAt <= new Date())) return undefined;
 
         const replacedInstallationIds = await this.disableSourceActiveInstallations(
           source,
@@ -667,6 +683,7 @@ export class PluginRepo implements PluginRepoPort {
         if (!pending) return undefined;
         const plugin = await pluginModel.findOne(pluginId, undefined, { session }).lean();
         if (!plugin) throw new Error('Plugin not found');
+        if (plugin.uploadCleanupPending || plugin.workerUploadIncomplete) throw new Error('Plugin upload is incomplete or cleanup has started');
         const activeCount = await installationModel.countDocuments(
           this.getActiveInstallationFilter({
             pluginId: plugin.pluginId,
@@ -685,6 +702,8 @@ export class PluginRepo implements PluginRepoPort {
         }
         const [, replaceErr] = await this.disableSameVersionActivePlugins(pluginId, session);
         if (replaceErr) throw replaceErr.error;
+        // A confirmed artifact is retained until normal plugin deletion/pruning.
+        await pluginModel.updateOne(pluginId, { $unset: { uploadExpiresAt: 1 } }, { session });
         return {
           plugin,
           runtimeRegistrationRequired,
@@ -751,6 +770,9 @@ export class PluginRepo implements PluginRepoPort {
           );
         }
         await this.disableUnreferencedPluginIds([uniqueId], session);
+        if (this.deps.artifactBuilder) await this.deps.mongoClient.getModel('plugin').updateOne(
+          uniqueId, { $set: { uploadExpiresAt: addMinutes(Date.now(), PluginRepo.ExpiresMinutes) } }, { session }
+        );
       }, {});
       return successResult({});
     } catch (error) {
@@ -1067,7 +1089,19 @@ export class PluginRepo implements PluginRepoPort {
         .find(this.getActivePluginFilter())
         .lean();
 
-      return successResult(results.map((result) => this.toDomainPlugin(result)));
+      const plugins: PluginType[] = [];
+      for (const result of results) {
+        try {
+          const plugin = this.toDomainPlugin(result);
+          if (plugin.type === 'tool') {
+            plugins.push(plugin);
+          }
+        } catch {
+          // Ignore legacy or unsupported plugin records without failing the entire active list
+        }
+      }
+
+      return successResult(plugins);
     } catch (error) {
       return failureResult(
         {
@@ -1141,13 +1175,19 @@ export class PluginRepo implements PluginRepoPort {
     }
   }
 
-  async pruneDisabled(): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>> {
+  /** Automatic GC only targets expired uploads; explicit prune also handles disabled installs. */
+  async pruneExpiredUploads(): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>> {
+    return this.pruneDisabled(true);
+  }
+
+  async pruneDisabled(expiredUploadsOnly = false): Promise<Result<{ count: number; plugins: PluginUniqueIdType[] }>> {
     try {
       const pluginModel = this.deps.mongoClient.getModel('plugin');
       const disabledPlugins = await pluginModel
         .find(
           {
-            status: PluginStatusEnum.disabled
+            status: PluginStatusEnum.disabled,
+            ...(expiredUploadsOnly ? { uploadExpiresAt: { $lte: new Date() } } : {})
           },
           {
             _id: true,
@@ -1169,18 +1209,38 @@ export class PluginRepo implements PluginRepoPort {
       const pluginInstallationModel = this.deps.mongoClient.getModel('pluginInstallation');
       const pluginObjectIds = disabledPlugins.map((plugin) => plugin._id);
       const pendingInstallations = await pluginInstallationModel.find(
-        { status: 'pending', pluginObjectId: { $in: pluginObjectIds } },
+        { pluginObjectId: { $in: pluginObjectIds }, $or: [
+          { status: 'active' }, { status: { $exists: false } },
+          { status: 'pending', expiredAt: { $gt: new Date() } }
+        ] },
         { pluginObjectId: 1 }
       ).lean();
       const pendingPluginObjectIds = new Set(pendingInstallations.map((item) => String(item.pluginObjectId)));
       const removablePlugins = disabledPlugins.filter(
         (plugin) => !pendingPluginObjectIds.has(String(plugin._id))
       );
-      const removablePluginIds = removablePlugins.map((plugin) => PluginUniqueIdSchema.parse(plugin));
-      const removablePluginObjectIds = removablePlugins.map((plugin) => plugin._id);
+      const removablePluginIds: PluginUniqueIdType[] = [];
+      const removablePluginObjectIds: unknown[] = [];
 
-      for (const uniqueId of removablePluginIds) {
-        const activePrefix = this.getFileKey(uniqueId, [], false);
+      for (const removable of removablePlugins) {
+        const uniqueId = PluginUniqueIdSchema.parse(removable);
+        if (expiredUploadsOnly || this.deps.artifactBuilder) {
+          // Atomic claim races against upload renewal/confirmation on the same
+          // record. Once claimed, it remains unavailable until cleanup succeeds.
+          const claimed = await pluginModel.findOneAndUpdate(
+            { ...uniqueId, status: PluginStatusEnum.disabled,
+              $and: [
+                { $or: [{ uploadExpiresAt: { $exists: false } }, { uploadExpiresAt: { $lte: new Date() } }] },
+                { $or: [{ uploadCleanupLeaseUntil: { $exists: false } }, { uploadCleanupLeaseUntil: { $lte: new Date() } }] }
+              ]
+            },
+            { $set: { uploadCleanupPending: true, uploadCleanupLeaseUntil: addMinutes(Date.now(), 5) } }, { new: true }
+          ).lean();
+          if (!claimed) continue;
+        }
+        removablePluginIds.push(uniqueId);
+        removablePluginObjectIds.push(removable._id);
+        const activePrefix = this.getFileKey(uniqueId, [], false) + path.sep;
         const localActivePrefix = this.getLocalPluginRuntimeFileKey(uniqueId, []);
 
         const cleanupSteps = await Promise.all([
@@ -1259,7 +1319,15 @@ export class PluginRepo implements PluginRepoPort {
     }
   }
 
-  async createPlugin({
+  async createPlugin(input: Parameters<PluginRepoPort['createPlugin']>[0]): Promise<Result<PluginCreateResultType>> {
+    try {
+      return await this.createPluginFiles({ ...input, pending: input.pending ?? false });
+    } catch (error) {
+      return failureResult({ en: 'Failed to store plugin upload', 'zh-CN': '保存插件上传失败' }, error);
+    }
+  }
+
+  private async createPluginFiles({
     plugin,
     files,
     pending,
@@ -1271,10 +1339,70 @@ export class PluginRepo implements PluginRepoPort {
     source?: PluginSourceType;
   }): Promise<Result<PluginCreateResultType>> {
     const uniqueId = PluginUniqueIdSchema.parse(plugin);
+    // Build before any pending installation is created or renewed. The same gate
+    // protects direct URL installs, while LocalPool leaves artifactBuilder absent.
+    let artifact: Buffer | undefined;
+    if (this.deps.artifactBuilder && plugin.type === 'tool') {
+      const [result, error] = await this.deps.artifactBuilder.build(files.index);
+      if (error) {
+        if (
+          !this.deps.allowArtifactBuildFallback ||
+          error.code !== ErrorCode.pluginRuntimeArtifactBuildFailed
+        ) {
+          return failureResult(error);
+        }
+        getLogger(mod.plugin).warn(
+          'Worker artifact build failed during upload; preserving raw plugin package for localPool fallback',
+          {
+            pluginId: uniqueId.pluginId,
+            version: uniqueId.version,
+            etag: uniqueId.etag,
+            code: error.code,
+            reason: error.reason.en
+          }
+        );
+      } else {
+        artifact = result;
+      }
+    }
+    const persistArtifact = async (): Promise<Result> => {
+      if (!artifact) return successResult({});
+      const artifactHash = createHash('sha256').update(artifact).digest('hex');
+      const reserved = await this.deps.mongoClient.getModel('plugin').findOneAndUpdate(
+        { ...uniqueId, uploadCleanupPending: { $ne: true }, $or: [
+          { workerArtifactHash: { $exists: false } }, { workerArtifactHash: artifactHash }
+        ] },
+        { $set: { workerArtifactHash: artifactHash } }, { new: true }
+      ).lean();
+      if (!reserved) return failureResult({
+        en: 'Worker artifact changed or cleanup has started; publish a new plugin version',
+        'zh-CN': 'Worker 产物已变化或已开始清理，请发布新的插件版本'
+      });
+      const artifactKey = this.getFileKey(uniqueId, ['worker', 'artifact.json']);
+      const [exists, existsError] = await this.deps.privateRemoteFileStorageRepo.exists(artifactKey);
+      if (existsError) return failureResult(existsError);
+      if (exists) {
+        const [stored, readError] = await this.deps.privateRemoteFileStorageRepo.getBuffer(artifactKey);
+        if (readError) return failureResult(readError);
+        if (!stored.equals(artifact)) return failureResult({
+          en: 'Worker artifact changed for this plugin identity; publish a new plugin version',
+          'zh-CN': '该插件身份的 Worker 产物已变化，请发布新的插件版本'
+        });
+        return successResult({});
+      }
+      const [, error] = await this.deps.privateRemoteFileStorageRepo.save({
+        fileKey: artifactKey,
+        fileName: 'artifact.json', contentType: 'application/json', file: artifact
+      });
+      return error ? failureResult(error) : successResult({});
+    };
     const pluginModel = this.deps.mongoClient.getModel('plugin');
     const pendingExpiresAt = pending
       ? addMinutes(Date.now(), PluginRepo.ExpiresMinutes)
       : undefined;
+    const trackUploadExpiry = async () => {
+      if (artifact) await this.reserveWorkerUpload(uniqueId, pendingExpiresAt ?? addMinutes(Date.now(), PluginRepo.ExpiresMinutes));
+    };
     const installationModel = this.deps.mongoClient.getModel('pluginInstallation');
     let installedPlugin: MongoPluginWithId | undefined;
     let shouldUpdatePluginRecord = false;
@@ -1299,6 +1427,9 @@ export class PluginRepo implements PluginRepoPort {
             'zh-CN': '该来源下已存在相同插件安装'
           });
         }
+        await trackUploadExpiry();
+        const [, artifactError] = await persistArtifact();
+        if (artifactError) return failureResult(artifactError);
         await installationModel.updateOne(
           { _id: existingInstallation._id },
           { $set: { status: 'pending', expiredAt: pendingExpiresAt, updatedAt: new Date() } }
@@ -1324,7 +1455,12 @@ export class PluginRepo implements PluginRepoPort {
       );
     }
 
-    if (installedPlugin) {
+    if (installedPlugin && !installedPlugin.workerUploadIncomplete) {
+      try { await trackUploadExpiry(); } catch (error) {
+        return failureResult({ en: 'Plugin upload is being cleaned', 'zh-CN': '插件上传文件正在清理' }, error);
+      }
+      const [, artifactError] = await persistArtifact();
+      if (artifactError) return failureResult(artifactError);
       if (pending) {
         await this.updateInstallation(source, installedPlugin, undefined, 'pending', pendingExpiresAt);
         return successResult({ runtimeRegistrationRequired: false });
@@ -1364,6 +1500,24 @@ export class PluginRepo implements PluginRepoPort {
       readmesWithStreams.push({ file: readme, stream });
     }
 
+    // Keep a disabled identity before storage writes so partial failures remain
+    // discoverable by pruneDisabled instead of leaking untracked objects.
+    if (artifact && !installedPlugin) {
+      try {
+        const created = await pluginModel.create({ ...pluginRecord, status: PluginStatusEnum.disabled, workerUploadIncomplete: true, uploadExpiresAt: addMinutes(Date.now(), PluginRepo.ExpiresMinutes) });
+        installedPlugin = created.toObject() as MongoPluginWithId;
+      } catch (error) {
+        if (!isDuplicateKeyError(error)) return failureResult({ en: 'Failed to create plugin record', 'zh-CN': '创建插件记录失败' }, error);
+        installedPlugin = await pluginModel.findOne(uniqueId).lean() as MongoPluginWithId;
+      }
+    }
+
+    if (artifact) {
+      try { await trackUploadExpiry(); } catch (error) {
+        return failureResult({ en: 'Plugin upload is being cleaned', 'zh-CN': '插件上传文件正在清理' }, error);
+      }
+    }
+
     const publicSaveTasks = [
       ...readmesWithStreams.map(({ file, stream }) =>
         this.deps.publicRemoteFileStorageRepo.save({
@@ -1397,6 +1551,7 @@ export class PluginRepo implements PluginRepoPort {
     ];
 
     const saveTasks = [
+      persistArtifact(),
       this.deps.privateRemoteFileStorageRepo.save({
         ...files.index.metaData,
         fileKey: this.getFileKey(uniqueId, ['index.js'], false),
@@ -1408,8 +1563,9 @@ export class PluginRepo implements PluginRepoPort {
     const saveFileResults = await Promise.all(saveTasks);
 
     if (saveFileResults.every(([, saveErr]) => !saveErr)) {
+      if (artifact) await pluginModel.updateOne(uniqueId, { $unset: { workerUploadIncomplete: 1 } });
       try {
-        const createdPlugin = await pluginModel.create({
+        const createdPlugin = installedPlugin ? { toObject: () => installedPlugin! } : await pluginModel.create({
           ...pluginRecord,
           status: PluginStatusEnum.disabled
         });
@@ -1456,6 +1612,74 @@ export class PluginRepo implements PluginRepoPort {
       },
       saveFileResults.find((result) => !!result[1])?.[1]
     );
+  }
+
+  async getWorkerArtifact(uniqueId: PluginUniqueIdType): Promise<Result<Buffer>> {
+    const artifactKey = this.getFileKey(uniqueId, ['worker', 'artifact.json']);
+    const [file, error] = await this.deps.privateRemoteFileStorageRepo.getFileObject(artifactKey);
+    if (!error) {
+      return file.fileBuffer;
+    }
+
+    if (!this.deps.artifactBuilder) {
+      return failureResult({
+        en: 'Worker artifact is missing; upload the plugin in Coworkerd mode first',
+        'zh-CN': '缺少 Worker 产物，请先在 Coworkerd 模式下上传插件'
+      }, error);
+    }
+
+    const jitKey = `${uniqueId.pluginId}/${uniqueId.version}/${uniqueId.etag}`;
+    const inFlight = this.jitArtifactBuilds.get(jitKey);
+    if (inFlight) return inFlight;
+
+    const buildPromise = this.buildAndPersistJitWorkerArtifact(uniqueId, artifactKey);
+    this.jitArtifactBuilds.set(jitKey, buildPromise);
+    try {
+      return await buildPromise;
+    } finally {
+      this.jitArtifactBuilds.delete(jitKey);
+    }
+  }
+
+  private async buildAndPersistJitWorkerArtifact(
+    uniqueId: PluginUniqueIdType,
+    artifactKey: string
+  ): Promise<Result<Buffer>> {
+    const remoteIndexFileKey = this.getFileKey(uniqueId, ['index.js'], false);
+    const [indexFile, indexErr] = await this.deps.privateRemoteFileStorageRepo.getFileObject(remoteIndexFileKey);
+    if (indexErr) {
+      return failureResult({
+        en: 'Worker artifact is missing; upload the plugin in Coworkerd mode first',
+        'zh-CN': '缺少 Worker 产物，请先在 Coworkerd 模式下上传插件'
+      }, indexErr);
+    }
+
+    const [artifact, buildErr] = await this.deps.artifactBuilder!.build(indexFile);
+    if (buildErr) {
+      return failureResult(buildErr);
+    }
+
+    const artifactHash = createHash('sha256').update(artifact).digest('hex');
+    try {
+      await this.deps.mongoClient.getModel('plugin').updateOne(
+        uniqueId,
+        { $set: { workerArtifactHash: artifactHash } }
+      );
+    } catch {
+      // Non-fatal if mongo metadata update fails
+    }
+
+    const [, saveErr] = await this.deps.privateRemoteFileStorageRepo.save({
+      fileKey: artifactKey,
+      fileName: 'artifact.json',
+      contentType: 'application/json',
+      file: artifact
+    });
+    if (saveErr) {
+      return failureResult(saveErr);
+    }
+
+    return successResult(artifact);
   }
 
   async getPluginById(

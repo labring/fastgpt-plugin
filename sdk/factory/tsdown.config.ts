@@ -2,11 +2,11 @@ import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   deps: {
-    neverBundle: ['zod'],
+    neverBundle: ['zod', 'tsdown', 'tar-stream'],
     alwaysBundle: ['undici'],
     onlyBundle: false
   },
-  entry: './src/index.ts',
+  entry: ['./src/index.ts', './src/worker.ts', './src/runtime-shim.ts', './src/bundler.ts'],
   format: 'esm',
   outDir: './dist',
   tsconfig: './tsconfig.json',
