@@ -110,9 +110,17 @@ describe('buildPluginPackage', () => {
     expect(manifest.inputSchema.properties.legacy.title).toBe('Legacy-only title');
     expect(manifest.inputSchema.properties.nested.properties.value).not.toHaveProperty('toolDescription');
     expect(manifest.inputSchema.properties.nestedList.items.properties.label).not.toHaveProperty('toolDescription');
-    expect(manifest.outputSchema.properties.result.description).toBe('Result 说明');
+    expect(manifest.outputSchema.properties.result.description).toBe('Result description');
+    expect(manifest.outputSchema.properties.result['x-i18n']?.description).toEqual({
+      en: 'Result description',
+      'zh-CN': 'Result 说明'
+    });
     expect(manifest.outputSchema.properties.result).not.toHaveProperty('toolDescription');
-    expect(manifest.secretSchema.properties.apiKey.placeholder).toBe('API key 占位符');
+    expect(manifest.secretSchema.properties.apiKey.placeholder).toBe('API key placeholder');
+    expect(manifest.secretSchema.properties.apiKey['x-i18n']?.placeholder).toEqual({
+      en: 'API key placeholder',
+      'zh-CN': 'API key 占位符'
+    });
     expect(manifest.secretSchema.properties.apiKey).not.toHaveProperty('toolDescription');
   });
 
@@ -167,9 +175,11 @@ describe('buildPluginPackage', () => {
 
   it('rejects duplicate locale entries and non-canonical casing', () => {
     expect(() => validateReadmeFileNames(['README.en.md', 'README.en.md'])).toThrow(
-      /Duplicate README locale "en"/
+      /Duplicate README filename: README\.en\.md/
     );
-    expect(() => validateReadmeFileNames(['README.zh-cn.md'])).toThrow(/Invalid README filename/);
+    expect(() => validateReadmeFileNames(['README.zh-cn.md'])).toThrow(
+      /Unsupported or non-canonical README filename: README\.zh-cn\.md/
+    );
   });
 
 });
