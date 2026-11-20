@@ -1,8 +1,27 @@
 import { describe, expect, it } from 'vitest';
+import z from 'zod';
+
+import { defineContentSchema, defineOutputSchema } from '../../../../sdk/factory/src/index';
 
 import { toManifestJsonSchema } from './index';
 
 describe('manifest JSON Schema localization', () => {
+  it('preserves multimodal markers and value types in the built manifest', () => {
+    const output = defineOutputSchema({
+      results: {
+        type: defineContentSchema(z.array(z.object({ id: z.string() }))),
+        title: { en: 'Results', 'zh-CN': '结果' }
+      }
+    });
+    const schema = z.toJSONSchema(output);
+    const manifest = toManifestJsonSchema(schema) as typeof schema;
+    expect(manifest.properties?.results).toMatchObject({
+      type: 'object',
+      'x-fastgpt-output-kind': 'model-content',
+      properties: { value: { type: 'array', items: { type: 'object' } }, images: { type: 'array' } }
+    });
+  });
+
   it('uses English compatibility strings while preserving localized metadata', () => {
     const schema = {
       type: 'object',

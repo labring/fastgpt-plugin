@@ -65,12 +65,14 @@ export type {
   ToolListItemType,
   ToolListParamsType,
   ToolListType,
+  ToolMessageContentPartType,
   ToolRunInputType,
   TTSModelItemType,
   WorkflowListType,
   WorkflowTemplateType
 } from './types';
 export { PluginPermissionEnum, PluginPermissionEnumSchema } from './types';
+export { ToolMessageContentPartSchema } from './types';
 export { pluginTagList } from './types';
 
 /**

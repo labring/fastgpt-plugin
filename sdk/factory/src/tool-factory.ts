@@ -2,7 +2,12 @@ import z from 'zod';
 
 import { PluginTypeEnum, type PluginTypeType } from '@domain/entities/plugin-base.entity';
 import type { InvokePort } from '@domain/ports/invoke.port';
-import type { PluginStreamAnswerType, PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
+import type {
+  PluginStreamAnswerType,
+  PluginStreamMessageType,
+  PluginStreamResponseDataType
+} from '@domain/value-objects/plugin-stream.vo';
+import { PluginStreamResponseDataSchema } from '@domain/value-objects/plugin-stream.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
 import { PluginChannelHostMethod } from '@infrastructure/plugin/plugin-runtime/ports/channel';
@@ -12,6 +17,7 @@ import { getErrText } from '@shared/utils/err';
 import { InvokeClient } from './invoke.client';
 import type { UserToolManifestType } from './manifest.type';
 import { PluginFactory } from './plugin-factory';
+
 export type ToolContextType<TSecret = Record<string, unknown>> = {
   systemVar: SystemVarType;
   secrets: TSecret;
@@ -112,9 +118,11 @@ export class ToolFactory extends PluginFactory {
                   }
                 });
 
+                // handler 返回值原样透传:content 等业务字段保持旧插件的任意 JSON 语义,
+                // 结构化 content parts 由 outputSchema 声明约定,不在 wire 层强校验。
                 output.send({
                   type: 'response',
-                  data: result
+                  data: PluginStreamResponseDataSchema.parse(result)
                 });
               } catch (err) {
                 output.send({
