@@ -2,16 +2,20 @@ import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 
 import {
+  type InvokeChatCompletionInputType,
+  type InvokeChatCompletionOutputType,
   type InvokePort,
   type InvokeUploadFileInputType,
   InvokeUploadFileOutputSchema,
   type InvokeUploadFileOutputType,
   InvokeUserInfoOutputSchema,
   type InvokeUserInfoOutputType,
-  type InvokeWecomCorpTokenOutputType
+  type InvokeWecomCorpTokenOutputType,
+  parseInvokeChatCompletionInput
 } from '@domain/ports/invoke.port';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { StreamData } from '@domain/value-objects/stream.vo';
 
 export type InvokeUploadFileHandler = (arg: {
   token: string;
@@ -35,6 +39,21 @@ type SerializedBufferChunk = {
   type: 'Buffer';
   data: number[];
 };
+
+const CHAT_COMPLETION_FAILURE_REASON: I18nStringType = {
+  en: 'Invoke chat completion failed',
+  'zh-CN': '反向调用模型对话失败'
+};
+
+const PROTECTED_CHAT_REQUEST_HEADERS = new Set([
+  'authorization',
+  'connection',
+  'content-length',
+  'content-type',
+  'host',
+  'keep-alive',
+  'transfer-encoding'
+]);
 
 export class InvokeManager implements InvokePort {
   constructor(private readonly deps: InvokeManagerDeps) {}
@@ -137,6 +156,175 @@ export class InvokeManager implements InvokePort {
         },
         error
       );
+    }
+  }
+
+  /**
+   * Proxies an OpenAI-compatible chat completion request to FastGPT.
+   * Non-2xx HTTP responses from FastGPT are returned as `successResult({ status, headers, body })`
+   * so downstream OpenAI clients can reconstruct exact `APIError` instances, whereas transport or
+   * input validation failures before FastGPT responds return `failureResult(...)`.
+   */
+  async chatCompletion(
+    input: InvokeChatCompletionInputType,
+    options?: { signal?: AbortSignal }
+  ): Promise<Result<InvokeChatCompletionOutputType>> {
+    const [parsedInput, inputErr] = parseInvokeChatCompletionInput(input);
+    if (inputErr) {
+      return [null, inputErr];
+    }
+
+    let serializedBody: string;
+    try {
+      serializedBody = JSON.stringify(parsedInput.body);
+    } catch (error) {
+      return failureResult(CHAT_COMPLETION_FAILURE_REASON, error);
+    }
+
+    const headers = new Headers();
+    if (parsedInput.headers) {
+      for (const [key, value] of Object.entries(parsedInput.headers)) {
+        if (!PROTECTED_CHAT_REQUEST_HEADERS.has(key.toLowerCase())) {
+          headers.set(key, value);
+        }
+      }
+    }
+    headers.set('Content-Type', 'application/json');
+    headers.set('Authorization', `Bearer ${this.deps.token}`);
+
+    let response: Response;
+    try {
+      response = await fetch(this.buildUrl('/api/invoke/llm/chat/completions'), {
+        method: 'POST',
+        headers,
+        body: serializedBody,
+        ...(options?.signal ? { signal: options.signal } : {})
+      });
+    } catch (error) {
+      return failureResult(CHAT_COMPLETION_FAILURE_REASON, error);
+    }
+
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+
+    const contentType = response.headers.get('content-type') ?? '';
+    const isEventStream = contentType.toLowerCase().includes('text/event-stream');
+
+    if (response.ok && isEventStream && response.body) {
+      return successResult({
+        status: response.status,
+        headers: responseHeaders,
+        stream: this.bridgeWebStreamToStreamData(response.body, options?.signal)
+      });
+    }
+
+    let rawText: string;
+    try {
+      rawText = await response.text();
+    } catch (error) {
+      return failureResult(CHAT_COMPLETION_FAILURE_REASON, error);
+    }
+
+    return successResult({
+      status: response.status,
+      headers: responseHeaders,
+      body: this.parseChatCompletionBody(rawText, contentType)
+    });
+  }
+
+  private bridgeWebStreamToStreamData(
+    webStream: ReadableStream<Uint8Array>,
+    signal?: AbortSignal
+  ): StreamData<Uint8Array> {
+    const streamData = StreamData.create<Uint8Array>();
+    const readable = streamData.toReadable();
+    // Guard against uncaught EventEmitter 'error' throws if upstream fails before an async reader attaches.
+    readable.on('error', () => {});
+
+    const reader = webStream.getReader();
+    let cancelled = false;
+    let streamDone = false;
+
+    const cancelUpstream = () => {
+      if (cancelled || streamDone) {
+        return;
+      }
+      cancelled = true;
+      void reader.cancel().catch(() => {});
+      if (!readable.destroyed) {
+        readable.destroy();
+      }
+    };
+
+    readable.once('close', cancelUpstream);
+    if (signal?.aborted) {
+      cancelUpstream();
+    } else {
+      signal?.addEventListener('abort', cancelUpstream, { once: true });
+    }
+
+    void (async () => {
+      try {
+        while (!cancelled && !readable.destroyed) {
+          const { done, value } = await reader.read();
+          if (done) {
+            streamDone = true;
+            if (!cancelled && !readable.destroyed) {
+              streamData.end();
+            }
+            break;
+          }
+          if (cancelled || readable.destroyed) {
+            break;
+          }
+          if (value && value.byteLength > 0) {
+            streamData.write(value);
+          }
+        }
+      } catch (error) {
+        if (!cancelled && !readable.destroyed) {
+          try {
+            streamData.fail(error instanceof Error ? error : new Error(String(error)));
+          } catch {
+            // Stream was already closed externally.
+          }
+        }
+      } finally {
+        readable.off('close', cancelUpstream);
+        signal?.removeEventListener('abort', cancelUpstream);
+        cancelUpstream();
+        try {
+          reader.releaseLock();
+        } catch {
+          // Reader lock may still be settling after cancel.
+        }
+      }
+    })();
+
+    return streamData;
+  }
+
+  private parseChatCompletionBody(rawText: string, contentType: string): unknown {
+    if (rawText.length === 0) {
+      return '';
+    }
+
+    const trimmed = rawText.trimStart();
+    const looksLikeJson =
+      contentType.toLowerCase().includes('json') ||
+      trimmed.startsWith('{') ||
+      trimmed.startsWith('[');
+
+    if (!looksLikeJson) {
+      return rawText;
+    }
+
+    try {
+      return JSON.parse(rawText);
+    } catch {
+      return rawText;
     }
   }
 

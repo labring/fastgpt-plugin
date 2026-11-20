@@ -1,7 +1,6 @@
 import z from 'zod';
 
 import { PluginTypeEnum, type PluginTypeType } from '@domain/entities/plugin-base.entity';
-import type { InvokePort } from '@domain/ports/invoke.port';
 import type { PluginStreamAnswerType, PluginStreamMessageType } from '@domain/value-objects/plugin-stream.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import type { SystemVarType } from '@domain/value-objects/system-var.vo';
@@ -9,7 +8,7 @@ import { PluginChannelHostMethod } from '@infrastructure/plugin/plugin-runtime/p
 import type { PluginToolRunPayloadType } from '@infrastructure/plugin/tool.impl';
 import { getErrText } from '@shared/utils/err';
 
-import { InvokeClient } from './invoke.client';
+import { InvokeClient, type ToolInvokeClient } from './invoke.client';
 import type { UserToolManifestType } from './manifest.type';
 import { PluginFactory } from './plugin-factory';
 export type ToolContextType<TSecret = Record<string, unknown>> = {
@@ -33,10 +32,10 @@ type ToolSecretValue<TSecret extends ToolSecretSchema> = TSecret extends z.ZodTy
   ? z.output<NoInfer<TSecret>>
   : undefined;
 
-export type ToolHandlerContext<TSecret extends ToolSecretSchema> = {
+export type ToolHandlerContext<TSecret extends ToolSecretSchema = undefined> = {
   systemVar: SystemVarType;
   secrets?: ToolSecretValue<TSecret>;
-  invoke: InvokePort;
+  invoke: ToolInvokeClient;
   streamResponse: (msg: PluginStreamAnswerType) => void;
 };
 

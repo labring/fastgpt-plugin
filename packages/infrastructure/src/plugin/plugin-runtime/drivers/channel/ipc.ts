@@ -540,13 +540,10 @@ export class PluginIpcRuntimeChannel<TSide extends PluginChannelSide>
     descriptor: ChannelReplyDescriptor
   ): Promise<void> {
     if (descriptor.output !== undefined) {
-      void this.pipeStream(getRequestOutputStreamName(message.id), descriptor.output, {
-        traceId: descriptor.outputStream?.traceId ?? message.traceId,
-        streamId: descriptor.outputStream?.streamId,
-        streamName: descriptor.outputStream?.streamName,
-        meta: descriptor.outputStream?.meta
-      }).catch((error) => {
-        this.emitError(error instanceof Error ? error : new Error(String(error)));
+      void this.pipeReplyOutputStream(message, descriptor).catch((error) => {
+        if (!this.closed) {
+          this.emitError(error instanceof Error ? error : new Error(String(error)));
+        }
       });
     }
 
@@ -555,6 +552,27 @@ export class PluginIpcRuntimeChannel<TSide extends PluginChannelSide>
       hasOutputStream: descriptor.output !== undefined,
       ...(descriptor.result !== undefined ? { result: descriptor.result } : {})
     });
+  }
+
+  private async pipeReplyOutputStream(
+    message: PluginChannelRequestMessage,
+    descriptor: ChannelReplyDescriptor
+  ): Promise<void> {
+    const writable = await this.createWritableStream(getRequestOutputStreamName(message.id), {
+      traceId: descriptor.outputStream?.traceId ?? message.traceId,
+      streamId: descriptor.outputStream?.streamId,
+      streamName: descriptor.outputStream?.streamName,
+      meta: descriptor.outputStream?.meta
+    });
+
+    try {
+      for await (const chunk of toAsyncIterable(descriptor.output!)) {
+        await writable.write(chunk);
+      }
+      await writable.end();
+    } catch (error) {
+      await writable.fail(error instanceof Error ? error : new Error(String(error)));
+    }
   }
 
   private async reply(message: PluginChannelRequestMessage, result: unknown): Promise<void> {

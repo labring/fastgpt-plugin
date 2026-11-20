@@ -2,6 +2,12 @@ import z from 'zod';
 
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
 
+/**
+ * String schema annotated with `format: "modelId"` so FastGPT renders a model selector
+ * and passes the selected model identifier to the plugin handler.
+ */
+export const Model: z.ZodString = z.string().meta({ format: 'modelId' });
+
 type UiFieldDefinition<T extends z.ZodType> = {
   type: T;
   title: I18nStringType;

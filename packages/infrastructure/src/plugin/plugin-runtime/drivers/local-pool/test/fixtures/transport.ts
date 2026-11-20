@@ -5,7 +5,8 @@ import type { InvokePort } from '@domain/ports/invoke.port';
 import { PluginPod } from '../../pod';
 
 const fakeInvokeManager: InvokePort = {
-  uploadFile: () => {}
+  uploadFile: () => {},
+  chatCompletion: () => {}
 } as unknown as InvokePort;
 
 const pluginPath = resolve(process.cwd(), 'index.js');

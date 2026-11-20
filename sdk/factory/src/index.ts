@@ -18,7 +18,7 @@ export type {
   OutputFieldDefinition,
   SecretFieldDefinition
 } from './schema-helpers';
-export { defineInputSchema, defineOutputSchema, defineSecretSchema } from './schema-helpers';
+export { defineInputSchema, defineOutputSchema, defineSecretSchema, Model } from './schema-helpers';
 
 export type I18nSchemaMetaType = {
   title: I18nStringType;
@@ -96,6 +96,7 @@ export const defineToolSet = ({
   return toolSet;
 };
 
+export type { ToolInvokeClient } from './invoke.client';
 export {
   defineModerationManifest,
   type UserModerationManifestType,

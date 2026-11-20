@@ -1,4 +1,10 @@
-import { InvokeMethodEnum, type InvokeUploadFileInputType } from '@domain/ports/invoke.port';
+import {
+  type InvokeChatCompletionReplyMetaType,
+  InvokeMethodEnum,
+  type InvokeUploadFileInputType,
+  parseInvokeChatCompletionInput
+} from '@domain/ports/invoke.port';
+import { successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { InvokeManager } from '@infrastructure/plugin/invoke/invoke.impl';
 
@@ -35,7 +41,8 @@ export class RemoteDebugInvokeBridge {
     method,
     args,
     input,
-    traceId
+    traceId,
+    createReply
   }: LocalDebugHostRequestContext): Promise<unknown> {
     if (!traceId) {
       throw new Error('远程调试反向调用缺少 traceId。');
@@ -61,6 +68,28 @@ export class RemoteDebugInvokeBridge {
         return invoke.userInfo();
       case InvokeMethodEnum.wecomCorpToken:
         return invoke.getWecomCorpToken();
+      case InvokeMethodEnum.chatCompletion: {
+        const [chatInput, inputErr] = parseInvokeChatCompletionInput(args);
+        if (inputErr) {
+          return [null, inputErr];
+        }
+
+        const invokeResult = await invoke.chatCompletion(chatInput);
+        const [response, responseErr] = invokeResult;
+        if (responseErr || !response.stream) {
+          return invokeResult;
+        }
+
+        return createReply(
+          successResult<InvokeChatCompletionReplyMetaType>({
+            status: response.status,
+            headers: response.headers
+          }),
+          {
+            output: response.stream
+          }
+        );
+      }
       default:
         throw new Error(`远程调试宿主暂不支持反向调用: ${String(method)}`);
     }

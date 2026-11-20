@@ -2,7 +2,7 @@ import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   deps: {
-    neverBundle: ['zod'],
+    neverBundle: ['zod', 'openai'],
     alwaysBundle: ['undici'],
     onlyBundle: false
   },

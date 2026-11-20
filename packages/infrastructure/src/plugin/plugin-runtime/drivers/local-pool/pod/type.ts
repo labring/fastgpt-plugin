@@ -2,7 +2,12 @@ import type { InvokePort } from '@domain/ports/invoke.port';
 import type { PluginInvokeEventNameType } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import type { PluginPermissionEnumType } from '@domain/value-objects/permission.vo';
 
-import type { PluginChannelIncomingStream } from '../../../ports/channel';
+import type {
+  PluginChannelHandlerResult,
+  PluginChannelIncomingStream,
+  PluginChannelStreamOptions,
+  PluginChannelStreamSource
+} from '../../../ports/channel';
 import type { InvokeOptions } from '../types';
 
 export type PodStatus = 'pending' | 'running' | 'idle' | 'terminating' | 'failed';
@@ -59,4 +64,11 @@ export interface PluginPodClientRequestContext {
   waitForInputStream: <T = unknown>(options?: {
     timeoutMs?: number;
   }) => Promise<PluginChannelIncomingStream<T>>;
+  createReply: <TResult = unknown, TOutput = unknown>(
+    result?: TResult,
+    options?: {
+      output?: PluginChannelStreamSource<TOutput>;
+      outputStream?: PluginChannelStreamOptions;
+    }
+  ) => PluginChannelHandlerResult<TResult, TOutput>;
 }

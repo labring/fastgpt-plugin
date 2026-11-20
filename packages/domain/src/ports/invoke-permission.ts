@@ -17,7 +17,8 @@ export type KnownInvokeMethodType = Exclude<
 export const InvokeMethodPermission = {
   [InvokeMethodEnum.uploadFile]: PluginPermissionEnum['file-upload:allow'],
   [InvokeMethodEnum.userInfo]: PluginPermissionEnum['userInfo:read'],
-  [InvokeMethodEnum.wecomCorpToken]: PluginPermissionEnum['teamInfo:read']
+  [InvokeMethodEnum.wecomCorpToken]: PluginPermissionEnum['teamInfo:read'],
+  [InvokeMethodEnum.chatCompletion]: PluginPermissionEnum['model:invoke']
 } satisfies Record<KnownInvokeMethodType, PluginPermissionEnumType>;
 
 export function getInvokeMethodPermission(method: string): PluginPermissionEnumType | undefined {

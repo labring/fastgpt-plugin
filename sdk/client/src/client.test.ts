@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { FastGPTPluginClient } from './client';
-import type { WorkflowListType } from './types';
+import { PluginPermissionEnum, PluginPermissionEnumSchema, type WorkflowListType } from './index';
 
 describe('FastGPTPluginClient workflows', () => {
   it('returns workflow templates unchanged without a locale parameter', async () => {
@@ -398,12 +398,21 @@ describe('FastGPTPluginClient plugin source payloads', () => {
   });
 });
 
-
 describe('FastGPTPluginClient restoration', () => {
   it('sends an exact source-scoped identity without uploading package files', async () => {
     const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     const client = new FastGPTPluginClient({ baseUrl: 'http://plugin.local', fetch });
     await client.restorePlugin({ pluginId: 'keyword', version: '1.0.0', etag: 'abc', source: 'system' });
     expect(fetch).toHaveBeenCalledWith('http://plugin.local/api/plugin/restore', expect.objectContaining({ method: 'POST', body: JSON.stringify({ pluginId: 'keyword', version: '1.0.0', etag: 'abc', source: 'system' }) }));
+  });
+});
+
+describe('sdk-client permission re-exports', () => {
+  it('re-exports model:invoke from PluginPermissionEnum and PluginPermissionEnumSchema', () => {
+    expect(PluginPermissionEnum['model:invoke']).toBe('model:invoke');
+    expect(PluginPermissionEnumSchema.safeParse('model:invoke')).toEqual({
+      success: true,
+      data: 'model:invoke'
+    });
   });
 });
