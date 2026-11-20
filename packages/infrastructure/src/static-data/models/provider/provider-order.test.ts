@@ -87,8 +87,12 @@ describe('static model provider ordering', () => {
     const openai = providerConfigs.find(({ provider }) => provider === 'OpenAI');
     const hunyuan = providerConfigs.find(({ provider }) => provider === 'Hunyuan');
 
-    expect(openai?.list[0]?.model).toBe('gpt-6-astra');
-    expect(hunyuan?.list[0]?.model).toBe('hy4');
+    expect(openai?.list.slice(0, 3).map(({ model }) => model)).toEqual([
+      'gpt-6.2-astra',
+      'gpt-6.2-sol',
+      'gpt-6-astra'
+    ]);
+    expect(hunyuan?.list[0]?.model).toBe('hy4-flash');
   });
 
   it('places the newest Ant Ling model first', () => {
