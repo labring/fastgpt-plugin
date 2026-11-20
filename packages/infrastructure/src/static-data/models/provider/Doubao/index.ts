@@ -85,7 +85,8 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: false,
-      toolChoice: true
+      toolChoice: true,
+      responseFormatList: ['text', 'json_object']
     },
     {
       type: ModelTypeEnum.llm,
