@@ -162,13 +162,14 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'mistral-large-latest',
-      maxContext: 130000,
+      maxContext: 1000000,
       maxTokens: 8000,
       quoteMaxToken: 60000,
       maxTemperature: 1.2,
-      vision: false,
-      reasoning: false,
-      reasoningEffort: false,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
       toolChoice: true
     },
     {
