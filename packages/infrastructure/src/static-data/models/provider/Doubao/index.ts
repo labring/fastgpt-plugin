@@ -28,6 +28,7 @@ const models: ProviderConfigType = {
       maxTokens: 256000,
       quoteMaxToken: 1024000,
       maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       video: true,
       reasoning: true,

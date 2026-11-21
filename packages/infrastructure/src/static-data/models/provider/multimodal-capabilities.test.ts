@@ -69,7 +69,7 @@ describe('static model multimodal capabilities', () => {
   it('marks Qwen visual models with their video input capability', () => {
     expect(getModel('Qwen', 'qwen3.8-flash')).toMatchObject({
       maxContext: 1000000,
-      maxTokens: 64000,
+      maxTokens: 131072,
       vision: true,
       video: true,
       reasoning: true,
@@ -81,6 +81,7 @@ describe('static model multimodal capabilities', () => {
       video: true
     });
     expect(getModel('Qwen', 'qwen3.7-plus')).toMatchObject({
+      maxTokens: 131072,
       vision: true,
       video: true
     });
