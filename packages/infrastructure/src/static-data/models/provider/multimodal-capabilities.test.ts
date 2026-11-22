@@ -127,6 +127,16 @@ describe('static model multimodal capabilities', () => {
     });
   });
 
+  it.each([
+    'glm-4.6v',
+    'glm-4.6v-flashx',
+    'glm-4.6v-flash',
+    'glm-4.1v-thinking-flashx',
+    'glm-4.1v-thinking-flash'
+  ])('marks %s as supporting video input', (model) => {
+    expect(getModel('ChatGLM', model)).toMatchObject({ vision: true, video: true });
+  });
+
   it('marks GPT-6 Astra with its documented limits and agent capabilities', () => {
     expect(getModel('OpenAI', 'gpt-6-astra')).toMatchObject({
       maxContext: 1050000,
