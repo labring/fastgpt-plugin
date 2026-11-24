@@ -55,6 +55,7 @@ import type {
   EmbeddingModelItemType,
   LLMModelItemType,
   ModelItemType,
+  ReasoningEffortLevelType,
   RerankModelItemType,
   STTModelItemType,
   TTSModelItemType
@@ -87,6 +88,7 @@ export type {
   PluginTagType,
   PluginTypeType,
   PluginUniqueIdType,
+  ReasoningEffortLevelType,
   RerankModelItemType,
   STTModelItemType,
   SystemVarType,

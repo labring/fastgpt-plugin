@@ -15,6 +15,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'low', 'medium', 'high'],
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
@@ -32,6 +33,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'low', 'medium', 'high'],
       toolChoice: true,
       fieldMap: {
         max_tokens: 'max_completion_tokens'
