@@ -83,10 +83,10 @@ const rollbackPendingPlugins = async (
   for (const uniqueId of uniqueIds) {
     if (existingPendingPluginKeys.has(toPluginKey(uniqueId))) continue;
 
-    const [, err] =
-      source === 'system'
-        ? await deps.pluginRepo.deletePendingPlugin(uniqueId)
-        : await deps.pluginRepo.deletePendingPlugin(uniqueId, source);
+    const [, err] = await deps.pluginRepo.deletePendingPlugin(
+      uniqueId,
+      ...(source === 'system' ? ([] as const) : ([source] as const))
+    );
 
     if (err) {
       deps.logger.warn('Failed to rollback pending plugin', {
@@ -166,10 +166,11 @@ export const makePluginUploadUC =
       }
 
       for (const pkgFile of pkgFiles) {
-        const [info, parseErr] =
-          source === 'system'
-            ? await deps.pluginPKGFileResolver.parsePluginPkg(pkgFile, true)
-            : await deps.pluginPKGFileResolver.parsePluginPkg(pkgFile, true, source);
+        const [info, parseErr] = await deps.pluginPKGFileResolver.parsePluginPkg(
+          pkgFile,
+          true,
+          ...(source === 'system' ? ([] as const) : ([source] as const))
+        );
         logger.debug('plugin info', { info });
 
         if (parseErr) {
