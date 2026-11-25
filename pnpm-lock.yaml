@@ -12,6 +12,9 @@ catalogs:
     '@fastgpt-sdk/storage':
       specifier: ^0.9.1
       version: 0.9.1
+    openai:
+      specifier: ^7.56.0
+      version: 7.57.0
     tsdown:
       specifier: ^0.21.10
       version: 0.21.10
@@ -237,6 +240,9 @@ importers:
       hono:
         specifier: ^4.13.11
         version: 4.13.11
+      openai:
+        specifier: 'catalog:'
+        version: 7.57.0(@aws-sdk/credential-provider-node@3.972.80)(@smithy/signature-v4@5.7.2)(undici@7.29.0)(ws@8.21.0)(zod@4.3.6)
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
@@ -386,7 +392,7 @@ importers:
   sdk/factory:
     dependencies:
       openai:
-        specifier: ^7.56.0
+        specifier: 'catalog:'
         version: 7.57.0(@aws-sdk/credential-provider-node@3.972.80)(@smithy/signature-v4@5.7.2)(undici@7.29.0)(ws@8.21.0)(zod@4.3.6)
       zod:
         specifier: 'catalog:'
