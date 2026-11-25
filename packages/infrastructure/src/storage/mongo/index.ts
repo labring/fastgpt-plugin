@@ -135,12 +135,16 @@ export class MongoClient {
 
       return result;
     } catch (error) {
-      if (!session.inTransaction()) {
-        await session.abortTransaction();
+      if (session.inTransaction()) {
+        try {
+          await session.abortTransaction();
+        } catch (abortError) {
+          this._logger.warn('Failed to abort mongo transaction', { error: abortError });
+        }
       } else {
         this._logger.warn('Uncaught mongo session error', { error });
       }
-      return Promise.reject(error);
+      throw error;
     } finally {
       await session.endSession();
     }
