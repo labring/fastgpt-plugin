@@ -78,7 +78,8 @@ describe('static model provider ordering', () => {
     const modelIds = gemini?.list.map((model) => model.model) ?? [];
     const flashModels = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
 
-    expect(modelIds[0]).toBe('gemini-4-argon');
+    expect(modelIds[0]).toBe('gemini-4-carbon');
+    expect(modelIds.indexOf('gemini-4-carbon')).toBeLessThan(modelIds.indexOf('gemini-4-argon'));
     expect(modelIds.filter((model) => flashModels.includes(model))).toEqual(flashModels);
   });
 
@@ -86,8 +87,12 @@ describe('static model provider ordering', () => {
     const openai = providerConfigs.find(({ provider }) => provider === 'OpenAI');
     const hunyuan = providerConfigs.find(({ provider }) => provider === 'Hunyuan');
 
-    expect(openai?.list[0]?.model).toBe('gpt-6-astra');
-    expect(hunyuan?.list[0]?.model).toBe('hy4');
+    expect(openai?.list.slice(0, 3).map(({ model }) => model)).toEqual([
+      'gpt-6.2-astra',
+      'gpt-6.2-sol',
+      'gpt-6-astra'
+    ]);
+    expect(hunyuan?.list[0]?.model).toBe('hy4-flash');
   });
 
   it('places the newest Ant Ling model first', () => {

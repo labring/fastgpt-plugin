@@ -5,6 +5,35 @@ const models: ProviderConfigType = {
   list: [
     {
       type: ModelTypeEnum.llm,
+      model: 'gemini-4-carbon',
+      maxContext: 1048576,
+      maxTokens: 65536,
+      quoteMaxToken: 1000000,
+      vision: true,
+      audio: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      responseFormatList: ['text', 'json_object', 'json_schema']
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gemini-4-neon',
+      maxContext: 1048576,
+      maxTokens: 65536,
+      quoteMaxToken: 1000000,
+      vision: true,
+      audio: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      showTopP: false
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gemini-4-argon',
       maxContext: 1048576,
       maxTokens: 65536,
@@ -15,6 +44,20 @@ const models: ProviderConfigType = {
       reasoning: true,
       reasoningEffort: true,
       toolChoice: true
+    },
+    {
+      type: ModelTypeEnum.llm,
+      model: 'gemini-4-hydrogen',
+      maxContext: 1048576,
+      maxTokens: 65536,
+      quoteMaxToken: 1000000,
+      vision: true,
+      audio: true,
+      video: true,
+      reasoning: true,
+      reasoningEffort: true,
+      toolChoice: true,
+      responseFormatList: ['text', 'json_object', 'json_schema']
     },
     {
       type: ModelTypeEnum.llm,

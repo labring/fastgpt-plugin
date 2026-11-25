@@ -68,6 +68,7 @@ npx @fastgpt-plugin/cli pack --entry <plugin-directory> --dist <plugin-directory
 - 字段可嵌套组合或作为数组元素，例如 `type: z.array(defineOutputSchema({ label: { type: z.string(), title: { en: 'Label', 'zh-CN': '标签' } } }))`。
 - 高级 metadata 仍可使用低层 `.meta()`；手动书写 `z.object()` 时，密钥字段使用 `.meta({ isSecret: true | false, ... } satisfies SecretSchemaMetaType)`。
 - handler 返回值必须匹配 `outputSchema`。
+- 需要向模型返回图片时，用 `defineContentSchema(valueType)` 声明多模态输出字段，返回 `{ value, images }`。
 
 manifest 至少包含：
 
@@ -260,6 +261,33 @@ export default defineToolSet({
 });
 ```
 
+## 返回图片内容（可选）
+
+通过 SDK 的 `defineContentSchema(valueType)` 声明顶层输出字段，字段名由工具决定。`value` 符合传入的 Schema，`images` 是 OpenAI `image_url` parts 数组：
+
+```ts
+import { createToolHandler, defineContentSchema, defineOutputSchema } from '@fastgpt-plugin/sdk-factory';
+import z from 'zod';
+
+const handler = createToolHandler({
+  inputSchema: z.object({ prompt: z.string() }),
+  outputSchema: defineOutputSchema({
+    result: {
+      type: defineContentSchema(z.array(z.object({ title: z.string() }))),
+      title: { en: 'Result', 'zh-CN': '结果' }
+    }
+  }),
+  handler: async ({ prompt }) => ({
+    result: {
+      value: [{ title: prompt }],
+      images: [{ type: 'image_url', image_url: { url: 'https://example.com/result.png' } }]
+    }
+  })
+});
+```
+
+工作流中该字段的类型和值都是 `value`；Agent 将 `value` 转成文本，按字段顺序追加对应图片。`images` 可为空；每条结果最多发送 4 张图片。图片 URL 支持 http(s) 或图片 data URI，`detail` 可为 `auto`、`low`、`high`。仅支持图片；普通字段和未标记的 `content` 保持业务数据，不自动转成视觉输入。
+
 ## 验证重点
 
 - `index.ts` 默认导出正确。
@@ -268,6 +296,8 @@ export default defineToolSet({
 - 使用 `ctx.invoke` 时已在 `manifest.permission` 声明对应权限，例如上传文件声明 `file-upload:allow`。
 - Zod schema 覆盖全部用户可见输入和输出；推荐由 AI 托管补充的输入字段设置 `isToolParam: true`。
 - handler 成功路径返回值与 `outputSchema` 一致。
+- 多模态输出使用 `defineContentSchema`，返回的 `value` 符合声明类型，`images` 只包含合法的 `image_url` parts。
+- 构建后的 JSON Schema 保留 `x-fastgpt-output-kind: model-content` 标记，图片不超过 4 张。
 - 外部调用失败、空响应、超时、鉴权失败都有明确错误。
 - 密钥配置只通过 `secretSchema` 和 `ctx.secrets` 处理。
 - 系统工具根目录存在 `logo.<ext>`。
