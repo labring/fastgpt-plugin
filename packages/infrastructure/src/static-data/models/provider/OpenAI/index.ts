@@ -313,6 +313,21 @@ const models: ProviderConfigType = {
     },
     {
       type: ModelTypeEnum.llm,
+      model: 'chat-latest',
+      maxContext: 400000,
+      maxTokens: 128000,
+      quoteMaxToken: 272000,
+      responseFormatList: ['text', 'json_schema'],
+      vision: true,
+      reasoning: false,
+      reasoningEffort: false,
+      toolChoice: true,
+      fieldMap: {
+        max_tokens: 'max_completion_tokens'
+      }
+    },
+    {
+      type: ModelTypeEnum.llm,
       model: 'gpt-5.2-chat-latest',
       maxContext: 128000,
       maxTokens: 16384,
