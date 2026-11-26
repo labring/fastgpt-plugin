@@ -18,9 +18,6 @@ catalogs:
     typescript:
       specifier: ^5.9.3
       version: 5.9.3
-    zod:
-      specifier: ^4
-      version: 4.3.6
 
 overrides:
   '@opentelemetry/core': 2.8.0
@@ -138,7 +135,7 @@ importers:
         version: 3.3.1
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.6
     devDependencies:
       '@types/react':
         specifier: ^19.2.17
@@ -178,7 +175,7 @@ importers:
         version: 4.13.22
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.6
     devDependencies:
       tsdown:
         specifier: 'catalog:'
@@ -224,7 +221,7 @@ importers:
         version: 2.1.11(hono@4.13.22)
       '@t3-oss/env-core':
         specifier: ^0.13.10
-        version: 0.13.10(typescript@5.9.3)(zod@4.3.6)
+        version: 0.13.10(typescript@5.9.3)(zod@4.6.6)
       dayjs:
         specifier: ^1.11.19
         version: 1.11.19
@@ -242,7 +239,7 @@ importers:
         version: 5.9.3
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.6
     devDependencies:
       '@types/express':
         specifier: ^5.0.1
@@ -264,7 +261,7 @@ importers:
     dependencies:
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.6
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -283,7 +280,7 @@ importers:
         version: 0.11.14(hono@4.13.22)
       '@t3-oss/env-core':
         specifier: ^0.13.10
-        version: 0.13.10(typescript@5.9.3)(zod@4.3.6)
+        version: 0.13.10(typescript@5.9.3)(zod@4.6.6)
       '@zip.js/zip.js':
         specifier: ^2.8.26
         version: 2.8.26
@@ -307,7 +304,7 @@ importers:
         version: 7.30.2
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.6
     devDependencies:
       '@fastgpt-plugin/domain':
         specifier: workspace:*
@@ -329,7 +326,7 @@ importers:
     dependencies:
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.6
     devDependencies:
       '@fastgpt-plugin/domain':
         specifier: workspace:*
@@ -348,7 +345,7 @@ importers:
         version: 7.30.2
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.6
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -361,7 +358,7 @@ importers:
         version: 1.45.0
       zod:
         specifier: 'catalog:'
-        version: 4.3.6
+        version: 4.6.6
     devDependencies:
       '@fastgpt-plugin/domain':
         specifier: workspace:*
@@ -4352,6 +4349,9 @@ packages:
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
+  zod@4.6.6:
+    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
+
 snapshots:
 
   '@alcalzone/ansi-tokenize@0.3.0':
@@ -5013,7 +5013,7 @@ snapshots:
 
   '@fastgpt-sdk/invoke@0.0.1-alpha.2':
     dependencies:
-      zod: 4.3.6
+      zod: 4.6.6
 
   '@fastgpt-sdk/otel@0.2.0':
     dependencies:
@@ -5787,7 +5787,7 @@ snapshots:
       '@scalar/helpers': 0.10.0
       nanoid: 5.1.16
       type-fest: 5.7.0
-      zod: 4.3.6
+      zod: 4.6.6
 
   '@scalar/validation@0.6.2': {}
 
@@ -5832,10 +5832,10 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@t3-oss/env-core@0.13.10(typescript@5.9.3)(zod@4.3.6)':
+  '@t3-oss/env-core@0.13.10(typescript@5.9.3)(zod@4.6.6)':
     optionalDependencies:
       typescript: 5.9.3
-      zod: 4.3.6
+      zod: 4.6.6
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
@@ -8036,3 +8036,5 @@ snapshots:
   yoga-layout@3.2.1: {}
 
   zod@4.3.6: {}
+
+  zod@4.6.6: {}
