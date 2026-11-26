@@ -1,7 +1,10 @@
+import type { Readable } from 'node:stream';
+
 import z from 'zod';
 
 import { FileCreateSchema, FileMetaSchema } from '../value-objects/file/file.vo';
-import type { Result } from '../value-objects/result.vo';
+import { failureResult, type Result, successResult } from '../value-objects/result.vo';
+import type { StreamData } from '../value-objects/stream.vo';
 
 export const InvokeUploadFileInputSchema = z.object({
   ...FileCreateSchema.omit({
@@ -40,8 +43,8 @@ const rawInvokeMethodEnumSchema = z.enum([
   'uploadFile',
   'userInfo',
   'wecomCorpToken',
+  'chatCompletion',
   'unknown'
-  // 'chatCompletion',
   // 'datasetQuery',
   // 'teamInfo'
 ]);
@@ -57,17 +60,80 @@ export type InvokeWecomCorpTokenOutputType = {
   expires_in: number;
 };
 
+export const InvokeChatCompletionInputSchema = z.object({
+  body: z.record(z.string(), z.unknown()),
+  headers: z.record(z.string(), z.string()).optional()
+});
+
+export type InvokeChatCompletionInputType = z.infer<typeof InvokeChatCompletionInputSchema>;
+
+export type InvokeChatCompletionStreamChunkType = Uint8Array | string;
+
+export type InvokeChatCompletionStreamSourceType =
+  | Readable
+  | StreamData<InvokeChatCompletionStreamChunkType>;
+
+export type InvokeChatCompletionJsonOutputType = {
+  status: number;
+  headers: Record<string, string>;
+  body: unknown;
+  stream?: undefined;
+};
+
+export type InvokeChatCompletionStreamOutputType = {
+  status: number;
+  headers: Record<string, string>;
+  stream: InvokeChatCompletionStreamSourceType;
+  body?: undefined;
+};
+
+export type InvokeChatCompletionOutputType =
+  | InvokeChatCompletionJsonOutputType
+  | InvokeChatCompletionStreamOutputType;
+
+export type InvokeChatCompletionReplyMetaType = {
+  status: number;
+  headers: Record<string, string>;
+  body?: unknown;
+};
+
 /**
- * 反向调用 FastGPT 的能力
+ * Normalizes and validates raw `chatCompletion` arguments from channel requests.
+ * Accepts either `{ body, headers? }` or a plain OpenAI request body object directly.
+ */
+export function parseInvokeChatCompletionInput(
+  raw: unknown
+): Result<InvokeChatCompletionInputType> {
+  const candidate =
+    raw && typeof raw === 'object' && !Array.isArray(raw) && !('body' in raw)
+      ? { body: raw }
+      : raw;
+  const parsed = InvokeChatCompletionInputSchema.safeParse(candidate);
+  if (!parsed.success) {
+    return failureResult(
+      {
+        en: 'Invalid invoke chat completion input',
+        'zh-CN': '反向调用模型参数格式错误'
+      },
+      parsed.error
+    );
+  }
+  return successResult(parsed.data);
+}
+
+/**
+ * Reverse invocation capabilities provided by the FastGPT host.
  */
 export interface InvokePort {
-  /** 上传文件 */
+  /** Upload a file to FastGPT */
   uploadFile(input: InvokeUploadFileInputType): Promise<Result<InvokeUploadFileOutputType>>;
-  userInfo(): Promise<Result<InvokeUserInfoOutputType>>; // 调用插件者的个人信息
-  getWecomCorpToken(): Promise<Result<InvokeWecomCorpTokenOutputType>>; // 获取企业微信企业令牌
-
-  // /** 模型调用 */
-  // chatCompletion(): any;
+  userInfo(): Promise<Result<InvokeUserInfoOutputType>>;
+  getWecomCorpToken(): Promise<Result<InvokeWecomCorpTokenOutputType>>;
+  /** Proxy OpenAI-compatible chat completions through FastGPT */
+  chatCompletion?(
+    input: InvokeChatCompletionInputType,
+    options?: { signal?: AbortSignal }
+  ): Promise<Result<InvokeChatCompletionOutputType>>;
 
   // /** 知识库搜索 */
   // datasetQuery(): any;

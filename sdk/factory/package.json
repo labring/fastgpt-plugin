@@ -40,5 +40,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "openai": "catalog:"
+  }
 }

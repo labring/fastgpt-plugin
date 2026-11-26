@@ -62,6 +62,7 @@ process.on('message', (message) => {
         execArgv: process.execArgv,
         home: process.env.HOME,
         tmpdir: process.env.TMPDIR,
+        pluginIpcTimeoutMs: process.env.PLUGIN_IPC_TIMEOUT_MS,
         parentSecret: process.env.LOCAL_POOL_PARENT_SECRET,
         httpProxy: process.env.HTTP_PROXY,
         httpsProxy: process.env.HTTPS_PROXY,
@@ -130,22 +131,81 @@ process.on('message', (message) => {
     const reverseMethod =
       payload.mode === 'reverse-invoke-error' ? 'userInfo' : payload.reverseMethod;
     const requestId = `${message.id}:reverse`;
-    const handleReverseResponse = (response) => {
-      if (!response || response.protocol !== '1.0' || response.id !== requestId) {
+    let reverseResponse;
+    let outputStreamId;
+    let streamSettled = false;
+    let streamError = null;
+    const chunks = [];
+
+    const tryFinish = () => {
+      if (!reverseResponse) {
         return;
       }
 
-      process.off('message', handleReverseResponse);
+      const replyEnvelope = reverseResponse.result;
+      const expectsStream =
+        Boolean(replyEnvelope?.__fastgptChannelReply__) && Boolean(replyEnvelope?.hasOutputStream);
+      if (expectsStream && !streamSettled) {
+        return;
+      }
+
+      process.off('message', handleReverseMessage);
       process.send?.({
         protocol: '1.0',
         id: message.id,
-        result: response.result,
+        result: expectsStream
+          ? {
+              meta: replyEnvelope.result,
+              chunks,
+              streamError
+            }
+          : reverseResponse.result,
         ...(message.traceId !== undefined ? { traceId: message.traceId } : {}),
         timestamp: Date.now()
       });
     };
 
-    process.on('message', handleReverseResponse);
+    const handleReverseMessage = (incoming) => {
+      if (!incoming || incoming.protocol !== '1.0') {
+        return;
+      }
+
+      if (incoming.method === 'channel.stream' && incoming.params) {
+        const frame = incoming.params;
+        if (frame.type === 'start' && frame.streamName === `request.output:${requestId}`) {
+          outputStreamId = frame.streamId;
+          return;
+        }
+        if (outputStreamId && frame.streamId === outputStreamId) {
+          if (frame.type === 'chunk') {
+            chunks.push(
+              typeof frame.chunk === 'string'
+                ? frame.chunk
+                : Buffer.from(frame.chunk).toString('utf8')
+            );
+            return;
+          }
+          if (frame.type === 'end') {
+            streamSettled = true;
+            tryFinish();
+            return;
+          }
+          if (frame.type === 'error') {
+            streamError = frame.error;
+            streamSettled = true;
+            tryFinish();
+          }
+        }
+        return;
+      }
+
+      if (incoming.id === requestId) {
+        reverseResponse = incoming;
+        tryFinish();
+      }
+    };
+
+    process.on('message', handleReverseMessage);
     if (reverseMethod === 'uploadFile') {
       const streamId = `${requestId}:input`;
       process.send?.({
@@ -182,9 +242,11 @@ process.on('message', (message) => {
       params: {
         method: reverseMethod,
         args:
-          reverseMethod === 'uploadFile'
-            ? { fileName: 'denied.txt', contentType: 'text/plain' }
-            : {}
+          payload.reverseArgs !== undefined
+            ? payload.reverseArgs
+            : reverseMethod === 'uploadFile'
+              ? { fileName: 'denied.txt', contentType: 'text/plain' }
+              : {}
       },
       ...(message.traceId !== undefined ? { traceId: message.traceId } : {}),
       timestamp: Date.now()

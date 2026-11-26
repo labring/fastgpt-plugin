@@ -3,16 +3,22 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, realpath, rm } from 'node:fs/promises';
 import path from 'node:path';
 
-import { InvokeMethodEnum, type InvokeUploadFileInputType } from '@domain/ports/invoke.port';
+import {
+  type InvokeChatCompletionReplyMetaType,
+  InvokeMethodEnum,
+  type InvokeUploadFileInputType,
+  parseInvokeChatCompletionInput
+} from '@domain/ports/invoke.port';
 import { getInvokeMethodPermission } from '@domain/ports/invoke-permission';
 import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
-import { failureResult } from '@domain/value-objects/result.vo';
+import { failureResult, successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { env } from '@infrastructure/env';
 import { getProxyEnv } from '@shared/utils/proxy';
 
 import {
   PluginChannelClientMethod,
+  type PluginChannelHandlerResult,
   PluginChannelHostMethod,
   type PluginChannelIncomingStream,
   type PluginChannelReceivedRequestContext,
@@ -89,6 +95,7 @@ export class PluginPod {
           env: {
             HOME: runtime.homeDirectory,
             RUNTIME_MODE: PluginRuntimeModeEnum.localPool,
+            PLUGIN_IPC_TIMEOUT_MS: String(this.options.podTimeout),
             TEMP: runtime.tempDirectory,
             TMP: runtime.tempDirectory,
             TMPDIR: runtime.tempDirectory,
@@ -375,7 +382,7 @@ export class PluginPod {
 
   private async handleClientRequest(
     message: PluginChannelReceivedRequestContext<'host'>
-  ): Promise<unknown> {
+  ): Promise<PluginChannelHandlerResult> {
     return this.routeClientRequest(this.createClientRequestContext(message));
   }
 
@@ -397,11 +404,19 @@ export class PluginPod {
       traceId: message.traceId,
       permissions: this.options.pluginPermissions,
       waitForInputStream: <T = unknown>(options?: { timeoutMs?: number }) =>
-        message.waitForInputStream(options) as Promise<PluginChannelIncomingStream<T>>
+        message.waitForInputStream(options) as Promise<PluginChannelIncomingStream<T>>,
+      createReply: (result, options) => {
+        if (!this.channel) {
+          throw new Error('Channel not available');
+        }
+        return this.channel.createReply(result, options);
+      }
     };
   }
 
-  private async routeClientRequest(request: PluginPodClientRequestContext): Promise<unknown> {
+  private async routeClientRequest(
+    request: PluginPodClientRequestContext
+  ): Promise<PluginChannelHandlerResult> {
     const uploadInput =
       request.method === InvokeMethodEnum.uploadFile
         ? request.waitForInputStream({ timeoutMs: this.options.podTimeout })
@@ -437,6 +452,55 @@ export class PluginPod {
       case InvokeMethodEnum.wecomCorpToken: {
         return invokeSession.getWecomCorpToken();
       }
+      case InvokeMethodEnum.chatCompletion: {
+        if (!invokeSession.chatCompletion) {
+          return failureResult(
+            {
+              en: `Method not found: ${request.method}`,
+              'zh-CN': `未找到方法: ${request.method}`
+            },
+            null
+          );
+        }
+
+        const [chatInput, inputErr] = parseInvokeChatCompletionInput(request.args);
+        if (inputErr) {
+          return [null, inputErr];
+        }
+
+        const abortController = new AbortController();
+        const unsubClose = this.channel?.onClose(() => abortController.abort());
+        let streamTransferred = false;
+        try {
+          const invokeResult = await invokeSession.chatCompletion(chatInput, {
+            signal: abortController.signal
+          });
+          const [response, responseErr] = invokeResult;
+          if (responseErr || !response.stream) {
+            return invokeResult;
+          }
+
+          const reply = request.createReply(
+            successResult<InvokeChatCompletionReplyMetaType>({
+              status: response.status,
+              headers: response.headers
+            }),
+            {
+              output: response.stream
+            }
+          );
+          streamTransferred = true;
+          this.cleanupOnStreamFinish(response.stream, () => unsubClose?.());
+          return reply;
+        } catch (error) {
+          abortController.abort();
+          throw error;
+        } finally {
+          if (!streamTransferred) {
+            unsubClose?.();
+          }
+        }
+      }
     }
     return failureResult(
       {
@@ -445,6 +509,31 @@ export class PluginPod {
       },
       null
     );
+  }
+
+  private cleanupOnStreamFinish(stream: unknown, cleanup: () => void): void {
+    let cleaned = false;
+    const runCleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      cleanup();
+    };
+
+    if (stream instanceof StreamData) {
+      stream.onEnd(runCleanup).onError(runCleanup);
+      stream.toReadable().once('close', runCleanup);
+      return;
+    }
+
+    if (stream && typeof stream === 'object' && 'once' in stream && typeof stream.once === 'function') {
+      const emitter = stream as NodeJS.EventEmitter;
+      emitter.once('end', runCleanup);
+      emitter.once('error', runCleanup);
+      emitter.once('close', runCleanup);
+      return;
+    }
+
+    runCleanup();
   }
 
   private discardInputStream(

@@ -3,10 +3,15 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { InvokePort } from '@domain/ports/invoke.port';
+import type {
+  InvokeChatCompletionOutputType,
+  InvokeChatCompletionReplyMetaType,
+  InvokePort
+} from '@domain/ports/invoke.port';
 import type { PluginPermissionEnumType } from '@domain/value-objects/permission.vo';
 import { PluginRuntimeModeEnum } from '@domain/value-objects/plugin.vo';
-import { failureResult, successResult } from '@domain/value-objects/result.vo';
+import { failureResult, type Result, successResult } from '@domain/value-objects/result.vo';
+import { StreamData } from '@domain/value-objects/stream.vo';
 
 import { PluginPod } from './pod';
 
@@ -474,6 +479,326 @@ describe('PluginPod', () => {
       delete process.env.NO_PROXY;
       delete process.env.ALL_PROXY;
     }
+  });
+
+  it('denies chatCompletion when model:invoke permission is missing', async () => {
+    const chatCompletion = vi.fn();
+    const pod = createPodWithInvokeSession(
+      {
+        chatCompletion
+      } as unknown as InvokePort,
+      ['userInfo:read']
+    );
+
+    await pod.start();
+
+    const result = await pod.invoke<
+      { mode: string; reverseMethod: string; reverseArgs: unknown },
+      Result<InvokeChatCompletionReplyMetaType>,
+      false
+    >({
+      eventName: 'run',
+      payload: {
+        mode: 'reverse-invoke',
+        reverseMethod: 'chatCompletion',
+        reverseArgs: {
+          body: {
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'hello' }]
+          }
+        }
+      },
+      returnStream: false,
+      options: {
+        timeout: 1000,
+        invocationId: 'invoke-session-id'
+      }
+    });
+
+    const [, err] = result;
+    expect(chatCompletion).not.toHaveBeenCalled();
+    expect(err).toMatchObject({
+      reason: {
+        en: 'Plugin permission "model:invoke" is required',
+        'zh-CN': '插件需要 "model:invoke" 权限'
+      }
+    });
+  });
+
+  it('proxies non-streaming chatCompletion responses when model:invoke permission is granted', async () => {
+    const chatCompletion = vi.fn(async () =>
+      successResult({
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+        body: { error: { message: 'Model disabled' } }
+      })
+    );
+    const pod = createPodWithInvokeSession(
+      {
+        chatCompletion
+      } as unknown as InvokePort,
+      ['model:invoke']
+    );
+
+    await pod.start();
+
+    const result = await pod.invoke<
+      { mode: string; reverseMethod: string; reverseArgs: unknown },
+      Result<InvokeChatCompletionReplyMetaType>,
+      false
+    >({
+      eventName: 'run',
+      payload: {
+        mode: 'reverse-invoke',
+        reverseMethod: 'chatCompletion',
+        reverseArgs: {
+          body: {
+            model: 'disabled-model',
+            messages: [{ role: 'user', content: 'hello' }]
+          }
+        }
+      },
+      returnStream: false,
+      options: {
+        timeout: 1000,
+        invocationId: 'invoke-session-id'
+      }
+    });
+
+    expect(chatCompletion).toHaveBeenCalledWith(
+      {
+        body: {
+          model: 'disabled-model',
+          messages: [{ role: 'user', content: 'hello' }]
+        }
+      },
+      {
+        signal: expect.any(AbortSignal)
+      }
+    );
+    expect(result).toEqual([
+      {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+        body: { error: { message: 'Model disabled' } }
+      },
+      null
+    ]);
+  });
+
+  it('streams chatCompletion SSE output over IPC via createReply when model:invoke is granted', async () => {
+    const encoder = new TextEncoder();
+    const chatCompletion = vi.fn(async () => {
+      const stream = StreamData.create<Uint8Array>();
+      setTimeout(() => {
+        stream.write(encoder.encode('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\n'));
+        stream.write(encoder.encode('data: [DONE]\n\n'));
+        stream.end();
+      }, 10);
+
+      return successResult({
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+        stream
+      });
+    });
+
+    const pod = createPodWithInvokeSession(
+      {
+        chatCompletion
+      } as unknown as InvokePort,
+      ['model:invoke']
+    );
+
+    await pod.start();
+
+    const result = await pod.invoke<
+      { mode: string; reverseMethod: string; reverseArgs: unknown },
+      {
+        meta: Result<InvokeChatCompletionReplyMetaType>;
+        chunks: string[];
+        streamError: unknown;
+      },
+      false
+    >({
+      eventName: 'run',
+      payload: {
+        mode: 'reverse-invoke',
+        reverseMethod: 'chatCompletion',
+        reverseArgs: {
+          body: {
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'hello' }],
+            stream: true
+          }
+        }
+      },
+      returnStream: false,
+      options: {
+        timeout: 1000,
+        invocationId: 'invoke-session-id'
+      }
+    });
+
+    expect(chatCompletion).toHaveBeenCalledTimes(1);
+    expect(result.meta).toEqual([
+      {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' }
+      },
+      null
+    ]);
+    expect(result.chunks).toEqual([
+      'data: {"choices":[{"delta":{"content":"Hi"}}]}\n\n',
+      'data: [DONE]\n\n'
+    ]);
+    expect(result.streamError).toBeNull();
+    expect(pod.isAvailable()).toBe(true);
+  });
+
+  it('forwards upstream chatCompletion stream errors over IPC without killing the pod', async () => {
+    const encoder = new TextEncoder();
+    const chatCompletion = vi.fn(async () => {
+      const stream = StreamData.create<Uint8Array>();
+      stream.toReadable().on('error', () => {});
+      setTimeout(() => {
+        stream.write(encoder.encode('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n'));
+        setTimeout(() => {
+          stream.fail(new Error('upstream SSE interrupted'));
+        }, 15);
+      }, 10);
+
+      return successResult({
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+        stream
+      });
+    });
+
+    const pod = createPodWithInvokeSession(
+      {
+        chatCompletion
+      } as unknown as InvokePort,
+      ['model:invoke']
+    );
+
+    await pod.start();
+
+    const result = await pod.invoke<
+      { mode: string; reverseMethod: string; reverseArgs: unknown },
+      {
+        meta: Result<InvokeChatCompletionReplyMetaType>;
+        chunks: string[];
+        streamError: { message?: string } | null;
+      },
+      false
+    >({
+      eventName: 'run',
+      payload: {
+        mode: 'reverse-invoke',
+        reverseMethod: 'chatCompletion',
+        reverseArgs: {
+          body: {
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'hello' }],
+            stream: true
+          }
+        }
+      },
+      returnStream: false,
+      options: {
+        timeout: 1000,
+        invocationId: 'invoke-session-id'
+      }
+    });
+
+    expect(result.chunks).toEqual(['data: {"choices":[{"delta":{"content":"partial"}}]}\n\n']);
+    expect(result.streamError).toMatchObject({
+      message: 'upstream SSE interrupted'
+    });
+    expect(pod.isAvailable()).toBe(true);
+  });
+
+  it('passes PLUGIN_IPC_TIMEOUT_MS matching podTimeout into the child process env', async () => {
+    const pod = createPod({}, { podTimeout: 45_000 });
+
+    await pod.start();
+
+    const result = await pod.invoke<
+      { mode: string },
+      { pluginIpcTimeoutMs?: string },
+      false
+    >({
+      eventName: 'run',
+      payload: {
+        mode: 'security-context'
+      },
+      returnStream: false,
+      options: { timeout: 1000 }
+    });
+
+    expect(result.pluginIpcTimeoutMs).toBe('45000');
+  });
+
+  it('aborts in-flight chatCompletion AbortSignal when the pod channel closes', async () => {
+    let capturedSignal: AbortSignal | undefined;
+    let resolveStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      resolveStarted = resolve;
+    });
+
+    const chatCompletion = vi.fn(
+      (_input: unknown, options?: { signal?: AbortSignal }) =>
+        new Promise<Result<InvokeChatCompletionOutputType>>((_resolve, reject) => {
+          capturedSignal = options?.signal;
+          resolveStarted();
+          options?.signal?.addEventListener('abort', () => {
+            reject(new Error('aborted'));
+          });
+        })
+    );
+
+    const pod = createPodWithInvokeSession(
+      {
+        chatCompletion
+      } as unknown as InvokePort,
+      ['model:invoke']
+    );
+
+    await pod.start();
+
+    const invokePromise = pod.invoke<
+      { mode: string; reverseMethod: string; reverseArgs: unknown },
+      unknown,
+      false
+    >({
+      eventName: 'run',
+      payload: {
+        mode: 'reverse-invoke',
+        reverseMethod: 'chatCompletion',
+        reverseArgs: {
+          body: {
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'hang' }]
+          }
+        }
+      },
+      returnStream: false,
+      options: {
+        timeout: 5000,
+        invocationId: 'invoke-session-id'
+      }
+    });
+
+    await started;
+    expect(capturedSignal?.aborted).toBe(false);
+
+    pod.kill('SIGKILL');
+    await expect(invokePromise).rejects.toThrow();
+
+    await vi.waitFor(() => {
+      expect(capturedSignal?.aborted).toBe(true);
+    });
   });
 });
 

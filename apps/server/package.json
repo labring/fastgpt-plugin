@@ -29,6 +29,7 @@
     "es-toolkit": "^1.44.0",
     "glob": "^14.0.2",
     "hono": "^4.13.16",
+    "openai": "catalog:",
     "zod": "catalog:"
   }
 }

@@ -50,13 +50,15 @@ describe('connectDebugGateway', () => {
       })
       .parse(bind.metadata);
     const wireTarget = wireMetadata.pluginDebug.targets[0];
-    expect(wireTarget.toolDescription).toBe('Get time');
+    expect(wireTarget).not.toHaveProperty('toolDescription');
+    expect(wireTarget.description).toBe('Get time');
     const wireTools = z.array(z.record(z.string(), z.unknown())).parse(wireTarget.tools);
-    expect(wireTools[0].toolDescription).toBe('Get time');
+    expect(wireTools[0]).not.toHaveProperty('toolDescription');
+    expect(wireTools[0].description).toBe('Get time');
     const wireInputSchema = z
       .object({ properties: z.object({ query: z.record(z.string(), z.unknown()) }) })
       .parse(wireTools[0].inputSchema);
-    expect(wireInputSchema.properties.query.toolDescription).toBe('legacy');
+    expect(wireInputSchema.properties.query.description).toBe('Query');
 
     socket.receive({
       protocol: 'connection-gateway.ws.v1',
@@ -292,6 +294,294 @@ describe('connectDebugGateway', () => {
 
     client.close();
     await client.closed;
+  });
+
+  it('routes remote debug reverse chatCompletion JSON and SSE stream calls through FastGPT invoke APIs', async () => {
+    const runtime = createLocalDebugRuntime();
+    const invokeBridge = new RemoteDebugInvokeBridge('https://fastgpt.example.com');
+    invokeBridge.attach(runtime);
+    invokeBridge.bind('trace-chat', { invokeToken: 'real-fastgpt-invoke-token' });
+
+    const encoder = new TextEncoder();
+    const fastgptFetch = vi
+      .fn()
+      .mockImplementationOnce(async () =>
+        new Response(
+          JSON.stringify({
+            id: 'chatcmpl-json',
+            choices: [{ index: 0, message: { role: 'assistant', content: 'json reply' } }]
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      )
+      .mockImplementationOnce(async () =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(
+                encoder.encode('data: {"choices":[{"delta":{"content":"stream "}}]}\n\n')
+              );
+              controller.enqueue(
+                encoder.encode('data: {"choices":[{"delta":{"content":"reply"}}]}\n\n')
+              );
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              controller.close();
+            }
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'text/event-stream' }
+          }
+        )
+      )
+      .mockImplementationOnce(async () =>
+        new Response(
+          JSON.stringify({
+            error: { message: 'Model access denied', type: 'permission_error' }
+          }),
+          {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      );
+    vi.stubGlobal('fetch', fastgptFetch);
+
+    const jsonResponse = await runtime.pluginChannel.request(
+      PluginChannelClientMethod.request,
+      {
+        method: 'chatCompletion',
+        args: {
+          body: {
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'hi' }],
+            stream: false
+          }
+        }
+      },
+      {
+        traceId: 'trace-chat'
+      }
+    );
+
+    expect(jsonResponse.output).toBeUndefined();
+    expect(jsonResponse.result).toEqual([
+      {
+        status: 200,
+        headers: expect.objectContaining({ 'content-type': 'application/json' }),
+        body: {
+          id: 'chatcmpl-json',
+          choices: [{ index: 0, message: { role: 'assistant', content: 'json reply' } }]
+        }
+      },
+      null
+    ]);
+
+    const streamResponse = await runtime.pluginChannel.request(
+      PluginChannelClientMethod.request,
+      {
+        method: 'chatCompletion',
+        args: {
+          body: {
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'stream hi' }],
+            stream: true
+          }
+        }
+      },
+      {
+        traceId: 'trace-chat'
+      }
+    );
+
+    expect(streamResponse.result).toEqual([
+      {
+        status: 200,
+        headers: expect.objectContaining({ 'content-type': 'text/event-stream' })
+      },
+      null
+    ]);
+    expect(streamResponse.output).toBeDefined();
+
+    const decoder = new TextDecoder();
+    const chunks: string[] = [];
+    await streamResponse.output!.stream.consume((chunk) => {
+      chunks.push(
+        typeof chunk === 'string' ? chunk : decoder.decode(chunk as Uint8Array, { stream: true })
+      );
+    });
+    chunks.push(decoder.decode());
+
+    expect(chunks.join('')).toBe(
+      'data: {"choices":[{"delta":{"content":"stream "}}]}\n\n' +
+        'data: {"choices":[{"delta":{"content":"reply"}}]}\n\n' +
+        'data: [DONE]\n\n'
+    );
+
+    const errorResponse = await runtime.pluginChannel.request(
+      PluginChannelClientMethod.request,
+      {
+        method: 'chatCompletion',
+        args: {
+          body: {
+            model: 'restricted-model',
+            messages: [{ role: 'user', content: 'hi' }]
+          }
+        }
+      },
+      {
+        traceId: 'trace-chat'
+      }
+    );
+
+    expect(errorResponse.output).toBeUndefined();
+    expect(errorResponse.result).toEqual([
+      {
+        status: 403,
+        headers: expect.objectContaining({ 'content-type': 'application/json' }),
+        body: {
+          error: { message: 'Model access denied', type: 'permission_error' }
+        }
+      },
+      null
+    ]);
+
+    expect(fastgptFetch).toHaveBeenCalledTimes(3);
+    expect(fastgptFetch).toHaveBeenNthCalledWith(
+      1,
+      'https://fastgpt.example.com/api/invoke/llm/chat/completions',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.any(Headers)
+      })
+    );
+    const sentHeaders = fastgptFetch.mock.calls[0]![1]!.headers as Headers;
+    expect(sentHeaders.get('Authorization')).toBe('Bearer real-fastgpt-invoke-token');
+
+    invokeBridge.release('trace-chat');
+  });
+
+  it('aborts upstream streaming chatCompletion when debug session releases, channel closes, or consumer destroys stream', async () => {
+    const encoder = new TextEncoder();
+    const createHangingStreamFetch = () => {
+      const capturedSignals: AbortSignal[] = [];
+      const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+        const signal = init?.signal;
+        if (signal) {
+          capturedSignals.push(signal);
+        }
+
+        let streamController: ReadableStreamDefaultController<Uint8Array> | null = null;
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            streamController = controller;
+            controller.enqueue(
+              encoder.encode('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n')
+            );
+            signal?.addEventListener(
+              'abort',
+              () => {
+                try {
+                  controller.error(new DOMException('Aborted', 'AbortError'));
+                } catch {
+                  // Ignore if already closed/errored.
+                }
+              },
+              { once: true }
+            );
+          },
+          cancel() {
+            streamController = null;
+          }
+        });
+        void streamController;
+
+        return new Response(body, {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' }
+        });
+      });
+
+      return { fetchMock, capturedSignals };
+    };
+
+    const requestStream = (runtime: ReturnType<typeof createLocalDebugRuntime>, traceId: string) =>
+      runtime.pluginChannel.request(
+        PluginChannelClientMethod.request,
+        {
+          method: 'chatCompletion',
+          args: {
+            body: {
+              model: 'gpt-4o-mini',
+              messages: [{ role: 'user', content: 'stream hi' }],
+              stream: true
+            }
+          }
+        },
+        { traceId }
+      );
+
+    // 1. release(traceId) aborts active upstream stream
+    {
+      const { fetchMock, capturedSignals } = createHangingStreamFetch();
+      vi.stubGlobal('fetch', fetchMock);
+      const runtime = createLocalDebugRuntime();
+      const invokeBridge = new RemoteDebugInvokeBridge('https://fastgpt.example.com');
+      invokeBridge.attach(runtime);
+      invokeBridge.bind('trace-release', { invokeToken: 'token-1' });
+
+      const response = await requestStream(runtime, 'trace-release');
+      expect(response.output).toBeDefined();
+      expect(capturedSignals).toHaveLength(1);
+      expect(capturedSignals[0]!.aborted).toBe(false);
+
+      invokeBridge.release('trace-release');
+      expect(capturedSignals[0]!.aborted).toBe(true);
+    }
+
+    // 2. hostChannel.close() aborts active upstream stream
+    {
+      const { fetchMock, capturedSignals } = createHangingStreamFetch();
+      vi.stubGlobal('fetch', fetchMock);
+      const runtime = createLocalDebugRuntime();
+      const invokeBridge = new RemoteDebugInvokeBridge('https://fastgpt.example.com');
+      invokeBridge.attach(runtime);
+      invokeBridge.bind('trace-close', { invokeToken: 'token-2' });
+
+      const response = await requestStream(runtime, 'trace-close');
+      expect(response.output).toBeDefined();
+      expect(capturedSignals).toHaveLength(1);
+      expect(capturedSignals[0]!.aborted).toBe(false);
+
+      await runtime.hostChannel.close();
+      expect(capturedSignals[0]!.aborted).toBe(true);
+    }
+
+    // 3. consumer destroying the stream early aborts active upstream stream
+    {
+      const { fetchMock, capturedSignals } = createHangingStreamFetch();
+      vi.stubGlobal('fetch', fetchMock);
+      const runtime = createLocalDebugRuntime();
+      const invokeBridge = new RemoteDebugInvokeBridge('https://fastgpt.example.com');
+      invokeBridge.attach(runtime);
+      invokeBridge.bind('trace-destroy', { invokeToken: 'token-3' });
+
+      const response = await requestStream(runtime, 'trace-destroy');
+      expect(response.output).toBeDefined();
+      expect(capturedSignals).toHaveLength(1);
+      expect(capturedSignals[0]!.aborted).toBe(false);
+
+      const readable = response.output!.stream.toReadable();
+      readable.on('error', () => {});
+      readable.destroy();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(capturedSignals[0]!.aborted).toBe(true);
+      invokeBridge.release('trace-destroy');
+    }
   });
 
   it('updates local debug targets without rebinding the WSS session', async () => {
@@ -737,7 +1027,6 @@ function makeSnapshot() {
     version: '1.0.0',
     name: 'getTime',
     description: 'Get time',
-    toolDescription: 'Get time',
     tags: [],
     permissions: [],
     secretSchema: {},
@@ -747,8 +1036,7 @@ function makeSnapshot() {
         id: 'tool',
         name: 'getTime',
         description: 'Get time',
-        toolDescription: 'Get time',
-        inputSchema: { properties: { query: { type: 'string', toolDescription: 'legacy' } } },
+        inputSchema: { properties: { query: { type: 'string', description: 'Query' } } },
         outputSchema: {}
       }
     ]

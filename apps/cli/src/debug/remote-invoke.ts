@@ -1,4 +1,10 @@
-import { InvokeMethodEnum, type InvokeUploadFileInputType } from '@domain/ports/invoke.port';
+import {
+  type InvokeChatCompletionReplyMetaType,
+  InvokeMethodEnum,
+  type InvokeUploadFileInputType,
+  parseInvokeChatCompletionInput
+} from '@domain/ports/invoke.port';
+import { successResult } from '@domain/value-objects/result.vo';
 import { StreamData } from '@domain/value-objects/stream.vo';
 import { InvokeManager } from '@infrastructure/plugin/invoke/invoke.impl';
 
@@ -6,11 +12,13 @@ import type { LocalDebugHostRequestContext, LocalDebugRuntime } from './runtime'
 
 type RemoteInvokeSession = {
   invokeToken: string;
+  controllers: Set<AbortController>;
 };
 
 export class RemoteDebugInvokeBridge {
   private readonly sessions = new Map<string, RemoteInvokeSession>();
   private readonly getFastgptBaseUrl: () => string;
+  private detachChannelClose: (() => void) | null = null;
 
   constructor(fastgptBaseUrl: string | (() => string)) {
     this.getFastgptBaseUrl =
@@ -18,24 +26,46 @@ export class RemoteDebugInvokeBridge {
   }
 
   attach(runtime: LocalDebugRuntime): void {
+    this.detachChannelClose?.();
+    this.detachChannelClose = runtime.hostChannel.onClose(() => {
+      this.abortAll();
+    });
     runtime.setHostRequestHandler((request) => this.handleHostRequest(request));
   }
 
   bind(traceId: string, input: { invokeToken: string }): void {
+    this.release(traceId);
     this.sessions.set(traceId, {
-      invokeToken: input.invokeToken
+      invokeToken: input.invokeToken,
+      controllers: new Set()
     });
   }
 
   release(traceId: string): void {
+    const session = this.sessions.get(traceId);
+    if (!session) {
+      return;
+    }
+
     this.sessions.delete(traceId);
+    for (const controller of session.controllers) {
+      controller.abort();
+    }
+    session.controllers.clear();
+  }
+
+  abortAll(): void {
+    for (const traceId of Array.from(this.sessions.keys())) {
+      this.release(traceId);
+    }
   }
 
   private async handleHostRequest({
     method,
     args,
     input,
-    traceId
+    traceId,
+    createReply
   }: LocalDebugHostRequestContext): Promise<unknown> {
     if (!traceId) {
       throw new Error('远程调试反向调用缺少 traceId。');
@@ -61,10 +91,104 @@ export class RemoteDebugInvokeBridge {
         return invoke.userInfo();
       case InvokeMethodEnum.wecomCorpToken:
         return invoke.getWecomCorpToken();
+      case InvokeMethodEnum.chatCompletion: {
+        const [chatInput, inputErr] = parseInvokeChatCompletionInput(args);
+        if (inputErr) {
+          return [null, inputErr];
+        }
+
+        const abortController = new AbortController();
+        session.controllers.add(abortController);
+        let streamTransferred = false;
+
+        try {
+          const invokeResult = await invoke.chatCompletion(chatInput, {
+            signal: abortController.signal
+          });
+          const [response, responseErr] = invokeResult;
+          if (responseErr || !response.stream) {
+            return invokeResult;
+          }
+
+          const reply = createReply(
+            successResult<InvokeChatCompletionReplyMetaType>({
+              status: response.status,
+              headers: response.headers
+            }),
+            {
+              output: response.stream
+            }
+          );
+          streamTransferred = true;
+          attachStreamAbortCleanup(response.stream, abortController, () => {
+            session.controllers.delete(abortController);
+          });
+          return reply;
+        } catch (error) {
+          abortController.abort();
+          throw error;
+        } finally {
+          if (!streamTransferred) {
+            session.controllers.delete(abortController);
+          }
+        }
+      }
       default:
         throw new Error(`远程调试宿主暂不支持反向调用: ${String(method)}`);
     }
   }
+}
+
+function attachStreamAbortCleanup(
+  stream: unknown,
+  abortController: AbortController,
+  cleanup: () => void
+): void {
+  let cleaned = false;
+  let completed = false;
+
+  const finish = (shouldAbort: boolean) => {
+    if (cleaned) {
+      return;
+    }
+    cleaned = true;
+    cleanup();
+    if (shouldAbort && !abortController.signal.aborted) {
+      abortController.abort();
+    }
+  };
+
+  if (stream instanceof StreamData) {
+    stream
+      .onEnd(() => {
+        completed = true;
+        finish(false);
+      })
+      .onError(() => {
+        finish(true);
+      });
+    stream.toReadable().once('close', () => {
+      finish(!completed);
+    });
+    return;
+  }
+
+  if (stream && typeof stream === 'object' && 'once' in stream && typeof stream.once === 'function') {
+    const emitter = stream as NodeJS.EventEmitter;
+    emitter.once('end', () => {
+      completed = true;
+      finish(false);
+    });
+    emitter.once('error', () => {
+      finish(true);
+    });
+    emitter.once('close', () => {
+      finish(!completed);
+    });
+    return;
+  }
+
+  finish(false);
 }
 
 function ensurePlainObject(value: unknown): Record<string, unknown> {

@@ -49,7 +49,10 @@ export abstract class PluginFactory {
     // 1. 注册监听
     // 2. 发送 ready 信号
     if (this.mode === 'localPool') {
-      this.channel = createCurrentProcessPluginChannel();
+      const defaultTimeoutMs = resolvePluginIpcTimeoutMs();
+      this.channel = createCurrentProcessPluginChannel(
+        defaultTimeoutMs !== undefined ? { defaultTimeoutMs } : undefined
+      );
       setImmediate(() => {
         void this.getChannel().notify(PluginChannelClientMethod.ready, {
           pid: process.pid,
@@ -73,6 +76,16 @@ export abstract class PluginFactory {
   protected constructor() {
     void this.init();
   }
+}
+
+export function resolvePluginIpcTimeoutMs(
+  raw: string | undefined = process.env.PLUGIN_IPC_TIMEOUT_MS
+): number | undefined {
+  if (!raw) {
+    return undefined;
+  }
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function getCurrentLocalDebugRuntime(): LocalDebugRuntimeLike {

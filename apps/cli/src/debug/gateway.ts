@@ -34,6 +34,7 @@ export type DebugGatewayTarget = {
   invokeBridge?: {
     bind(traceId: string, input: { invokeToken: string }): void;
     release(traceId: string): void;
+    abortAll?(): void;
   };
 };
 
@@ -184,6 +185,9 @@ async function connectSingleDebugGateway({
     socket.addEventListener('close', () => {
       closed = true;
       stopHeartbeat();
+      for (const target of targetsByPluginId.values()) {
+        target.invokeBridge?.abortAll?.();
+      }
       resolve();
     });
     socket.addEventListener('error', () => {

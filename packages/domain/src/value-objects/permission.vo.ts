@@ -4,6 +4,7 @@ const rawPluginPermissionEnumSchema = z.enum([
   'userInfo:read',
   'teamInfo:read',
   'model:read',
+  'model:invoke',
   'dataset:read',
   'file-upload:allow',
   'unknown'

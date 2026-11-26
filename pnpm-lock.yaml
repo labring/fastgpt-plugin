@@ -12,6 +12,9 @@ catalogs:
     '@fastgpt-sdk/storage':
       specifier: ^0.9.1
       version: 0.9.1
+    openai:
+      specifier: ^7.56.0
+      version: 7.65.0
     tsdown:
       specifier: ^0.21.10
       version: 0.21.10
@@ -237,6 +240,9 @@ importers:
       hono:
         specifier: ^4.13.16
         version: 4.13.22
+      openai:
+        specifier: 'catalog:'
+        version: 7.65.0(@aws-sdk/credential-provider-node@3.972.80)(@smithy/signature-v4@5.7.2)(undici@7.30.2)(ws@8.21.0)(zod@4.3.6)
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
@@ -385,6 +391,9 @@ importers:
 
   sdk/factory:
     dependencies:
+      openai:
+        specifier: 'catalog:'
+        version: 7.65.0(@aws-sdk/credential-provider-node@3.972.80)(@smithy/signature-v4@5.7.2)(undici@7.30.2)(ws@8.21.0)(zod@4.3.6)
       zod:
         specifier: 'catalog:'
         version: 4.3.6
@@ -3532,6 +3541,33 @@ packages:
   onetime@7.0.0:
     resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
     engines: {node: '>=18'}
+
+  openai@7.65.0:
+    resolution: {integrity: sha512-n7tmWKiUptMIugQMGAEDsfeu8MsPLR4uHPFWRcUjy7Mn2w968TuAUMGOlvnh/AghLF1iz4zYop2RoxfHZFKaEw==}
+    engines: {node: '>=22.0.0'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
+      '@smithy/hash-node': '>=4.3.0 <5'
+      '@smithy/signature-v4': '>=5.4.0 <6'
+      google-auth-library: '>=9.15.1 <12'
+      undici: '>=5 <9'
+      ws: ^8.21.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-node':
+        optional: true
+      '@smithy/hash-node':
+        optional: true
+      '@smithy/signature-v4':
+        optional: true
+      google-auth-library:
+        optional: true
+      undici:
+        optional: true
+      ws:
+        optional: true
+      zod:
+        optional: true
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -7208,6 +7244,14 @@ snapshots:
   onetime@7.0.0:
     dependencies:
       mimic-function: 5.0.1
+
+  openai@7.65.0(@aws-sdk/credential-provider-node@3.972.80)(@smithy/signature-v4@5.7.2)(undici@7.30.2)(ws@8.21.0)(zod@4.3.6):
+    optionalDependencies:
+      '@aws-sdk/credential-provider-node': 3.972.80
+      '@smithy/signature-v4': 5.7.2
+      undici: 7.30.2
+      ws: 8.21.0
+      zod: 4.3.6
 
   optionator@0.9.4:
     dependencies:

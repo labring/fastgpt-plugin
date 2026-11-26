@@ -1,7 +1,13 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import z from 'zod';
 
-import { createToolHandler, defineInputSchema, defineOutputSchema, defineSecretSchema } from './index';
+import {
+  createToolHandler,
+  defineInputSchema,
+  defineOutputSchema,
+  defineSecretSchema,
+  Model
+} from './index';
 
 const text = (en: string, zhCN: string, zhHant?: string) => ({
   en,
@@ -237,6 +243,88 @@ describe('schema definition helpers', () => {
       baseURL: 'https://api.example.com'
     });
     expect(secretSchema.safeParse({ apiKey: '' }).success).toBe(false);
+  });
+
+  it('supports Model schema helper standalone and inside defineInputSchema', () => {
+    expect(Model.parse('gpt-4o-mini')).toBe('gpt-4o-mini');
+    expect(Model.safeParse(123).success).toBe(false);
+    expect(z.toJSONSchema(Model)).toMatchObject({
+      type: 'string',
+      format: 'modelId'
+    });
+
+    const standaloneSchema = z.object({
+      model: Model.describe('Model to invoke'),
+      fallbackModel: Model.optional()
+    });
+    expect(standaloneSchema.parse({ model: 'gpt-4o' })).toEqual({ model: 'gpt-4o' });
+    expect(
+      standaloneSchema.parse({ model: 'gpt-4o', fallbackModel: 'gpt-4o-mini' })
+    ).toEqual({ model: 'gpt-4o', fallbackModel: 'gpt-4o-mini' });
+    expect(z.toJSONSchema(standaloneSchema)).toMatchObject({
+      type: 'object',
+      properties: {
+        model: {
+          type: 'string',
+          format: 'modelId',
+          description: 'Model to invoke'
+        },
+        fallbackModel: {
+          type: 'string',
+          format: 'modelId'
+        }
+      },
+      required: ['model']
+    });
+
+    const uiInputSchema = defineInputSchema({
+      model: {
+        type: Model,
+        title: text('Model', '模型'),
+        description: text('Select an LLM model', '选择大语言模型')
+      },
+      optionalModel: {
+        type: Model.optional(),
+        title: text('Fallback model', '备用模型')
+      }
+    });
+    expect(uiInputSchema.parse({ model: 'claude-sonnet-4-5' })).toEqual({
+      model: 'claude-sonnet-4-5'
+    });
+    expect(uiInputSchema.shape.model.meta()).toMatchObject({
+      format: 'modelId',
+      title: 'Model',
+      description: 'Select an LLM model',
+      'x-i18n': {
+        title: text('Model', '模型'),
+        description: text('Select an LLM model', '选择大语言模型')
+      }
+    });
+    expect(z.toJSONSchema(uiInputSchema)).toMatchObject({
+      type: 'object',
+      properties: {
+        model: {
+          type: 'string',
+          format: 'modelId',
+          title: 'Model',
+          description: 'Select an LLM model',
+          'x-i18n': {
+            title: text('Model', '模型'),
+            description: text('Select an LLM model', '选择大语言模型')
+          }
+        },
+        optionalModel: {
+          type: 'string',
+          format: 'modelId',
+          title: 'Fallback model',
+          'x-i18n': {
+            title: text('Fallback model', '备用模型')
+          }
+        }
+      },
+      required: ['model']
+    });
+    expect(Model.meta()).toEqual({ format: 'modelId' });
   });
 });
 

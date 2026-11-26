@@ -405,6 +405,7 @@ function toStreamData<T>(source: PluginChannelStreamSource<T>): StreamData<T> {
   }
 
   const output = StreamData.create<T>();
+  output.toReadable().on('error', () => {});
 
   void (async () => {
     try {

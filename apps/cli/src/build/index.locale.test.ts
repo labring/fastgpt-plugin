@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import z from 'zod';
 
-import { defineContentSchema, defineOutputSchema } from '../../../../sdk/factory/src/index';
+import {
+  defineContentSchema,
+  defineInputSchema,
+  defineOutputSchema,
+  Model
+} from '../../../../sdk/factory/src/index';
 
 import { toManifestJsonSchema } from './index';
 
@@ -51,6 +56,32 @@ describe('manifest JSON Schema localization', () => {
     expect(result.properties.legacy).toEqual({
       title: 'Legacy title',
       description: 'Legacy description'
+    });
+  });
+
+  it('preserves Model format metadata across z.toJSONSchema and toManifestJsonSchema', () => {
+    const inputSchema = defineInputSchema({
+      model: {
+        type: Model,
+        title: { en: 'Model', 'zh-CN': '模型' },
+        description: { en: 'Model to invoke', 'zh-CN': '要调用的模型' }
+      }
+    });
+
+    const manifestSchema = toManifestJsonSchema(z.toJSONSchema(inputSchema)) as {
+      type: string;
+      properties: Record<string, Record<string, unknown>>;
+    };
+
+    expect(manifestSchema.properties.model).toMatchObject({
+      type: 'string',
+      format: 'modelId',
+      title: 'Model',
+      description: 'Model to invoke',
+      'x-i18n': {
+        title: { en: 'Model', 'zh-CN': '模型' },
+        description: { en: 'Model to invoke', 'zh-CN': '要调用的模型' }
+      }
     });
   });
 });
