@@ -62,7 +62,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'high'],
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -74,7 +74,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {

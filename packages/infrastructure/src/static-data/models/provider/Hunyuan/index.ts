@@ -155,7 +155,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: false,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: false
     },
     {

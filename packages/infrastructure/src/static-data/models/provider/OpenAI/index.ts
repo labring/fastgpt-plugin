@@ -72,7 +72,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'low', 'medium', 'high', 'xhigh'],
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: false,
       showTopP: false,
       fieldMap: {
@@ -89,7 +89,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'low', 'medium', 'high', 'xhigh'],
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: false,
       showTopP: false,
       fieldMap: {
@@ -106,7 +106,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'low', 'medium', 'high', 'xhigh'],
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -119,7 +119,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'low', 'medium', 'high', 'xhigh'],
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -132,7 +132,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'low', 'medium', 'high', 'xhigh'],
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -145,7 +145,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'low', 'medium', 'high', 'xhigh'],
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -158,7 +158,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'low', 'medium', 'high', 'xhigh'],
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {

@@ -85,7 +85,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'high'],
+      reasoningEffortList: ['none', 'low', 'high'],
       toolChoice: true,
       responseFormatList: ['text', 'json_object', 'json_schema']
     },
