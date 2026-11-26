@@ -56,6 +56,7 @@ export type {
   PluginVersionItemType,
   PluginVersionListParamsType,
   PluginVersionListType,
+  ReasoningEffortLevelType,
   RerankModelItemType,
   RunToolStreamParams,
   STTModelItemType,

@@ -104,6 +104,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: false
     },
     {
