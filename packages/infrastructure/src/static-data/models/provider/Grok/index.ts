@@ -14,6 +14,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high'],
       toolChoice: true
     },
     {
@@ -27,6 +28,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -39,6 +41,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -51,6 +54,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high'],
       toolChoice: true
     },
     {

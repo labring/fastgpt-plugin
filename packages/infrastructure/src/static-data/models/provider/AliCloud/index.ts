@@ -59,7 +59,8 @@ const models: ProviderConfigType = {
       video: true,
       audio: true,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true,
       responseFormatList: ['text', 'json_object']
     },
