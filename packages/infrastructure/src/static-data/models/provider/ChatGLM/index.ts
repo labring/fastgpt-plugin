@@ -15,7 +15,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'high'],
+      reasoningEffortList: ['low', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -30,7 +30,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'high'],
+      reasoningEffortList: ['low', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -44,7 +44,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'high'],
+      reasoningEffortList: ['low', 'high', 'xhigh'],
       toolChoice: true
     },
     {

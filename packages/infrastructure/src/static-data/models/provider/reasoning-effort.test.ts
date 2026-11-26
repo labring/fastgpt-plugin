@@ -180,9 +180,12 @@ describe('static model reasoningEffortList presets', () => {
       'high'
     ]);
     expect(findModel('Doubao', 'glm-5-3-flash-260828')?.reasoningEffortList).toEqual([
-      'none',
-      'high'
+      'low',
+      'high',
+      'xhigh'
     ]);
+    expect(findModel('ChatGLM', 'glm-5.3')?.reasoningEffortList).toEqual(['low', 'high', 'xhigh']);
+    expect(findModel('ChatGLM', 'glm-5.2')?.reasoningEffortList).toEqual(['none', 'high']);
     expect(findModel('DeepSeek', 'deepseek-v4-pro')?.reasoningEffortList).toEqual(['none', 'high']);
     expect(findModel('Qwen', 'qwen3-32b')?.reasoningEffortList).toEqual([
       'none',

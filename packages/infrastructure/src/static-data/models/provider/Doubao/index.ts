@@ -90,7 +90,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
-      reasoningEffortList: ['none', 'high'],
+      reasoningEffortList: ['low', 'high', 'xhigh'],
       toolChoice: true,
       responseFormatList: ['text', 'json_object']
     },
