@@ -12,7 +12,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: false,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high'],
       toolChoice: true
     },
     {
@@ -36,7 +37,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -48,7 +50,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1,
       vision: true,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high'],
       toolChoice: true
     },
     {
@@ -109,7 +112,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: true,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: false,
       responseFormatList: ['text', 'json_object', 'json_schema']
     },

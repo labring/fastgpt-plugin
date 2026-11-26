@@ -6,6 +6,17 @@ import { I18nStringStrictSchema } from '../value-objects/i18n-string.vo';
 export const ModelTypeSchema = z.enum(['llm', 'embedding', 'rerank', 'tts', 'stt']);
 export const ModelTypeEnum = ModelTypeSchema.enum;
 
+// 思考等级枚举（对齐 AI Proxy 思考等级配置）
+export const ReasoningEffortLevelSchema = z.enum([
+  'none',
+  'minimal',
+  'low',
+  'medium',
+  'high',
+  'xhigh'
+]);
+export type ReasoningEffortLevelType = z.infer<typeof ReasoningEffortLevelSchema>;
+
 // 价格类型 schema
 const PriceSchema = z.object({
   charsPointsPrice: z.number().optional(), // 1k chars=n points; 60s=n points
@@ -41,6 +52,7 @@ export const LLMModelItemSchema = z.object({
   video: z.boolean().optional(),
   reasoning: z.boolean(),
   reasoningEffort: z.boolean(),
+  reasoningEffortList: z.array(ReasoningEffortLevelSchema).optional(),
   toolChoice: z.boolean(),
 
   // diff function model

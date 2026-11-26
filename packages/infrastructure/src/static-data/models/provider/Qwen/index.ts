@@ -15,6 +15,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true,
       fieldMap: { max_tokens: 'max_completion_tokens' }
     },
@@ -22,7 +23,7 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.llm,
       model: 'qwen3.8-max',
       maxContext: 1000000,
-      maxTokens: 64000,
+      maxTokens: 131072,
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
@@ -30,6 +31,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -44,6 +46,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true,
       audio: true
     },
@@ -51,7 +54,7 @@ const models: ProviderConfigType = {
       type: ModelTypeEnum.llm,
       model: 'qwen3.8-flash',
       maxContext: 1000000,
-      maxTokens: 64000,
+      maxTokens: 131072,
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
@@ -59,6 +62,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -73,6 +77,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -87,6 +92,7 @@ const models: ProviderConfigType = {
       video: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -101,6 +107,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true,
       audio: true
     },
@@ -116,6 +123,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true,
       audio: true
     },
@@ -131,13 +139,14 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
       type: ModelTypeEnum.llm,
       model: 'qwen3.7-plus',
       maxContext: 1000000,
-      maxTokens: 64000,
+      maxTokens: 131072,
       quoteMaxToken: 1000000,
       maxTemperature: 1,
       responseFormatList: ['text', 'json_object', 'json_schema'],
@@ -145,6 +154,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -159,6 +169,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
 
@@ -174,6 +185,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -188,6 +200,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -202,6 +215,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -216,6 +230,7 @@ const models: ProviderConfigType = {
       video: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -350,6 +365,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true,
       defaultConfig: {
         stream: true
@@ -366,6 +382,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true,
       defaultConfig: {
         stream: true
@@ -382,6 +399,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true,
       defaultConfig: {
         stream: true
@@ -398,6 +416,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true,
       defaultConfig: {
         stream: true
@@ -414,6 +433,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true,
       defaultConfig: {
         stream: true
@@ -430,6 +450,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true,
       defaultConfig: {
         stream: true
@@ -446,6 +467,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true,
       defaultConfig: {
         stream: true
@@ -462,6 +484,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true,
       defaultConfig: {
         stream: true
@@ -528,6 +551,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -541,6 +565,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -554,6 +579,7 @@ const models: ProviderConfigType = {
       vision: false,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {

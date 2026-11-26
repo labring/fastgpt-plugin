@@ -60,7 +60,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: true,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -72,7 +73,8 @@ const models: ProviderConfigType = {
       maxTemperature: 1.2,
       vision: true,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -85,6 +87,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -97,6 +100,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['none', 'high'],
       toolChoice: true
     },
     {
@@ -162,13 +166,15 @@ const models: ProviderConfigType = {
     {
       type: ModelTypeEnum.llm,
       model: 'mistral-large-latest',
-      maxContext: 130000,
+      maxContext: 1000000,
       maxTokens: 8000,
       quoteMaxToken: 60000,
       maxTemperature: 1.2,
-      vision: false,
-      reasoning: false,
-      reasoningEffort: false,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
+      vision: true,
+      reasoning: true,
+      reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high'],
       toolChoice: true
     },
     {

@@ -3,15 +3,22 @@ import { Readable } from 'node:stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PluginType } from '@domain/entities/plugin.entity';
+import type {
+  ModerationDetailType,
+  ModerationManagerPort
+} from '@domain/ports/plugin/moderation.port';
 import type { FileObject } from '@domain/value-objects/file/file-object.vo';
 import type { PkgContentFileObjects } from '@domain/value-objects/file/pkg-file.vo';
 import type { I18nStringType } from '@domain/value-objects/i18n-string.vo';
+import type { ModerationResultType } from '@domain/value-objects/moderation.vo';
 import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import { failureResult, successResult } from '@domain/value-objects/result.vo';
 import type { UsecaseLogger } from '@usecase/logger.port';
 
 import { makeModelListUC } from './model/model-list.uc';
 import { makeProviderListUC } from './model/providers.uc';
+import { makeModerationCheckUC } from './moderation/moderation-check.uc';
+import { makeModerationDetailUC } from './moderation/moderation-detail.uc';
 import { makePluginConfigGetUC } from './plugin/plugin-config-get.uc';
 import { makeResetPluginConfigUC } from './plugin/plugin-config-reset.uc';
 import { makeSetPluginConfigUC } from './plugin/plugin-config-set.uc';
@@ -154,6 +161,12 @@ const baseToolManager = (overrides: Record<string, unknown> = {}) => ({
   ...overrides
 });
 
+const baseModerationManager = (overrides: Record<string, unknown> = {}): ModerationManagerPort => ({
+  detail: vi.fn(),
+  check: vi.fn(),
+  ...overrides
+});
+
 describe('simple usecases', () => {
   it('delegates read and write operations to the injected ports', async () => {
     const result = successResult({ ok: true });
@@ -178,6 +191,10 @@ describe('simple usecases', () => {
       list: vi.fn().mockResolvedValue(result),
       detail: vi.fn().mockResolvedValue(result),
       run: vi.fn().mockResolvedValue(result)
+    });
+    const moderationDetailResult = successResult({} as ModerationDetailType);
+    const moderationManager = baseModerationManager({
+      detail: vi.fn().mockResolvedValue(moderationDetailResult)
     });
 
     await expect(
@@ -232,6 +249,7 @@ describe('simple usecases', () => {
     await expect(
       makeToolRunUC({ toolManager, logger: usecaseLogger })({
         pluginId: 'plugin-a',
+        childId: 'child-1',
         input: {},
         systemVar: {
           app: { id: 'app', name: 'app' },
@@ -241,6 +259,12 @@ describe('simple usecases', () => {
         }
       })
     ).resolves.toEqual(result);
+    await expect(
+      makeModerationDetailUC({ moderationManager, logger: usecaseLogger })({
+        pluginId: 'plugin-a',
+        source: 'system'
+      })
+    ).resolves.toEqual(moderationDetailResult);
 
     expect(runtimeManager.getConfig).toHaveBeenCalledWith('plugin-a');
     expect(runtimeManager.updateConfig).toHaveBeenCalledWith('plugin-a', { mode: 'local' });
@@ -442,6 +466,50 @@ describe('simple usecases', () => {
             time: '2026-01-01T00:00:00Z'
           }
         })
+    },
+    {
+      name: 'moderation detail',
+      message: 'Moderation Detail Error',
+      expectedErrorContext: { input: { pluginId: 'plugin-a', source: 'system' } },
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeModerationDetailUC({
+          moderationManager: baseModerationManager({
+            detail: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({ pluginId: 'plugin-a', source: 'system' })
+    },
+    {
+      name: 'moderation check',
+      message: 'Moderation Check Error',
+      expectedErrorContext: {
+        input: {
+          pluginId: 'plugin-a',
+          source: 'system',
+          hasSecrets: false,
+          systemVar: {
+            app: { id: 'app', name: 'app' },
+            chat: { chatId: 'chat' },
+            time: '2026-01-01T00:00:00Z'
+          }
+        }
+      },
+      run: (result: ReturnType<typeof failureResult>, usecaseLogger: UsecaseLogger) =>
+        makeModerationCheckUC({
+          moderationManager: baseModerationManager({
+            check: vi.fn().mockResolvedValue(result)
+          }),
+          logger: usecaseLogger
+        })({
+          pluginId: 'plugin-a',
+          input: { content: 'secret content' },
+          systemVar: {
+            app: { id: 'app', name: 'app' },
+            chat: { chatId: 'chat' },
+            invokeToken: 'invoke-token',
+            time: '2026-01-01T00:00:00Z'
+          }
+        })
     }
   ])(
     'records usecase error logs for $name failures',
@@ -567,6 +635,96 @@ describe('simple usecases', () => {
         }
       }
       })
+    );
+  });
+
+  it('logs moderation check verdicts without exposing raw content or secrets', async () => {
+    const usecaseLogger = logger();
+    const passResult: ModerationResultType = {
+      verdict: 'pass',
+      keywords: [],
+      hits: [],
+      provider: 'test-provider'
+    };
+    const blockResult: ModerationResultType = {
+      verdict: 'block',
+      keywords: ['bad'],
+      hits: [{ label: 'abuse', providerLabel: 'abuse', keywords: ['bad'] }],
+      provider: 'test-provider'
+    };
+    const errorVerdictResult: ModerationResultType = {
+      verdict: 'error',
+      keywords: [],
+      hits: [],
+      provider: 'test-provider',
+      errorMessage: 'upstream unavailable'
+    };
+    const moderationManager = baseModerationManager({
+      check: vi
+        .fn()
+        .mockResolvedValueOnce(successResult(passResult))
+        .mockResolvedValueOnce(successResult(blockResult))
+        .mockResolvedValueOnce(successResult(errorVerdictResult))
+    });
+    const run = makeModerationCheckUC({ moderationManager, logger: usecaseLogger });
+    const systemVar = {
+      app: { id: 'app', name: 'app' },
+      chat: { chatId: 'chat' },
+      invokeToken: 'invoke-token',
+      time: '2026-01-01T00:00:00Z'
+    };
+
+    await expect(
+      run({
+        pluginId: 'mod-a',
+        source: 'team-a',
+        version: '1.0.0',
+        input: { content: 'sensitive-pass-text', scene: 'chat', partial: true },
+        secrets: { apiKey: 'secret-key' },
+        systemVar
+      })
+    ).resolves.toEqual(successResult(passResult));
+    expect(usecaseLogger.info).toHaveBeenCalledWith(
+      'Moderation Check Result',
+      expect.objectContaining({
+        pluginId: 'mod-a',
+        source: 'team-a',
+        version: '1.0.0',
+        partial: true,
+        scene: 'chat',
+        hasSecrets: true,
+        verdict: 'pass'
+      })
+    );
+    expect(JSON.stringify(vi.mocked(usecaseLogger.info).mock.calls)).not.toContain(
+      'sensitive-pass-text'
+    );
+
+    await expect(
+      run({
+        pluginId: 'mod-a',
+        input: { content: 'sensitive-block-text' },
+        secrets: {},
+        systemVar
+      })
+    ).resolves.toEqual(successResult(blockResult));
+    await expect(
+      run({
+        pluginId: 'mod-a',
+        input: { content: 'sensitive-error-text' },
+        systemVar
+      })
+    ).resolves.toEqual(successResult(errorVerdictResult));
+    expect(usecaseLogger.warn).toHaveBeenCalledTimes(2);
+    expect(usecaseLogger.warn).toHaveBeenNthCalledWith(
+      1,
+      'Moderation Check Result',
+      expect.objectContaining({ source: 'system', hasSecrets: false, verdict: 'block' })
+    );
+    expect(usecaseLogger.warn).toHaveBeenNthCalledWith(
+      2,
+      'Moderation Check Result',
+      expect.objectContaining({ source: 'system', hasSecrets: false, verdict: 'error' })
     );
   });
 });
@@ -1054,6 +1212,38 @@ describe('makePluginUploadUC', () => {
     expect(deps.pluginPKGFileResolver.parsePluginZipFiles).toHaveBeenCalledWith(bundleFile);
     expect(deps.pluginRepo.createPlugin).toHaveBeenCalledTimes(2);
   });
+
+  it('passes custom source when uploading and rolling back failed pending plugins', async () => {
+    const pkgFile = fileObject('upload');
+    const deps = makeDeps({
+      localFileStorageRepo: {
+        save: vi.fn().mockResolvedValue(successResult(pkgFile)),
+        delete: vi.fn().mockResolvedValue(successResult(true))
+      },
+      pluginRepo: basePluginRepo({
+        getPendingPluginIds: vi.fn().mockResolvedValue(successResult([])),
+        createPlugin: vi.fn().mockResolvedValue(failureResult(reason('create failed'))),
+        deletePendingPlugin: vi.fn().mockResolvedValue(successResult({}))
+      })
+    });
+
+    const [uploaded, err] = await makePluginUploadUC(deps)({
+      source: 'team-a',
+      files: [{ file: stream(), fileName: 'plugin.pkg' }]
+    });
+
+    expect(err).toBeNull();
+    expect(uploaded).toEqual({
+      plugins: [],
+      failed: [{ fileName: 'upload.pkg', reason: reason('create failed') }]
+    });
+    expect(deps.pluginRepo.getPendingPluginIds).toHaveBeenCalledWith('team-a');
+    expect(deps.pluginPKGFileResolver.parsePluginPkg).toHaveBeenCalledWith(pkgFile, true, 'team-a');
+    expect(deps.pluginRepo.createPlugin).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'team-a', pending: true })
+    );
+    expect(deps.pluginRepo.deletePendingPlugin).toHaveBeenCalledWith(uniqueId, 'team-a');
+  });
 });
 
 describe('makePluginInstallUC', () => {
@@ -1444,6 +1634,36 @@ describe('makePluginInstallUC', () => {
       { replacementUniqueId: uniqueId }
     );
   });
+
+  it('records failure when disabling replaced plugins fails after install', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        listActive: vi.fn().mockResolvedValue(successResult([plugin({ etag: 'old-etag' })])),
+        createPlugin: vi
+          .fn()
+          .mockResolvedValue(successResult({ runtimeRegistrationRequired: true })),
+        disableUnreferencedPlugins: vi
+          .fn()
+          .mockResolvedValue(failureResult(reason('disable failed')))
+      })
+    });
+
+    const [result, err] = await makePluginInstallUC(deps)({
+      urls: ['tool-url'],
+      batchDownloadSize: 1
+    });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({
+      installed: [],
+      failed: [
+        {
+          url: 'tool-url',
+          reason: { en: 'Failed to disable replaced plugins', 'zh-CN': '禁用被替换插件失败' }
+        }
+      ]
+    });
+  });
 });
 
 describe('makePluginConfirmUC', () => {
@@ -1732,6 +1952,88 @@ describe('makePluginConfirmUC', () => {
       }]
     });
   });
+
+  it('skips runtime registration during confirm when runtimeRegistrationRequired is false', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        listActive: vi.fn().mockResolvedValue(successResult([])),
+        confirmPlugin: vi
+          .fn()
+          .mockResolvedValue(successResult({ ...plugin(), runtimeRegistrationRequired: false })),
+        disableUnreferencedPlugins: vi.fn().mockResolvedValue(successResult({ plugins: [] }))
+      })
+    });
+
+    const [result, err] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId] });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({ confirmed: [uniqueId], failed: [] });
+    expect(deps.pluginRuntimeManager.register).not.toHaveBeenCalled();
+  });
+
+  it('logs rollback errors when restoring confirmation fails after runtime registration failure', async () => {
+    const appLogger = logger();
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        listActive: vi.fn().mockResolvedValue(successResult([])),
+        getPluginById: vi.fn().mockResolvedValue(successResult({ info: plugin() })),
+        confirmPlugin: vi
+          .fn()
+          .mockResolvedValue(successResult({ ...plugin(), replacedInstallationIds: ['old-inst'] })),
+        rollbackPluginConfirmation: vi
+          .fn()
+          .mockResolvedValue(failureResult(reason('rollback failed')))
+      }),
+      pluginRuntimeManager: baseRuntimeManager({
+        register: vi.fn().mockResolvedValue(failureResult(reason('register failed')))
+      }),
+      logger: appLogger
+    });
+
+    const [result, err] = await makePluginConfirmUC(deps)({
+      uniqueIds: [uniqueId],
+      restore: true
+    });
+
+    expect(err).toBeNull();
+    expect(result?.failed).toHaveLength(1);
+    expect(deps.pluginRepo.rollbackPluginConfirmation).toHaveBeenCalledWith(
+      uniqueId,
+      'system',
+      ['old-inst'],
+      true
+    );
+    expect(appLogger.error).toHaveBeenCalledWith(
+      'Plugin Confirm Rollback Error',
+      expect.objectContaining({ uniqueId })
+    );
+  });
+
+  it('still records registration failure when rollbackPluginConfirmation is unavailable', async () => {
+    const deps = makeDeps({
+      pluginRepo: basePluginRepo({
+        listActive: vi.fn().mockResolvedValue(successResult([])),
+        confirmPlugin: vi.fn().mockResolvedValue(successResult(plugin())),
+        rollbackPluginConfirmation: undefined
+      }),
+      pluginRuntimeManager: baseRuntimeManager({
+        register: vi.fn().mockResolvedValue(failureResult(reason('register failed')))
+      })
+    });
+
+    const [result, err] = await makePluginConfirmUC(deps)({ uniqueIds: [uniqueId] });
+
+    expect(err).toBeNull();
+    expect(result).toEqual({
+      confirmed: [],
+      failed: [
+        {
+          uniqueId,
+          reason: { en: 'Failed to register confirmed plugin', 'zh-CN': '注册确认后的插件失败' }
+        }
+      ]
+    });
+  });
 });
 
 describe('makePluginRegisterActiveUC', () => {
@@ -1842,6 +2144,34 @@ describe('makePluginRegisterActiveUC', () => {
       ])
     });
     expect(register).toHaveBeenCalledTimes(activePlugins.length);
+  });
+
+  it('falls back to sequential concurrency when registerConcurrency is not finite', async () => {
+    const activePlugins = [plugin({ pluginId: 'plugin-a' }), plugin({ pluginId: 'plugin-b' })];
+    let activeRegistrations = 0;
+    let maxActiveRegistrations = 0;
+    const register = vi.fn(async () => {
+      activeRegistrations += 1;
+      maxActiveRegistrations = Math.max(maxActiveRegistrations, activeRegistrations);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      activeRegistrations -= 1;
+      return successResult({});
+    });
+    const deps = {
+      pluginRepo: basePluginRepo({
+        listActive: vi.fn().mockResolvedValue(successResult(activePlugins))
+      }),
+      pluginRuntimeManager: baseRuntimeManager({ register }),
+      logger: logger(),
+      registerConcurrency: Number.NaN
+    };
+
+    const [result, err] = await makePluginRegisterActiveUC(deps)();
+
+    expect(err).toBeNull();
+    expect(result).toBe('ok');
+    expect(register).toHaveBeenCalledTimes(2);
+    expect(maxActiveRegistrations).toBe(1);
   });
 });
 
@@ -2151,5 +2481,24 @@ describe('plugin replacement helpers', () => {
       { ...uniqueId, etag: 'old-a' },
       { replacementUniqueId: undefined }
     );
+  });
+
+  it('handles missing disabled plugin list when unregistering replaced plugins', async () => {
+    const deps = {
+      pluginRepo: basePluginRepo({
+        disableUnreferencedPlugins: vi.fn().mockResolvedValue(successResult(null))
+      }),
+      pluginRuntimeManager: baseRuntimeManager({
+        unregister: vi.fn().mockResolvedValue(successResult({}))
+      }),
+      logger: logger(),
+      replacedPlugins: [plugin({ etag: 'old-a' })]
+    };
+
+    const [result, err] = await disableAndUnregisterReplacedPlugins(deps);
+
+    expect(err).toBeNull();
+    expect(result).toEqual({});
+    expect(deps.pluginRuntimeManager.unregister).not.toHaveBeenCalled();
   });
 });

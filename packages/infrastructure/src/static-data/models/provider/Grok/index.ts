@@ -10,9 +10,11 @@ const models: ProviderConfigType = {
       maxTokens: 8000,
       quoteMaxToken: 500000,
       maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high'],
       toolChoice: true
     },
     {
@@ -22,9 +24,11 @@ const models: ProviderConfigType = {
       maxTokens: 8000,
       quoteMaxToken: 500000,
       maxTemperature: 1,
+      responseFormatList: ['text', 'json_object', 'json_schema'],
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -37,6 +41,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high', 'xhigh'],
       toolChoice: true
     },
     {
@@ -49,6 +54,7 @@ const models: ProviderConfigType = {
       vision: true,
       reasoning: true,
       reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high'],
       toolChoice: true
     },
     {

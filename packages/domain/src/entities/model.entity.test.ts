@@ -37,6 +37,31 @@ describe('LLMModelItemSchema', () => {
         .success
     ).toBe(false);
   });
+
+  it('validates reasoningEffortList against AI Proxy levels', () => {
+    const parsed = LLMModelItemSchema.parse({
+      ...baseLlmModel,
+      reasoningEffort: true,
+      reasoningEffortList: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh']
+    });
+    expect(parsed.reasoningEffortList).toEqual([
+      'none',
+      'minimal',
+      'low',
+      'medium',
+      'high',
+      'xhigh'
+    ]);
+
+    expect(LLMModelItemSchema.parse(baseLlmModel)).not.toHaveProperty('reasoningEffortList');
+    expect(
+      LLMModelItemSchema.safeParse({
+        ...baseLlmModel,
+        reasoningEffort: true,
+        reasoningEffortList: ['low', 'max']
+      }).success
+    ).toBe(false);
+  });
 });
 
 const baseEmbeddingModel = {

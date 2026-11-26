@@ -41,7 +41,7 @@
     "oxc-parser": "^0.112.0",
     "react": "^19.2.7",
     "tsdown": "catalog:",
-    "undici": "^7.29.0",
+    "undici": "^7.29.1",
     "yaml": "^2.8.3",
     "yazl": "^3.3.1",
     "zod": "catalog:"
@@ -51,7 +51,7 @@
     "@types/yazl": "^3.3.0",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.0.5",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=22.12.0"

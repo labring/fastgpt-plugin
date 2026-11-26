@@ -11,8 +11,10 @@ const models: ProviderConfigType = {
       quoteMaxToken: 240000,
       maxTemperature: 2,
       vision: true,
+      video: true,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high'],
       toolChoice: true
     },
     {
@@ -24,7 +26,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high'],
       toolChoice: true
     },
     {
@@ -36,7 +39,8 @@ const models: ProviderConfigType = {
       maxTemperature: 2,
       vision: false,
       reasoning: true,
-      reasoningEffort: false,
+      reasoningEffort: true,
+      reasoningEffortList: ['low', 'medium', 'high'],
       toolChoice: true
     },
     {
