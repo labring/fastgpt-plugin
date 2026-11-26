@@ -228,6 +228,11 @@ describe('static model reasoningEffortList presets', () => {
       'medium',
       'high'
     ]);
+    expect(findModel('MistralAI', 'mistral-large-latest')?.reasoningEffortList).toEqual([
+      'low',
+      'medium',
+      'high'
+    ]);
     expect(findModel('MistralAI', 'mistral-small-2603')?.reasoningEffortList).toEqual([
       'none',
       'high'

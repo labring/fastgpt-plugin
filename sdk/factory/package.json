@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "tsdown": "catalog:",
-    "undici": "^7.29.0"
+    "undici": "^7.29.1"
   },
   "peerDependencies": {
     "zod": "catalog:"

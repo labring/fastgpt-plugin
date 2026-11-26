@@ -11,6 +11,7 @@ const models: ProviderConfigType = {
       quoteMaxToken: 240000,
       maxTemperature: 2,
       vision: true,
+      video: true,
       reasoning: true,
       reasoningEffort: true,
       reasoningEffortList: ['low', 'medium', 'high'],

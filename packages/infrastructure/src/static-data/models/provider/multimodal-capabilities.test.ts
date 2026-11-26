@@ -69,7 +69,7 @@ describe('static model multimodal capabilities', () => {
   it('marks Qwen visual models with their video input capability', () => {
     expect(getModel('Qwen', 'qwen3.8-flash')).toMatchObject({
       maxContext: 1000000,
-      maxTokens: 64000,
+      maxTokens: 131072,
       vision: true,
       video: true,
       reasoning: true,
@@ -81,6 +81,7 @@ describe('static model multimodal capabilities', () => {
       video: true
     });
     expect(getModel('Qwen', 'qwen3.7-plus')).toMatchObject({
+      maxTokens: 131072,
       vision: true,
       video: true
     });
@@ -124,6 +125,16 @@ describe('static model multimodal capabilities', () => {
       reasoningEffort: true,
       toolChoice: true
     });
+  });
+
+  it.each([
+    'glm-4.6v',
+    'glm-4.6v-flashx',
+    'glm-4.6v-flash',
+    'glm-4.1v-thinking-flashx',
+    'glm-4.1v-thinking-flash'
+  ])('marks %s as supporting video input', (model) => {
+    expect(getModel('ChatGLM', model)).toMatchObject({ vision: true, video: true });
   });
 
   it('marks GPT-6 Astra with its documented limits and agent capabilities', () => {
