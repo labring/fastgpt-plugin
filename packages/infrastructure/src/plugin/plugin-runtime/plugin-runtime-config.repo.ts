@@ -10,16 +10,21 @@ export class PluginRuntimeConfigRepo<T extends object> {
   private default_config: T;
   constructor(
     private deps: PluginRuntimeConfigRepoDeps,
-    default_config: T
+    default_config: T,
+    private readonly namespace?: string
   ) {
     this.default_config = default_config;
+  }
+
+  private key(pluginId: string): string {
+    return this.namespace ? `${this.namespace}:${pluginId}` : pluginId;
   }
 
   async getPluginRuntimeConfig(pluginId: string): Promise<Result<T>> {
     const result = await this.deps.mongoClient
       .getModel('pluginRuntimeConfig')
       .findOne({
-        pluginId
+        pluginId: this.key(pluginId)
       })
       .lean();
     if (result) {
@@ -33,7 +38,7 @@ export class PluginRuntimeConfigRepo<T extends object> {
     try {
       await this.deps.mongoClient
         .getModel('pluginRuntimeConfig')
-        .updateOne({ pluginId }, { $set: { config } }, { upsert: true });
+        .updateOne({ pluginId: this.key(pluginId) }, { $set: { config } }, { upsert: true });
       return successResult({});
     } catch (error) {
       return failureResult(
@@ -48,7 +53,7 @@ export class PluginRuntimeConfigRepo<T extends object> {
 
   async resetPluginRuntimeConfig(pluginId: string): Promise<Result<T>> {
     try {
-      await this.deps.mongoClient.getModel('pluginRuntimeConfig').deleteOne({ pluginId });
+      await this.deps.mongoClient.getModel('pluginRuntimeConfig').deleteOne({ pluginId: this.key(pluginId) });
       return successResult({ ...this.default_config });
     } catch (error) {
       return failureResult(

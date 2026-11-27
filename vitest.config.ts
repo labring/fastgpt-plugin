@@ -27,6 +27,8 @@ export default defineConfig({
       '@shared': resolve(__dirname, 'packages/shared/src'),
       '@interface-adapter': resolve(__dirname, 'packages/interface-adapter/src'),
       '@infrastructure': resolve(__dirname, 'packages/infrastructure/src'),
+      '@fastgpt-plugin/sdk-factory': resolve(__dirname, 'sdk/factory/src/index.ts'),
+      '@fastgpt-plugin/sdk-factory/bundler': resolve(__dirname, 'sdk/factory/src/bundler.ts'),
       '@fastgpt-plugin/cli': resolve(__dirname, 'apps/cli/src')
     }
   }

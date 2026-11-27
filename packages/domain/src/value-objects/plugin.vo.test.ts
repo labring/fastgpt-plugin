@@ -10,6 +10,7 @@ describe('PluginRuntimeModeSchema', () => {
     expect(PluginRuntimeModeSchema.parse('localPool')).toBe(
       PluginRuntimeModeEnum.localPool
     );
+    expect(PluginRuntimeModeSchema.parse('coworkerd')).toBe(PluginRuntimeModeEnum.coworkerd);
     expect(PluginRuntimeModeSchema.parse('serverless')).toBe(
       PluginRuntimeModeEnum.serverless
     );

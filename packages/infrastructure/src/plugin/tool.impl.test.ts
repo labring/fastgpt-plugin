@@ -266,6 +266,37 @@ describe('ToolManager.run', () => {
     invoke.mockReset();
   });
 
+  it('provides a lazy host-only issuer bound to each invocation, not to plugin source', async () => {
+    const issue = vi.fn(() => 'scoped-token');
+    const manager = createToolManager({ internalInvokeTokenService: { issue }, internalInvokeGatewayUrl: 'https://plugin.internal/internal/plugin-invoke/v1' });
+    getPluginByUserPluginId.mockResolvedValue(successResult(makeTool('1.0.0')));
+    invoke.mockResolvedValue(successResult(null));
+    const input = {
+      pluginId: 'getTime', input: {},
+      systemVar: { app: { id: 'app', name: 'App' }, chat: { chatId: 'chat' }, time: '', invokeToken: 'upstream' }
+    };
+    await manager.run(input);
+    await manager.run(input);
+    expect(issue).not.toHaveBeenCalled();
+    const first = invoke.mock.calls[0][0].options;
+    const second = invoke.mock.calls[1][0].options;
+    expect(first.invocationId).not.toBe(second.invocationId);
+    expect(first.internalInvoke.issueToken('project-tenant')).toBe('scoped-token');
+    expect(issue).toHaveBeenCalledWith({ tenantId: 'project-tenant', pluginId: 'getTime', invocationId: first.invocationId, invokeToken: 'upstream' });
+    expect(first.invoke).toBeDefined();
+    expect(first).not.toHaveProperty('invokeToken');
+    expect(JSON.stringify(invoke.mock.calls[0][0].payload)).not.toContain('scoped-token');
+  });
+
+  it('does not add reverse-invoke context when the gateway is disabled', async () => {
+    const manager = createToolManager();
+    getPluginByUserPluginId.mockResolvedValue(successResult(makeTool('1.0.0')));
+    invoke.mockResolvedValue(successResult(null));
+    await manager.run({ pluginId: 'getTime', input: {}, systemVar: { app: { id: '', name: '' }, chat: { chatId: '' }, time: '', invokeToken: '' } });
+    expect(invoke.mock.calls[0][0].options.internalInvoke).toBeUndefined();
+    expect(invoke.mock.calls[0][0].options.invoke).toBeDefined();
+  });
+
   it('returns plugin invoke errors with code and diagnostic context', async () => {
     const toolManager = createToolManager();
     const timeoutError = createError(ErrorCode.pluginInvokeTimeout, {

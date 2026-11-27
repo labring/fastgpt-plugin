@@ -73,6 +73,16 @@ describe('request log context', () => {
     });
   });
 
+  it('never clones or logs reverse-invoke bodies, including text uploads', async () => {
+    const request = new Request('https://plugin.internal/internal/plugin-invoke/v1/uploadFile', {
+      method: 'POST', headers: { 'Content-Type': 'text/plain', Authorization: 'Bearer private-token' }, body: 'private-file'
+    });
+    const context = await buildHttpRequestLogContext(createContext(request), createHttpRequestBodySnapshot(request));
+    expect(context.body).toEqual({ omitted: true, reason: 'internal_invoke_body_omitted' });
+    expect(JSON.stringify(context)).not.toContain('private');
+    expect(await request.text()).toBe('private-file');
+  });
+
   it('omits multipart file bodies', async () => {
     const form = new FormData();
     form.append('files', new Blob(['pkg-content'], { type: 'application/octet-stream' }), 'tool.pkg');

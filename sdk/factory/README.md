@@ -6,6 +6,33 @@
 
 TypeScript SDK for building FastGPT Tool Plugins. It wraps plugin metadata, input/output validation, secret configuration, runtime communication, and streaming responses behind a small API surface so tool authors can focus on business logic.
 
+## Coworkerd Worker 构建（实验性）
+
+构建工具可从 Node.js 使用独立子路径；插件源码继续从 SDK 主入口导入 `defineTool` / `defineToolSet`，无需编写 Worker `fetch` 入口：
+
+```ts
+import { writeFile } from 'node:fs/promises';
+import { buildWorkerBundle } from '@fastgpt-plugin/sdk-factory/bundler';
+
+const result = await buildWorkerBundle({
+  entry: './tool/index.ts',
+  tenantId: 'system',
+  workerId: 'example',
+  versionId: 'v1',
+  compatibilityDate: '2026-01-01',
+  invokeGatewayUrl: 'https://plugin-host.internal/internal/plugin-invoke/v1',
+  activate: true
+});
+await writeFile('./worker.tar', result.bundle);
+```
+
+- 输出包含自包含的 `worker.mjs` 和 coworkerd v2 tar（不是市场插件 ZIP）；上传使用 `application/x-tar`，并保持构建与上传的 `activate` 选项一致。`compatibilityDate` 必须在集群支持范围内。
+- SDK 的工具定义与 Node.js IPC 初始化分离；此构建会自动选用无 IPC 的定义入口并注入 Runtime Shim。服务端复用 CLI 现有 `.pkg`，在 Coworkerd 模式 upload 时调用 `compileWorker` 并持久化代码，confirm/register 时调用 `packageWorkerBundle` 封装部署 tar，无需新增 CLI 构建参数。`buildWorkerBundle` 保留为两个步骤的组合 API。
+- `compileWorker({ entry, invokeGatewayUrl, bundledInput: true })` 用于已打包的上传入口：除 SDK 主入口外，所有依赖必须已打进 `index.js`，拒绝解析宿主文件和其他包。一般源码构建可省略 `bundledInput`。
+- 当前采用保守的 Web-only profile，未启用 `nodejs_compat`：会拒绝所有 Node 内置模块和 `.node` 原生扩展（包括传递依赖），并拒绝残留外部导入。这不是声称 workerd 不支持 `node:fs` 等模块；兼容子集需后续按具体运行时版本单独评估。
+- 构建不会执行插件顶层代码，但也不能证明任意运行分支兼容。`process` / `Buffer` 等全局的动态使用、资源限制和真实网络策略仍需要 Trial Load 与集群执行测试。不要把密钥作为编译常量写入源码；业务密钥仍随每次请求注入。
+- 包布局对照 [coworkerd CLI adapter](https://github.com/coworkerd/coworkerd/blob/ab72cc6bb84cdae46b3ff838803e33408db84f93/cli/adapter.mjs) 和 [cowctl](https://github.com/coworkerd/coworkerd/blob/ab72cc6bb84cdae46b3ff838803e33408db84f93/cli/bin/cowctl.mjs)；已验证过 coworkerd 0.5.2 的基础 Trial Load 与 JSON/NDJSON 调用，新上传生命周期的真实 Mongo/S3/Coworkerd 联调仍待执行。
+
 ## 安装 / Installation
 
 ```bash

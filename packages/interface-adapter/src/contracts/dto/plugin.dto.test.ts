@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { PluginListParamsSchema, PluginRuntimeConfigSchema } from './plugin.dto';
 
 describe('PluginRuntimeConfigSchema', () => {
+  it('accepts strict Coworkerd infrastructure config', () => {
+    expect(PluginRuntimeConfigSchema.parse({ tenantId: 'system', limits: { cpuMs: 200, memoryMiB: 128 } })).toEqual({
+      tenantId: 'system', limits: { cpuMs: 200, memoryMiB: 128 }
+    });
+  });
+
+  it('rejects invalid Coworkerd tenant and extra business credentials', () => {
+    expect(PluginRuntimeConfigSchema.safeParse({ tenantId: '../other', limits: {} }).success).toBe(false);
+    expect(PluginRuntimeConfigSchema.safeParse({ tenantId: 'system', limits: {}, managementToken: 'secret' }).success).toBe(false);
+  });
+
   it('rejects global local-pool fields from plugin runtime config API', () => {
     expect(() =>
       PluginRuntimeConfigSchema.parse({

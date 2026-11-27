@@ -8,49 +8,65 @@ import type { PluginUniqueIdType } from '@domain/value-objects/plugin.vo';
 import type { Result } from '@domain/value-objects/result.vo';
 import type { StreamData } from '@domain/value-objects/stream.vo';
 
-export class CompositePluginRuntimeManager<Config extends PluginRuntimeConfigType = PluginRuntimeConfigType>
-  implements PluginRuntimeManagerPort<Config>
+export type CompositeRuntimeMode = 'primary' | 'coworkerd';
+
+export class CompositePluginRuntimeManager
+  implements PluginRuntimeManagerPort<PluginRuntimeConfigType>
 {
+  private readonly selectedPrimary: PluginRuntimeManagerPort<PluginRuntimeConfigType>;
+
   constructor(
     private readonly deps: {
-      primary: PluginRuntimeManagerPort<Config>;
-      debug: PluginRuntimeManagerPort<PluginRuntimeConfigType>;
+      primary?: PluginRuntimeManagerPort<any>;
+      coworkerd?: PluginRuntimeManagerPort<any>;
+      debug: PluginRuntimeManagerPort<any>;
+      mode?: CompositeRuntimeMode;
     }
-  ) {}
+  ) {
+    const selected = deps.mode === 'coworkerd' ? deps.coworkerd : deps.primary;
+    if (!selected) {
+      throw new Error(
+        deps.mode === 'coworkerd'
+          ? 'Coworkerd runtime mode requires a Coworkerd runtime manager'
+          : 'Primary runtime mode requires a primary runtime manager'
+      );
+    }
+    this.selectedPrimary = selected as PluginRuntimeManagerPort<PluginRuntimeConfigType>;
+  }
 
   register(uniqueId: PluginUniqueIdType, options?: unknown): Promise<Result> {
-    return this.deps.primary.register(uniqueId, options as never);
+    return this.selectedPrimary.register(uniqueId, options as never);
   }
 
   unregister(
     uniqueId: PluginUniqueIdType,
     options?: { replacementUniqueId?: PluginUniqueIdType }
   ): Promise<Result> {
-    return this.deps.primary.unregister(uniqueId, options);
+    return this.selectedPrimary.unregister(uniqueId, options);
   }
 
-  getConfig(pluginId: string): Promise<Result<Config>> {
-    return this.deps.primary.getConfig(pluginId);
+  getConfig(pluginId: string): Promise<Result<PluginRuntimeConfigType>> {
+    return this.selectedPrimary.getConfig(pluginId);
   }
 
-  updateConfig(pluginId: string, config: Config): Promise<Result> {
-    return this.deps.primary.updateConfig(pluginId, config);
+  updateConfig(pluginId: string, config: PluginRuntimeConfigType): Promise<Result> {
+    return this.selectedPrimary.updateConfig(pluginId, config);
   }
 
   resetConfig(pluginId: string): Promise<Result> {
-    return this.deps.primary.resetConfig(pluginId);
+    return this.selectedPrimary.resetConfig(pluginId);
   }
 
   status(uniqueId: PluginUniqueIdType): Promise<Result<unknown>> {
-    return this.deps.primary.status(uniqueId);
+    return this.selectedPrimary.status(uniqueId);
   }
 
   globalStatus(): Promise<Result<unknown>> {
-    return this.deps.primary.globalStatus();
+    return this.selectedPrimary.globalStatus();
   }
 
   shutdown(timeout?: number): Promise<Result> {
-    return this.deps.primary.shutdown(timeout);
+    return this.selectedPrimary.shutdown(timeout);
   }
 
   invoke<
@@ -69,6 +85,6 @@ export class CompositePluginRuntimeManager<Config extends PluginRuntimeConfigTyp
       return this.deps.debug.invoke(arg0) as Promise<Result<S extends true ? StreamData<R> : R>>;
     }
 
-    return this.deps.primary.invoke(arg0);
+    return this.selectedPrimary.invoke(arg0);
   }
 }

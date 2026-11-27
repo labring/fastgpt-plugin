@@ -21,7 +21,7 @@ export const PluginTagListSchema = z.array(PluginTagListItemSchema);
 export type PluginTagListItemType = z.infer<typeof PluginTagListItemSchema>;
 export type PluginTagListType = z.infer<typeof PluginTagListSchema>;
 
-const rawPluginRuntimeModeSchema = z.enum(['localPool', 'serverless', 'unknown']);
+const rawPluginRuntimeModeSchema = z.enum(['localPool', 'coworkerd', 'serverless', 'unknown']);
 export const PluginRuntimeModeEnum = rawPluginRuntimeModeSchema.enum;
 export const PluginRuntimeModeSchema = rawPluginRuntimeModeSchema.catch(
   PluginRuntimeModeEnum.unknown

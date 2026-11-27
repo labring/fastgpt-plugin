@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import type { InternalPluginInvokeTokenIssuerPort } from '@domain/ports/plugin/internal-plugin-invoke-token.port';
 import type { PluginRuntimeInvokeOptions } from '@domain/ports/plugin/plugin-runtime-manager.port';
 import { createError, getErrorDefinition, type RegisteredError } from '@domain/value-objects/error.vo';
 import type { PluginSourceType } from '@domain/value-objects/plugin.vo';
@@ -36,19 +37,40 @@ export function getDebugIdentityFromSource(source: string): { tmbId?: string; us
 export function createPluginInvokeOptions({
   systemVar,
   source,
-  fastgptBaseUrl
+  fastgptBaseUrl,
+  pluginId,
+  internalInvokeTokenService,
+  internalInvokeGatewayUrl
 }: {
   systemVar: SystemVarType;
   source: PluginSourceType | undefined;
   fastgptBaseUrl: string;
+  pluginId?: string;
+  internalInvokeTokenService?: InternalPluginInvokeTokenIssuerPort;
+  internalInvokeGatewayUrl?: string;
 }): PluginRuntimeInvokeOptions {
+  const invocationId = randomUUID();
   const token = systemVar.invokeToken;
+  const invokeToken = typeof token === 'string' ? token : '';
   return {
-    invocationId: randomUUID(),
+    invocationId,
     invoke: new InvokeManager({
-      token: typeof token === 'string' ? token : '',
+      token: invokeToken,
       fastgptBaseUrl
     }),
+    ...(internalInvokeTokenService && internalInvokeGatewayUrl && pluginId && !isPluginDebugSource(source)
+      ? {
+          internalInvoke: {
+            gatewayUrl: internalInvokeGatewayUrl,
+            issueToken: (tenantId: string) => internalInvokeTokenService.issue({
+              tenantId,
+              pluginId,
+              invocationId,
+              invokeToken
+            })
+          }
+        }
+      : {}),
     ...(isPluginDebugSource(source)
       ? {
           debug: {

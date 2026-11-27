@@ -59,11 +59,13 @@ export const init = async () => {
 
   const [, err] = await pluginRegisterActiveUC();
   if (err) {
-    logger.error('Register active plugins on init failed', {
+    const data = err.data as { failures?: unknown } | undefined;
+    logger.warn('Some active plugins failed to register on init; server will continue starting up', {
       error: err.error,
-      reason: err.reason
+      reason: err.reason,
+      failures: data?.failures
     });
-    return Promise.reject(err.error ?? err);
+  } else {
+    logger.info('Register active plugins on init completed');
   }
-  logger.info('Register active plugins on init completed');
 };

@@ -418,6 +418,16 @@ submission or polling is needed later, it will use a separate async interface. S
 provider (console-side policy id or score thresholds) and passed through `secretSchema`; the framework does
 not normalise it.
 
+## Coworkerd Worker builds (experimental)
+
+From a Node.js build process, import `buildWorkerBundle` from `@fastgpt-plugin/sdk-factory/bundler` and pass `entry`, `tenantId`, `workerId`, `versionId`, `compatibilityDate`, `invokeGatewayUrl`, and optional `activate`. Plugin sources keep their normal SDK imports. The builder selects portable tool definitions, injects the Worker shim, bundles dependencies into `worker.mjs`, and returns `{ code, bundle, contentHash }`.
+
+`bundle` is a coworkerd v2 tar, not a marketplace ZIP. Upload with `application/x-tar` and the same activation setting; non-activating uploads contain no routes. The compatibility date must be supported by the target cluster. The server reuses existing CLI `.pkg` files: upload in Coworkerd mode calls `compileWorker` and persists the code; confirm/register calls `packageWorkerBundle` without recompilation. No additional CLI build flag is required. `buildWorkerBundle` remains a convenience composition of both steps. Use `bundledInput: true` with `compileWorker` for uploaded bundles: only the SDK main import may remain external; host file paths and other package imports are rejected.
+
+The initial Web-only profile rejects Node builtins, native `.node` addons (including transitive imports), and remaining external imports. It does not enable `nodejs_compat` or claim those modules are universally unavailable in workerd. Build success is not runtime proof: dynamic globals, executed branches, limits and egress policy still need trial loading and cluster tests. Basic Trial Load and JSON/NDJSON calls have been verified against coworkerd 0.5.2; the new upload lifecycle still requires real Mongo/S3/Coworkerd integration testing. Do not embed secrets in source or build options; inject business credentials per invocation.
+
+The archive layout follows coworkerd's [adapter](https://github.com/coworkerd/coworkerd/blob/ab72cc6bb84cdae46b3ff838803e33408db84f93/cli/adapter.mjs) and [CLI](https://github.com/coworkerd/coworkerd/blob/ab72cc6bb84cdae46b3ff838803e33408db84f93/cli/bin/cowctl.mjs).
+
 ## Build
 
 ```bash

@@ -145,6 +145,15 @@ const ServerEnvShape = {
   AUTH_TOKEN: AuthTokenSchema,
   JWT_SECRET: z.string().default('fastgpt-plugin-secret'),
 
+  // Coworkerd control/data plane. Management credentials remain server-side only.
+  COWORKERD_API_SERVER_URL: z.url().optional(),
+  COWORKERD_INGRESS_URL: z.url().optional(),
+  COWORKERD_MANAGEMENT_TOKEN: z.string().min(1).optional(),
+  COWORKERD_COMPATIBILITY_DATE: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).default('2026-01-01'),
+  COWORKERD_DEFAULT_CPU_MS: PositiveIntSchema.default(200),
+  COWORKERD_DEFAULT_MEMORY_MIB: PositiveIntSchema.default(128),
+  COWORKERD_FALLBACK_TO_LOCAL_POOL: BoolStringSchema.default(false),
+
   // Connection Gateway client 配置
   CONNECTION_GATEWAY_BASE_URL: z.url().optional(),
   CONNECTION_GATEWAY_PUBLIC_URL: z.string().default('ws://localhost:3011/connection-gateway/v1'),
@@ -152,6 +161,14 @@ const ServerEnvShape = {
   CONNECTION_GATEWAY_DEBUG_SESSION_TTL_MS: PositiveIntSchema.default(30 * 60_000),
   CONNECTION_GATEWAY_DEBUG_TICKET_TTL_MS: PositiveIntSchema.default(5 * 60_000),
   CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS: PositiveIntSchema.default(120_000),
+
+  // Coworkerd Worker reverse-invoke gateway
+  INTERNAL_PLUGIN_INVOKE_GATEWAY_URL: z.url().refine((value) => {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !url.search && !url.hash;
+  }, 'Internal invoke gateway URL must use HTTP(S) without credentials, query or fragment').optional(),
+  INTERNAL_PLUGIN_INVOKE_SECRET: z.string().min(32).optional(),
+  INTERNAL_PLUGIN_INVOKE_TOKEN_TTL_MS: PositiveIntSchema.max(30_000).default(30_000),
 
   // 安全配置
   ALLOWED_INSTALL_HOSTS: z.string().optional().default('*.fastgpt.cn'),
@@ -220,6 +237,18 @@ const ServerEnvShape = {
 const ServerEnvSchema = z
   .object(ServerEnvShape)
   .superRefine((env, ctx) => {
+    if (env.PLUGIN_RUNTIME_MODE === 'coworkerd') {
+      for (const key of ['COWORKERD_API_SERVER_URL', 'COWORKERD_INGRESS_URL', 'COWORKERD_MANAGEMENT_TOKEN', 'INTERNAL_PLUGIN_INVOKE_GATEWAY_URL', 'INTERNAL_PLUGIN_INVOKE_SECRET'] as const) {
+        if (!env[key]) ctx.addIssue({ code: 'custom', path: [key], message: `${key} is required when PLUGIN_RUNTIME_MODE=coworkerd` });
+      }
+    }
+    if (env.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL && !env.INTERNAL_PLUGIN_INVOKE_SECRET) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['INTERNAL_PLUGIN_INVOKE_SECRET'],
+        message: 'INTERNAL_PLUGIN_INVOKE_SECRET is required when the internal invoke gateway is enabled'
+      });
+    }
     if (!env.CONNECTION_GATEWAY_BASE_URL || env.NODE_ENV !== 'production') {
       return;
     }
@@ -276,12 +305,22 @@ export type ServerEnv = {
   AUTH_TOKEN: string;
   JWT_SECRET: string;
   REMOTE_DEBUG_ENABLED: boolean;
+  COWORKERD_API_SERVER_URL?: string;
+  COWORKERD_INGRESS_URL?: string;
+  COWORKERD_MANAGEMENT_TOKEN?: string;
+  COWORKERD_COMPATIBILITY_DATE: string;
+  COWORKERD_DEFAULT_CPU_MS: number;
+  COWORKERD_DEFAULT_MEMORY_MIB: number;
+  COWORKERD_FALLBACK_TO_LOCAL_POOL: boolean;
   CONNECTION_GATEWAY_BASE_URL?: string;
   CONNECTION_GATEWAY_PUBLIC_URL: string;
   CONNECTION_GATEWAY_AUTH_TOKEN?: string;
   CONNECTION_GATEWAY_DEBUG_SESSION_TTL_MS: number;
   CONNECTION_GATEWAY_DEBUG_TICKET_TTL_MS: number;
   CONNECTION_GATEWAY_DEBUG_REQUEST_TIMEOUT_MS: number;
+  INTERNAL_PLUGIN_INVOKE_GATEWAY_URL?: string;
+  INTERNAL_PLUGIN_INVOKE_SECRET?: string;
+  INTERNAL_PLUGIN_INVOKE_TOKEN_TTL_MS: number;
   HTTP_PROXY?: string;
   HTTPS_PROXY?: string;
   NO_PROXY?: string;

@@ -21,6 +21,7 @@ export type InvokeUploadFileHandler = (arg: {
 export type InvokeManagerDeps = {
   token: string;
   fastgptBaseUrl: string;
+  signal?: AbortSignal;
 };
 
 type InvokeUploadFileRequest = {
@@ -224,7 +225,9 @@ export class InvokeManager implements InvokePort {
     try {
       response = await fetch(this.buildUrl(path), {
         ...init,
-        headers
+        headers,
+        signal: this.deps.signal,
+        redirect: 'error'
       });
     } catch (error) {
       return failureResult(failureReason, error);

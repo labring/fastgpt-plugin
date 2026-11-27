@@ -44,6 +44,9 @@ export function createRuntimeMetricsRecorder({
   const podStartups = meter.createCounter('fastgpt.plugin.runtime.pod.startups', {
     unit: '{pod}'
   });
+  const runtimeFallbacks = meter.createCounter('fastgpt.plugin.runtime.fallbacks', {
+    unit: '{fallback}'
+  });
 
   meter
     .createObservableGauge('fastgpt.plugin.runtime.pods', { unit: '{pod}' })
@@ -153,6 +156,17 @@ export function createRuntimeMetricsRecorder({
         podStartups.add(1, {
           ...buildAttributes(attributes, includePluginVersion, includePluginEtag),
           outcome: attributes.outcome
+        });
+      });
+    },
+    recordFallback(attributes) {
+      safelyRecord(onError, 'record runtime fallback metrics', () => {
+        runtimeFallbacks.add(1, {
+          ...buildAttributes(attributes, includePluginVersion, includePluginEtag),
+          'fallback.target_runtime': attributes.targetRuntimeMode,
+          'fallback.reason': attributes.reason,
+          'fallback.phase': attributes.phase,
+          'fallback.sticky': String(attributes.sticky)
         });
       });
     }
@@ -274,7 +288,8 @@ export function createNoopRuntimeMetricsRecorder(): RuntimeMetricsRecorder {
     recordInvocationCompleted() {},
     recordInvocationFailed() {},
     recordPodCrash() {},
-    recordPodStartup() {}
+    recordPodStartup() {},
+    recordFallback() {}
   };
 }
 
@@ -370,7 +385,7 @@ function parseRuntimeId(
 
   return {
     runtimeMode:
-      runtimeMode === 'localPool' || runtimeMode === 'serverless'
+      runtimeMode === 'localPool' || runtimeMode === 'serverless' || runtimeMode === 'coworkerd'
         ? runtimeMode
         : fallbackRuntimeMode,
     pluginId,

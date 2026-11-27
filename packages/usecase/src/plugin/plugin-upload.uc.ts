@@ -194,6 +194,17 @@ export const makePluginUploadUC =
           ...(source === 'system' ? {} : { source })
         });
 
+        // Parsed files are upload-local copies; persisted plugin files have their
+        // own immutable keys. Release these on both successful and failed builds.
+        const extracted = [
+          parsedPackage.files.index, parsedPackage.files.manifest,
+          parsedPackage.files.readme, ...Object.values(parsedPackage.files.readmes ?? {}),
+          ...(parsedPackage.files.logos ?? []), ...(parsedPackage.files.assets ?? []), pkgFile
+        ].filter((file): file is FileObject => file !== undefined);
+        await Promise.all([...new Set(extracted.map((file) => file.metaData.fileKey))].map(
+          (key) => deps.localFileStorageRepo.delete(key)
+        ));
+
         if (createErr) {
           await rollbackPendingPlugins(
             deps,
@@ -212,6 +223,10 @@ export const makePluginUploadUC =
         });
 
         uploadedPlugins.push(parsedPackage.plugin);
+      }
+      // A ZIP collection itself is not one of its extracted .pkg files.
+      if (!pkgFiles.some((file) => file.metaData.fileKey === localPkgFile.metaData.fileKey)) {
+        await deps.localFileStorageRepo.delete(localPkgFile.metaData.fileKey);
       }
     }
 

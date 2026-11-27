@@ -82,6 +82,16 @@ describe('runtime metrics recorder', () => {
       pluginEtag: 'etag-a',
       durationMs: 42
     });
+    recorder.recordFallback({
+      runtimeMode: 'coworkerd',
+      targetRuntimeMode: 'localPool',
+      pluginId: 'plugin-a',
+      pluginVersion: '1.2.3',
+      pluginEtag: 'etag-a',
+      reason: 'artifact_build_failed',
+      phase: 'register',
+      sticky: true
+    });
 
     expect(meterMock.counters['fastgpt.plugin.runtime.invocations.started']).toHaveBeenCalledWith(
       1,
@@ -108,6 +118,15 @@ describe('runtime metrics recorder', () => {
         'plugin.version': '1.2.3'
       }
     );
+    expect(meterMock.counters['fastgpt.plugin.runtime.fallbacks']).toHaveBeenCalledWith(1, {
+      'runtime.mode': 'coworkerd',
+      'plugin.id': 'plugin-a',
+      'plugin.version': '1.2.3',
+      'fallback.target_runtime': 'localPool',
+      'fallback.reason': 'artifact_build_failed',
+      'fallback.phase': 'register',
+      'fallback.sticky': 'true'
+    });
   });
 
   it('observes state gauges from lazy runtime sources', () => {

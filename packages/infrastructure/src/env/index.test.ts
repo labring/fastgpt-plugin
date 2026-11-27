@@ -18,6 +18,17 @@ const resetEnv = () => {
   delete process.env.POOL_SERVICE_POD_ALLOW_NET;
   delete process.env.POOL_SERVICE_POD_TERMINATION_GRACE_PERIOD;
   delete process.env.PLUGIN_REGISTER_CONCURRENCY;
+  delete process.env.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL;
+  delete process.env.INTERNAL_PLUGIN_INVOKE_SECRET;
+  delete process.env.INTERNAL_PLUGIN_INVOKE_TOKEN_TTL_MS;
+  delete process.env.PLUGIN_RUNTIME_MODE;
+  delete process.env.COWORKERD_API_SERVER_URL;
+  delete process.env.COWORKERD_INGRESS_URL;
+  delete process.env.COWORKERD_MANAGEMENT_TOKEN;
+  delete process.env.COWORKERD_COMPATIBILITY_DATE;
+  delete process.env.COWORKERD_DEFAULT_CPU_MS;
+  delete process.env.COWORKERD_DEFAULT_MEMORY_MIB;
+  delete process.env.COWORKERD_FALLBACK_TO_LOCAL_POOL;
 };
 
 describe('env AUTH_TOKEN', () => {
@@ -144,6 +155,96 @@ describe('env AUTH_TOKEN', () => {
 
     expect(serverEnv.AUTH_TOKEN).toBe('s'.repeat(32));
     expect(serverEnv.CONNECTION_GATEWAY_AUTH_TOKEN).toBe('g'.repeat(32));
+  });
+
+  it('requires Coworkerd control, ingress and reverse-invoke settings when explicitly selected', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'coworkerd';
+    const { serverEnv } = await import('./index');
+    expect(() => serverEnv.PLUGIN_RUNTIME_MODE).toThrow(/COWORKERD_API_SERVER_URL/);
+  });
+
+  it('accepts Coworkerd mode only with its complete server-side configuration', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'coworkerd';
+    process.env.COWORKERD_API_SERVER_URL = 'https://control.internal';
+    process.env.COWORKERD_INGRESS_URL = 'https://ingress.internal';
+    process.env.COWORKERD_MANAGEMENT_TOKEN = 'management-secret';
+    process.env.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL = 'https://plugin.internal/internal/plugin-invoke/v1';
+    process.env.INTERNAL_PLUGIN_INVOKE_SECRET = 'test-only-secret-with-at-least-32-characters';
+    const { serverEnv } = await import('./index');
+    expect(serverEnv.PLUGIN_RUNTIME_MODE).toBe('coworkerd');
+    expect(serverEnv.COWORKERD_DEFAULT_CPU_MS).toBe(200);
+    expect(serverEnv.COWORKERD_DEFAULT_MEMORY_MIB).toBe(128);
+  });
+
+  it('keeps LocalPool selected by default and does not require Coworkerd settings', async () => {
+    const { serverEnv } = await import('./index');
+    expect(serverEnv.PLUGIN_RUNTIME_MODE).toBe('localPool');
+    expect(serverEnv.COWORKERD_API_SERVER_URL).toBeUndefined();
+  });
+
+  it('requires the complete Coworkerd runtime configuration when explicitly selected', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'coworkerd';
+    const { serverEnv } = await import('./index');
+    expect(() => serverEnv.PLUGIN_RUNTIME_MODE).toThrow('COWORKERD_API_SERVER_URL');
+  });
+
+  it('accepts a complete Coworkerd runtime configuration', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'coworkerd';
+    process.env.COWORKERD_API_SERVER_URL = 'https://coworkerd.internal/v1';
+    process.env.COWORKERD_INGRESS_URL = 'https://workers.internal';
+    process.env.COWORKERD_MANAGEMENT_TOKEN = 'management-test';
+    process.env.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL = 'https://plugin.internal/internal/plugin-invoke/v1';
+    process.env.INTERNAL_PLUGIN_INVOKE_SECRET = 'test-only-secret-with-at-least-32-characters';
+    const { serverEnv } = await import('./index');
+    expect(serverEnv.PLUGIN_RUNTIME_MODE).toBe('coworkerd');
+    expect(serverEnv.COWORKERD_DEFAULT_CPU_MS).toBe(200);
+    expect(serverEnv.COWORKERD_DEFAULT_MEMORY_MIB).toBe(128);
+    expect(serverEnv.COWORKERD_FALLBACK_TO_LOCAL_POOL).toBe(false);
+  });
+
+  it('enables Coworkerd fallback to localPool when explicitly configured', async () => {
+    process.env.PLUGIN_RUNTIME_MODE = 'coworkerd';
+    process.env.COWORKERD_API_SERVER_URL = 'https://coworkerd.internal/v1';
+    process.env.COWORKERD_INGRESS_URL = 'https://workers.internal';
+    process.env.COWORKERD_MANAGEMENT_TOKEN = 'management-test';
+    process.env.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL = 'https://plugin.internal/internal/plugin-invoke/v1';
+    process.env.INTERNAL_PLUGIN_INVOKE_SECRET = 'test-only-secret-with-at-least-32-characters';
+    process.env.COWORKERD_FALLBACK_TO_LOCAL_POOL = 'true';
+    const { serverEnv } = await import('./index');
+    expect(serverEnv.COWORKERD_FALLBACK_TO_LOCAL_POOL).toBe(true);
+  });
+
+  it('keeps internal invocation disabled by default', async () => {
+    const { serverEnv } = await import('./index');
+    expect(serverEnv.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL).toBeUndefined();
+    expect(serverEnv.INTERNAL_PLUGIN_INVOKE_SECRET).toBeUndefined();
+  });
+
+  it('requires a dedicated secret when internal invocation is enabled', async () => {
+    process.env.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL = 'https://plugin.internal/internal/plugin-invoke/v1';
+    const { serverEnv } = await import('./index');
+    expect(() => serverEnv.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL).toThrow('INTERNAL_PLUGIN_INVOKE_SECRET');
+  });
+
+  it.each(['file:///tmp/gateway', 'https://user:password@host/invoke', 'https://host/invoke?token=secret'])('rejects unsafe internal gateway URL %s', async (url) => {
+    process.env.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL = url;
+    process.env.INTERNAL_PLUGIN_INVOKE_SECRET = 'test-only-secret-with-at-least-32-characters';
+    const { serverEnv } = await import('./index');
+    expect(() => serverEnv.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL).toThrow('INTERNAL_PLUGIN_INVOKE_GATEWAY_URL');
+  });
+
+  it('accepts a bounded internal invoke TTL with a dedicated key', async () => {
+    process.env.INTERNAL_PLUGIN_INVOKE_GATEWAY_URL = 'https://plugin.internal/internal/plugin-invoke/v1';
+    process.env.INTERNAL_PLUGIN_INVOKE_SECRET = 'test-only-secret-with-at-least-32-characters';
+    process.env.INTERNAL_PLUGIN_INVOKE_TOKEN_TTL_MS = '10000';
+    const { serverEnv } = await import('./index');
+    expect(serverEnv.INTERNAL_PLUGIN_INVOKE_TOKEN_TTL_MS).toBe(10000);
+  });
+
+  it('rejects an excessively long internal invoke TTL', async () => {
+    process.env.INTERNAL_PLUGIN_INVOKE_TOKEN_TTL_MS = '30001';
+    const { serverEnv } = await import('./index');
+    expect(() => serverEnv.INTERNAL_PLUGIN_INVOKE_TOKEN_TTL_MS).toThrow('INTERNAL_PLUGIN_INVOKE_TOKEN_TTL_MS');
   });
 
   it('keeps metrics disabled by default', async () => {

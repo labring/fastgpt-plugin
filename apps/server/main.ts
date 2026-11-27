@@ -9,9 +9,10 @@ import { configureMetrics, destroyMetrics } from '@infrastructure/metrics';
 import { configureProxy } from '@infrastructure/utils/proxy';
 import { getErrText } from '@shared/utils/err';
 
-import deps from './src/deps';
+import deps, { internalPluginInvokeTokenService, pruneExpiredPluginUploads } from './src/deps';
 import { init } from './src/init';
 import { makeDebugSessionRoute } from './src/routes/debug-session.route';
+import { makeInternalInvokeRoute } from './src/routes/internal-invoke.route';
 import { makeModelRoute } from './src/routes/model.route';
 import { makeModerationRoute } from './src/routes/moderation.route';
 import { makePluginRoute } from './src/routes/plugin.route';
@@ -23,7 +24,11 @@ import { makeWorkflowRoute } from './src/routes/workflow.route';
 await configureLogger(); // setup logger
 await configureMetrics(); // setup metrics
 const logger = getLogger(root);
-logger.debug(serverEnv);
+logger.debug({
+  ...serverEnv,
+  COWORKERD_MANAGEMENT_TOKEN: serverEnv.COWORKERD_MANAGEMENT_TOKEN ? '[redacted]' : undefined,
+  INTERNAL_PLUGIN_INVOKE_SECRET: serverEnv.INTERNAL_PLUGIN_INVOKE_SECRET ? '[redacted]' : undefined
+});
 
 const modelRoute = makeModelRoute(deps);
 const debugSessionRoute = makeDebugSessionRoute(deps);
@@ -42,6 +47,15 @@ app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
   scheme: 'bearer'
 });
 
+// Scoped invocation credentials are intentionally separate from /api/* management authentication.
+if (internalPluginInvokeTokenService) {
+  app.route('/internal/plugin-invoke', makeInternalInvokeRoute({
+    tokenService: internalPluginInvokeTokenService,
+    fastgptBaseUrl: serverEnv.FASTGPT_BASE_URL,
+    maxUploadBytes: serverEnv.MAX_FILE_SIZE
+  }));
+}
+
 app.route('/api', modelRoute);
 app.route('/api', debugSessionRoute);
 app.route('/api', pluginRoute);
@@ -52,6 +66,20 @@ app.route('/api', moderationRoute);
 app.route('/api', workflowRoute);
 
 let server: ServerType | null = null;
+let uploadCleanupTimer: ReturnType<typeof setInterval> | undefined;
+let uploadCleanupRunning = false;
+async function cleanExpiredUploads() {
+  if (uploadCleanupRunning) return;
+  uploadCleanupRunning = true;
+  try {
+    const [, error] = await pruneExpiredPluginUploads();
+    if (error) logger.error('Failed to clean expired plugin uploads', { error });
+  } catch (error) {
+    logger.error('Failed to clean expired plugin uploads', { error });
+  } finally {
+    uploadCleanupRunning = false;
+  }
+}
 
 /**
  * NOTE:
@@ -87,6 +115,7 @@ function shutdown() {
     return;
   }
   shuttingDown = true;
+  if (uploadCleanupTimer) clearInterval(uploadCleanupTimer);
 
   void (async () => {
     let exitCode = 0;
@@ -113,6 +142,12 @@ async function main() {
     console.error(inspect(error, { depth: null }));
     console.info(`Failed startup server: ${errorMessage}`);
     shutdown();
+  }
+
+  if (serverEnv.PLUGIN_RUNTIME_MODE === 'coworkerd') {
+    void cleanExpiredUploads();
+    uploadCleanupTimer = setInterval(() => { void cleanExpiredUploads(); }, 60_000);
+    uploadCleanupTimer.unref();
   }
 
   process.on('SIGTERM', shutdown);
