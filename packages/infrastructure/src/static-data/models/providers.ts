@@ -306,6 +306,16 @@ export const aiproxyChannels: AIProxyChannelsType = [
     website: "https://hunyuan.tencent.com",
   },
   {
+    channelId: 49,
+    name: {
+      en: "Baidu Qianfan",
+      "zh-CN": "百度千帆",
+      "zh-Hant": "百度千帆",
+    },
+    avatar: "qianfan",
+    website: "https://qianfan.cloud.baidu.com",
+  },
+  {
     channelId: 13,
     name: {
       en: "Ernie V2",
