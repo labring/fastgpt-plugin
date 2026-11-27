@@ -46,7 +46,6 @@ import type { MongoPluginSchemaType } from '@infrastructure/storage/mongo/models
 
 import { MongoClient } from '../storage/mongo';
 
-import { isCurrentWorkerArtifact } from './plugin-runtime/drivers/coworkerd/worker-artifact';
 import {
   deserializePluginDataJsonSchemaFields,
   deserializePluginRecordJsonSchemaFields,
@@ -1618,16 +1617,8 @@ export class PluginRepo implements PluginRepoPort {
   async getWorkerArtifact(uniqueId: PluginUniqueIdType): Promise<Result<Buffer>> {
     const artifactKey = this.getFileKey(uniqueId, ['worker', 'artifact.json']);
     const [file, error] = await this.deps.privateRemoteFileStorageRepo.getFileObject(artifactKey);
-    let existingBytes: Buffer | undefined;
     if (!error) {
-      const [buf, bufErr] = await file.fileBuffer;
-      if (bufErr) return failureResult(bufErr);
-      if (!this.deps.artifactBuilder || isCurrentWorkerArtifact(buf)) {
-        return successResult(buf);
-      }
-      // Persisted artifact uses an older format (e.g. compiled before bundler/nodejs_compat updates).
-      // Rebuild from source index.js when available so stale artifacts auto-upgrade in place.
-      existingBytes = buf;
+      return file.fileBuffer;
     }
 
     if (!this.deps.artifactBuilder) {
@@ -1641,7 +1632,7 @@ export class PluginRepo implements PluginRepoPort {
     const inFlight = this.jitArtifactBuilds.get(jitKey);
     if (inFlight) return inFlight;
 
-    const buildPromise = this.buildAndPersistJitWorkerArtifact(uniqueId, artifactKey, existingBytes);
+    const buildPromise = this.buildAndPersistJitWorkerArtifact(uniqueId, artifactKey);
     this.jitArtifactBuilds.set(jitKey, buildPromise);
     try {
       return await buildPromise;
@@ -1652,15 +1643,11 @@ export class PluginRepo implements PluginRepoPort {
 
   private async buildAndPersistJitWorkerArtifact(
     uniqueId: PluginUniqueIdType,
-    artifactKey: string,
-    fallbackArtifact?: Buffer
+    artifactKey: string
   ): Promise<Result<Buffer>> {
     const remoteIndexFileKey = this.getFileKey(uniqueId, ['index.js'], false);
     const [indexFile, indexErr] = await this.deps.privateRemoteFileStorageRepo.getFileObject(remoteIndexFileKey);
     if (indexErr) {
-      if (fallbackArtifact) {
-        return successResult(fallbackArtifact);
-      }
       return failureResult({
         en: 'Worker artifact is missing; upload the plugin in Coworkerd mode first',
         'zh-CN': '缺少 Worker 产物，请先在 Coworkerd 模式下上传插件'

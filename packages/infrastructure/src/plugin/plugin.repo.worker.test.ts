@@ -228,18 +228,5 @@ describe('Worker artifact upload lifecycle', () => {
       expect(error?.reason.en).toContain('Worker artifact is missing');
       expect(f.artifactBuilder.build).not.toHaveBeenCalled();
     });
-
-    it('rebuilds and overwrites stale fastgpt-worker-v1 artifacts when source index.js exists', async () => {
-      const stale = Buffer.from(JSON.stringify({ format: 'fastgpt-worker-v1', invokeGatewayUrl: 'https://g.invalid', code: 'old', sha256: '0'.repeat(64) }));
-      const f = fixture({ existing: true });
-      f.objects.set(f.key, stale);
-      f.objects.set(`${id.pluginId}/${id.version}/${id.etag}/index.js`, Buffer.from('index-code'));
-
-      const [result, error] = await f.repo.getWorkerArtifact(id);
-      expect(error).toBeNull();
-      expect(result).toEqual(Buffer.from('compiled-artifact'));
-      expect(f.artifactBuilder.build).toHaveBeenCalledTimes(1);
-      expect(f.objects.get(f.key)?.toString()).toBe('compiled-artifact');
-    });
   });
 });

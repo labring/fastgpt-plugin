@@ -10,26 +10,15 @@ import { createError } from '@domain/value-objects/error.vo';
 import { failureResult, successResult } from '@domain/value-objects/result.vo';
 import { ErrorCode } from '@infrastructure/errors/error.registry';
 
-export const WORKER_ARTIFACT_FORMAT = 'fastgpt-worker-v2';
-
 const MAX_MODULE_BYTES = 10 * 1024 * 1024;
 const ArtifactSchema = z.object({
-  format: z.literal(WORKER_ARTIFACT_FORMAT),
+  format: z.literal('fastgpt-worker-v1'),
   invokeGatewayUrl: z.string().url(),
   code: z.string(),
   sha256: z.string().regex(/^[a-f0-9]{64}$/)
 }).strict();
 
 const digest = (code: string) => createHash('sha256').update(code).digest('hex');
-
-export function isCurrentWorkerArtifact(bytes: Buffer): boolean {
-  try {
-    const parsed = JSON.parse(bytes.toString('utf8')) as { format?: unknown };
-    return parsed?.format === WORKER_ARTIFACT_FORMAT;
-  } catch {
-    return false;
-  }
-}
 
 /** A single storage object keeps code and integrity metadata atomic. No deployment identity or secrets. */
 export function readWorkerArtifact(bytes: Buffer, invokeGatewayUrl: string) {
@@ -59,7 +48,7 @@ export function createWorkerArtifactBuilder(options: {
         const code = await options.compile({ entry, invokeGatewayUrl: options.invokeGatewayUrl, bundledInput: true });
         if (Buffer.byteLength(code) > MAX_MODULE_BYTES) throw new Error('Worker code exceeds coworkerd 10 MiB module limit');
         return successResult(Buffer.from(JSON.stringify({
-          format: WORKER_ARTIFACT_FORMAT, invokeGatewayUrl: options.invokeGatewayUrl,
+          format: 'fastgpt-worker-v1', invokeGatewayUrl: options.invokeGatewayUrl,
           code, sha256: digest(code)
         })));
       } catch (error) {
