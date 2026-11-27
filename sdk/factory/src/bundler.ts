@@ -100,7 +100,7 @@ export async function compileWorker(options: WorkerCompileOptions): Promise<stri
           order: 'pre',
           handler(id, importer) {
             if (id === 'node:buffer' || id === 'buffer') {
-              return require.resolve('buffer/');
+              return localModule('buffer-polyfill');
             }
             if (isBuiltin(id) || id.endsWith('.node')) {
               throw new Error(`Worker build does not support ${id} (imported by ${importer ?? 'entry'}). Use Web APIs or select the Node runtime.`);
