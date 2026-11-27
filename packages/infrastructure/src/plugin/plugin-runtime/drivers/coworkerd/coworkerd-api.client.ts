@@ -69,10 +69,10 @@ export class CoworkerdApiClient {
     });
   }
 
-  async ensureTenant(tenantId: string): Promise<Result<void>> {
+  async ensureTenant(tenantId: string): Promise<Result<CoworkerdTenantResponse | undefined>> {
     const [tenant, tenantErr] = await this.getTenant(tenantId);
     if (tenant) {
-      return successResult(undefined);
+      return successResult(tenant);
     }
 
     const isNotFound =
@@ -80,7 +80,7 @@ export class CoworkerdApiClient {
       (tenantErr?.data as { status?: number } | undefined)?.status === 404;
 
     if (isNotFound) {
-      const [, createErr] = await this.request<CoworkerdTenantResponse>({
+      const [created, createErr] = await this.request<CoworkerdTenantResponse>({
         path: '/v1/tenants',
         method: 'POST',
         body: JSON.stringify({ name: tenantId }),
@@ -103,10 +103,33 @@ export class CoworkerdApiClient {
         return failureResult(createErr);
       }
 
-      return successResult(undefined);
+      return successResult(created);
     }
 
     return failureResult(tenantErr!);
+  }
+
+  async setTenantDefaultLimits(
+    tenantId: string,
+    defaultLimits: CoworkerdWorkerLimitsType
+  ): Promise<Result<void>> {
+    const path = `/v1/tenants/${encodeURIComponent(tenantId)}`;
+
+    const [, err] = await this.request<unknown>({
+      path,
+      method: 'PATCH',
+      body: JSON.stringify({ defaultLimits }),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      failureReason: {
+        en: `Failed to update default limits for tenant ${tenantId}`,
+        'zh-CN': `更新租户 ${tenantId} 的默认资源限制失败`
+      }
+    });
+
+    if (err) return failureResult(err);
+    return successResult(undefined);
   }
 
   async uploadVersion(arg: {

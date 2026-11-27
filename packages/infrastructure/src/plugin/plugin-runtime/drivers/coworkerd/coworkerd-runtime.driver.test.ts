@@ -22,7 +22,11 @@ function fixture(overrides: Partial<CoworkerdRuntimeDeps> = {}) {
     calls.push({ path, method: init?.method, body: init?.body });
     expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer management-only');
     if (path === '/v1/status') return Response.json({ storage: { tenantsRevision: String(revision) }, nodes: [{ nodeId: 'node-1', reachable: true, storage: { appliedTenantsRevision: String(revision) } }] });
-    if (path.endsWith('/system')) return Response.json({ name: 'system' });
+    if (init?.method === 'GET' && path.endsWith('/system')) return Response.json({ tenant: { name: 'system', defaultLimits: defaults.limits } });
+    if (init?.method === 'PATCH' && path.endsWith('/system')) {
+      revision++;
+      return Response.json({ tenant: { name: 'system', defaultLimits: defaults.limits } });
+    }
     if (init?.method === 'GET' && path.includes('/workers/')) {
       const workerId = path.split('/').at(-1)!;
       return Response.json({ workerId: `system/${workerId}`, activeVersion: `v-${workerId.slice(3)}`, valid: true, versions: [] });
@@ -201,7 +205,7 @@ describe('CoworkerdPluginRuntimeDriver', () => {
     const f = fixture();
     f.managementFetch.mockImplementation(async (url) => String(url).includes('/versions/')
       ? Response.json({ code: 'LOAD_FAILED', reason: 'trial failed' }, { status: 422 })
-      : Response.json({ name: 'system' }));
+      : Response.json({ tenant: { name: 'system', defaultLimits: defaults.limits } }));
     expect((await f.driver.register(id))[1]?.code).toBe(ErrorCode.pluginRuntimeTrialLoadFailed);
     expect((await f.driver.status(id))[0]?.registered).toBe(false);
     expect(f.ingressFetch).not.toHaveBeenCalled();
@@ -308,5 +312,51 @@ describe('CoworkerdPluginRuntimeDriver', () => {
 
     expect(second.build.mock.calls[0][0].workerId).toBe(first.build.mock.calls[0][0].workerId);
     expect(secondVersionId).not.toBe(firstVersionId);
+  });
+
+  it('syncs tenant defaultLimits and waits for propagation before Trial Load when limits differ', async () => {
+    let revision = 1;
+    const calls: { path: string; method?: string; body: unknown }[] = [];
+    const f = fixture({
+      config: {
+        apiServerUrl: 'https://management.internal',
+        ingressUrl: 'https://ingress.internal',
+        managementToken: 'management-only',
+        defaultLimits: { cpuMs: 2000, memoryMiB: 256 },
+        internalInvokeGatewayUrl: gatewayUrl,
+        requestTimeoutMs: 1000
+      },
+      managementFetch: vi.fn<typeof fetch>(async (url, init) => {
+        const path = new URL(String(url)).pathname;
+        calls.push({ path, method: init?.method, body: init?.body });
+        if (path === '/v1/status') {
+          return Response.json({
+            storage: { tenantsRevision: String(revision) },
+            nodes: [{ nodeId: 'node-1', reachable: true, storage: { appliedTenantsRevision: String(revision) } }]
+          });
+        }
+        if (init?.method === 'GET' && path.endsWith('/system')) {
+          return Response.json({ tenant: { name: 'system', defaultLimits: {} } });
+        }
+        revision++;
+        if (init?.method === 'PATCH' && path.endsWith('/system')) {
+          return Response.json({ tenant: { name: 'system', defaultLimits: { cpuMs: 2000, memoryMiB: 256 } } });
+        }
+        if (path.includes('/versions/')) return Response.json({ active: true });
+        return new Response(null, { status: 204 });
+      })
+    });
+
+    expect((await f.driver.register(id))[1]).toBeNull();
+    const buildOptions = f.build.mock.calls[0][0];
+    expect(calls.map((c) => [c.method, c.path])).toEqual([
+      ['GET', '/v1/tenants/system'],
+      ['PATCH', '/v1/tenants/system'],
+      ['GET', '/v1/status'],
+      ['PUT', `/v1/tenants/system/workers/${buildOptions.workerId}/versions/${buildOptions.versionId}`],
+      ['PATCH', `/v1/tenants/system/workers/${buildOptions.workerId}`],
+      ['GET', '/v1/status']
+    ]);
+    expect(JSON.parse(String(calls[1].body))).toEqual({ defaultLimits: { cpuMs: 2000, memoryMiB: 256 } });
   });
 });

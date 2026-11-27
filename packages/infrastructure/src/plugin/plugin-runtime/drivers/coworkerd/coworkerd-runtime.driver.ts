@@ -82,6 +82,8 @@ export class CoworkerdPluginRuntimeDriver implements PluginRuntimeManagerPort<Co
   private readonly deployments = new Map<string, Deployment>();
   private readonly registrations = new Map<string, Promise<Result>>();
   private readonly mutations = new Map<string, Promise<unknown>>();
+  private readonly syncedTenants = new Set<string>();
+  private readonly tenantSyncs = new Map<string, Promise<Result>>();
   private readonly requests = new Map<AbortController, string>();
   private readonly shutdownSignal = new AbortController();
   private destroyed = false;
@@ -187,6 +189,45 @@ export class CoworkerdPluginRuntimeDriver implements PluginRuntimeManagerPort<Co
     return operation;
   }
 
+  /**
+   * Ensure the tenant exists and its `defaultLimits` match `config.defaultLimits`
+   * before any Worker upload so Trial Load honors `COWORKERD_DEFAULT_CPU_MS` /
+   * `COWORKERD_DEFAULT_MEMORY_MIB` instead of falling back to node defaults.
+   */
+  private ensureTenantReady(tenantId: string): Promise<Result> {
+    if (this.syncedTenants.has(tenantId)) return Promise.resolve(successResult({}));
+    const pending = this.tenantSyncs.get(tenantId);
+    if (pending) return pending;
+
+    const operation = (async (): Promise<Result> => {
+      const [tenant, tenantError] = await this.api.ensureTenant(tenantId);
+      if (tenantError) {
+        this.circuitBreaker.recordFailure(tenantError);
+        return failureResult(mapCoworkerdApiError(tenantError));
+      }
+      const current = tenant?.tenant?.defaultLimits ?? tenant?.defaultLimits;
+      const desired = this.config.defaultLimits;
+      if (current?.cpuMs !== desired.cpuMs || current?.memoryMiB !== desired.memoryMiB) {
+        const [, limitsError] = await this.api.setTenantDefaultLimits(tenantId, desired);
+        if (limitsError) {
+          this.circuitBreaker.recordFailure(limitsError);
+          return failureResult(mapCoworkerdApiError(limitsError));
+        }
+        const [, propagationError] = await this.waitForPropagation();
+        if (propagationError) return failureResult(propagationError);
+      }
+      this.syncedTenants.add(tenantId);
+      return successResult({});
+    })();
+
+    this.tenantSyncs.set(tenantId, operation);
+    void operation.then(
+      () => { this.tenantSyncs.delete(tenantId); },
+      () => { this.tenantSyncs.delete(tenantId); }
+    );
+    return operation;
+  }
+
   private async deploy(uniqueId: PluginUniqueIdType): Promise<Result> {
     if (this.destroyed) return this.closed();
     try {
@@ -210,11 +251,8 @@ export class CoworkerdPluginRuntimeDriver implements PluginRuntimeManagerPort<Co
           activate: true
         });
         if (this.destroyed) return this.closed();
-        const [, tenantError] = await this.api.ensureTenant(config.tenantId);
-        if (tenantError) {
-          this.circuitBreaker.recordFailure(tenantError);
-          return failureResult(mapCoworkerdApiError(tenantError));
-        }
+        const [, tenantError] = await this.ensureTenantReady(config.tenantId);
+        if (tenantError) return failureResult(tenantError);
         const [, uploadError] = await this.api.uploadVersion({ tenantId: config.tenantId, workerId, versionId, bundle: bundle.bundle, activate: true });
         if (uploadError) {
           this.circuitBreaker.recordFailure(uploadError);

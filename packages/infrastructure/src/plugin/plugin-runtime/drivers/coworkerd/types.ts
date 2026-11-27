@@ -29,10 +29,17 @@ export type CoworkerdStatusResponse = {
 };
 
 export type CoworkerdTenantResponse = {
-  name: string;
+  name?: string;
   state?: string;
   quotas?: Record<string, unknown>;
-  defaultLimits?: CoworkerdWorkerLimitsType;
+  defaultLimits?: Partial<CoworkerdWorkerLimitsType>;
+  tenant?: {
+    name: string;
+    status?: string;
+    quotas?: Record<string, unknown>;
+    defaultLimits?: Partial<CoworkerdWorkerLimitsType>;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 };
 

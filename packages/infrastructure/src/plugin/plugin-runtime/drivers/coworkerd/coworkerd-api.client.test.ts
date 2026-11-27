@@ -43,7 +43,7 @@ describe('CoworkerdApiClient', () => {
     const [result, err] = await client.ensureTenant('team-alpha');
 
     expect(err).toBeNull();
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ name: 'team-alpha', state: 'active' });
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -67,7 +67,7 @@ describe('CoworkerdApiClient', () => {
     const [result, err] = await client.ensureTenant('team-new');
 
     expect(err).toBeNull();
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ name: 'team-new', state: 'active' });
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(mockFetch).toHaveBeenLastCalledWith(
       'http://apiserver.local:8940/v1/tenants',
