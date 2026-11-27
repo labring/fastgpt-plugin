@@ -140,6 +140,11 @@ export async function compileWorker(options: WorkerCompileOptions): Promise<stri
       format: 'esm',
       dts: false,
       clean: false,
+      // workerd leaves import.meta.url undefined, which breaks CJS-interop shims
+      // calling createRequire(import.meta.url) at module top level.
+      define: {
+        'import.meta.url': '"file:///worker.mjs"'
+      },
       deps: { onlyBundle: /.*/ },
       outExtensions: () => ({ js: '.mjs' }),
       outputOptions: { codeSplitting: false },

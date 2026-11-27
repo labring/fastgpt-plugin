@@ -191,16 +191,21 @@ export default defineToolSet({
     expect(result.code).toContain('node:querystring');
   }, 20000);
 
-  it('allows nodejs_compat builtins in bundledInput mode', async () => {
+  it('allows nodejs_compat builtins and replaces import.meta.url for createRequire in bundledInput mode', async () => {
     const options = await fixture(`
       import { Buffer } from 'node:buffer';
       import { createHmac } from 'node:crypto';
       import http2 from 'node:http2';
-      export default { buffer: Buffer.isBuffer, createHmac, http2 };
+      import { createRequire } from 'node:module';
+      const req = createRequire(import.meta.url);
+      export default { buffer: Buffer.isBuffer, createHmac, http2, req };
     `);
     const code = await compileWorker({ ...options, bundledInput: true });
     expect(code).toContain('node:buffer');
     expect(code).toContain('node:crypto');
     expect(code).toContain('node:http2');
+    expect(code).toContain('node:module');
+    expect(code).toContain('file:///worker.mjs');
+    expect(code).not.toContain('import.meta.url');
   });
 });
