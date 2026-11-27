@@ -205,6 +205,7 @@ export default defineToolSet({
     expect(code).toContain('node:crypto');
     expect(code).toContain('node:http2');
     expect(code).toContain('node:module');
+    expect(code).toContain('getPrototypeOf');
     expect(code).toContain('file:///worker.mjs');
     expect(code).not.toContain('import.meta.url');
   });

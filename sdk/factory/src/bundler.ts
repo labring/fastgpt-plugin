@@ -93,6 +93,25 @@ function resolveNodeCompatBuiltin(id: string): string | undefined {
   return NODE_COMPAT_BUILTINS.has(normalized) ? normalized : undefined;
 }
 
+const NODE_MODULE_SHIM_ID = '\0fastgpt-node-module-shim';
+
+const NODE_MODULE_SHIM_CODE = `
+import * as __nativeModule from 'node:module';
+export * from 'node:module';
+export function createRequire(filename) {
+  const rawRequire = __nativeModule.createRequire(filename);
+  const wrapped = (id) => {
+    const mod = rawRequire(id);
+    if (mod && typeof mod === 'object' && Object.getPrototypeOf(mod) === null && 'default' in mod) {
+      return mod.default;
+    }
+    return mod;
+  };
+  return Object.assign(wrapped, rawRequire);
+}
+export default { ...__nativeModule, createRequire };
+`;
+
 const require = createRequire(import.meta.url);
 
 export async function buildWorkerBundle(options: WorkerBuildOptions): Promise<WorkerBuildResult> {
@@ -153,8 +172,14 @@ export async function compileWorker(options: WorkerCompileOptions): Promise<stri
         resolveId: {
           order: 'pre',
           handler(id, importer) {
+            if (id === NODE_MODULE_SHIM_ID) {
+              return NODE_MODULE_SHIM_ID;
+            }
             const nodeCompatBuiltin = resolveNodeCompatBuiltin(id);
             if (nodeCompatBuiltin) {
+              if (nodeCompatBuiltin === 'node:module' && importer !== NODE_MODULE_SHIM_ID) {
+                return NODE_MODULE_SHIM_ID;
+              }
               return { id: nodeCompatBuiltin, external: true };
             }
             if (isBuiltin(id) || id.endsWith('.node')) {
@@ -171,6 +196,11 @@ export async function compileWorker(options: WorkerCompileOptions): Promise<stri
             if (id.startsWith('@fastgpt-plugin/sdk-factory/')) {
               throw new Error(`Unsupported SDK subpath in Worker build: ${id}`);
             }
+          }
+        },
+        load(id) {
+          if (id === NODE_MODULE_SHIM_ID) {
+            return NODE_MODULE_SHIM_CODE;
           }
         },
         generateBundle(_output, bundle) {
