@@ -59,22 +59,38 @@ async function unpack(bundle: Buffer) {
 // Execute in a fresh JS context with Web APIs only; process, Buffer, IPC and Node
 // builtins are deliberately unavailable. This does not claim workerd equivalence.
 async function execute(code: string, stream: boolean) {
-  const program = `
-    import vm from 'node:vm';
-    const context = vm.createContext({ Request, Response, ReadableStream, TextEncoder, Headers, URL, AbortSignal, AbortController });
-    const module = new vm.SourceTextModule(${JSON.stringify(code)}, { context });
-    await module.link(() => { throw new Error('Unexpected external module'); });
-    await module.evaluate();
-    const response = await module.namespace.default.fetch(new Request('https://worker/system/hello/run', {
-      method: 'POST', headers: { Accept: ${JSON.stringify(stream ? 'application/x-ndjson' : 'application/json')} },
-      body: JSON.stringify({ payload: { input: { name: 'Alice' }, secrets: { prefix: 'Hi ' }, childId: 'hello', systemVar: {} } })
-    }));
-    if (response.status !== 200) throw new Error('Worker response status ' + response.status);
-    console.log(await response.text());
-  `;
-  const { stdout } = await promisify(execFile)(process.execPath,
-    ['--experimental-vm-modules', '--input-type=module', '-e', program], { maxBuffer: 8 * 1024 * 1024 });
-  return stdout.trim();
+  const directory = await mkdtemp(join(tmpdir(), 'fastgpt-worker-exec-test-'));
+  try {
+    const workerPath = join(directory, 'worker.mjs');
+    const runnerPath = join(directory, 'runner.mjs');
+    await writeFile(workerPath, code);
+    await writeFile(
+      runnerPath,
+      `
+      import { readFile } from 'node:fs/promises';
+      import vm from 'node:vm';
+      const code = await readFile(${JSON.stringify(workerPath)}, 'utf8');
+      const context = vm.createContext({ Request, Response, ReadableStream, TextEncoder, Headers, URL, AbortSignal, AbortController });
+      const module = new vm.SourceTextModule(code, { context });
+      await module.link(() => { throw new Error('Unexpected external module'); });
+      await module.evaluate();
+      const response = await module.namespace.default.fetch(new Request('https://worker/system/hello/run', {
+        method: 'POST', headers: { Accept: ${JSON.stringify(stream ? 'application/x-ndjson' : 'application/json')} },
+        body: JSON.stringify({ payload: { input: { name: 'Alice' }, secrets: { prefix: 'Hi ' }, childId: 'hello', systemVar: {} } })
+      }));
+      if (response.status !== 200) throw new Error('Worker response status ' + response.status);
+      console.log(await response.text());
+    `
+    );
+    const { stdout } = await promisify(execFile)(
+      process.execPath,
+      ['--experimental-vm-modules', runnerPath],
+      { maxBuffer: 8 * 1024 * 1024 }
+    );
+    return stdout.trim();
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 }
 
 afterEach(async () => {

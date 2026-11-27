@@ -1,11 +1,10 @@
-import { execFile } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pathToFileURL } from 'node:url';
-import { promisify } from 'node:util';
 import { constants, runInThisContext } from 'node:vm';
 
+import { PackCommand } from '@fastgpt-plugin/cli/commands/pack';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { PluginRepoPort } from '@domain/ports/plugin/plugin-repo.port';
@@ -32,7 +31,7 @@ describe('CLI package to upload and confirmed Worker execution', () => {
       await cp(join(process.cwd(), 'test/fixtures/tools/getTime'), source, { recursive: true, filter: (path) => !path.split('/').includes('dist') });
       await mkdir(join(source, 'node_modules/@fastgpt-plugin'), { recursive: true });
       await symlink(join(process.cwd(), 'sdk/factory'), join(source, 'node_modules/@fastgpt-plugin/sdk-factory'), 'dir');
-      await promisify(execFile)(process.execPath, [join(process.cwd(), 'apps/cli/dist/index.js'), 'pack', '--entry', source, '--output', directory]);
+      await new PackCommand().run({ entry: source, dist: './dist', output: directory });
       const pkg = await readFile(join(directory, 'getTime.pkg'));
       const objects = new Map<string, Buffer>();
       const asFile = (key: string, bytes: Buffer, fileName = key) => new FileObject({
@@ -142,7 +141,7 @@ describe('CLI package to upload and confirmed Worker execution', () => {
         export const OutputType = z.object({ time: z.string() });
         export async function tool() { return { time: await readFile('/unsupported', 'utf8') }; }
       `);
-      await promisify(execFile)(process.execPath, [join(process.cwd(), 'apps/cli/dist/index.js'), 'pack', '--entry', source, '--output', directory]);
+      await new PackCommand().run({ entry: source, dist: './dist', output: directory });
       const badPkg = await readFile(join(directory, 'getTime.pkg'));
       artifact = undefined;
       const [rejected, rejectionError] = await makePluginUploadUC({ localFileStorageRepo: local as never, pluginPKGFileResolver: resolver, pluginRepo, logger })({ files: [{ fileName: 'node.pkg', file: Readable.from([badPkg]) }] });

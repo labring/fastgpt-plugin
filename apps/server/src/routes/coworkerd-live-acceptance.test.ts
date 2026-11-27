@@ -1,10 +1,9 @@
-import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
-import { promisify } from 'node:util';
 
+import { PackCommand } from '@fastgpt-plugin/cli/commands/pack';
 import { describe, expect, it } from 'vitest';
 
 import { FileObject } from '@domain/value-objects/file/file-object.vo';
@@ -47,10 +46,12 @@ describe.skipIf(!enabled)('Live cluster and MongoDB end-to-end acceptance', () =
       await mkdir(join(source, 'node_modules/@fastgpt-plugin'), { recursive: true });
       await symlink(join(process.cwd(), 'sdk/factory'), join(source, 'node_modules/@fastgpt-plugin/sdk-factory'), 'dir');
 
-      await promisify(execFile)(process.execPath, [
-        join(process.cwd(), 'apps/cli/dist/index.js'),
-        'pack', '--entry', source, '--output', testDir, '--name', testPluginId
-      ]);
+      await new PackCommand().run({
+        entry: source,
+        dist: './dist',
+        output: testDir,
+        name: testPluginId
+      });
       const pkgBytes = await readFile(join(testDir, `${testPluginId}.pkg`));
       expect(pkgBytes.length).toBeGreaterThan(0);
 
