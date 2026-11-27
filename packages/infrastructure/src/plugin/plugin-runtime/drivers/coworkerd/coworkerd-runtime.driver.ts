@@ -114,6 +114,20 @@ export class CoworkerdPluginRuntimeDriver implements PluginRuntimeManagerPort<Co
     return { workerId: `fg-${digest}`, versionId: `v-${digest}` };
   }
 
+  /**
+   * Derive an immutable versionId from the actual deployment definition content.
+   * Re-deploying identical bytes stays idempotent across restarts/replicas, while
+   * SDK or compatibility-flag upgrades publish under a new versionId instead of
+   * colliding with Coworkerd's immutable VERSION_EXISTS check.
+   */
+  private versionIdentity(code: string): string {
+    const digest = createHash('sha256')
+      .update(JSON.stringify([this.deps.compatibilityDate, ['nodejs_compat'], code]))
+      .digest('hex')
+      .slice(0, 48);
+    return `v-${digest}`;
+  }
+
   private async locked<T>(pluginId: string, work: () => Promise<T>): Promise<T> {
     const previous = this.mutations.get(pluginId) ?? Promise.resolve();
     const next = previous.catch(() => {}).then(work);
@@ -185,8 +199,11 @@ export class CoworkerdPluginRuntimeDriver implements PluginRuntimeManagerPort<Co
       if (!existing) {
         const [code, entryError] = await this.deps.resolveWorkerCode(uniqueId);
         if (entryError) return failureResult(entryError);
-        // A dedicated physical Worker per immutable installation prevents active-version aliasing.
-        const { workerId, versionId } = this.physicalIdentity(uniqueId, config.tenantId);
+        // A dedicated physical Worker per immutable installation prevents active-version aliasing,
+        // while versionId is content-addressed to the compiled bundle so runtime/SDK upgrades
+        // publish cleanly without hitting Coworkerd's immutable VERSION_EXISTS conflict.
+        const { workerId } = this.physicalIdentity(uniqueId, config.tenantId);
+        const versionId = this.versionIdentity(code);
         const bundle = await this.deps.package({
           code, tenantId: config.tenantId, workerId, versionId,
           compatibilityDate: this.deps.compatibilityDate,
@@ -283,7 +300,13 @@ export class CoworkerdPluginRuntimeDriver implements PluginRuntimeManagerPort<Co
       }
       return failureResult(error);
     }
-    const registered = remote.workerId === `${deployment.tenantId}/${deployment.workerId}` && remote.activeVersion === deployment.versionId && remote.valid;
+    const registered =
+      remote.workerId === `${deployment.tenantId}/${deployment.workerId}` &&
+      (cached ? remote.activeVersion === deployment.versionId : Boolean(remote.activeVersion)) &&
+      remote.valid;
+    if (!cached && remote.activeVersion) {
+      deployment.versionId = remote.activeVersion;
+    }
     return successResult({
       registered,
       deployment: structuredClone(deployment),

@@ -295,4 +295,18 @@ describe('CoworkerdPluginRuntimeDriver', () => {
     await f.driver.shutdown(0);
     expect((await request)[1]).not.toBeNull();
   });
+
+  it('derives a new versionId when compiled worker code changes for the same plugin identity', async () => {
+    const first = fixture();
+    await first.driver.register(id);
+    const firstVersionId = first.build.mock.calls[0][0].versionId;
+
+    const second = fixture();
+    second.resolveWorkerCode.mockResolvedValue(successResult('export default { fetch: () => new Response("v2") };'));
+    await second.driver.register(id);
+    const secondVersionId = second.build.mock.calls[0][0].versionId;
+
+    expect(second.build.mock.calls[0][0].workerId).toBe(first.build.mock.calls[0][0].workerId);
+    expect(secondVersionId).not.toBe(firstVersionId);
+  });
 });
