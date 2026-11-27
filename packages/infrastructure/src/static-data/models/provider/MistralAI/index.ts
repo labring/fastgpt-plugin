@@ -11,8 +11,9 @@ const models: ProviderConfigType = {
       quoteMaxToken: 900000,
       maxTemperature: 1.2,
       vision: true,
-      reasoning: false,
-      reasoningEffort: false,
+      reasoning: true,
+      reasoningEffort: true,
+      reasoningEffortList: ['low', 'high'],
       toolChoice: true
     },
     {
@@ -23,8 +24,9 @@ const models: ProviderConfigType = {
       quoteMaxToken: 900000,
       maxTemperature: 1.2,
       vision: false,
-      reasoning: false,
-      reasoningEffort: false,
+      reasoning: true,
+      reasoningEffort: true,
+      reasoningEffortList: ['low', 'high'],
       toolChoice: true
     },
     {
