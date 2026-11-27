@@ -43,7 +43,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "buffer": "^6.0.3",
     "tar-stream": "^3.2.2",
     "tsdown": "catalog:"
   }

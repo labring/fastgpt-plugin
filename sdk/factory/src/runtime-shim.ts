@@ -135,10 +135,6 @@ export function createWorkerRuntime(
 /** Produces the ES module entry used by the build pipeline in the next task. */
 export function generateWorkerEntry(pluginModule: string, options: WorkerRuntimeOptions): string {
   return [
-    'import { Buffer as __FastGPT_Buffer__ } from "node:buffer";',
-    'if (typeof globalThis.Buffer === "undefined") {',
-    '  globalThis.Buffer = __FastGPT_Buffer__;',
-    '}',
     `import plugin from ${JSON.stringify(pluginModule)};`,
     'import { createWorkerRuntime } from "@fastgpt-plugin/sdk-factory/runtime-shim";',
     `export default createWorkerRuntime(plugin, ${JSON.stringify({ invokeGatewayUrl: options.invokeGatewayUrl })});`,

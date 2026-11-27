@@ -125,7 +125,7 @@ describe('buildWorkerBundle', () => {
     expect(manifest.routes).toEqual([{ host: '*', pathPrefix: '/system/hello', workerId: 'hello' }]);
     expect(manifest.workers[0].versions[0]).toMatchObject({
       versionId: 'v1', format: 'v2', mainModule: 'worker.mjs', contentHash: result.contentHash,
-      compatibilityDate: options.compatibilityDate, compatibilityFlags: []
+      compatibilityDate: options.compatibilityDate, compatibilityFlags: ['nodejs_compat']
     });
   }, 20000);
 
@@ -135,7 +135,7 @@ describe('buildWorkerBundle', () => {
     expect(JSON.parse(files.get('manifest.json')!.toString()).routes).toEqual([]);
   }, 20000);
 
-  it.each(['node:fs', 'child_process', 'node:net'])('rejects unsupported builtin %s with actionable diagnostics', async (builtin) => {
+  it.each(['node:fs', 'child_process', 'node:vm'])('rejects unsupported builtin %s with actionable diagnostics', async (builtin) => {
     const options = await fixture(`import * as api from '${builtin}'; export default api;`);
     await expect(buildWorkerBundle(options)).rejects.toThrow(/Worker build does not support/);
   });
@@ -160,10 +160,12 @@ describe('buildWorkerBundle', () => {
     await expect(buildWorkerBundle({ ...options, invokeGatewayUrl: 'file:///tmp/gateway' })).rejects.toThrow('HTTP(S)');
   });
 
-  it('polyfills Buffer and node:buffer for Web-only worker execution', async () => {
-    const pluginWithBuffer = `
+  it('preserves nodejs_compat builtins as external node:* imports', async () => {
+    const pluginWithNodeCompat = `
 import { defineToolSet, createToolHandler, defineInputSchema, defineOutputSchema } from '@fastgpt-plugin/sdk-factory';
-import { Buffer as NodeBuffer } from 'node:buffer';
+import { Buffer as NodeBuffer } from 'buffer';
+import { createHmac } from 'crypto';
+import { stringify } from 'querystring';
 import z from 'zod';
 export default defineToolSet({
   manifest: {},
@@ -173,24 +175,32 @@ export default defineToolSet({
     description: {},
     handler: createToolHandler({
       inputSchema: defineInputSchema({ name: { type: z.string(), title: { en: 'Name', 'zh-CN': '名称' } } }),
-      outputSchema: defineOutputSchema({ base64: { type: z.string(), title: { en: 'Base64', 'zh-CN': 'Base64' } } }),
+      outputSchema: defineOutputSchema({ out: { type: z.string(), title: { en: 'Out', 'zh-CN': '输出' } } }),
       handler: async (input) => {
-        const encoded = NodeBuffer.from(input.name).toString('base64');
-        const decoded = Buffer.from(encoded, 'base64').toString('utf8');
-        return { base64: encoded + ':' + decoded };
+        const b64 = NodeBuffer.from(input.name).toString('base64');
+        const sig = createHmac('sha256', 'k').update(b64).digest('hex');
+        return { out: stringify({ b64, sig }) };
       }
     })
   }]
 });`;
-    const options = await fixture(pluginWithBuffer);
+    const options = await fixture(pluginWithNodeCompat);
     const result = await buildWorkerBundle(options);
-    const output = await execute(result.code, false);
-    expect(JSON.parse(output)).toEqual({ base64: 'QWxpY2U=:Alice' });
+    expect(result.code).toContain('node:buffer');
+    expect(result.code).toContain('node:crypto');
+    expect(result.code).toContain('node:querystring');
   }, 20000);
 
-  it('allows node:buffer and buffer in bundledInput mode', async () => {
-    const options = await fixture(`import { Buffer } from 'node:buffer'; export default { buffer: Buffer.isBuffer };`);
+  it('allows nodejs_compat builtins in bundledInput mode', async () => {
+    const options = await fixture(`
+      import { Buffer } from 'node:buffer';
+      import { createHmac } from 'node:crypto';
+      import http2 from 'node:http2';
+      export default { buffer: Buffer.isBuffer, createHmac, http2 };
+    `);
     const code = await compileWorker({ ...options, bundledInput: true });
-    expect(code).toBeDefined();
+    expect(code).toContain('node:buffer');
+    expect(code).toContain('node:crypto');
+    expect(code).toContain('node:http2');
   });
 });

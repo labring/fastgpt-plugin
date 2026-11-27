@@ -26,6 +26,8 @@ export type WorkerPackageOptions = {
   workerId: string;
   versionId: string;
   compatibilityDate: string;
+  /** Compatibility flags forwarded to workerd; defaults to `['nodejs_compat']`. */
+  compatibilityFlags?: string[];
   /** Must agree with uploadVersion's activate option; non-activating uploads have no routes. */
   activate?: boolean;
 };
@@ -40,10 +42,57 @@ export type WorkerBuildResult = {
 };
 
 /**
- * Conservative portable profile: bundle every dependency, reject Node builtins,
- * and never polyfill an unavailable API with a silent stub. This is a build
- * check, not proof that dynamically selected APIs will work at execution time.
+ * Node.js builtins provided by workerd under `compatibilityFlags: ['nodejs_compat']`.
+ * Host-OS / sandbox-escaping builtins (e.g. `node:child_process`, `node:fs`, `node:vm`,
+ * `node:worker_threads`, `.node` native addons) remain strictly rejected at build time
+ * so incompatible plugins fail fast (or sticky-fallback to localPool when enabled).
  */
+const DEFAULT_COMPATIBILITY_FLAGS = ['nodejs_compat'] as const;
+
+const NODE_COMPAT_BUILTINS = new Set<string>([
+  'node:assert',
+  'node:assert/strict',
+  'node:async_hooks',
+  'node:buffer',
+  'node:console',
+  'node:constants',
+  'node:crypto',
+  'node:diagnostics_channel',
+  'node:dns',
+  'node:dns/promises',
+  'node:events',
+  'node:http',
+  'node:https',
+  'node:http2',
+  'node:module',
+  'node:net',
+  'node:os',
+  'node:path',
+  'node:path/posix',
+  'node:path/win32',
+  'node:process',
+  'node:punycode',
+  'node:querystring',
+  'node:stream',
+  'node:stream/consumers',
+  'node:stream/promises',
+  'node:stream/web',
+  'node:string_decoder',
+  'node:sys',
+  'node:timers',
+  'node:timers/promises',
+  'node:tls',
+  'node:url',
+  'node:util',
+  'node:util/types',
+  'node:zlib'
+]);
+
+function resolveNodeCompatBuiltin(id: string): string | undefined {
+  const normalized = id.startsWith('node:') ? id : `node:${id}`;
+  return NODE_COMPAT_BUILTINS.has(normalized) ? normalized : undefined;
+}
+
 const require = createRequire(import.meta.url);
 
 export async function buildWorkerBundle(options: WorkerBuildOptions): Promise<WorkerBuildResult> {
@@ -99,13 +148,14 @@ export async function compileWorker(options: WorkerCompileOptions): Promise<stri
         resolveId: {
           order: 'pre',
           handler(id, importer) {
-            if (id === 'node:buffer' || id === 'buffer') {
-              return localModule('buffer-polyfill');
+            const nodeCompatBuiltin = resolveNodeCompatBuiltin(id);
+            if (nodeCompatBuiltin) {
+              return { id: nodeCompatBuiltin, external: true };
             }
             if (isBuiltin(id) || id.endsWith('.node')) {
               throw new Error(`Worker build does not support ${id} (imported by ${importer ?? 'entry'}). Use Web APIs or select the Node runtime.`);
             }
-            if (options.bundledInput && importer === pluginEntry && id !== '@fastgpt-plugin/sdk-factory' && id !== 'node:buffer' && id !== 'buffer') {
+            if (options.bundledInput && importer === pluginEntry && id !== '@fastgpt-plugin/sdk-factory') {
               throw new Error(`Uploaded plugin must bundle its dependencies; unsupported import: ${id}`);
             }
             // tsdown treats peer dependencies as external by default. The Worker build must inline
@@ -120,10 +170,13 @@ export async function compileWorker(options: WorkerCompileOptions): Promise<stri
         },
         generateBundle(_output, bundle) {
           for (const item of Object.values(bundle)) {
-            if (item.type === 'chunk' && (item.imports.length || item.dynamicImports.length)) {
+            if (item.type !== 'chunk') continue;
+            const disallowedImports = item.imports.filter((specifier) => !NODE_COMPAT_BUILTINS.has(specifier));
+            const disallowedDynamicImports = item.dynamicImports.filter((specifier) => !NODE_COMPAT_BUILTINS.has(specifier));
+            if (disallowedImports.length || disallowedDynamicImports.length) {
               throw new Error(
                 `Worker bundle must not contain unresolved imports in ${item.fileName}: ` +
-                  JSON.stringify({ imports: item.imports, dynamicImports: item.dynamicImports })
+                  JSON.stringify({ imports: disallowedImports, dynamicImports: disallowedDynamicImports })
               );
             }
           }
@@ -159,7 +212,8 @@ export async function packageWorkerBundle(options: WorkerPackageOptions): Promis
   const contentHash = hash(packageJson);
   const version = {
     versionId: options.versionId, format: 'v2',
-    compatibilityDate: options.compatibilityDate, compatibilityFlags: [],
+    compatibilityDate: options.compatibilityDate,
+    compatibilityFlags: options.compatibilityFlags ?? [...DEFAULT_COMPATIBILITY_FLAGS],
     mainModule: 'worker.mjs', contentHash, variables: [], bindings: []
   };
   const manifest = {
